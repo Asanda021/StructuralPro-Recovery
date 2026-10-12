@@ -6,6 +6,7 @@ missing unit prices into a zero-priced estimate or fabricates a statement.
 from __future__ import annotations
 
 import math
+import hashlib
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -91,6 +92,28 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     result = validate_boq_structure(boq)
     if not result["valid"]:
         raise ValueError("ساختار ردیف‌های برآورد نامعتبر است")
+    pricebook = None
+    price_rows = {}
+    if require_pricebook:
+        pricebook = project.get("user_pricebook_review")
+        if not isinstance(pricebook, dict) or pricebook.get("status") != "approved":
+            raise ValueError("فهرست‌بهای واردشده توسط کاربر باید بازبینی و تأیید شده باشد")
+        _required_text(pricebook.get("approved_by"), "تأییدکننده فهرست‌بها")
+        raw_path = Path(_required_text(pricebook.get("path"), "مسیر فایل واردشده"))
+        if not raw_path.is_file():
+            raise ValueError("فایل مبنای فهرست‌بها در دسترس نیست")
+        digest = _required_text(pricebook.get("sha256"), "اثر انگشت فهرست‌بها")
+        if len(digest) != 64 or any(c not in "0123456789abcdefABCDEF" for c in digest):
+            raise ValueError("SHA-256 فهرست‌بها معتبر نیست")
+        actual_hash = hashlib.sha256()
+        with raw_path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                actual_hash.update(chunk)
+        if actual_hash.hexdigest() != digest.lower():
+            raise ValueError("محتوای فایل فهرست‌بها تغییر کرده است")
+        price_rows = pricebook.get("rows_by_code")
+        if not isinstance(price_rows, dict) or not price_rows:
+            raise ValueError("ردیف‌های قیمت تأییدشده در فهرست‌بها موجود نیستند")
     expected = {}
     for row in details:
         key = (row["source_id"], row["item_code"], row["unit"])
@@ -126,6 +149,15 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
             unpriced.append(n)
         elif require_pricebook:
             price = finite_quantity(row["unit_price"], "قیمت واحد", zero=True)
+            price_origin = price_rows.get(row["price_code"])
+            if not isinstance(price_origin, dict):
+                raise ValueError("کد قیمت با فهرست‌بهای تأییدشده تطبیق ندارد")
+            if normalize_unit(_required_text(price_origin.get("unit"), "واحد قیمت")) != unit:
+                raise ValueError("واحد ردیف قیمت با BOQ مطابقت ندارد")
+            expected_price = finite_quantity(price_origin.get("unit_price"),
+                                             "بهای واحد مستند", zero=True)
+            if not math.isclose(price, expected_price, rel_tol=1e-10, abs_tol=1e-8):
+                raise ValueError("قیمت واحد BOQ با فهرست‌بهای واردشده برابر نیست")
             factor = finite_quantity(row.get("factor", 1), "ضریب", zero=True)
             effective = finite_quantity(row.get("effective_quantity", amount), "مقدار مؤثر", zero=True)
             total = finite_quantity(row.get("total"), "مبلغ ردیف", zero=True)
