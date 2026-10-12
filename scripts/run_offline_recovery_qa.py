@@ -16,6 +16,7 @@ from pathlib import Path
 
 _TARGETS = (
     "tests/test_recovery_concurrent_takeoff.py",
+    "tests/test_recovery_13_finishes_five_floors.py",
     "tests/test_finish_recovery_pr481.py",
     "tests/test_finish_takeoff_assemblies.py",
     "tests/test_priority_37_stabilization.py",
