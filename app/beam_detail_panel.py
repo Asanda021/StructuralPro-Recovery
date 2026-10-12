@@ -188,9 +188,13 @@ class BeamDetailPanel(QWidget):
                     scene_origin=context.get("cad_scene_origin"), page=page,
                 )
             elif context.get("pdf_engine") is not None:
-                # This PDF reader exposes page-level text without anchor coordinates.
-                candidates = pdf_beam_evidence(
-                    context["pdf_engine"].text(page), beam_id, page=page,
+                # Search every page for related section/schedule tags in the same file.
+                # Page text has no region coordinates; the reviewer chooses explicitly.
+                reader = context["pdf_engine"]
+                candidates = tuple(
+                    match
+                    for detail_page in range(1, reader.page_count + 1)
+                    for match in pdf_beam_evidence(reader.text(detail_page), beam_id, page=detail_page)
                 )
             else:
                 raise ValueError("نمایشگر فعلی اطلاعات متنی قابل بررسی ندارد")
@@ -215,7 +219,8 @@ class BeamDetailPanel(QWidget):
             item = ordered[options.index(choice)]
             self._selected_evidence = {
                 "source_id": current_source["source_id"], "beam_tag": normalize_label(beam_id),
-                "evidence": {**item.to_dict(), "beam_tag": normalize_label(beam_id)},
+                "evidence": {**item.to_dict(), "beam_tag": normalize_label(beam_id),
+                             "drawing_sha256": current_source["sha256"]},
             }
             proposed = parse_section_hint(item.text, beam_id)
             if proposed is not None:
