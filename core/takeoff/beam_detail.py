@@ -14,6 +14,7 @@ from typing import Any
 
 from core.takeoff.boq import build_boq
 from core.drawings.beam_detail_match import validate_evidence_link
+from core.takeoff.stirrup_zones import validate_stirrup_zones
 
 BAR_TYPES = ("longitudinal", "stirrups", "side_bars", "crossties", "additional")
 BAR_LABELS = {
@@ -170,6 +171,9 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                 # Explicit segments support variable stirrup zones and differing bar sizes.
                 # Cut length includes reviewed hooks, laps and bends; never infer it from span.
                 segments = bar.get("segments", [bar])
+                if kind == "stirrups" and "segments" in bar:
+                    # A partial or overlapping zone schedule must never enter BOQ.
+                    segments = validate_stirrup_zones(segments, geometry.get("length"))
                 if not isinstance(segments, list) or not segments:
                     raise ValueError("بازه‌های میلگرد باید فهرست غیرخالی باشند")
                 quantities = []
@@ -184,8 +188,12 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                     result = engine.calculate("building", "rebar", description=BAR_LABELS[kind],
                                               count=count, length=cut, unit_weight=weight)
                     quantities.append(result.quantity)
-                    validated.append({"count": count, "length": cut, "unit_weight": weight,
-                                      "source_ref": segment["source_ref"]})
+                    segment_parameters = {"count": count, "length": cut, "unit_weight": weight,
+                                          "source_ref": segment["source_ref"]}
+                    if kind == "stirrups" and "segments" in bar:
+                        segment_parameters.update({field: segment[field] for field in (
+                            "name", "start_m", "end_m", "spacing_m", "first_bar_m", "last_bar_m")})
+                    validated.append(segment_parameters)
                 total = math.fsum(quantities)
                 if not math.isfinite(total) or total <= 0:
                     raise ValueError("مجموع وزن میلگرد معتبر نیست")
