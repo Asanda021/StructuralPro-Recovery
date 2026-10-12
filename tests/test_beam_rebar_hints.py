@@ -132,3 +132,25 @@ def test_sqlite_draft_keeps_rebar_hint_but_never_commits_it(tmp_path):
         after.commit("P1", "L1", "B1", expected_revision=entry["revision"])
     assert restored.get("P1")["boq"] == []
     restored.close()
+
+
+def test_dxf_vector_text_roundtrip_yields_unapproved_bar_hint(tmp_path):
+    from types import SimpleNamespace
+    ezdxf = pytest.importorskip("ezdxf")
+    from core.drawings.beam_detail_match import cad_beam_evidence
+    path = tmp_path / "b1-bars.dxf"
+    drawing = ezdxf.new()
+    drawing.modelspace().add_text("B1 LONGITUDINAL: 4Ø20", dxfattribs={"insert": (110, 190)})
+    drawing.modelspace().add_text("B10 STIRRUP: Ø8 @10cm", dxfattribs={"insert": (120, 200)})
+    drawing.saveas(path)
+    reopened = ezdxf.readfile(path)
+    entities = [SimpleNamespace(entity_type=e.dxftype(), layer=e.dxf.layer,
+                 handle=e.dxf.handle, data={"text": e.dxf.text,
+                     "insert": (e.dxf.insert.x, e.dxf.insert.y)}) for e in reopened.modelspace()]
+    matched = cad_beam_evidence(SimpleNamespace(entities=entities), "B1",
+                                region=(8, 8, 5, 5), scene_origin=(100, 200))
+    hints = propose_rebar_from_evidence(matched, "B1")
+    assert len(hints["candidates"]) == 1
+    assert hints["candidates"][0]["count"] == 4
+    assert hints["candidates"][0]["diameter_mm"] == 20
+    assert not hints["quantity_approved"] and not hints["ready_for_boq"]
