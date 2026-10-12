@@ -13,6 +13,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
+from core.drawings.beam_detail_match import validate_evidence_link
 
 BAR_TYPES = ("longitudinal", "stirrups", "side_bars", "crossties", "additional")
 BAR_LABELS = {
@@ -107,6 +108,7 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
     source = data.get("source", {})
     try:
         _validate_source(source)
+        validate_evidence_link(source, beam_id)
     except ValueError as exc:
         errors.append(str(exc))
 
@@ -226,6 +228,7 @@ class BeamDetailWorkflow:
         # Reject malformed source at the time it is supplied; an empty source is okay for a draft.
         if draft.get("source"):
             _validate_source(draft["source"])
+            validate_evidence_link(draft["source"], beam_id)
         try:
             json.dumps(draft, allow_nan=False, ensure_ascii=False)
         except (ValueError, TypeError, OverflowError) as exc:
