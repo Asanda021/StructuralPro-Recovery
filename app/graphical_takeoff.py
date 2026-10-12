@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout
+    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -315,7 +315,22 @@ class GraphicalTakeoffDialog(QDialog):
 
         self.canvas = TakeoffCanvas(self.session, self.refresh, self.add_note)
         self.canvas.setFrameShape(QFrame.Shape.StyledPanel)
-        root.addWidget(self.canvas, 5)
+        self.beam_detail_panel = None
+        if self.app_service is not None:
+            # Keep the drawing visible while the engineer reviews beam details.
+            from app.beam_detail_panel import BeamDetailPanel
+            self.beam_detail_panel = BeamDetailPanel(
+                self.app_service, lambda: self.project_id_input.text(),
+                self.beam_drawing_context, self
+            )
+            split = QSplitter(Qt.Orientation.Horizontal)
+            split.addWidget(self.canvas)
+            split.addWidget(self.beam_detail_panel)
+            split.setStretchFactor(0, 4)
+            split.setStretchFactor(1, 2)
+            root.addWidget(split, 5)
+        else:
+            root.addWidget(self.canvas, 5)
 
         table_title = QLabel("متره‌های ثبت‌شده — قابل بازبینی و اتصال به BOQ")
         table_title.setObjectName("SectionTitle")
@@ -366,6 +381,17 @@ class GraphicalTakeoffDialog(QDialog):
                 self.open_drawing(pdf_path)
             except Exception as exc:
                 QMessageBox.warning(self, "نقشه", "فایل برای نمایش گرافیکی باز نشد: " + str(exc))
+
+    def beam_drawing_context(self):
+        """Context link only: a selected rectangle does not imply a parsed beam detail."""
+        rect = self.canvas._selected_region_rect
+        region = None
+        if rect is not None and rect.isValid() and rect.width() > 0 and rect.height() > 0:
+            region = (rect.left(), rect.top(), rect.width(), rect.height())
+        return {
+            "path": str(self.viewer.path) if self.viewer.path else "",
+            "page": self.page, "region": region,
+        }
 
     def save_session_to_project(self):
         if self.app_service is None:
