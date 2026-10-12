@@ -1,9 +1,12 @@
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def read(path: str) -> str:
-    return (ROOT / path).read_text(encoding="utf-8")
+    return ((HISTORY if path.startswith(".github/workflows/") else ROOT) / path).read_text(encoding="utf-8")
 
 def test_installer_uses_stable_version_placeholder():
     text = read("packaging/installer.iss")

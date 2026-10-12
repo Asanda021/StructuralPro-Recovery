@@ -1,4 +1,7 @@
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 ROOT=Path(__file__).resolve().parents[1]
 
 def test_windows_release_script_uses_canonical_version():
@@ -13,7 +16,7 @@ def test_installer_paths_are_valid_in_template():
     assert '#define MyAppVersion "__VERSION__"' in text
 
 def test_release_workflow_validates_payload_and_installer():
-    text=(ROOT/".github/workflows/windows-release.yml").read_text()
+    text=(HISTORY/".github/workflows/windows-release.yml").read_text()
     assert "dist/StructuralPro/StructuralPro.exe" in text
     assert "dist/StructuralPro/VERSION" in text
     assert "StructuralPro-*-Setup.exe" in text

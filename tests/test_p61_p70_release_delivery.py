@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACTS = ROOT / "contracts" / "ervira"
@@ -28,7 +31,7 @@ def test_release_notes_match_canonical_version():
     assert f"## {version}" in notes
 
 def test_windows_release_workflow_contains_required_delivery_gates():
-    workflow = (ROOT / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
+    workflow = (HISTORY / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
     for token in [
         "Validate version","Build payload","Validate payload","Build installer",
         "Validate installer","Run installed application acceptance smoke",

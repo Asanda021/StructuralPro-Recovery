@@ -1,11 +1,14 @@
 """Fail-closed static checks only; intentionally never executes GitHub Actions."""
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 import copy
 import pytest
 import yaml
 
 ROOT=Path(__file__).resolve().parents[1]
-P=ROOT/'.github/workflows/p37-real-product-deployment.yml'
+P=HISTORY/'.github/workflows/p37-real-product-deployment.yml'
 
 def spec():
     return yaml.safe_load(P.read_text(encoding='utf8'))
@@ -72,7 +75,7 @@ def test_publish_mutations_rejected(mutation):
 def test_release_version_is_not_interpolated_into_powershell_source():
     for name,job_name in [('p37-real-product-deployment.yml','deploy-production'),
                           ('windows-release.yml','build-windows')]:
-        data=yaml.safe_load((ROOT/'.github/workflows'/name).read_text(encoding='utf8'))
+        data=yaml.safe_load((HISTORY/'.github/workflows'/name).read_text(encoding='utf8'))
         steps=data['jobs'][job_name]['steps']
         step=next(x for x in steps if x.get('name') in ('Validate release version','Validate version'))
         assert step['env']['REQUESTED_RELEASE_VERSION']=='${{ inputs.release_version }}'
