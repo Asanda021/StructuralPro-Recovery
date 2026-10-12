@@ -1,7 +1,7 @@
 """CAD/PDF beam label resolution must always be evidence-only and fail-closed."""
 from types import SimpleNamespace
 import pytest
-from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, suggested_link, parse_section_hint
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, suggested_link, parse_section_hint, validate_evidence_link
 
 
 def entity(text, x=10, y=20, handle="A1", typ="TEXT"):
@@ -92,3 +92,21 @@ def test_conflicting_dimensions_never_proposed():
 
 def test_persian_explicit_section():
     assert parse_section_hint("B۱ عرض=۳۰ سانتی‌متر ارتفاع=۵۰ سانتی‌متر", "B1") == {"width_m": .3, "depth_m": .5}
+
+
+def test_drawing_evidence_link_consistency():
+    source = {"mode": "drawing", "page": 2,
+              "detail_evidence": {"beam_tag": "B1", "kind": "cad",
+                                  "source_ref": "cad:page:2:handle:A1", "text": "b۱", "page": 2}}
+    validate_evidence_link(source, "B1")
+    with pytest.raises(ValueError, match="تیر دیگری"):
+        validate_evidence_link(source, "B2")
+    source["detail_evidence"]["page"] = 3
+    with pytest.raises(ValueError, match="صفحه"):
+        validate_evidence_link(source, "B1")
+
+
+def test_invalid_evidence_does_not_pass_validation():
+    src = {"mode": "manual", "page": 1, "detail_evidence": {"beam_tag": "B1"}}
+    with pytest.raises(ValueError, match="نقشه معتبر"):
+        validate_evidence_link(src, "B1")
