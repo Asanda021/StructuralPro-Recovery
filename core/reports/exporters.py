@@ -151,34 +151,54 @@ def export_xlsx(rows, path, title="StructuralPro", summary=None, metadata=None, 
 def export_docx(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
     from docx import Document
     from docx.enum.table import WD_TABLE_DIRECTION
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     rows = list(rows)
+
+    def mark_rtl(paragraph):
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        ppr = paragraph._p.get_or_add_pPr()
+        if ppr.find(qn('w:bidi')) is None:
+            bidi = OxmlElement('w:bidi')
+            bidi.set(qn('w:val'), '1')
+            # OOXML requires bidi before justification; preserve schema order.
+            ppr.insert_element_before(bidi, 'w:jc')
+        for run in paragraph.runs:
+            rpr = run._r.get_or_add_rPr()
+            if rpr.find(qn('w:rtl')) is None:
+                rtl = OxmlElement('w:rtl')
+                rtl.set(qn('w:val'), '1')
+                rpr.append(rtl)
+
+    def mark_table_rtl(table):
+        # python-docx's public property is table_direction, not direction.
+        table.table_direction = WD_TABLE_DIRECTION.RTL
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    mark_rtl(paragraph)
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     cols = _columns(rows, columns)
     d = Document()
-    d.add_heading(title, 0)
-    d.add_heading("خلاصه تجاری", level=1)
+    mark_rtl(d.add_heading(title, 0))
+    mark_rtl(d.add_heading("خلاصه تجاری", level=1))
     table = d.add_table(rows=1, cols=2)
-    try:
-        table.direction = WD_TABLE_DIRECTION.RTL
-    except Exception:
-        pass
     table.rows[0].cells[0].text, table.rows[0].cells[1].text = "شرح", "مقدار"
     for label, value in _summary_items(summary):
         cells = table.add_row().cells
         cells[0].text, cells[1].text = str(label), _cell(value)
-    d.add_heading("ریز متره و برآورد", level=1)
+    mark_table_rtl(table)
+    mark_rtl(d.add_heading("ریز متره و برآورد", level=1))
     t = d.add_table(rows=1, cols=len(cols))
-    try:
-        t.direction = WD_TABLE_DIRECTION.RTL
-    except Exception:
-        pass
     for i, (_, label) in enumerate(cols):
         t.rows[0].cells[i].text = str(label)
     for row in rows:
         cells = t.add_row().cells
         for i, (key, _) in enumerate(cols):
             cells[i].text = _cell(row.get(key))
+    mark_table_rtl(t)
     d.save(path)
     return path
 
