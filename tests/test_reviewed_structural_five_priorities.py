@@ -28,6 +28,7 @@ def approved(kind="column", ident="C1", *, floor="L1"):
     record["geometry"] = {**dims, "intersections": [], "source_ref": "approved-plan",
                           "approved_by": "structural-reviewer"}
     record["formwork"] = {"status": "confirmed", "approved_by": "structural-reviewer",
+                          "area_scope": "total_group", "area_scope_ref": "approved-formwork-schedule",
                           "surfaces": [{"id": "face-east", "net_area_m2": 2.4,
                                         "source_ref": "approved-section"}]}
     for group in record["rebars"]:
@@ -84,6 +85,7 @@ def test_verified_steel_is_engine_quantity_not_formula_duplicate():
     draft = approved()
     draft["rebars"]["longitudinal"] = {
         "status": "confirmed", "source_ref": "column-C1", "approved_by": "checker",
+        "count_scope": "total_group", "count_scope_ref": "C1/all-columns-bar-schedule",
         "segments": [{"source_ref": "C1/long", "approved_by": "checker",
                       "count": 8, "unit_weight_kg_m": 2.47,
                       "unit_weight_source": "reviewed-bar-table",
@@ -344,6 +346,7 @@ def test_column_tie_or_grade_beam_stirrup_requires_real_stations(
 ):
     draft = approved(kind, ident)
     group = "ties" if kind == "column" else "stirrups"
+    draft["geometry"]["count"] = 1  # one physical member per station plan
     schedule = {"name": "تمام طول", "start_m": 0, "end_m": axis,
                 "spacing_m": spacing, "first_bar_m": first, "last_bar_m": last,
                 "count": count, "cut_length_m": 1.3, "unit_weight_kg_m": .395,
@@ -358,3 +361,34 @@ def test_column_tie_or_grade_beam_stirrup_requires_real_stations(
     # A confirmed count with missing physical stations is *not* proof.
     del schedule["first_bar_m"]
     assert not preview_member(draft, TakeoffEngine())["ready"]
+
+
+def test_ambiguous_repeat_member_rebar_and_formwork_totals_block():
+    d = approved("column", "C1")  # concrete member count is 2
+    del d["formwork"]["area_scope"]
+    assert not preview_member(d, TakeoffEngine())["ready"]
+    d = approved("column", "C1")
+    d["rebars"]["longitudinal"] = {
+        "status": "confirmed", "approved_by": "checker", "source_ref": "C1/long",
+        "segments": [{"count": 8, "approved_by": "checker", "source_ref": "C1/long",
+                      "unit_weight_kg_m": .395, "unit_weight_source": "tables",
+                      "cut_length_m": 3.5}],
+    }
+    assert not preview_member(d, TakeoffEngine())["ready"]
+    d["rebars"]["longitudinal"]["count_scope"] = "total_group"
+    d["rebars"]["longitudinal"]["count_scope_ref"] = "C1/all-identical-columns"
+    assert preview_member(d, TakeoffEngine())["ready"]
+
+
+def test_two_column_tie_schedule_cannot_pass_as_one():
+    d = approved("column", "C1")
+    d["rebars"]["ties"] = {
+        "status": "confirmed", "approved_by": "checker", "source_ref": "C1/ties",
+        "count_scope": "total_group", "count_scope_ref": "C1/schedule",
+        "segments": [{"name": "کل ستون", "start_m": 0, "end_m": 3,
+                      "spacing_m": .2, "first_bar_m": .1, "last_bar_m": 2.9,
+                      "count": 15, "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+                      "unit_weight_source": "tables", "approved_by": "checker",
+                      "source_ref": "C1/ties"}],
+    }
+    assert not preview_member(d, TakeoffEngine())["ready"]
