@@ -161,6 +161,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
         seen.add(line)
         evidence = require_text(item.get("source_ref"), "مرجع اندازه‌گیری")
         description = require_text(item.get("description"), "شرح ریزقلم")
+        declared_domain = require_text(item.get("domain"), "حوزه تخصصی ریزقلم")
+        if declared_domain not in TakeoffEngine.DOMAINS:
+            raise ValueError("حوزه تخصصی ریزقلم معتبر نیست")
         code = require_text(item.get("item_code"), "کد عملیات")
         mode = item.get("mode")
         if mode == "engine":
@@ -185,7 +188,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
         if not math.isfinite(amount) or amount <= 0:
             raise ValueError("مقدار جزئی باید مثبت و متناهی باشد")
         rows.append({"line_id": line, "source_ref": evidence, "description": description,
-                     "item_code": code, "domain": item.get("domain") or "building",
+                     "item_code": code, "domain": declared_domain,
                      "quantity": amount, "unit": unit, "formula": formula,
                      "params": deepcopy(item.get("params") or {}),
                      "method": mode})
@@ -211,12 +214,29 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     if not isinstance(components, dict) or set(components) != set(spec.components):
         raise ValueError("فهرست گروه‌های مصالح یا عملیات با نوع سیستم تطبیق ندارد")
     seen = set()
+    adjustments = {
+        "waffle": {"junction_adjustment": "ribs_y"},
+        "uboot": {"verified_voids": "gross_concrete"},
+        "cobiax": {"verified_voids": "gross_concrete"},
+    }.get(kind, {})
+    adjustment_rows = {}
     for name in spec.components:
         part = components[name]
         try:
             if name in spec.essential and isinstance(part, dict) and part.get("status") == "not_applicable":
                 raise ValueError("این جزء برای تیپ انتخابی ضروری است؛ عدم کاربرد مجاز نیست")
-            for item in _preview_component(part, name, engine):
+            accepted_rows = _preview_component(part, name, engine)
+            if name == "openings":
+                # Openings are evidence, not additional billable quantities.
+                # Users must enter *net* quantities for their other components.
+                if accepted_rows and part.get("net_excluded_from_quantities") is not True:
+                    raise ValueError("بازشوها باید از ریزمقادیر خالص کسر و صریحاً تأیید شده باشند")
+                adjustment_rows[name] = accepted_rows
+                continue
+            if name in adjustments:
+                adjustment_rows[name] = accepted_rows
+                continue
+            for item in accepted_rows:
                 ref = f"aec:{kind}:{floor}:{identity}:{name}:{item['line_id']}"
                 if ref in seen:
                     raise ValueError("شناسه ردیف پروژه تکراری است")
@@ -225,6 +245,30 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
                              "system": floor, "component": name})
         except (ValueError, KeyError, TypeError, OverflowError) as exc:
             blockers.append(f"{spec.title} / {name}: {exc}")
+    # A concrete void/intersection is a DEDUCTION, never a positive BOQ row.
+    for deduction_component, target_component in adjustments.items():
+        checked = adjustment_rows.get(deduction_component)
+        if not checked:
+            continue
+        targets = [r for r in rows if r["component"] == target_component]
+        if len(targets) != 1 or len(checked) != 1:
+            blockers.append("کسر حجم نیازمند دقیقاً یک ردیف ناخالص و یک ردیف کسر مستند است")
+            continue
+        source, target = checked[0], targets[0]
+        if target["unit"] != "m3" or source["unit"] != "m3":
+            blockers.append("کسر حجم سقف باید بر حسب مترمکعب و هم‌واحد با بتن باشد")
+            continue
+        net = target["quantity"] - source["quantity"]
+        if net <= 0 or not math.isfinite(net):
+            blockers.append("حجم خالص سقف پس از کسورات نامعتبر است")
+            continue
+        target["params"]["gross_m3"] = target["quantity"]
+        target["params"]["deduction"] = {
+            "quantity_m3": source["quantity"], "source_ref": source["source_ref"],
+            "measurement_formula": source["formula"],
+        }
+        target["quantity"] = net
+        target["formula"] = target["formula"] + " − کسر حجم مستند " + source["formula"]
     return {"kind": kind, "floor_id": floor, "system_id": identity, "source_id": sid,
             "ready": not blockers, "blockers": blockers, "rows": rows,
             "preview_only": True}
