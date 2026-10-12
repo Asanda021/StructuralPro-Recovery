@@ -262,3 +262,45 @@ def test_manual_import_does_not_masquerade_as_drawing_hash():
     data = approved()
     data["source"]["detail_evidence"] = {"kind": "pdf", "page": 1}
     assert not preview_member(data, TakeoffEngine())["ready"]
+
+
+def test_beam_shared_rebar_length_parts_concrete_joints_and_form_faces():
+    from core.takeoff.beam_detail import empty_beam, preview_beam
+    d = empty_beam("L1", "B1")
+    d["source"] = {"mode": "manual", "source_id": "manual:P1:L1:B1"}
+    d["geometry"] = {"length": 5, "width": .3, "depth": .5, "count": 1,
+                     "approved_by": "engineer", "source_ref": "B1/section",
+                     "intersections": [{"id": "beam-column-joint-1", "volume_m3": .1,
+                                        "approved_by": "engineer", "source_ref": "B1/joint"}]}
+    d["formwork"] = {"approved_by": "engineer", "source_ref": "B1/face-detail",
+                     "surfaces": [{"id": "left", "net_area_m2": 3, "source_ref": "B1/detail"},
+                                  {"id": "right", "net_area_m2": 3, "source_ref": "B1/detail"}]}
+    for kind in d["bars"]:
+        d["bars"][kind] = {"status": "not_applicable", "reason": "reviewed absent",
+                           "approved_by": "engineer", "source_ref": "B1/schedule"}
+    d["bars"]["longitudinal"] = {
+        "status": "confirmed", "approved_by": "engineer",
+        "source_ref": "B1/long-detail", "count": 4,
+        "unit_weight_kg_m": 2.47, "unit_weight_source": "approved-bar-table",
+        "length_parts_m": [
+            {"kind": "straight", "length_m": 5, "source_ref": "B1/plan"},
+            {"kind": "anchorage", "length_m": .5, "source_ref": "B1/anchor"},
+        ],
+    }
+    report = preview_beam(d, TakeoffEngine())
+    assert report["ready"], report["blockers"]
+    assert next(row for row in report["rows"] if row["code"] == "beam")["quantity"] == pytest.approx(.65)
+    assert next(row for row in report["rows"] if row["code"] == "formwork")["quantity"] == 6
+    assert next(row for row in report["rows"] if row["source_id"].endswith("longitudinal"))["quantity"] == pytest.approx(54.34)
+
+
+def test_beam_conflicting_scalar_and_detailed_deductions_are_rejected():
+    from core.takeoff.beam_detail import empty_beam, preview_beam
+    d = empty_beam("L1", "B1")
+    d["source"] = {"mode": "manual", "source_id": "manual:B1"}
+    d["geometry"] = {"length": 5, "width": .3, "depth": .5, "count": 1,
+                     "approved_by": "engineer", "source_ref": "B1/section",
+                     "deductions_m3": .2,
+                     "intersections": [{"id": "joint", "volume_m3": .1,
+                                        "source_ref": "B1/joint", "approved_by": "engineer"}]}
+    assert not preview_beam(d, TakeoffEngine())["ready"]
