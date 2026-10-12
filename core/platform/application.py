@@ -96,6 +96,33 @@ class StructuralProApp:
             project_id, floor_id, beam_id, expected_revision=expected_revision
         )
 
+    def structural_member_workflow(self):
+        """Column, grade beam and foundation reviews use the same canonical engine/store."""
+        from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
+        return ReviewedStructuralWorkflow(self.store, self.takeoff)
+
+    def new_structural_member(self, kind: str, floor_id: str, member_id: str) -> dict[str, Any]:
+        from core.takeoff.reviewed_structural import empty_member
+        return empty_member(kind, floor_id, member_id)
+
+    def save_structural_member_draft(self, project_id: str, draft: dict[str, Any], *,
+                                      expected_revision: int = 0) -> dict[str, Any]:
+        return self.structural_member_workflow().save_draft(
+            project_id, draft, expected_revision=expected_revision)
+
+    def get_structural_member(self, project_id: str, kind: str, floor_id: str,
+                              member_id: str) -> dict[str, Any] | None:
+        return self.structural_member_workflow().get(project_id, kind, floor_id, member_id)
+
+    def preview_structural_member(self, project_id: str, kind: str, floor_id: str,
+                                  member_id: str) -> dict[str, Any]:
+        return self.structural_member_workflow().preview(project_id, kind, floor_id, member_id)
+
+    def commit_structural_member(self, project_id: str, kind: str, floor_id: str,
+                                 member_id: str, *, expected_revision: int) -> dict[str, Any]:
+        return self.structural_member_workflow().commit(
+            project_id, kind, floor_id, member_id, expected_revision=expected_revision)
+
     def ai_assistant_context(self, project_id: str) -> dict[str, Any]:
         """Return the bounded project context used by the AI assistant."""
         project = self.store.get(project_id)
