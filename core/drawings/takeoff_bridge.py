@@ -6,6 +6,9 @@ price data. Callers must validate the session and explicitly select rows to comm
 from __future__ import annotations
 
 import math
+import hashlib
+import json
+from pathlib import Path
 from typing import Any, Iterable
 
 from core.drawings.takeoff_session import DrawingTakeoffSession
@@ -13,6 +16,78 @@ from core.drawings.graphical_takeoff import Point, polygon_area, polyline_length
 
 
 _KIND_UNITS = {"length": "m", "area": "m2", "count": "عدد"}
+
+
+def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Bind commit-time source bytes and per-page evidence to stable measurements."""
+    payload = record.get("session", {})
+    expected = str(record.get("source_sha256") or "")
+    path = Path(str(payload.get("drawing_source", "")))
+    if not expected or not path.is_file():
+        raise ValueError("منشأ فایل و SHA-256 متره احراز نشده؛ منبع را بازبینی و دوباره اندازه‌گیری کنید")
+    data = path.read_bytes()
+    actual = hashlib.sha256(data).hexdigest()
+    if actual != expected or payload.get("source_sha256") != expected:
+        raise ValueError("فایل منبع نقشه پس از اندازه‌گیری تغییر کرده است؛ ثبت متره رد شد")
+    if path.suffix.lower() == ".pdf":
+        import fitz
+        with fitz.open(stream=data, filetype="pdf") as document:
+            for row in rows:
+                page = int(row["page"])
+                if not 1 <= page <= len(document) or not document[page-1].get_drawings():
+                    raise ValueError("صفحه PDF فاقد شاهد برداری معتبر است؛ کمیت رستری وارد BOQ نمی‌شود")
+    else:
+        from core.drawings.viewer_model import DrawingViewerModel
+        try:
+            DrawingViewerModel(path)
+        except Exception as exc:
+            raise ValueError("منبع CAD/BIM با واردکننده اصلی معتبر شناخته نشد") from exc
+        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError("فایل نقشه هنگام بررسی منشأ تغییر کرده است")
+    items = {str(item["id"]): item for item in payload.get("items", [])}
+    def canonical(points, closed=False):
+        points = tuple(tuple(float(v) for v in point) for point in points)
+        if closed and points and points[0] == points[-1]: points = points[:-1]
+        variants = [points, points[::-1]]
+        if closed and points:
+            variants = (variant[i:]+variant[:i] for variant in variants for i in range(len(variant)))
+        return min(variants)
+    seen = set()
+    for row in rows:
+        calibration = (payload.get("calibrations", {}) or {}).get(str(row["page"]))
+        if calibration is None and row["kind"] in {"length", "area"}:
+            raise ValueError("کالیبراسیون صریح صفحه احراز نشده است")
+        identity = {"source_sha256": actual, "page": row["page"], "kind": row["kind"],
+                    "operation": row["item_code"], "unit": row["unit"],
+                    "geometry": canonical(row["geometry"], row["kind"] == "area"),
+                    "holes": sorted(canonical(hole, True) for hole in row.get("holes", [])),
+                    # Scale and display counters cannot turn the same physical
+                    # source/geometry/operation into an independent measurement.
+                    "measurement_context": str(items[row["takeoff_id"]].get("source", "")) if row["kind"] == "count" and not row["geometry"] else ""}
+        fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        if fingerprint in seen:
+            raise ValueError("متره تکراری با هندسه و منشأ یکسان در انتخاب فعلی وجود دارد")
+        seen.add(fingerprint)
+        row.update(source_sha256=actual, measurement_identity=fingerprint, calibration=calibration)
+    return rows
+
+
+def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+    known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
+    if any(row["measurement_identity"] in known for row in rows):
+        raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")
+    source = Path(str(record.get("drawing_source", ""))).resolve()
+    sessions = project.get("drawing_sessions", {}) or {}
+    for old in project.get("takeoffs", []):
+        if old.get("domain") not in {"drawing", "drawing_ai"}: continue
+        params = old.get("params") or {}
+        old_session = sessions.get(str(old.get("drawing_session_id", "")), {}) or {}
+        old_source = params.get("drawing_source") or old_session.get("drawing_source")
+        if old_source and Path(str(old_source)).resolve() == source:
+            if not params.get("measurement_identity") or not params.get("source_sha256"):
+                raise ValueError("متره قدیمی این نقشه فاقد منشأ قابل احراز است؛ پیش از ثبت جدید بازبینی کنید")
+            if params["source_sha256"] != record["source_sha256"]:
+                raise ValueError("نسخه جدید نقشه باید با متره پرداختی نسخه قبلی تطبیق و بازبینی شود")
 
 
 def validate_session_payload(payload: dict[str, Any]) -> dict[str, Any]:

@@ -302,13 +302,16 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
         length, width = _n(p, "length", 1e-12), _n(p, "width", 1e-12)
         count = _count(p, "count")
         openings = _n(p, "openings")
-        gross_area = count * length * width
+        openings_scope = str(p.get("openings_scope", "total"))
+        if openings_scope not in {"total", "per_repeat"}:
+            raise ValueError("دامنه بازشو باید total یا per_repeat باشد")
+        gross_area = length * width if openings_scope == "per_repeat" else count * length * width
         if openings >= gross_area:
             raise ValueError("مساحت بازشوها باید از مساحت ناخالص کف کمتر باشد")
-        net_area = gross_area - openings
+        net_area = (gross_area - openings) * (count if openings_scope == "per_repeat" else 1)
         components = [AssemblyComponent("finish_area", "مساحت خالص کف‌سازی", "m²",
-                                        "تعداد×طول×عرض−مساحت بازشوها", net_area)]
-        used = ["length", "width", "count", "openings"]
+                                        "تعداد×(طول×عرض−بازشوی هر تکرار)" if openings_scope == "per_repeat" else "تعداد×طول×عرض−بازشوی کل", net_area)]
+        used = ["length", "width", "count", "openings"] + (["openings_scope"] if "openings_scope" in p else [])
         consumption = _optional(p, "consumption_per_m2")
         consumption_unit = str(p.get("consumption_unit", "") or "").strip()
         if consumption is not None:

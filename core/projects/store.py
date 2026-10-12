@@ -30,6 +30,14 @@ class ProjectStore:
             row = self.db.execute(
                 "SELECT version,payload FROM projects WHERE id=?", (pid,)
             ).fetchone()
+            snapshot_version = (project.get("_meta") or {}).get("version")
+            if row is not None and snapshot_version is not None and int(snapshot_version) != int(row["version"]):
+                raise RuntimeError("project changed since write began")
+            # All existing application mutations use get() then save(). Protect
+            # those callers too, even when they did not supply an explicit token.
+            if expected_digest is None and pid in self._cache:
+                cached_payload = {k: v for k, v in self._cache[pid][1].items() if k != "_meta"}
+                expected_digest = begin_write(cached_payload)
             if expected_digest is not None:
                 if row is None:
                     raise RuntimeError("project changed since write began")
@@ -67,12 +75,16 @@ class ProjectStore:
 
     def get(self, project_id: str) -> dict[str,Any] | None:
         pid=str(project_id)
+        # A cache is valid only while its committed SQLite version is current.
+        # Other desktop instances/processes can commit without touching this cache.
+        row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
+        if not row:
+            self._cache.pop(pid, None)
+            return None
         cached=self._cache.get(pid)
-        if cached is not None:
+        if cached is not None and cached[0] == int(row["version"]):
             _, data=cached
             return deepcopy(data)
-        row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
-        if not row: return None
         data=json.loads(row["payload"])
         data["_meta"]={"id":row["id"],"version":row["version"],"updated_at":row["updated_at"]}
         self._cache[pid]=(int(row["version"]), deepcopy(data))

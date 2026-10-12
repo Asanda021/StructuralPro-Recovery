@@ -147,9 +147,9 @@ def test_financial_control_filters_exposure_matrix_and_integrity(tmp_path):
 def test_statement_activity_snapshot_and_exports(tmp_path):
     a=StructuralProApp(tmp_path); a.create_project("صورت","st1")
     a.add_takeoff("st1","building","slab",length=2,width=3,member_code="S1")
-    a.open_project("st1")["boq"][0]["price_code"]="S1"
-    p=a.open_project("st1"); p["boq"][0]["unit_price"]=100; p["boq"][0]["quantity"]=6; a.store.save("st1",p)
-    a.save_statement_period("st1",current_quantities={"S1":2})
+    p=a.open_project("st1"); p["boq"][0]["price_code"]="S1"; p["boq"][0]["unit_price"]=100; p["boq"][0]["quantity"]=6; a.store.save("st1",p)
+    period=a.save_statement_period("st1",current_quantities={"S1":2})
+    assert period["gross_current"] == 200
     assert a.project_statement_summary("st1")["period_count"]==1
     assert a.project_statement_period("st1",1)["number"]==1
     assert a.project_statement_report("st1","csv",tmp_path/"statement.csv").exists()

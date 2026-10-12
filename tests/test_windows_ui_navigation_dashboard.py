@@ -64,8 +64,13 @@ def test_user_pricebook_is_persisted_locally():
     assert 'pricebook_store.write_text(catalog.export_csv' in MAIN
 
 
-def test_quick_takeoff_preserves_selected_discipline():
-    assert 'service.add_takeoff(qpid.text().strip(),discipline.currentData() or "building"' in MAIN
+def test_quick_takeoff_preserves_selected_discipline(tmp_path):
+    import os, subprocess, sys
+    script=Path(__file__).with_name('audit_critical_ui_probe.py')
+    result=subprocess.run([sys.executable,str(script),str(tmp_path),'members'],
+                          cwd=script.parents[1],capture_output=True,text=True,timeout=40,
+                          env={**os.environ,'QT_QPA_PLATFORM':'offscreen','STRUCTURALPRO_SMOKE':'1'})
+    assert result.returncode==0,result.stdout+result.stderr
 
 
 def test_main_navigation_has_controlled_glass_styling():

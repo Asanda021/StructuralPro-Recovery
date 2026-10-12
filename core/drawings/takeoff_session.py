@@ -10,6 +10,8 @@ from dataclasses import dataclass, asdict
 from copy import deepcopy
 import json
 import math
+import hashlib
+from pathlib import Path
 from typing import Any, Iterable
 
 from core.drawings.graphical_takeoff import Point, polygon_area, polyline_length, snap_point
@@ -53,6 +55,8 @@ class DrawingTakeoffSession:
 
     def __init__(self, drawing_source: str = ""):
         self.drawing_source = str(drawing_source or "")
+        source_path = Path(self.drawing_source)
+        self.source_sha256 = hashlib.sha256(source_path.read_bytes()).hexdigest() if source_path.is_file() else ""
         self.calibration: Calibration | None = None
         self.calibrations: dict[int, Calibration] = {}
         self.items: list[TakeoffItem] = []
@@ -254,6 +258,7 @@ class DrawingTakeoffSession:
     def add_count(
         self, count: int = 1, *, page: int | None = None, label: str = "",
         takeoff_code: str = "", source: str = "", confidence: float = 1.0,
+        point: Point | None = None,
     ) -> TakeoffItem:
         page = self.current_page if page is None else self._page_number(page)
         quantity = self._ensure_finite(count)
@@ -262,12 +267,14 @@ class DrawingTakeoffSession:
         if not quantity.is_integer():
             raise ValueError("count must be an integer")
         self._ensure_source_unique(source)
+        if point is not None and not all(math.isfinite(float(v)) for v in (point.x, point.y)):
+            raise ValueError("مختصات شمارش باید متناهی باشد")
         confidence = self._ensure_confidence(confidence)
         self._record()
         item_id = self._next_id()
         item = TakeoffItem(
             item_id, "count", quantity, "عدد", page, label, takeoff_code, source,
-            self._source_ref(page, item_id), (), f"{int(quantity)} عدد", self._ensure_confidence(confidence),
+            self._source_ref(page, item_id), ((point.x, point.y),) if point is not None else (), f"{int(quantity)} عدد", self._ensure_confidence(confidence),
         )
         self.items.append(item)
         self._commit()
@@ -412,6 +419,7 @@ class DrawingTakeoffSession:
     def to_dict(self) -> dict[str, Any]:
         return {
             "drawing_source": self.drawing_source,
+            "source_sha256": self.source_sha256,
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
             "current_page": self.current_page,
@@ -424,7 +432,10 @@ class DrawingTakeoffSession:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DrawingTakeoffSession":
-        session = cls(data.get("drawing_source", ""))
+        session = cls()
+        session.drawing_source = str(data.get("drawing_source", ""))
+        # Loading a saved measurement must never rebind it to changed bytes.
+        session.source_sha256 = str(data.get("source_sha256", ""))
         raw_calibrations = data.get("calibrations")
         if isinstance(raw_calibrations, dict):
             for page_key, value in raw_calibrations.items():
