@@ -19,6 +19,7 @@ _VOLUME = {"concrete", "waist_concrete", "step_concrete", "landing_concrete",
            "topping", "ribs", "ribs_x", "ribs_y", "junction_adjustment",
            "gross_concrete", "verified_voids", "deck_concrete",
            "mortar", "adhesive_mortar", "grout", "screed"}
+_LENGTH = {"pipes", "cables", "conduits", "trays", "earthing"}
 _COUNT = {"blocks", "bricks", "joists", "foam", "studs", "fittings",
           "valves", "equipment", "fixtures", "switches", "devices", "boards"}
 
@@ -37,7 +38,7 @@ def sample(kind: str, *, identity: str = "S1"):
 
 def component(kind: str, name: str, *, quantity: float = 1.0, unit: str | None = None):
     if unit is None:
-        unit = "m3" if name in _VOLUME else "عدد" if name in _COUNT else "m2"
+        unit = "m3" if name in _VOLUME else "m" if name in _LENGTH else "عدد" if name in _COUNT else "m2"
     domain = ("mechanical" if kind in _MECHANICAL else
               "electrical" if kind in _ELECTRICAL else "building")
     return {"status": "confirmed", "approved_by": "مهندس مترور",
@@ -45,6 +46,7 @@ def component(kind: str, name: str, *, quantity: float = 1.0, unit: str | None =
                        "description": f"{kind}/{name}", "item_code": name,
                        "source_ref": f"schedule/{kind}/{name}",
                        "measurement_ref": f"drawing/{kind}/{name}",
+                       "spec_ref": f"approved-specification/{kind}/{name}",
                        "quantity": quantity, "unit": unit, "domain": domain,
                        "formula": "اندازه‌گیری واقعی طبق جدول و جزئیات تأییدشده"}]}
 
@@ -352,3 +354,23 @@ def test_pricebook_row_unit_and_price_mismatch_are_blocked(tmp_path):
     with pytest.raises(ValueError, match="برابر"):
         audit_boq(project, require_pricebook=True)
     store.close()
+
+
+def test_plumbing_pipe_length_needs_specification_and_length_units():
+    d = sample("plumbing")
+    d["components"]["pipes"]["items"][0]["unit"] = "m2"
+    assert not preview_system(d, TakeoffEngine())["ready"]
+    d = sample("plumbing")
+    del d["components"]["pipes"]["items"][0]["spec_ref"]
+    assert not preview_system(d, TakeoffEngine())["ready"]
+    d = sample("plumbing")
+    assert preview_system(d, TakeoffEngine())["ready"]
+
+
+def test_cable_and_light_device_units_are_not_interchangeable():
+    d = sample("electrical_power")
+    d["components"]["cables"]["items"][0]["unit"] = "عدد"
+    assert not preview_system(d, TakeoffEngine())["ready"]
+    d = sample("lighting")
+    d["components"]["fixtures"]["items"][0]["unit"] = "m"
+    assert not preview_system(d, TakeoffEngine())["ready"]
