@@ -298,3 +298,4 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
     footer = lambda canvas, current_doc: _pdf_page_footer(canvas, current_doc, font)
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return path
+
