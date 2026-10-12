@@ -20,6 +20,11 @@ from core.takeoff.reviewed_components import require_text, positive
 from core.takeoff.reviewed_structural import _validate_source
 
 REGISTER = "reviewed_aec_systems"
+MECHANICAL_SYSTEMS = frozenset({"plumbing", "hvac", "fire_protection",
+    "natural_gas", "sanitary_drainage", "mechanical_ventilation", "plantroom"})
+ELECTRICAL_SYSTEMS = frozenset({"electrical_power", "lighting", "low_voltage",
+    "fire_alarm", "data_network", "security_systems", "emergency_power", "elevator"})
+CIVIL_SYSTEMS = frozenset({"external_earthwork", "external_works", "site_drains", "retaining_structures"})
 
 
 @dataclass(frozen=True)
@@ -93,6 +98,110 @@ SPECS = {
                                     "supports"), ("fixtures",)),
     "low_voltage": SystemSpec("جریان ضعیف", ("cables", "conduits", "devices",
                                            "termination", "racks"), ("devices",)),
+    # Priority 1–9 coverage gaps: manual reviewed detail, no invented auto-formula.
+    "steel_frame": SystemSpec("اسکلت فولادی", ("columns", "beams", "bracing", "plates",
+        "bolts", "welds", "connections", "erection", "surface_prep", "corrosion_coating",
+        "fireproofing"), ("columns", "beams")),
+    "composite_frame": SystemSpec("سازه مرکب", ("steel", "concrete", "rebars",
+        "shear_connectors", "connections", "formwork"), ("steel", "concrete")),
+    "timber_frame": SystemSpec("سازه چوبی", ("members", "panels", "connectors",
+        "treatments", "erection"), ("members",)),
+    "kromit_roof": SystemSpec("سقف تیرچه کرومیت", ("joists", "blocks_or_foam",
+        "topping", "bracing", "reinforcement", "edge_beams", "formwork"),
+        ("joists", "topping")),
+    "composite_roof": SystemSpec("سقف مرکب فولاد و بتن", ("steel_members", "concrete",
+        "shear_connectors", "mesh", "formwork", "edge_zones"),
+        ("steel_members", "concrete")),
+    "sandwich_roof": SystemSpec("سقف ساندویچ‌پنل", ("panels", "supports",
+        "fasteners", "flashings", "seals"), ("panels",)),
+    "timber_roof": SystemSpec("سقف چوبی", ("joists", "sheathing",
+        "connectors", "insulation", "waterproofing", "finish"), ("joists",)),
+    "precast_roof": SystemSpec("سقف پیش‌ساخته", ("precast_units",
+        "connections", "bearing", "joints", "topping", "reinforcement"),
+        ("precast_units",)),
+    "cement_render": SystemSpec("اندود سیمانی", ("scratch_coat",
+        "render_coat", "finish", "reinforcement_mesh", "corner_beads"),
+        ("render_coat",)),
+    "stone_cladding": SystemSpec("سنگ‌کاری و سنگ نما", ("stone",
+        "anchoring", "substructure", "mortar_or_adhesive", "grout",
+        "waterproofing", "scaffolding"), ("stone",)),
+    "facade_cladding": SystemSpec("نمای خشک", ("panels", "rails",
+        "brackets", "anchors", "insulation", "waterproofing", "seals"),
+        ("panels",)),
+    "gypsum_partition": SystemSpec("دیوار خشک", ("frames", "boards",
+        "insulation", "joint_compound", "tape", "fixings", "doors"),
+        ("frames", "boards")),
+    "suspended_ceiling": SystemSpec("سقف کاذب", ("grid", "hangers",
+        "boards_or_tiles", "insulation", "edge_trims", "access_panels"),
+        ("grid", "boards_or_tiles")),
+    "thermal_insulation": SystemSpec("عایق حرارتی", ("insulation",
+        "vapor_barrier", "adhesive", "anchors", "seals"), ("insulation",)),
+    "acoustic_insulation": SystemSpec("عایق صوتی", ("insulation",
+        "acoustic_panels", "resilient_supports", "seals"), ("insulation",)),
+    "stone_floor": SystemSpec("سنگ فرش و پله‌پوش", ("stone",
+        "bedding", "grout", "skirting", "edging"), ("stone",)),
+    "upvc_aluminium_windows": SystemSpec("پنجره UPVC و آلومینیوم",
+        ("profiles", "reinforcement", "glazing", "hardware", "seals",
+         "anchors", "installation"), ("profiles", "glazing")),
+    "glass_curtain_wall": SystemSpec("نمای شیشه‌ای", ("mullions",
+        "transoms", "glazing", "anchors", "gaskets", "sealant"),
+        ("mullions", "glazing")),
+    "handrails_metalwork": SystemSpec("نرده و فلزکاری تکمیلی",
+        ("profiles", "plates", "anchors", "welds", "coating"),
+        ("profiles",)),
+    "external_earthwork": SystemSpec("عملیات خاکی و گودبرداری",
+        ("survey", "excavation", "haulage", "disposal", "shoring",
+         "dewatering", "backfill", "compaction"), ("excavation",)),
+    "blinding_concrete": SystemSpec("بتن مگر", ("base_preparation",
+        "blinding_concrete", "edge_formwork"), ("blinding_concrete",)),
+    "retaining_structures": SystemSpec("سازه نگهبان", ("soldier_piles",
+        "lagging", "anchors", "shotcrete", "struts", "monitoring"),
+        ("soldier_piles",)),
+    "external_works": SystemSpec("محوطه و زیرسازی", ("subbase",
+        "grading", "paving", "kerbs", "channels", "walls", "landscaping",
+        "irrigation"), ("paving",)),
+    "site_drains": SystemSpec("زهکشی محوطه", ("pipes", "trenches",
+        "bedding", "manholes", "filter_media", "outlets"), ("pipes",)),
+    "natural_gas": SystemSpec("گازرسانی", ("pipes", "fittings",
+        "valves", "meters", "supports", "coating", "testing"), ("pipes",)),
+    "sanitary_drainage": SystemSpec("فاضلاب و آب باران",
+        ("pipes", "fittings", "cleanouts", "traps", "manholes",
+         "supports", "testing"), ("pipes",)),
+    "mechanical_ventilation": SystemSpec("تهویه مکانیکی",
+        ("ducts", "fans", "diffusers", "dampers", "insulation",
+         "hangers", "controls"), ("ducts",)),
+    "plantroom": SystemSpec("موتورخانه و تجهیزات مرکزی",
+        ("equipment", "pumps", "tanks", "pipes", "fittings",
+         "valves", "instrumentation", "supports", "controls"), ("equipment",)),
+    "fire_alarm": SystemSpec("اعلام حریق",
+        ("detectors", "sounders", "call_points", "cables",
+         "conduits", "panels", "interfaces"), ("detectors", "panels")),
+    "data_network": SystemSpec("دیتا و مخابرات",
+        ("cables", "conduits", "trays", "sockets", "patch_panels",
+         "racks", "terminations", "tests"), ("cables",)),
+    "security_systems": SystemSpec("دوربین و کنترل دسترسی",
+        ("cameras", "readers", "controllers", "cables", "conduits",
+         "recorders", "locks", "power_supplies"), ("controllers",)),
+    "emergency_power": SystemSpec("برق اضطراری",
+        ("generators", "ups", "batteries", "panels", "cables",
+         "grounding", "transfer_switches"), ("panels",)),
+    "elevator": SystemSpec("آسانسور", ("rails", "brackets",
+        "car", "doors", "machine", "controller", "cables",
+        "shaft_works", "testing"), ("car", "machine")),
+    "demolition": SystemSpec("تخریب", ("selective_demolition",
+        "structure_demolition", "waste_sorting", "haulage",
+        "temporary_support", "dust_control"), ("selective_demolition",)),
+    "concrete_repair": SystemSpec("ترمیم بتن", ("substrate_prep",
+        "corrosion_treatment", "repair_mortar", "injection",
+        "reinforcement", "finishes"), ("repair_mortar",)),
+    "seismic_retrofit": SystemSpec("مقاوم‌سازی لرزه‌ای",
+        ("concrete_jackets", "steel_jackets", "frp",
+        "added_bracing", "anchorage", "foundations", "tests"),
+        ("anchorage",)),
+    "historic_restoration": SystemSpec("مرمت بنای تاریخی",
+        ("survey", "documentation", "stabilization",
+        "compatible_mortar", "masonry_repair", "protective_coating"),
+        ("documentation", "stabilization")),
 }
 
 # Only these canonical formula routes may be calculated in this review workflow.
@@ -240,8 +349,9 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
                 continue
             for item in accepted_rows:
                 allowed_domains = (
-                    {"mechanical"} if kind in {"plumbing", "hvac", "fire_protection"}
-                    else {"electrical"} if kind in {"electrical_power", "lighting", "low_voltage"}
+                    {"mechanical"} if kind in MECHANICAL_SYSTEMS
+                    else {"electrical"} if kind in ELECTRICAL_SYSTEMS
+                    else {"civil"} if kind in CIVIL_SYSTEMS
                     else {"building", "advanced"}
                 )
                 if item["domain"] not in allowed_domains:
@@ -251,8 +361,7 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
                     "trays": "m", "earthing": "m", "valves": "عدد",
                     "sprinklers": "عدد", "switches": "عدد",
                     "fixtures": "عدد", "devices": "عدد", "boards": "عدد",
-                } if kind in {"plumbing", "hvac", "fire_protection",
-                              "electrical_power", "lighting", "low_voltage"} else {}
+                } if kind in (MECHANICAL_SYSTEMS | ELECTRICAL_SYSTEMS) else {}
                 if name in mandatory_units and item["unit"] != mandatory_units[name]:
                     raise ValueError("واحد فیزیکی ریزقلم با نوع تأسیسات تطبیق ندارد")
                 ref = f"aec:{kind}:{floor}:{identity}:{name}:{item['line_id']}"
