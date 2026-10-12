@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
-from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint, normalize_label
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint, normalize_label, BeamEvidence
+from core.drawings.beam_rebar_hints import propose_rebar_from_evidence
 
 _STATUS_LABELS = {
     "needs_detail": "نیازمند ورود دیتایل", "unreviewed": "بررسی‌نشده",
@@ -46,6 +47,9 @@ class BeamDetailPanel(QWidget):
         root.addWidget(hint)
         self.find_labels_button = QPushButton("یافتن برچسب و مرجع دیتایل تیر در نقشه")
         root.addWidget(self.find_labels_button)
+        self.suggest_rebar_button = QPushButton("پیشنهاد مشخصات میلگرد از مرجع انتخاب‌شده")
+        self.suggest_rebar_button.setToolTip("فقط متن دارای شناسه تیر و نوع میلگرد را می‌خواند؛ محاسبه وزن و تأیید نهایی انجام نمی‌شود.")
+        root.addWidget(self.suggest_rebar_button)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         root.addWidget(scroll, 1)
@@ -90,7 +94,7 @@ class BeamDetailPanel(QWidget):
                 status.addItem(label, code)
             form.addRow("وضعیت بررسی", status)
             widgets = {"status": status}
-            for field, label in (("count", "تعداد"), ("cut_length_m", "طول برش تأییدشده (متر)"),
+            for field, label in (("count", "تعداد"), ("nominal_diameter_mm", "قطر اسمی از دیتایل (میلی‌متر)"), ("cut_length_m", "طول برش تأییدشده (متر)"),
                                  ("unit_weight_kg_m", "وزن واحد (کیلوگرم/متر)"),
                                  ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد")):
                 editor = QLineEdit()
@@ -111,6 +115,7 @@ class BeamDetailPanel(QWidget):
         self.message.setWordWrap(True)
         root.addWidget(self.message)
         self.find_labels_button.clicked.connect(self.find_drawing_labels)
+        self.suggest_rebar_button.clicked.connect(self.suggest_reinforcement)
         self.load_button.clicked.connect(self.load)
         self.save_button.clicked.connect(self.save)
         self.preview_button.clicked.connect(self.preview)
@@ -252,6 +257,67 @@ class BeamDetailPanel(QWidget):
         except Exception as exc:
             QMessageBox.warning(self, "یافتن دیتایل تیر", str(exc))
 
+    def suggest_reinforcement(self):
+        """Show traceable reinforcement candidates; require explicit consent even to prefill."""
+        try:
+            _, _, beam_id = self._identity()
+            source = self._drawing_source()
+            raw = source.get("detail_evidence") if source.get("mode") == "drawing" else None
+            if not isinstance(raw, dict):
+                raise ValueError("ابتدا ناحیه تیر و مرجع دیتایل همین نقشه را انتخاب کنید")
+            evidence = BeamEvidence(
+                source_ref=str(raw["source_ref"]), text=str(raw["text"]),
+                kind=str(raw["kind"]), page=int(raw["page"]),
+                layer=str(raw.get("layer", "")), handle=str(raw.get("handle", "")),
+                in_selected_region=bool(raw.get("in_selected_region", False)),
+                located=bool(raw.get("located", False)),
+            )
+            result = propose_rebar_from_evidence((evidence,), beam_id)
+            proposals = result["candidates"]
+            if not proposals:
+                self.message.setText("در متن انتخاب‌شده سری میلگرد صریح و بدون ابهام پیدا نشد؛ دیتایل را دستی بررسی کنید.")
+                return
+            lines = []
+            for item in proposals:
+                count = str(item["count"]) if item["count"] is not None else "نامشخص"
+                spacing = (f" | فاصله {item['spacing_m']:g} متر" if item["spacing_m"] is not None else "")
+                lines.append(f"{BAR_LABELS[item['kind']]}: {count} عدد، قطر اسمی {item['diameter_mm']:g} میلی‌متر{spacing}")
+                lines.extend("  نیازمند بررسی: " + issue for issue in item["issues"])
+            lines.extend(result["warnings"])
+            QMessageBox.information(
+                self, "پیشنهادهای آرماتور — نیازمند تأیید",
+                "\n".join(lines) + "\n\nطول برش، خم، وصله، وزن واحد و تعداد خاموت حدس زده نمی‌شوند."
+            )
+            # Only one explicit, nonconflicting series can prefill basic fields.
+            ready = [item for item in proposals if item["count"] is not None
+                     and not item["issues"] and item["kind"] != "stirrups"]
+            if len(proposals) != 1 or len(ready) != 1 or result["warnings"]:
+                self.message.setText("چند سری یا مشخصات ناقص دیده شد؛ انتقال خودکار به فرم انجام نشد.")
+                return
+            proposal = ready[0]
+            widgets = self.bars[proposal["kind"]]
+            if (widgets["count"].text().strip() or widgets["nominal_diameter_mm"].text().strip()
+                    or widgets["status"].currentData() in {"confirmed", "not_applicable"}):
+                self.message.setText("مقادیر/تأیید قبلی وجود دارد؛ بازنویسی خودکار ممنوع است.")
+                return
+            answer = QMessageBox.question(
+                self, "درج پیشنهاد در پیش‌نویس",
+                f"از {proposal['source_ref']} تعداد {proposal['count']} و قطر اسمی "
+                f"{proposal['diameter_mm']:g} میلی‌متر را پس از بررسی وارد فرم کنم؟ "
+                "وضعیت همچنان «نیازمند تأیید» می‌ماند و محاسبه نهایی مسدود است.",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+            widgets["count"].setText(str(proposal["count"]))
+            widgets["nominal_diameter_mm"].setText(f"{proposal['diameter_mm']:g}")
+            widgets["source_ref"].setText(proposal["source_ref"])
+            widgets["status"].setCurrentIndex(widgets["status"].findData("needs_review"))
+            self.message.setText("پیشنهاد در فرم درج شد؛ برای محاسبه باید طول برش و وزن واحد معتبر وارد و مهندس تأیید کند.")
+        except (ValueError, TypeError, KeyError) as exc:
+            QMessageBox.warning(self, "پیشنهاد آرماتور", str(exc))
+
     def _draft(self):
         project, floor, beam = self._identity()
         draft = empty_beam(floor, beam)
@@ -274,9 +340,10 @@ class BeamDetailPanel(QWidget):
             bar = {"status": widgets["status"].currentData()}
             if bar["status"] in ("confirmed", "not_applicable"):
                 bar["approved_by"] = reviewer
+            if bar["status"] in ("confirmed", "not_applicable", "needs_review"):
                 bar["source_ref"] = widgets["source_ref"].text().strip()
-            if bar["status"] == "confirmed":
-                for name in ("count", "cut_length_m", "unit_weight_kg_m"):
+            if bar["status"] in ("confirmed", "needs_review"):
+                for name in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m"):
                     value = self._maybe_number(widgets[name].text(), integral=(name == "count"))
                     if value is not None:
                         bar[name] = value
@@ -321,7 +388,7 @@ class BeamDetailPanel(QWidget):
                 data = draft["bars"][name]
                 widgets = self.bars[name]
                 widgets["status"].setCurrentIndex(widgets["status"].findData(data["status"]))
-                for field in ("count", "cut_length_m", "unit_weight_kg_m", "source_ref", "reason"):
+                for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m", "source_ref", "reason"):
                     widgets[field].setText(str(data.get(field, "")))
             if record and record["status"] == "committed":
                 self.save_button.setEnabled(False)
