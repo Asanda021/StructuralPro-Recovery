@@ -281,6 +281,10 @@ class StructuralProApp:
         return self._model_registry(project_id).export_dict()
 
     def add_takeoff(self,project_id:str,domain:str,item:str,**params)->dict[str,Any]:
+        # Multiple desktop windows may hold cached snapshots. Always reload the
+        # latest committed project before checking identities and calculating BOQ.
+        digest = self.store.current_digest(project_id)
+        self.store._cache.pop(str(project_id), None)
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
         source_id=str(params.pop("source_id","")).strip()
@@ -299,7 +303,7 @@ class StructuralProApp:
              "formula":result.formula,"warning":result.warning,"price_code":params.get("price_code"),"unit_price":params.get("unit_price")}]}
         p["takeoffs"].append(row)
         p["boq"] = self._build_project_boq(p)
-        self.store.save(project_id,p); return row
+        self.store.save(project_id,p,expected_digest=digest); return row
 
 
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
@@ -543,6 +547,10 @@ class StructuralProApp:
             raise ValueError("شناسه پروژه الزامی است")
         if not floor:
             raise ValueError("طبقه یا تراز باید صریح مشخص شود")
+        # Read through SQLite rather than a cached in-memory snapshot. The
+        # checksum will be enforced again by the transactional save below.
+        digest = self.store.current_digest(pid)
+        self.store._cache.pop(pid, None)
         project = self.store.get(pid)
         if project is None:
             raise KeyError(pid)
@@ -607,7 +615,7 @@ class StructuralProApp:
 
         project.setdefault("takeoff_assemblies", []).append(parent)
         project["boq"] = self._build_project_boq(project)
-        self.store.save(pid, project)
+        self.store.save(pid, project, expected_digest=digest)
         return {"assembly": parent, "rows": deepcopy(rows)}
 
     def revise_takeoff(self, project_id: str, source_id: str, *, expected_revision: int,
