@@ -156,6 +156,34 @@ def pdf_beam_evidence(page_text: str, beam_id: str, *, page: int) -> tuple[BeamE
     return tuple(found)
 
 
+
+def validate_evidence_link(source: dict[str, Any], beam_id: str) -> None:
+    """Reject mismatched beam/page refs in optional persisted drawing evidence.
+
+    This verifies metadata consistency only; the user's engineering approval and
+    drawing file integrity checks remain separate, mandatory gates.
+    """
+    evidence = source.get("detail_evidence")
+    if evidence is None:
+        return
+    if source.get("mode") != "drawing" or not isinstance(evidence, dict):
+        raise ValueError("مرجع دیتایل باید به نقشه معتبر متصل باشد")
+    tag = normalize_label(beam_id)
+    if normalize_label(evidence.get("beam_tag")) != tag:
+        raise ValueError("مرجع دیتایل به تیر دیگری تعلق دارد")
+    text = evidence.get("text")
+    if not isinstance(text, str) or not _beam_pattern(beam_id).search(normalize_label(text)):
+        raise ValueError("متن مرجع دیتایل با شناسه تیر مطابقت ندارد")
+    page = evidence.get("page")
+    if isinstance(page, bool) or not isinstance(page, int) or page != int(source.get("page", -1)):
+        raise ValueError("شماره صفحه مرجع دیتایل با صفحه نقشه ناسازگار است")
+    kind = evidence.get("kind")
+    ref = evidence.get("source_ref")
+    prefix = {"cad": f"cad:page:{page}:", "pdf": f"pdf:page:{page}:"}.get(kind)
+    if not prefix or not isinstance(ref, str) or not ref.startswith(prefix):
+        raise ValueError("شناسه منبع دیتایل معتبر نیست")
+
+
 def suggested_link(evidence: Iterable[BeamEvidence]) -> dict[str, Any]:
     """Report candidates without arbitrarily picking one or marking it reviewed."""
     items = tuple(evidence)
