@@ -462,6 +462,8 @@ def main()->int:
     assembly_project_id.setPlaceholderText("شناسه پروژه برای ثبت دائمی")
     assembly_floor_id = QLineEdit()
     assembly_floor_id.setPlaceholderText("طبقه یا تراز (الزامی)")
+    assembly_location_id = QLineEdit()
+    assembly_location_id.setPlaceholderText("شناسه ثابت محل (برای نازک‌کاری الزامی؛ مثال: اتاق ۱۰۱)")
     assembly_save_button = QPushButton("ثبت اجزای تأییدشده در BOQ پروژه")
     assembly_save_button.setEnabled(False)
     assembly_preview_state = {}
@@ -473,6 +475,7 @@ def main()->int:
     tfv.addWidget(assembly_button)
     tfv.addWidget(assembly_project_id)
     tfv.addWidget(assembly_floor_id)
+    tfv.addWidget(assembly_location_id)
     tfv.addWidget(assembly_save_button)
     tfv.addWidget(assembly_output)
     def invalidate_assembly_preview(*_):
@@ -482,6 +485,7 @@ def main()->int:
     assembly_combo.currentIndexChanged.connect(invalidate_assembly_preview)
     assembly_project_id.textChanged.connect(invalidate_assembly_preview)
     assembly_floor_id.textChanged.connect(invalidate_assembly_preview)
+    assembly_location_id.textChanged.connect(invalidate_assembly_preview)
     def do_assembly_preview():
         assembly_preview_state.clear()
         assembly_save_button.setEnabled(False)
@@ -541,7 +545,8 @@ def main()->int:
                 raise ValueError("شناسه پروژه و طبقه/تراز برای ثبت دائمی الزامی است.")
             saved = service.add_assembly_takeoff(
                 project_id, assembly_preview_state["code"], assembly_preview_state["inputs"],
-                floor_id=floor_id, description=assembly_preview_state["title"]
+                floor_id=floor_id, description=assembly_preview_state["title"],
+                location_id=assembly_location_id.text().strip(),
             )
             assembly_output.setPlainText(json.dumps({
                 "status": "saved", "assembly": saved["assembly"],
