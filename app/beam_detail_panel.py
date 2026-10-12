@@ -11,10 +11,11 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton,
-    QComboBox, QMessageBox, QScrollArea, QGroupBox,
+    QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog,
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence
 
 _STATUS_LABELS = {
     "needs_detail": "نیازمند ورود دیتایل", "unreviewed": "بررسی‌نشده",
@@ -34,6 +35,7 @@ class BeamDetailPanel(QWidget):
         self.revision = 0
         self._loaded_identity = None
         self._segmented_kinds = set()
+        self._selected_evidence = None
         self.setMinimumWidth(360)
         root = QVBoxLayout(self)
         title = QLabel("متره ترکیبی تیر — کنترل دیتایل")
@@ -42,6 +44,8 @@ class BeamDetailPanel(QWidget):
         hint = QLabel("ابتدا تیر و ناحیه آن را در نقشه انتخاب کنید. اطلاعات نامشخص را وارد و اقلام را جداگانه بررسی کنید.")
         hint.setWordWrap(True)
         root.addWidget(hint)
+        self.find_labels_button = QPushButton("یافتن برچسب و مرجع دیتایل تیر در نقشه")
+        root.addWidget(self.find_labels_button)
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         root.addWidget(scroll, 1)
@@ -106,6 +110,7 @@ class BeamDetailPanel(QWidget):
         self.message = QLabel("تا قبل از تأیید پنج قلم میلگرد، جمع وزن نهایی مسدود است.")
         self.message.setWordWrap(True)
         root.addWidget(self.message)
+        self.find_labels_button.clicked.connect(self.find_drawing_labels)
         self.load_button.clicked.connect(self.load)
         self.save_button.clicked.connect(self.save)
         self.preview_button.clicked.connect(self.preview)
@@ -153,8 +158,69 @@ class BeamDetailPanel(QWidget):
         digest = sha.hexdigest()
         page = context.get("page", 1)
         fingerprint = ",".join(format(float(v), ".8g") for v in region)
-        return {"mode": "drawing", "source_id": f"drawing:{digest}:page:{page}:region:{fingerprint}",
-                "sha256": digest, "page": page, "drawing_path": str(path), "selected_region": list(region)}
+        source = {"mode": "drawing", "source_id": f"drawing:{digest}:page:{page}:region:{fingerprint}",
+                  "sha256": digest, "page": page, "drawing_path": str(path), "selected_region": list(region)}
+        # An explicit reference selection never constitutes dimensional or rebar approval.
+        linked = self._selected_evidence
+        if linked is not None and linked.get("source_id") == source["source_id"]:
+            source["detail_evidence"] = dict(linked["evidence"])
+        return source
+
+    def find_drawing_labels(self):
+        """Ask the engineer to select an evidence reference; never approve quantities."""
+        try:
+            _, _, beam_id = self._identity()
+            context = self.drawing_context_getter()
+            path = Path(context.get("path") or "")
+            if not path.is_file():
+                raise ValueError("ابتدا نقشه PDF، DWG یا DXF را باز کنید")
+            region = context.get("region")
+            if region is None:
+                raise ValueError("ابتدا ناحیه تیر را روی نقشه انتخاب کنید")
+            current_source = self._drawing_source()
+            if current_source.get("mode") != "drawing":
+                raise ValueError("منبع و ناحیه نقشه کامل نیست")
+            page = int(context.get("page", 1))
+            if context.get("cad_document") is not None:
+                candidates = cad_beam_evidence(
+                    context["cad_document"], beam_id, region=region,
+                    scene_origin=context.get("cad_scene_origin"), page=page,
+                )
+            elif context.get("pdf_engine") is not None:
+                # This PDF reader exposes page-level text without anchor coordinates.
+                candidates = pdf_beam_evidence(
+                    context["pdf_engine"].text(page), beam_id, page=page,
+                )
+            else:
+                raise ValueError("نمایشگر فعلی اطلاعات متنی قابل بررسی ندارد")
+            if not candidates:
+                self.message.setText(
+                    "برچسب منطبق پیدا نشد؛ این به معنای نبود دیتایل نیست. بررسی دستی لازم است."
+                )
+                return
+            ordered = sorted(candidates, key=lambda x: not x.in_selected_region)
+            options = [
+                ("در ناحیه انتخابی" if item.in_selected_region else "در صفحه/خارج از ناحیه")
+                + f" | {item.source_ref} | {item.text[:90]}"
+                for item in ordered
+            ]
+            choice, accepted = QInputDialog.getItem(
+                self, "انتخاب مرجع دیتایل تیر",
+                "مرجع پیشنهادی را با خود نقشه تطبیق دهید؛ انتخاب، کمیت را تأیید نمی‌کند:",
+                options, 0, False,
+            )
+            if not accepted:
+                return
+            item = ordered[options.index(choice)]
+            self._selected_evidence = {
+                "source_id": current_source["source_id"], "evidence": item.to_dict(),
+            }
+            self.message.setText(
+                f"مرجع {item.source_ref} انتخاب شد. هنوز هیچ ابعاد یا میلگردی خودکار تأیید نشده است. "
+                "پس از بررسی دیتایل، اطلاعات لازم را وارد و پیش‌نویس را ذخیره کنید."
+            )
+        except Exception as exc:
+            QMessageBox.warning(self, "یافتن دیتایل تیر", str(exc))
 
     def _draft(self):
         project, floor, beam = self._identity()
@@ -202,6 +268,10 @@ class BeamDetailPanel(QWidget):
                 self.revision = record["revision"]
                 self.message.setText(f"نسخه {self.revision} بازیابی شد؛ وضعیت: {record['status']}")
             self._loaded_identity = (project, floor, beam)
+            source = draft.get("source", {})
+            evidence = source.get("detail_evidence") if isinstance(source, dict) else None
+            self._selected_evidence = ({"source_id": source.get("source_id"), "evidence": dict(evidence)}
+                                       if isinstance(evidence, dict) else None)
             self._segmented_kinds = {
                 kind for kind in BAR_TYPES if draft["bars"][kind].get("segments")
             }
