@@ -429,9 +429,11 @@ class BeamDetailPanel(QWidget):
             if record and record["status"] == "committed":
                 self.save_button.setEnabled(False)
                 self.commit_button.setEnabled(False)
+                self.stirrup_zones_button.setEnabled(False)
             else:
                 self.save_button.setEnabled(True)
                 self.commit_button.setEnabled(True)
+                self.stirrup_zones_button.setEnabled(True)
         except Exception as exc:
             QMessageBox.warning(self, "بارگذاری تیر", str(exc))
 
