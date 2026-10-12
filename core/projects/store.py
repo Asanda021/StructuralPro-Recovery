@@ -20,22 +20,41 @@ class ProjectStore:
         self.db.commit()
 
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None) -> dict[str,Any]:
-        pid=str(project_id); now=time.time()
-        row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
-        if expected_digest is not None:
-            if row is None:
-                raise RuntimeError("project changed since write began")
-            current=json.loads(row["payload"])
-            assert_unchanged(current, expected_digest)
-        version=int(row["version"])+1 if row else 1
-        payload=json.dumps(project,ensure_ascii=False,sort_keys=True)
-        self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
-                        (pid,str(project.get("name","")),version,now,payload))
-        self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
-                        (pid,version,now,payload))
-        self.db.commit()
-        self._cache[pid] = (version, deepcopy(project))
-        return {"id":pid,"version":version,"updated_at":now}
+        pid = str(project_id)
+        now = time.time()
+        # The original implementation compared the digest *before* obtaining a
+        # SQLite write lock. Two writers could both pass, then overwrite each
+        # other. BEGIN IMMEDIATE makes the compare-and-save a single transaction.
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            row = self.db.execute(
+                "SELECT version,payload FROM projects WHERE id=?", (pid,)
+            ).fetchone()
+            if expected_digest is not None:
+                if row is None:
+                    raise RuntimeError("project changed since write began")
+                assert_unchanged(json.loads(row["payload"]), expected_digest)
+            version = int(row["version"]) + 1 if row else 1
+            # Database revision metadata is derived from the committed row and
+            # must never be embedded in the project business payload.
+            clean_project = {key: value for key, value in project.items() if key != "_meta"}
+            payload = json.dumps(clean_project, ensure_ascii=False, sort_keys=True)
+            self.db.execute(
+                "INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+                (pid, str(project.get("name", "")), version, now, payload)
+            )
+            self.db.execute(
+                "INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
+                (pid, version, now, payload)
+            )
+            self.db.commit()
+        except BaseException:
+            self.db.rollback()
+            raise
+        saved = deepcopy(clean_project)
+        saved["_meta"] = {"id": pid, "version": version, "updated_at": now}
+        self._cache[pid] = (version, saved)
+        return {"id": pid, "version": version, "updated_at": now}
 
     def begin_write(self, project_id: str) -> str:
         row = self.db.execute("SELECT payload FROM projects WHERE id=?", (str(project_id),)).fetchone()
