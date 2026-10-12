@@ -18,6 +18,7 @@ from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.reviewed_components import (
     require_text, positive, reviewed_steel, net_concrete, net_formwork,
 )
+from core.takeoff.stirrup_zones import validate_stirrup_zones
 
 REGISTER = "reviewed_structural_members"
 KINDS = {
@@ -169,6 +170,14 @@ def preview_member(data: dict, engine: Any) -> dict:
                     blockers.append(f"میلگرد {group_name}: {exc}")
             elif state == "confirmed":
                 try:
+                    if (kind == "column" and group_name == "ties") or (
+                            kind == "tie_beam" and group_name == "stirrups"):
+                        # Physical ties need an actual zone plan. Merely giving
+                        # spacing is not evidence of a count.
+                        axial_length = positive(
+                            geometry.get("height" if kind == "column" else "length"),
+                            "طول واقعی عضو برای جانمایی خاموت")
+                        validate_stirrup_zones(bar.get("segments"), axial_length)
                     mass, parts = reviewed_steel(bar, label=group_name, engine=engine)
                     rows.append({"source_id": prefix + ":rebar:" + group_name,
                                  "item": "rebar", "code": "rebar", "domain": "building",
