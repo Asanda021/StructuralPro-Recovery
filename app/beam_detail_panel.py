@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
-from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint
 
 _STATUS_LABELS = {
     "needs_detail": "نیازمند ورود دیتایل", "unreviewed": "بررسی‌نشده",
@@ -215,9 +215,32 @@ class BeamDetailPanel(QWidget):
             self._selected_evidence = {
                 "source_id": current_source["source_id"], "evidence": item.to_dict(),
             }
+            proposed = parse_section_hint(item.text, beam_id)
+            if proposed is not None:
+                width_text = self.geometry["width"].text().strip()
+                depth_text = self.geometry["depth"].text().strip()
+                if width_text or depth_text:
+                    self.message.setText(
+                        "مرجع دیتایل انتخاب شد؛ ابعاد موجود فرم به‌صورت خودکار بازنویسی نشدند. "
+                        "برای جلوگیری از تعارض، ابعاد را دستی با نقشه تطبیق دهید."
+                    )
+                    return
+                answer = QMessageBox.question(
+                    self, "انتقال ابعاد مستند به فرم",
+                    f"متن {item.source_ref} عرض {proposed['width_m']:g} متر و ارتفاع مقطع "
+                    f"{proposed['depth_m']:g} متر را صریحاً ذکر می‌کند. "
+                    "پس از تطبیق دستی با نقشه، این دو مقدار در فرم درج شوند؟ "
+                    "این اقدام به‌معنی تأیید نهایی کمیت نیست.",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if answer == QMessageBox.StandardButton.Yes:
+                    self.geometry["width"].setText(format(proposed["width_m"], ".8g"))
+                    self.geometry["depth"].setText(format(proposed["depth_m"], ".8g"))
+                    self.geometry["source_ref"].setText(item.source_ref)
             self.message.setText(
-                f"مرجع {item.source_ref} انتخاب شد. هنوز هیچ ابعاد یا میلگردی خودکار تأیید نشده است. "
-                "پس از بررسی دیتایل، اطلاعات لازم را وارد و پیش‌نویس را ذخیره کنید."
+                f"مرجع {item.source_ref} انتخاب شد. مقدارها همچنان نیازمند بازبینی هستند؛ "
+                "طول، تعداد، کسر هم‌پوشانی و دیتایل پنج گروه میلگرد حدس زده نمی‌شوند."
             )
         except Exception as exc:
             QMessageBox.warning(self, "یافتن دیتایل تیر", str(exc))
