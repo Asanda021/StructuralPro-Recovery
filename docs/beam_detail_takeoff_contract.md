@@ -72,3 +72,13 @@ A selected B1 on PDF page 1 may reference B1 section/schedule text on PDF page 2
 - Existing PR #11 remains **draft**; do not merge, activate GitHub Actions, build or release.
 
 - **QA update:** 60/60 local isolated tests passed after one real DXF text roundtrip and validation of negative counts/invalid nominal diameters in review drafts. These do not establish Windows GUI or production readiness.
+
+
+## 2026-10-13 — Reviewed multi-zone stirrup editor (follow-up after rebar hints)
+
+- New canonical validator: \`core/takeoff/stirrup_zones.py\`. Each stirrup zone requires explicit start/end stations, a spacing in metres, verified first/last physical stirrup positions, integer count, cut length including reviewed hooks/bends, unit mass and a traceable drawing/detail reference. Persian/Arabic digits may be used. **No zone count or cut length is inferred.**
+- A full beam interval [0,L] must be covered by contiguous zones. Reject overlaps, uncovered lengths, out-of-range bars, contradictory \`count × spacing\` positions, duplicated bars at shared boundaries, unreasonably large spacing gaps between adjacent zones and zero/non-finite fields.
+- The existing \`preview_beam\` path validates stirrup zone geometry **before** calling canonical \`TakeoffEngine\`, retains source/position metadata in calculated row parameters, and blocks final BOQ on incomplete zones. Old stirrup segments without start/end/first/last station data are no longer accepted for final BOQ; such drafts must be reviewed/converted to the explicit format, never silently migrated.
+- New Windows/PySide6 form: \`app/beam_stirrup_zone_editor.py\`, opened from \`BeamDetailPanel\`. Adds/deletes manually entered zones, validates the table with the exact domain function and returns only reviewed spatial rows into the existing SQLite draft workflow. Every edit demotes the group to \`needs_review\`; the user must explicitly confirm the bar group before final BOQ. The editor is disabled after the beam has already been committed. Non-stirrup segmented groups remain protected from accidental overwrite.
+- Tests: the newly added \`tests/test_stirrup_zones.py\` plus the updated existing zone scenario were run with the 4 previous beam test modules in the isolated local harness: **79/79 PASS, 0 FAIL, 0 SKIPPED**. Source and editor passed Python syntax compilation. PySide6 is not installed in the local harness; Windows Qt visuals, full-repository regression, real DWG/PDF drawings, BOQ report export and the full assembly acceptance remain **unverified**.
+- Changes stay in draft PR #11 only. No GitHub Actions/workflows, installers, releases or main-branch merges are authorized.
