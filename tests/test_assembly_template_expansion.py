@@ -14,7 +14,7 @@ def test_column_assembly_is_deterministic_and_has_no_implicit_waste():
 
 def test_beam_assembly_only_adds_explicit_formwork_and_rebar_specification():
     result = calculate_assembly("concrete_beam", count=2, length=5, width=0.3, depth=0.5,
-                                formwork_sides=2, rebar_kg_per_m3=120)
+                                formwork_sides=2, rebar_schedule=[dict(count=10,length=8,unit_weight=2,diameter_mm=18,bend_length=.2,hook_length=.3,lap_length=.5,detail_ref='SYNTHETIC-BEAM-BAR-001')])
     by_code = {item.code: item for item in result.components}
     assert by_code["concrete"].quantity == pytest.approx(1.5)
     assert by_code["formwork"].quantity == pytest.approx(13)

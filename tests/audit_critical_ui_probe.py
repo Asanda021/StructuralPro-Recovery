@@ -18,7 +18,7 @@ def exercise(app):
     tabs = window.findChild(QTabBar, 'MainNavigationTabs')
     pages = window.findChild(QStackedWidget)
     index = next(i for i in range(tabs.count()) if 'متره سریع' in tabs.tabText(i))
-    tabs.setCurrentIndex(index); 
+    tabs.setCurrentIndex(index);
     page = pages.currentWidget()
     service = StructuralProApp(home / '.structuralpro')
     service.create_project('آزمون فرمان واقعی', 'UI')
@@ -27,7 +27,7 @@ def exercise(app):
     output = page.findChild(QTextEdit)
     def persisted(): return service.open_project('UI')['takeoffs']
     button = next(b for b in page.findChildren(QPushButton) if b.text() == 'محاسبه و ثبت')
-    button.click(); 
+    button.click();
     assert 'خطا' not in output.toPlainText(), output.toPlainText()
     assert len(persisted()) == 1
     quantity = persisted()[0]['quantities'][0]
@@ -38,10 +38,10 @@ def exercise(app):
     ribbon = next(ribbon_layout.itemAt(i).widget() for i in range(ribbon_layout.count())
                   if isinstance(ribbon_layout.itemAt(i).widget(), QPushButton)
                   and ribbon_layout.itemAt(i).widget().objectName() == 'RibbonPrimary')
-    ribbon.click(); 
+    ribbon.click();
     assert len(persisted()) == 2
     lines[1].clear()
-    button.click(); 
+    button.click();
     assert 'خطا' in output.toPlainText()
     assert len(persisted()) == 2
     service.store.close()

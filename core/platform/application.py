@@ -26,6 +26,7 @@ from core.recovery.recovery import export_project, import_project
 from core.aec.disciplines import takeoff_domain
 from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload, verified_measurement_identities, assert_new_measurements
 from core.takeoff.ai_output_guard import validate_ai_takeoff_proposal
+from core.takeoff.units import normalize_unit
 
 
 def _normalize_date_key(value: str) -> str | None:
@@ -304,6 +305,13 @@ class StructuralProApp:
         system=str(params.pop("system","")).strip() or None
         if source_id and any(str(t.get("source_id","")).strip()==source_id for t in p.get("takeoffs",[])):
             raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source_id}")
+        location = str(params.get("manual_location_id", "")).strip()
+        if location and not system:
+            raise ValueError("شناسه ثابت عضو به طبقه / تراز صریح نیاز دارد")
+        if location and any(str(t.get("system", "")) == system and str(t.get("item", "")) == str(item)
+                            and str(t.get("params", {}).get("manual_location_id", "")) == location
+                            for t in p.get("takeoffs", [])):
+            raise ValueError("متره تکراری برای همین نوع عملیات، طبقه و شناسه عضو")
         calculation_params = deepcopy(params)
         normalized_domain = takeoff_domain(domain)
         result=self.takeoff.calculate(normalized_domain,item,description=description or item,**calculation_params)
@@ -562,7 +570,8 @@ class StructuralProApp:
                 "drawing_session_id": sid, "drawing_session_revision": record["revision"]}
 
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
-                             floor_id: str, description: str = "", location_id: str = "") -> dict[str, Any]:
+                             floor_id: str, description: str = "", location_id: str = "",
+                             component_prices: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
         """Persist a reviewed assembly with stable source/location identity."""
         pid = str(project_id).strip()
         floor = str(floor_id or "").strip()
@@ -579,9 +588,9 @@ class StructuralProApp:
             raise KeyError(pid)
         fixed_location = str(location_id or "").strip()
         assembly_key = str(assembly_code).strip()
-        if assembly_key in _FINISH_ASSEMBLY_CODES:
-            if not fixed_location:
-                raise ValueError("شناسه ثابت محل برای متره نازک‌کاری الزامی است")
+        if assembly_key in _FINISH_ASSEMBLY_CODES and not fixed_location:
+            raise ValueError("شناسه ثابت محل برای متره نازک‌کاری الزامی است")
+        if fixed_location:
             if any(
                 str(previous.get("assembly_code", "")) == assembly_key
                 and str(previous.get("floor_id", "")).strip() == floor
@@ -597,6 +606,22 @@ class StructuralProApp:
         for component in result.components:
             if not math.isfinite(float(component.quantity)) or float(component.quantity) < 0:
                 raise ValueError(f"مقدار جزء {component.code} نامعتبر است")
+        prices = deepcopy(component_prices or {})
+        if not isinstance(prices, dict) or set(prices) - {c.code for c in result.components}:
+            raise ValueError("نگاشت قیمت به جزء ناشناخته مجاز نیست")
+        for component in result.components:
+            if component.code not in prices: continue
+            mapping = prices[component.code]
+            if not isinstance(mapping, dict) or set(mapping) != {"price_code", "unit", "unit_price"}:
+                raise ValueError("قیمت جزء به کد، واحد و قیمت صریح نیاز دارد")
+            if _finish_component_role(result.code, component.code) != "work":
+                raise ValueError("اجزای تأمین و مصرف نباید دوباره در BOQ پرداختی قیمت‌گذاری شوند")
+            if not str(mapping["price_code"]).strip() or normalize_unit(mapping["unit"]) != normalize_unit(component.unit):
+                raise ValueError("کد یا واحد فهرست‌بهای جزء نامعتبر است")
+            if isinstance(mapping["unit_price"], bool): raise ValueError("قیمت جزء باید عددی باشد")
+            rate = float(mapping["unit_price"])
+            if not math.isfinite(rate) or rate < 0: raise ValueError("قیمت جزء باید متناهی و نامنفی باشد")
+            mapping["unit_price"] = rate
 
         bundle_id = uuid4().hex
         created_at = datetime.now(timezone.utc).isoformat()
@@ -604,6 +629,7 @@ class StructuralProApp:
             "id": bundle_id, "assembly_code": result.code, "title": result.title,
             "description": str(description or result.title).strip(), "floor_id": floor,
             "location_id": fixed_location,
+            "component_prices": prices,
             "inputs": deepcopy(dict(inputs)), "inputs_used": list(result.inputs_used),
             "revision": 1, "created_at": created_at, "component_source_ids": [],
         }
@@ -629,7 +655,8 @@ class StructuralProApp:
                     "role": component_role,
                     "unit": component.unit, "amount": float(component.quantity),
                     "formula": component.formula, "warning": component.warning,
-                    "price_code": None, "unit_price": None,
+                    "price_code": prices.get(component.code, {}).get("price_code"),
+                    "unit_price": prices.get(component.code, {}).get("unit_price"),
                 }],
             }
             project.setdefault("takeoffs", []).append(row)
@@ -677,6 +704,20 @@ class StructuralProApp:
 
         normalized_domain = takeoff_domain(domain)
         calculation_params = deepcopy(params)
+        # A geometry revision must retain stable physical identity and price
+        # unless the caller explicitly supplies their replacements.
+        for name in ("manual_location_id", "price_code", "unit_price"):
+            if name not in calculation_params and name in row.get("params", {}):
+                calculation_params[name] = row["params"][name]
+        effective_system = str(system).strip() if system is not None else row.get("system")
+        location = str(calculation_params.get("manual_location_id", "")).strip()
+        if location and not effective_system:
+            raise ValueError("شناسه ثابت عضو به طبقه / تراز صریح نیاز دارد")
+        if location and any(other is not row and str(other.get("system", "")) == effective_system
+                            and str(other.get("item", "")) == str(item)
+                            and str(other.get("params", {}).get("manual_location_id", "")) == location
+                            for other in project.get("takeoffs", [])):
+            raise ValueError("نسخه جدید با شناسه عضو موجود تداخل دارد")
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
                                         **calculation_params)

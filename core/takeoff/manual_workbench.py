@@ -34,7 +34,7 @@ class ManualTakeoffRecord:
     floor_id: str
     element_label: str
     code: str
-    params: Mapping[str, float]
+    params: Mapping[str, float | str]
     quantity: float
     unit: str
     formula: str
@@ -95,6 +95,9 @@ class ManualTakeoffWorkbench:
             "excavation": ("length", "width", "depth"), "rebar": ("count", "length", "unit_weight"), "steel": ("count", "length", "unit_weight"),
         }.get(entry.code, ())
         missing = tuple(k for k in fields if k not in params or (params[k] < 0 if k == "openings" else params[k] <= 0))
+        # Detailed reinforcement may have additional parser requirements; never
+        # silently calculate a simpler bar when diameter/hooks/laps are incomplete.
+        missing += tuple(k for k in entry.missing if k not in fields)
         if missing:
             updated = ManualEntry(entry.code, params, missing, entry.source_text)
             return ManualTakeoffDraft(self.project_id, str(floor_id).strip(), updated, missing)
