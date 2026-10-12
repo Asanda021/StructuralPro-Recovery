@@ -2,6 +2,7 @@
 from pathlib import Path
 import importlib.util
 import tempfile
+import pytest
 
 SPEC=importlib.util.spec_from_file_location("win_gate",Path(__file__).resolve().parents[1]/"scripts/windows_acceptance_gate.py")
 mod=importlib.util.module_from_spec(SPEC)
@@ -69,3 +70,31 @@ def test_no_fake_green_on_non_windows_when_requested_preflight(tmp_path,monkeypa
     monkeypatch.setattr(mod,"missing_dependencies",lambda:[])
     r,code=mod.perform(repo,repo/"qa",force_platform="linux",preflight_only=True)
     assert code==2 and "PASSED" not in r["status"]
+
+
+@pytest.mark.parametrize("linked_directory", [False, True])
+def test_quarantined_symlinks_fail_before_dependency_preflight(tmp_path, monkeypatch, linked_directory):
+    repo = make_repo(tmp_path)
+    quarantine = repo / "recovery/disabled_workflows"
+    if linked_directory:
+        moved = repo / "external-workflows"
+        quarantine.rename(moved)
+        quarantine.symlink_to(moved, target_is_directory=True)
+    else:
+        source = quarantine / "workflow-000.yml"
+        external = repo / "external.yml"
+        source.rename(external)
+        source.symlink_to(external)
+    monkeypatch.setattr(mod, "missing_dependencies", lambda: [])
+    report, code = mod.perform(repo, repo / "qa", force_platform="linux")
+    assert code == 1
+    assert report["status"] == "FAILED_PRECHECK"
+    assert "linked" in report["reason"] or "symbolic link" in report["reason"]
+
+
+def test_quarantine_rejects_unexpected_files(tmp_path, monkeypatch):
+    repo = make_repo(tmp_path)
+    (repo / "recovery/disabled_workflows/unexpected.txt").write_text("unexpected")
+    monkeypatch.setattr(mod, "missing_dependencies", lambda: [])
+    report, code = mod.perform(repo, repo / "qa", force_platform="linux")
+    assert code == 1 and report["status"] == "FAILED_PRECHECK"

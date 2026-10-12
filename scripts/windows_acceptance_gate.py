@@ -110,7 +110,13 @@ def perform(repo: Path, output: Path, *, force_platform: str | None = None,
             return report, 1
         # Assert that we didn't remove the source of the historical audit.
         archived = repo / "recovery" / "disabled_workflows"
-        report["quarantined_workflow_count"] = len(list(archived.glob("*.yml"))) + len(list(archived.glob("*.yaml")))
+        if archived.is_symlink() or not archived.is_dir():
+            raise ValueError("Quarantined workflows directory unavailable or linked")
+        children = list(archived.iterdir())
+        if any(item.is_symlink() or not item.is_file() or
+               item.suffix.lower() not in {".yml", ".yaml"} for item in children):
+            raise ValueError("Unexpected file type or symbolic link in quarantine")
+        report["quarantined_workflow_count"] = len(children)
         if report["quarantined_workflow_count"] != 193:
             report.update(status="BLOCKED_INCOMPLETE_RECOVERY", reason="workflow count differs from recovery record")
             return report, 1
