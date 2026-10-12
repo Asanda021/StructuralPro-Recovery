@@ -304,3 +304,32 @@ def test_beam_conflicting_scalar_and_detailed_deductions_are_rejected():
                      "intersections": [{"id": "joint", "volume_m3": .1,
                                         "source_ref": "B1/joint", "approved_by": "engineer"}]}
     assert not preview_beam(d, TakeoffEngine())["ready"]
+
+
+def test_domain_foundation_and_column_reject_non_finite_values():
+    from core.engineering.domains.foundations import foundation_quantities
+    from core.engineering.domains.concrete import concrete_quantities
+    for bad in (float("nan"), float("inf"), float("-inf"), True):
+        with pytest.raises(ValueError):
+            foundation_quantities("isolated", length=bad, width=2, depth=.5, count=1)
+        with pytest.raises(ValueError):
+            concrete_quantities("column", length=bad, width=.4, depth=.5, count=1)
+
+
+def test_domain_result_must_be_finite():
+    from core.engineering.domains.models import DomainQuantity
+    with pytest.raises(ValueError):
+        DomainQuantity("foundation", "footing", float("nan"), "m3", "L×W×D").validate()
+
+
+def test_drawing_has_to_link_its_real_selected_region(tmp_path):
+    path = tmp_path / "detail.dxf"
+    path.write_bytes(b"valid drawing")
+    draft = approved()
+    draft["source"] = {"mode": "drawing", "source_id": "C1-1", "page": 1,
+                       "drawing_path": str(path),
+                       "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                       "selected_region": [1, 2, 0, 4]}
+    report = preview_member(draft, TakeoffEngine())
+    assert not report["ready"]
+    assert any("ناحیه" in block for block in report["blockers"])
