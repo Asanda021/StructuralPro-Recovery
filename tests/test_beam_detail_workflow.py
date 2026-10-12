@@ -184,3 +184,16 @@ def test_commit_stale_revision_changes_nothing(tmp_path):
         w.commit("P1", "L1", "B1", expected_revision=0)
     assert store.get("P1")["boq"] == []
     store.close()
+
+
+def test_beam_identity_normalizes_persian_digits_and_letter_case(tmp_path):
+    w, store, _ = _workflow(tmp_path)
+    original = _draft()
+    w.save_draft("P1", original)
+    variant = _draft()
+    variant["beam_id"] = "b۱"
+    variant["source"]["source_id"] = "different-drawing-region"
+    with pytest.raises(RuntimeError, match="تعارض نسخه"):
+        w.save_draft("P1", variant, expected_revision=0)
+    assert w.get("P1", "L1", "b۱")["data"]["beam_id"] == "B1"
+    store.close()
