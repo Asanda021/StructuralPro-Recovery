@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import copy
 import math
+import hashlib
 
 import pytest
 
@@ -267,11 +268,25 @@ def test_priced_boq_works_only_when_amounts_reconcile(tmp_path):
     wf.save_draft("P1", sample("block_wall"))
     wf.commit("P1", "block_wall", "L1", "S1", expected_revision=1)
     project = store.get("P1")
+    imported = tmp_path / "pricebook-import.csv"
+    imported.write_text("verified sample rows", encoding="utf-8")
+    project["user_pricebook_review"] = {
+        "status": "approved", "approved_by": "مسئول برآورد",
+        "path": str(imported), "sha256": hashlib.sha256(imported.read_bytes()).hexdigest(),
+        "rows_by_code": {},
+    }
     for r in project["boq"]:
         r["price_code"] = "USER-" + r["item_code"]
         r["unit_price"] = 100
         r["total"] = r["effective_quantity"] * r["unit_price"] * r["factor"]
+        project["user_pricebook_review"]["rows_by_code"][r["price_code"]] = {
+            "unit": r["unit"], "unit_price": 100,
+        }
     assert audit_boq(project, require_pricebook=True)["pricing_complete"]
+    imported.write_text("tampered pricebook", encoding="utf-8")
+    with pytest.raises(ValueError, match="تغییر"):
+        audit_boq(project, require_pricebook=True)
+    imported.write_text("verified sample rows", encoding="utf-8")
     project["boq"][0]["quantity"] += 1
     with pytest.raises(ValueError, match="یکسان"):
         audit_boq(project, require_pricebook=True)
@@ -309,4 +324,31 @@ def test_excel_report_is_user_price_safe_and_rtl(tmp_path):
     wb = openpyxl.load_workbook(output)
     assert wb["ریز متره"].sheet_view.rightToLeft
     assert wb["ریز متره"].max_row >= 4
+    store.close()
+
+
+def test_pricebook_row_unit_and_price_mismatch_are_blocked(tmp_path):
+    store = _store(tmp_path)
+    wf = ReviewedAECWorkflow(store, TakeoffEngine())
+    wf.save_draft("P1", sample("block_wall"))
+    wf.commit("P1", "block_wall", "L1", "S1", expected_revision=1)
+    project = store.get("P1")
+    source = tmp_path / "catalog.csv"
+    source.write_bytes(b"reviewed user pricebook bytes")
+    project["user_pricebook_review"] = {
+        "status": "approved", "approved_by": "مهندس برآورد",
+        "path": str(source), "sha256": hashlib.sha256(source.read_bytes()).hexdigest(),
+        "rows_by_code": {},
+    }
+    for row in project["boq"]:
+        row["unit_price"] = 100
+        row["price_code"] = "USER-" + row["item_code"]
+        row["total"] = row["effective_quantity"] * 100 * row["factor"]
+        project["user_pricebook_review"]["rows_by_code"][row["price_code"]] = {
+            "unit": row["unit"], "unit_price": 100}
+    assert audit_boq(project, require_pricebook=True)["pricing_complete"]
+    project["boq"][0]["unit_price"] = 150
+    project["boq"][0]["total"] = project["boq"][0]["effective_quantity"] * 150
+    with pytest.raises(ValueError, match="برابر"):
+        audit_boq(project, require_pricebook=True)
     store.close()
