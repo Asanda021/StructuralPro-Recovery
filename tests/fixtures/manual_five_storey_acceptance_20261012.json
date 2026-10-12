@@ -1,0 +1,327 @@
+{
+  "schema": 1,
+  "status": "explicit-synthetic-test-only-not-real-design",
+  "floors": 5,
+  "units": {
+    "geometry": "m",
+    "diameter": "mm",
+    "void_volume": "m3",
+    "unit_weight": "kg/m"
+  },
+  "prices": "synthetic testing currency units; not official Iranian pricebook",
+  "material_assumptions": "No implicit concrete grade, rebar diameter, waste, wall thickness or price. Distinct roof patches are test objects, not one overlapping real floor. No quantities summed across incompatible units.",
+  "cases": [
+    {
+      "item": "footing_concrete",
+      "domain": "advanced",
+      "inputs": {
+        "count": 4,
+        "length": 1.5,
+        "width": 1.5,
+        "thickness": 0.5
+      },
+      "expected_per_floor": 4.5,
+      "unit": "m3",
+      "reference": "4×1.5×1.5×0.5",
+      "unit_price": 100
+    },
+    {
+      "item": "tie_beam",
+      "domain": "building",
+      "inputs": {
+        "count": 4,
+        "length": 4,
+        "width": 0.25,
+        "depth": 0.4
+      },
+      "expected_per_floor": 1.6,
+      "unit": "m3",
+      "reference": "4×4×0.25×0.4",
+      "unit_price": 100
+    },
+    {
+      "item": "column",
+      "domain": "building",
+      "inputs": {
+        "count": 8,
+        "width": 0.4,
+        "depth": 0.4,
+        "height": 3
+      },
+      "expected_per_floor": 3.84,
+      "unit": "m3",
+      "reference": "8×0.4×0.4×3",
+      "unit_price": 100
+    },
+    {
+      "item": "beam",
+      "domain": "building",
+      "inputs": {
+        "count": 10,
+        "length": 4,
+        "width": 0.3,
+        "depth": 0.5
+      },
+      "expected_per_floor": 6,
+      "unit": "m3",
+      "reference": "10×4×0.3×0.5",
+      "unit_price": 100
+    },
+    {
+      "item": "shear_wall",
+      "domain": "building",
+      "inputs": {
+        "count": 2,
+        "length": 3,
+        "thickness": 0.2,
+        "height": 3
+      },
+      "expected_per_floor": 3.6,
+      "unit": "m3",
+      "reference": "2×3×0.2×3",
+      "unit_price": 100
+    },
+    {
+      "item": "stair_concrete",
+      "domain": "building",
+      "inputs": {
+        "count": 2,
+        "sloped_length": 4,
+        "width": 1.2,
+        "waist_thickness": 0.15
+      },
+      "expected_per_floor": 1.44,
+      "unit": "m3",
+      "reference": "2×4×1.2×0.15; waist only, landings/risers excluded",
+      "unit_price": 100
+    },
+    {
+      "item": "formwork",
+      "domain": "building",
+      "inputs": {
+        "count": 8,
+        "perimeter": 1.6,
+        "height": 3
+      },
+      "expected_per_floor": 38.4,
+      "unit": "m2",
+      "reference": "8×1.6×3",
+      "unit_price": 10
+    },
+    {
+      "item": "rebar",
+      "domain": "building",
+      "inputs": {
+        "count": 10,
+        "length": 3,
+        "unit_weight": 1.58,
+        "diameter_mm": 16,
+        "bend_length": 0.2,
+        "hook_length": 0.3,
+        "lap_length": 0.5,
+        "detail_ref": "SYNTHETIC-BAR-001"
+      },
+      "expected_per_floor": 63.2,
+      "unit": "kg",
+      "reference": "10×(3+0.2+0.3+0.5)×1.58",
+      "unit_price": 2
+    },
+    {
+      "item": "solid_slab_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 10,
+        "width": 8,
+        "thickness": 0.2
+      },
+      "expected_per_floor": 16,
+      "unit": "m3",
+      "reference": "10×8×0.2",
+      "unit_price": 100
+    },
+    {
+      "item": "joist_block_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 8,
+        "width": 6,
+        "topping_thickness": 0.05,
+        "joist_spacing": 0.5,
+        "joist_width": 0.1,
+        "joist_depth": 0.2,
+        "joist_count": 12
+      },
+      "expected_per_floor": 4.32,
+      "unit": "m3",
+      "reference": "8×6×0.05+12×8×0.1×0.2; 12 ribs explicitly scheduled",
+      "unit_price": 100
+    },
+    {
+      "item": "joist_foam_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 8,
+        "width": 6,
+        "topping_thickness": 0.05,
+        "joist_spacing": 0.5,
+        "joist_width": 0.1,
+        "joist_depth": 0.2,
+        "joist_count": 12
+      },
+      "expected_per_floor": 4.32,
+      "unit": "m3",
+      "reference": "8×6×0.05+12×8×0.1×0.2",
+      "unit_price": 100
+    },
+    {
+      "item": "hollow_core_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 10,
+        "width": 4,
+        "thickness": 0.2,
+        "void_diameter": 0.1,
+        "void_count": 20
+      },
+      "expected_per_floor": 6.429203673205103,
+      "unit": "m3",
+      "reference": "10×4×0.2−π×0.05²×10×20; precast only, topping excluded",
+      "unit_price": 100
+    },
+    {
+      "item": "waffle_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 6,
+        "width": 6,
+        "top_thickness": 0.06,
+        "spacing_x": 0.6,
+        "spacing_y": 0.6,
+        "rib_width": 0.12,
+        "rib_depth": 0.18
+      },
+      "expected_per_floor": 4.4928,
+      "unit": "m3",
+      "reference": "2.16+1.296+1.296−0.2592; ideal uniform grid only",
+      "unit_price": 100
+    },
+    {
+      "item": "uboot_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 6,
+        "width": 6,
+        "thickness": 0.28,
+        "void_length": 0.5,
+        "void_width": 0.25,
+        "void_height": 0.2,
+        "void_count": 40
+      },
+      "expected_per_floor": 9.08,
+      "unit": "m3",
+      "reference": "6×6×0.28−40×0.5×0.25×0.2; rectangular void specification",
+      "unit_price": 100
+    },
+    {
+      "item": "cobiax_roof",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 6,
+        "width": 6,
+        "thickness": 0.28,
+        "void_volume": 0.02,
+        "void_count": 40,
+        "void_spec_ref": "SYNTHETIC-VOID-001"
+      },
+      "expected_per_floor": 9.28,
+      "unit": "m3",
+      "reference": "6×6×0.28−40×0.02; explicit actual void volume, no bounding box assumption",
+      "unit_price": 100
+    },
+    {
+      "item": "steel",
+      "domain": "advanced",
+      "inputs": {
+        "count": 8,
+        "length": 4,
+        "unit_weight": 12
+      },
+      "expected_per_floor": 384,
+      "unit": "kg",
+      "reference": "8×4×12; member schedule only, connections excluded",
+      "unit_price": 2
+    },
+    {
+      "item": "steel_roof_deck_area",
+      "domain": "advanced",
+      "inputs": {
+        "count": 1,
+        "length": 10,
+        "width": 8
+      },
+      "expected_per_floor": 80,
+      "unit": "m2",
+      "reference": "10×8; deck area only",
+      "unit_price": 10
+    },
+    {
+      "item": "steel_roof_deck_weight",
+      "domain": "advanced",
+      "inputs": {
+        "count": 1,
+        "length": 10,
+        "width": 8,
+        "sheet_weight": 10
+      },
+      "expected_per_floor": 800,
+      "unit": "kg",
+      "reference": "10×8×10; actual kg/m2 supplied",
+      "unit_price": 2
+    },
+    {
+      "item": "steel_roof_composite_concrete",
+      "domain": "building",
+      "inputs": {
+        "count": 1,
+        "length": 10,
+        "width": 8,
+        "thickness": 0.12
+      },
+      "expected_per_floor": 9.6,
+      "unit": "m3",
+      "reference": "10×8×0.12; flat slab layer only, corrugation excluded",
+      "unit_price": 100
+    },
+    {
+      "item": "pipe",
+      "domain": "mechanical",
+      "inputs": {
+        "count": 3,
+        "length": 12
+      },
+      "expected_per_floor": 36,
+      "unit": "m",
+      "reference": "3×12",
+      "unit_price": 5
+    },
+    {
+      "item": "cable_tray",
+      "domain": "electrical",
+      "inputs": {
+        "count": 3,
+        "length": 4
+      },
+      "expected_per_floor": 12,
+      "unit": "m",
+      "reference": "3×4",
+      "unit_price": 5
+    }
+  ]
+}

@@ -29,7 +29,7 @@ _NUMBER = r"[+-]?\d+(?:[.,]\d+)?"
 @dataclass(frozen=True)
 class ManualEntry:
     code: str
-    params: dict[str, float]
+    params: dict[str, float | str]
     missing: tuple[str, ...]
     source_text: str
     @property
@@ -49,13 +49,14 @@ def _normalise(text: str) -> str:
     return (text.translate(PERSIAN_DIGITS).replace("×","x").replace("✕","x")
             .replace("٬",",").replace("٫",".").strip())
 
-def _extract_named(text: str) -> dict[str, float]:
+def _extract_named(text: str) -> dict[str, float | str]:
     aliases = {
         "تعداد":"count","عدد":"count","طول":"length","عرض":"width","عمق":"depth",
         "ارتفاع":"height","ضخامت":"thickness","ضخامت رویه":"topping_thickness","ضخامت جان پله":"waist_thickness",
         "طول شیبدار":"sloped_length","بازشو":"openings","فاصله تیرچه":"joist_spacing",
         "فاصله":"joist_spacing","عرض تیرچه":"joist_width","عمق تیرچه":"joist_depth",
         "وزن واحد":"unit_weight","وزن":"unit_weight",
+        "قطر":"diameter_mm","خم":"bend_length","قلاب":"hook_length","وصله":"lap_length",
     }
     out = {}
     labels = "|".join(re.escape(label) for label in sorted(aliases, key=len, reverse=True))
@@ -71,11 +72,17 @@ def _extract_named(text: str) -> dict[str, float]:
         if unit:
             if key in {"count", "unit_weight", "openings"}:
                 raise ValueError(f"واحد طول برای «{label}» معتبر نیست")
-            value *= {"mm": .001, "cm": .01, "m": 1,
-                      "میلی‌متر": .001, "سانتی‌متر": .01, "متر": 1}[unit.lower()]
+            scale = {"mm": .001, "cm": .01, "m": 1,
+                     "میلی‌متر": .001, "سانتی‌متر": .01, "متر": 1}[unit.lower()]
+            value *= scale * (1000 if key == "diameter_mm" else 1)
         if key in out and out[key] != value:
             raise ValueError(f"مقادیر متعارض برای «{label}» ثبت شده است")
         out[key] = value
+    reference = re.findall(r"مرجع دیتایل\s*[:=]\s*([^،;\n]+)", text)
+    if reference:
+        if len(set(x.strip() for x in reference)) != 1:
+            raise ValueError("مرجع دیتایل متعارض است")
+        out["detail_ref"] = reference[0].strip()
     return out
 
 def _extract_code(text: str):
@@ -107,6 +114,7 @@ def parse_manual_entry(text: str) -> ManualEntry:
                     raise ValueError("ابعاد کوتاه و ورودی نام‌گذاری‌شده متعارض هستند")
                 params[key] = value
     for key, value in params.items():
+        if key == "detail_ref": continue
         if not math.isfinite(value):
             raise ValueError(f"{key} باید متناهی باشد")
         if value < 0:
@@ -114,6 +122,11 @@ def parse_manual_entry(text: str) -> ManualEntry:
         if key == "count" and not value.is_integer():
             raise ValueError("تعداد باید عدد صحیح باشد")
     missing = tuple(name for name in fields if name not in params or (params[name] < 0 if name == "openings" else params[name] <= 0))
+    details = ("diameter_mm", "bend_length", "hook_length", "lap_length", "detail_ref")
+    if code == "rebar" and any(name in params for name in details):
+        missing += tuple(name for name in details if name not in params or
+                         (not str(params[name]).strip() if name == "detail_ref" else
+                          params[name] <= 0 if name == "diameter_mm" else params[name] < 0))
     return ManualEntry(code, params, missing, raw)
 
 def parse_manual_batch(text: str) -> tuple[ManualEntry,...]:

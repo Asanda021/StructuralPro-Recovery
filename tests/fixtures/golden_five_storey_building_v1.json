@@ -40,7 +40,7 @@
       "id": "beams-per-storey",
       "assembly": "concrete_beam",
       "repeat_count": 5,
-      "inputs": {"count": 2, "length": 20.0, "width": 0.3, "depth": 0.5, "formwork_sides": 2, "rebar_kg_per_m3": 120.0},
+      "inputs": {"count": 2, "length": 20.0, "width": 0.3, "depth": 0.5, "formwork_sides": 2, "rebar_schedule": [{"count": 40, "length": 8, "unit_weight": 2, "diameter_mm": 18, "bend_length": 0.2, "hook_length": 0.3, "lap_length": 0.5, "detail_ref": "SYNTHETIC-BEAM-BAR-001"}]},
       "expected_per_repeat": {"concrete": 6.0, "formwork": 52.0, "reinforcement": 720.0},
       "units": {"concrete": "m³", "formwork": "m²", "reinforcement": "kg"}
     },

@@ -163,6 +163,8 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
         spacing = _n(p, "joist_spacing", 1e-12)
         jw = _n(p, "joist_width", 1e-12)
         jd = _n(p, "joist_depth", 1e-12)
+        if jw > spacing:
+            raise ValueError("joist_width cannot exceed joist_spacing")
         joist_count = _optional(p, "joist_count")
         if joist_count is None:
             joist_count = ceil(W / spacing) + 1
@@ -246,10 +248,22 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
             used.append("formwork_sides")
         rebar_rate = _optional(p, "rebar_kg_per_m3")
         if rebar_rate is not None:
+            raise ValueError("برای متره دقیق میلگرد، نرخ kg/m3 کافی نیست؛ rebar_schedule با دیتایل صریح وارد کنید")
+        if "rebar_schedule" in p:
+            from core.takeoff.modules.building import calculate_building_item
+            schedule = p["rebar_schedule"]
+            if not isinstance(schedule, (list, tuple)) or not schedule:
+                raise ValueError("rebar_schedule باید فهرست غیرخالی دیتایل باشد")
+            weights=[]
+            for bar in schedule:
+                required={"count","length","unit_weight","diameter_mm","bend_length","hook_length","lap_length","detail_ref"}
+                if not isinstance(bar, Mapping) or set(bar) != required:
+                    raise ValueError("rebar_schedule به تعداد، قطر، طول، خم، قلاب، وصله، وزن واحد و مرجع معتبر نیاز دارد")
+                weights.append(calculate_building_item("rebar", **bar).quantity)
             components.append(AssemblyComponent("reinforcement", "وزن آرماتور بر اساس مشخصات ورودی", "kg",
-                                                "حجم هندسی بتن×وزن آرماتور واردشده بر m³", gross * rebar_rate,
-                                                warning="این نرخ باید از نقشه/مشخصات معتبر وارد شود؛ نرخ پیش‌فرض وجود ندارد."))
-            used.append("rebar_kg_per_m3")
+                                                "جمع وزن ردیف‌های دیتایل صریح کل مجموعه تیر", sum(weights),
+                                                warning="دیتایل مربوط به کل مجموعه است؛ تعداد تیر دوباره بر وزن میلگرد اعمال نشده است."))
+            used.append("rebar_schedule")
         return AssemblyResult("concrete_beam", "تیر بتنی", tuple(components), tuple(used))
 
     if k in {"concrete_slab", "slab_concrete"}:

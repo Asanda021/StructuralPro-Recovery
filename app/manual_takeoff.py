@@ -44,6 +44,7 @@ _PARAM_LABELS = {
     "joist_width": "عرض تیرچه", "joist_depth": "عمق تیرچه",
     "sloped_length": "طول شیبدار", "waist_thickness": "ضخامت جان پله",
     "unit_weight": "وزن واحد",
+    "diameter_mm":"قطر", "bend_length":"خم", "hook_length":"قلاب", "lap_length":"وصله", "detail_ref":"مرجع دیتایل",
 }
 
 
@@ -53,6 +54,7 @@ class ManualTakeoffDialog(QDialog):
     def __init__(self, service, project_id: str = "", parent=None):
         super().__init__(parent)
         self.service = service
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowTitle("متره دستی حرفه‌ای — پروژه‌محور")
         self.resize(1080, 720)
         self.project_id = QLineEdit(project_id)
@@ -492,6 +494,7 @@ class ManualTakeoffDialog(QDialog):
                                  if record.element_label == record.code else record.element_label),
                     source_id=f"manual-workbench:{record.project_id}:{self._session_id}:{record.record_id}",
                     system=record.floor_id,
+                    manual_location_id=(record.element_label if record.element_label != record.code else ""),
                     **dict(record.params),
                 )
                 self._saved_ids.add(record.record_id)

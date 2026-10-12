@@ -9,7 +9,7 @@ def test_confirmed_assembly_components_persist_to_takeoffs_and_boq(tmp_path):
     result = app.add_assembly_takeoff(
         "assembly-p1", "concrete_beam",
         {"count": 2, "length": 5, "width": 0.3, "depth": 0.5,
-         "formwork_sides": 2, "rebar_kg_per_m3": 120},
+         "formwork_sides": 2, "rebar_schedule": [dict(count=10,length=8,unit_weight=2,diameter_mm=18,bend_length=.2,hook_length=.3,lap_length=.5,detail_ref="SYNTHETIC-BEAM-BAR-001")]},
         floor_id="طبقه ۱", description="تیر بتنی محور A",
     )
     assert len(result["rows"]) == 3

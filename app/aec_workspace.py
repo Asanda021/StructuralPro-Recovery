@@ -2,6 +2,10 @@
 from __future__ import annotations
 from core.takeoff.assembly import calculate_assembly
 from core.takeoff.manual_input import parse_manual_batch
+from core.takeoff.assembly_templates import AssemblyTemplateLibrary
+from core.takeoff.units import normalize_unit
+from uuid import uuid4
+from PySide6.QtCore import Qt
 
 from PySide6.QtWidgets import (
     QCheckBox,QComboBox,QDoubleSpinBox,QFormLayout,QGroupBox,QLabel,QLineEdit,QMessageBox,
@@ -20,14 +24,14 @@ ITEMS={
 ("column","ستون بتنی",("width","depth","height","count")),("beam","تیر بتنی",("length","width","depth","count")),
 ("shear_wall","دیوار برشی بتنی",("length","thickness","height","count")),
 ("stair_concrete","پله بتنی",("sloped_length","width","waist_thickness","count")),
-("formwork","قالب‌بندی",("perimeter","height","count")),("rebar","آرماتور",("length","unit_weight","count")),
+("formwork","قالب‌بندی",("perimeter","height","count")),("rebar","آرماتور با دیتایل صریح",("length","unit_weight","count","diameter_mm","bend_length","hook_length","lap_length")),
 ("solid_slab_roof","سقف دال بتنی توپر / دال تخت — حجم بتن",("length","width","thickness","count")),
 ("joist_block_roof","سقف تیرچه‌بلوک — حجم بتن",("length","width","topping_thickness","joist_spacing","joist_width","joist_depth","count")),
 ("joist_foam_roof","سقف تیرچه‌فوم — حجم بتن",("length","width","topping_thickness","joist_spacing","joist_width","joist_depth","count")),
 ("hollow_core_roof","سقف دال مجوف — حجم بتن",("length","width","thickness","void_diameter","void_count","count")),
 ("waffle_roof","سقف وافل — حجم بتن",("length","width","top_thickness","spacing_x","spacing_y","rib_width","rib_depth","count")),
 ("uboot_roof","سقف یوبوت — حجم بتن خالص",("length","width","thickness","void_length","void_width","void_height","void_count","count")),
-("cobiax_roof","سقف کوبیاکس — حجم بتن خالص",("length","width","thickness","void_length","void_width","void_height","void_count","count"))],
+("cobiax_roof","سقف کوبیاکس — حجم بتن خالص",("length","width","thickness","void_volume","void_count","count"))],
 "structural_steel":[
 ("steel","عضو فولادی / تیر / ستون",("length","unit_weight","count")),
 ("steel_roof_deck_area","سقف عرشه فولادی — مساحت عرشه",("length","width","count")),
@@ -46,6 +50,8 @@ ITEMS={
 
 FIELDS={
 "length":"طول","width":"عرض","height":"ارتفاع","depth":"عمق","thickness":"ضخامت","perimeter":"محیط",
+"void_volume":"حجم واقعی هر حفره طبق مشخصات (m³)","diameter_mm":"قطر میلگرد (mm)",
+"bend_length":"طول اضافه خم (m)","hook_length":"طول اضافه قلاب (m)","lap_length":"طول اضافه وصله (m)",
 "sloped_length":"طول مایل پله (m)","waist_thickness":"ضخامت دال مایل پله (m)",
 "count":"تعداد","unit_weight":"وزن واحد (kg/m)","openings":"کسر بازشو (m²)","waste":"ضریب پرت",
 "layers":"تعداد لایه","diameter":"قطر","excavation":"حجم خاکبرداری","deductions":"کسرها",
@@ -63,10 +69,11 @@ FIELDS={
 
 ITEM_DOMAINS={"block_wall":"building","footing_concrete":"advanced","steel":"advanced","steel_roof_deck_area":"advanced",
 "steel_roof_deck_weight":"advanced","steel_roof_composite_concrete":"building",
-"steel_roof_composite_deck":"advanced","kromit_roof":"advanced","steel_truss_roof":"advanced"}
+"steel_roof_composite_deck":"advanced","kromit_roof":"advanced","steel_truss_roof":"advanced",
+"steel_sandwich_roof":"advanced","facade":"advanced","ceiling":"advanced","screed":"advanced","demolition":"advanced"}
 
 def build_aec_workspace(service,catalog,*,title,description,domain,key,status_callback=None):
-    root=QWidget(); root.setObjectName("AECWorkspace"); outer=QVBoxLayout(root); outer.setSpacing(14)
+    root=QWidget(); root.setLayoutDirection(Qt.LayoutDirection.RightToLeft); root.setObjectName("AECWorkspace"); outer=QVBoxLayout(root); outer.setSpacing(14)
     h=QLabel(title); h.setObjectName("PageTitle"); d=QLabel(description); d.setObjectName("PageDescription"); d.setWordWrap(True)
     outer.addWidget(h); outer.addWidget(d)
     quick=QGroupBox("⚡ متره سریع دستی — بدون فرم‌های طولانی")
@@ -85,6 +92,10 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     specs={c:f for c,_,f in ITEMS[key]}; labels={c:l for c,l,_ in ITEMS[key]}
     for c,l,_ in ITEMS[key]: item.addItem(l,c)
     grid.addRow("پروژه",project); grid.addRow("آیتم / نوع سقف",item); grid.addRow("کد فهرست‌بها (اختیاری)",price)
+    floor=QLineEdit(); floor.setObjectName("TakeoffFloor"); floor.setPlaceholderText("طبقه / تراز؛ برای Assembly الزامی")
+    location=QLineEdit(); location.setObjectName("TakeoffLocation"); location.setPlaceholderText("شناسه ثابت عضو / محل؛ برای Assembly الزامی")
+    detail=QLineEdit(); detail.setObjectName("TakeoffDetailReference"); detail.setPlaceholderText("مرجع دیتایل میلگرد یا مشخصات حجم حفره")
+    grid.addRow("طبقه / تراز",floor); grid.addRow("شناسه ثابت عضو / محل",location); grid.addRow("مرجع مشخصات معتبر",detail)
     assembly_mode=QCheckBox("متره به‌صورت Assembly (عملیات → اجزای مستقل)")
     grid.addRow("روش متره",assembly_mode)
     fields={}
@@ -100,10 +111,12 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     result=QLabel("نتیجه پس از محاسبه در پروژه و BOQ ثبت می‌شود."); result.setWordWrap(True); outer.addWidget(result)
     table=QTableWidget(0,8); table.setHorizontalHeaderLabels(["شناسه","آیتم","مقدار","واحد","فرمول","کد فهرست‌بها","منبع","هشدار"]); table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch); outer.addWidget(table,1)
     ASSEMBLY_CODES={"block_wall","joist_foam_roof","joist_block_roof"}
+    ASSEMBLY_MAPPING={"block_wall":"block_wall","joist_foam_roof":"joist_foam_roof_assembly","joist_block_roof":"joist_block_roof_assembly"}
     def update_fields():
         active=set(specs[item.currentData()])
         if assembly_mode.isChecked() and item.currentData() in ASSEMBLY_CODES:
-            active.update({"foam_length","foam_width","foam_height","mesh_unit_weight"})
+            if item.currentData() != "block_wall": active.update({"foam_length","foam_width","foam_height","mesh_unit_weight"})
+        grid.setRowVisible(detail,item.currentData() in {"rebar","cobiax_roof"})
         for n,w in fields.items():
             w.setEnabled(n in active)
             grid.setRowVisible(w,n in active)
@@ -126,6 +139,8 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
         pid=project.text().strip()
         if not pid: QMessageBox.warning(root,"متره","ابتدا شناسه پروژه را وارد کنید."); return
         code=item.currentData(); params={n:float(w.value()) for n,w in fields.items() if w.isEnabled()}; params["member_code"]=code
+        if code == "rebar": params["detail_ref"]=detail.text().strip()
+        if code == "cobiax_roof": params["void_spec_ref"]=detail.text().strip()
         pc=price.text().strip()
         if pc:
             resolved=catalog.resolve(pc)
@@ -134,23 +149,29 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
             params["price_code"]=pc; params["unit_price"]=resolved["unit_price"]
         else: params["price_code"]=None
         try:
-            p=service.open_project(pid); source_id=f"manual:{key}:{code}:{len(p.get('takeoffs',[]))+1}"
+            p=service.open_project(pid); source_id=f"manual:{key}:{code}:{uuid4().hex}"
             if assembly_mode.isChecked() and code in ASSEMBLY_CODES:
-                ar=calculate_assembly(code, **params)
+                if pc:
+                    raise ValueError("قیمت واحد مشترک برای اجزای ناهم‌واحد مجاز نیست؛ هر جزء باید مستقل به فهرست‌بها نگاشت شود.")
+                if not floor.text().strip() or not location.text().strip():
+                    raise ValueError("طبقه و شناسه ثابت محل برای Assembly الزامی است.")
+                template=AssemblyTemplateLibrary().get(ASSEMBLY_MAPPING[code])
+                inputs={n:v for n,v in params.items() if n in template.required_inputs+template.optional_inputs}
+                # The same engine previews and the existing service persists all components atomically.
+                ar=calculate_assembly(template.code, **inputs)
                 if not ar.complete:
                     QMessageBox.warning(root,"Assembly ناقص", "برای متره مرکب این مشخصات لازم است:\n" + "\n".join(ar.missing_inputs))
                     return
-                saved=[]
-                for component in ar.components:
-                    row=service.add_takeoff(pid,domain,component.code,source_id=source_id,
-                                            description=component.title,amount=component.quantity,unit=component.unit,
-                                            formula=component.formula,warning=component.warning or "",assembly_code=ar.code,
-                                            price_code=params.get("price_code"),unit_price=params.get("unit_price"),inputs_used=ar.inputs_used)
-                    saved.append(row["quantities"][0])
-                result.setText(f"🟢 Assembly ثبت شد | {ar.title} | {len(saved)} جزء مستقل")
+                saved=service.add_assembly_takeoff(pid,assembly_code=ar.code,inputs=inputs,
+                    floor_id=floor.text().strip(),location_id=location.text().strip(),description=labels[code])
+                result.setText(f"🟢 Assembly ثبت شد | {ar.title} | {len(saved['rows'])} جزء مستقل")
             else:
                 effective_domain=ITEM_DOMAINS.get(code,domain)
-                row=service.add_takeoff(pid,effective_domain,code,source_id=source_id,description=labels[code],**params)
+                preview=service.takeoff.calculate(effective_domain,code,**params)
+                if pc and normalize_unit(resolved["item"].unit) != normalize_unit(preview.unit):
+                    raise ValueError("واحد فهرست‌بها با واحد متره سازگار نیست.")
+                row=service.add_takeoff(pid,effective_domain,code,source_id=source_id,description=labels[code],
+                    system=floor.text().strip(),manual_location_id=location.text().strip(),**params)
                 q=row["quantities"][0]
                 result.setText(f"🟢 ثبت شد | {labels[code]} | {q['amount']:,.4f} {q['unit']} | فرمول: {q['formula']}")
             refresh()

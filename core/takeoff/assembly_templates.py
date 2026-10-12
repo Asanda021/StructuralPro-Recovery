@@ -35,7 +35,7 @@ TEMPLATES: tuple[AssemblyTemplate, ...] = (
                      ("joist_count", "mesh_unit_weight")),
     AssemblyTemplate("concrete_column", "ستون بتنی", ("count", "width", "depth", "height"), ("waste_factor",)),
     AssemblyTemplate("concrete_beam", "تیر بتنی", ("count", "length", "width", "depth"),
-                     ("waste_factor", "formwork_sides", "rebar_kg_per_m3")),
+                     ("waste_factor", "formwork_sides", "rebar_kg_per_m3", "rebar_schedule")),
     AssemblyTemplate("concrete_slab", "دال بتنی", ("count", "length", "width", "thickness", "openings"),
                      ("waste_factor",)),
     AssemblyTemplate("excavation", "خاکبرداری", ("count", "length", "width", "depth")),
