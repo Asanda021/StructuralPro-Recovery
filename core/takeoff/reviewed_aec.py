@@ -164,6 +164,8 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
         declared_domain = require_text(item.get("domain"), "حوزه تخصصی ریزقلم")
         if declared_domain not in TakeoffEngine.DOMAINS:
             raise ValueError("حوزه تخصصی ریزقلم معتبر نیست")
+        if declared_domain in {"mechanical", "electrical"}:
+            require_text(item.get("spec_ref"), "مرجع مشخصات فنی تجهیزات و مسیر تأسیسات")
         code = require_text(item.get("item_code"), "کد عملیات")
         mode = item.get("mode")
         if mode == "engine":
@@ -244,6 +246,15 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
                 )
                 if item["domain"] not in allowed_domains:
                     raise ValueError("حوزه ردیف با نوع عملیات ساختمان ناسازگار است")
+                mandatory_units = {
+                    "pipes": "m", "cables": "m", "conduits": "m",
+                    "trays": "m", "earthing": "m", "valves": "عدد",
+                    "sprinklers": "عدد", "switches": "عدد",
+                    "fixtures": "عدد", "devices": "عدد", "boards": "عدد",
+                } if kind in {"plumbing", "hvac", "fire_protection",
+                              "electrical_power", "lighting", "low_voltage"} else {}
+                if name in mandatory_units and item["unit"] != mandatory_units[name]:
+                    raise ValueError("واحد فیزیکی ریزقلم با نوع تأسیسات تطبیق ندارد")
                 ref = f"aec:{kind}:{floor}:{identity}:{name}:{item['line_id']}"
                 if ref in seen:
                     raise ValueError("شناسه ردیف پروژه تکراری است")
