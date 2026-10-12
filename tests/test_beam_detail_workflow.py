@@ -140,3 +140,47 @@ def test_invalid_float_not_written_to_sqlite(tmp_path):
         w.save_draft("P1", d)
     assert store.get("P1").get("beam_detail_register") is None
     store.close()
+
+
+def test_drawing_evidence_sha_mandatory_and_manual_mode_explicit():
+    d = _review_all(_draft())
+    d["source"]["sha256"] = "malformed"
+    assert not preview_beam(d, TakeoffEngine())["ready"]
+    d = _review_all(_draft())
+    d["source"] = {"mode": "manual", "source_id": "manual:P1:L1:B1"}
+    assert preview_beam(d, TakeoffEngine())["ready"]
+
+
+def test_source_change_cannot_reuse_old_approvals(tmp_path):
+    w, store, _ = _workflow(tmp_path)
+    d = _review_all(_draft())
+    saved = w.save_draft("P1", d)
+    changed = copy.deepcopy(d)
+    changed["source"]["sha256"] = "b" * 64
+    with pytest.raises(ValueError, match="منبع نقشه تغییر کرده"):
+        w.save_draft("P1", changed, expected_revision=saved["revision"])
+    assert w.get("P1", "L1", "B1")["revision"] == 1
+    store.close()
+
+
+def test_floor_scope_and_no_cross_beam_reuse(tmp_path):
+    w, store, _ = _workflow(tmp_path)
+    d = _review_all(_draft())
+    w.save_draft("P1", d)
+    second = _review_all(_draft())
+    second["floor_id"] = "L2"
+    second["source"]["source_id"] = "sheet-17#beam-B1-floor-2"
+    assert w.save_draft("P1", second)["revision"] == 1
+    assert w.get("P1", "L1", "B1") is not None
+    assert w.get("P1", "L2", "B1") is not None
+    store.close()
+
+
+def test_commit_stale_revision_changes_nothing(tmp_path):
+    w, store, _ = _workflow(tmp_path)
+    d = _review_all(_draft())
+    w.save_draft("P1", d)
+    with pytest.raises(RuntimeError, match="تعارض نسخه"):
+        w.commit("P1", "L1", "B1", expected_revision=0)
+    assert store.get("P1")["boq"] == []
+    store.close()
