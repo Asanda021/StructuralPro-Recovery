@@ -1,0 +1,16 @@
+name: Safe account Actions health check (no build)
+on:
+  push:
+    branches:
+      - test/gh-actions-account-health-20261012-chatgpt
+permissions: {}
+jobs:
+  account-health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check hosted runner without checkout or build
+        run: |
+          echo "GitHub Actions health check"
+          test "$RUNNER_OS" = "Linux"
+          echo "Runner available"
