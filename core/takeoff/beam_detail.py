@@ -47,8 +47,14 @@ def _number(value: Any, label: str, *, zero: bool = False, integer: bool = False
     return number
 
 
+_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
 def _beam_key(floor_id: str, beam_id: str) -> str:
-    return json.dumps([floor_id, beam_id], ensure_ascii=False, separators=(",", ":"))
+    """One physical identity despite Latin/Persian digits or letter casing."""
+    normalized = [" ".join(value.translate(_DIGITS).casefold().split())
+                  for value in (floor_id, beam_id)]
+    return json.dumps(normalized, ensure_ascii=False, separators=(",", ":"))
 
 
 def empty_beam(floor_id: str, beam_id: str) -> dict[str, Any]:
