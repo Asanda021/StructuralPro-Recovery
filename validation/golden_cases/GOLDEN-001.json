@@ -1,0 +1,19 @@
+{
+  "case_id": "GOLDEN-001",
+  "dataset_version": "2026.10",
+  "project": {"name": "Demo", "discipline": "structural"},
+  "expected_quantities": [
+    {"object_id": "C1", "concrete_volume_m3": 12.5, "rebar_weight_kg": 980.0},
+    {"object_id": "B1", "concrete_volume_m3": 4.2, "rebar_weight_kg": 320.0}
+  ],
+  "expected_boq": [
+    {"item_code": "CONC-01", "quantity": 16.7, "unit": "m3", "total": 83500.0},
+    {"item_code": "REBAR-01", "quantity": 1300.0, "unit": "kg", "total": 78000.0}
+  ],
+  "tolerances": {
+    "concrete_volume_m3": 0.001,
+    "rebar_weight_kg": 0.1,
+    "quantity": 0.01,
+    "total": 1.0
+  }
+}

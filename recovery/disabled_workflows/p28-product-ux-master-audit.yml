@@ -1,0 +1,25 @@
+name: P28 Product UX Master Audit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  product-ux-master-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Run P28 UX audit and regression
+        run: >
+          pytest -q
+          tests/test_p28_product_ux_master_audit.py
+          tests/test_ui_design_system.py
+          tests/test_priority_47_ui_functional_audit.py

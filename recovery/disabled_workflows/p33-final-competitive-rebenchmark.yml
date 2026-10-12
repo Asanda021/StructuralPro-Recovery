@@ -1,0 +1,21 @@
+name: P33 Final Competitive Re-Benchmark
+on:
+  pull_request:
+    branches: [main]
+    paths: ["core/platform/p33_final_competitive_rebenchmark.py","tests/test_p33_final_competitive_rebenchmark.py","docs/P33_FINAL_COMPETITIVE_REBENCHMARK.md",".github/workflows/p33-final-competitive-rebenchmark.yml"]
+  push:
+    branches: [main]
+    paths: ["core/platform/p33_final_competitive_rebenchmark.py","tests/test_p33_final_competitive_rebenchmark.py","docs/P33_FINAL_COMPETITIVE_REBENCHMARK.md",".github/workflows/p33-final-competitive-rebenchmark.yml"]
+jobs:
+  p33:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Run P33 competitive re-benchmark
+        run: pytest -q tests/test_p33_final_competitive_rebenchmark.py

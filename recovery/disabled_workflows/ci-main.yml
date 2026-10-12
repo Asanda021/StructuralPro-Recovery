@@ -1,0 +1,66 @@
+name: StructuralPro CI
+# Main-push CI is intentionally enabled so every direct main update gets a visible Actions check.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: structuralpro-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r requirements.txt pytest
+
+      - name: Compile check
+        run: |
+          python -m compileall -q core tests
+          python -m py_compile app/main.py app/graphical_takeoff.py app/manual_takeoff.py
+
+      - name: Drawing persistence, AI approval and golden regression
+        run: python -m pytest -q tests/test_drawing_takeoff_persistence_and_golden.py tests/test_ai_takeoff_output_guard.py tests/test_ai_takeoff_persistent_approval.py tests/test_golden_five_storey_building.py
+
+      - name: Phase 1-4 quantity input and geometry integrity
+        run: python -m pytest -q tests/test_phase1_4_geometry_input_hardening.py tests/test_graphical_workflow.py tests/test_manual_takeoff_input.py tests/test_manual_takeoff_workbench.py tests/test_drawing_viewer_model.py tests/test_region_takeoff.py
+
+      - name: Phase 5 real CAD import and conversion integrity
+        run: python -m pytest -q tests/test_phase1_5_import_hardening.py tests/test_drawing_viewer_model.py tests/test_ezdxf_provider_v1.py tests/test_external_dwg_provider.py tests/test_p57_dwg_dxf_validation.py tests/test_p541_p550_native_dwg_dxf_production_boundary.py
+
+      - name: Dedicated phase tests
+        run: python -m pytest -q tests/test_p211_p220_bim_quantity_integrity.py
+
+      - name: Dedicated phase tests
+        run: python -m pytest -q tests/test_p221_p230_drawing_measurement_integrity.py
+
+      - name: Product workflow acceptance gates 1-4
+        run: python -m pytest -q tests/test_product_workflow_acceptance.py
+
+      - name: Master roadmap phases 9-12 acceptance
+        run: python -m pytest -q tests/test_roadmap_phase9_12.py tests/test_roadmap_phase10.py tests/test_roadmap_phase10_finance.py tests/test_roadmap_phase11.py tests/test_roadmap_phase12.py
+
+      - name: Run full test suite
+        run: python -m pytest -q

@@ -1,0 +1,21 @@
+name: P79 pricebook artifact audit
+on:
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch official 1404 archive
+        run: curl -fL --retry 3 -A "StructuralPro-pricebook-audit/1.0" "https://sama.mporg.ir/DigitalAsset/DigitalAsset/FehrestBaha1404.rar?Web=1" -o /tmp/FehrestBaha1404.rar
+      - name: Validate non-HTML payload
+        run: |
+          test -s /tmp/FehrestBaha1404.rar
+          file /tmp/FehrestBaha1404.rar
+          ! grep -a -qi '<html' /tmp/FehrestBaha1404.rar
+      - name: SHA-256
+        run: sha256sum /tmp/FehrestBaha1404.rar | tee /tmp/pricebook.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p79-pricebook-audit
+          path: /tmp/pricebook.sha256

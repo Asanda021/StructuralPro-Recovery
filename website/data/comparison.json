@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "title": "Compare by Workflow",
+  "principle": "Compare workflow coverage and integration, not unsupported superiority claims.",
+  "rows": [
+    [
+      "Takeoff",
+      "Core workflow",
+      "Primary strength varies by tool"
+    ],
+    [
+      "BOQ & Estimating",
+      "Connected to takeoff",
+      "Dedicated estimating tools may specialize differently"
+    ],
+    [
+      "Project Management",
+      "Connected project workflow",
+      "Project management suites may go deeper in their own domain"
+    ],
+    [
+      "Cost Control",
+      "Connected to project information",
+      "Finance/ERP systems may provide broader accounting depth"
+    ],
+    [
+      "BIM",
+      "BIM/IFC-oriented workflow",
+      "Dedicated BIM authoring tools remain specialized"
+    ],
+    [
+      "AI",
+      "AEC workflow assistance",
+      "General AI tools are broader but less project-specific"
+    ],
+    [
+      "Engineering",
+      "AEC engineering product architecture",
+      "Discipline-specific engineering software may provide deeper specialist analysis"
+    ],
+    [
+      "Integration",
+      "Takeoff + BOQ + Estimate + Project + Cost + BIM + AI",
+      "Point tools often require more handoffs"
+    ]
+  ]
+}

@@ -1,0 +1,1 @@
+{"phase":"P67","name":"Download Authorization","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["download authorization is entitlement-bound","public pages may expose release metadata but must not expose an unrestricted customer artifact URL","unauthorized or missing entitlement fails closed"]}

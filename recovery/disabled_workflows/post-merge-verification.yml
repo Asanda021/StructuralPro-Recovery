@@ -1,0 +1,33 @@
+name: StructuralPro post-merge verification
+
+on:
+  push:
+    branches: [main]
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  post-merge:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest pypdf ezdxf openpyxl python-docx reportlab
+      - name: Compile source
+        run: python -m compileall -q core tests
+      - name: Run full regression
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests

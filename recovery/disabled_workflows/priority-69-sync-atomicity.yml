@@ -1,0 +1,22 @@
+name: Priority 69 Sync Atomicity
+on:
+  push:
+    paths:
+      - core/sync/manager.py
+      - tests/test_priority_69_sync_atomicity.py
+      - .github/workflows/priority-69-sync-atomicity.yml
+  pull_request:
+    paths:
+      - core/sync/manager.py
+      - tests/test_priority_69_sync_atomicity.py
+      - .github/workflows/priority-69-sync-atomicity.yml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -U pytest
+      - run: python -m pytest -q tests/test_priority_69_sync_atomicity.py

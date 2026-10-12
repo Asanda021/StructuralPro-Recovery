@@ -1,0 +1,13 @@
+name: P49 Real World Beta
+on:
+  pull_request:
+    paths: [core/beta/real_world_beta_v2.py, tests/test_p49_real_world_beta.py, docs/P49_REAL_WORLD_BETA.md, .github/workflows/p49-real-world-beta.yml]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -U pytest
+      - run: python -m pytest -q tests/test_p49_real_world_beta.py

@@ -1,0 +1,1 @@
+# P441-450 — Iranian Pricing / Fهرست‌بها Engine\nDeterministic, evidence-first production boundary. Missing source/value fails closed; review states are not accepted; no values are invented.\n

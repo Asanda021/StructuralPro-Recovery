@@ -1,0 +1,156 @@
+name: StructuralPro Windows Release
+on:
+  workflow_dispatch:
+    inputs:
+      build_approved:
+        description: "Owner explicitly approved creating executable and installer artifacts"
+        required: true
+        type: boolean
+        default: false
+      release_version:
+        description: "Optional version to validate against VERSION"
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  build-windows:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Validate version
+        shell: pwsh
+        env:
+          REQUESTED_RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          $v=(Get-Content VERSION -Raw).Trim()
+          if ($v -notmatch "^\d+\.\d+\.\d+$") { throw "Invalid VERSION: $v" }
+          if ("${{ github.ref_type }}" -eq "tag" -and "v$v" -ne "${{ github.ref_name }}") { throw "Tag/version mismatch" }
+          $requested=$env:REQUESTED_RELEASE_VERSION
+          if ($requested -and $requested -ne $v) { throw "Requested version does not match VERSION" }
+      - name: Verify native build failures stop release
+        shell: pwsh
+        run: |
+          python -m pip install pytest
+          if ($LASTEXITCODE -ne 0) { throw "Could not install build regression test runner" }
+          python -m pytest -q tests/test_windows_build_native_failures.py
+          if ($LASTEXITCODE -ne 0) { throw "Native build failure regressions failed" }
+      - name: Build payload
+        shell: pwsh
+        run: ./packaging/build_windows.ps1 -Version (Get-Content VERSION -Raw).Trim()
+      - name: Validate payload
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/StructuralPro/StructuralPro.exe")) { throw "Missing executable" }
+          if (-not (Test-Path "dist/StructuralPro/VERSION")) { throw "Missing embedded VERSION" }
+          $expected=(Get-Content VERSION -Raw).Trim()
+          $actual=(Get-Content "dist/StructuralPro/VERSION" -Raw).Trim()
+          if ($expected -ne $actual) { throw "Embedded VERSION mismatch" }
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $v=(Get-Content VERSION -Raw).Trim()
+          $template=Get-Content packaging/installer.iss -Raw
+          if (($template | Select-String -Pattern "__VERSION__" -AllMatches).Matches.Count -ne 1) { throw "Installer template must contain exactly one __VERSION__ placeholder" }
+          $generated=$template.Replace("__VERSION__",$v)
+          if ($generated.Contains("__VERSION__")) { throw "Installer placeholder was not fully resolved" }
+          Set-Content packaging/installer.generated.iss -Value $generated -Encoding utf8
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/installer.generated.iss
+      - name: Validate installer
+        shell: pwsh
+        run: |
+          $v=(Get-Content VERSION -Raw).Trim()
+          $installer="dist/StructuralPro-$v-Setup.exe"
+          if (-not (Test-Path $installer)) { throw "Installer missing: $installer" }
+          if ((Get-Item $installer).Length -le 0) { throw "Installer is empty" }
+          $installerInfo=Get-Item $installer
+          if ($installerInfo.Length -lt 1024) { throw "Installer is implausibly small: $($installerInfo.Length) bytes" }
+      - name: Run installed application acceptance smoke
+        shell: pwsh
+        run: |
+          $v=(Get-Content VERSION -Raw).Trim()
+          $installer="dist/StructuralPro-$v-Setup.exe"
+          ./packaging/windows_installer_smoke.ps1 -Installer $installer -ExpectedVersion $v
+      - name: Generate dependency and license inventory
+        shell: pwsh
+        run: |
+          python -m pip install pip-licenses
+          python -m pip freeze | Out-File -Encoding utf8 dist/StructuralPro-pip-freeze.txt
+          python -m piplicenses --format=csv --with-urls --output-file=dist/StructuralPro-third-party-licenses.csv
+          if (-not (Test-Path "dist/StructuralPro-third-party-licenses.csv")) { throw "Third-party license inventory missing" }
+          $rows=Import-Csv "dist/StructuralPro-third-party-licenses.csv"
+          if (-not $rows -or $rows.Count -lt 1) { throw "Third-party license inventory is empty" }
+          $unknown=@($rows | Where-Object { $_.License -match "^(UNKNOWN|Unknown|unknown)$" -or [string]::IsNullOrWhiteSpace($_.License) })
+          if ($unknown.Count -gt 0) { throw "Unresolved third-party license entries: $($unknown.Count)" }
+      - name: Generate SHA256 checksums
+        shell: pwsh
+        run: ./packaging/generate_sha256.ps1
+      - name: Generate release manifest
+        shell: pwsh
+        run: ./packaging/generate_release_manifest.ps1
+      - name: Validate release manifest
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/StructuralPro-ReleaseManifest.json")) { throw "Release manifest missing" }
+          $manifest=Get-Content "dist/StructuralPro-ReleaseManifest.json" -Raw | ConvertFrom-Json
+          $expected=(Get-Content VERSION -Raw).Trim()
+          if ($manifest.version -ne $expected) { throw "Manifest VERSION mismatch" }
+          if ($manifest.packaged_version -ne $expected) { throw "Manifest packaged VERSION mismatch" }
+          if (-not $manifest.source_commit) { throw "Manifest source commit missing" }
+      - name: Validate release artifact hashes
+        shell: pwsh
+        run: |
+          $manifest=Get-Content "dist/StructuralPro-ReleaseManifest.json" -Raw | ConvertFrom-Json
+          foreach ($property in $manifest.artifacts.PSObject.Properties) {
+            $path=$property.Name
+            $expectedHash=$property.Value.sha256.ToLowerInvariant()
+            $expectedSize=[int64]$property.Value.size_bytes
+            if (-not (Test-Path $path)) { throw "Manifest artifact missing: $path" }
+            $actualHash=(Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
+            $actualSize=[int64](Get-Item $path).Length
+            if ($actualHash -ne $expectedHash) { throw "SHA256 mismatch: $path" }
+            if ($actualSize -ne $expectedSize) { throw "Size mismatch: $path" }
+          }
+          Write-Host "All release manifest artifact hashes and sizes verified."
+      - name: Generate release registry
+        shell: pwsh
+        run: ./packaging/generate_release_registry.ps1
+      - name: Validate release registry
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/StructuralPro-ReleaseRegistry.json")) { throw "Release registry missing" }
+          $registry=Get-Content "dist/StructuralPro-ReleaseRegistry.json" -Raw | ConvertFrom-Json
+          $expected=(Get-Content VERSION -Raw).Trim()
+          if ($registry.product -ne "StructuralPro") { throw "Registry product mismatch" }
+          if ($registry.version -ne $expected) { throw "Registry VERSION mismatch" }
+          if (-not $registry.source_commit) { throw "Registry source commit missing" }
+          if ($registry.download_authorization -ne "entitlement_required") { throw "Download authorization boundary invalid" }
+          if ($registry.release_ready -ne $false) { throw "CI registry must remain fail-closed" }
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Windows-${{ github.run_id }}
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-*-Setup.exe
+            dist/StructuralPro-SHA256SUMS.txt
+            dist/StructuralPro-ReleaseManifest.json
+            dist/StructuralPro-ReleaseRegistry.json
+            dist/StructuralPro-pip-freeze.txt
+            dist/StructuralPro-third-party-licenses.csv

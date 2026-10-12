@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P4",
+  "purpose": "Release and download gate",
+  "release": {
+    "version": "0.1.0",
+    "publication_status": "not_published",
+    "download_enabled": false,
+    "artifact": null,
+    "sha256": null,
+    "verification": null
+  },
+  "rule": "ERVIRA download surfaces must remain disabled until a real verified Windows artifact and checksum exist."
+}

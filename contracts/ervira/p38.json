@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "version": "0.1.0",
+  "phase": "P38",
+  "purpose": "Revocation and audit governance",
+  "checks": [
+    "revocation",
+    "audit"
+  ],
+  "source_of_truth": "ERVIRA",
+  "runtime_status": "not_implemented",
+  "release_ready": false
+}

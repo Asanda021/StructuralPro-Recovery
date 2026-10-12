@@ -1,0 +1,121 @@
+# Isolated Windows-only source acceptance for StructuralPro PR #481.
+# No EXE, APK, installer, package, deployment, release or merge is produced.
+name: StructuralPro PR481 Windows Source QA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/structuralpro-pr481-windows-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: structuralpro-pr481-windows-source-qa
+  cancel-in-progress: false
+
+jobs:
+  windows-source-qa:
+    name: Python / PySide6 / SQLite / BOQ / Reports
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      PIP_DISABLE_PIP_VERSION_CHECK: '1'
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: source
+
+    steps:
+      - name: Checkout exact StructuralPro PR481 commit (read-only)
+        uses: actions/checkout@v4
+        with:
+          repository: asanda022/StructuralPro
+          ref: c37a49780b22e79e3f17f294afcf48549137c38f
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Verify source identity (fail closed)
+        run: |
+          $actual = (git rev-parse HEAD).Trim()
+          $expected = 'c37a49780b22e79e3f17f294afcf48549137c38f'
+          Write-Output "TESTED_SOURCE_SHA=$actual"
+          if ($actual -ne $expected) {
+            throw "Incorrect StructuralPro source SHA: actual=$actual expected=$expected"
+          }
+
+      - name: Configure Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install source test dependencies (no product builds)
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Verify real Windows Qt runtime and report dependencies
+        run: |
+          $script = @'
+          import sys
+          import pytest, fitz, docx, openpyxl, reportlab, arabic_reshaper
+          from bidi.algorithm import get_display
+          from PySide6.QtWidgets import QApplication
+          app = QApplication.instance() or QApplication([])
+          assert app is not None
+          print('WINDOWS_QT_RUNTIME_OK', sys.version)
+          '@
+          $script | python -
+
+      - name: Compile PR481 source, Qt dialog, services and tests
+        run: |
+          python -m py_compile app/finish_takeoff_dialog.py app/manual_takeoff.py core/platform/application.py core/takeoff/assembly.py core/takeoff/assembly_templates.py tests/test_finish_takeoff_assemblies.py tests/test_finish_takeoff_ui_runtime.py tests/test_finish_takeoff_report_contract.py tools/qa/finish_report_preview.py
+
+      - name: Test 13 finishing operations, persistence, BOQ, reports and Qt
+        id: finishing
+        continue-on-error: true
+        run: |
+          python -m pytest -q -ra tests/test_finish_takeoff_assemblies.py tests/test_finish_takeoff_ui_runtime.py tests/test_finish_takeoff_report_contract.py
+
+      - name: Test existing manual-takeoff regressions
+        id: regression
+        continue-on-error: true
+        run: |
+          python -m pytest -q -ra tests/test_master13_phase2_manual_transaction.py tests/test_master13_phase2_manual_dialog_runtime.py tests/test_manual_takeoff_workbench.py tests/test_manual_takeoff_input.py tests/test_manual_takeoff_ui_wiring.py
+
+      - name: Generate synthetic 5-floor XLSX, DOCX, PDF and UI evidence
+        id: evidence
+        continue-on-error: true
+        run: |
+          python tools/qa/finish_report_preview.py --output "${{ runner.temp }}/structuralpro-pr481-windows-qa"
+
+      - name: Upload synthetic QA evidence only (never app executables)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: PR481-WINDOWS-SYNTHETIC-QA-${{ github.run_id }}
+          path: ${{ runner.temp }}/structuralpro-pr481-windows-qa/
+          if-no-files-found: warn
+          retention-days: 3
+
+      - name: Record QA verdict and fail if any check failed
+        if: always()
+        env:
+          FINISHING: ${{ steps.finishing.outcome }}
+          REGRESSION: ${{ steps.regression.outcome }}
+          EVIDENCE: ${{ steps.evidence.outcome }}
+        run: |
+          "# StructuralPro PR481 - real Windows QA" >> $env:GITHUB_STEP_SUMMARY
+          "Source SHA: c37a49780b22e79e3f17f294afcf48549137c38f" >> $env:GITHUB_STEP_SUMMARY
+          "Finishing tests: $env:FINISHING" >> $env:GITHUB_STEP_SUMMARY
+          "Regression tests: $env:REGRESSION" >> $env:GITHUB_STEP_SUMMARY
+          "Synthetic reporting: $env:EVIDENCE" >> $env:GITHUB_STEP_SUMMARY
+          if ($env:FINISHING -ne 'success' -or $env:REGRESSION -ne 'success' -or $env:EVIDENCE -ne 'success') {
+            throw 'PR481 Windows source QA did not fully pass; do not merge.'
+          }
+          Write-Output 'STRUCTURALPRO_PR481_WINDOWS_QA_PASSED'

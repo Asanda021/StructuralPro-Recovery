@@ -1,0 +1,31 @@
+name: Priority 181-190 Cost Estimate Traceability
+
+on:
+  push:
+    branches:
+      - phase/p181-p190-cost-estimate-traceability
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "core/drawing/cost_estimate_traceability_v1.py"
+      - "core/drawing/boq_propagation_v1.py"
+      - "tests/test_p181_p190_cost_estimate_traceability.py"
+      - "docs/P181_P190_COST_ESTIMATE_TRACEABILITY.md"
+      - ".github/workflows/priority-181-190-cost-estimate-traceability.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner and project dependencies
+        run: python -m pip install --upgrade pip "pytest>=8.0" && python -m pip install -r requirements.txt
+      - name: Dedicated tests
+        run: python -m pytest -q tests/test_p181_p190_cost_estimate_traceability.py
+      - name: Full regression
+        run: python -m pytest -q

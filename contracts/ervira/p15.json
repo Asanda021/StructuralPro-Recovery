@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P15",
+  "purpose": "Commercial/store contract",
+  "store": {
+    "catalog_source": "ERVIRA",
+    "purchase_source": "ERVIRA",
+    "order_statuses": [
+      "pending",
+      "paid",
+      "failed",
+      "refunded",
+      "cancelled"
+    ],
+    "entitlement_creation": "after_verified_payment"
+  },
+  "rules": [
+    "StructuralPro must not maintain a conflicting store catalog.",
+    "No download entitlement is created from an unverified order."
+  ]
+}

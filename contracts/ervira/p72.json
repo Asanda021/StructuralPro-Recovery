@@ -1,0 +1,1 @@
+{"phase":"P72","name":"User Guide Synchronization","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["Persian and English guide versions match canonical release version","guide references only verified UI and runtime behavior","missing guide assets fail validation"]}

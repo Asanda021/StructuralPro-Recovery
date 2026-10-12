@@ -1,0 +1,31 @@
+{
+  "phase": "P29",
+  "basis": "repository_golden_validation",
+  "disclaimer": "Representative offline golden projects are validation evidence; this record does not claim customer-data validation.",
+  "evidence": [
+    {
+      "scenario": "residential_concrete_small",
+      "scale": "small",
+      "surfaces": ["pdf","cad","revision","takeoff","boq","estimate","reports","excel","output_pdf"],
+      "reference": "tests/test_priority_35_real_world_golden.py::test_residential_concrete_quantity_workflow",
+      "comparison": "deterministic quantity/BOQ acceptance against golden workflow expectations",
+      "status": "verified"
+    },
+    {
+      "scenario": "residential_concrete_medium",
+      "scale": "medium",
+      "surfaces": ["pdf","cad","revision","takeoff","boq","estimate","reports","excel","output_pdf"],
+      "reference": "tests/test_priority_35_real_world_golden.py::test_recovery_and_recalculation_scenario",
+      "comparison": "backup/recovery and recalculation equality against persisted golden project",
+      "status": "verified"
+    },
+    {
+      "scenario": "residential_concrete_large",
+      "scale": "large",
+      "surfaces": ["pdf","cad","revision","takeoff","boq","estimate","reports","excel","output_pdf"],
+      "reference": "tests/test_priority_35_real_world_golden.py::test_large_collection_pagination_scenario",
+      "comparison": "large-collection quantity integrity and pagination acceptance",
+      "status": "verified"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "case_id": "P106-001",
+  "name": "Concrete frame A",
+  "geometry": {
+    "length": 5,
+    "width": 0.3,
+    "depth": 0.5,
+    "count": 10
+  },
+  "rebar": {
+    "length_m": 24,
+    "diameter_mm": 16,
+    "count": 1
+  },
+  "cut_lengths_m": [
+    6,
+    5,
+    5,
+    4,
+    3
+  ],
+  "unit_price": 1000000,
+  "expected": {
+    "concrete_m3": 7.5,
+    "rebar_kg": 37.925925925925924,
+    "stock_bars": 2
+  }
+}

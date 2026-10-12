@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P17",
+  "purpose": "Release synchronization",
+  "release": {
+    "canonical_source": "StructuralPro GitHub Releases/tags",
+    "mirrored_fields": [
+      "version",
+      "build",
+      "release_date",
+      "channel",
+      "publication_status",
+      "supported_editions",
+      "artifact",
+      "sha256",
+      "release_notes"
+    ],
+    "current_version": "0.1.0",
+    "publication_status": "not_published"
+  },
+  "rules": [
+    "ERVIRA release metadata must match the canonical release.",
+    "Website must never invent a build or release date."
+  ]
+}

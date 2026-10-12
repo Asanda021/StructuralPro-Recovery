@@ -1,0 +1,26 @@
+name: P371-P380 Operational Evidence Chain
+
+on:
+  push:
+    paths:
+      - "core/platform/operational_evidence_chain_v1.py"
+      - "tests/test_p371_p380_operational_evidence_chain.py"
+      - "docs/P371_P380_OPERATIONAL_EVIDENCE_CHAIN.md"
+      - ".github/workflows/priority-371-380-operational-evidence-chain.yml"
+  pull_request:
+    paths:
+      - "core/platform/operational_evidence_chain_v1.py"
+      - "tests/test_p371_p380_operational_evidence_chain.py"
+      - "docs/P371_P380_OPERATIONAL_EVIDENCE_CHAIN.md"
+      - ".github/workflows/priority-371-380-operational-evidence-chain.yml"
+jobs:
+  operational-evidence-chain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_p371_p380_operational_evidence_chain.py
+      - run: python -m compileall -q core tests

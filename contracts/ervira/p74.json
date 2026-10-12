@@ -1,0 +1,1 @@
+{"phase":"P74","name":"Release Documentation Synchronization","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["release notes, registry and user guide share canonical VERSION","unreleased features are excluded","documentation build fails on version mismatch"]}

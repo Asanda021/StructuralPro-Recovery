@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P27",
+  "purpose": "Documentation navigation",
+  "docs": {
+    "locales": [
+      "fa-IR",
+      "en-US"
+    ],
+    "versioned": true,
+    "edition_aware": true,
+    "release_link_required": true,
+    "unreleased_capability_links_blocked": true
+  }
+}

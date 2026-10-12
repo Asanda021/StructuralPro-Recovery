@@ -1,0 +1,1 @@
+{"phase":"P62","name":"Version Synchronization","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["canonical VERSION is the single release version authority","packaged VERSION must equal canonical VERSION","release tag and requested release version must equal canonical VERSION"]}

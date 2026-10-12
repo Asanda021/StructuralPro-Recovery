@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "runtime_status": "implemented",
+  "release_ready": false,
+  "phase": "P55",
+  "purpose": "Payment Status",
+  "payment_status": {
+    "authority": "ERVIRA",
+    "runtime_implemented": true,
+    "actions": [
+      "checkout",
+      "payment_status"
+    ],
+    "fail_closed": true
+  }
+}

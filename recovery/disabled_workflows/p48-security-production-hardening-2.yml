@@ -1,0 +1,13 @@
+name: P48 Security Production Hardening 2
+on:
+  pull_request:
+    paths: [core/security/security_hardening_v2.py, tests/test_p48_security_production_hardening_2.py, docs/P48_SECURITY_PRODUCTION_HARDENING_2.md, .github/workflows/p48-security-production-hardening-2.yml]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -U pytest
+      - run: python -m pytest -q tests/test_p48_security_production_hardening_2.py

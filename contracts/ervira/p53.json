@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "runtime_status": "implemented",
+  "release_ready": false,
+  "phase": "P53",
+  "purpose": "Pricing Runtime",
+  "pricing": {
+    "authority": "ERVIRA",
+    "runtime_implemented": true,
+    "price_source": "product_plans",
+    "no_invented_prices": true
+  }
+}

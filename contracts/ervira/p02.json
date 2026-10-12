@@ -1,0 +1,91 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P2",
+  "purpose": "Capability parity",
+  "capabilities": [
+    {
+      "id": "project",
+      "name": "Project workspace",
+      "status": "available"
+    },
+    {
+      "id": "takeoff",
+      "name": "Quantity takeoff",
+      "status": "available"
+    },
+    {
+      "id": "estimation",
+      "name": "Estimation workflow",
+      "status": "available"
+    },
+    {
+      "id": "reports",
+      "name": "Professional reports",
+      "status": "available"
+    },
+    {
+      "id": "xlsx-output",
+      "name": "XLSX output",
+      "status": "available"
+    },
+    {
+      "id": "pdf-output",
+      "name": "PDF output",
+      "status": "available"
+    },
+    {
+      "id": "docx-output",
+      "name": "DOCX output",
+      "status": "available"
+    },
+    {
+      "id": "csv-output",
+      "name": "CSV output",
+      "status": "available"
+    },
+    {
+      "id": "backup-restore",
+      "name": "Backup and restore",
+      "status": "available"
+    },
+    {
+      "id": "local-ai",
+      "name": "Local AI assistance",
+      "status": "available"
+    },
+    {
+      "id": "dwg-dxf",
+      "name": "DWG/DXF extraction integration",
+      "status": "integration"
+    },
+    {
+      "id": "ifc-bim",
+      "name": "IFC/BIM integration",
+      "status": "integration"
+    },
+    {
+      "id": "cloud-sync",
+      "name": "Cloud synchronization",
+      "status": "planned"
+    },
+    {
+      "id": "team-collaboration",
+      "name": "Team collaboration",
+      "status": "planned"
+    },
+    {
+      "id": "enterprise-administration",
+      "name": "Enterprise administration",
+      "status": "planned"
+    },
+    {
+      "id": "commercial-entitlement",
+      "name": "Commercial entitlement service",
+      "status": "integration"
+    }
+  ]
+}

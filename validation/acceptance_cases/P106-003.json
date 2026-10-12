@@ -1,0 +1,28 @@
+{
+  "case_id": "P106-003",
+  "name": "Foundation C",
+  "geometry": {
+    "length": 2,
+    "width": 2,
+    "depth": 0.5,
+    "count": 4
+  },
+  "rebar": {
+    "length_m": 30,
+    "diameter_mm": 14,
+    "count": 1
+  },
+  "cut_lengths_m": [
+    6,
+    5,
+    5,
+    4,
+    3
+  ],
+  "unit_price": 900000,
+  "expected": {
+    "concrete_m3": 8,
+    "rebar_kg": 36.2962962962963,
+    "stock_bars": 2
+  }
+}

@@ -1,0 +1,25 @@
+name: P76 official pricebook artifact fetch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 2 1 * *"
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch and hash artifacts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from core.estimate.pricebook_artifact_fetch_v1 import ARTIFACTS_1404, fetch_artifact
+          out=Path("artifacts/pricebooks/1404"); out.mkdir(parents=True,exist_ok=True)
+          for a in ARTIFACTS_1404:
+              data,digest=fetch_artifact(a)
+              p=out/(str(a.discipline).replace(" ","_")+".xlsx")
+              p.write_bytes(data)
+              print(a.discipline, digest, len(data))
+          PY

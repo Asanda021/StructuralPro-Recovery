@@ -1,0 +1,23 @@
+{
+  "case_id": "P104-003",
+  "dataset_version": "2026.1",
+  "project": {
+    "id": "P104-3",
+    "member_type": "slab"
+  },
+  "expected_quantities": [
+    {
+      "id": "Q1",
+      "quantity": 3
+    }
+  ],
+  "expected_boq": [
+    {
+      "code": "BOQ-3",
+      "quantity": 3
+    }
+  ],
+  "tolerances": {
+    "quantity": 0.000001
+  }
+}

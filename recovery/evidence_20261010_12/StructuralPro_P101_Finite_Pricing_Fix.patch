@@ -1,0 +1,124 @@
+diff --git a/core/estimate/pricebook_full_building_pricing_v2.py b/core/estimate/pricebook_full_building_pricing_v2.py
+index 6d246cb..61b0f99 100644
+--- a/core/estimate/pricebook_full_building_pricing_v2.py
++++ b/core/estimate/pricebook_full_building_pricing_v2.py
+@@ -1,7 +1,24 @@
+ from __future__ import annotations
+ from dataclasses import dataclass
++import math
+ from core.estimate.item_code_normalization_v1 import code_key
+ DISCIPLINES=("ابنیه","تاسیسات مکانیکی","تاسیسات برقی","مرمت بناهای تاریخی")
++
++def _finite_nonnegative(value, label):
++    try:
++        number = float(value)
++    except (TypeError, ValueError, OverflowError) as exc:
++        raise ValueError(f"{label} must be finite and non-negative") from exc
++    if not math.isfinite(number) or number < 0:
++        raise ValueError(f"{label} must be finite and non-negative")
++    return number
++
++def _finite_total(quantity, unit_price):
++    total = quantity * unit_price
++    if not math.isfinite(total):
++        raise ValueError("price total must be finite")
++    return total
++
+ @dataclass(frozen=True)
+ class ProductionRow:
+     year:int; discipline:str; item_code:str; description:str; unit:str; unit_price:float; source_sha256:str; source_file:str
+@@ -9,9 +26,10 @@ def normalize_rows(rows):
+     out=[]
+     for r in rows:
+         code,unit=code_key(r.item_code,r.unit)
+-        if not code or not unit or not r.description or float(r.unit_price)<0 or not r.source_sha256: raise ValueError("invalid production pricebook row")
++        unit_price = _finite_nonnegative(r.unit_price, "unit price")
++        if not code or not unit or not r.description or not r.source_sha256: raise ValueError("invalid production pricebook row")
+         if r.discipline not in DISCIPLINES: raise ValueError("unsupported building discipline")
+-        out.append(ProductionRow(int(r.year),r.discipline,code,r.description,unit,float(r.unit_price),r.source_sha256,r.source_file))
++        out.append(ProductionRow(int(r.year),r.discipline,code,r.description,unit,unit_price,r.source_sha256,r.source_file))
+     return tuple(out)
+ def price_full_building(takeoff_rows,pricebook_rows,year,discipline):
+     rows=normalize_rows(pricebook_rows); index={}
+@@ -25,9 +43,9 @@ def price_full_building(takeoff_rows,pricebook_rows,year,discipline):
+     for item in takeoff_rows:
+         row=index.get(code_key(item.get("item_code"),item.get("unit")))
+         if row is None: unresolved.append(str(item.get("takeoff_id",""))); continue
+-        qty=float(item["quantity"])
+-        if qty<0: raise ValueError("negative takeoff quantity")
+-        priced.append({"takeoff_id":str(item["takeoff_id"]),"year":year,"discipline":discipline,"item_code":row.item_code,"unit":row.unit,"quantity":qty,"unit_price":row.unit_price,"total":qty*row.unit_price,"source_sha256":row.source_sha256,"source_file":row.source_file})
++        qty=_finite_nonnegative(item["quantity"], "takeoff quantity")
++        total=_finite_total(qty,row.unit_price)
++        priced.append({"takeoff_id":str(item["takeoff_id"]),"year":year,"discipline":discipline,"item_code":row.item_code,"unit":row.unit,"quantity":qty,"unit_price":row.unit_price,"total":total,"source_sha256":row.source_sha256,"source_file":row.source_file})
+     if unresolved: raise ValueError("unresolved production pricebook rows: "+",".join(unresolved))
+     return tuple(priced)
+ 
+@@ -53,10 +71,9 @@ def price_full_building_project(takeoff_rows, pricebook_rows, year):
+         if row is None:
+             unresolved.append(str(item.get("takeoff_id", "")))
+             continue
+-        qty = float(item["quantity"])
+-        if qty < 0:
+-            raise ValueError("negative takeoff quantity")
+-        priced.append({"takeoff_id":str(item["takeoff_id"]),"year":int(year),"discipline":row.discipline,"item_code":row.item_code,"unit":row.unit,"quantity":qty,"unit_price":row.unit_price,"total":qty*row.unit_price,"source_sha256":row.source_sha256,"source_file":row.source_file})
++        qty = _finite_nonnegative(item["quantity"], "takeoff quantity")
++        total = _finite_total(qty, row.unit_price)
++        priced.append({"takeoff_id":str(item["takeoff_id"]),"year":int(year),"discipline":row.discipline,"item_code":row.item_code,"unit":row.unit,"quantity":qty,"unit_price":row.unit_price,"total":total,"source_sha256":row.source_sha256,"source_file":row.source_file})
+     if unresolved:
+         raise ValueError("unresolved production pricebook rows: "+",".join(unresolved))
+     return tuple(priced)
+diff --git a/tests/test_p101_finite_quantity_integrity.py b/tests/test_p101_finite_quantity_integrity.py
+new file mode 100644
+index 0000000..a466147
+--- /dev/null
++++ b/tests/test_p101_finite_quantity_integrity.py
+@@ -0,0 +1,49 @@
++import math
++
++import pytest
++
++from core.estimate.pricebook_full_building_pricing_v2 import (
++    ProductionRow,
++    normalize_rows,
++    price_full_building,
++    price_full_building_project,
++)
++
++
++def row(unit_price=10.0):
++    return ProductionRow(
++        1404, "ابنیه", "1001", "Concrete", "m3", unit_price, "sha", "official.xlsx"
++    )
++
++
++def takeoff(quantity):
++    return [{
++        "takeoff_id": "Q1",
++        "discipline": "ابنیه",
++        "item_code": "1001",
++        "unit": "m3",
++        "quantity": quantity,
++    }]
++
++
++@pytest.mark.parametrize("invalid", [math.nan, math.inf, -math.inf])
++def test_nonfinite_or_negative_inputs_are_rejected(invalid):
++    with pytest.raises(ValueError, match="unit price must be finite"):
++        normalize_rows([row(invalid)])
++    for price_function, rows in (
++        (price_full_building, [row()]),
++        (price_full_building_project, [row()]),
++    ):
++        with pytest.raises(ValueError, match="takeoff quantity must be finite"):
++            if price_function is price_full_building:
++                price_function(takeoff(invalid), rows, 1404, "ابنیه")
++            else:
++                price_function(takeoff(invalid), rows, 1404)
++
++
++def test_nonfinite_computed_total_is_rejected():
++    huge = row(1e308)
++    with pytest.raises(ValueError, match="price total must be finite"):
++        price_full_building(takeoff(1e308), [huge], 1404, "ابنیه")
++    with pytest.raises(ValueError, match="price total must be finite"):
++        price_full_building_project(takeoff(1e308), [huge], 1404)

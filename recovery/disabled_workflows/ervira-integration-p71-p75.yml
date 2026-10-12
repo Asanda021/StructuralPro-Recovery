@@ -1,0 +1,17 @@
+name: ERVIRA P71-P75 Customer Trust Gate
+on:
+  pull_request:
+    paths: ["contracts/ervira/p7*.json","tests/test_ervira_integration_p71_p75.py",".github/workflows/ervira-integration-p71-p75.yml"]
+  push:
+    branches: [main]
+    paths: ["contracts/ervira/p7*.json","tests/test_ervira_integration_p71_p75.py",".github/workflows/ervira-integration-p71-p75.yml"]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: python -m pip install --upgrade pip pytest
+      - run: python -m compileall -q tests
+      - run: python -m pytest -q tests/test_ervira_integration_p71_p75.py

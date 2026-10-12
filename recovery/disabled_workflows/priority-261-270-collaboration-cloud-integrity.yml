@@ -1,0 +1,16 @@
+name: P261-P270 Collaboration Cloud Integrity
+on: [pull_request, push, workflow_dispatch]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip "pytest>=8.0"
+      - run: python -m pip install -r requirements.txt
+      - run: python -m compileall -q core tests
+      - run: python -m pytest -q tests/test_p261_p270_collaboration_cloud_integrity.py
+      - run: python -m pytest -q

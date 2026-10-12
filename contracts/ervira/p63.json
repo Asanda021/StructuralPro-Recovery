@@ -1,0 +1,1 @@
+{"phase":"P63","name":"Build Synchronization","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["release artifacts must identify the exact source commit","packaged executable and installer are produced from the same verified source commit","a release cannot be registered without successful Windows build validation"]}

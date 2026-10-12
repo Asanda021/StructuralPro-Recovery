@@ -1,0 +1,28 @@
+{
+  "case_id": "P106-004",
+  "name": "Slab D",
+  "geometry": {
+    "length": 10,
+    "width": 5,
+    "depth": 0.15,
+    "count": 1
+  },
+  "rebar": {
+    "length_m": 12,
+    "diameter_mm": 22,
+    "count": 1
+  },
+  "cut_lengths_m": [
+    6,
+    5,
+    5,
+    4,
+    3
+  ],
+  "unit_price": 850000,
+  "expected": {
+    "concrete_m3": 7.5,
+    "rebar_kg": 35.85185185185185,
+    "stock_bars": 2
+  }
+}

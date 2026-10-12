@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P20",
+  "purpose": "E2E integration gate",
+  "flow": [
+    "ERVIRA account",
+    "StructuralPro product",
+    "edition",
+    "purchase/order",
+    "license",
+    "entitlement",
+    "release",
+    "download",
+    "installation",
+    "license detection",
+    "feature gate",
+    "version parity",
+    "analytics"
+  ],
+  "gates": {
+    "account_link": false,
+    "verified_payment": false,
+    "license_issuance": false,
+    "entitlement_enforcement": false,
+    "published_release": false,
+    "verified_download": false,
+    "installation_e2e": false,
+    "feature_e2e": false,
+    "analytics_evidence": false
+  },
+  "release_ready": false,
+  "blocking_reasons": [
+    "No published verified StructuralPro release",
+    "No released commercial editions",
+    "No verified payment/license issuance backend",
+    "No installation and feature-entitlement E2E evidence"
+  ]
+}

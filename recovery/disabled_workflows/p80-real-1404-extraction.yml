@@ -1,0 +1,36 @@
+name: P80 real 1404 pricebook extraction
+on:
+  workflow_dispatch:
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: pip install openpyxl
+      - name: Fetch official archive
+        run: curl -fL --retry 5 --retry-all-errors -A "StructuralPro-pricebook-p80/1.0" "https://sama.mporg.ir/DigitalAsset/DigitalAsset/FehrestBaha1404.rar?Web=1" -o /tmp/FehrestBaha1404.rar
+      - name: Validate archive
+        run: |
+          test -s /tmp/FehrestBaha1404.rar
+          file /tmp/FehrestBaha1404.rar
+          ! grep -a -qi '<html' /tmp/FehrestBaha1404.rar
+          sha256sum /tmp/FehrestBaha1404.rar | tee /tmp/source.sha256
+      - name: Extract archive
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq unrar-free
+          mkdir -p /tmp/pb
+          unrar-free x /tmp/FehrestBaha1404.rar /tmp/pb/
+      - name: Build source inventory
+        run: |
+          find /tmp/pb -type f \( -iname '*.xlsx' -o -iname '*.xls' -o -iname '*.csv' \) -print | sort | tee /tmp/inventory.txt
+          test -s /tmp/inventory.txt
+      - name: Publish evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p80-1404-pricebook-evidence
+          path: |
+            /tmp/source.sha256
+            /tmp/inventory.txt

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "version": "0.1.0",
+  "phase": "P37",
+  "purpose": "Recovery boundary",
+  "checks": "ERVIRA",
+  "source_of_truth": "ERVIRA",
+  "runtime_status": "not_implemented",
+  "release_ready": false
+}

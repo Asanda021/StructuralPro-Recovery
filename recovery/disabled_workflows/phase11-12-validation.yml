@@ -1,0 +1,27 @@
+name: StructuralPro Phase 12 Validation
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  golden-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest pypdf ezdxf openpyxl python-docx reportlab
+      - name: Compile
+        run: |
+          python -m compileall -q core tests
+          python -m py_compile app/main.py
+      - name: Phase 11 client/platform regression
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_p91_clients_platform.py tests/test_priority_34_windows_validation.py
+      - name: Phase 12 deterministic validation
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_p92_validation.py tests/test_phase12_golden_validation.py tests/test_priority_35_real_world_golden.py tests/test_priority_51_golden_project_e2e.py

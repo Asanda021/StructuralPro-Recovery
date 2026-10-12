@@ -1,0 +1,1 @@
+{"phase":"P71","name":"Documentation Registry","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["documentation is versioned and tied to canonical product version","public documentation contains only verified capabilities","documentation metadata is machine-readable"]}

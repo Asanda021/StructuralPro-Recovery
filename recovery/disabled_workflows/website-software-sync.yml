@@ -1,0 +1,21 @@
+name: Website Software Sync
+on:
+  pull_request:
+    paths:
+      - "website/data/products.json"
+      - "website/data/product-architecture.json"
+      - "website/products.html"
+      - "tests/test_website_software_sync.py"
+      - "core/platform/parity.py"
+      - "core/platform/product_hub.py"
+      - ".github/workflows/website-software-sync.yml"
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip pytest
+      - run: pytest -q tests/test_website_software_sync.py

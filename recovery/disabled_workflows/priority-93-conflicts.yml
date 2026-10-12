@@ -1,0 +1,26 @@
+name: Priority 93 Deterministic Conflicts
+
+on:
+  pull_request:
+    paths:
+      - "core/sync/conflicts.py"
+      - "tests/test_p93_deterministic_conflicts.py"
+      - ".github/workflows/priority-93-conflicts.yml"
+  push:
+    paths:
+      - "core/sync/conflicts.py"
+      - "tests/test_p93_deterministic_conflicts.py"
+      - ".github/workflows/priority-93-conflicts.yml"
+
+jobs:
+  conflicts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install pytest
+      - run: python -m compileall -q core tests
+      - run: python -m pytest -q tests/test_p93_deterministic_conflicts.py

@@ -1,0 +1,23 @@
+name: P661-P670 Production Hardening
+on:
+  push:
+    paths:
+      - "core/platform/production_hardening_v1.py"
+      - "tests/test_p661_p670_production_hardening.py"
+      - "docs/P661_P670_PRODUCTION_HARDENING.md"
+      - ".github/workflows/priority-661-670-production-hardening.yml"
+  pull_request:
+    paths:
+      - "core/platform/production_hardening_v1.py"
+      - "tests/test_p661_p670_production_hardening.py"
+      - "docs/P661_P670_PRODUCTION_HARDENING.md"
+      - ".github/workflows/priority-661-670-production-hardening.yml"
+jobs:
+  production-hardening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install --upgrade pip pytest
+      - run: pytest -q tests/test_p661_p670_production_hardening.py

@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P8",
+  "purpose": "Security and session contract",
+  "security": {
+    "https_required": true,
+    "account_parent": "ERVIRA",
+    "license_validation": "server_or_verified_entitlement",
+    "download_integrity": "sha256_required",
+    "session_policy": "authenticated_surfaces_only",
+    "privacy_and_terms_required": true
+  },
+  "rule": "Security controls are prerequisites for commercial release; missing evidence must block release claims."
+}

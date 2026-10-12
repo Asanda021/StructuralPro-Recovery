@@ -1,0 +1,33 @@
+{
+  "case_id": "P106-005",
+  "name": "Roof E",
+  "geometry": {
+    "length": 12,
+    "width": 8,
+    "depth": 0.2,
+    "count": 1
+  },
+  "rebar": {
+    "length_m": 15,
+    "diameter_mm": 16,
+    "count": 1
+  },
+  "cut_lengths_m": [
+    6,
+    5,
+    5,
+    4,
+    3
+  ],
+  "unit_price": 1200000,
+  "expected": {
+    "concrete_m3": 19.200000000000003,
+    "rebar_kg": 23.703703703703702,
+    "stock_bars": 2
+  },
+  "roof": {
+    "area_m2": 96,
+    "thickness_m": 0.2,
+    "roof_type": "joist_single"
+  }
+}

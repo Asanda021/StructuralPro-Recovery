@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.1",
+  "title": "StructuralPro Product Architecture",
+  "source_of_truth": {"capabilities":"core/platform/parity.py","orchestration":"core/platform/product_hub.py","website_catalog":"website/data/products.json"},
+  "commercial_model": {"specialized_products":29,"enterprise_platforms":1,"total_products":30},
+  "sync_rules": [
+    "Every website product id must be unique.",
+    "Website capability_ids must exist in core/platform/parity.py.",
+    "Product status must be Available, Integration, or Planned.",
+    "The catalog must contain exactly 29 specialized products plus 1 Enterprise platform.",
+    "Planned specialist products must not be presented as released software.",
+    "Do not duplicate the product catalog inside HTML; website pages consume website/data/products.json."
+  ],
+  "product_detail_template": {"required_sections":["Hero","Problem","Workflow","Capabilities","Product visual","Target users","Integrations","AI/BIM","Outputs","Resources","CTA"],"actions":["Learn More","Get Started"]},
+  "routing":["/products","/products/{product-id}","/products/category/{category-id}"],
+  "search_filters":["category","discipline","workflow","role","availability"]
+}

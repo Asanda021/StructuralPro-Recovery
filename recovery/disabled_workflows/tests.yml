@@ -1,0 +1,30 @@
+name: StructuralPro tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip install pytest pypdf ezdxf openpyxl python-docx reportlab
+      - run: python -m compileall -q core tests
+      - run: python -m py_compile app/main.py
+      - run: python -m pytest -q tests/test_release_surfaces.py
+      - run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests
+      - name: P641-P650 technical office automation gate
+        run: python -m pytest -q tests/test_p641_p650_technical_office_automation.py
+      - name: P651-P660 human-in-the-loop gate
+        run: python -m pytest -q tests/test_p651_p660_hitl_workflow.py
+      - name: P661-P670 production hardening gate
+        run: python -m pytest -q tests/test_p661_p670_production_hardening.py
+      - name: ERVIRA product source-of-truth gate
+        run: python -m pytest -q tests/test_product_contract.py

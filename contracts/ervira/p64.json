@@ -1,0 +1,1 @@
+{"phase":"P64","name":"Release Notes Synchronization","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["release notes must identify the exact product version","release notes are validated against canonical VERSION","unverified features or capabilities must not be presented as released"]}

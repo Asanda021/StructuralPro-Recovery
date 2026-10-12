@@ -1,0 +1,26 @@
+name: P301-P310 Diagnostics Integrity
+on:
+  pull_request:
+    paths:
+      - 'core/platform/diagnostics_integrity_v1.py'
+      - 'tests/test_p301_p310_diagnostics_integrity.py'
+      - 'docs/P301_P310_DIAGNOSTICS_INTEGRITY.md'
+      - '.github/workflows/priority-301-310-diagnostics-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/platform/diagnostics_integrity_v1.py'
+      - 'tests/test_p301_p310_diagnostics_integrity.py'
+      - 'docs/P301_P310_DIAGNOSTICS_INTEGRITY.md'
+      - '.github/workflows/priority-301-310-diagnostics-integrity.yml'
+  workflow_dispatch:
+jobs:
+  diagnostics-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p301_p310_diagnostics_integrity.py
+      - run: python -m compileall -q core/platform/diagnostics_integrity_v1.py

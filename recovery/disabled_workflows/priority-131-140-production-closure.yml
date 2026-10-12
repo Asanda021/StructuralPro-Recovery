@@ -1,0 +1,24 @@
+name: P131-P140 Production Closure
+on:
+  push:
+    branches: ["phase/p131-p140-production-closure"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  closure:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        priority: [P131,P132,P133,P134,P135,P136,P137,P138,P139,P140]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip pytest
+      - run: python -m compileall -q core tests
+      - run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_p121_p130_production_completion.py tests/test_p131_p140_production_closure.py

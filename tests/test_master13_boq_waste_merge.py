@@ -1,0 +1,25 @@
+import pytest
+from core.takeoff.boq import build_boq
+
+
+def row(percentage, source, quantity=10):
+    return dict(source_id=source, source=source, item_code="WALL-01",
+                description="دیوار", quantity=quantity, unit="m2",
+                waste_percent=percentage, unit_price=None)
+
+
+def test_different_waste_percent_must_not_be_reported_as_one_rate():
+    got=build_boq([row(0,"A"),row(20,"B")])
+    assert len(got)==2
+    assert [x["waste_percent"] for x in got]==[0,20]
+    assert [x["effective_quantity"] for x in got]==[10,12]
+    assert all(x["unit_price"] is None and x["total"] is None for x in got)
+
+
+def test_same_waste_percent_can_still_be_aggregated_without_losing_sources():
+    got=build_boq([row(5,"A"),row(5,"B")])
+    assert len(got)==1
+    assert got[0]["quantity"]==20
+    assert got[0]["effective_quantity"]==pytest.approx(21)
+    assert got[0]["waste_percent"]==5
+    assert got[0]["source_ids"]==["A","B"]

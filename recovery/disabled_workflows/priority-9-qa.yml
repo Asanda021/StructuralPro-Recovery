@@ -1,0 +1,32 @@
+name: StructuralPro Priority 9 QA
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-qt-runtime
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install test dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements.txt
+      - name: Compile all Python
+        run: python -m compileall -q core tests app
+      - name: Full regression suite
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests
+      - name: Repeat regression suite
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests
+      - name: Production gates
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_drawing_takeoff.py tests/test_production_pipeline.py tests/test_product_gates.py tests/test_five_pass.py
+

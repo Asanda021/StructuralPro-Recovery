@@ -1,0 +1,28 @@
+name: P341-P350 Production Operational Evidence
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "core/platform/operational_evidence_v1.py"
+      - "tests/test_p341_p350_operational_evidence.py"
+      - "docs/P341_P350_OPERATIONAL_EVIDENCE.md"
+      - ".github/workflows/priority-341-350-operational-evidence.yml"
+  pull_request:
+    paths:
+      - "core/platform/operational_evidence_v1.py"
+      - "tests/test_p341_p350_operational_evidence.py"
+      - "docs/P341_P350_OPERATIONAL_EVIDENCE.md"
+      - ".github/workflows/priority-341-350-operational-evidence.yml"
+
+jobs:
+  dedicated-operational-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_p341_p350_operational_evidence.py
+      - run: python -m compileall -q core/platform/operational_evidence_v1.py

@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.1",
+  "source_of_truth": "core/platform/parity.py + core/platform/product_hub.py",
+  "ecosystem_label": "30 Products. One AEC Ecosystem.",
+  "specialized_product_count": 29,
+  "enterprise_platform_count": 1,
+  "status_definitions": {
+    "Available": "Backed by current StructuralPro core capabilities.",
+    "Integration": "Backed by a defined platform/provider boundary; integration may depend on an external surface.",
+    "Planned": "Product family is defined, but its dedicated specialist implementation is not claimed as released."
+  },
+  "categories": [
+    {"id":"takeoff-estimating","name":"Takeoff & Estimating","products":[
+      {"id":"takeoff","name":"StructuralPro Takeoff","status":"Available","capability_ids":["takeoff-length","takeoff-area","takeoff-count","takeoff-volume","takeoff-perimeter","takeoff-depth","takeoff-cutout","takeoff-formula","takeoff-waste","takeoff-classification","takeoff-markup","takeoff-legend","takeoff-visual-search","takeoff-dynamic-fill","takeoff-ai-count","takeoff-ai-map"]},
+      {"id":"cad-takeoff","name":"StructuralPro CAD Takeoff","status":"Integration","capability_ids":["cad-dwg","cad-dxf","cad-layers","cad-lines","cad-polylines","cad-arcs","cad-circles","cad-ellipse","cad-blocks","cad-text","cad-hatch","cad-dimensions","cad-xref","cad-units","cad-scale","cad-viewport","takeoff-length","takeoff-area","takeoff-count","takeoff-volume"]},
+      {"id":"bim-takeoff","name":"StructuralPro BIM Takeoff","status":"Available","capability_ids":["bim-ifc","bim-objects","bim-quantities","bim-2d3d-link","takeoff-volume","takeoff-classification"]},
+      {"id":"boq","name":"StructuralPro BOQ","status":"Available","capability_ids":["estimate-boq","takeoff-classification","pricing-search","pricing-import","pricing-export"]},
+      {"id":"estimating","name":"StructuralPro Estimating","status":"Available","capability_ids":["estimate-boq","estimate-assemblies","estimate-factors","estimate-transport","estimate-cost-breakdown","estimate-history","estimate-change"]}
+    ]},
+    {"id":"project-commercial","name":"Project & Commercial Management","products":[
+      {"id":"technical-office","name":"StructuralPro Technical Office","status":"Available","capability_ids":["project-templates","project-library","project-package","project-backup","project-audit","project-health","document-links","reports-pdf","reports-excel","reports-word","reports-csv","reports-custom"]},
+      {"id":"site-supervisor","name":"StructuralPro Site Supervisor","status":"Available","capability_ids":["project-library","project-health","document-links","collab-comments","collab-members"]},
+      {"id":"project-controls","name":"StructuralPro Project Controls","status":"Available","capability_ids":["project-health","estimate-history","estimate-change","statement-multi","statement-cumulative","statement-retention","statement-finalize"]},
+      {"id":"project-manager","name":"StructuralPro Project Manager","status":"Available","capability_ids":["project-templates","project-library","project-package","project-health","project-audit","collab-members","collab-roles","collab-comments"]},
+      {"id":"cost-control","name":"StructuralPro Cost Control","status":"Available","capability_ids":["pricing-search","pricing-analysis","pricing-snapshot","pricing-indexation","estimate-cost-breakdown","estimate-history","estimate-change","statement-financial"]},
+      {"id":"contract-claims","name":"StructuralPro Contract & Claims","status":"Available","capability_ids":["statement-multi","statement-cumulative","statement-retention","statement-finalize","statement-financial","document-links","project-audit"]},
+      {"id":"procurement","name":"StructuralPro Procurement","status":"Available","capability_ids":["pricing-search","pricing-import","pricing-export","estimate-transport","estimate-cost-breakdown","document-links"]}
+    ]},
+    {"id":"bim-ai-intelligence","name":"BIM, AI & Intelligence","products":[
+      {"id":"bim-coordination","name":"StructuralPro BIM & Coordination","status":"Available","capability_ids":["bim-ifc","bim-objects","bim-quantities","bim-2d3d-link","collab-comments","document-links"]},
+      {"id":"reports-intelligence","name":"StructuralPro Reports & Intelligence","status":"Available","capability_ids":["reports-pdf","reports-excel","reports-word","reports-csv","reports-custom","project-health"]},
+      {"id":"ai-assistant","name":"StructuralPro AI & AEC Assistant","status":"Available","capability_ids":["ai-missing","ai-next","ai-assistant","ai-qa"]},
+      {"id":"price-cost-intelligence","name":"StructuralPro Price & Cost Intelligence","status":"Available","capability_ids":["pricing-years","pricing-search","pricing-import","pricing-export","pricing-analysis","pricing-resources","pricing-snapshot","pricing-indexation","pricing-real-data"]}
+    ]},
+    {"id":"engineering","name":"Engineering","products":[
+      {"id":"structural-analysis-design","name":"StructuralPro Structural Analysis & Design","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"geotechnical","name":"StructuralPro Geotechnical","status":"Planned","capability_ids":[]},
+      {"id":"architecture","name":"StructuralPro Architecture","status":"Planned","capability_ids":["domain-architectural"]},
+      {"id":"mep","name":"StructuralPro MEP","status":"Planned","capability_ids":["domain-mechanical","domain-electrical","domain-mep-coordination"]},
+      {"id":"civil-site","name":"StructuralPro Civil & Site","status":"Planned","capability_ids":["domain-civil"]},
+      {"id":"concrete-engineering","name":"StructuralPro Concrete Engineering","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"steel-engineering","name":"StructuralPro Steel Engineering","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"masonry-engineering","name":"StructuralPro Masonry Engineering","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"timber-engineering","name":"StructuralPro Timber Engineering","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"composite-structures","name":"StructuralPro Composite Structures","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"precast","name":"StructuralPro Precast","status":"Planned","capability_ids":["domain-structural"]},
+      {"id":"special-structures","name":"StructuralPro Special Structures","status":"Planned","capability_ids":["domain-structural"]}
+    ]},
+    {"id":"tender","name":"Tender & Bid","products":[
+      {"id":"tender-bid","name":"StructuralPro Tender & Bid Management","status":"Planned","capability_ids":["estimate-boq","estimate-cost-breakdown","document-links"]}
+    ]},
+    {"id":"enterprise","name":"Enterprise","products":[
+      {"id":"aec-enterprise","name":"StructuralPro AEC Enterprise","status":"Available","platform":true,"capability_ids":["security-license","platform-windows","cloud-offline","integration-excel","integration-api","integration-transfer","ux-rtl","ux-shortcuts","ux-presets"]}
+    ]}
+  ]
+}

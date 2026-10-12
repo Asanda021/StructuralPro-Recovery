@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "brand": {
+    "name": "StructuralPro",
+    "positioning": "Professional AEC software ecosystem",
+    "accent": "electric-cyan"
+  },
+  "colors": {
+    "dark": {
+      "canvas": "#071222",
+      "surface": "#0D1828",
+      "surfaceRaised": "#122033",
+      "text": "#F5F7FA",
+      "textMuted": "#8C9AAF",
+      "border": "#2E3B4D",
+      "accent": "#00D4F5"
+    },
+    "light": {
+      "canvas": "#F5F7FA",
+      "surface": "#FFFFFF",
+      "surfaceRaised": "#EEF2F6",
+      "text": "#0D1828",
+      "textMuted": "#5E6B7A",
+      "border": "#D5DDE6",
+      "accent": "#009FBD"
+    },
+    "status": {
+      "success": "#22A06B",
+      "warning": "#D99A16",
+      "error": "#D64545",
+      "info": "#2E7CCB"
+    }
+  },
+  "typography": {
+    "fontStack": {
+      "latin": "Inter, Segoe UI, sans-serif",
+      "persian": "Vazirmatn, Tahoma, sans-serif"
+    },
+    "scale": {
+      "display": "48px/1.05",
+      "h1": "36px/1.12",
+      "h2": "28px/1.18",
+      "h3": "22px/1.25",
+      "body": "16px/1.55",
+      "small": "14px/1.45",
+      "caption": "12px/1.4"
+    },
+    "weights": {
+      "regular": 400,
+      "medium": 500,
+      "semibold": 600,
+      "bold": 700
+    }
+  },
+  "spacing": {
+    "unit": "4px",
+    "scale": [
+      4,
+      8,
+      12,
+      16,
+      24,
+      32,
+      48,
+      64,
+      96
+    ],
+    "containerMax": "1280px"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "12px",
+    "lg": "16px",
+    "xl": "24px",
+    "pill": "999px"
+  },
+  "elevation": {
+    "soft": "0 8px 24px rgba(7,18,34,.10)",
+    "strong": "0 16px 48px rgba(7,18,34,.18)"
+  },
+  "motion": {
+    "fast": "120ms",
+    "normal": "200ms",
+    "slow": "320ms",
+    "easing": "cubic-bezier(.2,.8,.2,1)",
+    "principle": "Motion explains state and hierarchy; never decorates for its own sake."
+  },
+  "responsive": {
+    "mobile": "320-767",
+    "tablet": "768-1199",
+    "desktop": "1200-1439",
+    "large": "1440+"
+  },
+  "accessibility": {
+    "focus": "2px solid accent with 2px offset",
+    "minimumBodySize": "16px",
+    "reducedMotion": "Respect prefers-reduced-motion",
+    "contrast": "WCAG AA target"
+  },
+  "visualLanguage": [
+    "drawing grids",
+    "BIM wireframes",
+    "measured spacing",
+    "data surfaces",
+    "technical linework",
+    "restrained gradients"
+  ]
+}

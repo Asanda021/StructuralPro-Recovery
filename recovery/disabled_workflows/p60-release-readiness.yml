@@ -1,0 +1,21 @@
+name: P60 Release Readiness
+on:
+  push:
+    branches: [main, "feat/p60-release-package-installation"]
+  pull_request:
+    branches: [main]
+jobs:
+  release-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e .; fi
+          pip install pytest
+      - run: python -m compileall -q core app tests
+      - run: python -m pytest -q tests/test_p60_release_readiness.py

@@ -1,0 +1,23 @@
+{
+  "case_id": "P104-004",
+  "dataset_version": "2026.1",
+  "project": {
+    "id": "P104-4",
+    "member_type": "foundation"
+  },
+  "expected_quantities": [
+    {
+      "id": "Q1",
+      "quantity": 4
+    }
+  ],
+  "expected_boq": [
+    {
+      "code": "BOQ-4",
+      "quantity": 4
+    }
+  ],
+  "tolerances": {
+    "quantity": 0.000001
+  }
+}

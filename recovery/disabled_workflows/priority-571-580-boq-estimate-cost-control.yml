@@ -1,0 +1,26 @@
+name: P571-580 BOQ Estimate Cost Control
+
+on:
+  pull_request:
+    paths:
+      - "core/estimate/boq_estimate_cost_control_v1.py"
+      - "tests/test_p571_p580_boq_estimate_cost_control.py"
+      - "docs/P571_P580_BOQ_ESTIMATE_COST_CONTROL.md"
+      - ".github/workflows/priority-571-580-boq-estimate-cost-control.yml"
+  push:
+    paths:
+      - "core/estimate/boq_estimate_cost_control_v1.py"
+      - "tests/test_p571_p580_boq_estimate_cost_control.py"
+      - "docs/P571_P580_BOQ_ESTIMATE_COST_CONTROL.md"
+      - ".github/workflows/priority-571-580-boq-estimate-cost-control.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pytest
+      - run: python -m pytest -q tests/test_p571_p580_boq_estimate_cost_control.py

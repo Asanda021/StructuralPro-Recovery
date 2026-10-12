@@ -1,0 +1,14 @@
+name: P47 Commercial System 2.0
+on:
+  pull_request:
+    paths: ["core/commercial/**","tests/test_p47_commercial_system_2.py","docs/P47_COMMERCIAL_SYSTEM_2.md",".github/workflows/p47-commercial-system-2.yml"]
+  workflow_dispatch:
+jobs:
+  dedicated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -U pip pytest
+      - run: pytest -q tests/test_p47_commercial_system_2.py

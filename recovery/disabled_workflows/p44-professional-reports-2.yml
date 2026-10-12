@@ -1,0 +1,14 @@
+name: P44 Professional Reports 2.0
+on:
+  pull_request:
+    paths: ["core/report/**","tests/test_p44_professional_reports_2.py","docs/P44_PROFESSIONAL_REPORTS_2.md",".github/workflows/p44-professional-reports-2.yml"]
+  workflow_dispatch:
+jobs:
+  dedicated:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -U pip pytest
+      - run: pytest -q tests/test_p44_professional_reports_2.py

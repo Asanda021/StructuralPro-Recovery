@@ -1,0 +1,1 @@
+{"phase":"P65","name":"Artifact Registry","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["registry includes executable, installer and checksum artifacts","each artifact has size and SHA-256 evidence","missing or empty release artifacts fail closed"]}

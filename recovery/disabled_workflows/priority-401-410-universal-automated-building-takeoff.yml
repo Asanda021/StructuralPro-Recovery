@@ -1,0 +1,24 @@
+name: P401-P410 Universal Automated Building Takeoff
+on:
+  push:
+    paths:
+      - "core/takeoff/automated_building_takeoff_v1.py"
+      - "tests/test_p401_p410_universal_automated_building_takeoff.py"
+      - "docs/P401_P410_UNIVERSAL_AUTOMATED_BUILDING_TAKEOFF.md"
+      - ".github/workflows/priority-401-410-universal-automated-building-takeoff.yml"
+  pull_request:
+    paths:
+      - "core/takeoff/automated_building_takeoff_v1.py"
+      - "tests/test_p401_P410_universal_automated_building_takeoff.py"
+      - "docs/P401_P410_UNIVERSAL_AUTOMATED_BUILDING_TAKEOFF.md"
+      - ".github/workflows/priority-401-410-universal-automated-building-takeoff.yml"
+jobs:
+  automated-takeoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_p401_p410_universal_automated_building_takeoff.py
+      - run: python -m compileall -q core tests

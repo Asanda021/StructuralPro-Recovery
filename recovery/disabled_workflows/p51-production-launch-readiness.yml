@@ -1,0 +1,22 @@
+name: P51 Production Launch Readiness
+
+on:
+  pull_request:
+    paths:
+      - "core/launch/**"
+      - "tests/test_p51_production_launch_readiness.py"
+      - "docs/P51_PRODUCTION_LAUNCH_READINESS.md"
+      - ".github/workflows/p51-production-launch-readiness.yml"
+  push:
+    branches: [main]
+
+jobs:
+  p51:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip pytest
+      - run: pytest -q tests/test_p51_production_launch_readiness.py

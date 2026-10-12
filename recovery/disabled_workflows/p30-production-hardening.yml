@@ -1,0 +1,32 @@
+name: P30 Production Hardening
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "core/platform/p30_production_hardening.py"
+      - "tests/test_p30_production_hardening.py"
+      - "docs/P30_PRODUCTION_HARDENING.md"
+      - ".github/workflows/p30-production-hardening.yml"
+  push:
+    branches: [main]
+    paths:
+      - "core/platform/p30_production_hardening.py"
+      - "tests/test_p30_production_hardening.py"
+      - "docs/P30_PRODUCTION_HARDENING.md"
+      - ".github/workflows/p30-production-hardening.yml"
+
+jobs:
+  p30:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Run P30 dedicated gate
+        run: pytest -q tests/test_p30_production_hardening.py

@@ -1,0 +1,30 @@
+name: StructuralPro Android
+on:
+  workflow_dispatch:
+    inputs:
+      build_approved:
+        description: "Owner explicitly approved producing Android build artifacts"
+        required: true
+        type: boolean
+        default: false
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: android } }
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: bash
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: test -n "$STRUCTURALPRO_BUILD_PERMIT"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "17" }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.10.2" }
+      - name: Compile debug and production variants
+        run: |
+          gradle :app:assembleDebug :app:assembleRelease --stacktrace

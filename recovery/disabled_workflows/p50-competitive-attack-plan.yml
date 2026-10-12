@@ -1,0 +1,13 @@
+name: P50 Competitive Attack Plan
+on:
+  pull_request:
+    paths: [core/competitive/competitive_attack_plan_v2.py, tests/test_p50_competitive_attack_plan.py, docs/P50_COMPETITIVE_ATTACK_PLAN.md, .github/workflows/p50-competitive-attack-plan.yml]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install -U pytest
+      - run: python -m pytest -q tests/test_p50_competitive_attack_plan.py

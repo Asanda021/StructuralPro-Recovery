@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "runtime_status": "implemented",
+  "release_ready": false,
+  "phase": "P59",
+  "purpose": "Upgrade/Downgrade",
+  "upgrade_downgrade": {
+    "authority": "ERVIRA",
+    "runtime_implemented": true,
+    "mode": "new_target_plan_order",
+    "entitlement_changes_after_payment": true
+  }
+}

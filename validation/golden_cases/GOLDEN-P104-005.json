@@ -1,0 +1,23 @@
+{
+  "case_id": "P104-005",
+  "dataset_version": "2026.1",
+  "project": {
+    "id": "P104-5",
+    "member_type": "roof"
+  },
+  "expected_quantities": [
+    {
+      "id": "Q1",
+      "quantity": 5
+    }
+  ],
+  "expected_boq": [
+    {
+      "code": "BOQ-5",
+      "quantity": 5
+    }
+  ],
+  "tolerances": {
+    "quantity": 0.000001
+  }
+}

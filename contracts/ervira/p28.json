@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P28",
+  "purpose": "Account dashboard synchronization",
+  "dashboard": {
+    "sections": [
+      "profile",
+      "products",
+      "licenses",
+      "orders",
+      "downloads",
+      "documentation"
+    ],
+    "data_source": "ERVIRA",
+    "structuralpro_local_duplicate_account_blocked": true
+  }
+}

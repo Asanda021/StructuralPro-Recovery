@@ -1,0 +1,19 @@
+# StructuralPro core is intentionally light and offline-first.
+pypdf>=5.0
+PySide6>=6.8
+PyMuPDF>=1.24
+openpyxl>=3.1
+reportlab>=4.0
+arabic-reshaper>=3.0
+python-bidi>=0.6
+python-docx>=1.1
+pytest>=8.0
+# Static-only, read-only GitHub Actions security review.
+PyYAML>=6.0,<7
+# Optional drawing integrations:
+# ezdxf is required by the canonical DXF/DWG extraction path and its tests.
+ezdxf>=1.3
+# Optional BIM integration:
+# IFC/BIM integration (install for production IFC ingestion)
+# ifcopenshell>=0.8
+

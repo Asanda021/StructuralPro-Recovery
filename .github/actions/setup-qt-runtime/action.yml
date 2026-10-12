@@ -1,0 +1,11 @@
+name: Set up Qt runtime
+description: Install Linux shared libraries required by the offscreen desktop acceptance test.
+runs:
+  using: composite
+  steps:
+    - name: Install Qt shared libraries
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install --no-install-recommends -y libegl1 libopengl0

@@ -1,0 +1,28 @@
+{
+  "case_id": "P106-002",
+  "name": "Concrete frame B",
+  "geometry": {
+    "length": 6,
+    "width": 0.25,
+    "depth": 0.5,
+    "count": 8
+  },
+  "rebar": {
+    "length_m": 18,
+    "diameter_mm": 20,
+    "count": 1
+  },
+  "cut_lengths_m": [
+    6,
+    5,
+    5,
+    4,
+    3
+  ],
+  "unit_price": 1100000,
+  "expected": {
+    "concrete_m3": 6,
+    "rebar_kg": 44.44444444444444,
+    "stock_bars": 2
+  }
+}

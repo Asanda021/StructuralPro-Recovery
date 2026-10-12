@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P10",
+  "purpose": "API and integration boundary",
+  "api": {
+    "status": "not_published",
+    "version": null,
+    "base_url": null,
+    "auth": null,
+    "endpoints": [],
+    "documentation": null
+  },
+  "integrations": [
+    {
+      "id": "dwg-dxf",
+      "status": "integration"
+    },
+    {
+      "id": "ifc-bim",
+      "status": "integration"
+    },
+    {
+      "id": "commercial-entitlement",
+      "status": "integration"
+    }
+  ],
+  "rule": "Integration status is not equivalent to a released public API or standalone customer feature."
+}

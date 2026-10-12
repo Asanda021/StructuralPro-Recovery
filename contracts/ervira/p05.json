@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P5",
+  "purpose": "Version and release parity",
+  "version_source": "VERSION",
+  "release_source": "GitHub Releases/tags",
+  "current_version": "0.1.0",
+  "release_status": "development",
+  "parity_rule": "ERVIRA must mirror the canonical version and release status exactly."
+}

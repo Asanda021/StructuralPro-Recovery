@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P11",
+  "purpose": "End-to-end release readiness",
+  "flow": [
+    "ERVIRA product page",
+    "edition",
+    "license/purchase",
+    "account",
+    "download",
+    "installation",
+    "license detection",
+    "feature availability",
+    "version/release parity"
+  ],
+  "gates": {
+    "product_sync": true,
+    "capability_sync": true,
+    "edition_sync": true,
+    "release_artifact": false,
+    "license_backend": false,
+    "installation_verification": false,
+    "feature_entitlement": false
+  },
+  "release_ready": false,
+  "blocking_reasons": [
+    "No published verified release artifact",
+    "Editions are still planned",
+    "Commercial entitlement is not released",
+    "Installation and entitlement E2E evidence is not present"
+  ]
+}

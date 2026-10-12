@@ -1,0 +1,29 @@
+name: ERVIRA P61-P65 Billing Operations Gate
+
+on:
+  pull_request:
+    paths:
+      - "contracts/ervira/p6*.json"
+      - "tests/test_ervira_integration_p61_p65.py"
+      - ".github/workflows/ervira-integration-p61-p65.yml"
+  push:
+    branches: [main]
+    paths:
+      - "contracts/ervira/p6*.json"
+      - "tests/test_ervira_integration_p61_p65.py"
+      - ".github/workflows/ervira-integration-p61-p65.yml"
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pytest
+        run: python -m pip install --upgrade pip pytest
+      - name: Compile
+        run: python -m compileall -q tests
+      - name: P61-P65 gate
+        run: python -m pytest -q tests/test_ervira_integration_p61_p65.py

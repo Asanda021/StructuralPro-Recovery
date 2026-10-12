@@ -1,0 +1,17 @@
+name: P141-P150 Resources
+on:
+  pull_request:
+    paths:
+      - "website/resources.html"
+      - "website/data/resources.json"
+      - "tests/test_website_resources.py"
+      - ".github/workflows/p141-p150-resources.yml"
+jobs:
+  resources-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_website_resources.py

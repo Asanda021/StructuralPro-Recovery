@@ -1,0 +1,15 @@
+name: P621-P630 Offline Sync Conflict E2E
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    paths: ["core/sync/**","tests/test_p621_p630_offline_sync.py",".github/workflows/priority-621-630-offline-sync.yml"]
+jobs:
+  sync-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -U pytest
+      - run: pytest -q tests/test_p621_p630_offline_sync.py

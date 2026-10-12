@@ -1,0 +1,18 @@
+{
+  "project_file_count": 1479,
+  "python_file_count": 861,
+  "quarantined_workflow_files": 193,
+  "active_workflow_files": 0,
+  "materialized_evidence_count": 13,
+  "baseline_archive": "StructuralPro-a07cf3376dcb57b70daba30dd8bb6b6e5c5167d9.zip",
+  "live_GitHub_repo_visibility_at_preparation": "public (owner-approved); secret-scan and no-release policy",
+  "last_observed_pytest": {
+    "passed": 2102,
+    "failed": 7,
+    "skipped": 9
+  },
+  "targeted_pytest": {
+    "passed": 87
+  },
+  "fully_recovered_PR481": false
+}

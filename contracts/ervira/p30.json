@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P30",
+  "purpose": "Cross-system governance gate",
+  "governance": {
+    "checks": [
+      "product parity",
+      "capability parity",
+      "edition parity",
+      "license compatibility",
+      "release parity",
+      "download integrity",
+      "documentation parity",
+      "account linkage",
+      "support status"
+    ],
+    "blocking": [
+      "duplicate_product_id",
+      "version_mismatch",
+      "fake_available_capability",
+      "unverified_download",
+      "expired_entitlement"
+    ],
+    "release_ready": false
+  }
+}

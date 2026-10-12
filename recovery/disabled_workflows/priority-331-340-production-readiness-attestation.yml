@@ -1,0 +1,26 @@
+name: P331-P340 Production Readiness Attestation
+on:
+  pull_request:
+    paths:
+      - 'core/platform/production_readiness_attestation_v1.py'
+      - 'tests/test_p331_p340_production_readiness_attestation.py'
+      - 'docs/P331_P340_PRODUCTION_READINESS_ATTESTATION.md'
+      - '.github/workflows/priority-331-340-production-readiness-attestation.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/platform/production_readiness_attestation_v1.py'
+      - 'tests/test_p331_p340_production_readiness_attestation.py'
+      - 'docs/P331_P340_PRODUCTION_READINESS_ATTESTATION.md'
+      - '.github/workflows/priority-331-340-production-readiness-attestation.yml'
+  workflow_dispatch:
+jobs:
+  production-readiness-attestation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p331_p340_production_readiness_attestation.py
+      - run: python -m compileall -q core/platform/production_readiness_attestation_v1.py

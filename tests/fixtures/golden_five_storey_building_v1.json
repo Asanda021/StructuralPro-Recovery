@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "dataset_id": "SP-GOLDEN-5F-001",
+  "title": "ساختمان مرجع پنج‌طبقه — داده قطعی آزمون متره",
+  "status": "synthetic-engineering-regression-fixture",
+  "note": "این مجموعه برای آزمون محاسبات نرم‌افزار است و جایگزین نقشه اجرایی، مشخصات پروژه یا فهرست‌بهای رسمی نیست. هیچ قیمت یا ضریب پنهانی در آن وجود ندارد.",
+  "building": {
+    "storeys": 5,
+    "footprint_m": {"length": 20.0, "width": 15.0},
+    "storey_height_m": 3.0,
+    "currency": null,
+    "pricebook": null
+  },
+  "cases": [
+    {
+      "id": "foundation-excavation",
+      "assembly": "excavation",
+      "repeat_count": 1,
+      "inputs": {"count": 20, "length": 1.5, "width": 1.5, "depth": 1.2},
+      "expected_per_repeat": {"excavation": 54.0},
+      "units": {"excavation": "m³"}
+    },
+    {
+      "id": "columns-per-storey",
+      "assembly": "concrete_column",
+      "repeat_count": 5,
+      "inputs": {"count": 20, "width": 0.4, "depth": 0.4, "height": 3.0},
+      "expected_per_repeat": {"concrete": 9.6},
+      "units": {"concrete": "m³"}
+    },
+    {
+      "id": "slab-per-storey",
+      "assembly": "concrete_slab",
+      "repeat_count": 5,
+      "inputs": {"count": 1, "length": 20.0, "width": 15.0, "thickness": 0.15, "openings": 10.0},
+      "expected_per_repeat": {"net_area": 290.0, "concrete": 43.5},
+      "units": {"net_area": "m²", "concrete": "m³"}
+    },
+    {
+      "id": "beams-per-storey",
+      "assembly": "concrete_beam",
+      "repeat_count": 5,
+      "inputs": {"count": 2, "length": 20.0, "width": 0.3, "depth": 0.5, "formwork_sides": 2, "rebar_kg_per_m3": 120.0},
+      "expected_per_repeat": {"concrete": 6.0, "formwork": 52.0, "reinforcement": 720.0},
+      "units": {"concrete": "m³", "formwork": "m²", "reinforcement": "kg"}
+    },
+    {
+      "id": "masonry-per-storey",
+      "assembly": "block_wall",
+      "repeat_count": 5,
+      "inputs": {"length": 10.0, "height": 3.0, "thickness": 0.2, "openings": 4.0, "block_length": 0.4, "block_height": 0.2, "block_thickness": 0.2, "joint_thickness": 0.01, "cement_parts": 1.0, "sand_parts": 4.0},
+      "expected_per_repeat": {"wall_area": 26.0, "block": 302.0, "mortar": 0.3684088269454122, "cement": 0.07368176538908244, "sand": 0.2947270615563298},
+      "units": {"wall_area": "m²", "block": "عدد", "mortar": "m³", "cement": "m³", "sand": "m³"}
+    },
+    {
+      "id": "floor-finish-per-storey",
+      "assembly": "floor_finish",
+      "repeat_count": 5,
+      "inputs": {"count": 1, "length": 20.0, "width": 15.0, "openings": 10.0},
+      "expected_per_repeat": {"finish_area": 290.0},
+      "units": {"finish_area": "m²"}
+    }
+  ],
+  "expected_building_totals": {
+    "excavation": {"quantity": 54.0, "unit": "m³"},
+    "column_concrete": {"quantity": 48.0, "unit": "m³"},
+    "slab_concrete": {"quantity": 217.5, "unit": "m³"},
+    "beam_concrete": {"quantity": 30.0, "unit": "m³"},
+    "beam_formwork": {"quantity": 260.0, "unit": "m²"},
+    "beam_reinforcement": {"quantity": 3600.0, "unit": "kg"},
+    "masonry_area": {"quantity": 130.0, "unit": "m²"},
+    "masonry_blocks": {"quantity": 1510.0, "unit": "عدد"},
+    "floor_finish_area": {"quantity": 1450.0, "unit": "m²"}
+  }
+}

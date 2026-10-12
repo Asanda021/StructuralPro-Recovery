@@ -1,0 +1,67 @@
+[
+  {
+    "name": "StructuralPro_Manual_Finishing_Assemblies_Validated.patch",
+    "sha256": "1a2545f987632eb8357fc2fe77f2b6a94f2c58351b55519736dcacf251ac33cb",
+    "bytes": 17976
+  },
+  {
+    "name": "StructuralPro_PR481_Boolean_Input_Guard.patch",
+    "sha256": "feaa3c49c88682207673a755ad8130d7a28793c4f73987f9fe4b4b0d59ef9ed4",
+    "bytes": 1665
+  },
+  {
+    "name": "StructuralPro_P100_LeastPrivilege_Validated_20261011.patch",
+    "sha256": "a97a18ab3ca34e2d064f2971cea893bec653d7e80a26bf0260b49002082e7c8d",
+    "bytes": 6244
+  },
+  {
+    "name": "StructuralPro_P101_Finite_Pricing_Fix.patch",
+    "sha256": "5829f222ae4cbaf372ff2e0576d8b99fc7e9390a41caca2d9c30168110d164c6",
+    "bytes": 6379
+  },
+  {
+    "name": "StructuralPro_PR462_Ready_To_Commit_20261011.patch",
+    "sha256": "ef5b1a770ff495600c636f306c61a854ea5ee563d305ca67e61b89541dabbcbe",
+    "bytes": 45764
+  },
+  {
+    "name": "structuralpro_numeric_guard_verified_v2.patch",
+    "sha256": "d86f62aecad122f4d1e43b6e67fb16071e6f398d5e8a46280941448825971027",
+    "bytes": 5163
+  },
+  {
+    "name": "structuralpro_boq_waste_merge_pending.patch",
+    "sha256": "7689e368c158cba1b64c7b50b47b27fcd41e8e4a0d0d3d1e2303a3af9f8f59d7",
+    "bytes": 1784
+  },
+  {
+    "name": "structuralpro_unit_aware_summary_pending.patch",
+    "sha256": "426d1b67ecc2000900d6adaa42bff714974cc40a02462455c562a2671e58a102",
+    "bytes": 5294
+  },
+  {
+    "name": "StructuralPro_P100_P101_Manifest_20261011.json",
+    "sha256": "c976f154bf5a826a17628767b6d66669c925f7bc123353c28ba20d65731b6f6d",
+    "bytes": 3053
+  },
+  {
+    "name": "StructuralPro_PR481_Execution_Verification_20261011.md",
+    "sha256": "41f3cdc7252490877094f46b5de411353502406c7dca79e0057b4efb04850e03",
+    "bytes": 5258
+  },
+  {
+    "name": "StructuralPro_PR481_Free_Colab_QA.ipynb",
+    "sha256": "b6c9b15bafe74c13cbd6633ce46c615740a9e792c0c1325747d81f6b5f4aa242",
+    "bytes": 11112
+  },
+  {
+    "name": "StructuralPro_Finish_Patch_Independent_Branch_Tests.py",
+    "sha256": "f55b0a6cd1f7e97c7412dbc6c09403b533513ab7d3f691c2927fa0bebfc566bb",
+    "bytes": 5437
+  },
+  {
+    "name": "structuralpro_pr481_windows_qa.yml",
+    "sha256": "bbf620bd7fee10d33771aef1acce16a4b20709926c4650cccbf917d126af0afc",
+    "bytes": 4827
+  }
+]

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "description": "StructuralPro deterministic drawing-takeoff acceptance cases; quantities use explicit calibration.",
+  "cases": [
+    {
+      "id": "line-10m",
+      "kind": "length",
+      "page": 1,
+      "calibration": {"reference_pixels": 100, "reference_meters": 10},
+      "geometry": [[0, 0], [100, 0]],
+      "expected_quantity": 10.0,
+      "unit": "m",
+      "tolerance": 1e-9
+    },
+    {
+      "id": "rectangle-50m2",
+      "kind": "area",
+      "page": 1,
+      "calibration": {"reference_pixels": 100, "reference_meters": 10},
+      "geometry": [[0, 0], [100, 0], [100, 50], [0, 50]],
+      "expected_quantity": 50.0,
+      "unit": "m2",
+      "tolerance": 1e-9
+    },
+    {
+      "id": "count-12",
+      "kind": "count",
+      "page": 1,
+      "calibration": null,
+      "count": 12,
+      "expected_quantity": 12.0,
+      "unit": "عدد",
+      "tolerance": 0
+    },
+    {
+      "id": "page-2-scale-independent",
+      "kind": "length",
+      "page": 2,
+      "calibration": {"reference_pixels": 200, "reference_meters": 5},
+      "geometry": [[0, 0], [200, 0]],
+      "expected_quantity": 5.0,
+      "unit": "m",
+      "tolerance": 1e-9
+    }
+  ]
+}

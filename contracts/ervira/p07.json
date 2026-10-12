@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P7",
+  "purpose": "Documentation parity",
+  "documentation": {
+    "product_docs_status": "not_published",
+    "version": "0.1.0",
+    "editions": [],
+    "source_of_truth": "software_repository",
+    "release_notes_required": true
+  },
+  "rule": "Documentation must be versioned and must not document unavailable capabilities as released."
+}

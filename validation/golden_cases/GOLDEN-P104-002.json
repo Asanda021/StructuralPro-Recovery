@@ -1,0 +1,23 @@
+{
+  "case_id": "P104-002",
+  "dataset_version": "2026.1",
+  "project": {
+    "id": "P104-2",
+    "member_type": "beam"
+  },
+  "expected_quantities": [
+    {
+      "id": "Q1",
+      "quantity": 2
+    }
+  ],
+  "expected_boq": [
+    {
+      "code": "BOQ-2",
+      "quantity": 2
+    }
+  ],
+  "tolerances": {
+    "quantity": 0.000001
+  }
+}

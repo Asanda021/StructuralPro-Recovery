@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P3",
+  "purpose": "Edition and entitlement parity",
+  "editions": [
+    {
+      "id": "light",
+      "status": "planned",
+      "features": [],
+      "entitlement": "not_released"
+    },
+    {
+      "id": "standard",
+      "status": "planned",
+      "features": [],
+      "entitlement": "not_released"
+    },
+    {
+      "id": "pro",
+      "status": "planned",
+      "features": [],
+      "entitlement": "not_released"
+    },
+    {
+      "id": "enterprise",
+      "status": "planned",
+      "features": [],
+      "entitlement": "not_released"
+    }
+  ],
+  "rule": "No edition may be advertised as purchasable or feature-enabled until the canonical contract changes from planned."
+}

@@ -1,0 +1,169 @@
+name: P37 Real Product Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_approved:
+        description: "Repository owner explicitly approves executable, installer, and release production"
+        required: true
+        type: boolean
+        default: false
+      publish_approved:
+        description: "Owner separately approves publication after binary approval"
+        required: true
+        type: boolean
+        default: false
+      release_version:
+        description: "Version to deploy; must exactly match VERSION"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-production:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Validate release version
+        shell: pwsh
+        env:
+          REQUESTED_RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          $version=(Get-Content VERSION -Raw).Trim()
+          if ($version -notmatch "^\d+\.\d+\.\d+$") { throw "Invalid VERSION: $version" }
+          if ("${{ github.ref_type }}" -eq "tag" -and "v$version" -ne "${{ github.ref_name }}") {
+            throw "Tag/version mismatch"
+          }
+          $requested=$env:REQUESTED_RELEASE_VERSION
+          if ($requested -and $requested -ne $version) { throw "Requested deployment version does not match VERSION" }
+      - name: Build Windows production payload
+        shell: pwsh
+        run: ./packaging/build_windows.ps1 -Version (Get-Content VERSION -Raw).Trim()
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          $version=(Get-Content VERSION -Raw).Trim()
+          $template=Get-Content packaging/installer.iss -Raw
+          if (($template | Select-String -Pattern "__VERSION__" -AllMatches).Matches.Count -ne 1) { throw "Installer template must contain exactly one __VERSION__ placeholder" }
+          $generated=$template.Replace("__VERSION__",$version)
+          Set-Content packaging/installer.generated.iss -Value $generated -Encoding utf8
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging/installer.generated.iss
+      - name: Validate installer
+        shell: pwsh
+        run: |
+          $version=(Get-Content VERSION -Raw).Trim()
+          $installer="dist/StructuralPro-$version-Setup.exe"
+          if (-not (Test-Path $installer)) { throw "Installer missing: $installer" }
+          if ((Get-Item $installer).Length -le 0) { throw "Installer is empty" }
+      - name: Run installed application E2E smoke
+        shell: pwsh
+        run: |
+          $version=(Get-Content VERSION -Raw).Trim()
+          ./packaging/windows_installer_smoke.ps1 -Installer "dist/StructuralPro-$version-Setup.exe" -ExpectedVersion $version
+      - name: Generate dependency inventory
+        shell: pwsh
+        run: python -m pip freeze | Out-File -Encoding utf8 dist/StructuralPro-pip-freeze.txt
+      - name: Generate SHA-256 checksums
+        shell: pwsh
+        run: ./packaging/generate_sha256.ps1
+      - name: Generate release manifest
+        shell: pwsh
+        run: ./packaging/generate_release_manifest.ps1
+      - name: Verify release manifest integrity
+        shell: pwsh
+        run: |
+          $manifest=Get-Content "dist/StructuralPro-ReleaseManifest.json" -Raw | ConvertFrom-Json
+          $version=(Get-Content VERSION -Raw).Trim()
+          if ($manifest.version -ne $version) { throw "Manifest VERSION mismatch" }
+          if ($manifest.packaged_version -ne $version) { throw "Manifest packaged VERSION mismatch" }
+          if (-not $manifest.source_commit) { throw "Manifest source commit missing" }
+          foreach ($property in $manifest.artifacts.PSObject.Properties) {
+            $path=$property.Name
+            $expectedHash=$property.Value.sha256.ToLowerInvariant()
+            $expectedSize=[int64]$property.Value.size_bytes
+            if (-not (Test-Path $path)) { throw "Manifest artifact missing: $path" }
+            $actualHash=(Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
+            $actualSize=[int64](Get-Item $path).Length
+            if ($actualHash -ne $expectedHash) { throw "SHA-256 mismatch: $path" }
+            if ($actualSize -ne $expectedSize) { throw "Size mismatch: $path" }
+          }
+      - name: Upload validated production artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Windows-${{ github.ref_name }}-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-*-Setup.exe
+            dist/StructuralPro-SHA256SUMS.txt
+            dist/StructuralPro-ReleaseManifest.json
+            dist/StructuralPro-pip-freeze.txt
+
+  publish-release:
+    needs: deploy-production
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' && inputs.build_approved == true && inputs.publish_approved == true }}
+    environment:
+      name: binary-publish-approval
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - name: Require independent protected authorization before release
+        shell: pwsh
+        env:
+          STRUCTURALPRO_PUBLISH_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_PUBLISH_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_PUBLISH_PERMIT) { throw 'Missing independent protected publish authorization' }
+      - name: Download validated build artifacts from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: StructuralPro-Windows-${{ github.ref_name }}-${{ github.run_id }}
+          path: dist
+      - name: Recheck version and release manifest hashes
+        shell: pwsh
+        env:
+          EXPECTED_RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          if ($env:EXPECTED_RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid publish version' }
+          $manifest=Get-Content 'dist/StructuralPro-ReleaseManifest.json' -Raw | ConvertFrom-Json
+          if ($manifest.version -ne $env:EXPECTED_RELEASE_VERSION) { throw 'Release manifest version mismatch' }
+          if ($manifest.packaged_version -ne $env:EXPECTED_RELEASE_VERSION) { throw 'Packaged version mismatch' }
+          if (-not $manifest.source_commit) { throw 'Missing source commit' }
+          foreach ($property in $manifest.artifacts.PSObject.Properties) {
+            $path=$property.Name
+            if (-not (Test-Path $path)) { throw "Missing release file: $path" }
+            $actualHash=(Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
+            $actualSize=[int64](Get-Item $path).Length
+            if ($actualHash -ne $property.Value.sha256.ToLowerInvariant()) { throw "Release hash mismatch: $path" }
+            if ($actualSize -ne [int64]$property.Value.size_bytes) { throw "Release size mismatch: $path" }
+          }
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.release_version }}
+          generate_release_notes: true
+          files: |
+            dist/StructuralPro-*-Setup.exe
+            dist/StructuralPro/StructuralPro.exe
+            dist/StructuralPro-SHA256SUMS.txt
+            dist/StructuralPro-ReleaseManifest.json
+            dist/StructuralPro-pip-freeze.txt
+          fail_on_unmatched_files: true

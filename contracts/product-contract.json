@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "product_name": "StructuralPro",
+  "parent_platform": "ERVIRA",
+  "source_of_truth": {
+    "repository": "Asanda021/StructuralPro",
+    "path": "contracts/product-contract.json",
+    "version_source": "VERSION",
+    "release_source": "GitHub Releases/tags",
+    "rule": "This contract is authoritative for ERVIRA product identity, capability status, edition status and release metadata."
+  },
+  "product": {
+    "status": "available",
+    "availability_note": "The application is under active development; customer release/download is gated until a verified release artifact exists.",
+    "description": "Offline-first construction quantity takeoff, estimation and project platform.",
+    "platform": "Windows-first",
+    "current_version": "0.1.0",
+    "release_status": "development",
+    "customer_download_enabled": false
+  },
+  "capabilities": [
+    {"id":"project","name":"Project workspace","status":"available"},
+    {"id":"takeoff","name":"Quantity takeoff","status":"available"},
+    {"id":"estimation","name":"Estimation workflow","status":"available"},
+    {"id":"reports","name":"Professional reports","status":"available"},
+    {"id":"xlsx-output","name":"XLSX output","status":"available"},
+    {"id":"pdf-output","name":"PDF output","status":"available"},
+    {"id":"docx-output","name":"DOCX output","status":"available"},
+    {"id":"csv-output","name":"CSV output","status":"available"},
+    {"id":"backup-restore","name":"Backup and restore","status":"available"},
+    {"id":"local-ai","name":"Local AI assistance","status":"available"},
+    {"id":"dwg-dxf","name":"DWG/DXF extraction integration","status":"integration"},
+    {"id":"ifc-bim","name":"IFC/BIM integration","status":"integration"},
+    {"id":"cloud-sync","name":"Cloud synchronization","status":"planned"},
+    {"id":"team-collaboration","name":"Team collaboration","status":"planned"},
+    {"id":"enterprise-administration","name":"Enterprise administration","status":"planned"},
+    {"id":"commercial-entitlement","name":"Commercial entitlement service","status":"integration"}
+  ],
+  "editions": [
+    {"id":"light","name":"Light","status":"planned","features":[]},
+    {"id":"standard","name":"Standard","status":"planned","features":[]},
+    {"id":"pro","name":"Pro","status":"planned","features":[]},
+    {"id":"enterprise","name":"Enterprise","status":"planned","features":[]}
+  ],
+  "release": {
+    "version": "0.1.0",
+    "build": null,
+    "channel": "stable",
+    "publication_status": "not_published",
+    "release_date": null,
+    "supported_editions": [],
+    "download": {"enabled": false, "windows_installer": null, "sha256": null}
+  },
+  "integrity_rules": [
+    "Available means implemented and validated in the software repository.",
+    "Integration means an integration boundary exists but the capability is not represented as a fully released standalone customer feature.",
+    "Planned means not released and must never be presented as available.",
+    "A customer download is enabled only when a real release artifact, checksum and release verification evidence exist.",
+    "ERVIRA must not create an independent conflicting StructuralPro version, capability or edition definition."
+  ]
+}

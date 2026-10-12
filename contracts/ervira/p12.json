@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P12",
+  "purpose": "Parent account linkage",
+  "account": {
+    "provider": "ERVIRA",
+    "parent_account_id_required": true,
+    "login_surface": "ERVIRA",
+    "logout_surface": "ERVIRA",
+    "profile_source": "ERVIRA",
+    "structuralpro_identity_link": "required"
+  },
+  "rules": [
+    "StructuralPro must not create a conflicting parent identity.",
+    "Account linkage must be explicit and revocable."
+  ]
+}

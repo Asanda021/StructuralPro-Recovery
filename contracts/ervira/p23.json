@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P23",
+  "purpose": "Edition feature matrix",
+  "edition_matrix": {
+    "source": "canonical entitlement contract",
+    "editions": [
+      "light",
+      "standard",
+      "pro",
+      "enterprise"
+    ],
+    "statuses": [
+      "planned",
+      "available",
+      "retired"
+    ],
+    "feature_statuses": [
+      "granted",
+      "denied",
+      "integration",
+      "planned"
+    ],
+    "unreleased_features_blocked": true
+  }
+}

@@ -1,0 +1,16 @@
+name: StructuralPro Priority 60 Readiness Gate
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install pytest
+      - run: python -m compileall -q core tests
+      - run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_priority_60_readiness.py

@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P14",
+  "purpose": "Feature entitlement enforcement",
+  "entitlement": {
+    "source": "ERVIRA",
+    "inputs": [
+      "product_id",
+      "edition",
+      "license_state",
+      "version"
+    ],
+    "statuses": [
+      "granted",
+      "denied",
+      "expired",
+      "revoked"
+    ]
+  },
+  "rules": [
+    "Available capability does not imply every edition has access.",
+    "Planned capabilities cannot be granted.",
+    "Integration capabilities require their integration gate."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P19",
+  "purpose": "Real-data analytics contract",
+  "analytics": {
+    "sources": [
+      "verified_download_events",
+      "verified_license_events",
+      "verified_release_events",
+      "verified_product_usage"
+    ],
+    "synthetic_data_allowed": false,
+    "pii_minimization": true,
+    "status": "contract_only"
+  },
+  "rules": [
+    "No fabricated adoption, download or revenue metrics.",
+    "Analytics must use verified event sources."
+  ]
+}

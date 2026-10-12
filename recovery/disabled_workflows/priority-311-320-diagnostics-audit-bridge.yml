@@ -1,0 +1,26 @@
+name: P311-P320 Diagnostics Audit Bridge
+on:
+  pull_request:
+    paths:
+      - 'core/platform/diagnostics_audit_bridge_v1.py'
+      - 'tests/test_p311_p320_diagnostics_audit_bridge.py'
+      - 'docs/P311_P320_DIAGNOSTICS_AUDIT_BRIDGE.md'
+      - '.github/workflows/priority-311-320-diagnostics-audit-bridge.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/platform/diagnostics_audit_bridge_v1.py'
+      - 'tests/test_p311_p320_diagnostics_audit_bridge.py'
+      - 'docs/P311_P320_DIAGNOSTICS_AUDIT_BRIDGE.md'
+      - '.github/workflows/priority-311-320-diagnostics-audit-bridge.yml'
+  workflow_dispatch:
+jobs:
+  diagnostics-audit-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p311_p320_diagnostics_audit_bridge.py
+      - run: python -m compileall -q core/platform/diagnostics_audit_bridge_v1.py

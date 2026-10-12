@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P9",
+  "purpose": "RTL and content integrity",
+  "locales": [
+    "fa-IR",
+    "en-US"
+  ],
+  "rtl": {
+    "required_for": "fa-IR",
+    "navigation": true,
+    "tables": true,
+    "forms": true,
+    "docs": true,
+    "dashboard": true
+  },
+  "content_rules": [
+    "no_fake_capability",
+    "no_fake_release",
+    "no_fake_download",
+    "no_conflicting_version"
+  ],
+  "rule": "Persian UI must be structurally RTL, not merely translated."
+}

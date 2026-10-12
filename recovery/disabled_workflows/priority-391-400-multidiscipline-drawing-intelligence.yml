@@ -1,0 +1,24 @@
+name: P391-P400 Multi-Discipline Drawing Intelligence
+on:
+  push:
+    paths:
+      - "core/drawing/multidiscipline_intelligence_v1.py"
+      - "tests/test_p391_p400_multidiscipline_drawing_intelligence.py"
+      - "docs/P391_P400_MULTIDISCIPLINE_DRAWING_INTELLIGENCE.md"
+      - ".github/workflows/priority-391-400-multidiscipline-drawing-intelligence.yml"
+  pull_request:
+    paths:
+      - "core/drawing/multidiscipline_intelligence_v1.py"
+      - "tests/test_p391_p400_multidiscipline_drawing_intelligence.py"
+      - "docs/P391_P400_MULTIDISCIPLINE_DRAWING_INTELLIGENCE.md"
+      - ".github/workflows/priority-391-400-multidiscipline-drawing-intelligence.yml"
+jobs:
+  drawing-intelligence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_p391_p400_multidiscipline_drawing_intelligence.py
+      - run: python -m compileall -q core tests

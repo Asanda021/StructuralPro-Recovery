@@ -1,0 +1,16 @@
+name: P421-P430 Evidence First BOQ
+on:
+  push:
+    paths: ["core/boq/evidence_first_boq_v1.py","tests/test_p421_p430_evidence_first_boq.py"]
+  pull_request:
+    paths: ["core/boq/evidence_first_boq_v1.py","tests/test_p421_p430_evidence_first_boq.py"]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_p421_p430_evidence_first_boq.py
+      - run: python -m compileall -q core tests

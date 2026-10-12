@@ -1,0 +1,8 @@
+{
+  "contract": "structuralpro.production-release-readiness",
+  "version": 1,
+  "fail_closed": true,
+  "required_evidence": ["customer_artifact","entitlement_authorization","installation_evidence","pricebook_provenance","third_party_licenses"],
+  "optional_evidence": ["code_signing","bundled_gguf","dwg_runtime_terms"],
+  "rules": ["Only non-empty real evidence files count as present.","Every present evidence file is SHA-256 fingerprinted.","Missing required evidence keeps release_ready=false.","Optional evidence never unlocks release.","Synthetic fixtures cannot be used as production evidence."]
+}

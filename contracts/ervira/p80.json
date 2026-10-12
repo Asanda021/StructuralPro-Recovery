@@ -1,0 +1,1 @@
+{"phase":"P80","name":"Final Integration / Sign-off","status":"implemented","runtime_status":"implemented","release_ready":false,"signoff_state":"engineering-complete","rules":["P76-P79 acceptance tests pass","final release claims remain fail-closed until real customer release evidence exists","no additional roadmap phases are created by this sign-off"]}

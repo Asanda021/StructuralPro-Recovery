@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "title": "AEC Coverage",
+  "intro": "StructuralPro is positioned as an AEC ecosystem spanning engineering, construction, project and commercial workflows.",
+  "disciplines": [
+    [
+      "architecture",
+      "Architecture",
+      "Design and architectural project workflows."
+    ],
+    [
+      "structural",
+      "Structural Engineering",
+      "Structural engineering workflows across multiple material systems."
+    ],
+    [
+      "concrete",
+      "Concrete Engineering",
+      "Concrete-focused engineering workflows."
+    ],
+    [
+      "steel",
+      "Steel Engineering",
+      "Steel engineering workflows."
+    ],
+    [
+      "masonry",
+      "Masonry Engineering",
+      "Masonry engineering workflows."
+    ],
+    [
+      "timber",
+      "Timber Engineering",
+      "Timber engineering workflows."
+    ],
+    [
+      "composite",
+      "Composite Structures",
+      "Composite structural workflows."
+    ],
+    [
+      "precast",
+      "Precast",
+      "Precast project workflows."
+    ],
+    [
+      "special",
+      "Special Structures",
+      "Specialized structural workflows."
+    ],
+    [
+      "geotechnical",
+      "Geotechnical",
+      "Ground and geotechnical project workflows."
+    ],
+    [
+      "mep",
+      "MEP",
+      "Mechanical, electrical and building-services workflows."
+    ],
+    [
+      "civil-site",
+      "Civil & Site",
+      "Civil and site workflows."
+    ],
+    [
+      "bim",
+      "BIM",
+      "Model, coordination and information workflows."
+    ],
+    [
+      "project-management",
+      "Project Management",
+      "Project delivery and management workflows."
+    ],
+    [
+      "cost-management",
+      "Cost Management",
+      "Estimating, cost and commercial workflows."
+    ],
+    [
+      "contracts",
+      "Contracts",
+      "Contract and claims workflows."
+    ],
+    [
+      "procurement",
+      "Procurement",
+      "Procurement and commercial sourcing workflows."
+    ]
+  ]
+}

@@ -1,0 +1,1 @@
+"""StructuralPro core package."""

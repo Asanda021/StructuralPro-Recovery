@@ -1,0 +1,43 @@
+[
+  {
+    "patch": "StructuralPro_P101_Finite_Pricing_Fix.patch",
+    "applicable": true,
+    "check_stderr": "",
+    "applied": true,
+    "apply_err": ""
+  },
+  {
+    "patch": "structuralpro_numeric_guard_verified_v2.patch",
+    "applicable": true,
+    "check_stderr": "",
+    "applied": true,
+    "apply_err": ""
+  },
+  {
+    "patch": "structuralpro_unit_aware_summary_pending.patch",
+    "applicable": true,
+    "check_stderr": "",
+    "applied": true,
+    "apply_err": ""
+  },
+  {
+    "patch": "structuralpro_boq_waste_merge_pending.patch",
+    "applicable": true,
+    "check_stderr": "",
+    "applied": true,
+    "apply_err": ""
+  },
+  {
+    "patch": "StructuralPro_P100_LeastPrivilege_Validated_20261011.patch",
+    "applicable": false,
+    "check_stderr": "error: tests/test_binary_build_security_contract.py: No such file or directory",
+    "applied": false
+  },
+  {
+    "patch": "StructuralPro_PR462_Ready_To_Commit_20261011.patch",
+    "applicable": true,
+    "check_stderr": "",
+    "applied": true,
+    "apply_err": ""
+  }
+]

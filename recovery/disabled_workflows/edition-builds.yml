@@ -1,0 +1,145 @@
+name: StructuralPro Edition Builds
+on:
+  workflow_dispatch:
+    inputs:
+      build_approved:
+        description: "Owner explicitly approved creating executable and installer artifacts"
+        required: true
+        type: boolean
+        default: false
+      release_version:
+        description: "Version to build (must match VERSION)"
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  contract:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r requirements.txt pytest
+      - run: python -m pytest -q tests/test_product_packaging.py tests/test_product_editions_runtime.py tests/test_ai_edition_models.py tests/test_local_ai_engine.py
+  light:
+    needs: contract
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: choco install innosetup --no-progress -y
+      - shell: pwsh
+        run: ./packaging/build_windows_edition.ps1 -Version (Get-Content VERSION -Raw).Trim() -Edition light
+      - shell: pwsh
+        run: |
+          if ((Get-Content dist/StructuralPro/EDITION -Raw).Trim() -ne "light") { throw "edition marker mismatch" }
+          $v=(Get-Content VERSION -Raw).Trim()
+          if (-not (Test-Path "dist/StructuralPro-light-$v-Setup.exe")) { throw "light installer missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Light
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-light-*-Setup.exe
+  standard:
+    needs: contract
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: choco install innosetup --no-progress -y
+      - shell: pwsh
+        run: ./packaging/build_windows_edition.ps1 -Version (Get-Content VERSION -Raw).Trim() -Edition standard
+      - shell: pwsh
+        run: |
+          if ((Get-Content dist/StructuralPro/EDITION -Raw).Trim() -ne "standard") { throw "edition marker mismatch" }
+          $v=(Get-Content VERSION -Raw).Trim()
+          if (-not (Test-Path "dist/StructuralPro-standard-$v-Setup.exe")) { throw "standard installer missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Standard
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-standard-*-Setup.exe
+  pro:
+    needs: contract
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: choco install innosetup --no-progress -y
+      - shell: pwsh
+        run: ./packaging/build_windows_edition.ps1 -Version (Get-Content VERSION -Raw).Trim() -Edition pro
+      - shell: pwsh
+        run: |
+          if ((Get-Content dist/StructuralPro/EDITION -Raw).Trim() -ne "pro") { throw "edition marker mismatch" }
+          $v=(Get-Content VERSION -Raw).Trim()
+          if (-not (Test-Path "dist/StructuralPro-pro-$v-Setup.exe")) { throw "pro installer missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Pro
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-pro-*-Setup.exe
+  enterprise:
+    needs: contract
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12", cache: pip}
+      - run: choco install innosetup --no-progress -y
+      - shell: pwsh
+        run: ./packaging/build_windows_edition.ps1 -Version (Get-Content VERSION -Raw).Trim() -Edition enterprise
+      - shell: pwsh
+        run: |
+          if ((Get-Content dist/StructuralPro/EDITION -Raw).Trim() -ne "enterprise") { throw "edition marker mismatch" }
+          $v=(Get-Content VERSION -Raw).Trim()
+          if (-not (Test-Path "dist/StructuralPro-enterprise-$v-Setup.exe")) { throw "enterprise installer missing" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StructuralPro-Enterprise
+          path: |
+            dist/StructuralPro/
+            dist/StructuralPro-enterprise-*-Setup.exe

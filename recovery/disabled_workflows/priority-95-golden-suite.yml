@@ -1,0 +1,26 @@
+name: Priority 95 Golden Structural Suite
+
+on:
+  pull_request:
+    paths:
+      - "validation/golden_cases/GOLDEN-STRUCTURAL-CORE-002.json"
+      - "tests/test_p95_golden_suite.py"
+      - ".github/workflows/priority-95-golden-suite.yml"
+  push:
+    paths:
+      - "validation/golden_cases/GOLDEN-STRUCTURAL-CORE-002.json"
+      - "tests/test_p95_golden_suite.py"
+      - ".github/workflows/priority-95-golden-suite.yml"
+
+jobs:
+  golden-suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install pytest
+      - run: python -m compileall -q core tests
+      - run: python -m pytest -q tests/test_p95_golden_suite.py

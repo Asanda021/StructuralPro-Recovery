@@ -1,0 +1,1 @@
+{"phase":"P73","name":"API / Integration Documentation","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["integration documentation identifies authentication and entitlement boundaries","examples cannot contain production secrets","undocumented public integration endpoints fail validation"]}

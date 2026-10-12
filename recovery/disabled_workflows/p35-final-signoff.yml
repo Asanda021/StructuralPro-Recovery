@@ -1,0 +1,27 @@
+name: P35 Final Sign-off
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "core/platform/p35_final_signoff.py"
+      - "tests/test_p35_final_signoff.py"
+      - "docs/P35_FINAL_SIGNOFF.md"
+      - ".github/workflows/p35-final-signoff.yml"
+  push:
+    branches: [main]
+    paths:
+      - "core/platform/p35_final_signoff.py"
+      - "tests/test_p35_final_signoff.py"
+      - "docs/P35_FINAL_SIGNOFF.md"
+      - ".github/workflows/p35-final-signoff.yml"
+jobs:
+  signoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - run: pytest -q tests/test_p35_final_signoff.py tests/test_p34_final_product_acceptance.py

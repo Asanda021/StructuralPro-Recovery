@@ -1,0 +1,26 @@
+name: Priority 72 Secure Sync Transport
+
+on:
+  pull_request:
+    paths:
+      - "core/sync/cloud.py"
+      - "tests/test_priority_72_secure_sync_transport.py"
+      - ".github/workflows/priority-72-secure-sync-transport.yml"
+  push:
+    paths:
+      - "core/sync/cloud.py"
+      - "tests/test_priority_72_secure_sync_transport.py"
+      - ".github/workflows/priority-72-secure-sync-transport.yml"
+
+jobs:
+  secure-sync-transport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install pytest
+      - run: python -m compileall -q core tests
+      - run: python -m pytest -q tests/test_priority_72_secure_sync_transport.py

@@ -1,0 +1,1 @@
+{"phase":"P66","name":"SHA-256 Verification","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["every published release artifact is hashed with SHA-256","manifest hashes must equal hashes calculated from the exact artifact bytes","hash or size mismatch blocks release registration"]}

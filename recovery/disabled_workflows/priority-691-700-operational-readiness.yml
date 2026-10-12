@@ -1,0 +1,16 @@
+name: P691-P700 Operational Readiness
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  operational-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_p691_p700_operational_readiness.py -q

@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "title": "From Drawing to Decision",
+  "steps": [
+    [
+      "drawing-bim",
+      "Drawing / BIM",
+      "PDF, CAD and BIM inputs become the starting point for project information."
+    ],
+    [
+      "takeoff",
+      "Takeoff",
+      "Measure quantities from project information with traceable workflow context."
+    ],
+    [
+      "boq",
+      "BOQ",
+      "Organize quantities into a structured bill of quantities."
+    ],
+    [
+      "estimate",
+      "Estimate",
+      "Apply pricing and estimating logic to build a project estimate."
+    ],
+    [
+      "contract",
+      "Contract",
+      "Connect commercial scope and contract workflows."
+    ],
+    [
+      "procurement",
+      "Procurement",
+      "Connect required items and commercial procurement workflows."
+    ],
+    [
+      "construction",
+      "Construction",
+      "Carry project information into delivery and site workflows."
+    ],
+    [
+      "progress",
+      "Progress",
+      "Capture progress and project reporting signals."
+    ],
+    [
+      "cost",
+      "Cost Control",
+      "Connect progress, commitments and cost information."
+    ],
+    [
+      "reports",
+      "Reports",
+      "Turn project information into reports and management views."
+    ],
+    [
+      "decision",
+      "Management Decision",
+      "Use connected project intelligence to support decisions."
+    ]
+  ],
+  "cross_cutting": [
+    "AI",
+    "BIM"
+  ]
+}

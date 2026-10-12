@@ -1,0 +1,19 @@
+{
+  "schema_version": 2,
+  "runtime": "llama.cpp-compatible",
+  "format": "GGUF",
+  "offline_required": true,
+  "api_key_required": false,
+  "internet_required": false,
+  "model_files": [
+    {
+      "name": "EXTERNAL_PRODUCTION_MODEL",
+      "path": "EXTERNAL_PRODUCTION_MODEL.gguf",
+      "sha256": "REPLACE_WITH_VERIFIED_SHA256",
+      "license": "REPLACE_WITH_VERIFIED_LICENSE",
+      "commercial_use": false,
+      "architecture": "REPLACE_WITH_VERIFIED_ARCHITECTURE"
+    }
+  ],
+  "notes": "Weights are external artifacts. Replace placeholders only after licensing and SHA-256 verification."
+}

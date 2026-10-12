@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P13",
+  "purpose": "License lifecycle",
+  "license": {
+    "states": [
+      "not_licensed",
+      "active",
+      "expired",
+      "revoked",
+      "suspended"
+    ],
+    "source": "ERVIRA",
+    "product_id": "structuralpro",
+    "edition_required": true,
+    "version_compatibility_required": true
+  },
+  "rules": [
+    "No active license without a verified entitlement.",
+    "Expired/revoked/suspended licenses must not unlock paid features."
+  ]
+}

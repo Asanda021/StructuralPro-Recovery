@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P6",
+  "purpose": "Price and cost intelligence provenance",
+  "pricebook": {
+    "status": "not_configured",
+    "source": null,
+    "year": null,
+    "effective_date": null,
+    "snapshot": null,
+    "provenance_required": true
+  },
+  "rule": "No website pricebook may override or contradict a canonical PriceBook when one is released."
+}

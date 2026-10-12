@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P25",
+  "purpose": "Release notes synchronization",
+  "release_notes": {
+    "source": "StructuralPro repository",
+    "required_fields": [
+      "version",
+      "date",
+      "summary",
+      "breaking_changes",
+      "known_issues"
+    ],
+    "publication_status": "not_published"
+  }
+}

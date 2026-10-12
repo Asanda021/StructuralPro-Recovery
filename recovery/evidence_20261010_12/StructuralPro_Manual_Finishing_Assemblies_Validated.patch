@@ -1,0 +1,319 @@
+diff --git a/core/takeoff/assembly.py b/core/takeoff/assembly.py
+index f70da9e..73f2c23 100644
+--- a/core/takeoff/assembly.py
++++ b/core/takeoff/assembly.py
+@@ -325,4 +325,107 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
+             used.append("waste_factor")
+         return AssemblyResult("floor_finish", "کف‌سازی", tuple(components), tuple(used))
+ 
++    # Finishing operations are measured as distinct work items. The measured
++    # operation area is independent from material consumption and procurement
++    # waste; those quantities are emitted only when the user supplies explicit
++    # rates and units.
++    wall_finishes = {
++        "gypsum_scratch": "گچ‌وخاک زیرکار",
++        "gypsum_finish": "سفیدکاری گچی",
++        "cement_render": "اندود سیمانی",
++        "wall_tile": "کاشی‌کاری دیوار",
++        "wall_paint": "نقاشی دیوار",
++        "waterproofing_wall": "عایق‌کاری دیوار",
++        "facade_finish": "پوشش نما",
++    }
++    horizontal_finishes = {
++        "floor_tile": "سرامیک کف",
++        "floor_screed": "زیرسازی و شیب‌بندی کف",
++        "ceiling_paint": "نقاشی سقف",
++        "false_ceiling": "سقف کاذب",
++        "waterproofing_floor": "عایق‌کاری کف",
++    }
++    linear_finishes = {"skirting": "قرنیز"}
++
++    if k in wall_finishes:
++        count = _count(p, "count")
++        length = _n(p, "length", 1e-12)
++        height = _n(p, "height", 1e-12)
++        openings = _n(p, "openings")
++        gross_area = count * length * height
++        if not isfinite(gross_area) or openings >= gross_area:
++            raise ValueError("مساحت بازشوها باید از سطح ناخالص عملیات کمتر باشد")
++        area = gross_area - openings
++        area_formula = "تعداد×طول×ارتفاع−مساحت بازشوها"
++        area_inputs = ["count", "length", "height", "openings"]
++    elif k in horizontal_finishes:
++        count = _count(p, "count")
++        length = _n(p, "length", 1e-12)
++        width = _n(p, "width", 1e-12)
++        openings = _n(p, "openings")
++        gross_area = count * length * width
++        if not isfinite(gross_area) or openings >= gross_area:
++            raise ValueError("مساحت کسرشده باید از سطح ناخالص عملیات کمتر باشد")
++        area = gross_area - openings
++        area_formula = "تعداد×طول×عرض−مساحت کسرشده"
++        area_inputs = ["count", "length", "width", "openings"]
++    elif k in linear_finishes:
++        count = _count(p, "count")
++        length = _n(p, "length", 1e-12)
++        deductions = _n(p, "deductions")
++        gross_length = count * length
++        if not isfinite(gross_length) or deductions >= gross_length:
++            raise ValueError("طول کسرشده باید از طول ناخالص قرنیز کمتر باشد")
++        area = gross_length - deductions
++        area_formula = "تعداد×طول−طول کسرشده"
++        area_inputs = ["count", "length", "deductions"]
++    else:
++        area = None
++
++    if area is not None:
++        title = wall_finishes.get(k) or horizontal_finishes.get(k) or linear_finishes[k]
++        unit = "m" if k in linear_finishes else "m²"
++        components = [AssemblyComponent(f"{k}_work", title, unit, area_formula, area)]
++        used = list(area_inputs)
++
++        layers = _optional(p, "layers")
++        if layers is not None:
++            if layers < 1 or not layers.is_integer():
++                raise ValueError("تعداد لایه/دست باید عدد صحیح مثبت باشد")
++            used.append("layers")
++
++        waste = _optional(p, "waste_factor")
++        if waste is not None:
++            components.append(AssemblyComponent(
++                f"{k}_procurement", f"مقدار تهیه {title}", unit,
++                "مقدار اجرای خالص×(1+پرت صریح)", _waste(area, waste),
++                warning="ضریب پرت فقط از ورودی صریح کاربر اعمال شده است.",
++            ))
++            used.append("waste_factor")
++
++        rate_key = "consumption_per_m" if k in linear_finishes else "consumption_per_m2_per_layer"
++        consumption = _optional(p, rate_key)
++        consumption_unit = str(p.get("consumption_unit", "") or "").strip()
++        material_ref = str(p.get("material_spec_ref", "") or "").strip()
++        if consumption is not None:
++            if not consumption_unit:
++                raise ValueError("واحد مصرف مصالح را صریح وارد کن.")
++            if not material_ref:
++                raise ValueError("مرجع مشخصات مصرف مصالح را وارد کن.")
++            if k not in linear_finishes and layers is None:
++                raise ValueError("برای مصرف مصالح سطحی، تعداد لایه/دست را صریح وارد کن.")
++            basis = 1.0 if k in linear_finishes else layers
++            components.append(AssemblyComponent(
++                f"{k}_material", f"مصالح {title}", consumption_unit,
++                "طول اجرای قرنیز×مصرف مستند بر m" if k in linear_finishes
++                else "سطح اجرا×تعداد لایه/دست×مصرف مستند بر m² در هر لایه",
++                area * basis * consumption,
++                source=material_ref,
++                warning="مصرف مصالح فقط از نرخ و مرجع صریح واردشده توسط کاربر محاسبه شده است.",
++            ))
++            used.extend((rate_key, "consumption_unit", "material_spec_ref"))
++        elif consumption_unit or material_ref:
++            raise ValueError("مصرف، واحد و مرجع مشخصات مصالح باید با هم ارائه شوند.")
++        return AssemblyResult(k, title, tuple(components), tuple(used))
++
+     raise KeyError(f"unsupported assembly: {code}")
+diff --git a/core/takeoff/assembly_templates.py b/core/takeoff/assembly_templates.py
+index 5b079ec..c70c2fe 100644
+--- a/core/takeoff/assembly_templates.py
++++ b/core/takeoff/assembly_templates.py
+@@ -43,6 +43,32 @@ TEMPLATES: tuple[AssemblyTemplate, ...] = (
+     AssemblyTemplate("steel_member", "عضو فولادی", ("count", "length", "unit_weight"), ()),
+     AssemblyTemplate("floor_finish", "کف‌سازی", ("count", "length", "width", "openings"),
+                      ("consumption_per_m2", "consumption_unit", "waste_factor")),
++    AssemblyTemplate("gypsum_scratch", "گچ‌وخاک زیرکار", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("gypsum_finish", "سفیدکاری گچی", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("cement_render", "اندود سیمانی", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("wall_tile", "کاشی‌کاری دیوار", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("wall_paint", "نقاشی دیوار", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("waterproofing_wall", "عایق‌کاری دیوار", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("facade_finish", "پوشش نما", ("count", "length", "height", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("floor_tile", "سرامیک کف", ("count", "length", "width", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("floor_screed", "زیرسازی و شیب‌بندی کف", ("count", "length", "width", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("ceiling_paint", "نقاشی سقف", ("count", "length", "width", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("false_ceiling", "سقف کاذب", ("count", "length", "width", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("waterproofing_floor", "عایق‌کاری کف", ("count", "length", "width", "openings"),
++                     ("layers", "waste_factor", "consumption_per_m2_per_layer", "consumption_unit", "material_spec_ref")),
++    AssemblyTemplate("skirting", "قرنیز", ("count", "length", "deductions"),
++                     ("waste_factor", "consumption_per_m", "consumption_unit", "material_spec_ref")),
+ )
+ 
+ 
+diff --git a/tests/test_finish_takeoff_assemblies.py b/tests/test_finish_takeoff_assemblies.py
+new file mode 100644
+index 0000000..ab019ff
+--- /dev/null
++++ b/tests/test_finish_takeoff_assemblies.py
+@@ -0,0 +1,164 @@
++import pytest
++
++from core.takeoff.assembly_templates import AssemblyTemplateLibrary
++from core.platform.application import StructuralProApp
++
++
++def test_finish_catalog_keeps_each_operation_as_a_separate_item():
++    library = AssemblyTemplateLibrary()
++    expected = {
++        "gypsum_scratch", "gypsum_finish", "cement_render", "wall_tile",
++        "wall_paint", "waterproofing_wall", "facade_finish", "floor_tile",
++        "floor_screed", "ceiling_paint", "false_ceiling",
++        "waterproofing_floor", "skirting",
++    }
++    assert expected <= {template.code for template in library.list()}
++
++
++@pytest.mark.parametrize(
++    ("code", "inputs", "expected"),
++    [
++        ("gypsum_scratch", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("gypsum_finish", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("cement_render", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("wall_tile", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("wall_paint", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("waterproofing_wall", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("facade_finish", {"count": 1, "length": 10, "height": 3, "openings": 2}, 28),
++        ("floor_tile", {"count": 1, "length": 6, "width": 4, "openings": 2}, 22),
++        ("floor_screed", {"count": 1, "length": 6, "width": 4, "openings": 2}, 22),
++        ("ceiling_paint", {"count": 1, "length": 6, "width": 4, "openings": 2}, 22),
++        ("false_ceiling", {"count": 1, "length": 6, "width": 4, "openings": 2}, 22),
++        ("waterproofing_floor", {"count": 1, "length": 6, "width": 4, "openings": 2}, 22),
++        ("skirting", {"count": 1, "length": 40, "deductions": 8}, 32),
++    ],
++)
++def test_finish_operation_calculates_net_quantity_with_explicit_deductions(code, inputs, expected):
++    result = AssemblyTemplateLibrary().expand(code, inputs)
++    assert result.complete
++    assert len(result.components) == 1
++    assert result.components[0].quantity == pytest.approx(expected)
++    assert result.components[0].unit == ("m" if code == "skirting" else "m²")
++    assert "بازشو" in result.components[0].formula or "کسرشده" in result.components[0].formula or "کسر" in result.components[0].formula
++
++
++def test_finish_material_quantity_requires_explicit_rate_unit_and_spec_reference():
++    library = AssemblyTemplateLibrary()
++    base = {"count": 1, "length": 10, "height": 3, "openings": 2}
++    with pytest.raises(ValueError, match="واحد مصرف"):
++        library.expand("wall_tile", {**base, "consumption_per_m2_per_layer": 4})
++    with pytest.raises(ValueError, match="مرجع مشخصات"):
++        library.expand("wall_tile", {**base, "layers": 2, "consumption_per_m2_per_layer": 4, "consumption_unit": "kg"})
++    with pytest.raises(ValueError, match="تعداد لایه"):
++        library.expand("wall_tile", {
++            **base, "consumption_per_m2_per_layer": 4, "consumption_unit": "kg",
++            "material_spec_ref": "آزمون مصنوعی: دیتاشیت T-01",
++        })
++    result = library.expand("wall_tile", {
++        **base, "layers": 2, "consumption_per_m2_per_layer": 4,
++        "consumption_unit": "kg", "material_spec_ref": "آزمون مصنوعی: دیتاشیت T-01",
++        "waste_factor": 0.1,
++    })
++    assert [component.code for component in result.components] == [
++        "wall_tile_work", "wall_tile_procurement", "wall_tile_material",
++    ]
++    assert [component.quantity for component in result.components] == pytest.approx([28, 30.8, 224])
++    assert result.components[2].source == "آزمون مصنوعی: دیتاشیت T-01"
++    assert "لایه" in result.components[2].formula
++
++
++def test_finish_surface_is_not_guessed_when_required_geometry_is_missing():
++    result = AssemblyTemplateLibrary().expand(
++        "wall_paint", {"count": 1, "length": 10, "height": 3}
++    )
++    assert not result.complete
++    assert result.missing_inputs == ("openings",)
++    assert result.components == ()
++
++
++def test_invalid_finish_dimensions_and_layers_fail_closed():
++    library = AssemblyTemplateLibrary()
++    with pytest.raises(ValueError):
++        library.expand("floor_tile", {"count": 1, "length": 6, "width": 4, "openings": 25})
++    with pytest.raises(ValueError, match="عدد صحیح مثبت"):
++        library.expand("wall_paint", {
++            "count": 1, "length": 10, "height": 3, "openings": 0, "layers": 1.5,
++        })
++
++
++def test_finish_assembly_persists_distinct_work_and_material_rows_to_boq(tmp_path):
++    app = StructuralProApp(tmp_path)
++    app.create_project("پروژه آزمون مصنوعی نازک‌کاری", "finish-project")
++    result = app.add_assembly_takeoff(
++        "finish-project", "wall_tile",
++        {
++            "count": 1, "length": 10, "height": 3, "openings": 2,
++            "layers": 2, "consumption_per_m2_per_layer": 4, "consumption_unit": "kg",
++            "material_spec_ref": "نمونه آزمون مصنوعی: SPEC-T01", "waste_factor": 0.1,
++        },
++        floor_id="طبقه ۱ / فضای آزمون",
++        description="کاشی دیوار سرویس — داده آزمون مصنوعی",
++    )
++    project = app.open_project("finish-project")
++    assert len(result["rows"]) == 3
++    assert len(project["takeoffs"]) == 3
++    assert len(project["boq"]) == 3
++    assert {row["system"] for row in project["takeoffs"]} == {"طبقه ۱ / فضای آزمون"}
++    assert {row["quantities"][0]["code"] for row in project["takeoffs"]} == {
++        "wall_tile_work", "wall_tile_procurement", "wall_tile_material",
++    }
++    by_component = {row["quantities"][0]["code"]: row["quantities"][0]["amount"]
++                    for row in project["takeoffs"]}
++    assert by_component == pytest.approx({
++        "wall_tile_work": 28.0, "wall_tile_procurement": 30.8,
++        "wall_tile_material": 224.0,
++    })
++
++
++def test_five_floor_synthetic_finish_takeoff_keeps_floor_and_item_provenance(tmp_path):
++    app = StructuralProApp(tmp_path)
++    app.create_project("ساختمان پنج‌طبقه — نمونه آزمون مصنوعی", "five-floor-finish")
++    library = AssemblyTemplateLibrary()
++    wall_inputs = {"count": 1, "length": 10, "height": 3, "openings": 2}
++    floor_inputs = {"count": 1, "length": 6, "width": 4, "openings": 2}
++    linear_inputs = {"count": 1, "length": 40, "deductions": 8}
++    item_inputs = {
++        "gypsum_scratch": wall_inputs,
++        "gypsum_finish": wall_inputs,
++        "cement_render": wall_inputs,
++        "wall_tile": wall_inputs,
++        "wall_paint": wall_inputs,
++        "waterproofing_wall": wall_inputs,
++        "facade_finish": wall_inputs,
++        "floor_tile": floor_inputs,
++        "floor_screed": floor_inputs,
++        "ceiling_paint": floor_inputs,
++        "false_ceiling": floor_inputs,
++        "waterproofing_floor": floor_inputs,
++        "skirting": linear_inputs,
++    }
++    for floor_number in range(1, 6):
++        for code, inputs in item_inputs.items():
++            app.add_assembly_takeoff(
++                "five-floor-finish", code, inputs,
++                floor_id=f"طبقه {floor_number} / فضای آزمون مصنوعی",
++                description=f"{code} — داده آزمون مصنوعی",
++            )
++
++    project = app.open_project("five-floor-finish")
++    assert len(project["takeoff_assemblies"]) == 65
++    assert len(project["takeoffs"]) == 65
++    assert project["boq"]
++    by_floor = {}
++    by_item = {}
++    for row in project["takeoffs"]:
++        by_floor.setdefault(row["system"], 0)
++        by_floor[row["system"]] += row["quantities"][0]["amount"]
++        item = row["params"]["assembly_code"]
++        by_item.setdefault(item, 0)
++        by_item[item] += row["quantities"][0]["amount"]
++    assert len(by_floor) == 5
++    assert set(by_item) == set(item_inputs)
++    assert by_item["wall_tile"] == pytest.approx(140)
++    assert by_item["floor_tile"] == pytest.approx(110)
++    assert by_item["skirting"] == pytest.approx(160)

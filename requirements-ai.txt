@@ -1,0 +1,4 @@
+# Optional local GGUF runtime for StructuralPro AI.
+# Core application remains usable without this package.
+# Install a wheel compatible with the target CPU/GPU/OS.
+llama-cpp-python>=0.3,<1

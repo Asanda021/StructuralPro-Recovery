@@ -1,0 +1,1 @@
+{"phase":"P79","name":"Security and SEO Sign-off","status":"implemented","runtime_status":"implemented","rules":["private account/checkout/dashboard surfaces remain non-indexable","public pages use canonical metadata and structured data","release and commercial secrets are excluded from public surfaces"]}

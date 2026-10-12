@@ -1,0 +1,1 @@
+{"phase":"P69","name":"Installation Detection","domain":"ERVIRA delivery","status":"implemented","runtime_status":"implemented","release_ready":false,"rules":["installed executable must be detected after installation","installed VERSION must be detected and verified","installed application smoke test must exit successfully","installer is removed after acceptance smoke"]}

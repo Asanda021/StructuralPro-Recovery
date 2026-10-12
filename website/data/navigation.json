@@ -1,0 +1,56 @@
+{
+  "primary": [
+    {
+      "id": "products",
+      "label": "Products",
+      "route": "/products/"
+    },
+    {
+      "id": "solutions",
+      "label": "Solutions",
+      "route": "/solutions/"
+    },
+    {
+      "id": "industries",
+      "label": "Industries",
+      "route": "/industries/"
+    },
+    {
+      "id": "features",
+      "label": "Features",
+      "route": "/features/"
+    },
+    {
+      "id": "resources",
+      "label": "Resources",
+      "route": "/resources/"
+    },
+    {
+      "id": "pricing",
+      "label": "Pricing",
+      "route": "/pricing/"
+    },
+    {
+      "id": "company",
+      "label": "Company",
+      "route": "/company/"
+    },
+    {
+      "id": "support",
+      "label": "Support",
+      "route": "/support/"
+    }
+  ],
+  "actions": [
+    {
+      "id": "get-started",
+      "label": "Get Started",
+      "route": "/get-started/"
+    },
+    {
+      "id": "sign-in",
+      "label": "Sign In",
+      "route": "/sign-in/"
+    }
+  ]
+}

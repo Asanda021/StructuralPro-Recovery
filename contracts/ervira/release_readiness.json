@@ -1,0 +1,22 @@
+{
+  "contract": "structuralpro.release-readiness",
+  "version": 1,
+  "policy": {
+    "fail_closed": true,
+    "customer_release_requires_all_required_items": true,
+    "optional_items_do_not_unlock_release": true
+  },
+  "required_items": [
+    "customer_artifact",
+    "entitlement_authorization",
+    "installation_evidence",
+    "pricebook_provenance",
+    "third_party_licenses"
+  ],
+  "optional_items": [
+    "code_signing",
+    "bundled_gguf",
+    "dwg_runtime_terms"
+  ],
+  "status_values": ["ready", "blocked"]
+}

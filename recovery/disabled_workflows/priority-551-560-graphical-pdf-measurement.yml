@@ -1,0 +1,22 @@
+name: P551-560 Graphical PDF Measurement
+
+on:
+  push:
+    branches:
+      - feat/p551-p560-graphical-pdf-measurement-engine
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  p551-p560-pdf-measurement:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner
+        run: python -m pip install --upgrade pip pytest
+      - name: Run P551-P560 tests
+        run: python -m pytest -q tests/test_p551_p560_graphical_pdf_measurement_engine.py

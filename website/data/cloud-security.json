@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "title": "Cloud, Collaboration & Security",
+  "layers": [
+    [
+      "desktop",
+      "Professional Windows Desktop",
+      "Offline-first professional workflow with local project work."
+    ],
+    [
+      "cloud",
+      "Cloud",
+      "Optional connected synchronization and shared project information when available."
+    ],
+    [
+      "team",
+      "Team",
+      "Roles, permissions, comments and collaboration workflows."
+    ],
+    [
+      "projects",
+      "Projects",
+      "Shared project context and document access."
+    ],
+    [
+      "audit",
+      "Audit Trail",
+      "Track relevant project and collaboration activity where supported."
+    ]
+  ],
+  "controls": [
+    "Project Data Protection",
+    "Role-Based Access",
+    "License & Entitlement",
+    "Offline Capability",
+    "Backup / Restore",
+    "Data Provenance",
+    "Cloud Sync Controls"
+  ],
+  "claims_policy": "Only claim security, cloud and collaboration capabilities that are verified as available; otherwise label them planned or integration."
+}

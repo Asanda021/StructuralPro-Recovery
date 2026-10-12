@@ -1,0 +1,126 @@
+name: StructuralPro ACadSharp DWG Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - "core/cad/**"
+      - "tools/acadsharp-dwg-bridge/**"
+      - "tests/test_external_dwg_provider.py"
+      - ".github/workflows/acadsharp-dwg-smoke.yml"
+  workflow_dispatch:
+    inputs:
+      build_approved:
+        description: "Owner approves compiling the Windows DWG bridge executable for real-file smoke"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  cad-unit-tests:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install CAD test dependencies
+        run: python -m pip install "ezdxf>=1.3" pytest
+      - name: Run CAD provider unit tests without compiling executables
+        run: python -m pytest tests/test_external_dwg_provider.py -q
+
+  real-dwg-smoke:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+    environment:
+      name: binary-build-approval
+    runs-on: windows-latest
+    steps:
+      - name: Require environment-scoped owner authorization before binary build
+        shell: pwsh
+        env:
+          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
+        run: |
+          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install Python CAD parser
+        shell: pwsh
+        run: python -m pip install "ezdxf>=1.3" pytest
+
+      - name: Unit tests
+        shell: pwsh
+        run: python -m pytest tests/test_external_dwg_provider.py -q
+
+      - name: Build ACadSharp bridge
+        shell: pwsh
+        run: dotnet publish tools/acadsharp-dwg-bridge/StructuralPro.DwgBridge.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --output build/dwg-bridge
+
+      - name: Download representative real DWG fixtures
+        shell: pwsh
+        run: |
+          $versions=@("AC1014","AC1015","AC1018","AC1021","AC1024","AC1027","AC1032")
+          New-Item -ItemType Directory -Force testdata/dwg | Out-Null
+          foreach ($v in $versions) {
+            $url="https://raw.githubusercontent.com/DomCR/ACadSharp/master/samples/sample_$v.dwg"
+            Invoke-WebRequest -Uri $url -OutFile "testdata/dwg/sample_$v.dwg"
+            if ((Get-Item "testdata/dwg/sample_$v.dwg").Length -lt 10000) { throw "Fixture $v is unexpectedly small" }
+          }
+
+      - name: Convert every DWG through ACadSharp
+        shell: pwsh
+        run: |
+          $bridge="build/dwg-bridge/StructuralPro.DwgBridge.exe"
+          $versions=@("AC1014","AC1015","AC1018","AC1021","AC1024","AC1027","AC1032")
+          foreach ($v in $versions) {
+            $input=(Resolve-Path "testdata/dwg/sample_$v.dwg").Path
+            $output=(Resolve-Path "testdata/dwg").Path + "\sample_$v.dxf"
+            & $bridge $input $output
+            if ($LASTEXITCODE -ne 0) { throw "ACadSharp conversion failed for $v" }
+            if (-not (Test-Path $output)) { throw "No DXF output for $v" }
+            if ((Get-Item $output).Length -lt 1000) { throw "DXF output for $v is unexpectedly small" }
+          }
+
+      - name: Exercise StructuralPro production DWG provider
+        shell: pwsh
+        run: |
+          $bridge=(Resolve-Path "build/dwg-bridge/StructuralPro.DwgBridge.exe").Path
+          $env:STRUCTURALPRO_DWG_BRIDGE=$bridge
+          @'
+          from pathlib import Path
+          from core.cad.external_dwg_provider_v1 import ACadSharpDWGProvider
+          from core.drawings.viewer_model import DrawingViewerModel
+
+          versions = ["AC1014","AC1015","AC1018","AC1021","AC1024","AC1027","AC1032"]
+          for version in versions:
+              source = Path("testdata/dwg") / f"sample_{version}.dwg"
+              evidence = ACadSharpDWGProvider().read(source)
+              assert evidence.dxf_version
+              assert evidence.entities, f"{version}: no modelspace entities reached StructuralPro"
+              assert evidence.layers, f"{version}: no layers reached StructuralPro"
+
+              # Exercise the same viewer/import path used by the Windows product,
+              # not just the lower-level provider in isolation.
+              viewer = DrawingViewerModel(source)
+              summary = viewer.summary
+              assert viewer.kind == "cad"
+              assert summary["entities"] > 0, f"{version}: viewer imported no entities"
+              assert summary["format"] == "DWG→DXF (ACadSharp)", summary
+              print(f"{version}: dxf={evidence.dxf_version} provider_entities={len(evidence.entities)} viewer_entities={summary['entities']} layers={len(evidence.layers)} blocks={len(evidence.blocks)}")
+          '@ | python -
+
+      - name: Parse every generated DXF with ezdxf
+        shell: pwsh
+        run: |
+          python -c "import ezdxf, pathlib; files=list(pathlib.Path('testdata/dwg').glob('*.dxf')); assert len(files)==7, files; [ezdxf.readfile(str(p)) for p in files]; print('Parsed', len(files), 'real ACadSharp-generated DXFs')"

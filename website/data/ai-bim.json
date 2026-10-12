@@ -1,0 +1,67 @@
+{
+  "ai": {
+    "schema_version": "1.0",
+    "title": "AI Built for AEC",
+    "capabilities": [
+      [
+        "ai-takeoff",
+        "AI Takeoff",
+        "Assist quantity workflows from project information."
+      ],
+      [
+        "missing-item-detection",
+        "Missing Item Detection",
+        "Surface potential omissions for human review."
+      ],
+      [
+        "quantity-qa",
+        "Quantity QA",
+        "Support review of quantities and workflow consistency."
+      ],
+      [
+        "drawing-understanding",
+        "Drawing Understanding",
+        "Help interpret project drawing information."
+      ],
+      [
+        "project-assistant",
+        "Project Assistant",
+        "Provide contextual assistance across project workflows."
+      ],
+      [
+        "cost-intelligence",
+        "Cost Intelligence",
+        "Surface cost-related project signals and context."
+      ],
+      [
+        "document-intelligence",
+        "Document Intelligence",
+        "Help organize and interpret project documents."
+      ],
+      [
+        "project-insights",
+        "Project Insights",
+        "Summarize connected project information for decision support."
+      ]
+    ],
+    "principles": [
+      "Human review remains authoritative.",
+      "Do not invent quantities, prices or project facts.",
+      "Capabilities must be labeled available, planned or integration where applicable."
+    ]
+  },
+  "bim": {
+    "schema_version": "1.0",
+    "title": "From 2D Drawings to BIM Intelligence",
+    "flow": [
+      "CAD",
+      "PDF",
+      "BIM / IFC",
+      "Quantities",
+      "BOQ",
+      "Cost",
+      "4D / 5D",
+      "Coordination"
+    ]
+  }
+}

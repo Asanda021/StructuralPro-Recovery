@@ -1,0 +1,38 @@
+diff --git a/core/takeoff/assembly.py b/core/takeoff/assembly.py
+index 73f2c23..8a8fb74 100644
+--- a/core/takeoff/assembly.py
++++ b/core/takeoff/assembly.py
+@@ -45,6 +45,8 @@ class AssemblyResult:
+ 
+ 
+ def _n(p: Mapping[str, Any], name: str, minimum: float = 0.0) -> float:
++    if isinstance(p.get(name), bool):
++        raise ValueError(f"{name} must be numeric, not boolean")
+     try:
+         value = float(p[name])
+     except (KeyError, TypeError, ValueError):
+diff --git a/tests/test_finish_takeoff_assemblies.py b/tests/test_finish_takeoff_assemblies.py
+index d8e195a..782ab39 100644
+--- a/tests/test_finish_takeoff_assemblies.py
++++ b/tests/test_finish_takeoff_assemblies.py
+@@ -255,3 +255,20 @@ def test_five_floor_synthetic_finish_takeoff_keeps_floor_and_item_provenance(tmp
+     assert by_item["wall_tile"] == pytest.approx(140)
+     assert by_item["floor_tile"] == pytest.approx(110)
+     assert by_item["skirting"] == pytest.approx(160)
++
++
++@pytest.mark.parametrize("field", [
++    "count", "length", "openings", "layers", "waste_factor",
++    "consumption_per_m2_per_layer",
++])
++def test_boolean_values_are_rejected_for_finish_measurement_inputs(field):
++    inputs = {"count": 1, "length": 10, "height": 3, "openings": 0}
++    if field in {"count", "length", "openings"}:
++        inputs[field] = True
++    else:
++        inputs.update({"layers": 1, "waste_factor": 0.05,
++                       "consumption_per_m2_per_layer": 2,
++                       "consumption_unit": "kg", "material_spec_ref": "SPEC-TEST"})
++        inputs[field] = True
++    with pytest.raises(ValueError):
++        AssemblyTemplateLibrary().expand("wall_tile", inputs)

@@ -1,0 +1,2 @@
+# P211-P220 BIM Quantity Integrity
+P211 explicit quantity contract; P212 source identity; P213 GlobalId uniqueness; P214 unit presence; P215 finite non-negative values; P216 deterministic normalization; P217 lineage preservation; P218 fingerprint; P219 fail-closed validation; P220 regression gate.

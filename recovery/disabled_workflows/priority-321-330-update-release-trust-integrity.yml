@@ -1,0 +1,26 @@
+name: P321-P330 Update Release Trust Integrity
+on:
+  pull_request:
+    paths:
+      - 'core/platform/update_release_trust_v1.py'
+      - 'tests/test_p321_p330_update_release_trust_integrity.py'
+      - 'docs/P321_P330_UPDATE_RELEASE_TRUST_INTEGRITY.md'
+      - '.github/workflows/priority-321-330-update-release-trust-integrity.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'core/platform/update_release_trust_v1.py'
+      - 'tests/test_p321_p330_update_release_trust_integrity.py'
+      - 'docs/P321_P330_UPDATE_RELEASE_TRUST_INTEGRITY.md'
+      - '.github/workflows/priority-321-330-update-release-trust-integrity.yml'
+  workflow_dispatch:
+jobs:
+  update-release-trust-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p321_p330_update_release_trust_integrity.py
+      - run: python -m compileall -q core/platform/update_release_trust_v1.py

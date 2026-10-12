@@ -1,0 +1,22 @@
+name: P561-570 Iranian Price Data Production Pipeline
+
+on:
+  push:
+    branches:
+      - feat/p561-p570-iranian-price-data-production-pipeline
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  p561-p570-price-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test runner
+        run: python -m pip install --upgrade pip pytest
+      - name: Run P561-P570 tests
+        run: python -m pytest -q tests/test_p561_p570_iranian_price_data_production_pipeline.py

@@ -1,0 +1,26 @@
+name: Priority 94 Client Contract
+
+on:
+  pull_request:
+    paths:
+      - "core/platform/clients.py"
+      - "tests/test_p94_client_contract.py"
+      - ".github/workflows/priority-94-client-contract.yml"
+  push:
+    paths:
+      - "core/platform/clients.py"
+      - "tests/test_p94_client_contract.py"
+      - ".github/workflows/priority-94-client-contract.yml"
+
+jobs:
+  client-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -U pip
+      - run: python -m pip install pytest
+      - run: python -m compileall -q core tests
+      - run: python -m pytest -q tests/test_p94_client_contract.py

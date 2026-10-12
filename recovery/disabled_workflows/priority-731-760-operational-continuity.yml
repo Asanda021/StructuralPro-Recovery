@@ -1,0 +1,16 @@
+name: P731-P760 Operational Continuity
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  operational-continuity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - run: python -m pytest tests/test_p731_p760_operational_continuity.py -q

@@ -1,0 +1,49 @@
+name: StructuralPro Windows smoke
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install -U pip
+          python -m pip install -r requirements.txt
+          python -m pip install pytest pypdf ezdxf openpyxl python-docx reportlab
+      - name: Compile source
+        shell: pwsh
+        run: python -m compileall -q core tests
+      - name: Windows contract tests
+        shell: pwsh
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python -m pytest -q tests/test_priority_34_windows_validation.py tests/test_priority_41_ci_dependency_parity.py tests/test_priority_42_windows_runtime_smoke.py tests/test_release_surfaces.py
+      - name: Desktop application runtime smoke
+        shell: pwsh
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+          STRUCTURALPRO_SMOKE: "1"
+          QT_QPA_PLATFORM: "offscreen"
+          STRUCTURALPRO_LOG_DIR: ${{ github.workspace }}\\.smoke-logs
+        run: |
+          python -u -X faulthandler -c "from app.main import main; code = main(); print(f'SMOKE_MAIN_EXIT={code}', flush=True); raise SystemExit(code)"
+          if ($LASTEXITCODE -ne 0) {
+            if (Test-Path "$env:STRUCTURALPRO_LOG_DIR\\structuralpro.log") {
+              Get-Content "$env:STRUCTURALPRO_LOG_DIR\\structuralpro.log"
+            }
+            exit $LASTEXITCODE
+          }

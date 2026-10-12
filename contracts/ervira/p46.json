@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "runtime_status": "implemented",
+  "release_ready": false,
+  "phase": "P46",
+  "purpose": "Expiration Handling",
+  "expiration": {
+    "authority": "ERVIRA",
+    "provider": "ERVIRA",
+    "runtime_implemented": true,
+    "client_fail_closed": true,
+    "subscription_renewal_days": 30
+  }
+}

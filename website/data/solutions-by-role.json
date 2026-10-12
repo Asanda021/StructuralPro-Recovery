@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0",
+  "title": "StructuralPro Solutions by Role",
+  "roles": [
+    {
+      "id": "quantity-surveyor",
+      "name": "Quantity Surveyor / Estimator",
+      "product_ids": [
+        "takeoff",
+        "boq",
+        "estimating"
+      ],
+      "outcome": "Measure faster, structure quantities, build BOQs and estimates."
+    },
+    {
+      "id": "technical-office",
+      "name": "Technical Office",
+      "product_ids": [
+        "technical-office",
+        "boq",
+        "estimating",
+        "reports-intelligence"
+      ],
+      "outcome": "Connect technical documentation, quantities, estimates and reporting."
+    },
+    {
+      "id": "site-supervisor",
+      "name": "Site Supervisor",
+      "product_ids": [
+        "site-supervisor",
+        "reports-intelligence"
+      ],
+      "outcome": "Keep site information, progress and documents connected."
+    },
+    {
+      "id": "project-controller",
+      "name": "Project Controller",
+      "product_ids": [
+        "project-controls",
+        "cost-control",
+        "reports-intelligence"
+      ],
+      "outcome": "Track progress, cost, commitments and project signals."
+    },
+    {
+      "id": "project-manager",
+      "name": "Project Manager",
+      "product_ids": [
+        "project-manager",
+        "cost-control",
+        "project-controls",
+        "reports-intelligence"
+      ],
+      "outcome": "Bring schedule, cost, progress and reporting into one project view."
+    },
+    {
+      "id": "bim-manager",
+      "name": "BIM Manager",
+      "product_ids": [
+        "bim-takeoff",
+        "bim-coordination",
+        "ai-assistant"
+      ],
+      "outcome": "Connect models, coordination, quantities and project intelligence."
+    },
+    {
+      "id": "structural-engineer",
+      "name": "Structural Engineer",
+      "product_ids": [
+        "structural-analysis-design",
+        "concrete-engineering",
+        "steel-engineering",
+        "masonry-engineering"
+      ],
+      "outcome": "Route structural work across specialized engineering products."
+    },
+    {
+      "id": "architect",
+      "name": "Architect",
+      "product_ids": [
+        "architecture",
+        "bim-coordination"
+      ],
+      "outcome": "Connect architectural workflows with BIM coordination."
+    },
+    {
+      "id": "mep-engineer",
+      "name": "MEP Engineer",
+      "product_ids": [
+        "mep",
+        "bim-coordination"
+      ],
+      "outcome": "Coordinate MEP work with the wider project model."
+    },
+    {
+      "id": "geotechnical-engineer",
+      "name": "Geotechnical Engineer",
+      "product_ids": [
+        "geotechnical",
+        "civil-site"
+      ],
+      "outcome": "Connect ground engineering with site and project workflows."
+    },
+    {
+      "id": "contract-commercial",
+      "name": "Contract / Commercial Team",
+      "product_ids": [
+        "contract-claims",
+        "procurement",
+        "cost-control"
+      ],
+      "outcome": "Connect claims, procurement and commercial cost workflows."
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise",
+      "product_ids": [
+        "aec-enterprise"
+      ],
+      "outcome": "Govern products, teams, projects and connected AEC workflows."
+    }
+  ]
+}

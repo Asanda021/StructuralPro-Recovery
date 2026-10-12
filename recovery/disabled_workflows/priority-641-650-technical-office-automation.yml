@@ -1,0 +1,23 @@
+name: P641-P650 Technical Office Automation
+on:
+  push:
+    paths:
+      - "core/automation/technical_office_v1.py"
+      - "tests/test_p641_p650_technical_office_automation.py"
+      - "docs/P641_P650_TECHNICAL_OFFICE_AUTOMATION.md"
+      - ".github/workflows/priority-641-650-technical-office-automation.yml"
+  pull_request:
+    paths:
+      - "core/automation/technical_office_v1.py"
+      - "tests/test_p641_p650_technical_office_automation.py"
+      - "docs/P641_P650_TECHNICAL_OFFICE_AUTOMATION.md"
+      - ".github/workflows/priority-641-650-technical-office-automation.yml"
+jobs:
+  technical-office:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install --upgrade pip pytest
+      - run: pytest -q tests/test_p641_p650_technical_office_automation.py

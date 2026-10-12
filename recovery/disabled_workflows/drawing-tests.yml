@@ -1,0 +1,28 @@
+name: StructuralPro drawing tests
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install test dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install pytest pypdf ezdxf openpyxl python-docx reportlab
+      - name: Compile source
+        run: |
+          python -m compileall -q core tests
+          python -m py_compile app/main.py
+      - name: Run production gates
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python -m pytest -q tests/test_drawing_takeoff.py tests/test_production_pipeline.py tests/test_product_gates.py tests/test_five_pass.py

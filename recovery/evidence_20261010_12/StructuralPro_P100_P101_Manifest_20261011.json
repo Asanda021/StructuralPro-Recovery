@@ -1,0 +1,71 @@
+{
+  "title": "StructuralPro P100/P101 Validated Handoff",
+  "created_at": "2026-10-11",
+  "repository": "Asanda021/StructuralPro",
+  "reference_commits": {
+    "pr_462_head": "8b38b59c55a79a25a7b397eb19390101fe3f2e98",
+    "main": "a268344282fc22ad3f66a0489049eb8a5d7925be"
+  },
+  "github_changes": {
+    "committed": false,
+    "pushed": false,
+    "merged": false
+  },
+  "patches": [
+    {
+      "name": "StructuralPro_P100_Security_Fix.patch",
+      "sha256_expected_previous_run": "fbf2629d58b09ac9b30893654e9bd8c9ff5d86dc2f133cfedb18759d60a0bd9a",
+      "changed_paths": [
+        ".github/workflows/p100-pricebook-archive-sync.yml",
+        "tests/test_binary_build_security_contract.py"
+      ],
+      "base_blob_sha1": {
+        ".github/workflows/p100-pricebook-archive-sync.yml": "3eb89dec5e17ebcbc7d42b3309609c7824facd8e",
+        "tests/test_binary_build_security_contract.py": "6107c7790a7198fc3eb9dfa5537a7bdc5475e607"
+      },
+      "git_apply_check": "PASS on exact PR-head GitHub blobs",
+      "apply_and_diff_check": "PASS in isolated copy",
+      "focused_test": "direct regression body PASS; official pytest unavailable"
+    },
+    {
+      "name": "StructuralPro_P101_Finite_Pricing_Fix.patch",
+      "sha256_expected_previous_run": "5829f222ae4cbaf372ff2e0576d8b99fc7e9390a41caca2d9c30168110d164c6",
+      "changed_paths": [
+        "core/estimate/pricebook_full_building_pricing_v2.py",
+        "tests/test_p101_finite_quantity_integrity.py"
+      ],
+      "base_blob_sha1": {
+        "core/estimate/pricebook_full_building_pricing_v2.py": "6d246cb6acba3246671c09d8fbae69be60aa31ad",
+        "core/estimate/item_code_normalization_v1.py": "3a40f41e11da3a73850e26af950141d65af242ac",
+        "tests/test_p101_finite_quantity_integrity.py": "absent on main and PR reference"
+      },
+      "git_apply_check": "PASS on exact GitHub blobs; pricing module blob is identical on main and PR head",
+      "apply_and_diff_check": "PASS in isolated copy",
+      "tests": "direct invalid-input/overflow and compatibility assertions PASS; official pytest unavailable"
+    }
+  ],
+  "files_in_zip": [
+    {
+      "name": "StructuralPro_P100_Security_Fix.patch",
+      "size_bytes": 3557,
+      "sha256": "fbf2629d58b09ac9b30893654e9bd8c9ff5d86dc2f133cfedb18759d60a0bd9a"
+    },
+    {
+      "name": "StructuralPro_P101_Finite_Pricing_Fix.patch",
+      "size_bytes": 6379,
+      "sha256": "5829f222ae4cbaf372ff2e0576d8b99fc7e9390a41caca2d9c30168110d164c6"
+    },
+    {
+      "name": "APPLY_INSTRUCTIONS_FA.txt",
+      "size_bytes": 1489,
+      "sha256": "879d3c82809cc32de4b26712afc0e79af32a4402f7c617fe3564712bb3f40b0b"
+    },
+    {
+      "name": "StructuralPro_P100_P101_Validation.log",
+      "size_bytes": 743,
+      "sha256": "43d50226fbd811809ee0d997a0e0338128c3b4f0482527f9d9f80929e9545ed7"
+    }
+  ],
+  "test_environment": "Python 3.12; PyYAML available; pytest unavailable (python -m pytest exited 1: No module named pytest)",
+  "forbidden_actions": "No EXE/installer/APK/AAB/build/release/Actions activation/push/merge was performed."
+}

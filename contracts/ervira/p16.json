@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P16",
+  "purpose": "Download center contract",
+  "download": {
+    "source": "ERVIRA",
+    "artifact_source": "GitHub Releases",
+    "required": [
+      "version",
+      "edition",
+      "channel",
+      "release_status",
+      "windows_installer",
+      "sha256",
+      "minimum_system_requirements"
+    ],
+    "enabled": false
+  },
+  "rules": [
+    "Download remains disabled until release publication and integrity verification.",
+    "A missing checksum blocks customer download."
+  ]
+}

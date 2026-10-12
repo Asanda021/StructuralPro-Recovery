@@ -1,0 +1,17 @@
+name: P39 Iranian Takeoff Engine
+on:
+  pull_request:
+    paths:
+      - "core/iran/**"
+      - "tests/test_p39_iranian_takeoff_engine.py"
+      - ".github/workflows/p39-iranian-takeoff.yml"
+jobs:
+  p39:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip install pytest
+      - run: python -m pytest -q tests/test_p39_iranian_takeoff_engine.py

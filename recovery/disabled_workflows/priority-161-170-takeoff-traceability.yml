@@ -1,0 +1,20 @@
+name: P161-P170 Takeoff Traceability V2
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  p161_p170:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip pytest
+      - name: Compile
+        run: python -m compileall -q core tests
+      - name: Tests
+        run: python -m pytest -q tests/test_p161_p170_takeoff_traceability.py tests/test_p161_p170_takeoff_traceability_v2.py

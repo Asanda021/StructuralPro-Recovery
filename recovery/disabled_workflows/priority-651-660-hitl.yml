@@ -1,0 +1,23 @@
+name: P651-P660 Autonomous Workflow HITL
+on:
+  push:
+    paths:
+      - "core/workflow/hitl_v1.py"
+      - "tests/test_p651_p660_hitl_workflow.py"
+      - "docs/P651_P660_AUTONOMOUS_HITL.md"
+      - ".github/workflows/priority-651-660-hitl.yml"
+  pull_request:
+    paths:
+      - "core/workflow/hitl_v1.py"
+      - "tests/test_p651_p660_hitl_workflow.py"
+      - "docs/P651_P660_AUTONOMOUS_HITL.md"
+      - ".github/workflows/priority-651-660-hitl.yml"
+jobs:
+  hitl-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install --upgrade pip pytest
+      - run: pytest -q tests/test_p651_p660_hitl_workflow.py

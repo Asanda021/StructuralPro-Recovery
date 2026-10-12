@@ -1,0 +1,19 @@
+name: P176-P185 Estimate Cost Controls
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  estimate_controls:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install test dependencies
+        run: python -m pip install --upgrade pip pytest
+      - name: Compile
+        run: python -m compileall -q core tests
+      - name: Tests
+        run: python -m pytest -q tests/test_p176_p185_estimate_cost_controls.py

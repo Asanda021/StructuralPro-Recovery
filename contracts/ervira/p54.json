@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "runtime_status": "implemented",
+  "release_ready": false,
+  "phase": "P54",
+  "purpose": "Order Creation",
+  "order_creation": {
+    "authority": "ERVIRA",
+    "runtime_implemented": true,
+    "requires_authenticated_user": true,
+    "status_on_create": "pending"
+  }
+}

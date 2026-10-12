@@ -1,0 +1,889 @@
+diff --git a/.github/workflows/acadsharp-dwg-smoke.yml b/.github/workflows/acadsharp-dwg-smoke.yml
+index 992cb0e..2a04ec8 100644
+--- a/.github/workflows/acadsharp-dwg-smoke.yml
++++ b/.github/workflows/acadsharp-dwg-smoke.yml
+@@ -34,9 +34,17 @@ jobs:
+         run: python -m pytest tests/test_external_dwg_provider.py -q
+ 
+   real-dwg-smoke:
+-    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true }}
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+ 
+       - uses: actions/setup-python@v5
+diff --git a/.github/workflows/android-build.yml b/.github/workflows/android-build.yml
+index 095b6bc..21c7466 100644
+--- a/.github/workflows/android-build.yml
++++ b/.github/workflows/android-build.yml
+@@ -9,10 +9,17 @@ on:
+         default: false
+ jobs:
+   build:
+-    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true }}
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: ubuntu-latest
+     defaults: { run: { working-directory: android } }
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: bash
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: test -n "$STRUCTURALPRO_BUILD_PERMIT"
+       - uses: actions/checkout@v4
+       - uses: actions/setup-java@v4
+         with: { distribution: temurin, java-version: "17" }
+diff --git a/.github/workflows/edition-builds.yml b/.github/workflows/edition-builds.yml
+index 553fc37..fe138d4 100644
+--- a/.github/workflows/edition-builds.yml
++++ b/.github/workflows/edition-builds.yml
+@@ -15,7 +15,7 @@ permissions:
+   contents: read
+ jobs:
+   contract:
+-    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true }}
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v4
+@@ -25,8 +25,17 @@ jobs:
+       - run: python -m pytest -q tests/test_product_packaging.py tests/test_product_editions_runtime.py tests/test_ai_edition_models.py tests/test_local_ai_engine.py
+   light:
+     needs: contract
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with: {python-version: "3.12", cache: pip}
+@@ -46,8 +55,17 @@ jobs:
+             dist/StructuralPro-light-*-Setup.exe
+   standard:
+     needs: contract
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with: {python-version: "3.12", cache: pip}
+@@ -67,8 +85,17 @@ jobs:
+             dist/StructuralPro-standard-*-Setup.exe
+   pro:
+     needs: contract
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with: {python-version: "3.12", cache: pip}
+@@ -88,8 +115,17 @@ jobs:
+             dist/StructuralPro-pro-*-Setup.exe
+   enterprise:
+     needs: contract
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with: {python-version: "3.12", cache: pip}
+diff --git a/.github/workflows/p37-real-product-deployment.yml b/.github/workflows/p37-real-product-deployment.yml
+index 5739738..83627c7 100644
+--- a/.github/workflows/p37-real-product-deployment.yml
++++ b/.github/workflows/p37-real-product-deployment.yml
+@@ -8,19 +8,32 @@ on:
+         required: true
+         type: boolean
+         default: false
++      publish_approved:
++        description: "Owner separately approves publication after binary approval"
++        required: true
++        type: boolean
++        default: false
+       release_version:
+         description: "Version to deploy; must exactly match VERSION"
+         required: true
+         type: string
+ 
+ permissions:
+-  contents: write
++  contents: read
+ 
+ jobs:
+   deploy-production:
+-    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true }}
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - name: Checkout
+         uses: actions/checkout@v4
+       - name: Setup Python
+@@ -30,13 +43,15 @@ jobs:
+           cache: pip
+       - name: Validate release version
+         shell: pwsh
++        env:
++          REQUESTED_RELEASE_VERSION: ${{ inputs.release_version }}
+         run: |
+           $version=(Get-Content VERSION -Raw).Trim()
+           if ($version -notmatch "^\d+\.\d+\.\d+$") { throw "Invalid VERSION: $version" }
+           if ("${{ github.ref_type }}" -eq "tag" -and "v$version" -ne "${{ github.ref_name }}") {
+             throw "Tag/version mismatch"
+           }
+-          $requested="${{ inputs.release_version }}"
++          $requested=$env:REQUESTED_RELEASE_VERSION
+           if ($requested -and $requested -ne $version) { throw "Requested deployment version does not match VERSION" }
+       - name: Build Windows production payload
+         shell: pwsh
+@@ -101,10 +116,49 @@ jobs:
+             dist/StructuralPro-SHA256SUMS.txt
+             dist/StructuralPro-ReleaseManifest.json
+             dist/StructuralPro-pip-freeze.txt
++
++  publish-release:
++    needs: deploy-production
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' && inputs.build_approved == true && inputs.publish_approved == true }}
++    environment:
++      name: binary-publish-approval
++    permissions:
++      contents: write
++    runs-on: windows-latest
++    steps:
++      - name: Require independent protected authorization before release
++        shell: pwsh
++        env:
++          STRUCTURALPRO_PUBLISH_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_PUBLISH_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_PUBLISH_PERMIT) { throw 'Missing independent protected publish authorization' }
++      - name: Download validated build artifacts from this run
++        uses: actions/download-artifact@v4
++        with:
++          name: StructuralPro-Windows-${{ github.ref_name }}-${{ github.run_id }}
++          path: dist
++      - name: Recheck version and release manifest hashes
++        shell: pwsh
++        env:
++          EXPECTED_RELEASE_VERSION: ${{ inputs.release_version }}
++        run: |
++          if ($env:EXPECTED_RELEASE_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid publish version' }
++          $manifest=Get-Content 'dist/StructuralPro-ReleaseManifest.json' -Raw | ConvertFrom-Json
++          if ($manifest.version -ne $env:EXPECTED_RELEASE_VERSION) { throw 'Release manifest version mismatch' }
++          if ($manifest.packaged_version -ne $env:EXPECTED_RELEASE_VERSION) { throw 'Packaged version mismatch' }
++          if (-not $manifest.source_commit) { throw 'Missing source commit' }
++          foreach ($property in $manifest.artifacts.PSObject.Properties) {
++            $path=$property.Name
++            if (-not (Test-Path $path)) { throw "Missing release file: $path" }
++            $actualHash=(Get-FileHash -Algorithm SHA256 $path).Hash.ToLowerInvariant()
++            $actualSize=[int64](Get-Item $path).Length
++            if ($actualHash -ne $property.Value.sha256.ToLowerInvariant()) { throw "Release hash mismatch: $path" }
++            if ($actualSize -ne [int64]$property.Value.size_bytes) { throw "Release size mismatch: $path" }
++          }
+       - name: Publish GitHub Release
+         uses: softprops/action-gh-release@v2
+-        if: github.ref_type == 'tag'
+         with:
++          tag_name: v${{ inputs.release_version }}
+           generate_release_notes: true
+           files: |
+             dist/StructuralPro-*-Setup.exe
+diff --git a/.github/workflows/priority-61-audit-integrity.yml b/.github/workflows/priority-61-audit-integrity.yml
+index 74b299a..d9143ee 100644
+--- a/.github/workflows/priority-61-audit-integrity.yml
++++ b/.github/workflows/priority-61-audit-integrity.yml
+@@ -4,7 +4,26 @@ on:
+     branches: [main]
+   push:
+     branches: [main]
++permissions:
++  contents: read
+ jobs:
++  security-build-policy:
++    name: security-build-policy
++    runs-on: ubuntu-latest
++    steps:
++      - uses: actions/checkout@v4
++      - uses: actions/setup-python@v5
++        with:
++          python-version: "3.12"
++      - name: Install static test dependencies only
++        run: python -m pip install pytest PyYAML
++      - name: Enforce owner-approved binary production contract
++        run: |
++          python -m pytest -q \
++            tests/test_owner_approved_binary_build_workflows.py \
++            tests/test_binary_build_security_contract.py \
++            tests/test_p37_release_gate_separation.py \
++            tests/test_p37_real_product_deployment.py
+   audit-integrity:
+     runs-on: ubuntu-latest
+     steps:
+diff --git a/.github/workflows/priority-611-620-mobile-clients.yml b/.github/workflows/priority-611-620-mobile-clients.yml
+index 1cd56e9..84968fc 100644
+--- a/.github/workflows/priority-611-620-mobile-clients.yml
++++ b/.github/workflows/priority-611-620-mobile-clients.yml
+@@ -8,6 +8,13 @@ on:
+       - "tests/test_p611_p620_mobile_clients.py"
+       - "android/**"
+       - ".github/workflows/priority-611-620-mobile-clients.yml"
++  workflow_dispatch:
++    inputs:
++      build_approved:
++        description: "Owner approval to compile a mobile executable; protected environment is also required"
++        required: true
++        type: boolean
++        default: false
+ jobs:
+   contract:
+     runs-on: ubuntu-latest
+@@ -19,11 +26,19 @@ jobs:
+       - run: python -m pip install -U pytest
+       - run: pytest -q tests/test_p611_p620_mobile_clients.py
+   android:
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: ubuntu-latest
+     defaults:
+       run:
+         working-directory: android
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: bash
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: test -n "$STRUCTURALPRO_BUILD_PERMIT"
+       - uses: actions/checkout@v4
+       - uses: actions/setup-java@v4
+         with:
+diff --git a/.github/workflows/windows-release.yml b/.github/workflows/windows-release.yml
+index 0061e26..f4feea7 100644
+--- a/.github/workflows/windows-release.yml
++++ b/.github/workflows/windows-release.yml
+@@ -15,9 +15,17 @@ permissions:
+   contents: read
+ jobs:
+   build-windows:
+-    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true }}
++    if: ${{ github.event_name == 'workflow_dispatch' && github.actor == 'Asanda021' && inputs.build_approved == true && github.repository == 'Asanda021/StructuralPro' && github.ref == 'refs/heads/main' }}
++    environment:
++      name: binary-build-approval
+     runs-on: windows-latest
+     steps:
++      - name: Require environment-scoped owner authorization before binary build
++        shell: pwsh
++        env:
++          STRUCTURALPRO_BUILD_PERMIT: ${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}
++        run: |
++          if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }
+       - uses: actions/checkout@v4
+       - uses: actions/setup-python@v5
+         with:
+@@ -25,11 +33,13 @@ jobs:
+           cache: pip
+       - name: Validate version
+         shell: pwsh
++        env:
++          REQUESTED_RELEASE_VERSION: ${{ inputs.release_version }}
+         run: |
+           $v=(Get-Content VERSION -Raw).Trim()
+           if ($v -notmatch "^\d+\.\d+\.\d+$") { throw "Invalid VERSION: $v" }
+           if ("${{ github.ref_type }}" -eq "tag" -and "v$v" -ne "${{ github.ref_name }}") { throw "Tag/version mismatch" }
+-          $requested="${{ inputs.release_version }}"
++          $requested=$env:REQUESTED_RELEASE_VERSION
+           if ($requested -and $requested -ne $v) { throw "Requested version does not match VERSION" }
+       - name: Verify native build failures stop release
+         shell: pwsh
+diff --git a/requirements.txt b/requirements.txt
+index d4c1dbd..96d46b6 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -8,6 +8,8 @@ arabic-reshaper>=3.0
+ python-bidi>=0.6
+ python-docx>=1.1
+ pytest>=8.0
++# Static-only, read-only GitHub Actions security review.
++PyYAML>=6.0,<7
+ # Optional drawing integrations:
+ # ezdxf is required by the canonical DXF/DWG extraction path and its tests.
+ ezdxf>=1.3
+diff --git a/tests/test_binary_build_security_contract.py b/tests/test_binary_build_security_contract.py
+new file mode 100644
+index 0000000..6107c77
+--- /dev/null
++++ b/tests/test_binary_build_security_contract.py
+@@ -0,0 +1,113 @@
++"""Portable static tests for PR #462. No build commands are executed."""
++from __future__ import annotations
++import copy
++import importlib.util
++from pathlib import Path
++
++import pytest
++import yaml
++
++ROOT = Path(__file__).resolve().parents[1]
++SCANNER = ROOT / 'tools' / 'audit_github_actions.py'
++spec = importlib.util.spec_from_file_location('structuralpro_ci_binary_audit', SCANNER)
++audit = importlib.util.module_from_spec(spec)
++spec.loader.exec_module(audit)
++
++
++def workflow(relative):
++    with (ROOT / '.github/workflows' / relative).open(encoding='utf8') as stream:
++        return yaml.safe_load(stream)
++
++
++def test_mobile_contract_automatic_and_android_binary_manual():
++    data = workflow('priority-611-620-mobile-clients.yml')
++    events = audit._event_names(data.get('on', data.get(True)))
++    assert 'push' in events and 'pull_request' in events
++    assert 'workflow_dispatch' in events
++    assert 'pytest -q tests/test_p611_p620_mobile_clients.py' in str(data['jobs']['contract'])
++    assert 'assemble' not in str(data['jobs']['contract'])
++    android = data['jobs']['android']
++    assert audit._job_gate(android)['source_gate_present']
++    assert 'gradle :app:assembleDebug' in str(android['steps'][-1])
++    assert 'checkout' in str(android['steps'][1])
++
++
++def test_p37_disables_all_automatic_release_and_build_triggers():
++    data = workflow('p37-real-product-deployment.yml')
++    assert audit._event_names(data.get('on', data.get(True))) == ['workflow_dispatch']
++    job = data['jobs']['deploy-production']
++    assert audit._job_gate(job)['source_gate_present']
++    contents = str(job['steps'])
++    for marker in ('build_windows.ps1','windows_installer_smoke.ps1','upload-artifact@v4'):
++        assert marker in contents, marker
++    assert 'action-gh-release@v2' not in contents
++    publisher = data['jobs']['publish-release']
++    assert audit._publish_gate(publisher)['source_gate_present']
++    assert 'action-gh-release@v2' in str(publisher['steps'])
++    # Publication is a separate, independently protected job.
++    assert not any(isinstance(s, dict) and s.get('continue-on-error') for s in job['steps'])
++
++
++@pytest.mark.parametrize('bad', [
++    lambda j: j.update({'if': "${{ github.event_name == 'push' }}"}),
++    lambda j: j.update({'if': j['if'].replace(' }}',' || true }}')}),
++    lambda j: j.update({'if': j['if'].replace('refs/heads/main','refs/tags/v1')}),
++    lambda j: j.update({'if': j['if'].replace('Asanda021/StructuralPro','attacker/fork')}),
++    lambda j: j.update({'environment': {'name':'unprotected'}}),
++    lambda j: j.pop('environment'),
++    lambda j: j['steps'].pop(0),
++    lambda j: j['steps'][0].update({'run':'test -n "$STRUCTURALPRO_BUILD_PERMIT" || true'}),
++    lambda j: j['steps'][0].update({'continue-on-error':True}),
++    lambda j: j['steps'][0].update({'env': {'STRUCTURALPRO_BUILD_PERMIT':'${{ inputs.build_approved }}'}}),
++])
++def test_mutated_android_policy_must_fail_closed(bad):
++    job = copy.deepcopy(workflow('priority-611-620-mobile-clients.yml')['jobs']['android'])
++    bad(job)
++    assert not audit._job_gate(job)['source_gate_present']
++
++
++@pytest.mark.parametrize('event,actor,approved,ref,repo,secret,external_review', [
++    ('push','Asanda021',True,'refs/heads/main','Asanda021/StructuralPro',True,True),
++    ('pull_request','Asanda021',True,'refs/heads/main','Asanda021/StructuralPro',True,True),
++    ('release','Asanda021',True,'refs/heads/main','Asanda021/StructuralPro',True,True),
++    ('workflow_dispatch','Asanda021',False,'refs/heads/main','Asanda021/StructuralPro',True,True),
++    ('workflow_dispatch','Asanda021',True,'refs/tags/v1','Asanda021/StructuralPro',True,True),
++    ('workflow_dispatch','Asanda021',True,'refs/heads/main','attacker/fork',True,True),
++    ('workflow_dispatch','Asanda021',True,'refs/heads/main','Asanda021/StructuralPro',False,True),
++    ('workflow_dispatch','Asanda021',True,'refs/heads/main','Asanda021/StructuralPro',True,False),
++])
++def test_mock_authorization_denies_invalid_requests(event,actor,approved,ref,repo,secret,external_review):
++    # Mock of intended policy only. Real GitHub required reviewers NOT verified here.
++    allowed = (event == 'workflow_dispatch' and actor == 'Asanda021' and approved is True
++               and ref == 'refs/heads/main' and repo == 'Asanda021/StructuralPro'
++               and secret and external_review)
++    assert allowed is False
++
++
++def test_indirect_build_script_is_caught(tmp_path):
++    wf = tmp_path / '.github/workflows/indirect.yml'; wf.parent.mkdir(parents=True)
++    wf.write_text('name: indirect\non: {push: {}}\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: ./packaging/helper.sh\n')
++    script = tmp_path / 'packaging/helper.sh'; script.parent.mkdir()
++    script.write_text('python -m PyInstaller project.py\n')
++    report = audit.inspect(tmp_path)
++    assert report['unprotected_binary_jobs'] == 1
++    assert report['github_settings_verified'] is False
++
++
++def test_reusable_workflow_needs_review_not_certified(tmp_path):
++    wf = tmp_path / '.github/workflows/reusable.yml'; wf.parent.mkdir(parents=True)
++    wf.write_text('name: delegated\non: {push: {}}\njobs:\n  call:\n    uses: ./.github/workflows/build.yml\n')
++    report = audit.inspect(tmp_path)
++    assert report['findings'][0]['classification']=='needs_review'
++
++
++def test_upload_without_identified_build_is_reviewed_not_assumed_binary(tmp_path):
++    wf = tmp_path / '.github/workflows/report.yml'; wf.parent.mkdir(parents=True)
++    wf.write_text('name: report\non: {pull_request: {}}\njobs:\n  report:\n    runs-on: ubuntu-latest\n    steps:\n      - run: python -m pytest -q\n      - uses: actions/upload-artifact@v4\n')
++    report=audit.inspect(tmp_path)
++    assert report['direct_or_indirect_binary_jobs']==0
++    assert 'review_payload' in report['findings'][0]['classification']
++
++
++def test_local_guard_presence_never_proves_actual_github_environment():
++    assert audit.inspect(ROOT)['github_settings_verified'] is False
+diff --git a/tests/test_p37_real_product_deployment.py b/tests/test_p37_real_product_deployment.py
+index 545f7b3..8135680 100644
+--- a/tests/test_p37_real_product_deployment.py
++++ b/tests/test_p37_real_product_deployment.py
+@@ -9,12 +9,28 @@ def test_p37_deployment_contract_is_complete():
+     assert doc.exists()
+     text = workflow.read_text(encoding="utf-8")
+     for marker in (
+-        'tags: ["v*"]', "actions/checkout@v4", "actions/setup-python@v5",
++        "actions/checkout@v4", "actions/setup-python@v5",
+         "packaging/build_windows.ps1", "packaging/windows_installer_smoke.ps1",
+         "packaging/generate_sha256.ps1", "packaging/generate_release_manifest.ps1",
+         "actions/upload-artifact@v4", "softprops/action-gh-release@v2",
+     ):
+         assert marker in text, marker
++    # Release tags and PR code are NOT owner binary-build permission.
++    import re
++    assert re.search(r"(?m)^  workflow_dispatch:\s*$", text)
++    assert not re.search(r"(?m)^  (?:push|pull_request|pull_request_target|schedule|release|workflow_call|workflow_run|repository_dispatch):", text)
++    for necessary in (
++        "github.event_name == 'workflow_dispatch'",
++        "github.actor == 'Asanda021'",
++        "inputs.build_approved == true",
++        "github.ref == 'refs/heads/main'",
++        "github.repository == 'Asanda021/StructuralPro'",
++        "name: binary-build-approval",
++        "secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL",
++    ):
++        assert necessary in text, necessary
++    assert text.index("environment:") < text.index("packaging/build_windows.ps1")
++    assert text.index("Require environment-scoped owner authorization") < text.index("packaging/build_windows.ps1")
+ 
+ def test_p37_is_desktop_first_and_does_not_fake_cloud_deployment():
+     text = (ROOT / "docs" / "P37_REAL_PRODUCT_DEPLOYMENT.md").read_text(encoding="utf-8")
+diff --git a/tests/test_p37_release_gate_separation.py b/tests/test_p37_release_gate_separation.py
+new file mode 100644
+index 0000000..2e8d9c4
+--- /dev/null
++++ b/tests/test_p37_release_gate_separation.py
+@@ -0,0 +1,102 @@
++"""Fail-closed static checks only; intentionally never executes GitHub Actions."""
++from pathlib import Path
++import copy
++import pytest
++import yaml
++
++ROOT=Path(__file__).resolve().parents[1]
++P=ROOT/'.github/workflows/p37-real-product-deployment.yml'
++
++def spec():
++    return yaml.safe_load(P.read_text(encoding='utf8'))
++
++def gate(job, *, publish=False):
++    cond=str(job.get('if',''))
++    required=["github.event_name == 'workflow_dispatch'", "github.actor == 'Asanda021'",
++              "github.repository == 'Asanda021/StructuralPro'", "github.ref == 'refs/heads/main'",
++              'inputs.build_approved == true']
++    if publish: required.append('inputs.publish_approved == true')
++    expected_env='binary-publish-approval' if publish else 'binary-build-approval'
++    expected_secret='secrets.STRUCTURALPRO_BINARY_PUBLISH_APPROVAL' if publish else 'secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL'
++    first=job.get('steps',[{}])[0]
++    return (all(x in cond for x in required)
++            and job.get('environment',{}).get('name')==expected_env
++            and expected_secret in str(first.get('env',{}))
++            and 'if (-not $env:STRUCTURALPRO_' in str(first.get('run','')))
++
++def test_build_and_release_jobs_separate():
++    d=spec(); jobs=d['jobs']
++    assert d['permissions']=={'contents':'read'}
++    assert set(jobs)=={'deploy-production','publish-release'}
++    assert gate(jobs['deploy-production'])
++    assert jobs['deploy-production'].get('permissions',{}).get('contents','read')!='write'
++    assert jobs['publish-release']['permissions']=={'contents':'write'}
++    assert jobs['publish-release']['needs']=='deploy-production'
++    assert gate(jobs['publish-release'],publish=True)
++    assert 'softprops/action-gh-release@v2' not in str(jobs['deploy-production'])
++    assert sum('softprops/action-gh-release@v2' in str(step) for step in jobs['publish-release']['steps'])==1
++
++def test_unapproved_release_default_false():
++    d=spec()
++    events=d.get('on', d.get(True))
++    assert events['workflow_dispatch']['inputs']['build_approved']['default'] is False
++    assert events['workflow_dispatch']['inputs']['publish_approved']['default'] is False
++    assert set(events)=={'workflow_dispatch'}
++
++def test_release_artifact_bound_to_same_run_and_validated_before_publish():
++    j=spec()['jobs']['publish-release']
++    assert 'actions/download-artifact@v4' in str(j['steps'][1])
++    assert "${{ github.run_id }}" in str(j['steps'][1])
++    assert 'Get-FileHash' in str(j['steps'][2])
++    assert 'inputs.release_version' in str(j['steps'][2])
++    assert 'softprops/action-gh-release@v2' in str(j['steps'][3])
++
++@pytest.mark.parametrize('mutation',[
++    lambda j:j.update({'if':"${{ github.event_name == 'push' }}"}),
++    lambda j:j.update({'if':str(j['if']).replace('inputs.publish_approved == true','inputs.publish_approved != true')}),
++    lambda j:j.update({'if':str(j['if']).replace("github.actor == 'Asanda021'",'true')}),
++    lambda j:j.update({'if':str(j['if']).replace('refs/heads/main','refs/heads/feature')}),
++    lambda j:j.update({'if':str(j['if']).replace('Asanda021/StructuralPro','attacker/fork')}),
++    lambda j:j.pop('environment'),
++    lambda j:j.update({'environment':{'name':'unprotected'}}),
++    lambda j:j['steps'].pop(0),
++    lambda j:j['steps'][0].update({'env':{}}),
++    lambda j:j.update({'if':'true'}),
++])
++def test_publish_mutations_rejected(mutation):
++    job=copy.deepcopy(spec()['jobs']['publish-release'])
++    mutation(job)
++    assert not gate(job,publish=True)
++
++
++def test_release_version_is_not_interpolated_into_powershell_source():
++    for name,job_name in [('p37-real-product-deployment.yml','deploy-production'),
++                          ('windows-release.yml','build-windows')]:
++        data=yaml.safe_load((ROOT/'.github/workflows'/name).read_text(encoding='utf8'))
++        steps=data['jobs'][job_name]['steps']
++        step=next(x for x in steps if x.get('name') in ('Validate release version','Validate version'))
++        assert step['env']['REQUESTED_RELEASE_VERSION']=='${{ inputs.release_version }}'
++        assert '${{ inputs.release_version }}' not in str(step['run'])
++        assert '$requested=$env:REQUESTED_RELEASE_VERSION' in step['run']
++
++@pytest.mark.parametrize('remove', [
++    'condition', 'environment','secret','needs','write_permission','preflight','publish_approval',
++])
++def test_auditor_marks_mutated_publication_unprotected(tmp_path, remove):
++    import sys
++    sys.path.insert(0,str(ROOT/'tools'))
++    from audit_github_actions import inspect
++    d=spec()
++    pub=d['jobs']['publish-release']
++    if remove=='condition':pub['if']="${{ github.event_name == 'push' }}"
++    elif remove=='environment':pub.pop('environment')
++    elif remove=='secret':pub['steps'][0]['env']={}
++    elif remove=='needs':pub.pop('needs')
++    elif remove=='write_permission':pub['permissions']={'contents':'read'}
++    elif remove=='preflight':pub['steps'][0]['run']='echo no auth'
++    elif remove=='publish_approval':pub['if']=pub['if'].replace('inputs.publish_approved == true','true')
++    path=tmp_path/'.github/workflows/p37.yml'
++    path.parent.mkdir(parents=True)
++    path.write_text(yaml.safe_dump(d,sort_keys=False),encoding='utf8')
++    findings=inspect(tmp_path)['findings']
++    assert any(x['job']=='publish-release' and x['classification']=='unprotected_publication_job' for x in findings)
+diff --git a/tools/audit_github_actions.py b/tools/audit_github_actions.py
+new file mode 100644
+index 0000000..49db2f9
+--- /dev/null
++++ b/tools/audit_github_actions.py
+@@ -0,0 +1,264 @@
++#!/usr/bin/env python3
++"""Offline, read-only, fail-closed GitHub Actions binary-path auditor.
++
++NO commands/workflows are executed. A source gate is NEVER evidence that
++GitHub Environment reviewers/rulesets/secret scoping were configured.
++"""
++from __future__ import annotations
++
++import argparse
++import json
++import re
++from pathlib import Path
++from typing import Any
++
++import yaml
++
++ENV = 'binary-build-approval'
++REPO = "github.repository == 'Asanda021/StructuralPro'"
++REF = "github.ref == 'refs/heads/main'"
++GUARDS = ("github.event_name == 'workflow_dispatch'", "github.actor == 'Asanda021'",
++          'inputs.build_approved == true', REPO, REF)
++BUILD = (
++    ('pyinstaller', r'\b(?:pyinstaller|python\s+-m\s+PyInstaller)\b'),
++    ('nuitka', r'\bnuitka\b'), ('cx_freeze', r'\bcx[_-]freeze\b'),
++    ('dotnet_publish', r'\bdotnet\s+publish\b'), ('msbuild', r'\bmsbuild(?:\.exe)?\b'),
++    ('wix', r'\b(?:candle\.exe|light\.exe|wix\s+build)\b'),
++    ('inno_setup', r'\b(?:ISCC(?:\.exe)?|iscc\s+)\b'),
++    ('nsis', r'\b(?:makensis(?:\.exe)?)\b'),
++    ('gradle_package', r'\b(?:gradle|gradlew)(?:\.bat)?\s+[^\n]*?(?::[\w-]+:)?(?:assemble|bundle)[\w:]*\b'),
++    ('electron_builder', r'\belectron-builder\b'),
++    ('docker_build', r'\bdocker\s+(?:build|buildx\s+build)\b'),
++    ('windows_packaging', r'\bbuild_windows(?:_edition)?\.ps1\b'),
++    ('release', r'\bgh\s+release\s+(?:create|upload)\b'),
++    ('gradle_wrapper_package', r'\b(?:\./)?gradlew(?:\.bat)?\s+[^\n]*?\b(?:assemble|bundle)[A-Za-z0-9:_-]*'),
++    ('wix_msi', r'\b(?:heat|candle|light)\.exe\b'),
++    ('native_publish', r'\b(?:cargo\s+build|go\s+build)\b'),
++)
++DELIVERY = (
++    ('upload_artifact', r'actions/upload-artifact@'),
++    ('github_release', r'softprops/action-gh-release@'),
++    ('docker_publish', r'docker/(?:build-push-action|metadata-action)@'),
++    ('github_release_cli', r'\bgh\s+release\s+(?:create|upload)\b'),
++)
++SCRIPT_REF = re.compile(r'(?:^|[\s"\'`])(?:\./|\$\{\{\s*github\.workspace\s*\}\}/)?'
++                        r'((?:packaging|scripts|tools|\.github/actions)/[\w./-]+\.(?:ps1|sh|py|bat|cmd))\b', re.M)
++LOCAL_ACTION = re.compile(r'^\./\.github/actions/([\w.-]+)$')
++SUSPECT_SCRIPT = re.compile(r'(?i)(?:build|release|publish|package|installer|deploy|bundle|setup|compile)')
++OPAQUE_INVOKE = re.compile(r'(?m)(?:^|[\s;&|])(?:\./|bash\s+|sh\s+|pwsh\s+|powershell\s+)[^\s;|]+\.(?:sh|ps1|bat|cmd)\b')
++
++
++def text_matches(content: str, patterns: tuple[tuple[str, str], ...]) -> list[str]:
++    return [name for name, pattern in patterns if re.search(pattern, content, re.I)]
++
++
++def local_dependency(root: Path, candidate: str, visited: set[str], depth: int = 0) -> dict[str, Any]:
++    """Read scripts/actions recursively only under root. Never execute them."""
++    if depth > 12:
++        return {'path': candidate, 'status': 'needs_review', 'reason': 'recursion_limit'}
++    path = (root / candidate).resolve()
++    if not path.is_relative_to(root.resolve()):
++        return {'path': candidate, 'status': 'needs_review', 'reason': 'path_escape'}
++    if candidate in visited:
++        return {'path': candidate, 'status': 'cycle_or_already_seen'}
++    visited.add(candidate)
++    if not path.is_file():
++        return {'path': candidate, 'status': 'needs_review', 'reason': 'not_available'}
++    try:
++        body = path.read_text(encoding='utf-8')
++    except (UnicodeError, OSError):
++        return {'path': candidate, 'status': 'needs_review', 'reason': 'unreadable'}
++    if candidate.endswith(('.yml', '.yaml')):
++        try:
++            data = yaml.safe_load(body) or {}
++            if isinstance(data, dict) and 'runs' in data:
++                composite = data['runs'] or {}
++                if composite.get('using') == 'composite':
++                    body += '\n'.join(str(step.get('run', '')) + '\n' + str(step.get('uses', ''))
++                                      for step in (composite.get('steps') or []) if isinstance(step, dict))
++                else:
++                    return {'path': candidate, 'status': 'needs_review', 'reason': 'opaque_action'}
++        except yaml.YAMLError:
++            return {'path': candidate, 'status': 'needs_review', 'reason': 'bad_yaml'}
++    children = [local_dependency(root, m.group(1), visited, depth + 1) for m in SCRIPT_REF.finditer(body)]
++    for act in re.finditer(r'uses:\s*(\./\.github/actions/[\w.-]+)', body):
++        children.append(local_dependency(root, act.group(1)[2:] + '/action.yml', visited, depth + 1))
++    return {'path': candidate, 'status': 'inspected', 'binary': text_matches(body, BUILD),
++            'delivery': text_matches(body, DELIVERY), 'dependencies': children}
++
++
++def binary_in_tree(nodes: list[dict]) -> bool:
++    return any(bool(n.get('binary')) or binary_in_tree(n.get('dependencies', [])) for n in nodes)
++
++
++def needs_review_in_tree(nodes: list[dict]) -> bool:
++    return any(n.get('status') == 'needs_review' or needs_review_in_tree(n.get('dependencies', [])) for n in nodes)
++
++
++def _event_names(raw: Any) -> list[str]:
++    if isinstance(raw, str):
++        return [raw]
++    if isinstance(raw, list):
++        return sorted(map(str, raw))
++    if isinstance(raw, dict):
++        return sorted(str(k) for k in raw)
++    return ['unknown']
++
++
++def _job_gate(job: dict) -> dict[str, Any]:
++    steps = job.get('steps') or []
++    condition = str(job.get('if') or '')
++    env = job.get('environment')
++    name = env.get('name') if isinstance(env, dict) else env
++    first = steps[0] if steps and isinstance(steps[0], dict) else {}
++    shell = str(first.get('shell', ''))
++    run = str(first.get('run', '')).strip()
++    expected_secret = '${{ secrets.STRUCTURALPRO_BINARY_BUILD_APPROVAL }}'
++    secret_ok = isinstance(first.get('env'), dict) and first['env'].get('STRUCTURALPRO_BUILD_PERMIT') == expected_secret
++    preflight = (secret_ok and first.get('continue-on-error') not in (True, 'true')
++                 and ((shell == 'bash' and run == 'test -n "$STRUCTURALPRO_BUILD_PERMIT"')
++                      or (shell == 'pwsh' and run == "if (-not $env:STRUCTURALPRO_BUILD_PERMIT) { throw 'Missing protected owner build authorization' }")))
++    expected_condition = '${{ ' + ' && '.join(GUARDS) + ' }}'
++    return {'environment': name, 'job_condition': condition,
++            'source_gate_present': name == ENV and condition.strip() == expected_condition
++                                   and not job.get('continue-on-error') and preflight,
++            'preflight_first': preflight,
++            'requires_external_settings_verification': True}
++
++
++def _publish_gate(job: dict) -> dict[str, Any]:
++    """Check source policy only; cannot attest GitHub reviewer configuration."""
++    steps = job.get('steps') or []
++    first = steps[0] if steps and isinstance(steps[0], dict) else {}
++    environment = job.get('environment')
++    name = environment.get('name') if isinstance(environment, dict) else environment
++    expected = '${{ ' + ' && '.join((
++        "github.event_name == 'workflow_dispatch'", "github.actor == 'Asanda021'",
++        REPO, REF, 'inputs.build_approved == true',
++        'inputs.publish_approved == true')) + ' }}'
++    preflight = (first.get('shell') == 'pwsh' and
++                 first.get('env', {}).get('STRUCTURALPRO_PUBLISH_PERMIT') ==
++                 '${{ secrets.STRUCTURALPRO_BINARY_PUBLISH_APPROVAL }}' and
++                 str(first.get('run', '')).strip() ==
++                 "if (-not $env:STRUCTURALPRO_PUBLISH_PERMIT) { throw 'Missing independent protected publish authorization' }" and
++                 first.get('continue-on-error') not in (True, 'true'))
++    return {'environment': name, 'source_gate_present':
++            (name == 'binary-publish-approval' and job.get('needs') == 'deploy-production'
++             and job.get('permissions') == {'contents': 'write'}
++             and str(job.get('if', '')).strip() == expected
++             and not job.get('continue-on-error') and preflight),
++            'preflight_first': preflight,
++            'requires_external_settings_verification': True}
++
++
++def inspect(root: Path) -> dict[str, Any]:
++    root = root.resolve()
++    workflow_dir = root / '.github/workflows'
++    if not workflow_dir.is_dir():
++        raise FileNotFoundError(workflow_dir)
++    files = sorted((*workflow_dir.glob('*.yml'), *workflow_dir.glob('*.yaml')))
++    findings, parse_errors, inventory = [], [], []
++    for file in files:
++        relative = file.relative_to(root).as_posix()
++        try:
++            workflow = yaml.safe_load(file.read_text(encoding='utf-8')) or {}
++            if not isinstance(workflow, dict) or not isinstance(workflow.get('jobs'), dict):
++                raise ValueError('workflow does not contain jobs mapping')
++        except (yaml.YAMLError, ValueError, UnicodeError) as exc:
++            parse_errors.append({'workflow': relative, 'error': str(exc)})
++            continue
++        events = _event_names(workflow.get('on', workflow.get(True)))  # PyYAML 1.1 on: -> True
++        manifest = {'path': relative, 'name': workflow.get('name', ''), 'events': events, 'jobs': []}
++        inventory.append(manifest)
++        for name, job in workflow['jobs'].items():
++            if not isinstance(job, dict):
++                parse_errors.append({'workflow': relative, 'job': name, 'error': 'non_mapping_job'})
++                continue
++            steps = job.get('steps') or []
++            if not isinstance(steps, list):
++                parse_errors.append({'workflow': relative, 'job': name, 'error': 'non_list_steps'})
++                continue
++            direct, delivery, deps, unknown = [], [], [], []
++            # Reusable workflow jobs are outside caller step list; an uninspected call is never trusted.
++            if 'uses' in job:
++                unknown.append('reusable_workflow:' + str(job['uses']))
++            for index, step in enumerate(steps):
++                if not isinstance(step, dict):
++                    unknown.append('unparseable_step')
++                    continue
++                contents = str(step.get('run', '')) + '\n' + str(step.get('uses', ''))
++                direct.extend([{'step': index, 'kind': hit} for hit in text_matches(contents, BUILD)])
++                delivery.extend([{'step': index, 'kind': hit} for hit in text_matches(contents, DELIVERY)])
++                for match in SCRIPT_REF.finditer(contents):
++                    deps.append(local_dependency(root, match.group(1), set()))
++                action_match = LOCAL_ACTION.match(str(step.get('uses', '')))
++                if action_match:
++                    deps.append(local_dependency(root, '.github/actions/'+action_match.group(1)+'/action.yml', set()))
++                elif step.get('uses') and not str(step['uses']).startswith('./'):
++                    unknown.append('external_action:' + str(step['uses']))
++                elif step.get('uses') and str(step['uses']).startswith('./') and not action_match:
++                    unknown.append('local_action_other:' + str(step['uses']))
++                if SUSPECT_SCRIPT.search(contents) and '${{' in contents and not direct:
++                    unknown.append('dynamic_command_or_script')
++                if OPAQUE_INVOKE.search(contents) and not SCRIPT_REF.search(contents):
++                    unknown.append('unresolved_shell_script_invocation')
++            is_build = bool(direct) or binary_in_tree(deps)
++            review = bool(unknown) or needs_review_in_tree(deps)
++            is_release = any(d['kind'] in ('github_release','github_release_cli') for d in delivery)
++            gate = _publish_gate(job) if is_release and not is_build else _job_gate(job)
++            manifest['jobs'].append({'name': str(name), 'binary_build': is_build,
++                                     'build_commands': direct, 'delivery_actions': delivery,
++                                     'script_dependencies': deps, 'unknown_or_external': unknown[:15],
++                                     'source_gate': gate['source_gate_present'],
++                                     'has_reusable_workflow': 'uses' in job})
++            if is_build:
++                classification = 'gated_in_source_unverified_settings' if gate['source_gate_present'] else 'unprotected_binary_job'
++            elif is_release:
++                classification = ('gated_publication_unverified_settings' if gate['source_gate_present']
++                                  else 'unprotected_publication_job')
++            elif delivery:
++                classification = 'delivery_nonbinary_or_indeterminate_review_payload'
++            elif review:
++                classification = 'needs_review'
++            else:
++                continue  # ordinary jobs are counted in total_jobs below
++            findings.append({'workflow': relative, 'job': str(name), 'events': events,
++                             'classification': classification, 'build_commands': direct,
++                             'delivery_actions': delivery, 'local_dependencies': deps,
++                             'unknown_or_external': unknown[:15], 'gate': gate})
++    all_jobs = 0
++    for file in files:
++        try:
++            data = yaml.safe_load(file.read_text(encoding='utf-8')) or {}
++            all_jobs += len(data.get('jobs') or {}) if isinstance(data, dict) else 0
++        except (yaml.YAMLError, UnicodeError, ValueError):
++            pass
++    return {'workflow_count': len(files), 'parsed_workflow_count': len(inventory),
++            'workflow_inventory': inventory,
++            'total_jobs': all_jobs, 'findings_count': len(findings),
++            'direct_or_indirect_binary_jobs': sum(f['classification'] in ('unprotected_binary_job','gated_in_source_unverified_settings') for f in findings),
++            'unprotected_binary_jobs': sum(f['classification']=='unprotected_binary_job' for f in findings),
++            'unprotected_publication_jobs': sum(f['classification']=='unprotected_publication_job' for f in findings),
++            'parse_errors': parse_errors, 'findings': findings,
++            'github_settings_verified': False, 'note': 'Read-only source evidence only; never executes any binary.'}
++
++
++def main():
++    parser = argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--repo', type=Path, required=True)
++    parser.add_argument('--output', type=Path)
++    parser.add_argument('--strict', action='store_true', help='exit 2 on unprotected binaries/parse errors')
++    args = parser.parse_args()
++    report = inspect(args.repo)
++    serialized = json.dumps(report, ensure_ascii=False, indent=2, default=str)
++    if args.output:
++        args.output.write_text(serialized, encoding='utf-8')
++    else:
++        print(serialized)
++    if args.strict and (report['unprotected_binary_jobs'] or report['unprotected_publication_jobs'] or report['parse_errors']
++                        or any(item['classification'] == 'needs_review' for item in report['findings'])):
++        raise SystemExit(2)
++
++
++if __name__ == '__main__':
++    main()

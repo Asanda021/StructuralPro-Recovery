@@ -1,0 +1,16 @@
+{
+  "case_id": "GOLDEN-STRUCTURAL-CORE-002",
+  "dataset_version": "2026.10",
+  "project": {"source": "authoritative-core", "scope": "column-slab-rebar"},
+  "expected_quantities": [
+    {"object_id": "COL-1", "item_code": "CONCRETE", "quantity": 1.08, "unit": "m3"},
+    {"object_id": "SLAB-1", "item_code": "SLAB-CON", "quantity": 18.0, "unit": "m3"},
+    {"object_id": "RB-1", "item_code": "REBAR-WEIGHT", "quantity": 1896.2962962962963, "unit": "kg"}
+  ],
+  "expected_boq": [
+    {"item_code": "CONCRETE", "quantity": 1.08, "unit": "m3"},
+    {"item_code": "SLAB-CON", "quantity": 18.0, "unit": "m3"},
+    {"item_code": "REBAR-WEIGHT", "quantity": 1896.2962962962963, "unit": "kg"}
+  ],
+  "tolerances": {"quantity": 0.000001}
+}

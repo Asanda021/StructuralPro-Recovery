@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "product_id": "structuralpro",
+  "parent_platform": "ERVIRA",
+  "source_contract": "contracts/product-contract.json",
+  "version": "0.1.0",
+  "phase": "P21",
+  "purpose": "Product catalog synchronization",
+  "catalog": {
+    "source": "StructuralPro canonical contract",
+    "fields": [
+      "product_id",
+      "name",
+      "description",
+      "status",
+      "current_version",
+      "capabilities",
+      "editions"
+    ],
+    "orphan_products_blocked": true,
+    "duplicate_product_ids_blocked": true
+  }
+}

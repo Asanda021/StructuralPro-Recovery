@@ -1,0 +1,32 @@
+name: P31 Commercial Readiness
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "core/platform/p31_commercial_readiness.py"
+      - "tests/test_p31_commercial_readiness.py"
+      - "docs/P31_COMMERCIAL_READINESS.md"
+      - ".github/workflows/p31-commercial-readiness.yml"
+  push:
+    branches: [main]
+    paths:
+      - "core/platform/p31_commercial_readiness.py"
+      - "tests/test_p31_commercial_readiness.py"
+      - "docs/P31_COMMERCIAL_READINESS.md"
+      - ".github/workflows/p31-commercial-readiness.yml"
+
+jobs:
+  p31:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pytest
+      - name: Run P31 dedicated gate
+        run: pytest -q tests/test_p31_commercial_readiness.py
