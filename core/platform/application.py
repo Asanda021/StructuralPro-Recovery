@@ -134,6 +134,47 @@ class StructuralProApp:
         return self.structural_member_workflow().commit(
             project_id, kind, floor_id, member_id, expected_revision=expected_revision)
 
+    def aec_workflow(self):
+        """Reviewed roof, stair, wall, finish and MEP quantities on existing SQLite/BOQ."""
+        from core.takeoff.reviewed_aec import ReviewedAECWorkflow
+        return ReviewedAECWorkflow(self.store, self.takeoff)
+
+    def aec_system_types(self) -> dict[str, Any]:
+        from core.takeoff.reviewed_aec import SPECS
+        return {key: {"title": spec.title, "components": list(spec.components),
+                      "essential": list(spec.essential)}
+                for key, spec in SPECS.items()}
+
+    def new_aec_system(self, kind: str, floor_id: str, system_id: str) -> dict[str, Any]:
+        from core.takeoff.reviewed_aec import empty_system
+        return empty_system(kind, floor_id, system_id)
+
+    def save_aec_system_draft(self, project_id: str, draft: dict[str, Any], *,
+                              expected_revision: int = 0) -> dict[str, Any]:
+        return self.aec_workflow().save_draft(
+            project_id, draft, expected_revision=expected_revision)
+
+    def get_aec_system(self, project_id: str, kind: str, floor_id: str,
+                       system_id: str) -> dict[str, Any] | None:
+        return self.aec_workflow().get(project_id, kind, floor_id, system_id)
+
+    def preview_aec_system(self, project_id: str, kind: str, floor_id: str,
+                           system_id: str) -> dict[str, Any]:
+        return self.aec_workflow().preview(project_id, kind, floor_id, system_id)
+
+    def commit_aec_system(self, project_id: str, kind: str, floor_id: str,
+                          system_id: str, *, expected_revision: int) -> dict[str, Any]:
+        return self.aec_workflow().commit(
+            project_id, kind, floor_id, system_id, expected_revision=expected_revision)
+
+    def office_aec_report(self, project_id: str, mode: str, fmt: str, path,
+                          *, statement: dict[str, Any] | None = None):
+        from core.reports.aec_office_package import export_office_package
+        project = self.open_project(project_id)
+        if project is None:
+            raise KeyError(project_id)
+        return export_office_package(project, mode, fmt, path, statement=statement)
+
     def ai_assistant_context(self, project_id: str) -> dict[str, Any]:
         """Return the bounded project context used by the AI assistant."""
         project = self.store.get(project_id)
