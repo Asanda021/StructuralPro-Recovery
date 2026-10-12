@@ -1,3 +1,5 @@
+import pytest
+
 from core.engineering.domains import concrete_quantities, steel_quantities, masonry_quantities, foundation_quantities
 from core.standards import default_iran_registry
 
@@ -19,7 +21,12 @@ def test_steel_domain_covers_member_connection_shop_items():
     assert steel_quantities("beam",length=10,unit_weight=30).quantity == 300
     assert steel_quantities("plate",length=2,width=1,thickness=.01).quantity == 157.0
     assert steel_quantities("bolt",quantity=8).unit == "عدد"
-    assert steel_quantities("weld",length=5).unit == "kg"
+    # Length alone does not establish the mass of welding material.
+    with pytest.raises(ValueError, match="وزن واحد"):
+        steel_quantities("weld", length=5)
+    result = steel_quantities("weld", length=5, count=2, weld_unit_weight=0.25,
+                              weld_unit_weight_unit="kg/m", weld_detail_ref="W-01")
+    assert result.unit == "kg" and result.quantity == pytest.approx(2.5)
     for k in ("column","bracing","truss","plate_girder","section","assembly","shop_part"): steel_quantities(k,length=2,unit_weight=20)
 
 def test_masonry_and_foundation_domains_cover_all_layer1_families():
