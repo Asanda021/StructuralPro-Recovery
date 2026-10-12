@@ -6,6 +6,7 @@ explicitly reviewed detail entries may be committed to project BOQ.
 from __future__ import annotations
 
 import hashlib
+from copy import deepcopy
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
+from core.takeoff.stirrup_zones import validate_stirrup_zones
 from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint, normalize_label, BeamEvidence
 from core.drawings.beam_rebar_hints import propose_rebar_from_evidence
 
@@ -36,6 +38,7 @@ class BeamDetailPanel(QWidget):
         self.revision = 0
         self._loaded_identity = None
         self._segmented_kinds = set()
+        self._stirrup_segments = None
         self._selected_evidence = None
         self.setMinimumWidth(360)
         root = QVBoxLayout(self)
@@ -101,6 +104,10 @@ class BeamDetailPanel(QWidget):
                 widgets[field] = editor
                 form.addRow(label, editor)
             self.bars[kind] = widgets
+            if kind == "stirrups":
+                self.stirrup_zones_button = QPushButton("ویرایش نواحی چندبازه‌ای خاموت")
+                self.stirrup_zones_button.setToolTip("کنترل ناحیه، فاصله، تعداد، طول برش و عدم تکرار خاموت مشترک")
+                form.addRow(self.stirrup_zones_button)
             column.addWidget(box)
         column.addStretch(1)
         buttons = QHBoxLayout()
@@ -114,6 +121,7 @@ class BeamDetailPanel(QWidget):
         self.message = QLabel("تا قبل از تأیید پنج قلم میلگرد، جمع وزن نهایی مسدود است.")
         self.message.setWordWrap(True)
         root.addWidget(self.message)
+        self.stirrup_zones_button.clicked.connect(self.edit_stirrup_zones)
         self.find_labels_button.clicked.connect(self.find_drawing_labels)
         self.suggest_rebar_button.clicked.connect(self.suggest_reinforcement)
         self.load_button.clicked.connect(self.load)
@@ -318,6 +326,26 @@ class BeamDetailPanel(QWidget):
         except (ValueError, TypeError, KeyError) as exc:
             QMessageBox.warning(self, "پیشنهاد آرماتور", str(exc))
 
+    def edit_stirrup_zones(self):
+        """Edit spatially validated zones; any change invalidates old approval."""
+        try:
+            identity = self._identity()
+            if self._loaded_identity is not None and self._loaded_identity != identity:
+                raise ValueError("شناسه تیر تغییر کرده؛ پیش از ویرایش نواحی، تیر جدید را بارگذاری کنید")
+            length = self._maybe_number(self.geometry["length"].text())
+            if length is None or length <= 0:
+                raise ValueError("ابتدا طول واقعی تیر را وارد کنید")
+            from app.beam_stirrup_zone_editor import StirrupZoneEditor
+            dialog = StirrupZoneEditor(beam_length_m=length, zones=self._stirrup_segments, parent=self)
+            if dialog.exec() != dialog.DialogCode.Accepted:
+                return
+            self._stirrup_segments = deepcopy(dialog.zones)
+            widgets = self.bars["stirrups"]
+            widgets["status"].setCurrentIndex(widgets["status"].findData("needs_review"))
+            self.message.setText("نواحی خاموت در فرم بارگذاری شد؛ وضعیت به نیازمند تأیید بازگشت. ثبت قطعی هنوز مجاز نیست.")
+        except (ValueError, TypeError) as exc:
+            QMessageBox.warning(self, "ویرایش خاموت‌های چندبازه‌ای", str(exc))
+
     def _draft(self):
         project, floor, beam = self._identity()
         draft = empty_beam(floor, beam)
@@ -349,6 +377,11 @@ class BeamDetailPanel(QWidget):
                         bar[name] = value
             if bar["status"] == "not_applicable":
                 bar["reason"] = widgets["reason"].text().strip()
+            if kind == "stirrups" and self._stirrup_segments is not None:
+                if bar["status"] == "not_applicable":
+                    raise ValueError("خاموت دارای ناحیه است؛ حذف کاربرد بدون اصلاح دیتایل ممنوع است")
+                validate_stirrup_zones(self._stirrup_segments, geometry.get("length"))
+                bar["segments"] = deepcopy(self._stirrup_segments)
             draft["bars"][kind] = bar
         return project, draft
 
@@ -370,11 +403,14 @@ class BeamDetailPanel(QWidget):
             self._selected_evidence = ({"source_id": source.get("source_id"),
                                         "beam_tag": evidence.get("beam_tag"), "evidence": dict(evidence)}
                                        if isinstance(evidence, dict) else None)
+            self._stirrup_segments = deepcopy(draft["bars"]["stirrups"].get("segments"))
             self._segmented_kinds = {
-                kind for kind in BAR_TYPES if draft["bars"][kind].get("segments")
+                kind for kind in BAR_TYPES if kind != "stirrups" and draft["bars"][kind].get("segments")
             }
+            if self._stirrup_segments:
+                self.message.setText(f"{len(self._stirrup_segments)} ناحیه خاموت بارگذاری شد؛ جزئیات در ویرایشگر نواحی قابل اصلاح هستند.")
             if self._segmented_kinds:
-                self.message.setText("این تیر دیتایل چندبازه‌ای دارد؛ این فرم ساده تا تکمیل ویرایشگر بازه‌ها اجازه ویرایش آن را نمی‌دهد.")
+                self.message.setText("بازه‌های غیرخاموت در فرم ساده قابل ویرایش نیستند؛ اطلاعات پیشین محفوظ است.")
             self.floor.setText(draft["floor_id"])
             self.beam.setText(draft["beam_id"])
             self.geometry["source_ref"].setText(str(draft.get("geometry", {}).get("source_ref", "")))
@@ -403,7 +439,10 @@ class BeamDetailPanel(QWidget):
         try:
             project, draft = self._draft()
             if self._segmented_kinds:
-                raise ValueError("ویرایش دیتایل چندبازه‌ای از این فرم پشتیبانی نمی‌شود؛ داده قبلی محفوظ است")
+                raise ValueError("ویرایش بازه‌های غیرخاموت از این فرم پشتیبانی نمی‌شود؛ داده قبلی محفوظ است")
+            if self._stirrup_segments is not None and self._loaded_identity is not None:
+                if self._loaded_identity != (project, draft["floor_id"], draft["beam_id"]):
+                    raise ValueError("شناسه تیر تغییر کرده؛ نواحی خاموت تیر قبلی قابل انتقال نیست")
             identity = (project, draft["floor_id"], draft["beam_id"])
             if self._loaded_identity != identity:
                 existing = self.service.get_beam_detail(*identity)
