@@ -227,9 +227,10 @@ class ReviewedStructuralWorkflow:
         if revision != expected_revision:
             raise RuntimeError("تعارض نسخه؛ دوباره بارگذاری کنید")
         if previous and previous["data"].get("source") != source:
-            if any(isinstance(x, dict) and x.get("status") in ("confirmed", "not_applicable")
-                   for x in [draft.get("formwork")] + list(draft.get("rebars", {}).values())):
-                raise ValueError("منبع تغییر یافته است؛ تأییدها باید بازنشانی شوند")
+            if (draft.get("geometry", {}).get("approved_by") or
+                    any(isinstance(x, dict) and x.get("status") in ("confirmed", "not_applicable")
+                        for x in [draft.get("formwork")] + list(draft.get("rebars", {}).values()))):
+                raise ValueError("منبع تغییر یافته است؛ تأیید هندسه، قالب و آرماتور باید بازنشانی شوند")
         source_id = source.get("source_id") if isinstance(source, dict) else None
         if source_id:
             for other_key, item in register.items():
