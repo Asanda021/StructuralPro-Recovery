@@ -52,6 +52,41 @@ def _normalize_date_key(value: str) -> str | None:
         return None
     return f"{y:04d}/{m:02d}/{d:02d}"
 
+# The original PR #481 branch is unavailable. These rules restore the documented
+# payable/consumption split without changing the payment treatment of legacy
+# concrete, steel, or masonry assembly components.
+_FINISH_ASSEMBLY_CODES = frozenset({
+    "gypsum_scratch", "gypsum_finish", "cement_render", "wall_tile",
+    "wall_paint", "waterproofing_wall", "facade_finish", "floor_tile",
+    "floor_screed", "ceiling_paint", "false_ceiling",
+    "waterproofing_floor", "skirting",
+})
+
+
+def _finish_component_role(assembly_code: str, component_code: str) -> str:
+    if assembly_code not in _FINISH_ASSEMBLY_CODES:
+        return "work"
+    if component_code == assembly_code + "_procurement":
+        return "procurement"
+    if component_code == assembly_code + "_material":
+        return "material"
+    return "work"
+
+
+def _is_payable_quantity(takeoff: dict[str, Any], quantity: dict[str, Any]) -> bool:
+    explicit_role = str(quantity.get("role") or takeoff.get("component_role") or "").strip()
+    if explicit_role:
+        # Fail closed: unknown role is not silently treated as payable work.
+        if explicit_role not in {"work", "procurement", "material"}:
+            raise ValueError("نقش جزء متره ناشناخته است")
+        return explicit_role == "work"
+    params = takeoff.get("params") or {}
+    assembly_code = str(params.get("assembly_code", ""))
+    component_code = str(quantity.get("code", ""))
+    # Backward-compatible: old saved finish rows had no role marker.
+    return _finish_component_role(assembly_code, component_code) == "work"
+
+
 class StructuralProApp:
     def __init__(self,data_dir: str|Path):
         self.data_dir=Path(data_dir); self.data_dir.mkdir(parents=True,exist_ok=True)
@@ -60,6 +95,33 @@ class StructuralProApp:
         self.qa=ProjectQA()
         self.ai_assistant = EngineeringAssistant()
         self.engineering = EngineeringLibrary()
+
+    @staticmethod
+    def _build_project_boq(project: dict[str, Any]) -> list[dict[str, Any]]:
+        """Single payable-BOQ rebuild route for manual, drawing, AI and revisions.
+
+        Procurement and material-consumption figures remain as auditable takeoffs
+        but are never billed twice in the payment BOQ.
+        """
+        boq_inputs: list[dict[str, Any]] = []
+        for takeoff in project.get("takeoffs", []):
+            for quantity in takeoff.get("quantities", []):
+                if not _is_payable_quantity(takeoff, quantity):
+                    continue
+                group = takeoff.get("domain") or "manual"
+                boq_inputs.append({
+                    "source": takeoff.get("source_id", "") or "manual",
+                    "source_id": takeoff.get("source_id", ""),
+                    "source_type": "takeoff",
+                    "description": quantity.get("title", ""),
+                    "quantity": quantity.get("amount", 0),
+                    "unit": quantity.get("unit", ""),
+                    "item_code": quantity.get("code", ""),
+                    "price_code": quantity.get("price_code"),
+                    "unit_price": quantity.get("unit_price"),
+                    "category": group, "group": group,
+                })
+        return build_boq(boq_inputs)
 
     def create_project(self,name:str,project_id:str)->dict[str,Any]:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
@@ -236,23 +298,7 @@ class StructuralProApp:
              "quantities":[{"code":item,"title":description or item,"system":system,"unit":result.unit,"amount":result.quantity,
              "formula":result.formula,"warning":result.warning,"price_code":params.get("price_code"),"unit_price":params.get("unit_price")}]}
         p["takeoffs"].append(row)
-        boq_inputs=[]
-        for takeoff in p["takeoffs"]:
-            for q in takeoff.get("quantities",[]):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id","") or "manual",
-                    "source_id": takeoff.get("source_id",""),
-                    "source_type": "takeoff",
-                    "description": q.get("title",""),
-                    "quantity": q.get("amount",0),
-                    "unit": q.get("unit",""),
-                    "item_code": q.get("code", item),
-                    "price_code": q.get("price_code"),
-                    "unit_price": q.get("unit_price"),
-                    "category": domain,
-                    "group": domain,
-                })
-        p["boq"]=build_boq(boq_inputs)
+        p["boq"] = self._build_project_boq(p)
         self.store.save(project_id,p); return row
 
 
@@ -366,18 +412,7 @@ class StructuralProApp:
                 }],
             })
         project.setdefault("takeoffs", []).extend(new_takeoffs)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["boq"] = self._build_project_boq(project)
         record["committed_item_ids"] = sorted(already.union(selected))
         record["ai_committed_item_ids"] = sorted(ai_already)
         record["revision"] = current_revision + 1
@@ -491,18 +526,7 @@ class StructuralProApp:
         if not new_rows:
             raise ValueError("پیشنهاد تأییدشده هیچ ردیف قابل ثبت ندارد")
         project.setdefault("takeoffs", []).extend(new_rows)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["boq"] = self._build_project_boq(project)
         record["ai_committed_item_ids"] = sorted(set(record.get("ai_committed_item_ids", [])) | seen_session_items)
         record["revision"] = expected_session_revision + 1
         record["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -511,8 +535,8 @@ class StructuralProApp:
                 "drawing_session_id": sid, "drawing_session_revision": record["revision"]}
 
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
-                             floor_id: str, description: str = "") -> dict[str, Any]:
-        """Calculate and persist every verified component of an explicit-input assembly to the BOQ."""
+                             floor_id: str, description: str = "", location_id: str = "") -> dict[str, Any]:
+        """Persist a reviewed assembly with stable source/location identity."""
         pid = str(project_id).strip()
         floor = str(floor_id or "").strip()
         if not pid:
@@ -522,6 +546,18 @@ class StructuralProApp:
         project = self.store.get(pid)
         if project is None:
             raise KeyError(pid)
+        fixed_location = str(location_id or "").strip()
+        assembly_key = str(assembly_code).strip()
+        if assembly_key in _FINISH_ASSEMBLY_CODES:
+            if not fixed_location:
+                raise ValueError("شناسه ثابت محل برای متره نازک‌کاری الزامی است")
+            if any(
+                str(previous.get("assembly_code", "")) == assembly_key
+                and str(previous.get("floor_id", "")).strip() == floor
+                and str(previous.get("location_id", "")).strip() == fixed_location
+                for previous in project.get("takeoff_assemblies", [])
+            ):
+                raise ValueError("متره تکراری برای همین نوع عملیات، طبقه و شناسه محل ثبت شده است")
         result = AssemblyTemplateLibrary().expand(assembly_code, inputs)
         if not result.complete:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
@@ -536,11 +572,13 @@ class StructuralProApp:
         parent = {
             "id": bundle_id, "assembly_code": result.code, "title": result.title,
             "description": str(description or result.title).strip(), "floor_id": floor,
+            "location_id": fixed_location,
             "inputs": deepcopy(dict(inputs)), "inputs_used": list(result.inputs_used),
             "revision": 1, "created_at": created_at, "component_source_ids": [],
         }
         rows = []
         for component in result.components:
+            component_role = _finish_component_role(result.code, component.code)
             source_id = f"assembly:{bundle_id}:{component.code}"
             if any(str(existing.get("source_id", "")).strip() == source_id
                    for existing in project.get("takeoffs", [])):
@@ -553,9 +591,11 @@ class StructuralProApp:
                 "params": {"assembly_id": bundle_id, "assembly_code": result.code,
                            "component_code": component.code, "inputs": deepcopy(dict(inputs))},
                 "revision": 1, "assembly_id": bundle_id,
+                "component_role": component_role, "location_id": fixed_location,
                 "description": title, "system": floor,
                 "quantities": [{
                     "code": component.code, "title": title, "system": floor,
+                    "role": component_role,
                     "unit": component.unit, "amount": float(component.quantity),
                     "formula": component.formula, "warning": component.warning,
                     "price_code": None, "unit_price": None,
@@ -566,19 +606,7 @@ class StructuralProApp:
             parent["component_source_ids"].append(source_id)
 
         project.setdefault("takeoff_assemblies", []).append(parent)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", ""), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "assembly"),
-                    "group": takeoff.get("domain", "assembly"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["boq"] = self._build_project_boq(project)
         self.store.save(pid, project)
         return {"assembly": parent, "rows": deepcopy(rows)}
 
@@ -643,19 +671,7 @@ class StructuralProApp:
             }],
         })
 
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", item), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "manual"),
-                    "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["boq"] = self._build_project_boq(project)
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(row)
 
