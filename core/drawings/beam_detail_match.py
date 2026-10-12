@@ -175,13 +175,20 @@ def validate_evidence_link(source: dict[str, Any], beam_id: str) -> None:
     if not isinstance(text, str) or not _beam_pattern(beam_id).search(normalize_label(text)):
         raise ValueError("متن مرجع دیتایل با شناسه تیر مطابقت ندارد")
     page = evidence.get("page")
-    if isinstance(page, bool) or not isinstance(page, int) or page != int(source.get("page", -1)):
-        raise ValueError("شماره صفحه مرجع دیتایل با صفحه نقشه ناسازگار است")
+    if isinstance(page, bool) or not isinstance(page, int) or page < 1:
+        raise ValueError("شماره صفحه مرجع دیتایل معتبر نیست")
     kind = evidence.get("kind")
     ref = evidence.get("source_ref")
     prefix = {"cad": f"cad:page:{page}:", "pdf": f"pdf:page:{page}:"}.get(kind)
     if not prefix or not isinstance(ref, str) or not ref.startswith(prefix):
         raise ValueError("شناسه منبع دیتایل معتبر نیست")
+    sha = source.get("sha256")
+    if not isinstance(sha, str) or evidence.get("drawing_sha256") != sha:
+        raise ValueError("اثر انگشت فایل دیتایل با نقشه انتخابی یکسان نیست")
+    # A PDF detail may be on another page of the *same* SHA-256 verified file.
+    # CAD modelspace in this viewer always maps to page 1.
+    if kind == "cad" and page != source.get("page"):
+        raise ValueError("صفحه برچسب CAD با صفحه نمایش نقشه ناسازگار است")
 
 
 def suggested_link(evidence: Iterable[BeamEvidence]) -> dict[str, Any]:
