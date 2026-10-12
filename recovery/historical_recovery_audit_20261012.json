@@ -1,0 +1,89 @@
+{
+  "record_type": "forensic_inventory_not_reconstruction",
+  "historical_main_sha_reported_only": "a268344282fc22ad3f66a0489049eb8a5d7925be",
+  "historical_pr462_snapshot_sha": "a07cf3376dcb57b70daba30dd8bb6b6e5c5167d9",
+  "historical_pr481_head_sha_reported_only": "57c1e941d8ec3e371c3332e0a0b77d21102b84a5",
+  "full_historical_main_tree_obtained": false,
+  "full_historical_pr481_tree_obtained": false,
+  "historical_archive_sha256": "4f98a2567de5b2c67dcb3b13127e290749e9a137f882316ce0142776de454519",
+  "historical_archive_file_count": 1454,
+  "historical_main_partial_blob_comparison": {
+    ".github/workflows/p100-pricebook-archive-sync.yml": {
+      "archive_present": true,
+      "archive_blob_sha1": "3eb89dec5e17ebcbc7d42b3309609c7824facd8e",
+      "historical_main_blob_sha1": "3eb89dec5e17ebcbc7d42b3309609c7824facd8e",
+      "matches_reported_main_blob": true
+    },
+    "tests/test_binary_build_security_contract.py": {
+      "archive_present": false,
+      "historical_main_blob_sha1": "6107c7790a7198fc3eb9dfa5537a7bdc5475e607",
+      "matches_reported_main_blob": null
+    },
+    "core/estimate/pricebook_full_building_pricing_v2.py": {
+      "archive_present": true,
+      "archive_blob_sha1": "6d246cb6acba3246671c09d8fbae69be60aa31ad",
+      "historical_main_blob_sha1": "6d246cb6acba3246671c09d8fbae69be60aa31ad",
+      "matches_reported_main_blob": true
+    }
+  },
+  "pr481_expected_tests_in_current_checkout": {
+    "tests/test_finish_takeoff_assemblies.py": true,
+    "tests/test_finish_takeoff_ui_runtime.py": false,
+    "tests/test_finish_takeoff_report_contract.py": false,
+    "tests/test_master13_phase2_manual_transaction.py": false,
+    "tests/test_master13_phase2_manual_dialog_runtime.py": false,
+    "tests/test_manual_takeoff_workbench.py": true,
+    "tests/test_manual_takeoff_input.py": true,
+    "tests/test_manual_takeoff_ui_wiring.py": true
+  },
+  "pr481_expected_tests_present_count": 4,
+  "pr481_expected_tests_missing": [
+    "tests/test_finish_takeoff_ui_runtime.py",
+    "tests/test_finish_takeoff_report_contract.py",
+    "tests/test_master13_phase2_manual_transaction.py",
+    "tests/test_master13_phase2_manual_dialog_runtime.py"
+  ],
+  "manual_workbench_basic_code_count": 13,
+  "manual_form_basic_code_count": 13,
+  "finishing_13_not_in_old_manual_workbench_route": [
+    "ceiling_paint",
+    "cement_render",
+    "facade_finish",
+    "false_ceiling",
+    "floor_screed",
+    "floor_tile",
+    "gypsum_finish",
+    "gypsum_scratch",
+    "skirting",
+    "wall_paint",
+    "wall_tile",
+    "waterproofing_floor",
+    "waterproofing_wall"
+  ],
+  "finishing_13_not_in_old_manual_dialog_route": [
+    "ceiling_paint",
+    "cement_render",
+    "facade_finish",
+    "false_ceiling",
+    "floor_screed",
+    "floor_tile",
+    "gypsum_finish",
+    "gypsum_scratch",
+    "skirting",
+    "wall_paint",
+    "wall_tile",
+    "waterproofing_floor",
+    "waterproofing_wall"
+  ],
+  "historical_pr464_vs_pr468_line_conflict_verified": false,
+  "historical_pr464_vs_pr468_file_overlap_reported": [
+    "core/takeoff/manual_workbench.py"
+  ],
+  "quarantined_workflow_count": 193,
+  "active_workflow_count": 0,
+  "local_bundle_heads": [
+    "0db9e2d7dff9fe7179008826fab2e646d34ec9e3 refs/heads/main",
+    "0db9e2d7dff9fe7179008826fab2e646d34ec9e3 HEAD"
+  ],
+  "local_bundle_contains_original_history_verified": false
+}
