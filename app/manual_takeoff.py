@@ -131,6 +131,10 @@ class ManualTakeoffDialog(QDialog):
         if not project_id:
             return
         try:
+            # Preview audit can run in a stale desktop too. Use the same
+            # persisted optimistic guard as takeoff writes, never cached payload.
+            digest = self.service.store.current_digest(project_id)
+            self.service.store._cache.pop(str(project_id), None)
             project = self.service.open_project(project_id)
             if project is None:
                 return
@@ -141,7 +145,7 @@ class ManualTakeoffDialog(QDialog):
                 "details": dict(details or {}),
             })
             project["_manual_takeoff_audit"] = timeline[-500:]
-            self.service.store.save(project_id, project)
+            self.service.store.save(project_id, project, expected_digest=digest)
         except Exception:
             # Audit failures are visible to the user; they must not silently block takeoff.
             self.status.setText("هشدار: متره انجام شد اما ذخیره تاریخچه ممیزی ناموفق بود.")
@@ -154,7 +158,9 @@ class ManualTakeoffDialog(QDialog):
             row = self.table.rowCount()
             self.table.insertRow(row)
             status = "ذخیره شد" if record.record_id in self._saved_ids else "آماده ذخیره"
-            values = [record.record_id, record.floor_id, record.code, record.element_label,
+            label = _SAVED_ITEM_LABELS.get(record.code, record.code)
+            values = [record.record_id, record.floor_id, label,
+                      label if record.element_label == record.code else record.element_label,
                       f"{record.quantity:g}", record.unit, status]
             for col, value in enumerate(values):
                 self.table.setItem(row, col, QTableWidgetItem(str(value)))
@@ -431,16 +437,20 @@ class ManualTakeoffDialog(QDialog):
             row = self.table.rowCount()
             self.table.insertRow(row)
             if isinstance(result, ManualTakeoffDraft):
+                label = _SAVED_ITEM_LABELS.get(result.entry.code, result.entry.code)
+                missing = [_PARAM_LABELS.get(key, key) for key in result.missing]
                 values = [
-                    "پیش‌نویس", result.floor_id, result.entry.code,
-                    self.element_label.text().strip() or result.entry.code,
-                    "—", "—", "نیازمند: " + "، ".join(result.missing),
+                    "پیش‌نویس", result.floor_id, label,
+                    self.element_label.text().strip() or label,
+                    "—", "—", "نیازمند: " + "، ".join(missing),
                 ]
-                incomplete.append(f"{result.entry.code}: {', '.join(result.missing)}")
+                incomplete.append(f"{label}: {', '.join(missing)}")
             else:
+                label = _SAVED_ITEM_LABELS.get(result.code, result.code)
                 values = [
-                    result.record_id, result.floor_id, result.code,
-                    result.element_label, f"{result.quantity:g}", result.unit,
+                    result.record_id, result.floor_id, label,
+                    label if result.element_label == result.code else result.element_label,
+                    f"{result.quantity:g}", result.unit,
                     "آماده ذخیره",
                 ]
                 added += 1
@@ -478,7 +488,8 @@ class ManualTakeoffDialog(QDialog):
                     record.project_id,
                     domain,
                     item,
-                    description=record.element_label,
+                    description=(_SAVED_ITEM_LABELS.get(record.code, record.code)
+                                 if record.element_label == record.code else record.element_label),
                     source_id=f"manual-workbench:{record.project_id}:{self._session_id}:{record.record_id}",
                     system=record.floor_id,
                     **dict(record.params),
