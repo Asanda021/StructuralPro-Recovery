@@ -1,4 +1,7 @@
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 import re
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -15,7 +18,7 @@ def test_requirements_are_explicit_and_optional_integrations_are_not_hidden():
     assert "# ifcopenshell" in text
 
 def test_release_workflow_has_deterministic_artifact_inputs():
-    text=(ROOT/".github/workflows/windows-release.yml").read_text(encoding="utf-8")
+    text=(HISTORY/".github/workflows/windows-release.yml").read_text(encoding="utf-8")
     assert "actions/checkout@v4" in text
     assert "Get-Content VERSION" in text
     assert "actions/upload-artifact@v4" in text

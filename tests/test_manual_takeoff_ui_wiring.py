@@ -38,4 +38,5 @@ def test_manual_takeoff_workbench_exposes_phase_two_controls():
         assert control in DIALOG
     assert "QApplication.clipboard().text()" in DIALOG
     assert 'project.setdefault("_manual_takeoff_audit", [])' in DIALOG
-    assert 'self.service.store.save(project_id, project)' in DIALOG
+    # Audit persistence must use the same optimistic guard as real takeoff writes.
+    assert 'self.service.store.save(project_id, project, expected_digest=digest)' in DIALOG

@@ -50,6 +50,13 @@ def _cell(value):
     return str(value)
 
 
+def _display_value(row, key):
+    value = row.get(key, "")
+    if key == "status":
+        return {"active": "فعال", "cancelled": "لغوشده"}.get(str(value), value)
+    return value
+
+
 def export_csv(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
     import csv
     rows = list(rows)
@@ -64,7 +71,7 @@ def export_csv(rows, path, title="StructuralPro", summary=None, metadata=None, c
                 w.writerow([key, value])
         w.writerow([])
         w.writerow([label for _, label in cols])
-        w.writerows([_cell(row.get(key)) for key, _ in cols] for row in rows)
+        w.writerows([_cell(_display_value(row, key)) for key, _ in cols] for row in rows)
     return path
 
 
@@ -103,7 +110,7 @@ def export_xlsx(rows, path, title="StructuralPro", summary=None, metadata=None, 
     header_row += 1
     detail.append([label for _, label in cols])
     for row in rows:
-        detail.append([row.get(key, "") for key, _ in cols])
+        detail.append([_display_value(row, key) for key, _ in cols])
     thin = Side(style="thin")
     for cell in detail[header_row]:
         cell.font = Font(bold=True)
@@ -197,7 +204,7 @@ def export_docx(rows, path, title="StructuralPro", summary=None, metadata=None, 
     for row in rows:
         cells = t.add_row().cells
         for i, (key, _) in enumerate(cols):
-            cells[i].text = _cell(row.get(key))
+            cells[i].text = _cell(_display_value(row, key))
     mark_table_rtl(t)
     d.save(path)
     return path
@@ -286,7 +293,7 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
     display_cols = list(reversed(cols))
     data = [[Paragraph(_pdf_text(label), body) for _, label in display_cols]]
     for row in rows:
-        data.append([Paragraph(_pdf_text(row.get(key)), body) for key, _ in display_cols])
+        data.append([Paragraph(_pdf_text(_display_value(row, key)), body) for key, _ in display_cols])
     if not rows:
         data.append([Paragraph(_pdf_text("ردیفی برای نمایش وجود ندارد"), body)])
     table = Table(data, repeatRows=1)
