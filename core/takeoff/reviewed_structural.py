@@ -261,10 +261,9 @@ class ReviewedStructuralWorkflow:
         current_deductions = {d["id"] for row in report["rows"] if row["code"] == "concrete"
                               for d in row["params"]["intersections"]}
         for other in prior:
-            if other.get("item") == "concrete":
-                other_deductions = other.get("params", {}).get("intersections", [])
-                if current_deductions & {d.get("id") for d in other_deductions}:
-                    raise ValueError("حجم هم‌پوشانی قبلاً از عضو دیگری کسر شده است")
+            other_deductions = other.get("params", {}).get("intersections", [])
+            if current_deductions & {d.get("id") for d in other_deductions}:
+                raise ValueError("حجم هم‌پوشانی قبلاً از عضو دیگری کسر شده است")
         takeoffs = deepcopy(prior)
         for row in report["rows"]:
             takeoffs.append({"id": row["source_id"], "source_id": row["source_id"],
