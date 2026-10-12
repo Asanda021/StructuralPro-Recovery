@@ -15,6 +15,7 @@ from typing import Any
 from core.takeoff.boq import build_boq
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.stirrup_zones import validate_stirrup_zones
+from core.takeoff.reviewed_components import cut_length as reviewed_cut_length, net_concrete, net_formwork
 
 BAR_TYPES = ("longitudinal", "stirrups", "side_bars", "crossties", "additional")
 BAR_LABELS = {
@@ -129,15 +130,24 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
         _text(geometry.get("source_ref"), "مرجع ابعاد تیر")
         dims = {key: _number(geometry.get(key), key) for key in ("length", "width", "depth")}
         dims["count"] = int(_number(geometry.get("count"), "تعداد تیر", integer=True))
-        deduction = _number(geometry.get("deductions_m3"), "کسر هم‌پوشانی بتن", zero=True)
         gross = engine.calculate("building", "beam", description=f"بتن تیر {beam_id}", **dims)
-        net = gross.quantity - deduction
+        if "intersections" in geometry:
+            net, checked_intersections = net_concrete(gross.quantity, geometry["intersections"])
+            deduction = gross.quantity - net
+            if "deductions_m3" in geometry and not math.isclose(
+                    _number(geometry["deductions_m3"], "کسر هم‌پوشانی بتن", zero=True),
+                    deduction, rel_tol=1e-9, abs_tol=1e-9):
+                raise ValueError("جمع کسورات بتن با کسر نهایی ناسازگار است")
+        else:
+            deduction = _number(geometry.get("deductions_m3"), "کسر هم‌پوشانی بتن", zero=True)
+            net = gross.quantity - deduction
+            checked_intersections = []
         if not math.isfinite(net) or net <= 0:
             raise ValueError("کسر هم‌پوشانی، حجم خالص بتن تیر را نامعتبر می‌کند")
         rows.append({"source_id": base_id+":concrete", "code": "beam", "domain": "building",
                      "description": f"بتن خالص تیر {beam_id}", "quantity": net, "unit": "m3",
                      "formula": f"{gross.formula} − کسر هم‌پوشانی مستند {deduction:g} m³",
-                     "params": {**dims, "deductions_m3": deduction}})
+                     "params": {**dims, "deductions_m3": deduction, "intersections": checked_intersections}})
     except (ValueError, TypeError, KeyError) as exc:
         errors.append("بتن تیر: " + str(exc))
 
@@ -147,10 +157,18 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
     try:
         _text(formwork.get("approved_by"), "تأییدکننده قالب‌بندی")
         _text(formwork.get("source_ref"), "مرجع سطوح در تماس با قالب")
-        area = _number(formwork.get("net_area_m2"), "مساحت خالص قالب‌بندی")
+        if "surfaces" in formwork:
+            area, verified_faces = net_formwork(formwork)
+            if "net_area_m2" in formwork and not math.isclose(
+                    _number(formwork["net_area_m2"], "مساحت خالص قالب‌بندی"), area,
+                    rel_tol=1e-9, abs_tol=1e-9):
+                raise ValueError("جمع سطوح قالب با مقدار نهایی تعارض دارد")
+        else:
+            area = _number(formwork.get("net_area_m2"), "مساحت خالص قالب‌بندی")
+            verified_faces = []
         rows.append({"source_id": base_id+":formwork", "code": "formwork", "domain": "building",
                      "description": f"قالب‌بندی تیر {beam_id}", "quantity": area, "unit": "m2",
-                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area}})
+                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area, "surfaces": verified_faces}})
     except (ValueError, TypeError) as exc:
         errors.append("قالب‌بندی: " + str(exc))
 
@@ -183,13 +201,23 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                         raise ValueError("دیتایل هر بازه میلگرد باید ساختار معتبر داشته باشد")
                     _text(segment.get("source_ref"), "مرجع بازه میلگرد")
                     count = int(_number(segment.get("count"), "تعداد میلگرد", integer=True))
-                    cut = _number(segment.get("cut_length_m"), "طول برش تأییدشده")
+                    if "length_parts_m" in segment:
+                        reviewed_segment = dict(segment)
+                        reviewed_segment.setdefault("approved_by", bar["approved_by"])
+                        cut, cut_metadata = reviewed_cut_length(reviewed_segment)
+                        _text(segment.get("unit_weight_source"), "منبع وزن واحد")
+                    else:
+                        cut = _number(segment.get("cut_length_m"), "طول برش تأییدشده")
+                        cut_metadata = {"method": "approved_cut_length", "cut_length_m": cut,
+                                        "source_ref": segment["source_ref"]}
                     weight = _number(segment.get("unit_weight_kg_m"), "وزن واحد تأییدشده")
                     result = engine.calculate("building", "rebar", description=BAR_LABELS[kind],
                                               count=count, length=cut, unit_weight=weight)
                     quantities.append(result.quantity)
                     segment_parameters = {"count": count, "length": cut, "unit_weight": weight,
-                                          "source_ref": segment["source_ref"]}
+                                          "source_ref": segment["source_ref"], "cut": cut_metadata}
+                    if "unit_weight_source" in segment:
+                        segment_parameters["unit_weight_source"] = segment["unit_weight_source"]
                     if kind == "stirrups" and "segments" in bar:
                         segment_parameters.update({field: segment[field] for field in (
                             "name", "start_m", "end_m", "spacing_m", "first_bar_m", "last_bar_m")})
