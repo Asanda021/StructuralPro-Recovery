@@ -220,3 +220,21 @@ def test_beam_evidence_cross_page_link_blocks_preview():
     result = preview_beam(draft, TakeoffEngine())
     assert not result["ready"]
     assert any("صفحه" in error for error in result["blockers"])
+
+def test_matching_beam_detail_reference_persists_without_finalizing(tmp_path):
+    workflow, store, db = _workflow(tmp_path)
+    draft = _draft()
+    draft["source"]["detail_evidence"] = {
+        "beam_tag": "B1", "kind": "cad", "source_ref": "cad:page:2:handle:ABC",
+        "text": "B1 b=30cm h=50cm", "page": 2, "located": True,
+        "in_selected_region": True,
+    }
+    workflow.save_draft("P1", draft)
+    store.close()
+    second = ProjectStore(db)
+    restored = BeamDetailWorkflow(second, TakeoffEngine())
+    record = restored.get("P1", "L1", "B1")
+    assert record["data"]["source"]["detail_evidence"]["source_ref"] == "cad:page:2:handle:ABC"
+    assert not restored.preview("P1", "L1", "B1")["ready"]
+    assert second.get("P1")["boq"] == []
+    second.close()
