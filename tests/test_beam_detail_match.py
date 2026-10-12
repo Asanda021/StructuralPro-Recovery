@@ -95,13 +95,15 @@ def test_persian_explicit_section():
 
 
 def test_drawing_evidence_link_consistency():
-    source = {"mode": "drawing", "page": 2,
+    source = {"mode": "drawing", "page": 2, "sha256": "a" * 64,
               "detail_evidence": {"beam_tag": "B1", "kind": "cad",
-                                  "source_ref": "cad:page:2:handle:A1", "text": "b۱", "page": 2}}
+                                  "source_ref": "cad:page:2:handle:A1", "text": "b۱", "page": 2,
+                                  "drawing_sha256": "a" * 64}}
     validate_evidence_link(source, "B1")
     with pytest.raises(ValueError, match="تیر دیگری"):
         validate_evidence_link(source, "B2")
     source["detail_evidence"]["page"] = 3
+    source["detail_evidence"]["source_ref"] = "cad:page:3:handle:A1"
     with pytest.raises(ValueError, match="صفحه"):
         validate_evidence_link(source, "B1")
 
@@ -110,3 +112,14 @@ def test_invalid_evidence_does_not_pass_validation():
     src = {"mode": "manual", "page": 1, "detail_evidence": {"beam_tag": "B1"}}
     with pytest.raises(ValueError, match="نقشه معتبر"):
         validate_evidence_link(src, "B1")
+
+
+def test_pdf_cross_page_detail_same_verified_file():
+    source = {"mode": "drawing", "page": 1, "sha256": "c" * 64,
+              "detail_evidence": {"beam_tag": "B1", "kind": "pdf",
+                                  "source_ref": "pdf:page:3:line:10", "text": "B1 b=30cm h=50cm",
+                                  "page": 3, "drawing_sha256": "c" * 64}}
+    validate_evidence_link(source, "B1")
+    source["detail_evidence"]["drawing_sha256"] = "b" * 64
+    with pytest.raises(ValueError, match="اثر انگشت"):
+        validate_evidence_link(source, "B1")
