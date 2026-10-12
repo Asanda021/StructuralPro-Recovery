@@ -34,5 +34,5 @@ def calculate_electrical_item(item: str, **p: Any) -> ElectricalResult:
     if k in {"earthing","earth","ارت"}:
         q=_n(p["length"],"length"); return ElectricalResult("ارت",q,"m","L")
     if k in {"cable_tray","سینی_کابل"}:
-        q=_n(p["length"],"length"); return ElectricalResult("سینی کابل",q,"m","L")
+        q=_n(p["length"],"length")*_n(p.get("count",1),"count"); return ElectricalResult("سینی کابل",q,"m","L×تعداد")
     raise KeyError(f"unsupported electrical item: {item}")

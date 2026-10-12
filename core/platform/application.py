@@ -24,7 +24,7 @@ from core.drawings.model_registry import ModelRegistry, ModelSource, ModelObject
 from core.performance.project_performance import paginate, project_performance_snapshot
 from core.recovery.recovery import export_project, import_project
 from core.aec.disciplines import takeoff_domain
-from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload
+from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload, verified_measurement_identities, assert_new_measurements
 from core.takeoff.ai_output_guard import validate_ai_takeoff_proposal
 
 
@@ -51,6 +51,18 @@ def _normalize_date_key(value: str) -> str | None:
     if not 1 <= d <= max_day:
         return None
     return f"{y:04d}/{m:02d}/{d:02d}"
+
+
+def _statement_rate(value: Any, name: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{name}: نرخ باید عددی باشد")
+    try:
+        rate = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name}: نرخ نامعتبر است") from exc
+    if not math.isfinite(rate) or not 0 <= rate <= 1:
+        raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
+    return rate
 
 # The original PR #481 branch is unavailable. These rules restore the documented
 # payable/consumption split without changing the payment treatment of legacy
@@ -344,6 +356,7 @@ class StructuralProApp:
             ai_committed = list(previous.get("ai_committed_item_ids", []))
         sessions[sid] = {
             "id": sid, "revision": revision, "drawing_source": str(payload.get("drawing_source", "")),
+            "source_sha256": str(payload.get("source_sha256", "")),
             "session": deepcopy(payload), "committed_item_ids": committed,
             "ai_committed_item_ids": ai_committed,
             "updated_at": datetime.now(timezone.utc).isoformat(),
@@ -392,6 +405,8 @@ class StructuralProApp:
         if already.intersection(selected) or ai_already.intersection(selected):
             raise ValueError("برخی متره‌های انتخاب‌شده قبلاً از مسیر دستی یا هوشمند وارد BOQ شده‌اند؛ انتقال تکراری رد شد")
         rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=selected)
+        rows = verified_measurement_identities(record, rows)
+        assert_new_measurements(project, record, rows)
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         duplicate_sources = [row["source_id"] for row in rows if row["source_id"] in existing_sources]
         if duplicate_sources:
@@ -404,6 +419,8 @@ class StructuralProApp:
                 "member_code": row["item_code"], "source_id": source_id,
                 "domain": "drawing", "item": row["kind"],
                 "params": {"drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                           "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
+                           "calibration": row["calibration"], "holes": row["holes"],
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
@@ -455,6 +472,10 @@ class StructuralProApp:
             raise ValueError("نشست نقشه مرجع پیشنهاد در پروژه ذخیره نشده است")
         candidate_item_ids = {str(row.get("session_item_id", "")).strip() for row in report["rows"]}
         candidate_item_ids.discard("")
+        measured_rows = verified_measurement_identities(record, session_to_boq_rows(
+            record.get("session", {}), session_id=sid, selected_item_ids=list(candidate_item_ids)))
+        evidence_by_item = {row["takeoff_id"]: row for row in measured_rows}
+        assert_new_measurements(project, record, measured_rows)
         committed_item_ids = set(record.get("committed_item_ids", [])) | set(record.get("ai_committed_item_ids", []))
         existing_item_ids = {
             str(row.get("drawing_takeoff_id") or (row.get("params") or {}).get("session_item_id") or "").strip()
@@ -514,6 +535,8 @@ class StructuralProApp:
                 "member_code": candidate["source_id"], "source_id": source_id,
                 "domain": "drawing_ai", "item": candidate["kind"],
                 "params": {"drawing_session_id": sid, "drawing_revision": expected_session_revision,
+                           "source_sha256": evidence_by_item[item_id]["source_sha256"],
+                           "measurement_identity": evidence_by_item[item_id]["measurement_identity"],
                            "session_item_id": candidate["session_item_id"],
                            "geometry": [list(point) for point in measured_item.geometry],
                            "evidence": deepcopy(candidate["evidence"]), "confidence": candidate["confidence"],
@@ -686,6 +709,8 @@ class StructuralProApp:
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
+        if factors is None:
+            factors = (p.get("estimate") or {}).get("factors", {})
         normalized_factors={str(k):float(v) for k,v in (factors or {}).items()}
         estimate=build_estimate(p.get("boq",[]), factors=normalized_factors, aggregate=False)
         # Keep the application service deterministic even if a downstream costing adapter is replaced.
@@ -728,6 +753,10 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
         if min(previous_paid, retention_rate, advance_recovery_rate, tax_rate, insurance_rate) < 0:
             raise ValueError("statement rates and previous payment cannot be negative")
         lines = []
@@ -774,11 +803,16 @@ class StructuralProApp:
     def save_statement_period(self, project_id: str, *, period_no: int | None = None,
                               current_quantities: dict[str, float] | None = None,
                               retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
-                              tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
+                              tax_rate: float = 0.0, insurance_rate: float = 0.0,
+                              persist: bool = True) -> dict[str, Any]:
         """Persist a numbered statement period and roll its quantities into the next period."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
         periods = list(p.get("statement_periods", []))
         if period_no is None:
             period_no = (max((int(x.get("number", 0)) for x in periods), default=0) + 1)
@@ -791,14 +825,20 @@ class StructuralProApp:
                 str(x.get("code", "")): float(x.get("cumulative_quantity", 0) or 0)
                 for x in periods[-1].get("lines", [])
             }
-        overrides = {str(k): float(v) for k, v in (current_quantities or {}).items()}
+        raw_quantities = current_quantities or {}
+        known_codes = {str(row.get("price_code", "") or "") for row in p.get("boq", [])}
+        if any(str(code) not in known_codes for code in raw_quantities):
+            raise ValueError("کد کارکرد در BOQ پروژه وجود ندارد")
+        if any(isinstance(value, bool) for value in raw_quantities.values()):
+            raise ValueError("کارکرد باید عددی باشد، نه مقدار منطقی")
+        overrides = {str(k): float(v) for k, v in raw_quantities.items()}
         lines = []
         for row in p.get("boq", []):
             code = str(row.get("price_code", "") or "")
             cur = float(overrides.get(code, row.get("current_quantity", 0)) or 0)
             prev = float(previous.get(code, row.get("previous_quantity", 0)) or 0)
-            if cur < 0 or prev < 0:
-                raise ValueError("statement quantities cannot be negative")
+            if not all(math.isfinite(value) and value >= 0 for value in (cur, prev)):
+                raise ValueError("statement quantities must be finite and non-negative")
             lines.append({
                 "code": code, "description": row.get("description", ""), "unit": row.get("unit", ""),
                 "contract_quantity": float(row.get("quantity", 0) or 0),
@@ -830,7 +870,8 @@ class StructuralProApp:
         })
         periods.append(period)
         p["statement_periods"] = periods
-        self.store.save(project_id, p)
+        if persist:
+            self.store.save(project_id, p)
         return period
 
     def statement_periods(self, project_id: str) -> list[dict[str, Any]]:

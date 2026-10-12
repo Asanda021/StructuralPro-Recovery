@@ -19,7 +19,7 @@ ITEMS={
 ("tie_beam","شناژ / کلاف بتنی",("length","width","depth","count")),
 ("column","ستون بتنی",("width","depth","height","count")),("beam","تیر بتنی",("length","width","depth","count")),
 ("shear_wall","دیوار برشی بتنی",("length","thickness","height","count")),
-("stair_concrete","پله بتنی",("length","width","thickness","count")),
+("stair_concrete","پله بتنی",("sloped_length","width","waist_thickness","count")),
 ("formwork","قالب‌بندی",("perimeter","height","count")),("rebar","آرماتور",("length","unit_weight","count")),
 ("solid_slab_roof","سقف دال بتنی توپر / دال تخت — حجم بتن",("length","width","thickness","count")),
 ("joist_block_roof","سقف تیرچه‌بلوک — حجم بتن",("length","width","topping_thickness","joist_spacing","joist_width","joist_depth","count")),
@@ -46,6 +46,7 @@ ITEMS={
 
 FIELDS={
 "length":"طول","width":"عرض","height":"ارتفاع","depth":"عمق","thickness":"ضخامت","perimeter":"محیط",
+"sloped_length":"طول مایل پله (m)","waist_thickness":"ضخامت دال مایل پله (m)",
 "count":"تعداد","unit_weight":"وزن واحد (kg/m)","openings":"کسر بازشو (m²)","waste":"ضریب پرت",
 "layers":"تعداد لایه","diameter":"قطر","excavation":"حجم خاکبرداری","deductions":"کسرها",
 "topping_thickness":"ضخامت بتن رویه","joist_spacing":"فاصله آکس تیرچه","joist_width":"عرض تیرچه",

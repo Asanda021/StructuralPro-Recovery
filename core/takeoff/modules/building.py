@@ -41,8 +41,9 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     if k in {"wall","wall_area","دیوار"}:
         q=_wall_area(p["length"],p["height"],p.get("openings",0))*_n(p.get("count",1),"count"); return QuantityResult("ابنیه","دیوار",q,"m2","(L×H−بازشو)×تعداد")
     if k in {"slab","slab_area","floor","کف"}:
-        q=_rect_area(p["length"],p["width"]); return QuantityResult("ابنیه","سطح سقف/کف",q,"m2","L×W")
-    if k in {"solid_slab_roof","solid_slab","flat_slab"}:
+        q=_wall_area(p["length"],p["width"],p.get("openings",0))*_n(p.get("count",1),"count")
+        return QuantityResult("ابنیه","سطح سقف/کف",q,"m2","(L×W−بازشوی هر تکرار)×تعداد")
+    if k in {"solid_slab_roof","solid_slab","flat_slab","steel_roof_composite_concrete"}:
         q=_rect_area(p["length"],p["width"])*_n(p["thickness"],"thickness", minimum=1e-12)*_n(p.get("count",1),"count")
         return QuantityResult("سقف بتن‌آرمه",item,q,"m3","L×W×t×تعداد")
     if k in {"joist_block_roof","joist_foam_roof"}:
