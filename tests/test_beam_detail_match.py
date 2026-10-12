@@ -1,7 +1,7 @@
 """CAD/PDF beam label resolution must always be evidence-only and fail-closed."""
 from types import SimpleNamespace
 import pytest
-from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, suggested_link
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, suggested_link, parse_section_hint
 
 
 def entity(text, x=10, y=20, handle="A1", typ="TEXT"):
@@ -74,3 +74,21 @@ def test_non_text_entities_are_ignored():
 def test_unusable_beam_tag_rejected():
     with pytest.raises(ValueError, match="شناسه تیر"):
         pdf_beam_evidence("B1", "", page=1)
+
+
+def test_explicit_section_dimensions_proposed_in_meters_only():
+    assert parse_section_hint("B1 b=30 cm h=50 cm", "B1") == {"width_m": .3, "depth_m": .5}
+
+
+def test_unlabeled_dimensions_never_inferred():
+    assert parse_section_hint("B1 30x50", "B1") is None
+    assert parse_section_hint("B1 b=30cm", "B1") is None
+    assert parse_section_hint("B10 b=30cm h=50cm", "B1") is None
+
+
+def test_conflicting_dimensions_never_proposed():
+    assert parse_section_hint("B1 b=30cm b=40cm h=50cm", "B1") is None
+
+
+def test_persian_explicit_section():
+    assert parse_section_hint("B۱ عرض=۳۰ سانتی‌متر ارتفاع=۵۰ سانتی‌متر", "B1") == {"width_m": .3, "depth_m": .5}
