@@ -154,3 +154,15 @@ def test_dxf_vector_text_roundtrip_yields_unapproved_bar_hint(tmp_path):
     assert hints["candidates"][0]["count"] == 4
     assert hints["candidates"][0]["diameter_mm"] == 20
     assert not hints["quantity_approved"] and not hints["ready_for_boq"]
+
+
+def test_invalid_draft_diameter_or_count_is_refused():
+    from core.takeoff.beam_detail import empty_beam, preview_beam
+    from core.takeoff.engine import TakeoffEngine
+    draft = empty_beam("L1", "B1")
+    draft["bars"]["longitudinal"] = {"status": "needs_review", "count": -2}
+    with pytest.raises(ValueError, match="تعداد"):
+        preview_beam(draft, TakeoffEngine())
+    draft["bars"]["longitudinal"] = {"status": "needs_review", "nominal_diameter_mm": 0}
+    with pytest.raises(ValueError, match="قطر"):
+        preview_beam(draft, TakeoffEngine())
