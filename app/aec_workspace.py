@@ -95,7 +95,7 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     for name,label in FIELDS.items():
         w=QDoubleSpinBox(); w.setDecimals(4); w.setRange(0,1000000000); w.setSingleStep(.1)
         w.setObjectName("TakeoffField_"+name)
-        w.setValue(1 if name in {"count","layers","waste"} else 0); fields[name]=w; grid.addRow(label,w)
+        w.setValue(0); fields[name]=w; grid.addRow(label,w)
     calc=QPushButton("محاسبه و ثبت واقعی"); calc.setObjectName("PrimaryAction"); grid.addRow(calc)
     form_scroll=QScrollArea(); form_scroll.setObjectName("TakeoffFormScroll")
     form_scroll.setWidgetResizable(True); form_scroll.setWidget(box); outer.addWidget(form_scroll,2)
@@ -113,7 +113,8 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
             w.setEnabled(n in active)
             grid.setRowVisible(w,n in active)
             if n not in active: w.setValue(0)
-            elif n in {"count","layers","waste"} and w.value()==0: w.setValue(1)
+            # Required values are never silently initialized to 1.
+            # The user must enter a positive count/layer/factor before saving.
     def refresh():
         pid=project.text().strip()
         if not pid:return
@@ -183,7 +184,7 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
             item.setCurrentIndex(idx)
             # A new draft must not inherit dimensions from the previous item.
             for name,field in fields.items():
-                field.setValue(1 if name in {"count","layers","waste"} and field.isEnabled() else 0)
+                field.setValue(0)
             for name,value in first.params.items():
                 if name in fields:
                     fields[name].setValue(value)
