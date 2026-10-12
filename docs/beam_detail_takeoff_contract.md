@@ -70,3 +70,5 @@ A selected B1 on PDF page 1 may reference B1 section/schedule text on PDF page 2
 - A plain stirrup spacing (such as \`Φ8 @15cm\`) **never** establishes an exact stirrup count. Real zone lengths, first/last spacing, transitions, hooks, section and lap details still require validated engineering inputs.
 - New tests \`tests/test_beam_rebar_hints.py\` cover exact tags, five categories, Arabic/Persian digits, multiple zones, ambiguity, SQLite persistence and rejection of committing proposed quantities. **58/58 total local isolated tests passed** across beam detail, matching, generated vector fixtures and hints. PySide6 is unavailable in this local environment, so UI runtime, production dependency integration, Windows and full repository test claims are forbidden.
 - Existing PR #11 remains **draft**; do not merge, activate GitHub Actions, build or release.
+
+- **QA update:** 60/60 local isolated tests passed after one real DXF text roundtrip and validation of negative counts/invalid nominal diameters in review drafts. These do not establish Windows GUI or production readiness.
