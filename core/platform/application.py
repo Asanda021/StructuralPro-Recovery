@@ -67,6 +67,35 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+    def beam_detail_workflow(self):
+        """Use the canonical SQLite project store and quantity engine for beam details."""
+        from core.takeoff.beam_detail import BeamDetailWorkflow
+        return BeamDetailWorkflow(self.store, self.takeoff)
+
+    def new_beam_detail(self, floor_id: str, beam_id: str) -> dict[str, Any]:
+        from core.takeoff.beam_detail import empty_beam
+        return empty_beam(floor_id, beam_id)
+
+    def save_beam_detail_draft(self, project_id: str, draft: dict[str, Any], *,
+                               expected_revision: int = 0) -> dict[str, Any]:
+        return self.beam_detail_workflow().save_draft(
+            project_id, draft, expected_revision=expected_revision
+        )
+
+    def get_beam_detail(self, project_id: str, floor_id: str,
+                        beam_id: str) -> dict[str, Any] | None:
+        return self.beam_detail_workflow().get(project_id, floor_id, beam_id)
+
+    def preview_beam_detail(self, project_id: str, floor_id: str,
+                            beam_id: str) -> dict[str, Any]:
+        return self.beam_detail_workflow().preview(project_id, floor_id, beam_id)
+
+    def commit_beam_detail(self, project_id: str, floor_id: str,
+                           beam_id: str, *, expected_revision: int) -> dict[str, Any]:
+        return self.beam_detail_workflow().commit(
+            project_id, floor_id, beam_id, expected_revision=expected_revision
+        )
+
     def ai_assistant_context(self, project_id: str) -> dict[str, Any]:
         """Return the bounded project context used by the AI assistant."""
         project = self.store.get(project_id)
