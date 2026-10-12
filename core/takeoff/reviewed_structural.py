@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
+from pathlib import Path
 import json
 import math
 from typing import Any
@@ -61,6 +63,20 @@ def _validate_source(source: dict, member_id: str) -> str:
         if len(digest) != 64 or any(c not in "0123456789abcdefABCDEF" for c in digest):
             raise ValueError("SHA-256 نقشه نامعتبر است")
         positive(source.get("page"), "شماره صفحه", integer=True)
+        path = Path(require_text(source.get("drawing_path"), "مسیر واقعی فایل نقشه"))
+        if not path.is_file():
+            raise ValueError("فایل منبع نقشه در دسترس نیست")
+        computed = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                computed.update(block)
+        if computed.hexdigest() != digest.lower():
+            raise ValueError("محتوای نقشه با اثر انگشت ذخیره‌شده یکسان نیست")
+        region = source.get("selected_region")
+        if (not isinstance(region, (list, tuple)) or len(region) != 4 or
+                not all(math.isfinite(float(x)) for x in region) or
+                float(region[2]) <= 0 or float(region[3]) <= 0):
+            raise ValueError("ناحیه انتخابی نقشه معتبر نیست")
         validate_evidence_link(source, member_id)
     elif "detail_evidence" in source:
         raise ValueError("مرجع دیتایل باید به نقشه تأییدشده مربوط باشد")
