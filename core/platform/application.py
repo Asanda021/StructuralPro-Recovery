@@ -65,18 +65,28 @@ def _statement_rate(value: Any, name: str) -> float:
         raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
     return rate
 
-# The original PR #481 branch is unavailable. These rules restore the documented
-# payable/consumption split without changing the payment treatment of legacy
-# concrete, steel, or masonry assembly components.
+# Explicit payable/consumption roles for finishing operations and block masonry.
+# The original PR #481 is unavailable; no inferred legacy material is billed.
 _FINISH_ASSEMBLY_CODES = frozenset({
     "gypsum_scratch", "gypsum_finish", "cement_render", "wall_tile",
     "wall_paint", "waterproofing_wall", "facade_finish", "floor_tile",
     "floor_screed", "ceiling_paint", "false_ceiling",
     "waterproofing_floor", "skirting",
 })
+_MASONRY_COMPONENT_ROLES = {
+    "wall_area": "work",       # only the executed wall area is payable
+    "block": "procurement",   # purchasing evidence, not a second work item
+    "mortar": "material",     # nested consumption, also detailed below
+    "cement": "material",
+    "sand": "material",
+}
 
 
-def _finish_component_role(assembly_code: str, component_code: str) -> str:
+def _assembly_component_role(assembly_code: str, component_code: str) -> str:
+    if assembly_code == "block_wall":
+        if component_code not in _MASONRY_COMPONENT_ROLES:
+            raise ValueError("جزء دیوار بلوکی ناشناخته است؛ نیازمند بازبینی مهندس")
+        return _MASONRY_COMPONENT_ROLES[component_code]
     if assembly_code not in _FINISH_ASSEMBLY_CODES:
         return "work"
     if component_code == assembly_code + "_procurement":
@@ -87,17 +97,27 @@ def _finish_component_role(assembly_code: str, component_code: str) -> str:
 
 
 def _is_payable_quantity(takeoff: dict[str, Any], quantity: dict[str, Any]) -> bool:
-    explicit_role = str(quantity.get("role") or takeoff.get("component_role") or "").strip()
-    if explicit_role:
-        # Fail closed: unknown role is not silently treated as payable work.
-        if explicit_role not in {"work", "procurement", "material"}:
-            raise ValueError("نقش جزء متره ناشناخته است")
-        return explicit_role == "work"
     params = takeoff.get("params") or {}
     assembly_code = str(params.get("assembly_code", ""))
     component_code = str(quantity.get("code", ""))
-    # Backward-compatible: old saved finish rows had no role marker.
-    return _finish_component_role(assembly_code, component_code) == "work"
+    expected_role = _assembly_component_role(assembly_code, component_code)
+    explicit_role = str(quantity.get("role") or takeoff.get("component_role") or "").strip()
+    if explicit_role and explicit_role not in {"work", "procurement", "material"}:
+        raise ValueError("نقش جزء متره ناشناخته است")
+    if assembly_code == "block_wall":
+        # Earlier block assemblies may have saved all five components as work,
+        # sometimes priced. Refuse ambiguity instead of silently migrating the
+        # price or destroying a previously approved amount.
+        if explicit_role and explicit_role != expected_role:
+            raise ValueError("نقش جزء بنایی با قرارداد پرداخت سازگار نیست؛ نیازمند بازبینی")
+        if expected_role != "work" and (quantity.get("price_code") not in (None, "")
+                                        or quantity.get("unit_price") is not None):
+            raise ValueError("جزء مصالح بنایی قبلاً قیمت‌گذاری شده؛ نیازمند بازبینی پیش از BOQ")
+        return expected_role == "work"
+    if explicit_role:
+        return explicit_role == "work"
+    # Backward compatible for existing unmarked finishing takeoffs.
+    return expected_role == "work"
 
 
 class StructuralProApp:
@@ -614,7 +634,7 @@ class StructuralProApp:
             mapping = prices[component.code]
             if not isinstance(mapping, dict) or set(mapping) != {"price_code", "unit", "unit_price"}:
                 raise ValueError("قیمت جزء به کد، واحد و قیمت صریح نیاز دارد")
-            if _finish_component_role(result.code, component.code) != "work":
+            if _assembly_component_role(result.code, component.code) != "work":
                 raise ValueError("اجزای تأمین و مصرف نباید دوباره در BOQ پرداختی قیمت‌گذاری شوند")
             if not str(mapping["price_code"]).strip() or normalize_unit(mapping["unit"]) != normalize_unit(component.unit):
                 raise ValueError("کد یا واحد فهرست‌بهای جزء نامعتبر است")
@@ -635,7 +655,7 @@ class StructuralProApp:
         }
         rows = []
         for component in result.components:
-            component_role = _finish_component_role(result.code, component.code)
+            component_role = _assembly_component_role(result.code, component.code)
             source_id = f"assembly:{bundle_id}:{component.code}"
             if any(str(existing.get("source_id", "")).strip() == source_id
                    for existing in project.get("takeoffs", [])):
