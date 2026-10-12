@@ -164,6 +164,11 @@ def prepare_office_rows(project: dict, mode: str, *, statement: dict | None = No
         lines = statement.get("rows")
         if not isinstance(lines, list) or not lines:
             raise ValueError("ردیف‌های صورت‌وضعیت مستند نیستند")
+        previous = statement.get("previous_quantities_by_source")
+        if not isinstance(previous, dict):
+            raise ValueError("مقادیر تأییدشده دوره‌های قبلی باید صریح مشخص شوند")
+        takeoff_index = {(x["source_id"], x["item_code"], x["unit"]): x["quantity"]
+                         for x in flatten_takeoffs(project)}
         rows = []
         seen = set()
         for row in lines:
@@ -172,14 +177,21 @@ def prepare_office_rows(project: dict, mode: str, *, statement: dict | None = No
                 raise ValueError("مرجع صورت‌وضعیت تکراری است")
             seen.add(sid)
             q = finite_quantity(row.get("quantity"), "مقدار دوره")
+            code = _required_text(row.get("item_code"), "کد ردیف")
+            unit = normalize_unit(_required_text(row.get("unit"), "واحد"))
+            permitted = takeoff_index.get((sid, code, unit))
+            if permitted is None:
+                raise ValueError("ردیف صورت‌وضعیت به ریزمتره پروژه متصل نیست")
+            previous_amount = finite_quantity(previous.get(sid, 0), "مقدار قبلی", zero=True)
+            if q + previous_amount > permitted + 1e-9:
+                raise ValueError("مقدار تجمعی صورت‌وضعیت از ریزمتره تأییدشده بیشتر است")
             price = finite_quantity(row.get("unit_price"), "بهای واحد دوره", zero=True)
             total = finite_quantity(row.get("total"), "مبلغ دوره", zero=True)
             if not math.isclose(total, q * price, rel_tol=1e-9, abs_tol=1e-6):
                 raise ValueError("مبلغ دوره با قیمت و مقدار تأییدشده برابر نیست")
-            rows.append({"source_id": sid,
-                         "item_code": _required_text(row.get("item_code"), "کد ردیف"),
+            rows.append({"source_id": sid, "item_code": code,
                          "description": _required_text(row.get("description"), "شرح صورت‌وضعیت"),
-                         "quantity": q, "unit": normalize_unit(_required_text(row.get("unit"), "واحد")),
+                         "quantity": q, "unit": unit,
                          "unit_price": price, "total": total})
         metadata["دوره"] = statement["period_id"]
         metadata["تأییدکننده"] = statement["approved_by"]
