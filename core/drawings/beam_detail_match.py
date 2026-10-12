@@ -29,6 +29,44 @@ def _beam_pattern(beam_id: str) -> re.Pattern:
     return re.compile(r"(?<![\w-])" + re.escape(tag) + r"(?![\w-])", re.UNICODE)
 
 
+_EXPLICIT_NUMBER = r"([0-9]+(?:\.[0-9]+)?)"
+_EXPLICIT_UNIT = r"(mm|cm|m|میلی[‌ -]?متر|سانتی[‌ -]?متر|متر)"
+
+
+def parse_section_hint(text: str, beam_id: str) -> dict[str, float] | None:
+    """Offer b/h only when BOTH dimensions have explicit labels and units.
+
+    Never interpret bare `30x50` as width/depth; never infer beam length,
+    bar counts, hooks or reinforcement from adjacent schedule text.
+    """
+    if not _beam_pattern(beam_id).search(normalize_label(text)):
+        return None
+    content = normalize_label(text)
+    definitions = {
+        "width_m": r"(?<![\w])(?:B|عرض(?:\s+تیر)?)",
+        "depth_m": r"(?<![\w])(?:H|ارتفاع(?:\s+مقطع|\s+تیر)?)",
+    }
+    unit_factor = {"MM": .001, "CM": .01, "M": 1.0,
+                   "میلیمتر": .001, "میلی متر": .001, "میلی‌متر": .001,
+                   "سانتیمتر": .01, "سانتی متر": .01, "سانتی‌متر": .01,
+                   "متر": 1.0}
+    values = {}
+    for name, label in definitions.items():
+        regex = label + r"\s*[:=]\s*" + _EXPLICIT_NUMBER + r"\s*" + _EXPLICIT_UNIT + r"(?![\w])"
+        matches = list(re.finditer(regex, content, re.UNICODE | re.IGNORECASE))
+        if len(matches) != 1:
+            return None
+        raw, unit = matches[0].groups()
+        factor = unit_factor.get(unit.upper() if unit.isascii() else unit)
+        if factor is None:
+            return None
+        value = float(raw) * factor
+        if not math.isfinite(value) or value <= 0:
+            return None
+        values[name] = value
+    return values
+
+
 @dataclass(frozen=True)
 class BeamEvidence:
     source_ref: str
