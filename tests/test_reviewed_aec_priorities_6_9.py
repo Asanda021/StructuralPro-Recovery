@@ -9,17 +9,20 @@ import pytest
 
 from core.takeoff.engine import TakeoffEngine
 from core.projects.store import ProjectStore
-from core.takeoff.reviewed_aec import SPECS, empty_system, preview_system, ReviewedAECWorkflow
+from core.takeoff.reviewed_aec import (
+    SPECS, MECHANICAL_SYSTEMS, ELECTRICAL_SYSTEMS, CIVIL_SYSTEMS,
+    empty_system, preview_system, ReviewedAECWorkflow)
 from core.reports.aec_office_package import audit_boq, prepare_office_rows, export_office_package
 
 
-_MECHANICAL = {"plumbing", "hvac", "fire_protection"}
-_ELECTRICAL = {"electrical_power", "lighting", "low_voltage"}
+_MECHANICAL = MECHANICAL_SYSTEMS
+_ELECTRICAL = ELECTRICAL_SYSTEMS
 _VOLUME = {"concrete", "waist_concrete", "step_concrete", "landing_concrete",
            "topping", "ribs", "ribs_x", "ribs_y", "junction_adjustment",
            "gross_concrete", "verified_voids", "deck_concrete",
            "mortar", "adhesive_mortar", "grout", "screed"}
-_LENGTH = {"pipes", "cables", "conduits", "trays", "earthing"}
+_LENGTH = {"pipes", "cables", "conduits", "trays", "earthing", "drainage",
+           "gaskets", "rails", "steel_members", "flashings"}
 _COUNT = {"blocks", "bricks", "joists", "foam", "studs", "fittings",
           "valves", "equipment", "fixtures", "switches", "devices", "boards"}
 
@@ -40,7 +43,8 @@ def component(kind: str, name: str, *, quantity: float = 1.0, unit: str | None =
     if unit is None:
         unit = "m3" if name in _VOLUME else "m" if name in _LENGTH else "عدد" if name in _COUNT else "m2"
     domain = ("mechanical" if kind in _MECHANICAL else
-              "electrical" if kind in _ELECTRICAL else "building")
+              "electrical" if kind in _ELECTRICAL else
+              "civil" if kind in CIVIL_SYSTEMS else "building")
     return {"status": "confirmed", "approved_by": "مهندس مترور",
             "items": [{"line_id": f"{kind}-{name}-1", "mode": "measured",
                        "description": f"{kind}/{name}", "item_code": name,
