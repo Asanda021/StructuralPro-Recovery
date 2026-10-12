@@ -26,7 +26,7 @@ An unreviewed bar is never treated as absent or zero. `not_applicable` requires 
 
 ## Review boundaries
 
-- The current graph selection is region-level provenance. **Automatic B1 -> beam schedule/section/rebar detail matching and automatic drawing-derived quantities are NOT complete.**
+- A selected viewport region provides provenance. Exact B1 label candidates can now be located in CAD TEXT/MTEXT and PDF page text and selected explicitly. **Comprehensive automatic B1 -> beam schedule/section/rebar matching and automatic complete quantities are NOT done.**
 - GUI multi-zone rebar editing is not yet implemented (the domain model supports segments and blocks unsafe overwrite in the simple panel).
 - Windows GUI runtime, real DWG/PDF quantity extraction, Persian PDF/Excel reports, five-story acceptance, and full regression **must be tested** before marking all 10 items complete.
 - Recovery snapshot is not confirmed to be the latest original StructuralPro main; preserve source, do not merge into the original until reconciliation.
@@ -46,3 +46,13 @@ An unreviewed bar is never treated as absent or zero. `not_applicable` requires 
 ## Deployment policy
 
 **No executable build, installer, release, merge or workflow activation without explicit owner approval.** This is draft development on a separate feature branch.
+
+## 2026-10-13 incremental implementation — evidence locator and guarded b/h hints
+
+- `core/drawings/beam_detail_match.py`: deterministic tag matching with Persian/Arabic digits, Unicode case normalization and exact-boundary protection (B1 ≠ B10). Each CAD text candidate retains layer/handle/page; matching against the chosen viewport uses the exact CAD model-to-scene origin used by the renderer. PDF text candidates have page/line references but no spatial coordinates, therefore cannot claim a selected PDF region.
+- The new Persian **یافتن برچسب و مرجع دیتایل تیر در نقشه** action shows candidates and requires explicit selection. Ambiguity is never automatically resolved. The selected candidate is recorded under `source.detail_evidence` and linked to the existing SHA-256/page/selected-region identity in SQLite.
+- Explicitly labeled, unit-bearing `b=30cm h=50cm` (or unambiguous Persian equivalents) may propose width/depth only; a second engineer confirmation is required before copying values into an otherwise empty form. Unlabeled `30x50`, unknown units, conflicts, length, counts and bar cut lengths **are never guessed**. Source and dimensions cannot be accepted as final BOQ quantities without all existing review gates.
+- The beam workflow validates optional evidence beam identity, page number, text label and source-ref format **both when saving a draft and when previewing for commit**. A stale beam label does not follow the user to another beam.
+- Tests: **37 isolated local PASS, 0 FAIL** in `tests/test_beam_detail_workflow.py`, `tests/test_beam_detail_match.py` and `tests/test_beam_detail_vector_fixtures.py`. Vector fixtures generate DXF using ezdxf and PDF using PyMuPDF. The engine/store harness is isolated; these are **not** Windows UI, full-repository, real engineering drawing or final customer acceptance tests.
+- Still needed: original-main reconciliation, full blueprint schedule and reinforcement detail interpretation, variable-zone stirrup GUI, large genuine DWG/PDF end-to-end tests, Windows/PySide6 visual interaction and Persian Excel/PDF result parity.
+- All changes are on the existing **draft** PR #11 feature branch. No `main` merge, CI activation, build or release is authorized.
