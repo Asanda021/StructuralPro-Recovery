@@ -248,6 +248,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.engine = None
         self.viewer = DrawingViewerModel()
         self.cad_document = None
+        self._cad_scene_origin = None
         self.page = 1
 
         root = QVBoxLayout(self)
@@ -391,6 +392,9 @@ class GraphicalTakeoffDialog(QDialog):
         return {
             "path": str(self.viewer.path) if self.viewer.path else "",
             "page": self.page, "region": region,
+            "cad_document": self.cad_document if self.viewer.kind == "cad" else None,
+            "cad_scene_origin": self._cad_scene_origin if self.viewer.kind == "cad" else None,
+            "pdf_engine": self.engine if self.viewer.kind == "pdf" else None,
         }
 
     def save_session_to_project(self):
@@ -542,6 +546,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.source_label.setText(f"منبع: {self.viewer.source_name} | {self.viewer.kind.upper()}")
         self.page_no.setMaximum(max(1, self.viewer.page_count))
         self.cad_document = self.viewer.cad_document
+        self._cad_scene_origin = None  # Never reuse a prior drawing's CAD coordinate transform.
         self.engine = new_engine
         self.load_page(1)
 
@@ -558,6 +563,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas.scene.clear()
             self.canvas._region_overlay = None
             self.canvas._selected_region_rect = None
+            self._cad_scene_origin = None
             self.canvas.points = []
             model_view = self.viewer.kind == "ifc"
             calibration = self.session.calibration
@@ -616,6 +622,8 @@ class GraphicalTakeoffDialog(QDialog):
         min_y=min(y for _,y in coords); max_y=max(y for _,y in coords)
         margin=max(max_x-min_x,max_y-min_y,1.0)*0.05
         min_x-=margin; max_x+=margin; min_y-=margin; max_y+=margin
+        # Evidence matching must use the same model -> scene transform as rendering.
+        self._cad_scene_origin = (min_x, max_y)
         def sx(x): return x-min_x
         def sy(y): return max_y-y
         pen=QPen(Qt.GlobalColor.darkBlue,0)
