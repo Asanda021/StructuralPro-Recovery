@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
-from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint
+from core.drawings.beam_detail_match import cad_beam_evidence, pdf_beam_evidence, parse_section_hint, normalize_label
 
 _STATUS_LABELS = {
     "needs_detail": "نیازمند ورود دیتایل", "unreviewed": "بررسی‌نشده",
@@ -162,7 +162,8 @@ class BeamDetailPanel(QWidget):
                   "sha256": digest, "page": page, "drawing_path": str(path), "selected_region": list(region)}
         # An explicit reference selection never constitutes dimensional or rebar approval.
         linked = self._selected_evidence
-        if linked is not None and linked.get("source_id") == source["source_id"]:
+        if (linked is not None and linked.get("source_id") == source["source_id"]
+                and linked.get("beam_tag") == normalize_label(self.beam.text())):
             source["detail_evidence"] = dict(linked["evidence"])
         return source
 
@@ -213,7 +214,8 @@ class BeamDetailPanel(QWidget):
                 return
             item = ordered[options.index(choice)]
             self._selected_evidence = {
-                "source_id": current_source["source_id"], "evidence": item.to_dict(),
+                "source_id": current_source["source_id"], "beam_tag": normalize_label(beam_id),
+                "evidence": {**item.to_dict(), "beam_tag": normalize_label(beam_id)},
             }
             proposed = parse_section_hint(item.text, beam_id)
             if proposed is not None:
@@ -293,7 +295,8 @@ class BeamDetailPanel(QWidget):
             self._loaded_identity = (project, floor, beam)
             source = draft.get("source", {})
             evidence = source.get("detail_evidence") if isinstance(source, dict) else None
-            self._selected_evidence = ({"source_id": source.get("source_id"), "evidence": dict(evidence)}
+            self._selected_evidence = ({"source_id": source.get("source_id"),
+                                        "beam_tag": evidence.get("beam_tag"), "evidence": dict(evidence)}
                                        if isinstance(evidence, dict) else None)
             self._segmented_kinds = {
                 kind for kind in BAR_TYPES if draft["bars"][kind].get("segments")
