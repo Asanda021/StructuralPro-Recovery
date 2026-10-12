@@ -211,7 +211,7 @@ def test_beam_evidence_cross_member_link_rejected_before_sqlite_save(tmp_path):
     assert store.get("P1")["takeoffs"] == []
 
 
-def test_beam_evidence_cross_page_link_blocks_preview():
+def test_evidence_without_matching_file_sha_blocks_preview():
     draft = _draft()
     draft["source"]["detail_evidence"] = {
         "beam_tag": "B1", "kind": "pdf", "source_ref": "pdf:page:3:line:5",
@@ -219,7 +219,7 @@ def test_beam_evidence_cross_page_link_blocks_preview():
     }
     result = preview_beam(draft, TakeoffEngine())
     assert not result["ready"]
-    assert any("صفحه" in error for error in result["blockers"])
+    assert any("اثر انگشت" in error for error in result["blockers"])
 
 def test_matching_beam_detail_reference_persists_without_finalizing(tmp_path):
     workflow, store, db = _workflow(tmp_path)
@@ -227,6 +227,7 @@ def test_matching_beam_detail_reference_persists_without_finalizing(tmp_path):
     draft["source"]["detail_evidence"] = {
         "beam_tag": "B1", "kind": "cad", "source_ref": "cad:page:2:handle:ABC",
         "text": "B1 b=30cm h=50cm", "page": 2, "located": True,
+        "drawing_sha256": "a" * 64,
         "in_selected_region": True,
     }
     workflow.save_draft("P1", draft)
@@ -238,3 +239,15 @@ def test_matching_beam_detail_reference_persists_without_finalizing(tmp_path):
     assert not restored.preview("P1", "L1", "B1")["ready"]
     assert second.get("P1")["boq"] == []
     second.close()
+
+def test_cross_page_pdf_detail_can_be_draft_without_boq(tmp_path):
+    workflow, store, _ = _workflow(tmp_path)
+    draft = _draft()
+    draft["source"]["detail_evidence"] = {
+        "beam_tag": "B1", "kind": "pdf", "source_ref": "pdf:page:4:line:7",
+        "text": "B1 b=30cm h=50cm", "page": 4, "drawing_sha256": "a" * 64,
+    }
+    workflow.save_draft("P1", draft)
+    assert workflow.get("P1", "L1", "B1")["data"]["source"]["detail_evidence"]["page"] == 4
+    assert not workflow.preview("P1", "L1", "B1")["ready"]
+    assert store.get("P1")["boq"] == []
