@@ -237,6 +237,13 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
                 adjustment_rows[name] = accepted_rows
                 continue
             for item in accepted_rows:
+                allowed_domains = (
+                    {"mechanical"} if kind in {"plumbing", "hvac", "fire_protection"}
+                    else {"electrical"} if kind in {"electrical_power", "lighting", "low_voltage"}
+                    else {"building", "advanced"}
+                )
+                if item["domain"] not in allowed_domains:
+                    raise ValueError("حوزه ردیف با نوع عملیات ساختمان ناسازگار است")
                 ref = f"aec:{kind}:{floor}:{identity}:{name}:{item['line_id']}"
                 if ref in seen:
                     raise ValueError("شناسه ردیف پروژه تکراری است")
