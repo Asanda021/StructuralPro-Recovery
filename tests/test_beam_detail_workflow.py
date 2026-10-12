@@ -197,3 +197,26 @@ def test_beam_identity_normalizes_persian_digits_and_letter_case(tmp_path):
         w.save_draft("P1", variant, expected_revision=0)
     assert w.get("P1", "L1", "b۱")["data"]["beam_id"] == "B1"
     store.close()
+
+def test_beam_evidence_cross_member_link_rejected_before_sqlite_save(tmp_path):
+    workbench, store, _ = _workflow(tmp_path)
+    draft = _draft()
+    draft["source"]["detail_evidence"] = {
+        "beam_tag": "B2", "kind": "cad", "source_ref": "cad:page:2:handle:A1",
+        "text": "B2", "page": 2,
+    }
+    with pytest.raises(ValueError, match="تیر دیگری"):
+        workbench.save_draft("P1", draft)
+    assert workbench.get("P1", "L1", "B1") is None
+    assert store.get("P1")["takeoffs"] == []
+
+
+def test_beam_evidence_cross_page_link_blocks_preview():
+    draft = _draft()
+    draft["source"]["detail_evidence"] = {
+        "beam_tag": "B1", "kind": "pdf", "source_ref": "pdf:page:3:line:5",
+        "text": "B1", "page": 3,
+    }
+    result = preview_beam(draft, TakeoffEngine())
+    assert not result["ready"]
+    assert any("صفحه" in error for error in result["blockers"])
