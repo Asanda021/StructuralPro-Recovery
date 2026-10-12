@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout
+    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -248,6 +248,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.engine = None
         self.viewer = DrawingViewerModel()
         self.cad_document = None
+        self._cad_scene_origin = None
         self.page = 1
 
         root = QVBoxLayout(self)
@@ -315,7 +316,22 @@ class GraphicalTakeoffDialog(QDialog):
 
         self.canvas = TakeoffCanvas(self.session, self.refresh, self.add_note)
         self.canvas.setFrameShape(QFrame.Shape.StyledPanel)
-        root.addWidget(self.canvas, 5)
+        self.beam_detail_panel = None
+        if self.app_service is not None:
+            # Keep the drawing visible while the engineer reviews beam details.
+            from app.beam_detail_panel import BeamDetailPanel
+            self.beam_detail_panel = BeamDetailPanel(
+                self.app_service, lambda: self.project_id_input.text(),
+                self.beam_drawing_context, self
+            )
+            split = QSplitter(Qt.Orientation.Horizontal)
+            split.addWidget(self.canvas)
+            split.addWidget(self.beam_detail_panel)
+            split.setStretchFactor(0, 4)
+            split.setStretchFactor(1, 2)
+            root.addWidget(split, 5)
+        else:
+            root.addWidget(self.canvas, 5)
 
         table_title = QLabel("متره‌های ثبت‌شده — قابل بازبینی و اتصال به BOQ")
         table_title.setObjectName("SectionTitle")
@@ -366,6 +382,20 @@ class GraphicalTakeoffDialog(QDialog):
                 self.open_drawing(pdf_path)
             except Exception as exc:
                 QMessageBox.warning(self, "نقشه", "فایل برای نمایش گرافیکی باز نشد: " + str(exc))
+
+    def beam_drawing_context(self):
+        """Context link only: a selected rectangle does not imply a parsed beam detail."""
+        rect = self.canvas._selected_region_rect
+        region = None
+        if rect is not None and rect.isValid() and rect.width() > 0 and rect.height() > 0:
+            region = (rect.left(), rect.top(), rect.width(), rect.height())
+        return {
+            "path": str(self.viewer.path) if self.viewer.path else "",
+            "page": self.page, "region": region,
+            "cad_document": self.cad_document if self.viewer.kind == "cad" else None,
+            "cad_scene_origin": self._cad_scene_origin if self.viewer.kind == "cad" else None,
+            "pdf_engine": self.engine if self.viewer.kind == "pdf" else None,
+        }
 
     def save_session_to_project(self):
         if self.app_service is None:
@@ -516,6 +546,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.source_label.setText(f"منبع: {self.viewer.source_name} | {self.viewer.kind.upper()}")
         self.page_no.setMaximum(max(1, self.viewer.page_count))
         self.cad_document = self.viewer.cad_document
+        self._cad_scene_origin = None  # Never reuse a prior drawing's CAD coordinate transform.
         self.engine = new_engine
         self.load_page(1)
 
@@ -532,6 +563,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas.scene.clear()
             self.canvas._region_overlay = None
             self.canvas._selected_region_rect = None
+            self._cad_scene_origin = None
             self.canvas.points = []
             model_view = self.viewer.kind == "ifc"
             calibration = self.session.calibration
@@ -590,6 +622,8 @@ class GraphicalTakeoffDialog(QDialog):
         min_y=min(y for _,y in coords); max_y=max(y for _,y in coords)
         margin=max(max_x-min_x,max_y-min_y,1.0)*0.05
         min_x-=margin; max_x+=margin; min_y-=margin; max_y+=margin
+        # Evidence matching must use the same model -> scene transform as rendering.
+        self._cad_scene_origin = (min_x, max_y)
         def sx(x): return x-min_x
         def sy(y): return max_y-y
         pen=QPen(Qt.GlobalColor.darkBlue,0)

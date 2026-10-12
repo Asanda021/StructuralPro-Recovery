@@ -96,13 +96,14 @@ class ManualTakeoffDialog(QDialog):
         self.delete_button = QPushButton("حذف ردیف انتخابی")
         self.undo_button = QPushButton("واگرد")
         self.redo_button = QPushButton("تکرار")
+        self.beam_detail_button = QPushButton("متره ترکیبی تیر — همراه نقشه")
         self.save_button = QPushButton("ذخیره ردیف‌های محاسبه‌شده در پروژه")
         self.load_saved_button = QPushButton("ویرایش نسخه ذخیره‌شده")
         self.revise_saved_button = QPushButton("ثبت نسخه اصلاح‌شده")
         self.close_button = QPushButton("بستن")
         for button in (self.add_button, self.paste_button, self.edit_button, self.copy_button,
                        self.floor_copy_button, self.delete_button, self.undo_button,
-                       self.redo_button, self.save_button, self.load_saved_button,
+                       self.redo_button, self.beam_detail_button, self.save_button, self.load_saved_button,
                        self.revise_saved_button, self.close_button):
             actions.addWidget(button)
         root.addLayout(actions)
@@ -118,11 +119,25 @@ class ManualTakeoffDialog(QDialog):
         self.delete_button.clicked.connect(self.delete_selected)
         self.undo_button.clicked.connect(self.undo)
         self.redo_button.clicked.connect(self.redo)
+        self.beam_detail_button.clicked.connect(self.open_beam_detail)
         self.save_button.clicked.connect(self.save_pending)
         self.load_saved_button.clicked.connect(self.edit_saved_selected)
         self.revise_saved_button.clicked.connect(self.apply_saved_revision)
         self.close_button.clicked.connect(self.accept)
         self.project_id.editingFinished.connect(self.refresh_saved_rows)
+        self.refresh_saved_rows()
+
+    def open_beam_detail(self):
+        """The same reviewed beam panel works with and without a drawing."""
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        dialog = GraphicalTakeoffDialog(
+            self, "", app_service=self.service,
+            project_id=self.project_id.text().strip(),
+        )
+        if dialog.beam_detail_panel is not None:
+            dialog.beam_detail_panel.floor.setText(self.floor_id.text().strip())
+            dialog.beam_detail_panel.beam.setText(self.element_label.text().strip())
+        dialog.exec()
         self.refresh_saved_rows()
 
     def _audit(self, event: str, details: dict | None = None):
