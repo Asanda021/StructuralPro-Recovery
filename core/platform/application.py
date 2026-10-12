@@ -96,6 +96,17 @@ class StructuralProApp:
             project_id, floor_id, beam_id, expected_revision=expected_revision
         )
 
+    def structural_drawing_evidence(self, kind: str, member_id: str, *,
+                                   drawing_sha256: str, cad_document=None,
+                                   cad_region=None, cad_scene_origin=None,
+                                   pdf_engine=None) -> dict[str, Any]:
+        """Return text evidence only; no unreviewed value becomes a quantity."""
+        from core.drawings.member_evidence import index_member_evidence
+        return index_member_evidence(
+            kind, member_id, drawing_sha256=drawing_sha256,
+            cad_document=cad_document, cad_region=cad_region,
+            cad_scene_origin=cad_scene_origin, pdf_engine=pdf_engine)
+
     def structural_member_workflow(self):
         """Column, grade beam and foundation reviews use the same canonical engine/store."""
         from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
