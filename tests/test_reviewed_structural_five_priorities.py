@@ -333,3 +333,28 @@ def test_drawing_has_to_link_its_real_selected_region(tmp_path):
     report = preview_member(draft, TakeoffEngine())
     assert not report["ready"]
     assert any("ناحیه" in block for block in report["blockers"])
+
+
+@pytest.mark.parametrize("kind,ident,axis,spacing,count,first,last", [
+    ("column", "C1", 3.0, .2, 15, .1, 2.9),
+    ("tie_beam", "TB1", 5.0, .2, 25, .1, 4.9),
+])
+def test_column_tie_or_grade_beam_stirrup_requires_real_stations(
+    kind, ident, axis, spacing, count, first, last
+):
+    draft = approved(kind, ident)
+    group = "ties" if kind == "column" else "stirrups"
+    schedule = {"name": "تمام طول", "start_m": 0, "end_m": axis,
+                "spacing_m": spacing, "first_bar_m": first, "last_bar_m": last,
+                "count": count, "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+                "unit_weight_source": "approved-tables", "source_ref": f"{ident}/schedule",
+                "approved_by": "checker"}
+    draft["rebars"][group] = {"status": "confirmed", "approved_by": "checker",
+                              "source_ref": f"{ident}/schedule", "segments": [schedule]}
+    report = preview_member(draft, TakeoffEngine())
+    assert report["ready"], report["blockers"]
+    row = next(r for r in report["rows"] if r["source_id"].endswith(group))
+    assert row["quantity"] == pytest.approx(count * 1.3 * .395)
+    # A confirmed count with missing physical stations is *not* proof.
+    del schedule["first_bar_m"]
+    assert not preview_member(draft, TakeoffEngine())["ready"]
