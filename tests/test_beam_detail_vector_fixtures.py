@@ -39,3 +39,28 @@ def test_real_pdf_vector_page_text_remains_unlocated(tmp_path):
     assert len(found)==1 and found[0].kind=="pdf"
     assert not found[0].located and not found[0].in_selected_region
     assert parse_section_hint(found[0].text,"B1")=={"width_m":.3,"depth_m":.5}
+def test_pdf_two_page_schedule_is_linked_without_guessing_quantity(tmp_path):
+    import hashlib
+    fitz = pytest.importorskip("fitz")
+    from core.drawings.beam_detail_match import validate_evidence_link, suggested_link
+    path = tmp_path / "plan-and-schedule.pdf"
+    file = fitz.open()
+    first = file.new_page()
+    first.insert_text((72, 72), "B1")
+    second = file.new_page()
+    second.insert_text((72, 72), "B1 b=30cm h=50cm")
+    file.save(path)
+    file.close()
+    opened = fitz.open(path)
+    try:
+        entries = tuple(found for page_no in range(1, len(opened) + 1)
+                        for found in pdf_beam_evidence(opened[page_no - 1].get_text(), "B1", page=page_no))
+    finally:
+        opened.close()
+    assert len(entries) == 2
+    detail = next(x for x in entries if x.page == 2)
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    record = {"mode": "drawing", "sha256": digest, "page": 1,
+              "detail_evidence": {**detail.to_dict(), "beam_tag": "B1", "drawing_sha256": digest}}
+    validate_evidence_link(record, "B1")
+    assert suggested_link(entries)["quantity_approved"] is False
