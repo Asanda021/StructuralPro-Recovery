@@ -140,6 +140,10 @@ def preview_member(data: dict, engine: Any) -> dict:
             blockers.append(f"قالب‌بندی: {exc}")
     elif form.get("status") == "confirmed":
         try:
+            if positive(geometry.get("count"), "تعداد اعضا", integer=True) > 1:
+                if form.get("area_scope") != "total_group":
+                    raise ValueError("برای اعضای تکراری باید مشخص شود مساحت قالب جمع کل اعضا است")
+                require_text(form.get("area_scope_ref"), "مرجع جمع قالب کل اعضا")
             area, faces = net_formwork(form)
             rows.append({"source_id": prefix + ":formwork", "item": "formwork",
                          "code": "formwork", "domain": "building",
@@ -170,8 +174,17 @@ def preview_member(data: dict, engine: Any) -> dict:
                     blockers.append(f"میلگرد {group_name}: {exc}")
             elif state == "confirmed":
                 try:
+                    member_count = int(positive(geometry.get("count"), "تعداد اعضا", integer=True))
+                    if member_count > 1:
+                        if bar.get("count_scope") != "total_group":
+                            raise ValueError("تعداد میلگرد باید به‌صورت صریح جمع کل اعضای تکراری باشد")
+                        require_text(bar.get("count_scope_ref"), "مرجع تعداد کل گروه میلگرد")
                     if (kind == "column" and group_name == "ties") or (
                             kind == "tie_beam" and group_name == "stirrups"):
+                        # A single physical station schedule cannot represent
+                        # several identical columns without explicit per-member rows.
+                        if member_count > 1:
+                            raise ValueError("خاموت اعضای تکراری باید برای هر عضو جداگانه متره شود")
                         # Physical ties need an actual zone plan. Merely giving
                         # spacing is not evidence of a count.
                         axial_length = positive(
