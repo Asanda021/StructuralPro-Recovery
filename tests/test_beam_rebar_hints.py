@@ -93,3 +93,42 @@ def test_duplicate_evidence_is_not_summed():
 def test_stirrup_explicit_count_is_still_not_approved():
     p = propose_rebar_from_evidence([sample("B1 خاموت: 34Φ8 @15cm")], "B1")["candidates"][0]
     assert p["count"] == 34 and not p["quantity_approved"]
+
+
+def test_suggested_values_are_not_committable_quantities():
+    from core.takeoff.beam_detail import empty_beam, preview_beam
+    from core.takeoff.engine import TakeoffEngine
+    proposed = propose_rebar_from_evidence([sample("B1 میلگرد طولی: 4Φ20")], "B1")["candidates"][0]
+    draft = empty_beam("L1", "B1")
+    draft["bars"]["longitudinal"] = {
+        "status": "needs_review", "count": proposed["count"],
+        "nominal_diameter_mm": proposed["diameter_mm"], "source_ref": proposed["source_ref"]
+    }
+    report = preview_beam(draft, TakeoffEngine())
+    assert not report["ready"]
+    assert not any(row["code"] == "rebar" for row in report["rows"])
+
+
+def test_sqlite_draft_keeps_rebar_hint_but_never_commits_it(tmp_path):
+    from core.takeoff.beam_detail import empty_beam, BeamDetailWorkflow
+    from core.takeoff.engine import TakeoffEngine
+    from core.projects.store import ProjectStore
+    path = tmp_path / "projects.db"
+    store = ProjectStore(path)
+    store.save("P1", {"id": "P1", "name": "آزمون", "takeoffs": [], "boq": []})
+    draft = empty_beam("L1", "B1")
+    draft["source"] = {"mode": "manual", "source_id": "manual:P1:L1:B1"}
+    draft["bars"]["longitudinal"] = {
+        "status": "needs_review", "count": 4, "nominal_diameter_mm": 20,
+        "source_ref": "pdf:page:2:line:10",
+    }
+    workflow = BeamDetailWorkflow(store, TakeoffEngine())
+    entry = workflow.save_draft("P1", draft)
+    store.close()
+    restored = ProjectStore(path)
+    after = BeamDetailWorkflow(restored, TakeoffEngine())
+    assert after.get("P1", "L1", "B1")["data"]["bars"]["longitudinal"]["count"] == 4
+    with pytest.raises(ValueError, match="ناقص"):
+        after.commit("P1", "L1", "B1", expected_revision=entry["revision"])
+    assert restored.get("P1")["boq"] == []
+    restored.close()
