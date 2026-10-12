@@ -121,9 +121,14 @@ def test_revision_and_cross_beam_source_uniqueness(tmp_path):
 
 def test_variable_stirrup_zones_and_missing_segment_block():
     d = _review_all(_draft())
+    d["geometry"]["length"] = 5
     d["bars"]["stirrups"]["segments"] = [
-        {"count": 12, "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/end-zone"},
-        {"count": 17, "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/mid-zone"},
+        {"name": "ابتدا", "start_m": 0, "end_m": 1.2, "spacing_m": .1,
+         "first_bar_m": .05, "last_bar_m": 1.15, "count": 12,
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/end-zone"},
+        {"name": "میانه", "start_m": 1.2, "end_m": 5,
+         "spacing_m": .22, "first_bar_m": 1.3, "last_bar_m": 4.82, "count": 17,
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/mid-zone"},
     ]
     preview = preview_beam(d, TakeoffEngine())
     assert preview["ready"]
