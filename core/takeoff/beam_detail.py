@@ -93,6 +93,12 @@ def _validate_bar_shape(bars: dict[str, Any]) -> None:
     for name, bar in bars.items():
         if not isinstance(bar, dict) or bar.get("status") not in VALID_STATUSES:
             raise ValueError(f"وضعیت {BAR_LABELS[name]} معتبر نیست")
+        if "count" in bar:
+            _number(bar["count"], "تعداد پیشنهادی میلگرد", integer=True)
+        if "nominal_diameter_mm" in bar:
+            nominal = _number(bar["nominal_diameter_mm"], "قطر اسمی میلگرد")
+            if nominal > 100:
+                raise ValueError("قطر اسمی میلگرد خارج از محدوده معتبر است")
 
 
 def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
