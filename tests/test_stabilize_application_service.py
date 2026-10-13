@@ -130,3 +130,68 @@ def test_legacy_takeoff_never_guesses_member_count_waste_or_layers(tmp_path,doma
         app.add_takeoff("P1",domain,item,source_id="source:one",**params)
     assert app.open_project("P1")["takeoffs"] == []
     app.store.close()
+
+
+
+def test_priced_boq_without_approved_pricebook_cannot_enter_estimate(tmp_path):
+    app=_app(tmp_path)
+    app.add_takeoff("P1", "building", "column", source_id="manual:priced:C1",
+                    width=.4, depth=.5, height=3, count=1,
+                    price_code="USER-CONC", unit_price=250)
+    project=app.open_project("P1")
+    assert project["boq"][0]["unit_price"] == 250
+    original_version=project["_meta"]["version"]
+    with pytest.raises(ValueError, match="فهرست‌بها"):
+        app.recalculate_estimate("P1")
+    assert app.open_project("P1")["_meta"]["version"] == original_version
+    app.store.close()
+
+
+def test_estimate_requires_file_hash_and_approved_pricebook_row_equality(tmp_path):
+    import hashlib
+
+    app=_app(tmp_path)
+    app.add_takeoff("P1", "building", "column", source_id="manual:priced:C2",
+                    width=.4, depth=.5, height=3, count=1,
+                    price_code="USER-CONC", unit_price=250)
+    catalog=tmp_path / "reviewed-pricebook.csv"
+    catalog.write_text("USER-CONC,concrete,m3,250", encoding="utf-8")
+    document=app.open_project("P1")
+    document["user_pricebook_review"]={
+        "status":"approved", "approved_by":"کارشناس دفتر فنی",
+        "path":str(catalog), "sha256":hashlib.sha256(catalog.read_bytes()).hexdigest(),
+        "rows_by_code":{"USER-CONC":{"unit":"m3", "unit_price":250}},
+    }
+    app.store.save("P1", document, expected_digest=app.store.current_digest("P1"))
+    actual=app.recalculate_estimate("P1")
+    assert actual["cost"]["grand_total"] > 0
+    catalog.write_text("tampered", encoding="utf-8")
+    with pytest.raises(ValueError, match="تغییر"):
+        app.recalculate_estimate("P1")
+    app.store.close()
+
+
+def test_estimate_requires_pricebook_same_units_and_rates(tmp_path):
+    import hashlib
+
+    app=_app(tmp_path)
+    app.add_takeoff("P1", "building", "column", source_id="manual:priced:C3",
+                    width=.4, depth=.5, height=3, count=1,
+                    price_code="USER-CONC", unit_price=250)
+    catalog=tmp_path / "pricebook.csv"
+    catalog.write_text("user catalog", encoding="utf-8")
+    project=app.open_project("P1")
+    project["user_pricebook_review"]={
+        "status":"approved", "approved_by":"کارشناس",
+        "path":str(catalog), "sha256":hashlib.sha256(catalog.read_bytes()).hexdigest(),
+        "rows_by_code":{"USER-CONC":{"unit":"kg", "unit_price":250}},
+    }
+    app.store.save("P1", project, expected_digest=app.store.current_digest("P1"))
+    with pytest.raises(ValueError, match="واحد"):
+        app.recalculate_estimate("P1")
+    project=app.open_project("P1")
+    project["user_pricebook_review"]["rows_by_code"]["USER-CONC"]={"unit":"m3","unit_price":200}
+    app.store.save("P1", project, expected_digest=app.store.current_digest("P1"))
+    with pytest.raises(ValueError, match="قیمت"):
+        app.recalculate_estimate("P1")
+    app.store.close()
