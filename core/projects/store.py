@@ -20,27 +20,36 @@ class ProjectStore:
         self.db.commit()
 
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None) -> dict[str,Any]:
+        """Version-check and write project + revision in one SQLite transaction.
+
+        BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
+        A competing connection cannot validate against a stale version and then
+        overwrite the current row.
+        """
         pid=str(project_id); now=time.time()
-        # _meta describes the SQLite row, not an engineering project field.
-        # Never persist cached/version metadata back inside the project payload.
         clean_project=deepcopy(project)
-        clean_project.pop("_meta", None)
-        row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
-        if expected_digest is not None:
-            if row is None:
-                raise RuntimeError("project changed since write began")
-            current=json.loads(row["payload"])
-            assert_unchanged(current, expected_digest)
-        version=int(row["version"])+1 if row else 1
+        clean_project.pop("_meta",None)
         payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
-        self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
-                        (pid,str(clean_project.get("name","")),version,now,payload))
-        self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
-                        (pid,version,now,payload))
-        self.db.commit()
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            if expected_digest is not None:
+                if row is None:
+                    raise RuntimeError("project changed since write began")
+                current=json.loads(row["payload"])
+                assert_unchanged(current, expected_digest)
+            version=int(row["version"])+1 if row else 1
+            self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+                            (pid,str(clean_project.get("name","")),version,now,payload))
+            self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
+                            (pid,version,now,payload))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
         cached=deepcopy(clean_project)
         cached["_meta"]={"id":pid,"version":version,"updated_at":now}
-        self._cache[pid] = (version, cached)
+        self._cache[pid] = (version,cached)
         return {"id":pid,"version":version,"updated_at":now}
 
     def begin_write(self, project_id: str) -> str:
