@@ -54,7 +54,15 @@ def _intersection_ids(takeoff: dict) -> set[str]:
     if not isinstance(params, dict):
         raise ValueError("پارامترهای ثبت متره نامعتبر است")
     result: set[str] = set()
-    for deduction in params.get("intersections", []):
+    listed=params.get("intersections", [])
+    if not isinstance(listed, list):
+        raise ValueError("فهرست کسورات بتن نامعتبر است")
+    standalone=params.get("deduction")
+    if standalone is not None:
+        if not isinstance(standalone, dict) or not str(standalone.get("id") or "").strip():
+            raise ValueError("شناسه منبع حفره/تقاطع سقف قابل ردیابی نیست")
+        listed=list(listed)+[standalone]
+    for deduction in listed:
         if not isinstance(deduction, dict):
             raise ValueError("مستند کسر هم‌پوشانی نامعتبر است")
         ident = deduction.get("id")
