@@ -318,3 +318,26 @@ def test_explicit_zero_waste_is_valid_but_omitted_waste_is_not():
         require_explicit_measurement_params("building", "tile", {"waste": -1})
     with pytest.raises(ValueError):
         require_explicit_measurement_params("building", "tile", {"waste": float("nan")})
+
+
+
+def test_registry_source_guard_checks_every_record_not_only_last():
+    project = _project()
+    project["reviewed_aec_systems"] = {
+        "first": {"data": {"source": {"source_id": "  manual:W1 "}}},
+        "second": {"data": {"source": {"source_id": "manual:W2"}}},
+        "third": {"data": {"source": {"source_id": "manual:W3"}}},
+    }
+    with pytest.raises(ValueError, match="تکرار"):
+        require_source_unused(project, "manual:W1")
+    require_source_unused(project, "manual:W4")
+
+
+def test_empty_registry_and_several_unassigned_drafts_do_not_crash():
+    project = _project()
+    project["reviewed_aec_systems"] = {}
+    project["reviewed_structural_members"] = {
+        "draft-1": {"data": {"source": {}}},
+        "draft-2": {"data": {"source": {}}},
+    }
+    require_source_unused(project, "manual:new-member")
