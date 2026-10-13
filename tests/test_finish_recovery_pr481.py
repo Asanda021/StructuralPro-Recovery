@@ -46,9 +46,18 @@ def test_different_floor_location_and_operation_allow_real_distinct_work(tmp_pat
         app.add_assembly_takeoff("p1", code, FINISH, floor_id=floor, location_id=location, approved_by="بازبین مستقل آزمون")
     project = app.open_project("p1")
     assert len(project["takeoffs"]) == 12
-    assert len(project["boq"]) == 2  # aggregated: wall_tile_work + wall_paint_work
-    quantities = {r["item_code"]: r["quantity"] for r in project["boq"]}
-    assert quantities == pytest.approx({"wall_tile_work": 84, "wall_paint_work": 28})
+    # BOQ keeps distinct floors, aggregates same-floor locations, and traces every source.
+    assert len(project["boq"]) == 3
+    by_group = {(r["group"], r["item_code"]): r for r in project["boq"]}
+    assert {k: r["quantity"] for k, r in by_group.items()} == pytest.approx({
+        ("اول", "wall_tile_work"): 56,
+        ("دوم", "wall_tile_work"): 28,
+        ("اول", "wall_paint_work"): 28,
+    })
+    payable_ids = {t["source_id"] for t in project["takeoffs"] if t["component_role"] == "work"}
+    grouped_ids = [sid for r in project["boq"] for sid in r["source_ids"]]
+    assert len(grouped_ids) == len(payable_ids) == 4
+    assert set(grouped_ids) == payable_ids
     assert {r["component_role"] for r in project["takeoffs"]} == {"work", "procurement", "material"}
 
 
@@ -60,16 +69,20 @@ def test_five_floors_round_trip_and_other_work_rebuilds_without_double_count(tmp
     reopened = StructuralProApp(tmp_path)
     before = reopened.open_project("p1")
     assert len(before["takeoffs"]) == 15
-    assert len(before["boq"]) == 1
-    assert before["boq"][0]["quantity"] == pytest.approx(140)
+    assert len(before["boq"]) == 5
+    assert {r["group"] for r in before["boq"]} == {f"طبقه {i}" for i in range(1, 6)}
+    assert sum(r["quantity"] for r in before["boq"]) == pytest.approx(140)
+    assert len({sid for r in before["boq"] for sid in r["source_ids"]}) == 5
     assert len([x for x in before["takeoffs"] if x["component_role"] == "material"]) == 5
     # Adding ordinary work rebuilds the entire BOQ; supply/material rows stay outside it.
     reopened.add_takeoff("p1", "building", "slab_volume", length=2, width=2, thickness=1,
                          count=1, source_id="synthetic:pr481:slab:after-reopen")
     after = reopened.open_project("p1")
-    assert len(after["boq"]) == 2
+    assert len(after["boq"]) == 6
     assert {r["item_code"] for r in after["boq"]} == {"wall_tile_work", "slab_volume"}
-    assert after["boq"][0]["group"] in {"assembly", "building"}
+    assert {r["group"] for r in after["boq"] if r["item_code"] == "wall_tile_work"} == {f"طبقه {i}" for i in range(1, 6)}
+    assert sum(r["quantity"] for r in after["boq"] if r["item_code"] == "wall_tile_work") == pytest.approx(140)
+    assert len({sid for r in after["boq"] for sid in r["source_ids"]}) == 6
     reopened.store.close()
 
 
