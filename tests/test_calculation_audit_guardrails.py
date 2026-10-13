@@ -56,11 +56,14 @@ def test_backfill_deductions_larger_than_excavation_are_rejected_not_clamped():
         calculate_civil_item("backfill", excavation=10, deductions=11)
 
 
-def test_hollow_core_void_volume_larger_than_slab_is_rejected():
-    with pytest.raises(ValueError, match="void volume cannot exceed gross slab"):
+def test_hollow_core_section_must_fit_real_slab_dimensions():
+    with pytest.raises(ValueError, match="هندسه فضای خالی هالوکور"):
         calculate_building_item(
             "hollow_core_roof", length=10, width=10, thickness=0.2,
             void_diameter=1, void_count=100,
+            void_effective_length_m=10, void_cross_section="circular",
+            void_spec_ref="synthetic:invalid-section",
+            void_reviewed_by="synthetic-checker",
         )
 
 
