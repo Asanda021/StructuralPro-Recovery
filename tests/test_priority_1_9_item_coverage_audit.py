@@ -79,3 +79,40 @@ def test_stair_ui_asks_for_sloped_waist_geometry_not_box_dimensions():
     ui_path = Path(__file__).resolve().parents[1] / "app" / "aec_workspace.py"
     source = ui_path.read_text(encoding="utf-8")
     assert '("stair_concrete","پله بتنی",("sloped_length","width","waist_thickness","count"))' in source
+
+
+@pytest.mark.parametrize("value", ["", "  ", "nan", "inf", "-inf", "-1"])
+def test_pricebook_import_never_silently_defaults_missing_or_nonfinite_price(value):
+    from core.pricing.import_service import PricebookImportService
+    with pytest.raises(ValueError):
+        PricebookImportService._number(value)
+
+
+def test_nonfinite_prices_cannot_pass_generic_pricing():
+    from core.pricing.production import validate_dataset_rows, price_analysis
+    valid = {"year": 1405, "group": "ابنیه", "chapter": "1",
+             "code": "010101", "description": "بتن",
+             "unit": "m3", "unit_price": float("nan")}
+    assert not validate_dataset_rows([valid])["valid"]
+    with pytest.raises(ValueError):
+        price_analysis(1.0, float("nan"))
+    with pytest.raises(ValueError):
+        price_analysis(2, 100, factors=(float("inf"),))
+
+
+def test_legacy_building_scope_rejects_nan_quantities():
+    from core.product.full_building_takeoff_v2 import TakeoffScope, validate_scope
+    item = TakeoffScope("concrete", "beam", "بتن", "m3", float("nan"), "manual:C1")
+    with pytest.raises(ValueError):
+        validate_scope([item])
+
+
+def test_manual_aec_assembly_is_not_committed_as_multiple_partial_transactions():
+    ui = (Path(__file__).resolve().parents[1] / "app" / "aec_workspace.py"
+          ).read_text(encoding="utf-8")
+    assert "service.add_assembly_takeoff(" in ui
+    assert "AssemblyTemplateLibrary" in ui
+    assert "floor_input.text().strip()" in ui
+    assert "joist_count" in ui
+    assert "این سقف به دیتایل‌های واقعی" in ui
+    assert 'w.setValue(0)' in ui
