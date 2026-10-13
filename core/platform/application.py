@@ -9,6 +9,8 @@ from typing import Any
 from core.projects.store import ProjectStore
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.boq import build_boq, boq_summary
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.explicit_inputs import require_explicit_measurement_params
 from core.takeoff.estimate import build_estimate
 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
 from core.commercial.progress import build_progress
@@ -327,42 +329,40 @@ class StructuralProApp:
         return self._model_registry(project_id).export_dict()
 
     def add_takeoff(self,project_id:str,domain:str,item:str,**params)->dict[str,Any]:
-        p=self.store.get(project_id)
-        if p is None: raise KeyError(project_id)
+        """Save one explicitly sourced manual takeoff with a guarded SQLite CAS."""
+        pid=str(project_id or "").strip()
+        if not pid:
+            raise ValueError("شناسه پروژه الزامی است")
         source_id=str(params.pop("source_id","")).strip()
+        if not source_id:
+            raise ValueError("ثبت متره بدون شناسه منبع یکتا ممنوع است")
         description=str(params.pop("description","")).strip()
         system=str(params.pop("system","")).strip() or None
-        if source_id and any(str(t.get("source_id","")).strip()==source_id for t in p.get("takeoffs",[])):
-            raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source_id}")
-        calculation_params = deepcopy(params)
-        normalized_domain = takeoff_domain(domain)
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        p=self.store.get(pid)
+        if p is None:
+            raise KeyError(pid)
+        require_source_unused(p,source_id)
+        calculation_params=deepcopy(params)
+        normalized_domain=takeoff_domain(domain)
+        require_explicit_measurement_params(normalized_domain,item,calculation_params)
         result=self.takeoff.calculate(normalized_domain,item,description=description or item,**calculation_params)
-        row={"id":f"{len(p['takeoffs'])+1}","member_code":str(params.get("member_code",item)),
+        row={"id":f"{len(p.get('takeoffs') or [])+1}",
+             "member_code":str(params.get("member_code",item)),
              "source_id":source_id,"domain":normalized_domain,"item":str(item),
              "params":calculation_params,"revision":1,
              "description":description or item,"system":system,
-             "quantities":[{"code":item,"title":description or item,"system":system,"unit":result.unit,"amount":result.quantity,
-             "formula":result.formula,"warning":result.warning,"price_code":params.get("price_code"),"unit_price":params.get("unit_price")}]}
-        p["takeoffs"].append(row)
-        boq_inputs=[]
-        for takeoff in p["takeoffs"]:
-            for q in takeoff.get("quantities",[]):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id","") or "manual",
-                    "source_id": takeoff.get("source_id",""),
-                    "source_type": "takeoff",
-                    "description": q.get("title",""),
-                    "quantity": q.get("amount",0),
-                    "unit": q.get("unit",""),
-                    "item_code": q.get("code", item),
-                    "price_code": q.get("price_code"),
-                    "unit_price": q.get("unit_price"),
-                    "category": domain,
-                    "group": domain,
-                })
-        p["boq"]=build_boq(boq_inputs)
-        self.store.save(project_id,p); return row
-
+             "provenance":{"mode":"manual","source_id":source_id},
+             "quantities":[{"code":item,"title":description or item,"system":system,
+                            "unit":result.unit,"amount":result.quantity,
+                            "formula":result.formula,"warning":result.warning,
+                            "price_code":params.get("price_code"),
+                            "unit_price":params.get("unit_price")}]}
+        validated=validate_commit_rows(p,[row],source_id=source_id)
+        p["takeoffs"],p["boq"]=rebuild_project_boq(p,(p.get("takeoffs") or [])+validated)
+        self.store.save(pid,p,expected_digest=digest)
+        return deepcopy(row)
 
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
                                      session_id: str | None = None,
@@ -465,6 +465,9 @@ class StructuralProApp:
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
+                "provenance": {"mode": "drawing", "source_id": source_id,
+                               "drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                               "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{
                     "code": row["item_code"], "title": row["description"], "system": f"صفحه {row['page']}",
@@ -473,19 +476,10 @@ class StructuralProApp:
                     "source_ref": row["source"], "page": row["page"],
                 }],
             })
-        project.setdefault("takeoffs", []).extend(new_takeoffs)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        validated = validate_commit_rows(
+            project, new_takeoffs, source_id=f"drawing-session:{sid}:{current_revision}")
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, (project.get("takeoffs") or []) + validated)
         record["committed_item_ids"] = sorted(already.union(selected))
         record["ai_committed_item_ids"] = sorted(ai_already)
         record["revision"] = current_revision + 1
@@ -588,6 +582,9 @@ class StructuralProApp:
                            "evidence": deepcopy(candidate["evidence"]), "confidence": candidate["confidence"],
                            "formula": candidate["formula"]},
                 "revision": 1, "drawing_session_id": sid, "ai_generated": True,
+                "provenance": {"mode": "drawing", "source_id": source_id,
+                               "drawing_session_id": sid, "page": page,
+                               "source_ref": source_ref},
                 "description": title, "system": f"صفحه {page}",
                 "quantities": [{
                     "code": candidate["source_id"], "title": title, "system": f"صفحه {page}",
@@ -598,19 +595,10 @@ class StructuralProApp:
             })
         if not new_rows:
             raise ValueError("پیشنهاد تأییدشده هیچ ردیف قابل ثبت ندارد")
-        project.setdefault("takeoffs", []).extend(new_rows)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        validated = validate_commit_rows(
+            project, new_rows, source_id=f"drawing-ai-session:{sid}:{expected_session_revision}")
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, (project.get("takeoffs") or []) + validated)
         record["ai_committed_item_ids"] = sorted(set(record.get("ai_committed_item_ids", [])) | seen_session_items)
         record["revision"] = expected_session_revision + 1
         record["updated_at"] = datetime.now(timezone.utc).isoformat()
@@ -620,75 +608,60 @@ class StructuralProApp:
 
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
                              floor_id: str, description: str = "") -> dict[str, Any]:
-        """Calculate and persist every verified component of an explicit-input assembly to the BOQ."""
-        pid = str(project_id).strip()
-        floor = str(floor_id or "").strip()
-        if not pid:
-            raise ValueError("شناسه پروژه الزامی است")
-        if not floor:
-            raise ValueError("طبقه یا تراز باید صریح مشخص شود")
-        project = self.store.get(pid)
-        if project is None:
-            raise KeyError(pid)
-        result = AssemblyTemplateLibrary().expand(assembly_code, inputs)
+        """Commit all separately measured assembly parts as one reviewed transaction."""
+        pid=str(project_id).strip()
+        floor=str(floor_id or "").strip()
+        if not pid or not floor:
+            raise ValueError("شناسه پروژه و طبقه/ناحیه باید صریح مشخص شوند")
+        result=AssemblyTemplateLibrary().expand(assembly_code,inputs)
         if not result.complete:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
         if not result.components:
-            raise ValueError("قالب هیچ جزء قابل ثبتی تولید نکرد")
-        for component in result.components:
-            if not math.isfinite(float(component.quantity)) or float(component.quantity) < 0:
-                raise ValueError(f"مقدار جزء {component.code} نامعتبر است")
-
-        bundle_id = uuid4().hex
-        created_at = datetime.now(timezone.utc).isoformat()
-        parent = {
-            "id": bundle_id, "assembly_code": result.code, "title": result.title,
-            "description": str(description or result.title).strip(), "floor_id": floor,
-            "inputs": deepcopy(dict(inputs)), "inputs_used": list(result.inputs_used),
-            "revision": 1, "created_at": created_at, "component_source_ids": [],
+            raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        project=self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        bundle_id=uuid4().hex
+        bundle_source=f"assembly:{bundle_id}"
+        require_source_unused(project,bundle_source)
+        created_at=datetime.now(timezone.utc).isoformat()
+        parent={
+            "id":bundle_id,"assembly_code":result.code,"title":result.title,
+            "description":str(description or result.title).strip(),"floor_id":floor,
+            "inputs":deepcopy(dict(inputs)),"inputs_used":list(result.inputs_used),
+            "revision":1,"created_at":created_at,"component_source_ids":[],
         }
-        rows = []
+        rows=[]
+        previous_count=len(project.get("takeoffs") or [])
         for component in result.components:
-            source_id = f"assembly:{bundle_id}:{component.code}"
-            if any(str(existing.get("source_id", "")).strip() == source_id
-                   for existing in project.get("takeoffs", [])):
-                raise ValueError(f"منبع جزء متره تکراری است: {source_id}")
-            title = f"{parent['description']} — {component.title}"
-            row = {
-                "id": f"{len(project['takeoffs']) + 1}",
-                "member_code": component.code, "source_id": source_id,
-                "domain": "assembly", "item": component.code,
-                "params": {"assembly_id": bundle_id, "assembly_code": result.code,
-                           "component_code": component.code, "inputs": deepcopy(dict(inputs))},
-                "revision": 1, "assembly_id": bundle_id,
-                "description": title, "system": floor,
-                "quantities": [{
-                    "code": component.code, "title": title, "system": floor,
-                    "unit": component.unit, "amount": float(component.quantity),
-                    "formula": component.formula, "warning": component.warning,
-                    "price_code": None, "unit_price": None,
+            source_id=f"{bundle_source}:{component.code}"
+            title=f"{parent['description']} — {component.title}"
+            row={
+                "id":f"{previous_count+len(rows)+1}",
+                "member_code":component.code,"source_id":source_id,
+                "domain":"assembly","item":component.code,
+                "params":{"assembly_id":bundle_id,"assembly_code":result.code,
+                          "component_code":component.code,"inputs":deepcopy(dict(inputs))},
+                "revision":1,"assembly_id":bundle_id,
+                "description":title,"system":floor,
+                "provenance":{"mode":"manual","source_id":source_id,"assembly_id":bundle_id},
+                "quantities":[{
+                    "code":component.code,"title":title,"system":floor,
+                    "unit":component.unit,"amount":float(component.quantity),
+                    "formula":component.formula,"warning":component.warning,
+                    "price_code":None,"unit_price":None,
                 }],
             }
-            project.setdefault("takeoffs", []).append(row)
             rows.append(row)
             parent["component_source_ids"].append(source_id)
-
-        project.setdefault("takeoff_assemblies", []).append(parent)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", ""), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "assembly"),
-                    "group": takeoff.get("domain", "assembly"),
-                })
-        project["boq"] = build_boq(boq_inputs)
-        self.store.save(pid, project)
-        return {"assembly": parent, "rows": deepcopy(rows)}
+        validated=validate_commit_rows(project,rows,source_id=bundle_source)
+        project["takeoffs"],project["boq"]=rebuild_project_boq(
+            project,(project.get("takeoffs") or [])+validated)
+        project.setdefault("takeoff_assemblies",[]).append(parent)
+        self.store.save(pid,project,expected_digest=digest)
+        return {"assembly":deepcopy(parent),"rows":deepcopy(rows)}
 
     def revise_takeoff(self, project_id: str, source_id: str, *, expected_revision: int,
                        domain: str, item: str, description: str = "", system: str | None = None,
@@ -720,15 +693,24 @@ class StructuralProApp:
         if len(matches) != 1:
             raise KeyError(f"منبع متره باید دقیقاً یک ردیف داشته باشد: {source}")
         row = matches[0]
+        # Reviewed, drawing and assembly quantities require their own dedicated
+        # revision workflows; a generic item edit would bypass approval gates.
+        if (row.get("review") or row.get("assembly_id") or
+                row.get("drawing_session_id") or
+                source.startswith(("beam-detail:", "structural:", "aec:"))):
+            raise ValueError("ویرایش این متره باید از مسیر بازبینی تخصصی همان عضو/نقشه انجام شود")
         current = int(row.get("revision", 1))
         if current != expected:
             raise RuntimeError(f"تعارض نسخه متره؛ نسخه فعلی {current} است و نسخه ارسالی {expected} بود.")
 
         normalized_domain = takeoff_domain(domain)
         calculation_params = deepcopy(params)
+        require_explicit_measurement_params(normalized_domain,item,calculation_params)
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
                                         **calculation_params)
+        if not math.isfinite(result.quantity) or result.quantity <= 0:
+            raise ValueError("ریزکمیت ویرایش‌شده باید مثبت و مستند باشد")
         previous = deepcopy(row)
         changed_at = datetime.now(timezone.utc).isoformat()
         history = project.setdefault("takeoff_revision_history", [])
@@ -751,40 +733,58 @@ class StructuralProApp:
             }],
         })
 
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", item), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "manual"),
-                    "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, project.get("takeoffs") or [])
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(row)
 
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
-        p=self.store.get(project_id)
-        if p is None: raise KeyError(project_id)
-        normalized_factors={str(k):float(v) for k,v in (factors or {}).items()}
-        estimate=build_estimate(p.get("boq",[]), factors=normalized_factors, aggregate=False)
-        # Keep the application service deterministic even if a downstream costing adapter is replaced.
+        """Financial estimate needs priced BOQ, finite rates and a version-safe save."""
+        pid=str(project_id or "").strip()
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        project=self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        boq=project.get("boq") or []
+        if not boq:
+            raise ValueError("برای برآورد مالی باید ریزمتره و BOQ موجود باشند")
+        for row in boq:
+            if row.get("unit_price") is None or not row.get("price_code"):
+                raise ValueError("قیمت واحد و کد فهرست‌بها برای همه ردیف‌های برآورد الزامی است")
+            price=float(row["unit_price"])
+            if not math.isfinite(price) or price<0:
+                raise ValueError("بهای واحد باید متناهی و نامنفی باشد")
+        # A nonempty hand-entered rate/code is not proof of a reviewed,
+        # user-imported pricebook. The same source-to-BOQ reconciliation gate
+        # used for financial exports must also protect the estimate service.
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(project, require_pricebook=True)
+        normalized_factors={}
+        for name,value in (factors or {}).items():
+            if isinstance(value,bool):
+                raise ValueError("ضریب برآورد نباید بولی باشد")
+            rate=float(value)
+            if not math.isfinite(rate) or rate<0:
+                raise ValueError("ضرایب برآورد باید نامنفی و متناهی باشند")
+            normalized_factors[str(name)]=rate
+        estimate=build_estimate(boq,factors=normalized_factors,aggregate=False)
         if normalized_factors:
-            base=float(estimate["cost"].get("base",0) or 0)
+            base=float(estimate["cost"].get("base",0))
+            if not math.isfinite(base) or base<0:
+                raise ValueError("مبلغ پایه برآورد نامعتبر است")
             subtotal=base
             applied={}
             for name,rate in normalized_factors.items():
                 delta=subtotal*rate
                 applied[name]=delta
                 subtotal+=delta
+                if not math.isfinite(subtotal):
+                    raise ValueError("اعمال ضرایب موجب سرریز مبلغ شد")
             estimate["cost"]["factors"]=applied
             estimate["cost"]["grand_total"]=subtotal
-        p["estimate"]=estimate
-        self.store.save(project_id,p)
+        project["estimate"]=estimate
+        self.store.save(pid,project,expected_digest=digest)
         return estimate
 
     def build_commercial_snapshot(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
@@ -1106,6 +1106,8 @@ class StructuralProApp:
 
     def save_project_management(self, project_id: str, management: ProjectManagement) -> dict[str, Any]:
         """Persist a validated management snapshot without changing legacy project fields."""
+        digest=self.store.current_digest(project_id)
+        self.store._cache.pop(project_id,None)
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
@@ -1118,7 +1120,7 @@ class StructuralProApp:
             "project_materials": exported["materials"],
             "project_meetings": exported["meetings"],
         })
-        self.store.save(project_id, p)
+        self.store.save(project_id, p, expected_digest=digest)
         return self.project_management_snapshot(project_id)
 
     def project_activity_summary(self, project_id: str) -> dict[str, Any]:

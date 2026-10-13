@@ -20,21 +20,36 @@ class ProjectStore:
         self.db.commit()
 
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None) -> dict[str,Any]:
+        """Version-check and write project + revision in one SQLite transaction.
+
+        BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
+        A competing connection cannot validate against a stale version and then
+        overwrite the current row.
+        """
         pid=str(project_id); now=time.time()
-        row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
-        if expected_digest is not None:
-            if row is None:
-                raise RuntimeError("project changed since write began")
-            current=json.loads(row["payload"])
-            assert_unchanged(current, expected_digest)
-        version=int(row["version"])+1 if row else 1
-        payload=json.dumps(project,ensure_ascii=False,sort_keys=True)
-        self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
-                        (pid,str(project.get("name","")),version,now,payload))
-        self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
-                        (pid,version,now,payload))
-        self.db.commit()
-        self._cache[pid] = (version, deepcopy(project))
+        clean_project=deepcopy(project)
+        clean_project.pop("_meta",None)
+        payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            if expected_digest is not None:
+                if row is None:
+                    raise RuntimeError("project changed since write began")
+                current=json.loads(row["payload"])
+                assert_unchanged(current, expected_digest)
+            version=int(row["version"])+1 if row else 1
+            self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+                            (pid,str(clean_project.get("name","")),version,now,payload))
+            self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
+                            (pid,version,now,payload))
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        cached=deepcopy(clean_project)
+        cached["_meta"]={"id":pid,"version":version,"updated_at":now}
+        self._cache[pid] = (version,cached)
         return {"id":pid,"version":version,"updated_at":now}
 
     def begin_write(self, project_id: str) -> str:
@@ -48,16 +63,23 @@ class ProjectStore:
 
     def get(self, project_id: str) -> dict[str,Any] | None:
         pid=str(project_id)
+        # Check the small SQLite version column before fetching a large payload.
+        # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
+        version_row=self.db.execute("SELECT version FROM projects WHERE id=?",(pid,)).fetchone()
+        if not version_row:
+            self._cache.pop(pid,None)
+            return None
         cached=self._cache.get(pid)
-        if cached is not None:
-            _, data=cached
-            return deepcopy(data)
+        if cached is not None and cached[0] == int(version_row["version"]):
+            return deepcopy(cached[1])
         row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
-        if not row: return None
+        if not row:
+            self._cache.pop(pid,None)
+            return None
         data=json.loads(row["payload"])
         data["_meta"]={"id":row["id"],"version":row["version"],"updated_at":row["updated_at"]}
         self._cache[pid]=(int(row["version"]), deepcopy(data))
-        return data
+        return deepcopy(data)
 
     def list(self, *, limit: int | None = None, offset: int = 0) -> list[dict[str,Any]]:
         offset=int(offset)

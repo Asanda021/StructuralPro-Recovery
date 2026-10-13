@@ -8,7 +8,10 @@ def _read(r,name,default=None): return r.get(name,default) if isinstance(r,dict)
 def _text(value): return str(value or "").strip()
 def _number(value,field,*,allow_none=True):
     if value is None and allow_none: return None
-    number=float(value)
+    if isinstance(value, bool): raise ValueError(f"{field} must be numeric")
+    try: number=float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{field} must be numeric") from exc
     if not math.isfinite(number): raise ValueError(f"{field} must be finite")
     return number
 def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dict[str,Any]]:
@@ -21,7 +24,7 @@ def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dic
         if source_ids is None: source_ids=[source_id] if source_id else []
         else: source_ids=[_text(x) for x in source_ids if _text(x)]
         source_type=_text(_read(r,"source_type","manual")) or "manual"
-        q=_number(_read(r,"quantity",0),"quantity",allow_none=False)
+        q=_number(_read(r,"quantity",None),"quantity",allow_none=False)
         if q<0: raise ValueError("quantity must be finite and non-negative")
         raw_unit=_text(_read(r,"unit",""))
         if not raw_unit: raise ValueError("unit is required")
@@ -50,8 +53,10 @@ def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dic
     if aggregate:
         groups={}
         for r in raw:
-            key=(r["item_code"] or r["price_code"] or r["description"],r["unit"],r["unit_price"],r["factor"],
-                 r["chapter"],r["category"],r["group"],r["status"],r["waste_percent"])
+            key=(r["item_code"] or r["price_code"] or r["description"],
+                 r["price_code"], r["description"], r["unit"], r["unit_price"], r["factor"],
+                 r["chapter"],r["category"],r["group"],r["status"],
+                 r["waste_percent"], r["source_type"])
             if key not in groups: groups[key]=dict(r)
             else:
                 groups[key]["quantity"]+=r["quantity"]; groups[key]["effective_quantity"]+=r["effective_quantity"]

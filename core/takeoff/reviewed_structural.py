@@ -14,6 +14,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, require_reset_of_changed_approvals
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.reviewed_components import (
     require_text, positive, reviewed_steel, net_concrete, net_formwork,
@@ -255,14 +256,8 @@ class ReviewedStructuralWorkflow:
                 raise ValueError("منبع تغییر یافته است؛ تأیید هندسه، قالب و آرماتور باید بازنشانی شوند")
         source_id = source.get("source_id") if isinstance(source, dict) else None
         if source_id:
-            for other_key, item in register.items():
-                if other_key != key and item["data"].get("source", {}).get("source_id") == source_id:
-                    raise ValueError("منبع متره تکراری است")
-            for item in (project.get("beam_detail_register") or {}).values():
-                if item["data"].get("source", {}).get("source_id") == source_id:
-                    raise ValueError("منبع نقشه قبلاً برای تیر استفاده شده است")
-            if any(row.get("source_id") == source_id for row in project.get("takeoffs", [])):
-                raise ValueError("منبع قبلاً در ریزمتره استفاده شده است")
+            require_source_unused(project, source_id, exclude=(REGISTER, key))
+        require_reset_of_changed_approvals(previous["data"] if previous else None, draft)
         record = {"status": "draft", "revision": revision+1, "data": deepcopy(draft),
                   "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = record
@@ -292,17 +287,7 @@ class ReviewedStructuralWorkflow:
         if not report["ready"]:
             raise ValueError("متره ناقص؛ ورود به BOQ مسدود است: " + "؛ ".join(report["blockers"]))
         prior = project.get("takeoffs", [])
-        prior_ids = {row.get("source_id") for row in prior}
         ids = {row["source_id"] for row in report["rows"]}
-        if prior_ids & ids or report["source_id"] in prior_ids:
-            raise ValueError("ریزمتره تکراری است")
-        # No two members may subtract the same physical concrete intersection.
-        current_deductions = {d["id"] for row in report["rows"] if row["code"] == "concrete"
-                              for d in row["params"]["intersections"]}
-        for other in prior:
-            other_deductions = other.get("params", {}).get("intersections", [])
-            if current_deductions & {d.get("id") for d in other_deductions}:
-                raise ValueError("حجم هم‌پوشانی قبلاً از عضو دیگری کسر شده است")
         takeoffs = deepcopy(prior)
         for row in report["rows"]:
             takeoffs.append({"id": row["source_id"], "source_id": row["source_id"],
@@ -315,14 +300,11 @@ class ReviewedStructuralWorkflow:
                                              "unit": row["unit"], "amount": row["quantity"],
                                              "formula": row["formula"], "price_code": None,
                                              "unit_price": None}]})
-        boq_input = [{"source": row.get("source_id", ""), "source_id": row["source_id"],
-                      "source_type": "takeoff", "description": q["title"],
-                      "quantity": q["amount"], "unit": q["unit"], "item_code": q["code"],
-                      "price_code": q["price_code"], "unit_price": q["unit_price"],
-                      "category": row["domain"], "group": row["domain"]}
-                     for row in takeoffs for q in row.get("quantities", ())]
-        project["boq"] = build_boq(boq_input)
-        project["takeoffs"] = takeoffs
+        validated = validate_commit_rows(
+            project, takeoffs[len(prior):], source_id=record["data"]["source"]["source_id"],
+            expected_current_registry=(REGISTER, _key(kind, floor, member_id)))
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, list(prior) + validated)
         record["status"] = "committed"
         record["committed_source_ids"] = sorted(ids)
         record["committed_at"] = datetime.now(timezone.utc).isoformat()
