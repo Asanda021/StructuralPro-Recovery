@@ -87,8 +87,9 @@ class ManualTakeoffDialog(QDialog):
         self._saved_ids: set[str] = set()
         self._session_id = uuid4().hex
 
-        root = QVBoxLayout(self)
+        root = QVBoxLayout()
         form = QFormLayout()
+        self.manual_context_form=form
         form.addRow("شناسه پروژه:", self.project_id)
         form.addRow("طبقه / تراز:", self.floor_id)
         form.addRow("شرح عضو (اختیاری):", self.element_label)
@@ -141,6 +142,8 @@ class ManualTakeoffDialog(QDialog):
         self.close_button.clicked.connect(self.accept)
         self.project_id.editingFinished.connect(self.refresh_saved_rows)
         self.refresh_saved_rows()
+        from app.manual_formula_controls import attach
+        attach(self,root)
 
     def open_beam_detail(self):
         """The same reviewed beam panel works with and without a drawing."""

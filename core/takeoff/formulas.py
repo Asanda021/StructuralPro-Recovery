@@ -55,7 +55,7 @@ def evaluate_rows(rows):
         for node in ast.walk(tree):
             if isinstance(node,ast.BinOp) and isinstance(node.op,(ast.Mult,ast.Div,ast.Pow)):
                 names=lambda part:{n.id for n in ast.walk(part) if isinstance(n,ast.Name)} & set(refs)
-                if names(node.left) and names(node.right) or isinstance(node.op,ast.Pow) and names(node.left):
+                if names(node.left) and names(node.right) or isinstance(node.op,ast.Pow) and names(node.left) or isinstance(node.op,ast.Div) and names(node.right):
                     raise ValueError('واحد نتیجه ضرب یا توان مراجع نیازمند دیتایل صریح است')
         value=evaluate(row['expression'],variables);active.remove(key);values[key]=value;return value
     try:

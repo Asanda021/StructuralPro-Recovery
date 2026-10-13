@@ -361,6 +361,34 @@ class StructuralProApp:
     def project_model_snapshot(self, project_id: str) -> dict[str, Any]:
         return self._model_registry(project_id).export_dict()
 
+    def save_manual_formula(self, project_id, row_id, data, *, expected_revision, reason):
+        from core.takeoff.manual_formula_register import save
+        return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)
+
+    def bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions, reason):
+        from core.takeoff.manual_formula_register import bulk_edit
+        return bulk_edit(self,project_id,row_ids,changes=changes,expected_revisions=expected_revisions,reason=reason)
+
+    def copy_manual_formulas(self, project_id, row_ids, *, floor, expected_revisions, reason):
+        from core.takeoff.manual_formula_register import copy_rows
+        return copy_rows(self,project_id,row_ids,floor=floor,expected_revisions=expected_revisions,reason=reason)
+
+    def export_manual_formula_report(self, project_id, path, *, format):
+        from core.reports.manual_formula_report import export
+        return export(self,project_id,path,format=format)
+
+    def load_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_register import load
+        return load(self,project_id)
+
+    def review_manual_formula(self, project_id, row_id, *, expected_revision, reviewer, note):
+        from core.takeoff.manual_formula_register import review
+        return review(self,project_id,row_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def commit_manual_formula(self, project_id, row_id, *, expected_revision):
+        from core.takeoff.manual_formula_register import commit
+        return commit(self,project_id,row_id,expected_revision=expected_revision)
+
     def add_takeoff(self,project_id:str,domain:str,item:str,**params)->dict[str,Any]:
         """Save one explicitly sourced manual takeoff with a guarded SQLite CAS."""
         pid=str(project_id or "").strip()
