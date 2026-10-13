@@ -89,8 +89,8 @@ class ManualTakeoffWorkbench:
             "column": ("count", "width", "depth", "height"), "beam": ("count", "length", "width", "depth"),
             "tie_beam": ("count", "length", "width", "depth"), "footing_concrete": ("count", "length", "width", "thickness"),
             "shear_wall": ("count", "length", "thickness", "height"), "solid_slab_roof": ("count", "length", "width", "thickness"),
-            "joist_block_roof": ("count", "length", "width", "topping_thickness", "joist_spacing", "joist_width", "joist_depth"),
-            "joist_foam_roof": ("count", "length", "width", "topping_thickness", "joist_spacing", "joist_width", "joist_depth"),
+            "joist_block_roof": ("count", "length", "width", "topping_thickness", "joist_spacing", "joist_width", "joist_depth","joist_count"),
+            "joist_foam_roof": ("count", "length", "width", "topping_thickness", "joist_spacing", "joist_width", "joist_depth","joist_count"),
             "stair_concrete": ("count", "sloped_length", "width", "waist_thickness"), "wall": ("count", "length", "height", "openings"),
             "excavation": ("length", "width", "depth"), "rebar": ("count", "length", "unit_weight"), "steel": ("count", "length", "unit_weight"),
         }.get(entry.code, ())
