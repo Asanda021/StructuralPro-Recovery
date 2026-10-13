@@ -90,7 +90,8 @@ def test_price_catalog_round_trip_and_custom_price():
 def test_backup_and_project_export_import_round_trip(tmp_path):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("Recovery Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=3, height=0.2)
+    app.add_takeoff("P-31", "building", "slab", length=2, width=3, height=0.2,
+                    count=1, source_id="fixture:P31:backup")
 
     db_backup = tmp_path / "backup.db"
     backup = app.backup_project_database(db_backup)
@@ -205,7 +206,8 @@ def test_database_reopen_preserves_project_data(tmp_path):
     data_dir = tmp_path / "data"
     app = StructuralProApp(data_dir)
     app.create_project("Persistence Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2)
+    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2,
+                    count=1, source_id="fixture:P31:reopen")
     app.store.close()
 
     reopened = StructuralProApp(data_dir)
