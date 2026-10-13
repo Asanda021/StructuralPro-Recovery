@@ -13,7 +13,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
-from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, require_reset_of_changed_approvals
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.stirrup_zones import validate_stirrup_zones
 from core.takeoff.reviewed_components import cut_length as reviewed_cut_length, net_concrete, net_formwork
@@ -293,6 +293,7 @@ class BeamDetailWorkflow:
                 raise ValueError("منبع نقشه تغییر کرده؛ ابتدا تأیید اقلام میلگرد را بازنشانی کنید")
         if source and source.get("source_id"):
             require_source_unused(project, source["source_id"], exclude=(REGISTER, key))
+        require_reset_of_changed_approvals(previous["data"] if previous else None, draft)
         payload = deepcopy(draft)
         entry = {"status": "draft", "revision": revision + 1, "data": payload,
                  "updated_at": datetime.now(timezone.utc).isoformat()}
