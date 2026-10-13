@@ -54,3 +54,30 @@ def approve_test_pricebook(tmp_path):
         app.store.save(pid, project, expected_digest=app.store.current_digest(pid))
         return catalog
     return approve
+
+
+@pytest.fixture(scope='session', autouse=True)
+def native_qt_session_cleanup():
+    """Destroy native Qt before Python shutdown, without changing test outcomes.
+
+    Individual dialogs may hold signal closures after close(). The interpreter
+    cannot safely choose the QApplication/widget destruction order. All asserts
+    run first; native teardown is performed normally while wrappers are alive.
+    """
+    yield
+    if 'PySide6.QtWidgets' not in sys.modules:
+        return
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QCoreApplication, QEvent
+    import shiboken6
+    app=QApplication.instance()
+    if app is None or not shiboken6.isValid(app):
+        return
+    # No focus/edit callbacks may run against already-closed test databases.
+    for widget in QApplication.allWidgets():
+        if shiboken6.isValid(widget):widget.blockSignals(True)
+    for widget in QApplication.topLevelWidgets():
+        if shiboken6.isValid(widget):shiboken6.delete(widget)
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete)
+    app.processEvents()
+    shiboken6.delete(app)

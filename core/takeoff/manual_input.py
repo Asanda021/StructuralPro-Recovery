@@ -2,6 +2,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import math
+from decimal import Decimal
+from core.commercial.statement_amendment import number as exact_number,legacy_float
 import re
 
 PERSIAN_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789")
@@ -37,13 +39,10 @@ class ManualEntry:
         return not self.missing
 
 def _number(value: str) -> float:
-    try:
-        number = float(value.translate(PERSIAN_DIGITS).replace(",", "").strip())
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("مقدار متره باید عددی باشد") from exc
-    if not math.isfinite(number):
-        raise ValueError("مقدار متره باید متناهی باشد")
-    return number
+    raw=value.translate(PERSIAN_DIGITS).replace(',', '').strip()
+    try:return legacy_float(exact_number(raw,'مقدار متره',True))
+    except ValueError as e:raise ValueError('مقدار یا دقت متره در موتور فعلی قابل حفظ نیست') from e
+
 
 def _normalise(text: str) -> str:
     return (text.translate(PERSIAN_DIGITS).replace("×","x").replace("✕","x")
@@ -74,7 +73,7 @@ def _extract_named(text: str) -> dict[str, float | str]:
                 raise ValueError(f"واحد طول برای «{label}» معتبر نیست")
             scale = {"mm": .001, "cm": .01, "m": 1,
                      "میلی‌متر": .001, "سانتی‌متر": .01, "متر": 1}[unit.lower()]
-            value *= scale * (1000 if key == "diameter_mm" else 1)
+            value = legacy_float(Decimal(str(value))*Decimal(str(scale))*(1000 if key == "diameter_mm" else 1))
         if key in out and out[key] != value:
             raise ValueError(f"مقادیر متعارض برای «{label}» ثبت شده است")
         out[key] = value

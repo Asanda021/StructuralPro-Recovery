@@ -5,7 +5,9 @@ from core.platform.application import StructuralProApp
 def test_stale_dialog_preview_audit_preserves_other_instance_takeoff(tmp_path):
     from PySide6.QtWidgets import QApplication
     from app.manual_takeoff import ManualTakeoffDialog
+    global _qt_lifetime
     qt = QApplication.instance() or QApplication([])
+    _qt_lifetime=qt
     first = StructuralProApp(tmp_path)
     first.create_project("پروژه هم‌زمان", "p")
     second = StructuralProApp(tmp_path)
@@ -21,13 +23,17 @@ def test_stale_dialog_preview_audit_preserves_other_instance_takeoff(tmp_path):
     assert data["takeoffs"][0]["source_id"] == "other-desktop"
     assert data["_manual_takeoff_audit"][-1]["event"] == "preview_added"
     reopened.store.close()
-    dialog.close()
+    dialog.close();dialog.deleteLater()
+    from PySide6.QtCore import QCoreApplication,QEvent
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);qt.processEvents()
 
 
 def test_audit_conflict_preserves_committed_data_and_shows_warning(tmp_path, monkeypatch):
     from PySide6.QtWidgets import QApplication
     from app.manual_takeoff import ManualTakeoffDialog
+    global _qt_lifetime
     qt = QApplication.instance() or QApplication([])
+    _qt_lifetime=qt
     first = StructuralProApp(tmp_path)
     first.create_project("پروژه هم‌زمان", "p")
     other = StructuralProApp(tmp_path)
@@ -51,4 +57,6 @@ def test_audit_conflict_preserves_committed_data_and_shows_warning(tmp_path, mon
     assert not project.get("_manual_takeoff_audit")
     assert "ممیزی ناموفق" in dialog.status.text()
     reopened.store.close()
-    dialog.close()
+    dialog.close();dialog.deleteLater()
+    from PySide6.QtCore import QCoreApplication,QEvent
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);qt.processEvents()

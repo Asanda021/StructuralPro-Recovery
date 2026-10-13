@@ -61,7 +61,8 @@ def probe(output: Path) -> dict:
         dialog.entry_text.setPlainText("ستون: تعداد=2، عرض=0.5، عمق=0.4، ارتفاع=3")
         QTest.mouseClick(dialog.add_button, Qt.MouseButton.LeftButton)
         assert dialog.table.rowCount() == 1
-        assert float(dialog.table.item(0, 4).text()) == 1.2
+        assert dialog.table.item(0,4).text()==str(dialog.workbench.records[0].quantity)
+        assert abs(float(dialog.table.item(0,4).text())-1.2)<1e-12
         QTest.mouseClick(dialog.save_button, Qt.MouseButton.LeftButton)
         assert "ذخیره شد" in dialog.status.text()
         QTest.mouseClick(dialog.save_button, Qt.MouseButton.LeftButton)
@@ -72,7 +73,9 @@ def probe(output: Path) -> dict:
         assert "ناقص" in dialog.status.text()
         QTest.mouseClick(dialog.save_button, Qt.MouseButton.LeftButton)
         assert dialog.grab().save(str(output / "manual_preview_save.png"))
-        dialog.close()
+        dialog.close();dialog.deleteLater()
+        from PySide6.QtCore import QCoreApplication,QEvent
+        QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);app.processEvents()
         service.store.close()
         reopened = StructuralProApp(d)
         project = reopened.open_project("UI-QA")

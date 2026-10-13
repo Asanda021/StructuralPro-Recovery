@@ -2,13 +2,15 @@
 from __future__ import annotations
 
 from uuid import uuid4
+import json
+from decimal import Decimal,localcontext
 from datetime import datetime, timezone
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget,
-    QTableWidgetItem, QTextEdit, QVBoxLayout, QHeaderView, QInputDialog,
+    QTableWidgetItem, QTextEdit, QVBoxLayout, QHeaderView, QInputDialog, QAbstractItemView, QGridLayout, QFileDialog,
 )
 
 from core.takeoff.manual_input import parse_manual_batch, parse_manual_entry
@@ -66,11 +68,17 @@ class ManualTakeoffDialog(QDialog):
         )
         self.status = QLabel("ورودی کامل محاسبه می‌شود؛ ورودی ناقص ذخیره نخواهد شد.")
         self.status.setWordWrap(True)
-        self.table = QTableWidget(0, 7)
+        self.table = QTableWidget(0, 12)
         self.table.setHorizontalHeaderLabels(
-            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت"]
+            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت", "فرمول", "پارامترها", "منبع ورودی", "نسخه", "پروژه"]
         )
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.table.horizontalHeader().setSortIndicator(0,Qt.AscendingOrder)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.setLayoutDirection(Qt.RightToLeft)
+        self._editing_pending = None
         self.saved_table = QTableWidget(0, 6)
         self.saved_table.setHorizontalHeaderLabels(["منبع متره", "نسخه", "شرح", "مقدار", "واحد", "طبقه"])
         self.saved_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -87,7 +95,7 @@ class ManualTakeoffDialog(QDialog):
         root.addLayout(form)
         root.addWidget(QLabel("ورودی متره"))
         root.addWidget(self.entry_text, 2)
-        actions = QHBoxLayout()
+        actions = QGridLayout()
         self.add_button = QPushButton("محاسبه و افزودن به پیش‌نمایش")
         self.paste_button = QPushButton("چسباندن Excel")
         self.edit_button = QPushButton("ویرایش ردیف انتخابی")
@@ -101,12 +109,19 @@ class ManualTakeoffDialog(QDialog):
         self.load_saved_button = QPushButton("ویرایش نسخه ذخیره‌شده")
         self.revise_saved_button = QPushButton("ثبت نسخه اصلاح‌شده")
         self.close_button = QPushButton("بستن")
-        for button in (self.add_button, self.paste_button, self.edit_button, self.copy_button,
+        for index, button in enumerate((self.add_button, self.paste_button, self.edit_button, self.copy_button,
                        self.floor_copy_button, self.delete_button, self.undo_button,
                        self.redo_button, self.beam_detail_button, self.save_button, self.load_saved_button,
-                       self.revise_saved_button, self.close_button):
-            actions.addWidget(button)
+                       self.revise_saved_button, self.close_button)):
+            actions.addWidget(button,index//4,index%4)
+        self.export_xlsx_button=QPushButton('خروجی Excel ریزمتره');self.export_pdf_button=QPushButton('خروجی PDF ریزمتره')
+        actions.addWidget(self.export_xlsx_button,4,0);actions.addWidget(self.export_pdf_button,4,1)
+        self.export_xlsx_button.clicked.connect(lambda:self.export_visible('xlsx'))
+        self.export_pdf_button.clicked.connect(lambda:self.export_visible('pdf'))
         root.addLayout(actions)
+        self.search_field=QLineEdit();self.search_field.setPlaceholderText("جست‌وجو و فیلتر طبقه، نوع، واحد یا وضعیت")
+        self.unit_totals=QLabel();self.search_field.textChanged.connect(self.filter_rows)
+        root.addWidget(self.search_field);root.addWidget(self.unit_totals)
         root.addWidget(self.table, 2)
         root.addWidget(QLabel("ردیف‌های ذخیره‌شده پروژه (ویرایش با کنترل نسخه)"))
         root.addWidget(self.saved_table, 2)
@@ -166,6 +181,7 @@ class ManualTakeoffDialog(QDialog):
             self.status.setText("هشدار: متره انجام شد اما ذخیره تاریخچه ممیزی ناموفق بود.")
 
     def _render_records(self):
+        self.table.setSortingEnabled(False)
         self.table.setRowCount(0)
         if self.workbench is None:
             return
@@ -174,9 +190,49 @@ class ManualTakeoffDialog(QDialog):
             self.table.insertRow(row)
             status = "ذخیره شد" if record.record_id in self._saved_ids else "آماده ذخیره"
             values = [record.record_id, record.floor_id, _SAVED_ITEM_LABELS.get(record.code,record.code), record.element_label,
-                      f"{record.quantity:g}", record.unit, status]
+                      str(record.quantity), record.unit, status, record.formula, json.dumps(dict(record.params),ensure_ascii=False), record.source, record.revision, record.project_id]
             for col, value in enumerate(values):
                 self.table.setItem(row, col, QTableWidgetItem(str(value)))
+
+        self.table.setSortingEnabled(True)
+        self.filter_rows()
+
+    def filter_rows(self,*args):
+        tokens=self.search_field.text().casefold().split();visible=set()
+        for row in range(self.table.rowCount()):
+            text=' '.join(self.table.item(row,c).text() if self.table.item(row,c) else '' for c in range(self.table.columnCount())).casefold()
+            hidden=not all(token in text for token in tokens);self.table.setRowHidden(row,hidden)
+            if not hidden and self.table.item(row,0):visible.add(self.table.item(row,0).text())
+        totals={}
+        with localcontext() as ctx:
+            ctx.prec=512
+            for record in self.workbench.records if self.workbench else ():
+                if record.record_id in visible:totals[record.unit]=totals.get(record.unit,Decimal(0))+Decimal(str(record.quantity))
+        self.unit_totals.setText('جمع مستقل واحدها: '+' | '.join(f'{unit}: {value:f}' for unit,value in sorted(totals.items())))
+
+    def _selected_records(self):
+        if self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():return ()
+        rows=sorted({i.row() for i in self.table.selectedIndexes() if not self.table.isRowHidden(i.row())})
+        ids={self.table.item(row,0).text() for row in rows if self.table.item(row,0)}
+        return tuple(r for r in self.workbench.records if r.record_id in ids)
+
+    def export_visible(self,fmt):
+        try:
+            if self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():raise ValueError('پروژه فعال با پیش‌نمایش مطابقت ندارد')
+            ids={self.table.item(r,0).text() for r in range(self.table.rowCount()) if not self.table.isRowHidden(r) and self.table.item(r,0)}
+            rows=[{'id':r.record_id,'project':r.project_id,'floor':r.floor_id,'item':_SAVED_ITEM_LABELS.get(r.code,r.code),'description':r.element_label,
+                   'quantity':str(r.quantity),'unit':r.unit,'formula':r.formula,'parameters':json.dumps(dict(r.params),ensure_ascii=False),
+                   'source':r.source,'revision':r.revision,'status':'ذخیره شد' if r.record_id in self._saved_ids else 'پیش‌نمایش بررسی‌نشده'} for r in self.workbench.records if r.record_id in ids]
+            if not rows:raise ValueError('ردیف کامل قابل گزارش موجود نیست')
+            path,_=QFileDialog.getSaveFileName(self,'خروجی ریزمتره','',f'{fmt.upper()} (*.{fmt})')
+            if not path:return
+            from core.reports import exporters
+            labels=['شناسه','پروژه','طبقه','نوع','شرح','مقدار','واحد','فرمول','پارامترها','مرجع ورودی','نسخه','وضعیت']
+            columns=list(zip(rows[0],labels));project=self.service.open_project(self.workbench.project_id)
+            title=(project or {}).get('name','')+' — ریزمتره دستی؛ پذیرش مهندسی مستقل لازم است'
+            getattr(exporters,'export_'+fmt)(rows,path,title=title,columns=columns)
+            self.status.setText('گزارش ردیف‌های قابل مشاهده ذخیره شد: '+path)
+        except Exception as e:QMessageBox.warning(self,'گزارش متره',str(e))
 
     def refresh_saved_rows(self):
         self.saved_table.setRowCount(0)
@@ -323,7 +379,7 @@ class ManualTakeoffDialog(QDialog):
 
     def _selected_record(self):
         row = self.table.currentRow()
-        if row < 0 or self.workbench is None:
+        if row < 0 or self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():
             return None
         item = self.table.item(row, 0)
         if item is None:
@@ -331,12 +387,10 @@ class ManualTakeoffDialog(QDialog):
         return next((r for r in self.workbench.records if r.record_id == item.text()), None)
 
     def copy_selected(self):
-        record = self._selected_record()
-        if record is None:
-            self.status.setText("یک ردیف کامل را انتخاب کن.")
-            return
-        QApplication.clipboard().setText(record.source)
-        self.status.setText("متن ورودی ردیف در کلیپ‌بورد کپی شد.")
+        records=self._selected_records()
+        if not records:self.status.setText('ردیف‌های کامل را انتخاب کن.');return
+        QApplication.clipboard().setText('\n'.join(r.source for r in records))
+        self.status.setText(f'{len(records)} ردیف کامل در کلیپ‌بورد کپی شد.')
 
     def edit_selected(self):
         record = self._selected_record()
@@ -347,44 +401,35 @@ class ManualTakeoffDialog(QDialog):
             QMessageBox.warning(self, "ویرایش متره", "این ردیف قبلاً در پروژه ذخیره شده؛ برای جلوگیری از مغایرت، ویرایش مستقیم آن غیرفعال است.")
             return
         self.entry_text.setPlainText(record.source)
+        self.floor_id.setText(record.floor_id)
         self.element_label.setText(record.element_label)
-        self.workbench.remove_record(record.record_id)
-        self._render_records()
+        self._editing_pending=(record.record_id,record.revision)
         self._audit("edit_started", {"record_id": record.record_id, "floor": record.floor_id})
-        self.status.setText("ردیف به ورودی برگشت؛ اصلاحش کن و دوباره محاسبه کن.")
+        self.status.setText("ردیف اصلی محفوظ است؛ اصلاح را وارد کن و دوباره محاسبه کن.")
 
     def copy_selected_to_floor(self):
-        record = self._selected_record()
-        if record is None:
-            self.status.setText("یک ردیف کامل را انتخاب کن.")
-            return
-        floor, ok = QInputDialog.getText(self, "کپی طبقه", "طبقه مقصد:", text=record.floor_id)
-        if not ok or not floor.strip():
-            return
+        records=self._selected_records()
+        if not records:self.status.setText('ردیف‌های کامل را انتخاب کن.');return
+        floor,ok=QInputDialog.getText(self,'کپی طبقه','طبقه مقصد:',text=records[0].floor_id)
+        if not ok or not floor.strip():return
         try:
-            result = self.workbench.add_text(record.source, floor_id=floor.strip(), element_label=record.element_label)
-            if isinstance(result, ManualTakeoffDraft):
-                raise ValueError("کپی به‌صورت پیش‌نویس درآمد؛ رکورد جدید ایجاد نشد.")
-            self._render_records()
-            self._audit("floor_copy", {"source_id": record.record_id, "new_id": result.record_id, "floor": floor.strip()})
-            self.status.setText(f"ردیف {record.record_id} به {floor.strip()} کپی شد؛ برای ذخیره دائمی، دکمه ذخیره را بزن.")
-        except Exception as exc:
-            QMessageBox.warning(self, "کپی طبقه", str(exc))
+            copies=self.workbench.copy_records([r.record_id for r in records],floor_id=floor.strip())
+            self._render_records();self._audit('floor_copy',{'source_ids':[r.record_id for r in records],'new_ids':[r.record_id for r in copies],'floor':floor.strip()})
+            self.status.setText(f'{len(copies)} ردیف با هویت جدید به طبقه مقصد کپی شد.')
+        except Exception as e:QMessageBox.warning(self,'کپی طبقه',str(e))
 
     def delete_selected(self):
-        record = self._selected_record()
-        if record is None:
-            self.status.setText("یک ردیف کامل را انتخاب کن.")
-            return
-        if record.record_id in self._saved_ids:
-            QMessageBox.warning(self, "حذف متره", "حذف ردیف ذخیره‌شده از این پنجره مجاز نیست؛ ابتدا از مسیر مدیریت متره پروژه آن را اصلاح کن.")
-            return
-        self.workbench.remove_record(record.record_id)
-        self._render_records()
-        self._audit("delete_pending", {"record_id": record.record_id})
-        self.status.setText("ردیف پیش‌نمایش حذف شد؛ با واگرد قابل بازیابی است.")
+        records=self._selected_records()
+        if not records:self.status.setText('ردیف‌های کامل را انتخاب کن.');return
+        if any(r.record_id in self._saved_ids for r in records):
+            QMessageBox.warning(self,'حذف متره','انتخاب شامل ردیف ذخیره‌شده است؛ هیچ ردیفی حذف نشد.');return
+        self.workbench.remove_records([r.record_id for r in records]);self._render_records()
+        self._audit('delete_pending',{'record_ids':[r.record_id for r in records]})
+        self.status.setText('حذف گروهی انجام شد؛ با یک واگرد قابل بازیابی است.')
 
     def undo(self):
+        if self.workbench is not None and self.workbench.project_id!=self.project_id.text().strip():
+            self.status.setText("پروژه فعال با پیش‌نمایش مطابقت ندارد.");return
         if self.workbench is None or not self.workbench.can_undo:
             self.status.setText("عملیات قابل واگردی وجود ندارد.")
             return
@@ -393,15 +438,23 @@ class ManualTakeoffDialog(QDialog):
                for row in self.workbench.records):
             self.status.setText("این واگرد ردیف ذخیره‌شده را از پیش‌نمایش خارج می‌کند؛ برای جلوگیری از مغایرت، عملیات متوقف شد.")
             return
+        target={r.record_id:r for r in self.workbench.undo_preview}
+        if any(r.record_id in self._saved_ids and target.get(r.record_id)!=r for r in self.workbench.records):
+            self.status.setText('واگرد محتوای ردیف ذخیره‌شده نیازمند مسیر ویرایش نسخه‌دار پروژه است.');return
         self.workbench.undo()
         self._render_records()
         self._audit("undo", {})
         self.status.setText("واگرد انجام شد.")
 
     def redo(self):
+        if self.workbench is not None and self.workbench.project_id!=self.project_id.text().strip():
+            self.status.setText("پروژه فعال با پیش‌نمایش مطابقت ندارد.");return
         if self.workbench is None or not self.workbench.can_redo:
             self.status.setText("عملیات قابل تکراری وجود ندارد.")
             return
+        target={r.record_id:r for r in self.workbench.redo_preview}
+        if any(r.record_id in self._saved_ids and target.get(r.record_id)!=r for r in self.workbench.records):
+            self.status.setText('تکرار محتوای ردیف ذخیره‌شده نیازمند مسیر ویرایش نسخه‌دار پروژه است.');return
         self.workbench.redo()
         self._render_records()
         self._audit("redo", {})
@@ -423,6 +476,7 @@ class ManualTakeoffDialog(QDialog):
         if self.workbench is None or self.workbench.project_id != project_id:
             self.workbench = ManualTakeoffWorkbench(project_id)
             self._saved_ids.clear()
+            self._editing_pending=None
             self._session_id = uuid4().hex
             self.table.setRowCount(0)
         try:
@@ -431,6 +485,16 @@ class ManualTakeoffDialog(QDialog):
             QMessageBox.warning(self, "ورودی متره", str(exc))
             return
 
+        if self._editing_pending is not None:
+            try:
+                if len(entries)!=1:raise ValueError('ویرایش باید دقیقاً یک ردیف باشد')
+                key,version=self._editing_pending
+                self.workbench.update_text(key,entries[0].source_text,expected_revision=version,floor_id=floor_id,element_label=self.element_label.text().strip())
+                self._editing_pending=None;self._render_records();self.entry_text.clear()
+                self._audit('edit_pending',{'record_id':key,'revision':version+1});self.status.setText('ویرایش نسخه‌دار ثبت شد؛ هویت ردیف حفظ شد.')
+            except Exception as e:QMessageBox.warning(self,'ویرایش متره',str(e))
+            return
+        self.table.setSortingEnabled(False)
         label = self.element_label.text().strip()
         results = []
         row_errors = []
@@ -459,8 +523,8 @@ class ManualTakeoffDialog(QDialog):
             else:
                 values = [
                     result.record_id, result.floor_id, _SAVED_ITEM_LABELS.get(result.code, result.code),
-                    result.element_label, f"{result.quantity:g}", result.unit,
-                    "آماده ذخیره",
+                    result.element_label, str(result.quantity), result.unit,
+                    "آماده ذخیره", result.formula, json.dumps(dict(result.params),ensure_ascii=False), result.source, result.revision, result.project_id,
                 ]
                 added += 1
             for col, value in enumerate(values):
@@ -468,6 +532,8 @@ class ManualTakeoffDialog(QDialog):
                 if col == 6:
                     cell.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 self.table.setItem(row, col, cell)
+        self.table.setSortingEnabled(True)
+        self.filter_rows()
         messages = []
         if incomplete:
             messages.append(f"{len(incomplete)} ردیف ناقص: " + " | ".join(incomplete))
@@ -479,6 +545,8 @@ class ManualTakeoffDialog(QDialog):
         self.entry_text.clear()
 
     def save_pending(self):
+        if self.workbench is not None and self.workbench.project_id!=self.project_id.text().strip():
+            QMessageBox.warning(self,"پروژه متره","پروژه فعال با ردیف‌های پیش‌نمایش مطابقت ندارد؛ هیچ ردیفی ذخیره نشد.");return
         if self.workbench is None or not self.workbench.records:
             QMessageBox.information(self, "ذخیره متره", "ردیف کامل و محاسبه‌شده‌ای برای ذخیره وجود ندارد.")
             return

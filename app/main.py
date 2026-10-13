@@ -498,7 +498,12 @@ def main()->int:
     tfv.addWidget(expr); tfv.addWidget(vars_); fe=QPushButton("محاسبه فرمول"); fo=QLabel(); tfv.addWidget(fe); tfv.addWidget(fo)
     def do_formula():
         try:
-            d={}; [d.__setitem__(x.split("=",1)[0].strip(),float(x.split("=",1)[1])) for x in vars_.text().split(",") if "=" in x]
+            d={}
+            for token in vars_.text().split(','):
+                if '=' not in token:raise ValueError('پارامتر فرمول باید نام=مقدار باشد')
+                name,value=token.split('=',1);name=name.strip()
+                if not name or name in d:raise ValueError('نام پارامتر خالی یا تکراری است')
+                d[name]=value.strip()
             fo.setText("نتیجه: "+str(evaluate(expr.text(),d)))
         except Exception as e: fo.setText("خطا: "+str(e))
     fe.clicked.connect(do_formula)

@@ -6,7 +6,9 @@ from core.reports.exporters import export_csv
 def test_manual_preview_and_missing_geometry_use_persian_labels(tmp_path):
     from PySide6.QtWidgets import QApplication
     from app.manual_takeoff import ManualTakeoffDialog
+    global _qt_lifetime
     qt = QApplication.instance() or QApplication([])
+    _qt_lifetime=qt
     service = StructuralProApp(tmp_path)
     service.create_project("پروژه", "p")
     dialog = ManualTakeoffDialog(service, "p")
@@ -26,7 +28,9 @@ def test_manual_preview_and_missing_geometry_use_persian_labels(tmp_path):
     assert data["takeoffs"][0]["description"] == "ستون"
     assert len(data["takeoffs"]) == 1
     service.store.close()
-    dialog.close()
+    dialog.close();dialog.deleteLater()
+    from PySide6.QtCore import QCoreApplication,QEvent
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);qt.processEvents()
 
 
 def test_report_status_display_is_persian_without_mutating_source(tmp_path):
