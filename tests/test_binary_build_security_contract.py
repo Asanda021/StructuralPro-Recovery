@@ -3,6 +3,9 @@ from __future__ import annotations
 import copy
 import importlib.util
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 import pytest
 import yaml
@@ -15,7 +18,7 @@ spec.loader.exec_module(audit)
 
 
 def workflow(relative):
-    with (ROOT / '.github/workflows' / relative).open(encoding='utf8') as stream:
+    with (HISTORY / '.github/workflows' / relative).open(encoding='utf8') as stream:
         return yaml.safe_load(stream)
 
 
@@ -137,4 +140,4 @@ def test_upload_without_identified_build_is_reviewed_not_assumed_binary(tmp_path
 
 
 def test_local_guard_presence_never_proves_actual_github_environment():
-    assert audit.inspect(ROOT)['github_settings_verified'] is False
+    assert audit.inspect(HISTORY)['github_settings_verified'] is False

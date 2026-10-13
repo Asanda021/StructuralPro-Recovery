@@ -33,6 +33,12 @@ class ProjectStore:
         self.db.execute("BEGIN IMMEDIATE")
         try:
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            incoming_version=(project.get("_meta") or {}).get("version")
+            if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
+                raise RuntimeError("project changed since write began")
+            if row is not None and expected_digest is None and pid in self._cache:
+                cached=deepcopy(self._cache[pid][1]);cached.pop("_meta",None)
+                assert_unchanged(json.loads(row["payload"]), begin_write(cached))
             if expected_digest is not None:
                 if row is None:
                     raise RuntimeError("project changed since write began")

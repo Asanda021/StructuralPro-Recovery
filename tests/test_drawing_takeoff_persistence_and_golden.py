@@ -7,14 +7,15 @@ from core.drawings.graphical_takeoff import Point
 from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload
 from core.drawings.takeoff_session import DrawingTakeoffSession
 from core.platform.application import StructuralProApp
+from drawing_source_fixture import vector_pdf
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "golden_drawing_takeoff_v1.json"
 
 
-def _golden_session():
+def _golden_session(source="golden://five-storey-building/drawing-A101.pdf"):
     cases = json.loads(FIXTURE.read_text(encoding="utf-8"))["cases"]
-    session = DrawingTakeoffSession("golden://five-storey-building/drawing-A101.pdf")
+    session = DrawingTakeoffSession(source)
     items = {}
     for case in cases:
         page = case["page"]
@@ -52,7 +53,7 @@ def test_golden_drawing_dataset_matches_expected_quantities():
 def test_drawing_session_persists_and_selected_items_enter_boq_once(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("ساختمان مرجع پنج طبقه", "golden-project")
-    _, session, items = _golden_session()
+    _, session, items = _golden_session(vector_pdf(tmp_path))
     saved = app.save_drawing_takeoff_session("golden-project", session)
     sid, revision = saved["session_id"], saved["revision"]
     assert revision == 1
@@ -82,7 +83,7 @@ def test_drawing_session_persists_and_selected_items_enter_boq_once(tmp_path):
 def test_drawing_session_revision_conflict_and_unknown_selection_fail_closed(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("تعارض نسخه", "revision-project")
-    _, session, items = _golden_session()
+    _, session, items = _golden_session(vector_pdf(tmp_path))
     saved = app.save_drawing_takeoff_session("revision-project", session)
     sid = saved["session_id"]
     with pytest.raises(RuntimeError, match="تعارض نسخه"):
@@ -96,8 +97,8 @@ def test_drawing_session_revision_conflict_and_unknown_selection_fail_closed(tmp
     assert app.open_project("revision-project")["takeoffs"] == []
 
 
-def test_bridge_requires_explicit_selection_and_valid_session():
-    _, session, items = _golden_session()
+def test_bridge_requires_explicit_selection_and_valid_session(tmp_path):
+    _, session, items = _golden_session(vector_pdf(tmp_path))
     payload = session.to_dict()
     assert validate_session_payload(payload)["valid"] is True
     with pytest.raises(ValueError, match="صریحاً انتخاب"):
@@ -112,7 +113,7 @@ def test_bridge_requires_explicit_selection_and_valid_session():
 def test_saving_new_session_edits_preserves_commit_ledger(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("دفتر ثبت متره", "commit-ledger-project")
-    session = DrawingTakeoffSession("golden://project/A103.pdf")
+    session = DrawingTakeoffSession(vector_pdf(tmp_path))
     session.calibrate(1, 100, 10)
     first = session.add_length([Point(0, 0), Point(100, 0)], page=1,
                                label="طول اول", takeoff_code="LINE-1")

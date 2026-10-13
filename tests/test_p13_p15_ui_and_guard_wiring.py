@@ -78,6 +78,6 @@ def test_atomic_manual_assembly_needs_physical_source_and_named_reviewer():
     assert "measurement_source" in section
     assert "approved_by" in section
     assert 'if not measurement or not reviewer:' in section
-    assert 'bundle_source=f"manual-assembly:{pid}:{floor}:{measurement}"' in section
+    assert 'bundle_source=f"manual-assembly:{pid}:{floor}:{result.code}:{measurement}"' in section
     assert "validate_commit_rows(" in section
     assert "rebuild_project_boq(" in section

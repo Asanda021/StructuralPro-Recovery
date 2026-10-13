@@ -12,6 +12,7 @@ from typing import Any, Iterable
 
 from core.takeoff.boq import validate_boq_structure
 from core.takeoff.units import normalize_unit
+from core.takeoff.commit_guards import _is_payable_quantity
 from core.reports.exporters import export_xlsx, export_pdf
 
 
@@ -114,8 +115,10 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
         price_rows = pricebook.get("rows_by_code")
         if not isinstance(price_rows, dict) or not price_rows:
             raise ValueError("ردیف‌های قیمت تأییدشده در فهرست‌بها موجود نیستند")
+    payable_sources = {(r["source_id"],q["code"],normalize_unit(q["unit"])) for r in project.get("takeoffs", []) for q in r.get("quantities", []) if _is_payable_quantity(r,q)}
     expected = {}
     for row in details:
+        if (row["source_id"],row["item_code"],row["unit"]) not in payable_sources: continue
         key = (row["source_id"], row["item_code"], row["unit"])
         expected[key] = expected.get(key, 0.0) + row["quantity"]
     actual = {}

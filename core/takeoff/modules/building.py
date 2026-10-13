@@ -23,6 +23,8 @@ def _n(v: Any, name: str, *, minimum: float = 0.0) -> float:
     try: x=float(v)
     except (TypeError, ValueError, OverflowError): raise ValueError(f"{name} must be numeric")
     if not math.isfinite(x): raise ValueError(f"{name} must be finite")
+    if name in {"length", "width", "depth", "height", "thickness", "perimeter", "sloped_length", "waist_thickness", "unit_weight", "count", "layers"}:
+        minimum = max(minimum, 1e-12)
     if x < minimum: raise ValueError(f"{name} must be >= {minimum}")
     if name in {"count", "void_count", "joist_count", "layers"} and not x.is_integer():
         raise ValueError(f"{name} must be an integer")
@@ -41,8 +43,9 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     if k in {"wall","wall_area","دیوار"}:
         q=_wall_area(p["length"],p["height"],p.get("openings",0))*_n(p.get("count",1),"count"); return QuantityResult("ابنیه","دیوار",q,"m2","(L×H−بازشو)×تعداد")
     if k in {"slab","slab_area","floor","کف"}:
-        q=_rect_area(p["length"],p["width"]); return QuantityResult("ابنیه","سطح سقف/کف",q,"m2","L×W")
-    if k in {"solid_slab_roof","solid_slab","flat_slab"}:
+        q=_wall_area(p["length"],p["width"],p.get("openings",0))*_n(p.get("count",1),"count")
+        return QuantityResult("ابنیه","سطح سقف/کف",q,"m2","(L×W−بازشوی هر تکرار)×تعداد")
+    if k in {"solid_slab_roof","solid_slab","flat_slab","steel_roof_composite_concrete"}:
         q=_rect_area(p["length"],p["width"])*_n(p["thickness"],"thickness", minimum=1e-12)*_n(p.get("count",1),"count")
         return QuantityResult("سقف بتن‌آرمه",item,q,"m3","L×W×t×تعداد")
     if k in {"joist_block_roof","joist_foam_roof"}:
@@ -54,28 +57,46 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
         spacing=_n(p["joist_spacing"],"joist_spacing", minimum=1e-12)
         joist_width=_n(p["joist_width"],"joist_width", minimum=1e-12)
         joist_depth=_n(p["joist_depth"],"joist_depth", minimum=1e-12)
+        if joist_width > spacing:
+            raise ValueError("joist_width cannot exceed joist_spacing")
         import math
         joist_count=_n(p["joist_count"],"joist_count", minimum=1e-12)
         ribs=joist_count*L*joist_width*joist_depth*count
         q=topping+ribs
-        return QuantityResult("سقف سبک بتنی",item,q,"m3","A×t رویه + تعداد تیرچه×L×b×h",("تعداد تیرچه باید از آرایش واقعی یا جدول تأییدشده ورود شود؛ کلاف‌ها، تیرهای مرزی و بازشوها جدا متره شوند.",))
+        return QuantityResult("سقف سبک بتنی",item,q,"m3","A×t رویه + تعداد تیرچه×L×b×h",("تعداد تیرچه از عرض/فاصله به‌صورت شفاف مشتق شده؛ کلاف‌ها، تیرهای مرزی و بازشوها جداگانه متره شوند.",))
     if k in {"hollow_core_roof","دال_مجوف"}:
         area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
         gross=area*_n(p["thickness"],"thickness", minimum=1e-12)
-        void=3.141592653589793*(_n(p["void_diameter"],"void_diameter")/2)**2*_n(p["length"],"length")*_n(p["void_count"],"void_count")*_n(p.get("count",1),"count")
+        diameter = _n(p["void_diameter"], "void_diameter", minimum=1e-12)
+        void_count = _n(p["void_count"], "void_count", minimum=1)
+        void=3.141592653589793*(diameter/2)**2*_n(p["length"],"length")*void_count*_n(p.get("count",1),"count")
         if void > gross:
             raise ValueError("hollow-core void volume cannot exceed gross slab volume")
+        if diameter > _n(p["thickness"], "thickness") or diameter * void_count > _n(p["width"], "width"):
+            raise ValueError("hollow-core void geometry does not fit slab thickness/width")
         q=gross-void
         return QuantityResult("سقف دال مجوف",item,q,"m3","L×W×t − π(d/2)²×L×تعداد فضای خالی",())
     if k in {"waffle_roof","وافل"}:
+        if _n(p["rib_width"], "rib_width", minimum=1e-12) > min(_n(p["spacing_x"], "spacing_x", minimum=1e-12), _n(p["spacing_y"], "spacing_y", minimum=1e-12)):
+            raise ValueError("rib_width cannot exceed spacing_x/spacing_y")
+        _n(p["top_thickness"], "top_thickness", minimum=1e-12)
         area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
         top=area*_n(p["top_thickness"],"top_thickness")
         dx=(area/_n(p["spacing_x"],"spacing_x", minimum=1e-12))*_n(p["rib_width"],"rib_width", minimum=1e-12)*_n(p["rib_depth"],"rib_depth", minimum=1e-12)
         dy=(area/_n(p["spacing_y"],"spacing_y", minimum=1e-12))*_n(p["rib_width"],"rib_width")*_n(p["rib_depth"],"rib_depth")
         overlap=(area/(_n(p["spacing_x"],"spacing_x")*_n(p["spacing_y"],"spacing_y")))*_n(p["rib_width"],"rib_width")**2*_n(p["rib_depth"],"rib_depth")
         q=top+dx+dy-overlap
-        return QuantityResult("سقف وافل",item,q,"m3","A×t رویه + A/sx×b×h + A/sy×b×h − تقاطع تیرچه‌ها",())
-    if k in {"uboot_roof","cobiax_roof"}:
+        return QuantityResult("سقف وافل",item,q,"m3","A×t رویه + A/sx×b×h + A/sy×b×h − تقاطع تیرچه‌ها",("مدل شبکه یکنواخت؛ نواحی توپر، لبه‌ها، کلاف و بازشو باید مستقل و با هندسه واقعی متره شوند.",))
+    if k == "cobiax_roof":
+        if not str(p.get("void_spec_ref", "")).strip() or "void_volume" not in p:
+            raise ValueError("cobiax requires verified void_volume and void_spec_ref; bounding-box dimensions are not void volume")
+        gross = _rect_area(p["length"],p["width"]) * _n(p["thickness"], "thickness")
+        void = _n(p["void_volume"], "void_volume", minimum=1e-12) * _n(p["void_count"], "void_count", minimum=1)
+        if void > gross:
+            raise ValueError("void volume cannot exceed gross slab volume")
+        q = (gross - void) * _n(p.get("count",1), "count")
+        return QuantityResult("سقف مجوف",item,q,"m3","(L×W×t − حجم تأییدشده هر حفره×تعداد حفره)×تعداد سقف",("حجم حفره از مشخصات صریح کاربر؛ هندسه تولیدکننده و نواحی توپر باید بازبینی شوند.",))
+    if k == "uboot_roof":
         area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
         gross=area*_n(p["thickness"],"thickness")
         void=_n(p["void_length"],"void_length")*_n(p["void_width"],"void_width")*_n(p["void_height"],"void_height")*_n(p["void_count"],"void_count")*_n(p.get("count",1),"count")
@@ -111,5 +132,18 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     if k in {"door","window","opening","درب","پنجره"}:
         q=_n(p.get("count",1),"count"); return QuantityResult("در و پنجره",item,q,"عدد","تعداد")
     if k in {"rebar","reinforcement","آرماتور"}:
-        q=_n(p["length"],"length")*_n(p["unit_weight"],"unit_weight")*_n(p.get("count",1),"count"); return QuantityResult("آرماتور",item,q,"kg","L×وزن واحد×تعداد")
+        detail_fields = ("bend_length", "hook_length", "lap_length")
+        if any(name in p for name in (*detail_fields, "diameter_mm", "detail_ref")):
+            if any(name not in p for name in (*detail_fields, "diameter_mm")) or not str(p.get("detail_ref", "")).strip():
+                raise ValueError("rebar detail requires diameter_mm, bend_length, hook_length, lap_length and detail_ref")
+            _n(p["diameter_mm"], "diameter_mm", minimum=1e-12)
+            cut_length = _n(p["length"], "length") + sum(_n(p[name], name) for name in detail_fields)
+            formula = "(طول مستقیم+خم+قلاب+وصله)×وزن واحد صریح×تعداد"
+            warnings = ()
+        else:
+            cut_length = _n(p["length"], "length")
+            formula = "طول برش صریح×وزن واحد×تعداد"
+            warnings = ("طول ورودی باید طول برش کامل باشد؛ دیتایل قطر/خم/قلاب/وصله در این ردیف ثبت نشده و پذیرش دقیق میلگرد نیازمند بازبینی است.",)
+        q=cut_length*_n(p["unit_weight"],"unit_weight")*_n(p.get("count",1),"count")
+        return QuantityResult("آرماتور",item,q,"kg",formula,warnings)
     raise KeyError(f"unsupported building item: {item}")

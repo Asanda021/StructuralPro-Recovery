@@ -50,6 +50,13 @@ def _cell(value):
     return str(value)
 
 
+def _display_value(row, key):
+    value = row.get(key, "")
+    if key == "status":
+        return {"active": "فعال", "cancelled": "لغوشده"}.get(str(value), value)
+    return value
+
+
 def export_csv(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
     import csv
     rows = list(rows)
@@ -64,7 +71,7 @@ def export_csv(rows, path, title="StructuralPro", summary=None, metadata=None, c
                 w.writerow([key, value])
         w.writerow([])
         w.writerow([label for _, label in cols])
-        w.writerows([_cell(row.get(key)) for key, _ in cols] for row in rows)
+        w.writerows([_cell(_display_value(row, key)) for key, _ in cols] for row in rows)
     return path
 
 
@@ -103,7 +110,7 @@ def export_xlsx(rows, path, title="StructuralPro", summary=None, metadata=None, 
     header_row += 1
     detail.append([label for _, label in cols])
     for row in rows:
-        detail.append([row.get(key, "") for key, _ in cols])
+        detail.append([_display_value(row, key) for key, _ in cols])
     thin = Side(style="thin")
     for cell in detail[header_row]:
         cell.font = Font(bold=True)
@@ -151,34 +158,54 @@ def export_xlsx(rows, path, title="StructuralPro", summary=None, metadata=None, 
 def export_docx(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
     from docx import Document
     from docx.enum.table import WD_TABLE_DIRECTION
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
     rows = list(rows)
+
+    def mark_rtl(paragraph):
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        ppr = paragraph._p.get_or_add_pPr()
+        if ppr.find(qn('w:bidi')) is None:
+            bidi = OxmlElement('w:bidi')
+            bidi.set(qn('w:val'), '1')
+            # OOXML requires bidi before justification; preserve schema order.
+            ppr.insert_element_before(bidi, 'w:jc')
+        for run in paragraph.runs:
+            rpr = run._r.get_or_add_rPr()
+            if rpr.find(qn('w:rtl')) is None:
+                rtl = OxmlElement('w:rtl')
+                rtl.set(qn('w:val'), '1')
+                rpr.append(rtl)
+
+    def mark_table_rtl(table):
+        # python-docx's public property is table_direction, not direction.
+        table.table_direction = WD_TABLE_DIRECTION.RTL
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    mark_rtl(paragraph)
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     cols = _columns(rows, columns)
     d = Document()
-    d.add_heading(title, 0)
-    d.add_heading("خلاصه تجاری", level=1)
+    mark_rtl(d.add_heading(title, 0))
+    mark_rtl(d.add_heading("خلاصه تجاری", level=1))
     table = d.add_table(rows=1, cols=2)
-    try:
-        table.direction = WD_TABLE_DIRECTION.RTL
-    except Exception:
-        pass
     table.rows[0].cells[0].text, table.rows[0].cells[1].text = "شرح", "مقدار"
     for label, value in _summary_items(summary):
         cells = table.add_row().cells
         cells[0].text, cells[1].text = str(label), _cell(value)
-    d.add_heading("ریز متره و برآورد", level=1)
+    mark_table_rtl(table)
+    mark_rtl(d.add_heading("ریز متره و برآورد", level=1))
     t = d.add_table(rows=1, cols=len(cols))
-    try:
-        t.direction = WD_TABLE_DIRECTION.RTL
-    except Exception:
-        pass
     for i, (_, label) in enumerate(cols):
         t.rows[0].cells[i].text = str(label)
     for row in rows:
         cells = t.add_row().cells
         for i, (key, _) in enumerate(cols):
-            cells[i].text = _cell(row.get(key))
+            cells[i].text = _cell(_display_value(row, key))
+    mark_table_rtl(t)
     d.save(path)
     return path
 
@@ -266,7 +293,7 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
     display_cols = list(reversed(cols))
     data = [[Paragraph(_pdf_text(label), body) for _, label in display_cols]]
     for row in rows:
-        data.append([Paragraph(_pdf_text(row.get(key)), body) for key, _ in display_cols])
+        data.append([Paragraph(_pdf_text(_display_value(row, key)), body) for key, _ in display_cols])
     if not rows:
         data.append([Paragraph(_pdf_text("ردیفی برای نمایش وجود ندارد"), body)])
     table = Table(data, repeatRows=1)

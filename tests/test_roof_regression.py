@@ -16,7 +16,7 @@ def test_all_concrete_roof_families_are_deterministic():
             "joist_block_roof",
             dict(
                 length=10, width=10, topping_thickness=0.05,
-                joist_spacing=0.50, joist_width=0.10, joist_depth=0.20, count=1,
+                joist_count=21, joist_spacing=0.50, joist_width=0.10, joist_depth=0.20, count=1,
             ),
             9.2,
             "m3",
@@ -54,7 +54,7 @@ def test_all_concrete_roof_families_are_deterministic():
             "cobiax_roof",
             dict(
                 length=10, width=10, thickness=0.28,
-                void_length=0.50, void_width=0.25, void_height=0.20,
+                void_volume=0.025, void_spec_ref="SYNTHETIC-VOID-001",
                 void_count=100, count=1,
             ),
             25.5,

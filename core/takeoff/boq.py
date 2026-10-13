@@ -59,9 +59,10 @@ def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dic
                  r["waste_percent"], r["source_type"])
             if key not in groups: groups[key]=dict(r)
             else:
-                groups[key]["quantity"]+=r["quantity"]; groups[key]["effective_quantity"]+=r["effective_quantity"]
-                groups[key]["allowance_quantity"]+=r["allowance_quantity"]
-                if groups[key]["total"] is not None and r["total"] is not None: groups[key]["total"]+=r["total"]
+                for field in ("quantity", "effective_quantity", "allowance_quantity"):
+                    groups[key][field] = _number(groups[key][field] + r[field], field, allow_none=False)
+                if groups[key]["total"] is not None and r["total"] is not None:
+                    groups[key]["total"] = _number(groups[key]["total"] + r["total"], "total", allow_none=False)
                 elif groups[key]["total"] is None: groups[key]["total"]=r["total"]
                 for source_id in r.get("source_ids",[]):
                     if source_id not in groups[key]["source_ids"]: groups[key]["source_ids"].append(source_id)

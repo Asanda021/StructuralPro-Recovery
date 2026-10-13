@@ -1,4 +1,7 @@
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 import pytest
 
 from core.reports import build_report
@@ -58,7 +61,7 @@ def test_multi_page_pdf_repeats_table_and_has_page_footer(tmp_path):
 
 
 def test_report_ci_jobs_install_canonical_pdf_dependencies():
-    root = Path(__file__).resolve().parents[1]
+    root = HISTORY
     workflows = (
         "priority-9-qa.yml",
         "priority-111-115-production-release.yml",

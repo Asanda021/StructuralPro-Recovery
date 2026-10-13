@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 import csv
 import math
-from io import StringIO
+from io import StringIO, BytesIO
 
 from core.pricing.catalog import PriceCatalog, PriceItem
 from core.pricing.source_registry import PriceSource, PriceSourceRegistry
@@ -71,7 +71,7 @@ class PricebookImportService:
 
     @staticmethod
     def _number(value: Any) -> float:
-        raw = str(value or "").strip()
+        raw = str("" if value is None else value).strip()
         trans = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
         raw = raw.translate(trans).replace(",", "").replace("٬", "").replace(" ", "")
         if not raw:
@@ -82,12 +82,19 @@ class PricebookImportService:
         return value
 
     @classmethod
-    def _rows_from_excel(cls, path: Path, *, fallback_year: int) -> list[PriceItem]:
+    def _year(cls, value: Any) -> int:
+        number = cls._number(value)
+        if not number.is_integer() or number <= 0:
+            raise ValueError("سال فهرست‌بها باید عدد صحیح مثبت باشد")
+        return int(number)
+
+    @classmethod
+    def _rows_from_excel(cls, path: Path, *, fallback_year: int, raw_bytes: bytes | None = None) -> list[PriceItem]:
         try:
             from openpyxl import load_workbook
         except ImportError as exc:
             raise RuntimeError("برای ورود Excel باید openpyxl نصب باشد.") from exc
-        wb = load_workbook(path, read_only=True, data_only=True)
+        wb = load_workbook(BytesIO(raw_bytes) if raw_bytes is not None else path, read_only=True, data_only=True)
         try:
             for ws in wb.worksheets:
                 rows = ws.iter_rows(values_only=True)
@@ -114,7 +121,7 @@ class PricebookImportService:
                     chapter = str(val("chapter", "")).strip()
                     price = cls._number(val("unit_price"))
                     out.append(PriceItem(
-                        year=int(cls._number(year_value)) if year_value else 0,
+                        year=cls._year(year_value),
                         group=group, chapter=chapter, code=code,
                         description=desc, unit=unit, unit_price=price,
                         analysis=str(val("analysis", "") or ""),
@@ -129,13 +136,14 @@ class PricebookImportService:
             wb.close()
 
     @classmethod
-    def _rows_from_pdf(cls, path: Path, *, fallback_year: int) -> list[PriceItem]:
+    def _rows_from_pdf(cls, path: Path, *, fallback_year: int, raw_bytes: bytes | None = None) -> list[PriceItem]:
         try:
             import fitz
         except ImportError as exc:
             raise RuntimeError("برای ورود PDF باید PyMuPDF نصب باشد.") from exc
         text_parts=[]
-        with fitz.open(path) as doc:
+        document = fitz.open(stream=raw_bytes, filetype="pdf") if raw_bytes is not None else fitz.open(path)
+        with document as doc:
             for page in doc:
                 text_parts.append(page.get_text("text") or "")
         text="\n".join(text_parts)
@@ -155,8 +163,8 @@ class PricebookImportService:
         return out
 
     @classmethod
-    def _rows_from_csv(cls, path: Path, *, fallback_year: int) -> list[PriceItem]:
-        text = path.read_text(encoding="utf-8-sig")
+    def _rows_from_csv(cls, path: Path, *, fallback_year: int, raw_bytes: bytes | None = None) -> list[PriceItem]:
+        text = raw_bytes.decode("utf-8-sig") if raw_bytes is not None else path.read_text(encoding="utf-8-sig")
         reader = csv.reader(StringIO(text))
         headers = next(reader, None)
         if not headers:
@@ -172,7 +180,7 @@ class PricebookImportService:
                 idx = mapping.get(field)
                 return values[idx] if idx is not None and idx < len(values) else default
             out.append(PriceItem(
-                year=int(cls._number(val("year", fallback_year)) or fallback_year),
+                year=cls._year(val("year", fallback_year)),
                 group=str(val("group", "") or ""),
                 chapter=str(val("chapter", "") or ""),
                 code=str(val("code", "") or "").strip(),
@@ -184,25 +192,37 @@ class PricebookImportService:
             ))
         return out
 
-    def _load_items(self, path: Path, *, fallback_year: int) -> tuple[list[PriceItem], str]:
+    def _load_items(self, path: Path, *, fallback_year: int, raw_bytes: bytes | None = None) -> tuple[list[PriceItem], str]:
         suffix = path.suffix.casefold()
         if suffix in {".xlsx", ".xlsm"}:
-            return self._rows_from_excel(path, fallback_year=fallback_year), "excel"
+            return self._rows_from_excel(path, fallback_year=fallback_year, raw_bytes=raw_bytes), "excel"
         if suffix == ".csv":
-            return self._rows_from_csv(path, fallback_year=fallback_year), "csv"
+            return self._rows_from_csv(path, fallback_year=fallback_year, raw_bytes=raw_bytes), "csv"
         if suffix == ".pdf":
-            return self._rows_from_pdf(path, fallback_year=fallback_year), "pdf"
+            return self._rows_from_pdf(path, fallback_year=fallback_year, raw_bytes=raw_bytes), "pdf"
         raise ValueError("فرمت پشتیبانی‌شده برای فهرست‌بها: XLSX، XLSM، CSV یا PDF متنی")
 
     def inspect(self, path: str | Path, *, year: int, discipline: str = "building",
                 source_id: str = "user-import") -> dict[str, Any]:
+        info, _ = self._inspect_items(path, year=year, discipline=discipline, source_id=source_id)
+        return info
+
+    def _inspect_items(self, path: str | Path, *, year: int, discipline: str,
+                       source_id: str) -> tuple[dict[str, Any], list[PriceItem]]:
         p = Path(path)
         if not p.exists():
             raise FileNotFoundError(p)
+        year = self._year(year)
         raw_bytes = p.read_bytes()
-        items, file_format = self._load_items(p, fallback_year=year)
+        items, file_format = self._load_items(p, fallback_year=year, raw_bytes=raw_bytes)
         errors: list[str] = []
+        codes: set[str] = set()
         for item in items:
+            if item.year != year:
+                errors.append(f"{item.code}: سال ردیف با سال درخواستی منطبق نیست")
+            if item.code in codes:
+                errors.append(f"{item.code}: کد فهرست‌بها تکراری است")
+            codes.add(item.code)
             try:
                 self.catalog._validate_item(item)
             except (ValueError, TypeError) as exc:
@@ -210,7 +230,7 @@ class PricebookImportService:
         if not items:
             errors.append("هیچ ردیف قابل استفاده‌ای در فایل پیدا نشد.")
         source = self.registry.get(year, discipline, source_id)
-        return {
+        info = {
             "path": str(p), "filename": p.name, "year": year,
             "discipline": discipline, "source_id": source_id,
             "sha256": sha256(raw_bytes).hexdigest(), "rows": len(items),
@@ -219,19 +239,20 @@ class PricebookImportService:
                                     self.registry.verify_record(source, sha256(raw_bytes).hexdigest())),
             "format": file_format,
         }
+        return info, items
 
     def import_file(self, path: str | Path, *, year: int, discipline: str = "building",
                     source_id: str = "user-import", require_verified_source: bool = False,
                     replace_year: bool = True) -> ImportReceipt:
         p = Path(path)
-        info = self.inspect(p, year=year, discipline=discipline, source_id=source_id)
+        info, items = self._inspect_items(p, year=year, discipline=discipline, source_id=source_id)
         if not info["valid"]:
             raise ValueError("اعتبارسنجی فهرست‌بها ناموفق بود: " + "; ".join(info["errors"][:5]))
         if require_verified_source and not info["verified_source"]:
             raise PermissionError(
                 "ورود رسمی/تأییدشده نیازمند منبع ثبت‌شده و SHA-256 منطبق است؛ حالت ورود فایل کاربر آزاد است."
             )
-        items, file_format = self._load_items(p, fallback_year=year)
+        file_format = info["format"]
         normalized = [
             PriceItem(
                 year=item.year or int(year), group=item.group, chapter=item.chapter,

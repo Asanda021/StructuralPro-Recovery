@@ -264,6 +264,25 @@ _ENGINE_FIELDS = {
     ("electrical", "cable_tray"): ("length",),
 }
 
+# Equal units do not establish equal materials: reinforcement is not a steel
+# profile, and concrete volume is not timber volume. Apply the same physical
+# component restriction to canonical engine routes as to detail calculators.
+_ENGINE_MATERIAL_COMPONENTS = {
+    ("building", "shear_wall"): {"concrete"},
+    ("building", "stair_concrete"): {"waist_concrete"},
+    ("building", "solid_slab_roof"): {
+        "concrete", "topping", "gross_concrete", "deck_concrete",
+        "step_concrete", "landing_concrete", "solid_zones"},
+    ("advanced", "footing_concrete"): {
+        "concrete", "blinding_concrete", "foundations"},
+    ("advanced", "screed"): {"screed"},
+    ("building", "rebar"): {
+        "vertical_rebar", "horizontal_rebar", "boundary_rebar", "crossties",
+        "reinforcement", "top_rebar", "bottom_rebar", "mesh", "rebars",
+        "reinforcement_mesh"},
+    ("advanced", "steel_roof_deck_weight"): {"sheet_steel"},
+}
+
 
 def _id(kind: str, floor: str, name: str) -> str:
     digits = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
@@ -296,6 +315,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
     if not isinstance(data, list) or not data:
         raise ValueError("جزء تأییدشده باید ریزاقلام مستقل داشته باشد")
     seen = set()
+    seen_detail_members = set()
     rows = []
     for n, item in enumerate(data, 1):
         if not isinstance(item, dict):
@@ -349,6 +369,13 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                     "kromit_roof", "composite_roof"}:
                 raise ValueError("متره حجم ناحیه‌بندی‌شده فقط برای سازه بتنی یا سقف مجاز است")
             checked = calculate_reviewed_detail(detail_kind, item.get("details"))
+            # Physical schedule IDs remain unique across every line in this
+            # component, not just within one calculator invocation.
+            for member in checked["details"]:
+                member_id = member["id"]
+                if member_id in seen_detail_members:
+                    raise ValueError("جزء فیزیکی با شناسه تکراری در چند ریزقلم آمده است")
+                seen_detail_members.add(member_id)
             # For Uboot/Cobiax the existing *separate* verified_voids component
             # already subtracts all cavities from gross_concrete. Never allow a
             # second subtraction inside the gross-region detail itself.
@@ -370,6 +397,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
             required = _ENGINE_FIELDS.get(route)
             if required is None:
                 raise ValueError("فرمول موجود برای این ریزقلم معتبر/تأییدشده نیست")
+            allowed_components = _ENGINE_MATERIAL_COMPONENTS.get(route)
+            if allowed_components is not None and name not in allowed_components:
+                raise ValueError("فرمول موتور با نوع مصالح و عضو مطابقت ندارد")
             params = item.get("params")
             if not isinstance(params, dict) or set(params) != set(required):
                 raise ValueError("ورودی‌های فرمول ناقص یا دارای مقدار اضافی‌اند")

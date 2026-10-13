@@ -253,10 +253,22 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
             used.append("formwork_sides")
         rebar_rate = _optional(p, "rebar_kg_per_m3")
         if rebar_rate is not None:
+            raise ValueError("برای متره دقیق میلگرد، نرخ kg/m3 کافی نیست؛ rebar_schedule با دیتایل صریح وارد کنید")
+        if "rebar_schedule" in p:
+            from core.takeoff.modules.building import calculate_building_item
+            schedule = p["rebar_schedule"]
+            if not isinstance(schedule, (list, tuple)) or not schedule:
+                raise ValueError("rebar_schedule باید فهرست غیرخالی دیتایل باشد")
+            weights=[]
+            for bar in schedule:
+                required={"count","length","unit_weight","diameter_mm","bend_length","hook_length","lap_length","detail_ref"}
+                if not isinstance(bar, Mapping) or set(bar) != required:
+                    raise ValueError("rebar_schedule به تعداد، قطر، طول، خم، قلاب، وصله، وزن واحد و مرجع معتبر نیاز دارد")
+                weights.append(calculate_building_item("rebar", **bar).quantity)
             components.append(AssemblyComponent("reinforcement", "وزن آرماتور بر اساس مشخصات ورودی", "kg",
-                                                "حجم هندسی بتن×وزن آرماتور واردشده بر m³", gross * rebar_rate,
-                                                warning="این نرخ باید از نقشه/مشخصات معتبر وارد شود؛ نرخ پیش‌فرض وجود ندارد."))
-            used.append("rebar_kg_per_m3")
+                                                "جمع وزن ردیف‌های دیتایل صریح کل مجموعه تیر", sum(weights),
+                                                warning="دیتایل مربوط به کل مجموعه است؛ تعداد تیر دوباره بر وزن میلگرد اعمال نشده است."))
+            used.append("rebar_schedule")
         return AssemblyResult("concrete_beam", "تیر بتنی", tuple(components), tuple(used))
 
     if k in {"concrete_slab", "slab_concrete"}:
@@ -309,13 +321,16 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
         length, width = _n(p, "length", 1e-12), _n(p, "width", 1e-12)
         count = _count(p, "count")
         openings = _n(p, "openings")
-        gross_area = count * length * width
+        openings_scope = str(p.get("openings_scope", "total"))
+        if openings_scope not in {"total", "per_repeat"}:
+            raise ValueError("دامنه بازشو باید total یا per_repeat باشد")
+        gross_area = length * width if openings_scope == "per_repeat" else count * length * width
         if openings >= gross_area:
             raise ValueError("مساحت بازشوها باید از مساحت ناخالص کف کمتر باشد")
-        net_area = gross_area - openings
+        net_area = (gross_area - openings) * (count if openings_scope == "per_repeat" else 1)
         components = [AssemblyComponent("finish_area", "مساحت خالص کف‌سازی", "m²",
-                                        "تعداد×طول×عرض−مساحت بازشوها", net_area)]
-        used = ["length", "width", "count", "openings"]
+                                        "تعداد×(طول×عرض−بازشوی هر تکرار)" if openings_scope == "per_repeat" else "تعداد×طول×عرض−بازشوی کل", net_area)]
+        used = ["length", "width", "count", "openings"] + (["openings_scope"] if "openings_scope" in p else [])
         consumption = _optional(p, "consumption_per_m2")
         consumption_unit = str(p.get("consumption_unit", "") or "").strip()
         if consumption is not None:
@@ -333,6 +348,7 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
                                                 "مساحت خالص×(1+پرت)", _waste(net_area, waste)))
             used.append("waste_factor")
         return AssemblyResult("floor_finish", "کف‌سازی", tuple(components), tuple(used))
+
 
     # Finishing operations are measured as distinct work items. The measured
     # operation area is independent from material consumption and procurement

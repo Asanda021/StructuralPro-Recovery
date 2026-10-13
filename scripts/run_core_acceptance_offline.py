@@ -24,12 +24,28 @@ TEST_FILES = (
     "tests/test_stabilize_cross_workflow.py",
     "tests/test_stabilize_backup_integrity.py",
     "tests/test_stabilize_application_service.py",
+    "tests/test_priority_b_execution_20261013.py",
     "tests/test_reviewed_structural_five_priorities.py",
     "tests/test_reviewed_aec_priorities_6_9.py",
     "tests/test_priority_1_9_item_coverage_audit.py",
     "tests/test_beam_detail_workflow.py",
     "tests/test_stirrup_zones.py",
 )
+
+
+def _summary_counts(stdout: str) -> dict[str, int]:
+    """Read pytest's terminal summary, never captured test output."""
+    fields = ("passed", "failed", "skipped", "xfailed", "xpassed", "error", "errors", "deselected")
+    counts = dict.fromkeys(fields, 0)
+    lines = stdout.strip().splitlines()
+    if not lines:
+        return counts
+    summary = lines[-1].strip().strip("=").strip()
+    if not re.fullmatch(r"(?:[0-9]+ (?:passed|failed|skipped|xfailed|xpassed|errors?|warnings?|deselected)(?:, )?)+ in [0-9.]+s(?: \(.*\))?", summary):
+        return counts
+    for number, label in re.findall(r"([0-9]+) (passed|failed|skipped|xfailed|xpassed|errors?|deselected)\b", summary):
+        counts[label] = int(number)
+    return counts
 
 
 def run(report_path: Path | None = None) -> int:
@@ -47,6 +63,7 @@ def run(report_path: Path | None = None) -> int:
         "stdout": "",
         "stderr": "",
         "passed": None,
+        "counts": _summary_counts(""),
     }
     if missing:
         result["return_code"] = 2
@@ -66,20 +83,13 @@ def run(report_path: Path | None = None) -> int:
             result["return_code"] = completed.returncode
             result["stdout"] = completed.stdout[-25000:]
             result["stderr"] = completed.stderr[-12000:]
-            # pytest exit 0 allows skipped/xfail tests; engineering acceptance
-            # requires a positive PASS count and zero not-executed cases.
-            if completed.returncode == 0:
-                has_passed = re.search(r"(?m)\b[1-9][0-9]* passed\b", completed.stdout)
-                incomplete = re.search(
-                    r"(?m)\b[1-9][0-9]* (?:skipped|xfailed|xpassed)\b",
-                    completed.stdout,
-                )
-                if not has_passed or incomplete:
-                    result["return_code"] = 3
-                    result["stderr"] += (
-                        "\nEngineering acceptance requires >=1 PASS and "
-                        "no SKIP/XFAIL/XPASS, even when pytest exit code is 0."
-                    )
+            result["counts"] = _summary_counts(completed.stdout)
+            counts = result["counts"]
+            if completed.returncode == 0 and (
+                counts["passed"] == 0 or any(counts[k] for k in counts if k != "passed")
+            ):
+                result["return_code"] = 3
+                result["stderr"] += "\nEngineering acceptance requires >=1 PASS and zero FAIL/SKIP/XFAIL/XPASS/ERROR."
         except subprocess.TimeoutExpired as exc:
             result["return_code"] = 124
             result["stderr"] = f"Acceptance timed out: {exc}"

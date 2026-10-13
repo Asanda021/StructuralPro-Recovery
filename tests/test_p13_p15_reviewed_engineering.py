@@ -149,7 +149,15 @@ def test_composite_concrete_and_steel_are_separate_material_rows():
         entry("encasement", count=1, length_m=5,width_m=.35,thickness_m=.2)])
     preview=preview_system(d,TakeoffEngine())
     assert preview["ready"],preview["blockers"]
-    assert {(r["unit"],r["quantity"]) for r in preview["rows"]} == {("kg",145),("m3",.35)}
+    assert len(preview["rows"]) == 2
+    by_component = {r["component"]: r for r in preview["rows"]}
+    assert set(by_component) == {"steel", "concrete"}
+    assert by_component["steel"]["unit"] == "kg"
+    assert by_component["concrete"]["unit"] == "m3"
+    # Independent schedule references: 1 × 5 × 29 kg/m and
+    # 1 × 5 × .35 × .2 m3; binary floating-point need not be exact.
+    assert by_component["steel"]["quantity"] == pytest.approx(145, rel=1e-12, abs=1e-12)
+    assert by_component["concrete"]["quantity"] == pytest.approx(.35, rel=1e-12, abs=1e-12)
 
 
 def test_timber_members_measured_in_real_volume():

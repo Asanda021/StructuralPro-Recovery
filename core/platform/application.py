@@ -9,7 +9,8 @@ from typing import Any
 from core.projects.store import ProjectStore
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.boq import build_boq, boq_summary
-from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, _is_payable_quantity
+from core.takeoff.units import normalize_unit
 from core.takeoff.explicit_inputs import require_explicit_measurement_params
 from core.takeoff.estimate import build_estimate
 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
@@ -26,7 +27,7 @@ from core.drawings.model_registry import ModelRegistry, ModelSource, ModelObject
 from core.performance.project_performance import paginate, project_performance_snapshot
 from core.recovery.recovery import export_project, import_project
 from core.aec.disciplines import takeoff_domain
-from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload
+from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload, verified_measurement_identities, assert_new_measurements
 from core.takeoff.ai_output_guard import validate_ai_takeoff_proposal
 
 
@@ -54,6 +55,17 @@ def _normalize_date_key(value: str) -> str | None:
         return None
     return f"{y:04d}/{m:02d}/{d:02d}"
 
+def _statement_rate(value: Any, name: str) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{name}: نرخ باید عددی باشد")
+    try:
+        rate = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{name}: نرخ نامعتبر است") from exc
+    if not math.isfinite(rate) or not 0 <= rate <= 1:
+        raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
+    return rate
+
 class StructuralProApp:
     def __init__(self,data_dir: str|Path):
         self.data_dir=Path(data_dir); self.data_dir.mkdir(parents=True,exist_ok=True)
@@ -68,6 +80,31 @@ class StructuralProApp:
         self.store.save(project_id,project); return self.store.get(project_id)
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
+
+    def import_project_pricebook(self, project_id: str, path: str | Path, *, year: int,
+                                 approved_by: str) -> dict[str, Any]:
+        """Bind a real user import and explicit reviewer to this project's pricing gate."""
+        from core.pricing.catalog import PriceCatalog
+        from core.pricing.import_service import PricebookImportService
+        import hashlib
+        reviewer = str(approved_by or "").strip()
+        if not reviewer: raise ValueError("تأییدکننده فهرست‌بهای پروژه الزامی است")
+        digest = self.store.current_digest(project_id)
+        self.store._cache.pop(str(project_id), None)
+        project = self.store.get(project_id)
+        if project is None: raise KeyError(project_id)
+        catalog = PriceCatalog()
+        receipt = PricebookImportService(catalog).import_file(path, year=year, discipline="building", source_id="project-user-import")
+        source = Path(path).resolve()
+        if hashlib.sha256(source.read_bytes()).hexdigest() != receipt.sha256:
+            raise ValueError("فایل فهرست‌بها هنگام ورود تغییر کرده است؛ تأیید ثبت نشد")
+        review = {"status":"approved", "approved_by":reviewer, "path":str(source),
+                  "sha256":receipt.sha256, "receipt":receipt.as_dict(),
+                  "rows_by_code":{x.code:{"unit":x.unit,"unit_price":x.unit_price}
+                                  for x in catalog.search("",year=year,limit=receipt.rows)}}
+        project["user_pricebook_review"] = review
+        self.store.save(project_id,project,expected_digest=digest)
+        return deepcopy(review)
 
     def beam_detail_workflow(self):
         """Use the canonical SQLite project store and quantity engine for beam details."""
@@ -344,6 +381,10 @@ class StructuralProApp:
         if p is None:
             raise KeyError(pid)
         require_source_unused(p,source_id)
+        location=str(params.get("manual_location_id", "")).strip()
+        if location and not system: raise ValueError("شناسه عضو به طبقه صریح نیاز دارد")
+        if location and any(str(r.get("system", ""))==system and str(r.get("item", ""))==str(item) and str(r.get("params",{}).get("manual_location_id", ""))==location for r in p.get("takeoffs", [])):
+            raise ValueError("عضو همین عملیات و طبقه قبلاً متره شده است")
         calculation_params=deepcopy(params)
         normalized_domain=takeoff_domain(domain)
         require_explicit_measurement_params(normalized_domain,item,calculation_params)
@@ -402,7 +443,7 @@ class StructuralProApp:
             ai_committed = list(previous.get("ai_committed_item_ids", []))
         sessions[sid] = {
             "id": sid, "revision": revision, "drawing_source": str(payload.get("drawing_source", "")),
-            "session": deepcopy(payload), "committed_item_ids": committed,
+            "session": deepcopy(payload), "source_sha256": str(payload.get("source_sha256", "")), "committed_item_ids": committed,
             "ai_committed_item_ids": ai_committed,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -450,6 +491,8 @@ class StructuralProApp:
         if already.intersection(selected) or ai_already.intersection(selected):
             raise ValueError("برخی متره‌های انتخاب‌شده قبلاً از مسیر دستی یا هوشمند وارد BOQ شده‌اند؛ انتقال تکراری رد شد")
         rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=selected)
+        rows = verified_measurement_identities(record, rows)
+        assert_new_measurements(project, record, rows)
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         duplicate_sources = [row["source_id"] for row in rows if row["source_id"] in existing_sources]
         if duplicate_sources:
@@ -462,11 +505,15 @@ class StructuralProApp:
                 "member_code": row["item_code"], "source_id": source_id,
                 "domain": "drawing", "item": row["kind"],
                 "params": {"drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                           "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
+                           "calibration": row["calibration"], "holes": row.get("holes", []),
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
                 "provenance": {"mode": "drawing", "source_id": source_id,
                                "drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                           "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
+                           "calibration": row["calibration"], "holes": row.get("holes", []),
                                "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{
@@ -532,6 +579,10 @@ class StructuralProApp:
         from core.drawings.takeoff_session import DrawingTakeoffSession
         session = DrawingTakeoffSession.from_dict(record.get("session", {}))
         known_pages = {session.current_page, *session.calibrations.keys(), *[item.page for item in session.items]}
+        canonical_rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=list(candidate_item_ids))
+        canonical_rows = verified_measurement_identities(record, canonical_rows)
+        assert_new_measurements(project, record, canonical_rows)
+        identities = {row["takeoff_id"]: row for row in canonical_rows}
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         new_rows = []
         seen_session_items: set[str] = set()
@@ -578,6 +629,11 @@ class StructuralProApp:
                 "domain": "drawing_ai", "item": candidate["kind"],
                 "params": {"drawing_session_id": sid, "drawing_revision": expected_session_revision,
                            "session_item_id": candidate["session_item_id"],
+                           "measurement_identity": identities[item_id]["measurement_identity"],
+                           "source_sha256": identities[item_id]["source_sha256"],
+                           "drawing_source": identities[item_id]["drawing_source"],
+                           "geometry": identities[item_id]["geometry"],
+                           "calibration": identities[item_id]["calibration"],
                            "geometry": [list(point) for point in measured_item.geometry],
                            "evidence": deepcopy(candidate["evidence"]), "confidence": candidate["confidence"],
                            "formula": candidate["formula"]},
@@ -609,7 +665,8 @@ class StructuralProApp:
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
                              floor_id: str, description: str = "",
                              measurement_source: str | None = None,
-                             approved_by: str | None = None) -> dict[str, Any]:
+                             approved_by: str | None = None, location_id: str = "",
+                             component_prices: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
         """Commit all separately measured assembly parts as one reviewed transaction."""
         pid=str(project_id).strip()
         floor=str(floor_id or "").strip()
@@ -620,7 +677,7 @@ class StructuralProApp:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
         if not result.components:
             raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
-        measurement = str(measurement_source or "").strip()
+        measurement = str(measurement_source or location_id or "").strip()
         reviewer = str(approved_by or "").strip()
         if not measurement or not reviewer:
             raise ValueError("شناسه واقعی برداشت و تأییدکننده عملیات مرکب الزامی‌اند")
@@ -632,8 +689,22 @@ class StructuralProApp:
         bundle_id=uuid4().hex
         # Stable physical identity independent of randomly generated bundle IDs.
         # The same location cannot be re-billed as a new assembly.
-        bundle_source=f"manual-assembly:{pid}:{floor}:{measurement}"
+        bundle_source=f"manual-assembly:{pid}:{floor}:{result.code}:{measurement}"
         require_source_unused(project,bundle_source)
+        prices=deepcopy(component_prices or {})
+        if not isinstance(prices,dict) or set(prices)-{c.code for c in result.components}:
+            raise ValueError("نگاشت قیمت به جزء ناشناخته مجاز نیست")
+        for c in result.components:
+            if c.code not in prices:continue
+            price=prices[c.code]
+            if not isinstance(price,dict) or set(price)!={"price_code","unit","unit_price"}:
+                raise ValueError("قیمت جزء به کد، واحد و قیمت صریح نیاز دارد")
+            if not _is_payable_quantity({"params":{"assembly_code":result.code}},{"code":c.code}):
+                raise ValueError("مصالح تأمین و مصرف دوباره وارد پرداخت نمی‌شوند")
+            if not str(price["price_code"]).strip() or normalize_unit(price["unit"])!=normalize_unit(c.unit):
+                raise ValueError("کد یا واحد قیمت جزء نامعتبر است")
+            if isinstance(price["unit_price"],bool) or not math.isfinite(float(price["unit_price"])) or float(price["unit_price"])<0:
+                raise ValueError("قیمت جزء باید نامنفی و متناهی باشد")
         created_at=datetime.now(timezone.utc).isoformat()
         parent={
             "id":bundle_id,"assembly_code":result.code,"title":result.title,
@@ -641,6 +712,7 @@ class StructuralProApp:
             "inputs":deepcopy(dict(inputs)),"inputs_used":list(result.inputs_used),
             "revision":1,"created_at":created_at,"component_source_ids":[],
             "measurement_source":measurement,"source_id":bundle_source,
+            "location_id":str(location_id).strip(),"component_prices":prices,
             "approved_by":reviewer,
         }
         rows=[]
@@ -648,6 +720,8 @@ class StructuralProApp:
         for component in result.components:
             source_id=f"{bundle_source}:{component.code}"
             title=f"{parent['description']} — {component.title}"
+            payable=_is_payable_quantity({"params":{"assembly_code":result.code}},{"code":component.code})
+            role="work" if payable else "procurement" if component.code.endswith("_procurement") else "material"
             row={
                 "id":f"{previous_count+len(rows)+1}",
                 "member_code":component.code,"source_id":source_id,
@@ -655,15 +729,18 @@ class StructuralProApp:
                 "params":{"assembly_id":bundle_id,"assembly_code":result.code,
                           "component_code":component.code,"inputs":deepcopy(dict(inputs))},
                 "revision":1,"assembly_id":bundle_id,
+                "component_role":role,"location_id":str(location_id).strip(),
                 "description":title,"system":floor,
                 "provenance":{"mode":"manual","source_id":bundle_source,
                               "source_component_id":source_id,
                               "approved_by":reviewer,"assembly_id":bundle_id},
                 "quantities":[{
                     "code":component.code,"title":title,"system":floor,
+                    "role":role,
                     "unit":component.unit,"amount":float(component.quantity),
                     "formula":component.formula,"warning":component.warning,
-                    "price_code":None,"unit_price":None,
+                    "price_code":prices.get(component.code,{}).get("price_code"),
+                    "unit_price":prices.get(component.code,{}).get("unit_price"),
                 }],
             }
             rows.append(row)
@@ -717,6 +794,14 @@ class StructuralProApp:
 
         normalized_domain = takeoff_domain(domain)
         calculation_params = deepcopy(params)
+        for name in ("manual_location_id", "price_code", "unit_price"):
+            if name not in calculation_params and name in row.get("params", {}):
+                calculation_params[name]=row["params"][name]
+        effective_system=str(system).strip() if system is not None else row.get("system")
+        location=str(calculation_params.get("manual_location_id", "")).strip()
+        if location and not effective_system: raise ValueError("شناسه عضو به طبقه صریح نیاز دارد")
+        if location and any(other is not row and str(other.get("system", ""))==effective_system and str(other.get("item", ""))==str(item) and str(other.get("params",{}).get("manual_location_id", ""))==location for other in project.get("takeoffs", [])):
+            raise ValueError("نسخه جدید با عضو موجود تداخل دارد")
         require_explicit_measurement_params(normalized_domain,item,calculation_params)
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
@@ -772,6 +857,8 @@ class StructuralProApp:
         # used for financial exports must also protect the estimate service.
         from core.reports.aec_office_package import audit_boq
         audit_boq(project, require_pricebook=True)
+        if factors is None:
+            factors = (project.get("estimate") or {}).get("factors", {})
         normalized_factors={}
         for name,value in (factors or {}).items():
             if isinstance(value,bool):
@@ -824,6 +911,10 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
         if min(previous_paid, retention_rate, advance_recovery_rate, tax_rate, insurance_rate) < 0:
             raise ValueError("statement rates and previous payment cannot be negative")
         lines = []
@@ -867,17 +958,27 @@ class StructuralProApp:
             },
         }
 
+
     def save_statement_period(self, project_id: str, *, period_no: int | None = None,
                               current_quantities: dict[str, float] | None = None,
                               retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
-                              tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
+                              tax_rate: float = 0.0, insurance_rate: float = 0.0,
+                              persist: bool = True) -> dict[str, Any]:
         """Persist a numbered statement period and roll its quantities into the next period."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
         periods = list(p.get("statement_periods", []))
         if period_no is None:
             period_no = (max((int(x.get("number", 0)) for x in periods), default=0) + 1)
+        if isinstance(period_no,bool) or float(period_no) != int(period_no):
+            raise ValueError("شماره دوره باید عدد صحیح مثبت باشد")
         period_no = int(period_no)
         if period_no <= 0 or any(int(x.get("number", 0)) == period_no for x in periods):
             raise ValueError("statement period number must be positive and unique")
@@ -887,14 +988,22 @@ class StructuralProApp:
                 str(x.get("code", "")): float(x.get("cumulative_quantity", 0) or 0)
                 for x in periods[-1].get("lines", [])
             }
-        overrides = {str(k): float(v) for k, v in (current_quantities or {}).items()}
+        raw_quantities = current_quantities or {}
+        known_codes = {str(row.get("price_code", "") or "") for row in p.get("boq", [])}
+        if any(str(code) not in known_codes for code in raw_quantities):
+            raise ValueError("کد کارکرد در BOQ پروژه وجود ندارد")
+        if any(isinstance(value, bool) for value in raw_quantities.values()):
+            raise ValueError("کارکرد باید عددی باشد، نه مقدار منطقی")
+        overrides = {str(k): float(v) for k, v in raw_quantities.items()}
         lines = []
         for row in p.get("boq", []):
             code = str(row.get("price_code", "") or "")
-            cur = float(overrides.get(code, row.get("current_quantity", 0)) or 0)
+            if code not in overrides and row.get("current_quantity") is None:
+                raise ValueError("کارکرد دوره باید صریح وارد شود؛ مقدار نامعلوم صفر نیست")
+            cur = float(overrides.get(code, row.get("current_quantity")))
             prev = float(previous.get(code, row.get("previous_quantity", 0)) or 0)
-            if cur < 0 or prev < 0:
-                raise ValueError("statement quantities cannot be negative")
+            if not all(math.isfinite(value) and value >= 0 for value in (cur, prev)):
+                raise ValueError("statement quantities must be finite and non-negative")
             lines.append({
                 "code": code, "description": row.get("description", ""), "unit": row.get("unit", ""),
                 "contract_quantity": float(row.get("quantity", 0) or 0),
@@ -926,8 +1035,10 @@ class StructuralProApp:
         })
         periods.append(period)
         p["statement_periods"] = periods
-        self.store.save(project_id, p)
+        if persist:
+            self.store.save(project_id, p)
         return period
+
 
     def statement_periods(self, project_id: str) -> list[dict[str, Any]]:
         p = self.store.get(project_id)
