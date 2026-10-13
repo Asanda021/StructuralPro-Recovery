@@ -113,3 +113,20 @@ def test_drawn_or_reviewed_item_cannot_be_revised_via_generic_manual_editor(tmp_
                            width=.5,depth=.5,height=3,count=1)
     assert app.open_project(pid)["_meta"]["version"]==before
     app.store.close()
+
+
+
+@pytest.mark.parametrize("domain,item,params", [
+    ("building","column",{"width":.4,"depth":.5,"height":3}),
+    ("advanced","footing_concrete",{"length":2,"width":2,"thickness":.5}),
+    ("mechanical","pipe",{"length":8}),
+    ("electrical","cable",{"length":9}),
+    ("building","tile",{"length":5,"height":2}),
+    ("building","roof_insulation",{"length":5,"width":3}),
+])
+def test_legacy_takeoff_never_guesses_member_count_waste_or_layers(tmp_path,domain,item,params):
+    app=_app(tmp_path)
+    with pytest.raises(ValueError,match="پیش‌فرض"):
+        app.add_takeoff("P1",domain,item,source_id="source:one",**params)
+    assert app.open_project("P1")["takeoffs"] == []
+    app.store.close()
