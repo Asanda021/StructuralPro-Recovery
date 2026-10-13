@@ -24,11 +24,12 @@ def test_release_surfaces_remain_present():
     for p in ("packaging/build_windows.ps1","packaging/installer.iss","packaging/structuralpro.spec",".github/workflows/windows-smoke.yml"):
         assert ((HISTORY if p.startswith(".github/workflows/") else ROOT)/p).is_file(), p
 
-def test_freeze_smoke_project(tmp_path):
+def test_freeze_smoke_project(tmp_path,approve_test_pricebook):
     from core.platform.application import StructuralProApp
     app=StructuralProApp(tmp_path/"data")
     app.create_project("Freeze","F38")
-    app.add_takeoff("F38","building","slab_volume",length=4,width=5,thickness=.2,count=1,source_id="fixture:F38:smoke")
+    app.add_takeoff("F38","building","slab_volume",length=4,width=5,thickness=.2,count=1,source_id="fixture:F38:smoke",price_code="T-SLAB",unit_price=100)
+    approve_test_pricebook(app,"F38",{"T-SLAB":{"unit":"m3","unit_price":100}})
     result=app.recalculate_estimate("F38")
     assert result["boq"]
     assert app.open_project("F38")["id"]=="F38"
