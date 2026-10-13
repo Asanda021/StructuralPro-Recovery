@@ -89,6 +89,10 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     geometry_reviewer=QLineEdit()
     form.addRow("مرجع دیتایل هندسه",geometry_ref)
     form.addRow("تأییدکننده هندسه",geometry_reviewer)
+    section_layout_ref=QLineEdit()
+    section_nonoverlap_approver=QLineEdit()
+    form.addRow("مرجع جانمایی ناحیه‌های غیرهم‌پوشان", section_layout_ref)
+    form.addRow("تأییدکننده عدم هم‌پوشانی", section_nonoverlap_approver)
     sections=QPlainTextEdit()
     sections.setPlaceholderText(
         "در حالت مقطع‌بندی: فهرست JSON از ناحیه‌های دارای شناسه، ابعاد، "
@@ -184,6 +188,10 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
                 if not isinstance(positions,list):
                     raise ValueError("جدول ناحیه‌ها باید فهرست واقعی باشد")
                 dimensions["sections"]=positions
+            if section_layout_ref.text().strip():
+                dimensions["section_layout_ref"]=section_layout_ref.text().strip()
+            if section_nonoverlap_approver.text().strip():
+                dimensions["nonoverlap_reviewed_by"]=section_nonoverlap_approver.text().strip()
         ref=geometry_ref.text().strip()
         approver=geometry_reviewer.text().strip()
         if ref: dimensions["source_ref"]=ref
@@ -280,6 +288,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
                 w.setText(str(geo[key]) if key in geo else "")
             geometry_ref.setText(str(geo.get("source_ref") or ""))
             geometry_reviewer.setText(str(geo.get("approved_by") or ""))
+            section_layout_ref.setText(str(geo.get("section_layout_ref") or ""))
+            section_nonoverlap_approver.setText(str(geo.get("nonoverlap_reviewed_by") or ""))
             sections.setPlainText(json.dumps(geo.get("sections",[]),ensure_ascii=False) if geo.get("sections") else "")
             refresh_groups()
             message.setText("پیش‌نویس بازیابی شد. تکمیل همه گروه‌ها برای ثبت قطعی الزامی است.")
