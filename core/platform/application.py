@@ -618,75 +618,60 @@ class StructuralProApp:
 
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
                              floor_id: str, description: str = "") -> dict[str, Any]:
-        """Calculate and persist every verified component of an explicit-input assembly to the BOQ."""
-        pid = str(project_id).strip()
-        floor = str(floor_id or "").strip()
-        if not pid:
-            raise ValueError("شناسه پروژه الزامی است")
-        if not floor:
-            raise ValueError("طبقه یا تراز باید صریح مشخص شود")
-        project = self.store.get(pid)
-        if project is None:
-            raise KeyError(pid)
-        result = AssemblyTemplateLibrary().expand(assembly_code, inputs)
+        """Commit all separately measured assembly parts as one reviewed transaction."""
+        pid=str(project_id).strip()
+        floor=str(floor_id or "").strip()
+        if not pid or not floor:
+            raise ValueError("شناسه پروژه و طبقه/ناحیه باید صریح مشخص شوند")
+        result=AssemblyTemplateLibrary().expand(assembly_code,inputs)
         if not result.complete:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
         if not result.components:
-            raise ValueError("قالب هیچ جزء قابل ثبتی تولید نکرد")
-        for component in result.components:
-            if not math.isfinite(float(component.quantity)) or float(component.quantity) < 0:
-                raise ValueError(f"مقدار جزء {component.code} نامعتبر است")
-
-        bundle_id = uuid4().hex
-        created_at = datetime.now(timezone.utc).isoformat()
-        parent = {
-            "id": bundle_id, "assembly_code": result.code, "title": result.title,
-            "description": str(description or result.title).strip(), "floor_id": floor,
-            "inputs": deepcopy(dict(inputs)), "inputs_used": list(result.inputs_used),
-            "revision": 1, "created_at": created_at, "component_source_ids": [],
+            raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        project=self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        bundle_id=uuid4().hex
+        bundle_source=f"assembly:{bundle_id}"
+        require_source_unused(project,bundle_source)
+        created_at=datetime.now(timezone.utc).isoformat()
+        parent={
+            "id":bundle_id,"assembly_code":result.code,"title":result.title,
+            "description":str(description or result.title).strip(),"floor_id":floor,
+            "inputs":deepcopy(dict(inputs)),"inputs_used":list(result.inputs_used),
+            "revision":1,"created_at":created_at,"component_source_ids":[],
         }
-        rows = []
+        rows=[]
+        previous_count=len(project.get("takeoffs") or [])
         for component in result.components:
-            source_id = f"assembly:{bundle_id}:{component.code}"
-            if any(str(existing.get("source_id", "")).strip() == source_id
-                   for existing in project.get("takeoffs", [])):
-                raise ValueError(f"منبع جزء متره تکراری است: {source_id}")
-            title = f"{parent['description']} — {component.title}"
-            row = {
-                "id": f"{len(project['takeoffs']) + 1}",
-                "member_code": component.code, "source_id": source_id,
-                "domain": "assembly", "item": component.code,
-                "params": {"assembly_id": bundle_id, "assembly_code": result.code,
-                           "component_code": component.code, "inputs": deepcopy(dict(inputs))},
-                "revision": 1, "assembly_id": bundle_id,
-                "description": title, "system": floor,
-                "quantities": [{
-                    "code": component.code, "title": title, "system": floor,
-                    "unit": component.unit, "amount": float(component.quantity),
-                    "formula": component.formula, "warning": component.warning,
-                    "price_code": None, "unit_price": None,
+            source_id=f"{bundle_source}:{component.code}"
+            title=f"{parent['description']} — {component.title}"
+            row={
+                "id":f"{previous_count+len(rows)+1}",
+                "member_code":component.code,"source_id":source_id,
+                "domain":"assembly","item":component.code,
+                "params":{"assembly_id":bundle_id,"assembly_code":result.code,
+                          "component_code":component.code,"inputs":deepcopy(dict(inputs))},
+                "revision":1,"assembly_id":bundle_id,
+                "description":title,"system":floor,
+                "provenance":{"mode":"manual","source_id":source_id,"assembly_id":bundle_id},
+                "quantities":[{
+                    "code":component.code,"title":title,"system":floor,
+                    "unit":component.unit,"amount":float(component.quantity),
+                    "formula":component.formula,"warning":component.warning,
+                    "price_code":None,"unit_price":None,
                 }],
             }
-            project.setdefault("takeoffs", []).append(row)
             rows.append(row)
             parent["component_source_ids"].append(source_id)
-
-        project.setdefault("takeoff_assemblies", []).append(parent)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", ""), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "assembly"),
-                    "group": takeoff.get("domain", "assembly"),
-                })
-        project["boq"] = build_boq(boq_inputs)
-        self.store.save(pid, project)
-        return {"assembly": parent, "rows": deepcopy(rows)}
+        validated=validate_commit_rows(project,rows,source_id=bundle_source)
+        project["takeoffs"],project["boq"]=rebuild_project_boq(
+            project,(project.get("takeoffs") or [])+validated)
+        project.setdefault("takeoff_assemblies",[]).append(parent)
+        self.store.save(pid,project,expected_digest=digest)
+        return {"assembly":deepcopy(parent),"rows":deepcopy(rows)}
 
     def revise_takeoff(self, project_id: str, source_id: str, *, expected_revision: int,
                        domain: str, item: str, description: str = "", system: str | None = None,
