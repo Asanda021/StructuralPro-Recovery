@@ -48,8 +48,8 @@ def test_cable_tray_rejects_invalid_count(count):
     ('structural_concrete','stair_concrete',{'sloped_length':4,'width':1.2,'waist_thickness':.15,'count':2},1.44,'m3'),
     ('structural_steel','steel_roof_composite_concrete',{'length':4,'width':3,'thickness':.2,'count':2},4.8,'m3'),
     ('electrical','cable_tray',{'length':4,'count':3},12,'m')])
-def test_actual_aec_button_commits_correct_geometry(tmp_path,key,item,inputs,expected,unit):
-    from PySide6.QtWidgets import QApplication,QComboBox,QDoubleSpinBox,QLineEdit,QPushButton
+def test_actual_aec_button_commits_correct_geometry(tmp_path,key,item,inputs,expected,unit,monkeypatch):
+    from PySide6.QtWidgets import QApplication,QComboBox,QDoubleSpinBox,QLineEdit,QPushButton,QMessageBox
     from app.aec_workspace import build_aec_workspace
     qt=QApplication.instance() or QApplication([])
     app=StructuralProApp(tmp_path);app.create_project('فرم واقعی','p')
@@ -60,8 +60,19 @@ def test_actual_aec_button_commits_correct_geometry(tmp_path,key,item,inputs,exp
     w.findChild(QLineEdit,'TakeoffLocation').setText('synthetic-explicit-'+item)
     combo=w.findChild(QComboBox,'TakeoffItem');combo.setCurrentIndex(combo.findData(item))
     for name,value in inputs.items():w.findChild(QDoubleSpinBox,'TakeoffField_'+name).setValue(value)
+    # Corrugated composite decks cannot be priced from a flat rectangular
+    # L×W×t volume: profile, troughs and approved concrete regions are missing.
+    # This negative GUI case is as important as valid stair/tray computations.
+    warnings=[]
+    if item=='steel_roof_composite_concrete':
+        monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
     w.findChild(QPushButton,'PrimaryAction').click();qt.processEvents()
     app.store.close();app=StructuralProApp(tmp_path)
-    q=app.open_project('p')['takeoffs'][0]['quantities'][0]
-    assert q['amount']==pytest.approx(expected) and q['unit']==unit
+    if item=='steel_roof_composite_concrete':
+        assert warnings and 'دیتایل‌های واقعی' in str(warnings[0][2])
+        assert app.open_project('p')['takeoffs']==[]
+        assert app.open_project('p')['boq']==[]
+    else:
+        q=app.open_project('p')['takeoffs'][0]['quantities'][0]
+        assert q['amount']==pytest.approx(expected) and q['unit']==unit
     app.store.close();w.close()
