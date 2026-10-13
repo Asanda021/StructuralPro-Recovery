@@ -247,3 +247,58 @@ def test_rebuild_boq_preserves_explicit_cost_factor_without_defaulting():
     assert takeoffs[0]["quantities"][0]["factor"] == 1.17
     assert boq[0]["factor"] == 1.17
     assert boq[0]["total"] == pytest.approx(1.2 * 200 * 1.17)
+
+
+
+def test_reviewed_source_collision_ignores_unassigned_draft_but_not_identity_whitespace():
+    project = _project()
+    project["reviewed_aec_systems"] = {
+        "unfinished": {"data": {"source": {}, "components": {}}},
+        "wall": {"data": {"source": {"source_id": "  manual:L1:W1  "}}},
+    }
+    with pytest.raises(ValueError, match="تکرار"):
+        require_source_unused(project, "manual:L1:W1")
+    # An incomplete, unassigned draft must not disable unrelated measurements.
+    require_source_unused(project, "manual:L1:W2")
+
+
+def test_committed_provenance_identity_with_whitespace_cannot_be_reused():
+    project = _project()
+    project["takeoffs"] = [_t("aec:wall:1", original=" manual:wall:1 ")]
+    with pytest.raises(ValueError):
+        require_source_unused(project, "manual:wall:1")
+
+
+def test_existing_takeoff_source_whitespace_collision_rejected_in_new_commit():
+    project = _project()
+    project["takeoffs"] = [_t("  manual:row:1 ")]
+    with pytest.raises(ValueError):
+        validate_commit_rows(project, [_t("manual:row:1")], source_id="manual:row:2")
+
+
+def test_whitespace_only_or_noncanonical_new_source_never_enters_boq():
+    project = _project()
+    for sid in ("  ", " source:1 ", "", "\n\t"):
+        with pytest.raises(ValueError):
+            validate_commit_rows(project, [_t(sid)], source_id="another:source")
+
+
+def test_intersection_deductions_collide_across_whitespace_variations():
+    project = _project()
+    project["takeoffs"] = [_t("one", intersections=[{
+        "id": "  joint:C1-F1 ", "volume_m3": .4,
+        "source_ref": "detail", "approved_by": "reviewer"}])]
+    candidate = _t("two", intersections=[{
+        "id": "joint:C1-F1", "volume_m3": .4,
+        "source_ref": "detail", "approved_by": "reviewer"}])
+    with pytest.raises(ValueError, match="کسر حجم"):
+        validate_commit_rows(project, [candidate], source_id="drawing:two")
+
+
+def test_valid_separate_intersections_are_allowed_across_two_sources():
+    project = _project()
+    project["takeoffs"] = [_t("one", intersections=[{
+        "id": "joint:C1-F1", "volume_m3": .1, "source_ref": "detail"}])]
+    candidate = _t("two", intersections=[{
+        "id": "joint:C1-F2", "volume_m3": .1, "source_ref": "detail"}])
+    assert len(validate_commit_rows(project, [candidate], source_id="drawing:two")) == 1
