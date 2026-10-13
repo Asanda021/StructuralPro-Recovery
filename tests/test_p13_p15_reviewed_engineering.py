@@ -350,3 +350,18 @@ def test_pile_without_diameter_or_shape_is_rejected():
     assert not preview_member(d, TakeoffEngine())["ready"]
     d["geometry"]["shape"]="circular_column"
     assert not preview_member(d, TakeoffEngine())["ready"]
+
+
+
+def test_no_default_steel_plate_density_even_in_legacy_domain():
+    with pytest.raises((ValueError,KeyError)):
+        steel_quantities("plate", count=1,length=1,width=.2,thickness=.01)
+    q=steel_quantities("plate",count=1,length=1,width=.2,thickness=.01,
+                       density_kg_m3=7850,density_source="supplier-certificate")
+    assert q.quantity==pytest.approx(15.7)
+
+
+def test_legacy_steel_stiffener_rejects_material_certificate_missing():
+    with pytest.raises(ValueError):
+        steel_quantities("stiffener",count=4,length=.2,width=.1,thickness=.01,
+                         density_kg_m3=7850)
