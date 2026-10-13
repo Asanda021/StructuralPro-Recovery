@@ -11,6 +11,7 @@ from hashlib import sha256
 from pathlib import Path
 from typing import Any
 import csv
+import math
 from io import StringIO
 
 from core.pricing.catalog import PriceCatalog, PriceItem
@@ -74,8 +75,11 @@ class PricebookImportService:
         trans = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
         raw = raw.translate(trans).replace(",", "").replace("٬", "").replace(" ", "")
         if not raw:
-            return 0.0
-        return float(raw)
+            raise ValueError("بهای واحد یا سال فهرست‌بها نباید خالی باشد")
+        value = float(raw)
+        if not math.isfinite(value) or value < 0:
+            raise ValueError("عدد فهرست‌بها باید متناهی و نامنفی باشد")
+        return value
 
     @classmethod
     def _rows_from_excel(cls, path: Path, *, fallback_year: int) -> list[PriceItem]:
