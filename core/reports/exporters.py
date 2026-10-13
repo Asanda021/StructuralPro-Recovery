@@ -256,6 +256,74 @@ def _pdf_page_footer(canvas, doc, font):
     canvas.restoreState()
 
 
+
+def _pdf_column_plan(cols, rows, *, font, usable_width):
+    """Size columns for printable numbers and split over-wide reports by field.
+
+    Every original field is retained; the stable row identifier is repeated on
+    continuation panels. No financial or engineering number is rounded or clipped.
+    """
+    from reportlab.pdfbase import pdfmetrics
+
+    if not cols:
+        return [[("description", "شرح", usable_width)]]
+    if usable_width <= 100:
+        raise ValueError("عرض قابل چاپ برای جدول PDF کافی نیست")
+    anchor = next((key for key, _ in cols if key in
+                   ("item_no", "ردیف", "id", "شناسه", "item_code", "code", "source_id")), None)
+    widths = {}
+    for key, label in cols:
+        values = [_display_value(row, key) for row in rows]
+        numeric = bool(values) and all(_pdf_is_number(v) or v in (None, "") for v in values)
+        label_width = pdfmetrics.stringWidth(_pdf_text(label), font, 8) + 17
+        if numeric:
+            # Numeric cells must not soft-wrap into misleading digit fragments.
+            value_width = max((pdfmetrics.stringWidth(_pdf_text(v), font, 8)
+                               for v in values), default=0) + 18
+            width = max(49, label_width, value_width)
+        else:
+            # Long prose wraps at words, but no arbitrary fixed minimum 1/N.
+            preferred = 178 if key in ("description", "شرح", "source_id", "notes") else 96
+            width = max(54, min(preferred, max(label_width, 68)))
+        if width > usable_width - 12:
+            if numeric:
+                raise ValueError("عدد مالی یا مهندسی برای عرض صفحه PDF بیش از حد طولانی است")
+            width = usable_width - 12
+        widths[key] = width
+    anchor_col = next(((key, label) for key, label in cols if key == anchor), None)
+    remaining = [col for col in cols if col[0] != anchor] if anchor_col else cols
+    panels = []
+    current = [anchor_col] if anchor_col else []
+    occupied = widths[anchor] if anchor_col else 0
+    for key, label in remaining:
+        width = widths[key]
+        if current and occupied + width > usable_width:
+            if anchor_col and len(current) == 1:
+                raise ValueError("جدول گزارش PDF: ستون داده در کنار شناسه ردیف جا نمی‌شود")
+            panels.append(current)
+            current = [anchor_col] if anchor_col else []
+            occupied = widths[anchor] if anchor_col else 0
+        if occupied + width > usable_width:
+            raise ValueError("جدول گزارش PDF: عرض ستون از محدوده صفحه بیشتر است")
+        current.append((key, label))
+        occupied += width
+    if current:
+        panels.append(current)
+    return [[(key, label, widths[key]) for key, label in panel] for panel in panels]
+
+
+def _pdf_is_number(value):
+    """Treat numeric strings as numeric for layout without changing their text."""
+    from decimal import Decimal
+    if isinstance(value, bool):
+        return False
+    if isinstance(value, (int, float, Decimal)):
+        return True
+    if not isinstance(value, str):
+        return False
+    return bool(re.fullmatch(r"[+-]?[0-9۰-۹٠-٩]+(?:[.,٬][0-9۰-۹٠-٩]+)*", value.strip()))
+
+
 def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
     from reportlab.lib.enums import TA_RIGHT
     from reportlab.lib.pagesizes import A4, landscape
@@ -279,29 +347,48 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
                             rightMargin=24, leftMargin=24, topMargin=24, bottomMargin=34)
     story = [Paragraph(_pdf_text(title), title_style), Spacer(1, 10),
              Paragraph(_pdf_text("خلاصه تجاری"), heading)]
+    usable_width = doc.width
     summary_rows = _summary_items(summary)
     if summary_rows:
-        data = [[Paragraph(_pdf_text("شرح"), body), Paragraph(_pdf_text("مقدار"), body)]]
-        data += [[Paragraph(_pdf_text(a), body), Paragraph(_pdf_text(b), body)] for a, b in summary_rows]
-        table = Table(data, repeatRows=1)
+        # RTL: labels appear on the right, values on the left.
+        data = [[Paragraph(_pdf_text("مقدار"), body), Paragraph(_pdf_text("شرح"), body)]]
+        data += [[Paragraph(_pdf_text(b), body), Paragraph(_pdf_text(a), body)] for a, b in summary_rows]
+        table = Table(data, colWidths=[usable_width * .36, usable_width * .64], repeatRows=1)
         table.setStyle(TableStyle([("GRID", (0,0), (-1,-1), .4, colors.grey),
                                    ("ALIGN", (0,0), (-1,-1), "RIGHT"),
                                    ("VALIGN", (0,0), (-1,-1), "TOP")]))
         story += [table, Spacer(1, 12)]
-    story.append(Paragraph(_pdf_text("ریز متره و برآورد"), heading))
-    # Reverse display order for RTL so the first logical field is on the right.
-    display_cols = list(reversed(cols))
-    data = [[Paragraph(_pdf_text(label), body) for _, label in display_cols]]
-    for row in rows:
-        data.append([Paragraph(_pdf_text(_display_value(row, key)), body) for key, _ in display_cols])
-    if not rows:
-        data.append([Paragraph(_pdf_text("ردیفی برای نمایش وجود ندارد"), body)])
-    table = Table(data, repeatRows=1)
-    table.setStyle(TableStyle([("GRID", (0,0), (-1,-1), .35, colors.grey),
-                               ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
-                               ("ALIGN", (0,0), (-1,-1), "RIGHT"),
-                               ("VALIGN", (0,0), (-1,-1), "TOP")]))
-    story.append(table)
+    from reportlab.platypus import LongTable, PageBreak
+    plan = _pdf_column_plan(cols, rows, font=font, usable_width=usable_width)
+    numeric_body = ParagraphStyle("StructuralProNumbers", parent=body,
+                                  splitLongWords=0, wordWrap=None)
+    for panel_no, panel in enumerate(plan, 1):
+        if panel_no > 1:
+            story.append(PageBreak())
+        caption = "ریز متره و برآورد" if len(plan) == 1 else (
+            f"ریز متره و برآورد — بخش {panel_no} از {len(plan)}")
+        story.append(Paragraph(_pdf_text(caption), heading))
+        # Reverse visual order in ReportLab's left-to-right table coordinates.
+        panel = list(reversed(panel))
+        data = [[Paragraph(_pdf_text(label), body) for _, label, _ in panel]]
+        for row in rows:
+            data.append([
+                Paragraph(_pdf_text(_display_value(row, key)),
+                          numeric_body if _pdf_is_number(_display_value(row, key)) else body)
+                for key, _, _ in panel
+            ])
+        if not rows:
+            data.append([Paragraph(_pdf_text("ردیفی برای نمایش وجود ندارد"), body)] +
+                        [""] * (len(panel) - 1))
+        table = LongTable(data, colWidths=[width for _, _, width in panel], repeatRows=1,
+                          hAlign="RIGHT")
+        table.setStyle(TableStyle([("GRID", (0,0), (-1,-1), .35, colors.grey),
+                                   ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+                                   ("ALIGN", (0,0), (-1,-1), "RIGHT"),
+                                   ("VALIGN", (0,0), (-1,-1), "TOP"),
+                                   ("LEFTPADDING", (0,0), (-1,-1), 5),
+                                   ("RIGHTPADDING", (0,0), (-1,-1), 5)]))
+        story.append(table)
     footer = lambda canvas, current_doc: _pdf_page_footer(canvas, current_doc, font)
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return path
