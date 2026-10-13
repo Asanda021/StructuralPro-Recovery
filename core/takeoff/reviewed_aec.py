@@ -280,7 +280,7 @@ def empty_system(kind: str, floor_id: str, system_id: str) -> dict:
                                          for name in SPECS[kind].components}}
 
 
-def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> list[dict]:
+def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, system_kind: str) -> list[dict]:
     if not isinstance(component, dict):
         raise ValueError("ساختار جزء نامعتبر است")
     status = component.get("status")
@@ -313,7 +313,53 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
             require_text(item.get("spec_ref"), "مرجع مشخصات فنی تجهیزات و مسیر تأسیسات")
         code = require_text(item.get("item_code"), "کد عملیات")
         mode = item.get("mode")
-        if mode == "engine":
+        params_evidence: dict[str, Any] = deepcopy(item.get("params") or {})
+        if mode == "detail":
+            from core.takeoff.reviewed_detail_calculators import calculate_reviewed_detail
+            detail_kind = require_text(item.get("detail_type"), "روش متره دیتایل")
+            permitted = {
+                "concrete_regions": {"concrete", "gross_concrete", "topping",
+                    "deck_concrete", "waist_concrete", "step_concrete",
+                    "landing_concrete", "ribs", "ribs_x", "ribs_y", "solid_zones"},
+                "rectangle_volume": {"concrete", "topping", "gross_concrete",
+                    "deck_concrete", "waist_concrete", "step_concrete", "landing_concrete",
+                    "mortar", "screed"},
+                "net_surface": {"surface", "formwork", "forms", "tiles", "stone",
+                    "membrane", "glazing", "finish_coats", "base_coats"},
+                "steel_profile_schedule": {"columns", "beams", "bracing", "steel",
+                    "steel_members", "profiles", "steel_members", "joists"},
+                "steel_plate_schedule": {"plates", "edge_plates", "steel_members", "steel"},
+                "timber_volume_schedule": {"members", "joists", "timber"},
+                "piece_schedule": {"joists", "foam", "blocks", "bricks", "studs",
+                    "precast_panels", "precast_units", "panels", "bolts",
+                    "fasteners", "connectors", "shear_connectors"},
+            }
+            if name not in permitted.get(detail_kind, set()):
+                raise ValueError("روش محاسبه دیتایل با نوع مصالح و عضو مطابقت ندارد")
+            if detail_kind.startswith("steel_") and system_kind not in {
+                    "steel_frame", "composite_frame", "steel_deck", "kromit_roof",
+                    "composite_roof", "handrails_metalwork"}:
+                raise ValueError("دیتایل وزنی فولاد فقط برای تیپ‌های سازه‌ای فولادی مجاز است")
+            if detail_kind == "timber_volume_schedule" and system_kind not in {
+                    "timber_frame", "timber_roof"}:
+                raise ValueError("متره چوب فقط در سیستم دارای مصالح چوبی مجاز است")
+            if detail_kind == "concrete_regions" and system_kind not in {
+                    "solid_slab", "joist_block", "joist_foam", "waffle", "uboot",
+                    "cobiax", "hollow_core", "steel_deck", "stair", "shear_wall",
+                    "kromit_roof", "composite_roof"}:
+                raise ValueError("متره حجم ناحیه‌بندی‌شده فقط برای سازه بتنی یا سقف مجاز است")
+            checked = calculate_reviewed_detail(detail_kind, item.get("details"))
+            amount, unit, formula = checked["quantity"], checked["unit"], checked["formula"]
+            params_evidence = {
+                "reviewed_detail_type": detail_kind, "details": checked["details"],
+            }
+            if detail_kind == "concrete_regions":
+                params_evidence["intersections"] = [
+                    {"id": "void:" + v["id"], "volume_m3": v["volume_m3"],
+                     "source_ref": v["source_ref"], "approved_by": v["approved_by"]}
+                    for region in checked["details"] for v in region["voids"]
+                ]
+        elif mode == "engine":
             route = (item.get("domain"), item.get("item"))
             required = _ENGINE_FIELDS.get(route)
             if required is None:
@@ -340,7 +386,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
         rows.append({"line_id": line, "source_ref": evidence, "description": description,
                      "item_code": code, "domain": declared_domain,
                      "quantity": amount, "unit": unit, "formula": formula,
-                     "params": deepcopy(item.get("params") or {}),
+                     "params": params_evidence,
                      "measurement_ref": item.get("measurement_ref") if mode == "measured" else evidence,
                      "method": mode})
     return rows
@@ -376,7 +422,7 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
         try:
             if name in spec.essential and isinstance(part, dict) and part.get("status") == "not_applicable":
                 raise ValueError("این جزء برای تیپ انتخابی ضروری است؛ عدم کاربرد مجاز نیست")
-            accepted_rows = _preview_component(part, name, engine)
+            accepted_rows = _preview_component(part, name, engine, system_kind=kind)
             if name == "openings":
                 # Openings are evidence, not additional billable quantities.
                 # Users must enter *net* quantities for their other components.
