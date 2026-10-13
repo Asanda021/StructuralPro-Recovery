@@ -11,13 +11,16 @@ def valid():
     return [
         {"name": "ابتدا", "start_m": 0, "end_m": 1.2, "spacing_m": .1,
          "first_bar_m": .05, "last_bar_m": 1.15, "count": 12,
-         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/section/end"},
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+         "unit_weight_source": "catalog:synthetic:zone-end", "source_ref": "B1/section/end"},
         {"name": "میانه", "start_m": 1.2, "end_m": 3.8, "spacing_m": .2,
          "first_bar_m": 1.3, "last_bar_m": 3.7, "count": 13,
-         "cut_length_m": 1.35, "unit_weight_kg_m": .395, "source_ref": "B1/section/mid"},
+         "cut_length_m": 1.35, "unit_weight_kg_m": .395,
+         "unit_weight_source": "catalog:synthetic:zone-mid", "source_ref": "B1/section/mid"},
         {"name": "انتها", "start_m": 3.8, "end_m": 5, "spacing_m": .1,
          "first_bar_m": 3.85, "last_bar_m": 4.95, "count": 12,
-         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/section/end2"},
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+         "unit_weight_source": "catalog:synthetic:zone-end2", "source_ref": "B1/section/end2"},
     ]
 
 
@@ -56,6 +59,7 @@ def test_three_zone_reviewed_quantities_exact():
     ("spacing_m",.12,"تعداد"),
     ("cut_length_m",0,"طول برش"),
     ("unit_weight_kg_m",float("nan"),"وزن واحد"),
+    ("unit_weight_source","","منبع وزن واحد"),
     ("source_ref","","مرجع"),
 ])
 def test_reject_zone_tampering(key,val,match):
@@ -138,3 +142,20 @@ def test_accept_unsorted_zones_but_sorted_deterministically():
     z.reverse()
     out = validate_stirrup_zones(z, 5)
     assert [item["name"] for item in out] == ["ابتدا", "میانه", "انتها"]
+
+
+def test_each_zone_requires_independent_weight_source_and_no_boq_write(tmp_path):
+    d = complete_beam()
+    d["bars"]["stirrups"]["segments"][1].pop("unit_weight_source")
+    preview = preview_beam(d, TakeoffEngine())
+    assert not preview["ready"]
+    assert any("منبع وزن واحد" in issue for issue in preview["blockers"])
+    path = tmp_path / "projects.db"
+    store = ProjectStore(path)
+    store.save("P1", {"id": "P1", "takeoffs": [], "boq": []})
+    wf = BeamDetailWorkflow(store, TakeoffEngine())
+    rev = wf.save_draft("P1", d)["revision"]
+    with pytest.raises(ValueError, match="متره ناقص"):
+        wf.commit("P1", "L1", "B1", expected_revision=rev)
+    assert store.get("P1")["boq"] == []
+    store.close()

@@ -99,6 +99,7 @@ class BeamDetailPanel(QWidget):
             widgets = {"status": status}
             for field, label in (("count", "تعداد"), ("nominal_diameter_mm", "قطر اسمی از دیتایل (میلی‌متر)"), ("cut_length_m", "طول برش تأییدشده (متر)"),
                                  ("unit_weight_kg_m", "وزن واحد (کیلوگرم/متر)"),
+                                 ("unit_weight_source", "مرجع وزن واحد میلگرد"),
                                  ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد")):
                 editor = QLineEdit()
                 widgets[field] = editor
@@ -375,6 +376,8 @@ class BeamDetailPanel(QWidget):
                     value = self._maybe_number(widgets[name].text(), integral=(name == "count"))
                     if value is not None:
                         bar[name] = value
+            if bar["status"] in ("confirmed", "needs_review"):
+                bar["unit_weight_source"] = widgets["unit_weight_source"].text().strip()
             if bar["status"] == "not_applicable":
                 bar["reason"] = widgets["reason"].text().strip()
             if kind == "stirrups" and self._stirrup_segments is not None:
@@ -424,7 +427,8 @@ class BeamDetailPanel(QWidget):
                 data = draft["bars"][name]
                 widgets = self.bars[name]
                 widgets["status"].setCurrentIndex(widgets["status"].findData(data["status"]))
-                for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m", "source_ref", "reason"):
+                for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m",
+                              "unit_weight_source", "source_ref", "reason"):
                     widgets[field].setText(str(data.get(field, "")))
             if record and record["status"] == "committed":
                 self.save_button.setEnabled(False)

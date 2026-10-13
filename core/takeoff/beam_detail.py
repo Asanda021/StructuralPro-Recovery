@@ -202,11 +202,11 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                         raise ValueError("دیتایل هر بازه میلگرد باید ساختار معتبر داشته باشد")
                     _text(segment.get("source_ref"), "مرجع بازه میلگرد")
                     count = int(_number(segment.get("count"), "تعداد میلگرد", integer=True))
+                    unit_weight_source = _text(segment.get("unit_weight_source"), "منبع وزن واحد")
                     if "length_parts_m" in segment:
                         reviewed_segment = dict(segment)
                         reviewed_segment.setdefault("approved_by", bar["approved_by"])
                         cut, cut_metadata = reviewed_cut_length(reviewed_segment)
-                        _text(segment.get("unit_weight_source"), "منبع وزن واحد")
                     else:
                         cut = _number(segment.get("cut_length_m"), "طول برش تأییدشده")
                         cut_metadata = {"method": "approved_cut_length", "cut_length_m": cut,
@@ -217,8 +217,7 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                     quantities.append(result.quantity)
                     segment_parameters = {"count": count, "length": cut, "unit_weight": weight,
                                           "source_ref": segment["source_ref"], "cut": cut_metadata}
-                    if "unit_weight_source" in segment:
-                        segment_parameters["unit_weight_source"] = segment["unit_weight_source"]
+                    segment_parameters["unit_weight_source"] = unit_weight_source
                     if kind == "stirrups" and "segments" in bar:
                         segment_parameters.update({field: segment[field] for field in (
                             "name", "start_m", "end_m", "spacing_m", "first_bar_m", "last_bar_m")})
