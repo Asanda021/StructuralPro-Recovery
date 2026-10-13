@@ -34,10 +34,12 @@ def test_duplicate_source_is_fail_closed(tmp_path):
     assert len(app.open_project("P33")["takeoffs"]) == 1
 
 
-def test_invalid_estimate_factor_does_not_persist(tmp_path):
+def test_invalid_estimate_factor_does_not_persist(tmp_path, approve_test_pricebook):
     app = _app(tmp_path)
     app.add_takeoff("P33", "building", "slab_volume",
-                    length=2, width=2, thickness=0.2)
+                    length=2, width=2, thickness=0.2, count=1, source_id="fixture:P33:bad-factor",
+                    price_code="P33-SLAB", unit_price=100)
+    approve_test_pricebook(app, "P33", {"P33-SLAB": {"unit": "m3", "unit_price": 100}})
     before = app.open_project("P33")
     with pytest.raises((ValueError, TypeError)):
         app.recalculate_estimate("P33", factors={"bad": "not-a-number"})
@@ -73,10 +75,12 @@ def test_corrupt_recovery_payload_is_rejected(tmp_path):
         app.import_project_backup(path)
 
 
-def test_ai_confirmation_gate_does_not_mutate_state(tmp_path):
+def test_ai_confirmation_gate_does_not_mutate_state(tmp_path, approve_test_pricebook):
     app = _app(tmp_path)
     app.add_takeoff("P33", "building", "slab_volume",
-                    length=2, width=2, thickness=0.2)
+                    length=2, width=2, thickness=0.2, count=1, source_id="fixture:P33:ai-gate",
+                    price_code="P33-SLAB", unit_price=100)
+    approve_test_pricebook(app, "P33", {"P33-SLAB": {"unit": "m3", "unit_price": 100}})
     app.recalculate_estimate("P33")
     before = app.open_project("P33")
     response = app.ai_assistant_respond("P33", "متره را اجرا کن و ثبت کن")
