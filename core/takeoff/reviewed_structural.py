@@ -114,18 +114,68 @@ def preview_member(data: dict, engine: Any) -> dict:
     try:
         require_text(geometry.get("source_ref"), "مرجع هندسه")
         require_text(geometry.get("approved_by"), "تأییدکننده هندسه")
-        dims = {field: (int(positive(geometry.get(field), field, integer=True))
-                        if field == "count" else positive(geometry.get(field), field))
-                for field in fields}
-        gross = engine.calculate(domain, item, description=f"بتن {title} {member_id}", **dims)
-        if gross.unit != "m3":
-            raise ValueError("واحد حجم سازه ناسازگار است")
-        net, deductions = net_concrete(gross.quantity, geometry.get("intersections"))
+        shape = geometry.get("shape", "rectangular")
+        count = int(positive(geometry.get("count"), "تعداد فیزیکی عضو", integer=True))
+        sections = []
+        if shape == "rectangular":
+            dims = {field: (count if field == "count" else positive(geometry.get(field), field))
+                    for field in fields}
+            gross = engine.calculate(domain, item, description=f"بتن {title} {member_id}", **dims)
+            if gross.unit != "m3":
+                raise ValueError("واحد حجم سازه ناسازگار است")
+            gross_m3 = gross.quantity
+            formula = "حجم مستطیلی موتور اصلی منهای کسورات مستقل تأییدشده"
+        elif shape == "circular_column" and kind == "column":
+            if any(k in geometry for k in ("width", "depth", "sections")):
+                raise ValueError("ابعاد مستطیلی و دایره‌ای نباید برای یک ستون ترکیب شوند")
+            diameter = positive(geometry.get("diameter"), "قطر واقعی ستون")
+            height = positive(geometry.get("height"), "ارتفاع واقعی ستون")
+            gross_m3 = math.pi * (diameter / 2)**2 * height * count
+            formula = "π×قطر²/۴×ارتفاع×تعداد منهای کسورات مستند"
+            dims = {"diameter": diameter, "height": height, "count": count}
+        elif shape == "reviewed_sections":
+            parts = geometry.get("sections")
+            if not isinstance(parts, list) or not parts:
+                raise ValueError("مقطع متغیر باید جدول ناحیه‌های واقعی داشته باشد")
+            used = set()
+            volumes = []
+            for part in parts:
+                if not isinstance(part, dict):
+                    raise ValueError("ساختار مقطع هندسی نامعتبر است")
+                identity = require_text(part.get("id"), "شناسه ناحیه هندسی")
+                if identity in used:
+                    raise ValueError("مقطع هندسی با شناسه تکراری ثبت شده است")
+                used.add(identity)
+                ref = require_text(part.get("source_ref"), "مرجع هندسه ناحیه")
+                reviewer = require_text(part.get("approved_by"), "تأییدکننده ناحیه")
+                if kind == "column":
+                    area = positive(part.get("net_section_area_m2"), "سطح واقعی مقطع")
+                    span = positive(part.get("height_m"), "ارتفاع ناحیه ستون")
+                    qty = area * span * count
+                else:
+                    if set(part) != {"id", "source_ref", "approved_by",
+                                    "length_m", "width_m", "thickness_m"}:
+                        raise ValueError("پی/شناژ مقطع‌بندی‌شده به طول، عرض و ضخامت واقعی نیاز دارد")
+                    length = positive(part.get("length_m"), "طول واقعی قطعه")
+                    width = positive(part.get("width_m"), "عرض واقعی قطعه")
+                    thickness = positive(part.get("thickness_m"), "ضخامت واقعی قطعه")
+                    qty = length * width * thickness * count
+                volumes.append(qty)
+                sections.append({"id": identity, "source_ref": ref,
+                                 "approved_by": reviewer, "volume_m3": qty})
+            gross_m3 = math.fsum(volumes)
+            positive(gross_m3, "حجم ناحیه‌بندی‌شده")
+            dims = {"count": count, "sections": sections}
+            formula = "جمع حجم ناحیه‌های واقعی جداگانه منهای کسورات مستند"
+        else:
+            raise ValueError("نوع شکل عضو باید مستطیلی، ستون دایره‌ای یا مقاطع مستند باشد")
+        net, deductions = net_concrete(gross_m3, geometry.get("intersections"))
         rows.append({"source_id": prefix + ":concrete", "item": item, "code": "concrete",
                      "domain": domain, "description": f"بتن خالص {title} {member_id}",
                      "quantity": net, "unit": "m3",
-                     "formula": "حجم ناخالص موتور اصلی منهای کسورات مستقل تأییدشده",
-                     "params": {"dimensions": dims, "intersections": deductions,
+                     "formula": formula,
+                     "params": {"dimensions": dims, "shape": shape,
+                                "sections": sections, "intersections": deductions,
                                 "source_ref": geometry["source_ref"]}})
     except (ValueError, TypeError, KeyError, AttributeError) as exc:
         blockers.append(f"بتن {title}: {exc}")
