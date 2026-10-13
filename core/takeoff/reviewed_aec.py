@@ -213,6 +213,7 @@ _VOLUME_COMPONENTS = frozenset({
     "topping", "ribs", "ribs_x", "ribs_y", "gross_concrete",
     "verified_voids", "deck_concrete", "mortar", "adhesive_mortar",
     "grout", "screed", "blinding_concrete", "repair_mortar",
+    "excavation", "backfill", "compaction",
 })
 _MASS_COMPONENTS = frozenset({
     "vertical_rebar", "horizontal_rebar", "boundary_rebar", "crossties",
@@ -226,6 +227,7 @@ _COUNT_COMPONENTS = frozenset({
     "boards", "detectors", "sounders", "call_points", "sprinklers",
     "panels", "cameras", "readers", "controllers", "recorders",
     "locks", "generators", "ups", "batteries", "transfer_switches",
+    "car", "machine", "anchorage",
 })
 _LENGTH_COMPONENTS = frozenset({"pipes", "cables", "conduits", "trays",
                                "earthing", "rails", "bracing_cables"})
