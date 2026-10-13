@@ -206,6 +206,39 @@ SPECS = {
 
 # Only these canonical formula routes may be calculated in this review workflow.
 # Other details require explicit measured amounts, not the approximate roof formulas.
+# Physical-unit gates for unambiguous construction components.
+# Ambiguous shop/installation items retain the unit explicitly reviewed by the user.
+_VOLUME_COMPONENTS = frozenset({
+    "concrete", "waist_concrete", "step_concrete", "landing_concrete",
+    "topping", "ribs", "ribs_x", "ribs_y", "gross_concrete",
+    "verified_voids", "deck_concrete", "mortar", "adhesive_mortar",
+    "grout", "screed", "blinding_concrete", "repair_mortar",
+})
+_MASS_COMPONENTS = frozenset({
+    "vertical_rebar", "horizontal_rebar", "boundary_rebar", "crossties",
+    "reinforcement", "top_rebar", "bottom_rebar", "mesh", "steel",
+    "steel_members", "columns", "beams", "bracing", "plates",
+    "reinforcement_mesh", "sheet_steel",
+})
+_COUNT_COMPONENTS = frozenset({
+    "blocks", "bricks", "joists", "foam", "studs", "fittings",
+    "valves", "equipment", "fixtures", "switches", "devices",
+    "boards", "detectors", "sounders", "call_points", "sprinklers",
+    "panels", "cameras", "readers", "controllers", "recorders",
+    "locks", "generators", "ups", "batteries", "transfer_switches",
+})
+_LENGTH_COMPONENTS = frozenset({"pipes", "cables", "conduits", "trays",
+                               "earthing", "rails", "bracing_cables"})
+_AREA_COMPONENTS = frozenset({"formwork", "forms", "membrane",
+                             "tiles", "finish_coats", "base_coats",
+                             "base_plaster", "finish_plaster", "render_coat",
+                             "stone", "panels_area", "glazing", "surface"})
+_UNIT_BY_COMPONENT = {**{k: "m3" for k in _VOLUME_COMPONENTS},
+                      **{k: "kg" for k in _MASS_COMPONENTS},
+                      **{k: "عدد" for k in _COUNT_COMPONENTS},
+                      **{k: "m" for k in _LENGTH_COMPONENTS},
+                      **{k: "m2" for k in _AREA_COMPONENTS}}
+
 _ENGINE_FIELDS = {
     ("building", "shear_wall"): ("length", "thickness", "height", "count"),
     ("building", "stair_concrete"): ("sloped_length", "width", "waist_thickness", "count"),
@@ -298,6 +331,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
             raise ValueError("شیوه متره فقط محاسبه مستند یا مقدار بازبینی‌شده است")
         if not math.isfinite(amount) or amount <= 0:
             raise ValueError("مقدار جزئی باید مثبت و متناهی باشد")
+        expected_unit = _UNIT_BY_COMPONENT.get(name)
+        if expected_unit is not None and unit != expected_unit:
+            raise ValueError(f"واحد فیزیکی {name} باید {expected_unit} باشد؛ مقدار ناسازگار قابل ثبت نیست")
         rows.append({"line_id": line, "source_ref": evidence, "description": description,
                      "item_code": code, "domain": declared_domain,
                      "quantity": amount, "unit": unit, "formula": formula,
