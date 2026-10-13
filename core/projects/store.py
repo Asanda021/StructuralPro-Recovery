@@ -6,6 +6,23 @@ from pathlib import Path
 from typing import Any
 from core.platform.concurrency import assert_unchanged, begin_write
 
+def _contract_basis(project: dict[str, Any]) -> str:
+    """Canonical payable BOQ and approved pricebook backing a financial estimate.
+
+    Current/previous period work quantities are deliberately not part of a
+    *contract* revision; changing a unit price, source, item, or amount is.
+    """
+    pricebook = project.get("user_pricebook_review") or {}
+    keys = ("item_code", "quantity", "unit", "source_ids", "source_id",
+            "price_code", "unit_price", "effective_quantity", "factor", "total")
+    return json.dumps({
+        "boq": [{key: row.get(key) for key in keys if key in row}
+                for row in (project.get("boq") or [])],
+        "pricebook": {key: pricebook.get(key) for key in
+                      ("status", "sha256", "approved_by", "path", "rows_by_code")},
+    }, ensure_ascii=False, sort_keys=True, allow_nan=False)
+
+
 class ProjectStore:
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
@@ -44,6 +61,16 @@ class ProjectStore:
                     raise RuntimeError("project changed since write began")
                 current=json.loads(row["payload"])
                 assert_unchanged(current, expected_digest)
+            if row is not None:
+                previous = json.loads(row["payload"])
+                if (previous.get("estimate") or previous.get("statement_periods")) and \
+                        _contract_basis(previous) != _contract_basis(clean_project):
+                    if previous.get("statement_periods"):
+                        raise ValueError("پس از صدور صورت‌وضعیت، تغییر مبنای BOQ یا فهرست‌بها نیازمند گردش اصلاحیه رسمی است")
+                    # An old estimate must never masquerade as current after a
+                    # quantity, approved pricebook or payable-unit change.
+                    clean_project.pop("estimate", None)
+                    payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
             version=int(row["version"])+1 if row else 1
             self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
                             (pid,str(clean_project.get("name","")),version,now,payload))

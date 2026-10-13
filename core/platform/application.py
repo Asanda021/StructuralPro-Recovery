@@ -913,6 +913,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
         retention_rate = _statement_rate(retention_rate, "تضمین")
         advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
         tax_rate = _statement_rate(tax_rate, "مالیات")
@@ -2342,7 +2344,9 @@ class StructuralProApp:
     def report(self,project_id:str,fmt:str,path,*,period_no:int|None=None):
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
-        estimate=p.get("estimate") or build_estimate(p.get("boq",[]), aggregate=False)
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
+        estimate=p.get("estimate") or self.recalculate_estimate(project_id)
         selected=None
         periods=p.get("statement_periods",[])
         if period_no is not None:
