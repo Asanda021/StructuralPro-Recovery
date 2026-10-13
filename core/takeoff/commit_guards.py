@@ -45,10 +45,13 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
                 continue
             if not isinstance(record, dict):
                 raise ValueError("رکورد بازبینی متره نامعتبر است")
-            if _canonical_source_id(
-                (record.get("data") or {}).get("source", {}).get("source_id")
-        ) == source_id:
-                raise ValueError("شناسه برداشت در عضو دیگری از پروژه تکرار شده است")
+            saved_source = (record.get("data") or {}).get("source", {}).get("source_id")
+        if saved_source is None or saved_source == "":
+            # Incomplete drafts may have no source yet. They cannot commit,
+            # but must not prevent other correctly sourced records.
+            continue
+        if _canonical_source_id(saved_source) == source_id:
+            raise ValueError("شناسه برداشت در عضو دیگری از پروژه تکرار شده است")
     for takeoff in project.get("takeoffs") or []:
         if not isinstance(takeoff, dict):
             raise ValueError("ساختار ردیف متره نامعتبر است")
