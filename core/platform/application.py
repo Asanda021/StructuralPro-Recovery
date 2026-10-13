@@ -580,6 +580,9 @@ class StructuralProApp:
                            "evidence": deepcopy(candidate["evidence"]), "confidence": candidate["confidence"],
                            "formula": candidate["formula"]},
                 "revision": 1, "drawing_session_id": sid, "ai_generated": True,
+                "provenance": {"mode": "drawing", "source_id": source_id,
+                               "drawing_session_id": sid, "page": page,
+                               "source_ref": source_ref},
                 "description": title, "system": f"صفحه {page}",
                 "quantities": [{
                     "code": candidate["source_id"], "title": title, "system": f"صفحه {page}",
@@ -590,19 +593,10 @@ class StructuralProApp:
             })
         if not new_rows:
             raise ValueError("پیشنهاد تأییدشده هیچ ردیف قابل ثبت ندارد")
-        project.setdefault("takeoffs", []).extend(new_rows)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        validated = validate_commit_rows(
+            project, new_rows, source_id=f"drawing-ai-session:{sid}:{expected_session_revision}")
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, (project.get("takeoffs") or []) + validated)
         record["ai_committed_item_ids"] = sorted(set(record.get("ai_committed_item_ids", [])) | seen_session_items)
         record["revision"] = expected_session_revision + 1
         record["updated_at"] = datetime.now(timezone.utc).isoformat()
