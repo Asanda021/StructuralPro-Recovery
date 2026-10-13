@@ -349,7 +349,7 @@ def test_bored_pile_must_use_real_diameter_and_can_have_independent_rebar_groups
 def test_pile_cap_is_distinct_from_a_regular_footing():
     from core.takeoff.reviewed_structural import preview_member
     d=_reviewed_structural("pile_cap","PC1",{
-        "length":2.4,"width":2.4,"thickness":.7})
+        "shape":"rectangular", "length":2.4,"width":2.4,"thickness":.7})
     report=preview_member(d,TakeoffEngine())
     assert report["ready"],report["blockers"]
     assert report["rows"][0]["quantity"]==pytest.approx(4.032)
