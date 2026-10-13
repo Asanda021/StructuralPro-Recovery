@@ -28,7 +28,7 @@ def test_freeze_smoke_project(tmp_path):
     from core.platform.application import StructuralProApp
     app=StructuralProApp(tmp_path/"data")
     app.create_project("Freeze","F38")
-    app.add_takeoff("F38","building","slab_volume",length=4,width=5,thickness=.2)
+    app.add_takeoff("F38","building","slab_volume",length=4,width=5,thickness=.2,count=1,source_id="fixture:F38:smoke")
     result=app.recalculate_estimate("F38")
     assert result["boq"]
     assert app.open_project("F38")["id"]=="F38"
