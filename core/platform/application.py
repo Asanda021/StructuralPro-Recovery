@@ -703,6 +703,12 @@ class StructuralProApp:
         if len(matches) != 1:
             raise KeyError(f"منبع متره باید دقیقاً یک ردیف داشته باشد: {source}")
         row = matches[0]
+        # Reviewed, drawing and assembly quantities require their own dedicated
+        # revision workflows; a generic item edit would bypass approval gates.
+        if (row.get("review") or row.get("assembly_id") or
+                row.get("drawing_session_id") or
+                source.startswith(("beam-detail:", "structural:", "aec:"))):
+            raise ValueError("ویرایش این متره باید از مسیر بازبینی تخصصی همان عضو/نقشه انجام شود")
         current = int(row.get("revision", 1))
         if current != expected:
             raise RuntimeError(f"تعارض نسخه متره؛ نسخه فعلی {current} است و نسخه ارسالی {expected} بود.")
@@ -712,6 +718,8 @@ class StructuralProApp:
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
                                         **calculation_params)
+        if not math.isfinite(result.quantity) or result.quantity <= 0:
+            raise ValueError("ریزکمیت ویرایش‌شده باید مثبت و مستند باشد")
         previous = deepcopy(row)
         changed_at = datetime.now(timezone.utc).isoformat()
         history = project.setdefault("takeoff_revision_history", [])
@@ -734,19 +742,8 @@ class StructuralProApp:
             }],
         })
 
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""),
-                    "source_type": "takeoff", "description": quantity.get("title", ""),
-                    "quantity": quantity.get("amount", 0), "unit": quantity.get("unit", ""),
-                    "item_code": quantity.get("code", item), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain", "manual"),
-                    "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, project.get("takeoffs") or [])
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(row)
 
