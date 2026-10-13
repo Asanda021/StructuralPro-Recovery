@@ -16,7 +16,8 @@ def test_recalculate_is_idempotent_and_persists(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=5, width=4, thickness=0.2, price_code="A-1"
+        length=5, width=4, thickness=0.2, price_code="A-1",
+        count=1, source_id="fixture:test_priority_32_integration_regression:1"
     )
     first = app.recalculate_estimate("P32")
     second = app.recalculate_estimate("P32")
@@ -34,7 +35,8 @@ def test_recovery_round_trip_preserves_estimate_inputs(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=3, width=4, thickness=0.2, price_code="A-1"
+        length=3, width=4, thickness=0.2, price_code="A-1",
+        count=1, source_id="fixture:test_priority_32_integration_regression:2"
     )
     before = app.recalculate_estimate("P32")
     backup = tmp_path / "p32.json"
@@ -50,7 +52,8 @@ def test_ai_review_does_not_change_estimate_or_takeoff_state(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=2, width=3, thickness=0.2
+        length=2, width=3, thickness=0.2,
+        count=1, source_id="fixture:test_priority_32_integration_regression:3"
     )
     estimate_before = app.recalculate_estimate("P32")
     before = app.open_project("P32")
@@ -80,7 +83,8 @@ def test_report_and_recalculation_share_same_takeoff_count(tmp_path):
     for i in range(3):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=2, width=2, thickness=0.2, source_id=f"R{i}"
+            length=2, width=2, thickness=0.2, source_id=f"R{i}",
+        count=1
         )
     estimate = app.recalculate_estimate("P32")
     activity = app.project_activity_summary("P32")
@@ -94,7 +98,8 @@ def test_invalid_project_operations_fail_without_partial_creation(tmp_path):
     with pytest.raises(ValueError):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=-1, width=2, thickness=0.2
+            length=-1, width=2, thickness=0.2,
+        count=1, source_id="fixture:test_priority_32_integration_regression:6"
         )
     project = app.open_project("P32")
     assert project is not None
