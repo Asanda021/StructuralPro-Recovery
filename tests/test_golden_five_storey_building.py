@@ -65,7 +65,7 @@ def test_five_storey_golden_dataset_round_trips_through_persistent_project_and_b
             floor = f"طبقه {floor_index}" if floor_index else "فونداسیون"
             app.add_assembly_takeoff(
                 dataset["dataset_id"], case["assembly"], case["inputs"],
-                floor_id=floor, description=f"{case['id']} — {floor}",
+                floor_id=floor, description=f"{case['id']} — {floor}", approved_by="بازبین مستقل آزمون"
             )
 
     project = app.open_project(dataset["dataset_id"])
