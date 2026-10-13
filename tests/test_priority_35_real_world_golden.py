@@ -11,15 +11,18 @@ def _app(tmp_path):
     return app
 
 
-def test_residential_concrete_quantity_workflow(tmp_path):
+def test_residential_concrete_quantity_workflow(tmp_path, approve_test_pricebook):
     app = _app(tmp_path)
     rows = [
         ("F1", "column", dict(width=0.4, depth=0.4, height=3.2, count=8)),
         ("B1", "beam", dict(width=0.3, depth=0.5, length=6.0, count=10)),
-        ("S1", "slab_volume", dict(length=12.0, width=10.0, thickness=0.2)),
+        ("S1", "slab_volume", dict(length=12.0, width=10.0, thickness=0.2, count=1)),
     ]
     for source_id, item, params in rows:
-        app.add_takeoff("G35", "building", item, source_id=source_id, **params)
+        app.add_takeoff("G35", "building", item, source_id=source_id,
+                        price_code=f"G35-{source_id}", unit_price=100, **params)
+    approve_test_pricebook(app, "G35", {f"G35-{code}": {"unit": "m3", "unit_price": 100}
+                                             for code in ("F1", "B1", "S1")})
     estimate = app.recalculate_estimate("G35")
     project = app.open_project("G35")
     assert len(project["takeoffs"]) == 3
@@ -27,10 +30,12 @@ def test_residential_concrete_quantity_workflow(tmp_path):
     assert estimate["validation"]["valid"] is True
 
 
-def test_recovery_and_recalculation_scenario(tmp_path):
+def test_recovery_and_recalculation_scenario(tmp_path, approve_test_pricebook):
     app = _app(tmp_path)
     app.add_takeoff("G35", "building", "slab_volume",
-                    length=20, width=15, thickness=0.2, source_id="DRAW-SLAB")
+                    length=20, width=15, thickness=0.2, count=1, source_id="DRAW-SLAB",
+                    price_code="G35-SLAB", unit_price=100)
+    approve_test_pricebook(app, "G35", {"G35-SLAB": {"unit": "m3", "unit_price": 100}})
     first = app.recalculate_estimate("G35")
     backup = tmp_path / "golden.json"
     app.export_project_backup("G35", backup)
@@ -40,13 +45,17 @@ def test_recovery_and_recalculation_scenario(tmp_path):
     assert first["boq"] == second["boq"]
 
 
-def test_golden_acceptance_covers_multiple_project_surfaces(tmp_path):
+def test_golden_acceptance_covers_multiple_project_surfaces(tmp_path, approve_test_pricebook):
     app = _app(tmp_path)
+
+    approve_test_pricebook(app, "G35", {"G35-GOLDEN": {"unit": "m3", "unit_price": 100}})
 
     def factory(case):
         if case.case_id == "quantity":
             app.add_takeoff("G35", "building", "slab_volume",
-                            length=10, width=8, thickness=0.2)
+                            length=10, width=8, thickness=0.2, count=1,
+                            source_id="fixture:G35:golden-quantity",
+                            price_code="G35-GOLDEN", unit_price=100)
             return app.open_project("G35")
         if case.case_id == "estimate":
             app.recalculate_estimate("G35")
