@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -51,8 +52,8 @@ def run(report_path: Path | None = None) -> int:
         result["return_code"] = 2
         result["stderr"] = "Required tests are missing; acceptance is blocked."
     else:
-        command = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider",
-                   "--disable-warnings", *TEST_FILES]
+        command = [sys.executable, "-m", "pytest", "-q", "-ra",
+                   "-p", "no:cacheprovider", "--disable-warnings", *TEST_FILES]
         result["command"] = command
         environment = dict(os.environ)
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -65,6 +66,20 @@ def run(report_path: Path | None = None) -> int:
             result["return_code"] = completed.returncode
             result["stdout"] = completed.stdout[-25000:]
             result["stderr"] = completed.stderr[-12000:]
+            # pytest exit 0 allows skipped/xfail tests; engineering acceptance
+            # requires a positive PASS count and zero not-executed cases.
+            if completed.returncode == 0:
+                has_passed = re.search(r"(?m)\b[1-9][0-9]* passed\b", completed.stdout)
+                incomplete = re.search(
+                    r"(?m)\b[1-9][0-9]* (?:skipped|xfailed|xpassed)\b",
+                    completed.stdout,
+                )
+                if not has_passed or incomplete:
+                    result["return_code"] = 3
+                    result["stderr"] += (
+                        "\nEngineering acceptance requires >=1 PASS and "
+                        "no SKIP/XFAIL/XPASS, even when pytest exit code is 0."
+                    )
         except subprocess.TimeoutExpired as exc:
             result["return_code"] = 124
             result["stderr"] = f"Acceptance timed out: {exc}"
