@@ -55,10 +55,10 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
         joist_width=_n(p["joist_width"],"joist_width", minimum=1e-12)
         joist_depth=_n(p["joist_depth"],"joist_depth", minimum=1e-12)
         import math
-        joist_count=_n(p.get("joist_count", math.ceil(W/spacing)+1),"joist_count", minimum=1e-12)
+        joist_count=_n(p["joist_count"],"joist_count", minimum=1e-12)
         ribs=joist_count*L*joist_width*joist_depth*count
         q=topping+ribs
-        return QuantityResult("سقف سبک بتنی",item,q,"m3","A×t رویه + تعداد تیرچه×L×b×h",("تعداد تیرچه از عرض/فاصله به‌صورت شفاف مشتق شده؛ کلاف‌ها، تیرهای مرزی و بازشوها جداگانه متره شوند.",))
+        return QuantityResult("سقف سبک بتنی",item,q,"m3","A×t رویه + تعداد تیرچه×L×b×h",("تعداد تیرچه باید از آرایش واقعی یا جدول تأییدشده ورود شود؛ کلاف‌ها، تیرهای مرزی و بازشوها جدا متره شوند.",))
     if k in {"hollow_core_roof","دال_مجوف"}:
         area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
         gross=area*_n(p["thickness"],"thickness", minimum=1e-12)

@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
+import math
 
 DISCIPLINES = (
     "architecture","structure","earthwork","concrete","masonry","waterproofing",
@@ -24,7 +25,8 @@ def validate_scope(rows: Iterable[TakeoffScope]) -> tuple[TakeoffScope,...]:
         if row.discipline not in DISCIPLINES: raise ValueError("unsupported building discipline")
         if any(not isinstance(v,str) or not v.strip() for v in (row.item_code,row.description,row.unit,row.source_id)):
             raise ValueError("takeoff row identity is incomplete")
-        if row.quantity < 0: raise ValueError("quantity cannot be negative")
+        if isinstance(row.quantity, bool) or not math.isfinite(float(row.quantity)) or row.quantity < 0:
+            raise ValueError("quantity must be finite and non-negative")
         key=(row.discipline,row.item_code)
         if key in seen: raise ValueError("duplicate takeoff scope item")
         seen.add(key); out.append(row)

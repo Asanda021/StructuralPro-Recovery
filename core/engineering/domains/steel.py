@@ -15,6 +15,6 @@ def steel_quantities(kind, **p):
         q=count(p.get("quantity",1),"quantity")
         return DomainQuantity("steel",k,q,"عدد","تعداد","IR-NBR-10","1401").validate()
     if k in {"weld"}:
-        q=positive(p["length"],"length")*positive(p.get("weld_unit_weight",1.0),"weld_unit_weight")*n
+        q=positive(p["length"],"length")*positive(p["weld_unit_weight"],"weld_unit_weight")*n
         return DomainQuantity("steel","weld",q,"kg","L×وزن واحد جوش×تعداد","IR-NBR-10","1401").validate()
     raise KeyError(f"unsupported steel item: {kind}")
