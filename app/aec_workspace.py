@@ -81,6 +81,16 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
                                  floor_id=floor_input.text().strip())
         refresh()
     complete_editor.clicked.connect(open_complete_editor)
+    if key == "structural_concrete":
+        structural_editor = QPushButton("فرم تخصصی متره دستی ستون، شناژ، پی و شمع")
+        structural_editor.setObjectName("OpenReviewedStructuralEditor")
+        outer.addWidget(structural_editor)
+        def open_structural_editor():
+            from app.reviewed_structural_manual_editor import open_manual_structural_editor
+            open_manual_structural_editor(service, parent=root,
+                project_id=project.text().strip(), floor_id=floor_input.text().strip())
+            refresh()
+        structural_editor.clicked.connect(open_structural_editor)
     quick=QGroupBox("⚡ متره سریع دستی — بدون فرم‌های طولانی")
     quick_layout=QVBoxLayout(quick)
     quick_input=QLineEdit()
