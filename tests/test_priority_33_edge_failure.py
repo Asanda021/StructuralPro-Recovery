@@ -27,10 +27,10 @@ def test_invalid_dimensions_fail_without_mutation(tmp_path):
 def test_duplicate_source_is_fail_closed(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff("P33", "building", "slab_volume",
-                    length=2, width=2, thickness=0.2, source_id="DRAW-1")
+                    length=2, width=2, thickness=0.2, count=1, source_id="DRAW-1")
     with pytest.raises(ValueError):
         app.add_takeoff("P33", "building", "slab_volume",
-                        length=3, width=3, thickness=0.2, source_id="DRAW-1")
+                        length=3, width=3, thickness=0.2, count=1, source_id="DRAW-1")
     assert len(app.open_project("P33")["takeoffs"]) == 1
 
 
