@@ -132,3 +132,11 @@ def test_steel_roof_families_use_explicit_inputs():
 def test_steel_roof_calculations_fail_closed_on_invalid_geometry(item, params, field):
     with pytest.raises(ValueError, match=field):
         calculate_advanced_item(item, **params)
+
+
+def test_joist_roof_warning_never_claims_count_was_guessed():
+    result = calculate_building_item('joist_block_roof', length=10, width=10, topping_thickness=.05,
+                                     joist_count=21, joist_spacing=.5, joist_width=.1, joist_depth=.2, count=1)
+    assert result.quantity == pytest.approx(9.2)
+    assert any('صریح' in warning and 'پیش‌ساخته' in warning for warning in result.warnings)
+    assert all('مشتق شده' not in warning for warning in result.warnings)
