@@ -97,7 +97,7 @@ def test_finish_assembly_persists_distinct_work_and_material_rows_to_boq(tmp_pat
             "material_spec_ref": "نمونه آزمون مصنوعی: SPEC-T01", "waste_factor": 0.1,
         },
         floor_id="طبقه ۱ / فضای آزمون", location_id="سرویس ۱۰۱",
-        description="کاشی دیوار سرویس — داده آزمون مصنوعی",
+        description="کاشی دیوار سرویس — داده آزمون مصنوعی", approved_by="بازبین مستقل آزمون"
     )
     project = app.open_project("finish-project")
     assert len(result["rows"]) == 3
@@ -143,7 +143,7 @@ def test_five_floor_synthetic_finish_takeoff_keeps_floor_and_item_provenance(tmp
                 "five-floor-finish", code, inputs,
                 floor_id=f"طبقه {floor_number} / فضای آزمون مصنوعی",
                 location_id="اتاق آزمون ثابت",
-                description=f"{code} — داده آزمون مصنوعی",
+                description=f"{code} — داده آزمون مصنوعی", approved_by="بازبین مستقل آزمون"
             )
 
     project = app.open_project("five-floor-finish")
