@@ -361,6 +361,42 @@ class StructuralProApp:
     def project_model_snapshot(self, project_id: str) -> dict[str, Any]:
         return self._model_registry(project_id).export_dict()
 
+    def create_manual_formula_amendment(self, project_id, row_id, data, *, expected_revision, created_by, reason):
+        from core.takeoff.manual_formula_amendments import proposal
+        return proposal(self,project_id,row_id,data,expected_revision=expected_revision,created_by=created_by,reason=reason)
+
+    def review_manual_formula_amendment(self, project_id, amendment_id, *, expected_revision, reviewer, note):
+        from core.takeoff.manual_formula_amendments import review
+        return review(self,project_id,amendment_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def apply_manual_formula_amendment(self, project_id, amendment_id, *, expected_revision):
+        from core.takeoff.manual_formula_amendments import apply
+        return apply(self,project_id,amendment_id,expected_revision=expected_revision)
+
+    def delete_manual_formulas(self, project_id, row_ids, *, expected_revisions, reason):
+        from core.takeoff.manual_formula_history import delete
+        return delete(self,project_id,row_ids,expected_revisions=expected_revisions,reason=reason)
+
+    def undo_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_history import step
+        return step(self,project_id)
+
+    def redo_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_history import step
+        return step(self,project_id,redo=True)
+
+    def set_manual_formula_deduction(self, project_id, row_id, item, *, expected_revision, reason):
+        from core.takeoff.manual_formula_deductions import set_item
+        return set_item(self,project_id,row_id,item,expected_revision=expected_revision,reason=reason)
+
+    def remove_manual_formula_deduction(self, project_id, row_id, source_id, *, expected_revision, reason):
+        from core.takeoff.manual_formula_deductions import remove
+        return remove(self,project_id,row_id,source_id,expected_revision=expected_revision,reason=reason)
+
+    def manual_formula_deduction_summary(self, project_id, row_id):
+        from core.takeoff.manual_formula_deductions import summary
+        return summary(self,project_id,row_id)
+
     def save_manual_formula(self, project_id, row_id, data, *, expected_revision, reason):
         from core.takeoff.manual_formula_register import save
         return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)

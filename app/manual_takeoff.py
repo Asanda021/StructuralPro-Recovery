@@ -68,9 +68,10 @@ class ManualTakeoffDialog(QDialog):
         )
         self.status = QLabel("ورودی کامل محاسبه می‌شود؛ ورودی ناقص ذخیره نخواهد شد.")
         self.status.setWordWrap(True)
-        self.table = QTableWidget(0, 12)
+        from app.manual_formula_controls import VisibleRowsTable
+        self.table = VisibleRowsTable(0, 14)
         self.table.setHorizontalHeaderLabels(
-            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت", "فرمول", "پارامترها", "منبع ورودی", "نسخه", "پروژه"]
+            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت", "فرمول", "پارامترها", "منبع ورودی", "نسخه", "پروژه", "عضو", "وابستگی"]
         )
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -184,6 +185,8 @@ class ManualTakeoffDialog(QDialog):
             self.status.setText("هشدار: متره انجام شد اما ذخیره تاریخچه ممیزی ناموفق بود.")
 
     def _render_records(self):
+        if hasattr(self,"refresh_formula_rows"):
+            self.refresh_formula_rows();return
         self.table.setSortingEnabled(False)
         self.table.setRowCount(0)
         if self.workbench is None:
@@ -216,7 +219,7 @@ class ManualTakeoffDialog(QDialog):
     def _selected_records(self):
         if self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():return ()
         rows=sorted({i.row() for i in self.table.selectedIndexes() if not self.table.isRowHidden(i.row())})
-        ids={self.table.item(row,0).text() for row in rows if self.table.item(row,0)}
+        ids={self.table.item(row,0).text() for row in rows if self.table.item(row,0) and self.table.item(row,0).data(Qt.UserRole)!='formula'}
         return tuple(r for r in self.workbench.records if r.record_id in ids)
 
     def export_visible(self,fmt):
@@ -385,7 +388,7 @@ class ManualTakeoffDialog(QDialog):
         if row < 0 or self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():
             return None
         item = self.table.item(row, 0)
-        if item is None:
+        if item is None or item.data(Qt.UserRole)=='formula':
             return None
         return next((r for r in self.workbench.records if r.record_id == item.text()), None)
 

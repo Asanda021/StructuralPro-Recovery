@@ -50,14 +50,17 @@ def export(service,pid,path,*,format):
         if row['status']=='draft':unreviewed.append(entry)
         for name,value in d['variables'].items():parameters.append([key,name,str(value),d['basis']])
         sources.append([key,d['source_id'],d['basis'],', '.join(d['references'].values()),row.get('review',{}).get('reviewer','')])
-        for item in d['deductions']:deductions.append([key,item['id'],str(item['quantity']),UNITS[item['unit']],item['basis']])
+        for item in d['deductions']:deductions.append([key,item['id'],str(item['quantity']),UNITS[item['unit']],item['basis'],item.get('source_id',item['id'])])
         matched=[b for b in project.get('boq',[]) if d['source_id'] in b.get('source_ids',[]) or b.get('source_id')==d['source_id']]
         links.append([key,d['source_id'],STATES[row['status']],str(len(matched)),q,unit])
         for name,group in [('خلاصه متره','پروژه'),('هر طبقه',d['floor']),('هر آیتم',titles[d['family']]),('هر عضو',d['member'])]:summaries[name][(group,unit,row['status'])]+=number(row['quantity'],'جمع متره')
     for item in project.get('manual_formula_history',[]):history.append([item['row_id'],str(item['revision']),item['reason'],item['at']])
     headers=['شناسه','طبقه','عضو','خانواده','شرح','مقدار دقیق','واحد','فرمول','مبنا و واحد ورودی','منبع','نسخه','وضعیت']
-    datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
+    datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا','منبع هندسی'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
     for name,groups in summaries.items():datasets[name]=(['گروه','واحد','وضعیت','جمع دقیق'],[[a,b,STATES[c],str(v)] for (a,b,c),v in sorted(groups.items())])
+    datasets['اصلاحیه قطعی']=(['شناسه اصلاحیه','ردیف','نسخه مبنا','علت','سازنده','بازبین','مقدار پیشنهادی','وضعیت'],[[a['id'],a['row_id'],str(a['base_revision']),a['reason'],a['created_by'],a.get('review',{}).get('reviewer',''),str(a['quantity']),{'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]] for a in project.get('manual_formula_amendments',{}).values()])
+    from core.takeoff.manual_formula_deductions import summary as deduction_summary
+    datasets['قبل و بعد کسر']=(['شناسه','پیش از کسر','خالص','کسر مؤثر','واحد'],[[key,str(v['gross']),str(v['net']),str(v['deducted']),UNITS[v['unit']]] for key in keys if reg[key]['data']['deductions'] for v in [deduction_summary(service,pid,key)]])
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
     if format=='pdf':
         # Narrow key/value rows retain all fields without squeezing 12 columns.

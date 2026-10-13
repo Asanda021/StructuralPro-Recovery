@@ -186,7 +186,8 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
     """A single deterministic BOQ conversion for all three reviewed workflows."""
     takeoffs = deepcopy(list(new_takeoffs))
     inputs: list[dict] = []
-    for takeoff in takeoffs:
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    for takeoff in effective_takeoffs(project,takeoffs):
         if not isinstance(takeoff, dict):
             raise ValueError("ردیف متره نامعتبر است")
         sid = takeoff.get("source_id")

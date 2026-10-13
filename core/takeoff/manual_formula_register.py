@@ -45,14 +45,16 @@ def clean(data):
     if not isinstance(deductions,list) or len(deductions)>128:raise ValueError('فهرست کسورات نامعتبر است')
     ids=set()
     for item in deductions:
-        if not isinstance(item,dict) or set(item)!={'id','quantity','unit','basis'}:raise ValueError('کسر به شناسه، مقدار، واحد و مبنا نیاز دارد')
+        if not isinstance(item,dict) or set(item) not in ({'id','quantity','unit','basis'},{'id','variable','quantity','unit','basis','source_id'}):raise ValueError('کسر به شناسه، مقدار، واحد و مبنا نیاز دارد')
         sid=text(item['id'],'شناسه کسر');text(item['basis'],'مبنای کسر');number(item['quantity'],'مقدار کسر')
         if sid in ids or normalize_unit(item['unit'])!=d['unit']:raise ValueError('کسر تکراری یا واحد ناسازگار است')
-        if not sid.isidentifier() or sid not in d['variables'] or number(d['variables'][sid],'پارامتر کسر')!=number(item['quantity'],'کسر'):
+        variable=item.get('variable',sid)
+        if 'source_id' in item:text(item['source_id'],'منبع هندسی کسر')
+        if not isinstance(variable,str) or not variable.isidentifier() or variable not in d['variables'] or number(d['variables'][variable],'پارامتر کسر')!=number(item['quantity'],'کسر'):
             raise ValueError('کسر باید به پارامتر همنام و مقدار دقیق در فرمول متصل باشد')
         try:tree=ast.parse(d['expression'],mode='eval')
         except (SyntaxError,ValueError) as exc:raise ValueError('فرمول کسر معتبر نیست') from exc
-        subtracts=[n for n in ast.walk(tree) if isinstance(n,ast.BinOp) and isinstance(n.op,ast.Sub) and isinstance(n.right,ast.Name) and n.right.id==sid]
+        subtracts=[n for n in ast.walk(tree) if isinstance(n,ast.BinOp) and isinstance(n.op,ast.Sub) and isinstance(n.right,ast.Name) and n.right.id==variable]
         if len(subtracts)!=1:raise ValueError('کسر باید دقیقاً یک‌بار به‌صورت صریح در فرمول کم شود')
         ids.add(sid)
     # Deductions are documentary inputs; the expression must explicitly incorporate
@@ -83,11 +85,19 @@ def verified(project):
     if not isinstance(register,dict):raise ValueError('دفتر فرمول نامعتبر است')
     for row in register.values():
         if clean(row['data'])!=row['data'] or row.get('numeric_policy')!=POLICY:raise ValueError('قرارداد یا سیاست فرمول ذخیره‌شده معتبر نیست')
+    from core.takeoff.manual_formula_amendments import effective
+    register=effective(project,register)
     values=evaluate_rows(graph(register));digests=fingerprints(register)
     for key,row in register.items():
         if number(row['quantity'],'مقدار ذخیره‌شده')!=number(values[key],'محاسبه مجدد'):raise ValueError('مقدار ذخیره‌شده با فرمول مطابقت ندارد')
         if row['status'] in {'reviewed','committed'} and row.get('review',{}).get('digest')!=digests[key]:raise ValueError('بازبینی فرمول با ورودی‌ها مطابقت ندارد')
     return register
+
+def preserve_originals(project,register):
+    result=deepcopy(register)
+    for key,row in project.get('manual_formula_register',{}).items():
+        if row.get('status')=='committed':result[key]=deepcopy(row)
+    return result
 
 def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependencies=None):
     reason=text(reason,'علت ثبت یا اصلاح');project,digest=read(service,pid);register=verified(project);before=deepcopy(register)
@@ -96,7 +106,9 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
         revision(expected,register[target]['revision'])
     if not isinstance(changes,dict) or not changes or set(changes)!=set(expected_revisions):raise ValueError('ردیف‌ها و نسخه‌های گروهی باید صریح باشند')
     for key,data in changes.items():
-        text(key,'شناسه ردیف');old=register.get(key);revision(expected_revisions[key],old['revision'] if old else 0);d=clean(data)
+        text(key,'شناسه ردیف');old=register.get(key);
+        if not old and key in project.get('manual_formula_deleted',{}):raise ValueError('شناسه حذف‌شده فقط با واگرد قابل بازیابی است')
+        revision(expected_revisions[key],old['revision'] if old else 0);d=clean(data)
         if old and old['status']=='committed':raise ValueError('ردیف قطعی قابل تغییر مستقیم نیست')
         if old and d['source_id']!=old['data']['source_id']:raise ValueError('هویت منبع در ویرایش قابل تغییر نیست')
         require_source_unused(project,d['source_id'])
@@ -104,6 +116,8 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
         register[key]={'data':d,'revision':(old['revision'] if old else 0)+1,'status':'draft','numeric_policy':POLICY}
     locations=[(r['data']['floor'],r['data']['family'],r['data']['member']) for r in register.values()]
     if len(locations)!=len(set(locations)):raise ValueError('همین عضو در همین عملیات و طبقه دوباره متره شده است')
+    deduction_sources=[v.get('source_id',v['id']) for r in register.values() for v in r['data']['deductions']]
+    if len(deduction_sources)!=len(set(deduction_sources)):raise ValueError('منبع هندسی کسر دوباره استفاده شده است')
     sources=[r['data']['source_id'] for r in register.values()]
     if len(sources)!=len(set(sources)):raise ValueError('منبع فرمول تکراری است')
     values=evaluate_rows(graph(register));oldhash=fingerprints(before);newhash=fingerprints(register);now=datetime.now(timezone.utc).isoformat()
@@ -117,7 +131,9 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
             if prev and k not in changes:row['revision']=prev['revision']+1
             row.update(status='draft',quantity=values[k],updated_at=now);row.pop('review',None)
             history.append({'row_id':k,'reason':reason,'at':now,'previous':prev,'revision':row['revision']})
-    project['manual_formula_register']=register;service.store.save(pid,project,expected_digest=digest);return deepcopy(register)
+    from core.takeoff.manual_formula_history import record
+    record(project,before,register,reason)
+    project['manual_formula_register']=preserve_originals(project,register);service.store.save(pid,project,expected_digest=digest);return deepcopy(register)
 
 def save(service,pid,key,data,*,expected_revision,reason):
     return save_many(service,pid,{key:data},expected_revisions={key:expected_revision},reason=reason)[key]
@@ -157,7 +173,7 @@ def review(service,pid,key,*,expected_revision,reviewer,note):
     reviewer=text(reviewer,'بازبین');note=text(note,'یادداشت کنترل فرمول و واحد');project,digest=read(service,pid);reg=verified(project);row=reg[key];revision(expected_revision,row['revision'])
     if row['status']=='committed':raise ValueError('ردیف قطعی دوباره بازبینی نمی‌شود')
     row.update(status='reviewed',review={'reviewer':reviewer,'note':note,'digest':fingerprints(reg)[key],'at':datetime.now(timezone.utc).isoformat()})
-    project['manual_formula_register']=reg;service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
+    project['manual_formula_register']=preserve_originals(project,reg);service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
 
 def commit(service,pid,key,*,expected_revision):
     project,digest=read(service,pid);reg=verified(project);r=reg[key];revision(expected_revision,r['revision'])
@@ -167,4 +183,4 @@ def commit(service,pid,key,*,expected_revision):
     row={'id':'manual-formula:'+key,'source_id':sid,'member_code':d['member'],'domain':'building','item':d['family'],'params':{**deepcopy(d),'intersections':[deepcopy(v) for v in d['deductions']]},'revision':r['revision'],'system':d['floor'],'description':d['title'],'review':deepcopy(r['review']),'provenance':{'mode':'manual_formula','source_id':sid,'row_id':key,'numeric_policy':POLICY},'quantities':[{'code':d['family'],'title':d['title'],'unit':d['unit'],'amount':amount,'formula':d['expression'],'role':'work','price_code':None,'unit_price':None}]}
     validated=validate_commit_rows(project,[row],source_id=sid)
     project['takeoffs'],project['boq']=rebuild_project_boq(project,project.get('takeoffs',[])+validated)
-    r['status']='committed';project['manual_formula_register']=reg;service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
+    r['status']='committed';project['manual_formula_register']=preserve_originals(project,reg);service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
