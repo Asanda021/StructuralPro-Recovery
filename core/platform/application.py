@@ -1826,7 +1826,7 @@ class StructuralProApp:
         rows = [{
             "ردیف": entry.get("id", ""),
             "دسته": entry.get("category", ""),
-            "شرح": entry.get("description", ""),
+            "شرح": entry.get("description") or entry.get("category", ""),
             "تاریخ": entry.get("date", ""),
             "مبلغ": float(entry.get("amount", 0) or 0),
         } for entry in entries]
