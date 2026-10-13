@@ -20,14 +20,15 @@ def test_no_common_debug_artifacts_in_source():
             bad.append(str(p))
     assert not bad, bad
 
-def test_json_serialization_contract_is_stable():
+def test_json_serialization_contract_is_stable(approve_test_pricebook):
     from core.platform.application import StructuralProApp
     import tempfile
     with tempfile.TemporaryDirectory() as td:
         app=StructuralProApp(Path(td))
         try:
             app.create_project("QA","QA36")
-            app.add_takeoff("QA36","building","slab_volume",length=2,width=3,thickness=.2,count=1,source_id="fixture:QA36:slab")
+            app.add_takeoff("QA36","building","slab_volume",length=2,width=3,thickness=.2,count=1,source_id="fixture:QA36:slab",price_code="T-SLAB",unit_price=100)
+            approve_test_pricebook(app,"QA36",{"T-SLAB":{"unit":"m3","unit_price":100}})
             estimate=app.recalculate_estimate("QA36")
             json.dumps(estimate,ensure_ascii=False)
             json.dumps(app.open_project("QA36"),ensure_ascii=False)
