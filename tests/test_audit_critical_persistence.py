@@ -72,8 +72,23 @@ def test_spawned_estimator_preserves_another_process_takeoff(tmp_path):
     child = ctx.Process(target=_stale_estimator, args=(str(tmp_path), ready, written))
     child.start()
     assert ready.wait(15)
+    # The parallel estimator must have a *real, hash-checked* price source.
+    # Without this fixture, its failure is an intended financial safety gate,
+    # not evidence about SQLite concurrency.
+    import hashlib
+    price_file = tmp_path / "reviewed-test-pricebook.csv"
+    price_file.write_text("code,unit,unit_price\nTEST-SLAB,m3,100\n", encoding="utf-8")
     app.add_takeoff('p', 'building', 'slab_volume', length=2, width=2,
-                    thickness=1, count=1, source_id='process-source')
+                    thickness=1, count=1, source_id='process-source',
+                    price_code='TEST-SLAB', unit_price=100)
+    project = app.open_project('p')
+    project['user_pricebook_review'] = {
+        'status': 'approved', 'approved_by': 'test-reviewer',
+        'path': str(price_file),
+        'sha256': hashlib.sha256(price_file.read_bytes()).hexdigest(),
+        'rows_by_code': {'TEST-SLAB': {'unit': 'm3', 'unit_price': 100}},
+    }
+    app.store.save('p', project, expected_digest=app.store.current_digest('p'))
     written.set()
     child.join(20)
     assert child.exitcode == 0
