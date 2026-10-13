@@ -64,7 +64,8 @@ def test_five_floors_round_trip_and_other_work_rebuilds_without_double_count(tmp
     assert before["boq"][0]["quantity"] == pytest.approx(140)
     assert len([x for x in before["takeoffs"] if x["component_role"] == "material"]) == 5
     # Adding ordinary work rebuilds the entire BOQ; supply/material rows stay outside it.
-    reopened.add_takeoff("p1", "building", "slab_volume", length=2, width=2, thickness=1)
+    reopened.add_takeoff("p1", "building", "slab_volume", length=2, width=2, thickness=1,
+                         count=1, source_id="synthetic:pr481:slab:after-reopen")
     after = reopened.open_project("p1")
     assert len(after["boq"]) == 2
     assert {r["item_code"] for r in after["boq"]} == {"wall_tile_work", "slab_volume"}
@@ -81,7 +82,8 @@ def test_legacy_finish_rows_without_explicit_role_not_double_counted(tmp_path):
         for quantity in row["quantities"]:
             quantity.pop("role", None)
     app.store.save("p1", project)
-    app.add_takeoff("p1", "building", "slab_volume", length=1, width=1, thickness=1)
+    app.add_takeoff("p1", "building", "slab_volume", length=1, width=1, thickness=1,
+                        count=1, source_id="synthetic:pr481:slab:role-control")
     boq = app.open_project("p1")["boq"]
     assert {r["item_code"] for r in boq} == {"wall_tile_work", "slab_volume"}
 
@@ -93,4 +95,5 @@ def test_unknown_explicit_role_fails_closed_on_rebuild(tmp_path):
     project["takeoffs"][0]["quantities"][0]["role"] = "other"
     app.store.save("p1", project)
     with pytest.raises(ValueError, match="نقش جزء متره"):
-        app.add_takeoff("p1", "building", "slab_volume", length=1, width=1, thickness=1)
+        app.add_takeoff("p1", "building", "slab_volume", length=1, width=1, thickness=1,
+                        count=1, source_id="synthetic:pr481:slab:role-control")
