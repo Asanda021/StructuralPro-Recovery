@@ -9,6 +9,7 @@ from typing import Any
 from core.projects.store import ProjectStore
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.boq import build_boq, boq_summary
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
 from core.takeoff.estimate import build_estimate
 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
 from core.commercial.progress import build_progress
@@ -327,42 +328,39 @@ class StructuralProApp:
         return self._model_registry(project_id).export_dict()
 
     def add_takeoff(self,project_id:str,domain:str,item:str,**params)->dict[str,Any]:
-        p=self.store.get(project_id)
-        if p is None: raise KeyError(project_id)
+        """Save one explicitly sourced manual takeoff with a guarded SQLite CAS."""
+        pid=str(project_id or "").strip()
+        if not pid:
+            raise ValueError("شناسه پروژه الزامی است")
         source_id=str(params.pop("source_id","")).strip()
+        if not source_id:
+            raise ValueError("ثبت متره بدون شناسه منبع یکتا ممنوع است")
         description=str(params.pop("description","")).strip()
         system=str(params.pop("system","")).strip() or None
-        if source_id and any(str(t.get("source_id","")).strip()==source_id for t in p.get("takeoffs",[])):
-            raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source_id}")
-        calculation_params = deepcopy(params)
-        normalized_domain = takeoff_domain(domain)
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        p=self.store.get(pid)
+        if p is None:
+            raise KeyError(pid)
+        require_source_unused(p,source_id)
+        calculation_params=deepcopy(params)
+        normalized_domain=takeoff_domain(domain)
         result=self.takeoff.calculate(normalized_domain,item,description=description or item,**calculation_params)
-        row={"id":f"{len(p['takeoffs'])+1}","member_code":str(params.get("member_code",item)),
+        row={"id":f"{len(p.get('takeoffs') or [])+1}",
+             "member_code":str(params.get("member_code",item)),
              "source_id":source_id,"domain":normalized_domain,"item":str(item),
              "params":calculation_params,"revision":1,
              "description":description or item,"system":system,
-             "quantities":[{"code":item,"title":description or item,"system":system,"unit":result.unit,"amount":result.quantity,
-             "formula":result.formula,"warning":result.warning,"price_code":params.get("price_code"),"unit_price":params.get("unit_price")}]}
-        p["takeoffs"].append(row)
-        boq_inputs=[]
-        for takeoff in p["takeoffs"]:
-            for q in takeoff.get("quantities",[]):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id","") or "manual",
-                    "source_id": takeoff.get("source_id",""),
-                    "source_type": "takeoff",
-                    "description": q.get("title",""),
-                    "quantity": q.get("amount",0),
-                    "unit": q.get("unit",""),
-                    "item_code": q.get("code", item),
-                    "price_code": q.get("price_code"),
-                    "unit_price": q.get("unit_price"),
-                    "category": domain,
-                    "group": domain,
-                })
-        p["boq"]=build_boq(boq_inputs)
-        self.store.save(project_id,p); return row
-
+             "provenance":{"mode":"manual","source_id":source_id},
+             "quantities":[{"code":item,"title":description or item,"system":system,
+                            "unit":result.unit,"amount":result.quantity,
+                            "formula":result.formula,"warning":result.warning,
+                            "price_code":params.get("price_code"),
+                            "unit_price":params.get("unit_price")}]}
+        validated=validate_commit_rows(p,[row],source_id=source_id)
+        p["takeoffs"],p["boq"]=rebuild_project_boq(p,(p.get("takeoffs") or [])+validated)
+        self.store.save(pid,p,expected_digest=digest)
+        return deepcopy(row)
 
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
                                      session_id: str | None = None,
