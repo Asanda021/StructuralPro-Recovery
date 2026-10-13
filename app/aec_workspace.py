@@ -103,6 +103,9 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     evidence_id=QLineEdit()
     evidence_id.setPlaceholderText("مرجع اندازه‌گیری و شماره برداشت دستی")
     grid.addRow("مرجع متره", evidence_id)
+    reviewer=QLineEdit()
+    reviewer.setPlaceholderText("نام واقعی مسئول تأیید متره مرکب")
+    grid.addRow("تأییدکننده متره", reviewer)
     mesh_source=QLineEdit()
     mesh_source.setPlaceholderText("شماره جدول یا دیتایل مش تأییدشده")
     grid.addRow("مرجع وزن مش", mesh_source)
@@ -201,7 +204,9 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
                         raise ValueError("مرجع وزن واحد مش باید صریح وارد شود")
                     inputs["mesh_unit_weight_source"]=mesh_source.text().strip()
                 result_bundle=service.add_assembly_takeoff(
-                    pid, assembly_code, inputs, floor_id=floor_id, description=labels[code])
+                    pid, assembly_code, inputs, floor_id=floor_id,
+                    description=labels[code], measurement_source=input_source,
+                    approved_by=reviewer.text().strip())
                 saved=result_bundle["rows"]
                 result.setText(f"🟢 عملیات مرکب ثبت شد | {labels[code]} | {len(saved)} ریزجزء مستقل")
             else:
