@@ -56,6 +56,8 @@ def test_actual_aec_button_commits_correct_geometry(tmp_path,key,item,inputs,exp
     domain='electrical' if key=='electrical' else 'building'
     w=build_aec_workspace(app,None,title='متره',description='ورودی مستقل',domain=domain,key=key)
     w.findChild(QLineEdit,'TakeoffProject').setText('p')
+    w.findChild(QLineEdit,'TakeoffFloor').setText('L1')
+    w.findChild(QLineEdit,'TakeoffLocation').setText('synthetic-explicit-'+item)
     combo=w.findChild(QComboBox,'TakeoffItem');combo.setCurrentIndex(combo.findData(item))
     for name,value in inputs.items():w.findChild(QDoubleSpinBox,'TakeoffField_'+name).setValue(value)
     w.findChild(QPushButton,'PrimaryAction').click();qt.processEvents()

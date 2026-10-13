@@ -4,8 +4,11 @@ from core.platform.application import StructuralProApp
 
 def priced_app(tmp_path):
     app=StructuralProApp(tmp_path);app.create_project('برآورد مستقل','p')
-    app.add_takeoff('p','building','slab',length=2,width=1,price_code='A',unit_price=100,source_id='A')
-    app.add_takeoff('p','building','slab',length=3,width=1,price_code='B',unit_price=20,source_id='B')
+    app.add_takeoff('p','building','slab',count=1,length=2,width=1,price_code='A',unit_price=100,source_id='A')
+    app.add_takeoff('p','building','slab',count=1,length=3,width=1,price_code='B',unit_price=20,source_id='B')
+    prices=tmp_path/'synthetic-user-prices.csv'
+    prices.write_text('year,group,chapter,code,description,unit,unit_price\n1404,ابنیه,01,A,سطح اول,m2,100\n1404,ابنیه,01,B,سطح دوم,m2,20\n')
+    app.import_project_pricebook('p',prices,year=1404,approved_by='explicit-synthetic-price-reviewer')
     return app
 
 

@@ -169,7 +169,7 @@ class ManualTakeoffDialog(QDialog):
             row = self.table.rowCount()
             self.table.insertRow(row)
             status = "ذخیره شد" if record.record_id in self._saved_ids else "آماده ذخیره"
-            values = [record.record_id, record.floor_id, record.code, record.element_label,
+            values = [record.record_id, record.floor_id, _SAVED_ITEM_LABELS.get(record.code,record.code), record.element_label,
                       f"{record.quantity:g}", record.unit, status]
             for col, value in enumerate(values):
                 self.table.setItem(row, col, QTableWidgetItem(str(value)))
@@ -434,7 +434,7 @@ class ManualTakeoffDialog(QDialog):
             try:
                 results.append(
                     self.workbench.add_text(
-                        entry.source_text, floor_id=floor_id, element_label=label
+                        entry.source_text, floor_id=floor_id, element_label=label or _SAVED_ITEM_LABELS.get(entry.code, entry.code)
                     )
                 )
             except Exception as exc:
@@ -447,14 +447,14 @@ class ManualTakeoffDialog(QDialog):
             self.table.insertRow(row)
             if isinstance(result, ManualTakeoffDraft):
                 values = [
-                    "پیش‌نویس", result.floor_id, result.entry.code,
-                    self.element_label.text().strip() or result.entry.code,
-                    "—", "—", "نیازمند: " + "، ".join(result.missing),
+                    "پیش‌نویس", result.floor_id, _SAVED_ITEM_LABELS.get(result.entry.code, result.entry.code),
+                    self.element_label.text().strip() or _SAVED_ITEM_LABELS.get(result.entry.code, result.entry.code),
+                    "—", "—", "نیازمند: " + "، ".join(_PARAM_LABELS.get(k, k) for k in result.missing),
                 ]
-                incomplete.append(f"{result.entry.code}: {', '.join(result.missing)}")
+                incomplete.append(_SAVED_ITEM_LABELS.get(result.entry.code, result.entry.code) + ": " + "، ".join(_PARAM_LABELS.get(k,k) for k in result.missing))
             else:
                 values = [
-                    result.record_id, result.floor_id, result.code,
+                    result.record_id, result.floor_id, _SAVED_ITEM_LABELS.get(result.code, result.code),
                     result.element_label, f"{result.quantity:g}", result.unit,
                     "آماده ذخیره",
                 ]

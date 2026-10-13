@@ -66,7 +66,7 @@ def ui(tmp_path,monkeypatch):
  def make(key,domain='building'):
   w=build_aec_workspace(app,catalog,title='متره',description='آزمون',domain=domain,key=key);widgets.append(w)
   w.findChild(QLineEdit,'TakeoffProject').setText('p')
-  for name,value in [('TakeoffFloor','L1'),('TakeoffLocation','A1')]:
+  for name,value in [('TakeoffFloor','L1'),('TakeoffLocation','A1'),('TakeoffReviewer','synthetic-explicit-reviewer')]:
    x=w.findChild(QLineEdit,name)
    if x:x.setText(value)
   return w
@@ -84,7 +84,8 @@ def click(w):w.findChild(QPushButton,'PrimaryAction').click()
 
 
 @pytest.mark.parametrize('key,code,params,quantity,unit',[
- ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),
+ ('architecture','facade',dict(length=4,height=3,openings=2,count=1),10,'m2'),
+ ('architecture','wall',dict(length=4,height=3,openings=2,count=2),20,'m2'),
  ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),
  ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),
  ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),
@@ -101,6 +102,7 @@ def test_form_rejects_incompatible_pricebook_unit(ui):
  app,make,messages=ui;w=make('structural_concrete');select(w,'column',dict(width=.4,depth=.4,height=3,count=1))
  price=next(x for x in w.findChildren(QLineEdit) if x.placeholderText().startswith('اختیاری؛'));price.setText('WRONG')
  click(w);assert not app.open_project('p')['takeoffs'] and messages
+ assert any('واحد فهرست‌بها' in m for m in messages)
 
 
 def test_block_assembly_real_button_saves_atomically_and_rejects_repeat(ui):
@@ -115,9 +117,9 @@ def test_block_assembly_real_button_saves_atomically_and_rejects_repeat(ui):
 def test_nonfinish_assembly_explicit_location_rejects_cross_instance_duplicate(tmp_path):
  app=StructuralProApp(tmp_path);app.create_project('شناسه پایدار','p')
  params=dict(count=1,width=.4,depth=.4,height=3)
- app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1')
+ app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',approved_by='synthetic-explicit-reviewer')
  other=StructuralProApp(tmp_path)
- with pytest.raises(ValueError):other.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1')
+ with pytest.raises(ValueError):other.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',approved_by='synthetic-explicit-reviewer')
  assert len(other.open_project('p')['takeoffs'])==1
  other.store.close();app.store.close()
 
@@ -126,9 +128,9 @@ def test_assembly_component_price_is_explicit_unit_checked_and_atomic(tmp_path):
  app=StructuralProApp(tmp_path);app.create_project('نگاشت مستقل اجزا','p')
  params=dict(count=1,width=.4,depth=.4,height=3)
  with pytest.raises(ValueError):
-  app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',component_prices={'concrete':dict(price_code='C',unit='kg',unit_price=100)})
+  app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',approved_by='synthetic-explicit-reviewer',component_prices={'concrete':dict(price_code='C',unit='kg',unit_price=100)})
  assert not app.open_project('p')['takeoffs']
- saved=app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',component_prices={'concrete':dict(price_code='C',unit='m3',unit_price=100)})
+ saved=app.add_assembly_takeoff('p','concrete_column',params,floor_id='L1',location_id='C1',approved_by='synthetic-explicit-reviewer',component_prices={'concrete':dict(price_code='C',unit='m3',unit_price=100)})
  assert saved['rows'][0]['quantities'][0]['price_code']=='C'
  assert app.open_project('p')['boq'][0]['total']==pytest.approx(48)
  app.store.close()
@@ -165,6 +167,6 @@ def test_manual_revision_preserves_identity_price_and_cannot_move_onto_existing_
   app.add_takeoff('p','building','column',source_id=source,system='L1',manual_location_id=location,price_code='C',unit_price=100,**params)
  row=app.revise_takeoff('p','A',expected_revision=1,domain='building',item='column',system='L1',**{**params,'height':4})
  assert row['params']['manual_location_id']=='C1' and row['quantities'][0]['unit_price']==100
- with pytest.raises(ValueError):app.add_takeoff('p','building','column',source_id='new-session',system='L1',manual_location_id='C1',**params)
+ with pytest.raises(ValueError):app.add_takeoff('p','building','column',source_id='new-session',system='L1',manual_location_id='C1',approved_by='synthetic-explicit-reviewer',**params)
  with pytest.raises(ValueError):app.revise_takeoff('p','A',expected_revision=2,domain='building',item='column',system='L1',manual_location_id='C2',**params)
  assert len(app.open_project('p')['takeoffs'])==2;app.store.close()

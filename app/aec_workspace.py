@@ -10,10 +10,10 @@ from PySide6.QtWidgets import (
 
 ITEMS={
 "architecture":[
-("wall","دیوار",("length","height","openings")),("slab","کف / سطح",("length","width")),
+("wall","دیوار",("length","height","openings","count")),("slab","کف / سطح",("length","width")),
 ("plaster","گچ‌کاری",("length","height","openings","count")),("tile","کاشی / سرامیک",("length","height","openings","waste")),
 ("roof_insulation","عایق‌کاری بام",("length","width","layers")),("door","درب",("count",)),("window","پنجره",("count",)),
-("facade","نما",("length","height","openings")),("ceiling","سقف کاذب",("length","width","count"))],
+("facade","نما",("length","height","openings","count")),("ceiling","سقف کاذب",("length","width","count"))],
 "structural_concrete":[
 ("footing_concrete","پی / فونداسیون بتنی",("length","width","thickness","count")),
 ("tie_beam","شناژ / کلاف بتنی",("length","width","depth","count")),
@@ -37,11 +37,11 @@ ITEMS={
 ("kromit_roof","سقف تیرچه کرومیت — وزن تیرچه",("joist_length","joist_unit_weight","joist_count","count")),
 ("steel_truss_roof","سقف خرپایی فولادی — وزن فولاد",("steel_length","unit_weight","count")),
 ("steel_sandwich_roof","سقف ساندویچ‌پنل روی سازه فولادی — مساحت پنل",("length","width","count"))],
-"masonry":[("wall","دیوار بنایی",("length","height","openings")),("block_wall","دیوار بلوکی — Assembly",("length","height","thickness","openings","block_length","block_height","block_thickness","joint_thickness","cement_parts","sand_parts","block_waste_factor","mortar_waste_factor"))],
+"masonry":[("wall","دیوار بنایی",("length","height","openings","count")),("block_wall","دیوار بلوکی — Assembly",("length","height","thickness","openings","block_length","block_height","block_thickness","joint_thickness","cement_parts","sand_parts","block_waste_factor","mortar_waste_factor"))],
 "mechanical":[("pipe","لوله",("length","count")),("duct","کانال",("length","count")),("duct_area","سطح کانال",("width","height","length")),("insulation","عایق لوله",("diameter","length")),("equipment","تجهیزات",("count",)),("valve","شیر / اتصال",("count",))],
 "electrical":[("cable","کابل / سیم",("length","count")),("conduit","لوله برق",("length","count")),("panel","تابلو",("count",)),("light","روشنایی",("count",)),("socket","پریز",("count",)),("earthing","ارت",("length",)),("cable_tray","سینی کابل",("length","count"))],
 "civil":[("excavation","خاکبرداری",("length","width","depth")),("backfill","خاکریزی",("excavation","deductions")),("paving","بتن محوطه",("length","width","thickness")),("asphalt","آسفالت",("length","width","thickness")),("curb","جدول",("length","count")),("drainage","زهکشی",("length",)),("fence_wall","دیوارکشی",("length","height"))],
-"renovation":[("demolition","تخریب",("length","width","height","count")),("facade","نما / مرمت نما",("length","height","openings")),("screed","کف‌سازی",("length","width","thickness","count")),("ceiling","سقف کاذب",("length","width","count"))],
+"renovation":[("demolition","تخریب",("length","width","height","count")),("facade","نما / مرمت نما",("length","height","openings","count")),("screed","کف‌سازی",("length","width","thickness","count")),("ceiling","سقف کاذب",("length","width","count"))],
 }
 
 FIELDS={
@@ -66,7 +66,8 @@ FIELDS={
 
 ITEM_DOMAINS={"block_wall":"building","footing_concrete":"advanced","steel":"advanced","steel_roof_deck_area":"advanced",
 "steel_roof_deck_weight":"advanced","steel_roof_composite_concrete":"building",
-"steel_roof_composite_deck":"advanced","kromit_roof":"advanced","steel_truss_roof":"advanced"}
+"steel_roof_composite_deck":"advanced","kromit_roof":"advanced","steel_truss_roof":"advanced",
+"facade":"advanced","ceiling":"advanced","demolition":"advanced","screed":"advanced","steel_sandwich_roof":"advanced"}
 
 def build_aec_workspace(service,catalog,*,title,description,domain,key,status_callback=None):
     root=QWidget(); root.setObjectName("AECWorkspace"); outer=QVBoxLayout(root); outer.setSpacing(14)
@@ -107,13 +108,16 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     specs={c:f for c,_,f in ITEMS[key]}; labels={c:l for c,l,_ in ITEMS[key]}
     for c,l,_ in ITEMS[key]: item.addItem(l,c)
     floor_input = QLineEdit()
+    floor_input.setObjectName("TakeoffFloor")
     floor_input.setPlaceholderText("شناسه طبقه یا ناحیه واقعی")
     grid.addRow("پروژه",project)
     grid.addRow("طبقه / ناحیه",floor_input)
     evidence_id=QLineEdit()
+    evidence_id.setObjectName("TakeoffLocation")
     evidence_id.setPlaceholderText("مرجع اندازه‌گیری و شماره برداشت دستی")
     grid.addRow("مرجع متره", evidence_id)
     reviewer=QLineEdit()
+    reviewer.setObjectName("TakeoffReviewer")
     reviewer.setPlaceholderText("نام واقعی مسئول تأیید متره مرکب")
     grid.addRow("تأییدکننده متره", reviewer)
     mesh_source=QLineEdit()
@@ -221,6 +225,12 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
                 result.setText(f"🟢 عملیات مرکب ثبت شد | {labels[code]} | {len(saved)} ریزجزء مستقل")
             else:
                 effective_domain=ITEM_DOMAINS.get(code,domain)
+                preview=service.takeoff.calculate(effective_domain,code,**params)
+                if pc:
+                    from core.takeoff.units import normalize_unit
+                    imported_unit = resolved.get("unit") or getattr(resolved.get("item"), "unit", None)
+                    if not imported_unit or normalize_unit(imported_unit) != normalize_unit(preview.unit):
+                        raise ValueError("واحد فهرست‌بها با واحد متره سازگار نیست.")
                 row=service.add_takeoff(pid,effective_domain,code,source_id=source_id,
                                         system=pid_floor,description=labels[code],**params)
                 q=row["quantities"][0]
