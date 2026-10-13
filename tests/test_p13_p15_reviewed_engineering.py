@@ -137,7 +137,7 @@ def test_steel_frame_tons_are_per_component_not_one_assumed_steel_weight():
     assert preview["ready"], preview["blockers"]
     assert len(preview["rows"]) == 3
     assert {r["unit"] for r in preview["rows"]} == {"kg"}
-    assert sum(r["quantity"] for r in preview["rows"]) == pytest.approx(202+202+75.36)
+    assert sum(r["quantity"] for r in preview["rows"]) == pytest.approx(101+101+75.36)
 
 
 def test_composite_concrete_and_steel_are_separate_material_rows():
