@@ -30,11 +30,13 @@ def revision(value,current):
 
 def clean(data):
     if not isinstance(data,dict):raise ValueError('ساختار ورودی فرمول نامعتبر است')
-    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions'}
+    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions','block','location'}
     if set(data)-allowed:raise ValueError('فیلد تعریف‌نشده در قرارداد فرمول')
     d=deepcopy(data)
     for k,label in {'family':'خانواده','title':'شرح','floor':'طبقه','member':'شناسه عضو','expression':'فرمول','source_id':'منبع','basis':'مبنای محاسبه و واحد ورودی‌ها'}.items():d[k]=text(d.get(k),label)
     if d['family'] not in {r['code'] for r in catalog()}:raise ValueError('خانواده در کتابخانه مرجع نیست')
+    for k in ('block','location'):
+        if k in d:d[k]=text(d[k],'بلوک یا محل')
     d['unit']=normalize_unit(d.get('unit'))
     for key in ('variables','references'):
         if not isinstance(d.get(key),dict) or len(d[key])>128:raise ValueError('پارامترها و مراجع باید صریح باشند')
@@ -114,7 +116,7 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
         require_source_unused(project,d['source_id'])
         if d['source_id'] in project.get('deleted_takeoff_sources',[]):raise ValueError('منبع قبلاً استفاده و حذف شده است')
         register[key]={'data':d,'revision':(old['revision'] if old else 0)+1,'status':'draft','numeric_policy':POLICY}
-    locations=[(r['data']['floor'],r['data']['family'],r['data']['member']) for r in register.values()]
+    locations=[(r['data'].get('block',''),r['data']['floor'],r['data'].get('location',''),r['data']['family'],r['data']['member']) for r in register.values()]
     if len(locations)!=len(set(locations)):raise ValueError('همین عضو در همین عملیات و طبقه دوباره متره شده است')
     deduction_sources=[v.get('source_id',v['id']) for r in register.values() for v in r['data']['deductions']]
     if len(deduction_sources)!=len(set(deduction_sources)):raise ValueError('منبع هندسی کسر دوباره استفاده شده است')

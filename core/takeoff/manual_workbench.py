@@ -178,3 +178,22 @@ class ManualTakeoffWorkbench:
         finally:self._records,self._undo,self._redo,self._next_id=previous
         self._snapshot();self._records=[result if r.record_id==record_id else r for r in self._records]
         return result
+
+    def relocate_records(self, ids, *, floor, block, location, mode):
+        from dataclasses import replace
+        from core.takeoff.manual_formula_register import text
+        rows=self._selected(ids);floor=text(floor,'طبقه');block=text(block,'بلوک');location=text(location,'محل اجرا')
+        if mode not in {'move','copy'}:raise ValueError('نوع عملیات انتقال یا کپی مشخص نیست')
+        if any((r.floor_id,r.params.get('block',''),r.params.get('location',''))==(floor,block,location) for r in rows):raise ValueError('مقصد با محل فعلی یکسان است')
+        next_id=self._next_id;result=[]
+        for r in rows:
+            params={**dict(r.params),'block':block,'location':location,'manual_location_id':block+':'+location+':'+r.element_label}
+            if mode=='move':result.append(replace(r,floor_id=floor,params=params,revision=r.revision+1))
+            else:
+                result.append(replace(r,record_id=f'MT-{next_id:06d}',floor_id=floor,params=params,revision=1));next_id+=1
+        proposed=list(self._records)
+        if mode=='move':changes={r.record_id:r for r in result};proposed=[changes.get(r.record_id,r) for r in proposed]
+        else:proposed+=result
+        located=[(r.code,r.floor_id,r.params['manual_location_id']) for r in proposed if r.params.get('manual_location_id')]
+        if len(located)!=len(set(located)):raise ValueError('برداشت عضو در محل مقصد تکراری است')
+        self._snapshot();self._records=proposed;self._next_id=next_id;return tuple(result)

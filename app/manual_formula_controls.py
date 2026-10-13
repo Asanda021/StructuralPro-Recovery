@@ -9,6 +9,22 @@ UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلو
 STATES={'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','committed':'قطعی'}
 
 class VisibleRowsTable(QTableWidget):
+    def set_sort_kinds(self,kinds):
+        self._sort_kinds=dict(kinds)
+        sorting=self.isSortingEnabled();self.setSortingEnabled(False)
+        for r in range(self.rowCount()):
+            for c in range(self.columnCount()):
+                item=self.item(r,c)
+                if item is not None:
+                    from app.manual_table_sort import TypedItem
+                    if isinstance(item,TypedItem):item.kind=self._sort_kinds.get(c,'natural')
+                    else:self.setItem(r,c,item)
+        self.setSortingEnabled(sorting)
+    def setItem(self,row,col,item):
+        from app.manual_table_sort import TypedItem
+        if not isinstance(item,TypedItem):item=TypedItem(item,self,getattr(self,'_sort_kinds',{}).get(col,'natural'),row)
+        else:item.kind=getattr(self,'_sort_kinds',{}).get(col,'natural')
+        super().setItem(row,col,item)
     def keyPressEvent(self,event):
         if event.key()==Qt.Key_A and event.modifiers() & Qt.ControlModifier:
             self.selectionModel().clearSelection()
@@ -24,6 +40,8 @@ def pairs(widget):
         if not line.strip():continue
         if line.count('=')!=1:raise ValueError('هر پارامتر باید به صورت نام=مقدار باشد')
         key,val=(s.strip() for s in line.split('='))
+        from core.takeoff.manual_form_fields import canonical
+        key=canonical(key)
         if key in result:raise ValueError('نام پارامتر تکراری است')
         result[key]=val
     return result
@@ -64,11 +82,13 @@ def attach(d,root):
     def date():
         now=datetime.now().astimezone();d.manual_date.setText('تاریخ واقعی سیستم: '+QLocale(QLocale.Persian,QLocale.Iran).toString(QDate(now.year,now.month,now.day),QLocale.FormatType.ShortFormat,QCalendar(QCalendar.Jalali))+' — '+str(now.tzinfo))
     d.manual_date_timer=QTimer(d);d.manual_date_timer.timeout.connect(date);d.manual_date_timer.start(60000);date()
-    d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[]
+    d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[];d._formula_site={}
     def guarded(fn):
         def run(*_):
             try:fn();refresh()
-            except Exception as e:d.status.setText('فرمول ثبت نشد: '+str(e))
+            except Exception as e:
+                from core.takeoff.manual_form_fields import persian_error
+                d.status.setText('فرمول ثبت نشد: '+persian_error(e))
         return run
     def rows():return d.service.load_manual_formulas(d.project_id.text().strip())
     def selected():
@@ -79,11 +99,13 @@ def attach(d,root):
         key=d.formula_table.item(r,0).text();return key,rows()[key]
     def refresh():
         from decimal import Decimal
+        selection={(d.table.item(i.row(),0).data(Qt.UserRole),d.table.item(i.row(),0).text()) for i in d.table.selectionModel().selectedRows() if d.table.item(i.row(),0)}
+        sort_col=d.table.horizontalHeader().sortIndicatorSection();sort_order=d.table.horizontalHeader().sortIndicatorOrder()
         register=rows();d.formula_table.setSortingEnabled(False);d.formula_table.setRowCount(0)
         from app.manual_takeoff import _SAVED_ITEM_LABELS,_PARAM_LABELS
         legacy_totals={}
         for r in d.workbench.records if d.workbench else ():
-            values=[r.record_id,r.floor_id,_SAVED_ITEM_LABELS.get(r.code,r.code),r.element_label,str(r.quantity),r.unit,'ذخیره شد' if r.record_id in d._saved_ids else 'آماده ذخیره',r.formula,str(dict(r.params)),r.source,str(r.revision),r.project_id,r.element_label,'']
+            values=[r.record_id,r.floor_id,_SAVED_ITEM_LABELS.get(r.code,r.code),r.element_label,str(r.quantity),UNITS.get(r.unit,r.unit),'ذخیره شد' if r.record_id in d._saved_ids else 'آماده ذخیره',__import__('core.takeoff.manual_form_fields',fromlist=['expression']).expression(r.formula,display=True),', '.join(_PARAM_LABELS.get(k,'پارامتر مستند')+'='+str(v) for k,v in r.params.items()),r.source,str(r.revision),r.project_id,r.element_label,'',str(r.params.get('count','')),'',str(r.params.get('block','')),str(r.params.get('location',''))]
             n=d.formula_table.rowCount();d.formula_table.insertRow(n)
             for c,v in enumerate(values):d.formula_table.setItem(n,c,QTableWidgetItem(v))
             d.formula_table.item(n,0).setData(Qt.UserRole,'legacy')
@@ -92,28 +114,37 @@ def attach(d,root):
         d.unit_totals.setText('جمع مستقل واحدها: '+' | '.join(f'{u}: {v:f}' for u,v in sorted(legacy_totals.items())))
         titles={r['code']:r['title'] for r in catalog()};totals={};tokens=d.formula_search.text().casefold().split()
         for key,row in sorted(register.items()):
-            data=row['data'];values=[key,data['floor'],titles[data['family']],data['title'],str(row['quantity']),UNITS[data['unit']],STATES[row['status']],data['expression'],', '.join(k+'='+str(v) for k,v in data['variables'].items()),data['source_id'],str(row['revision']),d.project_id.text().strip(),data['member'],', '.join(data['references'].values())]
+            data=row['data'];values=[key,data['floor'],titles[data['family']],data['title'],str(row['quantity']),UNITS[data['unit']],STATES[row['status']],__import__('core.takeoff.manual_form_fields',fromlist=['expression']).expression(data['expression'],display=True),', '.join(__import__('core.takeoff.manual_form_fields',fromlist=['LABELS']).LABELS.get(k,(k,''))[0]+'='+str(v) for k,v in data['variables'].items()),data['source_id'],str(row['revision']),d.project_id.text().strip(),data['member'],', '.join(data['references'].values()),str(data['variables'].get('count',data['variables'].get('تعداد',''))),row.get('updated_at',''),data.get('block',''),data.get('location','')]
             n=d.formula_table.rowCount();d.formula_table.insertRow(n)
             for i,v in enumerate(values):d.formula_table.setItem(n,i,QTableWidgetItem(v))
             d.formula_table.item(n,0).setData(Qt.UserRole,'formula')
+            if row.get('updated_at'):
+                date_value=datetime.fromisoformat(row['updated_at']).astimezone();cell=d.table.item(n,15);cell.setData(Qt.UserRole+1,row['updated_at']);cell.setText(QLocale(QLocale.Persian,QLocale.Iran).toString(QDate(date_value.year,date_value.month,date_value.day),QLocale.ShortFormat,QCalendar(QCalendar.Jalali))+' '+date_value.strftime('%H:%M:%S'))
             visible=all(t in ' '.join(values).casefold() for t in tokens);d.formula_table.setRowHidden(n,not visible)
             if visible:totals[data['unit']]=totals.get(data['unit'],Decimal(0))+Decimal(str(row['quantity']))
-        d.formula_table.setSortingEnabled(True);d.formula_table.sortItems(d.formula_group.currentData(),Qt.AscendingOrder);d.formula_totals.setText('جمع واحدهای مستقل: '+' | '.join(UNITS[u]+'='+str(v) for u,v in totals.items()))
-    d.refresh_formula_rows=refresh;d.formula_group.currentIndexChanged.connect(guarded(lambda:None));d.formula_search.textChanged.connect(guarded(lambda:None))
+        d.formula_table.setSortingEnabled(True)
+        for i in range(d.table.rowCount()):
+            cell=d.table.item(i,0)
+            if cell and (cell.data(Qt.UserRole),cell.text()) in selection:d.table.selectionModel().select(d.table.model().index(i,0),QItemSelectionModel.Select|QItemSelectionModel.Rows)
+        d.formula_table.sortItems(sort_col if sort_col>=0 else 0,sort_order);d.formula_totals.setText('جمع واحدهای مستقل: '+' | '.join(UNITS[u]+'='+str(v) for u,v in totals.items()))
+    d.refresh_formula_rows=refresh
+    def grouping(*_):
+        d.table.sortItems(d.formula_group.currentData(),Qt.AscendingOrder);guarded(lambda:None)()
+    d.formula_group.currentIndexChanged.connect(grouping);d.formula_search.textChanged.connect(guarded(lambda:None))
     def new():
-        d.formula_id.setText('MF-'+uuid4().hex);d.formula_source.setText('manual-formula:'+uuid4().hex);d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[]
+        d.formula_id.setText('MF-'+uuid4().hex);d.formula_source.setText('manual-formula:'+uuid4().hex);d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[];d._formula_site={}
     def payload():
-        return {'family':d.formula_family.currentData(),'title':d.formula_title.text(),'floor':d.floor_id.text(),'member':d.formula_member.text(),'unit':d.formula_unit.currentData(),'expression':d.formula_expression.text(),'variables':pairs(d.formula_variables),'references':pairs(d.formula_references),'source_id':d.formula_source.text(),'basis':d.formula_basis.text(),'deductions':d._formula_deductions}
+        return {'family':d.formula_family.currentData(),'title':d.formula_title.text(),'floor':d.floor_id.text(),'member':d.formula_member.text(),'unit':d.formula_unit.currentData(),'expression':__import__('core.takeoff.manual_form_fields',fromlist=['expression']).expression(d.formula_expression.text()),'variables':pairs(d.formula_variables),'references':pairs(d.formula_references),'source_id':d.formula_source.text(),'basis':d.formula_basis.text(),'deductions':[dict(v,variable=__import__('core.takeoff.manual_form_fields',fromlist=['canonical']).canonical(v.get('variable',v['id'])),source_id=v.get('source_id',v['id'])) for v in d._formula_deductions],**d._formula_site}
     def save():
         key=d.formula_id.text().strip()
         if d._formula_selected and key!=d._formula_selected:raise ValueError('شناسه ردیف در ویرایش قابل تغییر نیست')
-        data={'family':d.formula_family.currentData(),'title':d.formula_title.text(),'floor':d.floor_id.text(),'member':d.formula_member.text(),'unit':d.formula_unit.currentData(),'expression':d.formula_expression.text(),'variables':pairs(d.formula_variables),'references':pairs(d.formula_references),'source_id':d.formula_source.text(),'basis':d.formula_basis.text(),'deductions':d._formula_deductions}
+        data={'family':d.formula_family.currentData(),'title':d.formula_title.text(),'floor':d.floor_id.text(),'member':d.formula_member.text(),'unit':d.formula_unit.currentData(),'expression':__import__('core.takeoff.manual_form_fields',fromlist=['expression']).expression(d.formula_expression.text()),'variables':pairs(d.formula_variables),'references':pairs(d.formula_references),'source_id':d.formula_source.text(),'basis':d.formula_basis.text(),'deductions':[dict(v,variable=__import__('core.takeoff.manual_form_fields',fromlist=['canonical']).canonical(v.get('variable',v['id'])),source_id=v.get('source_id',v['id'])) for v in d._formula_deductions],**d._formula_site}
         r=d.service.save_manual_formula(d.project_id.text().strip(),key,data,expected_revision=d._formula_revision,reason=d.formula_reason.text());d._formula_revision=r['revision'];d._formula_selected=key;d.status.setText('پیش‌نویس نسخه‌دار ذخیره شد؛ برای BOQ بازبینی لازم است')
     def load():
-        key,row=selected();data=row['data'];d._formula_revision=row['revision'];d._formula_selected=key;d._formula_deductions=row['data']['deductions']
-        for field,name in [(d.formula_id,None),(d.formula_source,'source_id'),(d.formula_title,'title'),(d.formula_member,'member'),(d.formula_expression,'expression'),(d.formula_basis,'basis'),(d.floor_id,'floor')]:field.setText(key if name is None else data[name])
+        key,row=selected();data=row['data'];d._formula_revision=row['revision'];d._formula_selected=key;d._formula_deductions=row['data']['deductions'];d._formula_site={k:data[k] for k in ('block','location') if k in data}
+        for field,name in [(d.formula_id,None),(d.formula_source,'source_id'),(d.formula_title,'title'),(d.formula_member,'member'),(d.formula_expression,'expression'),(d.formula_basis,'basis'),(d.floor_id,'floor')]:field.setText(key if name is None else __import__('core.takeoff.manual_form_fields',fromlist=['expression']).expression(data[name],display=True) if name=='expression' else data[name])
         d.formula_family.setCurrentIndex(d.formula_family.findData(data['family']));d.formula_unit.setCurrentIndex(d.formula_unit.findData(data['unit']))
-        d.formula_variables.setPlainText('\n'.join(k+'='+str(v) for k,v in data['variables'].items()));d.formula_references.setPlainText('\n'.join(k+'='+v for k,v in data['references'].items()))
+        d.formula_variables.setPlainText('\n'.join(__import__('core.takeoff.manual_form_fields',fromlist=['LABELS']).LABELS.get(k,(k,''))[0]+'='+str(v) for k,v in data['variables'].items()));d.formula_references.setPlainText('\n'.join(k+'='+v for k,v in data['references'].items()))
         d.formula_reason.clear();d.status.setText('نسخه ذخیره‌شده بازگشایی و دوباره محاسبه شد')
     def review():
         key,row=selected();d.service.review_manual_formula(d.project_id.text().strip(),key,expected_revision=row['revision'],reviewer=d.formula_reviewer.text(),note=d.formula_review_note.text())
@@ -162,10 +193,75 @@ def attach(d,root):
     def delete():
         keys,versions=selected_many();d.service.delete_manual_formulas(d.project_id.text().strip(),keys,expected_revisions=versions,reason=d.formula_reason.text())
     for button,fn in [(d.formula_amend_button,amend),(d.formula_amend_review_button,amend_review),(d.formula_amend_apply_button,amend_apply),(d.deduction_save_button,lambda:deduction()),(d.deduction_delete_button,lambda:deduction(True)),(d.formula_delete_button,delete),(d.formula_undo_button,lambda:d.service.undo_manual_formulas(d.project_id.text().strip())),(d.formula_redo_button,lambda:d.service.redo_manual_formulas(d.project_id.text().strip()))]:button.clicked.connect(guarded(fn))
+    from core.takeoff.manual_form_fields import family_fields,LABELS,expression as formula_expression,canonical
+    d.formula_subitem=QComboBox();d.formula_subitem.setEditable(True);d.formula_subitem.setInsertPolicy(QComboBox.NoInsert);d.formula_subitem.completer().setFilterMode(Qt.MatchContains);form.addRow('زیرآیتم قابل جست‌وجو',d.formula_subitem)
+    d.dynamic_group=QLabel();form.addRow('گروه ورودی؛ هیچ مقدار پیش‌فرض ندارد',d.dynamic_group)
+    dynamic_widget=QWidget();dynamic_form=QFormLayout(dynamic_widget);form.addRow('ورودی‌های مرتبط',dynamic_widget);d.dynamic_parameters={};d.dynamic_missing=QLabel();form.addRow('ورودی‌های الزامی فرمول',d.dynamic_missing)
+    def dynamic():
+        import ast
+        group,fields=family_fields(d.formula_family.currentData());d.dynamic_group.setText(group)
+        try:required={n.id for n in ast.walk(ast.parse(formula_expression(d.formula_expression.text()),mode='eval')) if isinstance(n,ast.Name)}-set(pairs(d.formula_references))
+        except Exception:required=set()
+        try:values=pairs(d.formula_variables)
+        except ValueError:values={}
+        desired=list(dict.fromkeys(list(fields)+sorted(required)))
+        if list(d.dynamic_parameters)==desired:
+            for name,field in d.dynamic_parameters.items():
+                field.setText(str(values.get(name,'')))
+            missing=required-set(values);d.dynamic_missing.setText('اطلاعات ناقص: '+', '.join(LABELS.get(k,(k,''))[0] for k in sorted(missing)) if missing else 'همه پارامترها وارد شده‌اند؛ اعتبارسنجی هنگام ذخیره انجام می‌شود')
+            return
+        while dynamic_form.rowCount():dynamic_form.removeRow(0)
+        d.dynamic_parameters={}
+        for name in desired:
+            label,unit=LABELS.get(name,(name,'واحد را در مبنا مشخص کنید'));field=QLineEdit(str(values.get(name,'')));field.setPlaceholderText('ورودی صریح؛ '+unit);field.setToolTip(label+'؛ '+unit+'؛ مقدار یا ضریب حدسی وارد نشود');d.dynamic_parameters[name]=field
+            dynamic_form.addRow(label+(' *' if name in required else ' (اختیاری)')+' — '+unit,field)
+            def update(value,k=name):
+                try:v=pairs(d.formula_variables)
+                except ValueError:return
+                if value.strip():v[k]=value.strip()
+                else:v.pop(k,None)
+                d.formula_variables.setPlainText('\n'.join(LABELS.get(n,(n,''))[0]+'='+str(x) for n,x in v.items()))
+            field.textEdited.connect(update)
+        missing=required-set(values);d.dynamic_missing.setText('اطلاعات ناقص: '+', '.join(LABELS.get(k,(k,''))[0] for k in sorted(missing)) if missing else 'همه پارامترهای فرمول دارای ورودی‌اند؛ اعتبارسنجی هنگام ذخیره انجام می‌شود')
+    def subitems(*_):
+        d.formula_subitem.clear();d.formula_subitem.addItem('زیرآیتم را انتخاب کنید')
+        row=next((r for r in catalog() if r['code']==d.formula_family.currentData()),None)
+        if row:d.formula_subitem.addItems(row['components'])
+        dynamic()
+    d.formula_family.currentIndexChanged.connect(subitems);d.formula_expression.editingFinished.connect(dynamic);d.formula_variables.textChanged.connect(dynamic)
+    d.formula_subitem.activated.connect(lambda *_:d.formula_title.setText(d.formula_subitem.currentText()));subitems()
+    d.copy_deduction_sources=QTextEdit();d.copy_deduction_sources.setMaximumHeight(70);d.copy_deduction_sources.setPlaceholderText('هر سطر: شناسه ردیف | منبع کسر قبلی | منبع هندسی جدید صریح');form.addRow('منابع هندسی تازه برای کپی کسورات',d.copy_deduction_sources)
+    d.destination_project=QComboBox()
+    for p in d.service.store.list():d.destination_project.addItem(p['name'],p['id'])
+    d.destination_project.setCurrentIndex(d.destination_project.findData(d.project_id.text().strip()));d.destination_block=QLineEdit();d.destination_floor=QLineEdit();d.destination_location=QLineEdit()
+    for label,w in [('پروژه مقصد',d.destination_project),('بلوک مقصد',d.destination_block),('طبقه مقصد',d.destination_floor),('محل یا آکس مقصد',d.destination_location)]:form.addRow(label,w)
+    d.formula_move_button=QPushButton('انتقال نسخه‌دار به محل مقصد');d.formula_location_copy_button=QPushButton('کپی مستقل به محل مقصد');form.addRow(d.formula_move_button,d.formula_location_copy_button)
+    def relocate(mode):
+        indices=[i for i in d.table.selectionModel().selectedRows() if not d.table.isRowHidden(i.row())]
+        providers={d.table.item(i.row(),0).data(Qt.UserRole) for i in indices}
+        destination={'project_id':d.destination_project.currentData(),'block':d.destination_block.text(),'floor':d.destination_floor.text(),'location':d.destination_location.text()}
+        if providers=={'legacy'}:
+            if destination['project_id']!=d.project_id.text().strip():raise ValueError('انتقال بین پروژه‌ها نیازمند گردش مستقل است')
+            keys=[d.table.item(i.row(),0).text() for i in indices]
+            if any(k in d._saved_ids for k in keys):raise ValueError('ردیف ذخیره‌شده تخصصی به اصلاحیه مستقل نیاز دارد')
+            if d.workbench is None or d.workbench.project_id!=destination['project_id']:raise ValueError('پروژه پیش‌نمایش نامطابق است')
+            from core.takeoff.manual_formula_register import text
+            reason=text(d.formula_reason.text(),'علت انتقال')
+            d.workbench.relocate_records(keys,floor=destination['floor'],block=destination['block'],location=destination['location'],mode=mode);d._audit('location_'+mode,{'record_ids':keys,'destination':destination,'reason':reason});d.status.setText('پیش‌نمایش تخصصی منتقل شد؛ ذخیره پروژه هنوز لازم است');return
+        keys,versions=selected_many();sources={}
+        for line in d.copy_deduction_sources.toPlainText().splitlines():
+            if not line.strip():continue
+            parts=[p.strip() for p in line.split('|')]
+            if len(parts)!=3 or not all(parts):raise ValueError('منابع کسر باید شامل ردیف، منبع قبلی و منبع جدید باشند')
+            key,old,new=parts
+            if old in sources.get(key,{}):raise ValueError('منبع کسر در ورودی کپی تکراری است')
+            sources.setdefault(key,{})[old]=new
+        d.service.relocate_manual_formulas(d.project_id.text().strip(),keys,destination=destination,mode=mode,expected_revisions=versions,reason=d.formula_reason.text(),deduction_sources=sources);d.status.setText('عملیات محل اجرا ثبت شد؛ شناسه‌ها و نسخه‌ها کنترل شدند')
+    d.formula_move_button.clicked.connect(guarded(lambda:relocate('move')));d.formula_location_copy_button.clicked.connect(guarded(lambda:relocate('copy')))
     d._formula_project=d.project_id.text().strip()
     def project_changed():
         current=d.project_id.text().strip()
         if current!=d._formula_project:
-            d._formula_project=current;d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[];guarded(lambda:None)()
+            d._formula_project=current;d._formula_revision=0;d._formula_selected=None;d._formula_deductions=[];d._formula_site={};guarded(lambda:None)()
     d.project_id.editingFinished.connect(project_changed)
     if d.project_id.text().strip():guarded(lambda:None)()

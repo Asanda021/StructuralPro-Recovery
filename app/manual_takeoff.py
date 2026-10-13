@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem, QTextEdit, QVBoxLayout, QHeaderView, QInputDialog, QAbstractItemView, QGridLayout, QFileDialog,
 )
 
+from core.takeoff.manual_form_fields import persian_error
 from core.takeoff.manual_input import parse_manual_batch, parse_manual_entry
 from core.takeoff.manual_workbench import ManualTakeoffDraft, ManualTakeoffWorkbench
 
@@ -45,7 +46,7 @@ _PARAM_LABELS = {
     "topping_thickness": "ضخامت رویه", "joist_spacing": "فاصله تیرچه",
     "joist_width": "عرض تیرچه", "joist_depth": "عمق تیرچه",
     "sloped_length": "طول شیبدار", "waist_thickness": "ضخامت جان پله",
-    "unit_weight": "وزن واحد",
+    "unit_weight": "وزن واحد", "joist_count": "تعداد تیرچه", "block": "بلوک", "location": "محل اجرا", "manual_location_id": "شناسه عضو و محل",
 }
 
 
@@ -69,9 +70,10 @@ class ManualTakeoffDialog(QDialog):
         self.status = QLabel("ورودی کامل محاسبه می‌شود؛ ورودی ناقص ذخیره نخواهد شد.")
         self.status.setWordWrap(True)
         from app.manual_formula_controls import VisibleRowsTable
-        self.table = VisibleRowsTable(0, 14)
+        self.table = VisibleRowsTable(0, 18)
+        self.table.set_sort_kinds({0:"natural",1:"natural",4:"number",10:"number",12:"natural",14:"number",15:"date",16:"natural",17:"natural"})
         self.table.setHorizontalHeaderLabels(
-            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت", "فرمول", "پارامترها", "منبع ورودی", "نسخه", "پروژه", "عضو", "وابستگی"]
+            ["شناسه", "طبقه", "نوع", "شرح", "مقدار", "واحد", "وضعیت", "فرمول", "پارامترها", "منبع ورودی", "نسخه", "پروژه", "عضو", "وابستگی", "تعداد", "تاریخ تغییر", "بلوک", "محل اجرا"]
         )
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -227,7 +229,7 @@ class ManualTakeoffDialog(QDialog):
             if self.workbench is None or self.workbench.project_id!=self.project_id.text().strip():raise ValueError('پروژه فعال با پیش‌نمایش مطابقت ندارد')
             ids={self.table.item(r,0).text() for r in range(self.table.rowCount()) if not self.table.isRowHidden(r) and self.table.item(r,0)}
             rows=[{'id':r.record_id,'project':r.project_id,'floor':r.floor_id,'item':_SAVED_ITEM_LABELS.get(r.code,r.code),'description':r.element_label,
-                   'quantity':str(r.quantity),'unit':r.unit,'formula':r.formula,'parameters':json.dumps(dict(r.params),ensure_ascii=False),
+                   'quantity':str(r.quantity),'unit':__import__('app.manual_formula_controls',fromlist=['UNITS']).UNITS.get(r.unit,r.unit),'formula':r.formula,'parameters':json.dumps(dict(r.params),ensure_ascii=False),
                    'source':r.source,'revision':r.revision,'status':'ذخیره شد' if r.record_id in self._saved_ids else 'پیش‌نمایش بررسی‌نشده'} for r in self.workbench.records if r.record_id in ids]
             if not rows:raise ValueError('ردیف کامل قابل گزارش موجود نیست')
             path,_=QFileDialog.getSaveFileName(self,'خروجی ریزمتره','',f'{fmt.upper()} (*.{fmt})')
@@ -238,7 +240,7 @@ class ManualTakeoffDialog(QDialog):
             title=(project or {}).get('name','')+' — ریزمتره دستی؛ پذیرش مهندسی مستقل لازم است'
             getattr(exporters,'export_'+fmt)(rows,path,title=title,columns=columns)
             self.status.setText('گزارش ردیف‌های قابل مشاهده ذخیره شد: '+path)
-        except Exception as e:QMessageBox.warning(self,'گزارش متره',str(e))
+        except Exception as e:QMessageBox.warning(self,'گزارش متره',persian_error(e))
 
     def refresh_saved_rows(self):
         self.saved_table.setRowCount(0)
@@ -250,7 +252,7 @@ class ManualTakeoffDialog(QDialog):
         try:
             project = self.service.open_project(project_id)
         except Exception as exc:
-            self.status.setText("خواندن متره‌های ذخیره‌شده ناموفق بود: " + str(exc))
+            self.status.setText("خواندن متره‌های ذخیره‌شده ناموفق بود: " + persian_error(exc))
             return
         if project is None:
             return
@@ -265,7 +267,7 @@ class ManualTakeoffDialog(QDialog):
             values = [source_id or str(takeoff.get("id", "")),
                       str(takeoff.get("revision", 1)),
                       str(takeoff.get("description", quantity.get("title", ""))),
-                      str(quantity.get("amount", "")), str(quantity.get("unit", "")),
+                      str(quantity.get("amount", "")), __import__("app.manual_formula_controls",fromlist=["UNITS"]).UNITS.get(quantity.get("unit"),str(quantity.get("unit", ""))),
                       str(takeoff.get("system", "") or "—")]
             for col, value in enumerate(values):
                 cell = QTableWidgetItem(value)
@@ -310,7 +312,7 @@ class ManualTakeoffDialog(QDialog):
         try:
             parsed = parse_manual_entry(source_text)
         except Exception as exc:
-            self.status.setText("پارامترهای ذخیره‌شده برای ویرایش معتبر نیستند: " + str(exc))
+            self.status.setText("پارامترهای ذخیره‌شده برای ویرایش معتبر نیستند: " + persian_error(exc))
             return
         if parsed.code != item or parsed.missing:
             self.status.setText("پارامترهای خام این ردیف کامل/قابل بازسازی نیستند؛ ویرایش متوقف شد.")
@@ -363,7 +365,7 @@ class ManualTakeoffDialog(QDialog):
                 f"نسخه {updated.get('revision')} ثبت شد؛ نسخه قبلی در تاریخچه پروژه حفظ شد."
             )
         except Exception as exc:
-            self.status.setText("نسخه اصلاح نشد؛ اطلاعات ذخیره‌شده تغییر نکرد: " + str(exc))
+            self.status.setText("نسخه اصلاح نشد؛ اطلاعات ذخیره‌شده تغییر نکرد: " + persian_error(exc))
 
     def paste_clipboard(self):
         text = QApplication.clipboard().text()
@@ -422,7 +424,7 @@ class ManualTakeoffDialog(QDialog):
             copies=self.workbench.copy_records([r.record_id for r in records],floor_id=floor.strip())
             self._render_records();self._audit('floor_copy',{'source_ids':[r.record_id for r in records],'new_ids':[r.record_id for r in copies],'floor':floor.strip()})
             self.status.setText(f'{len(copies)} ردیف با هویت جدید به طبقه مقصد کپی شد.')
-        except Exception as e:QMessageBox.warning(self,'کپی طبقه',str(e))
+        except Exception as e:QMessageBox.warning(self,'کپی طبقه',persian_error(e))
 
     def delete_selected(self):
         records=self._selected_records()
@@ -488,7 +490,7 @@ class ManualTakeoffDialog(QDialog):
         try:
             entries = parse_manual_batch(self.entry_text.toPlainText())
         except Exception as exc:
-            QMessageBox.warning(self, "ورودی متره", str(exc))
+            QMessageBox.warning(self, "ورودی متره", persian_error(exc))
             return
 
         if self._editing_pending is not None:
@@ -498,7 +500,7 @@ class ManualTakeoffDialog(QDialog):
                 self.workbench.update_text(key,entries[0].source_text,expected_revision=version,floor_id=floor_id,element_label=self.element_label.text().strip())
                 self._editing_pending=None;self._render_records();self.entry_text.clear()
                 self._audit('edit_pending',{'record_id':key,'revision':version+1});self.status.setText('ویرایش نسخه‌دار ثبت شد؛ هویت ردیف حفظ شد.')
-            except Exception as e:QMessageBox.warning(self,'ویرایش متره',str(e))
+            except Exception as e:QMessageBox.warning(self,'ویرایش متره',persian_error(e))
             return
         self.table.setSortingEnabled(False)
         label = self.element_label.text().strip()
@@ -512,7 +514,7 @@ class ManualTakeoffDialog(QDialog):
                     )
                 )
             except Exception as exc:
-                row_errors.append(f"{entry.source_text}: {exc}")
+                row_errors.append(f"{entry.source_text}: {persian_error(exc)}")
 
         added = 0
         incomplete = []
@@ -529,8 +531,8 @@ class ManualTakeoffDialog(QDialog):
             else:
                 values = [
                     result.record_id, result.floor_id, _SAVED_ITEM_LABELS.get(result.code, result.code),
-                    result.element_label, str(result.quantity), result.unit,
-                    "آماده ذخیره", result.formula, json.dumps(dict(result.params),ensure_ascii=False), result.source, result.revision, result.project_id,
+                    result.element_label, str(result.quantity), __import__("app.manual_formula_controls",fromlist=["UNITS"]).UNITS.get(result.unit,result.unit),
+                    "آماده ذخیره", __import__("core.takeoff.manual_form_fields",fromlist=["expression"]).expression(result.formula,display=True), "، ".join(_PARAM_LABELS.get(k,"پارامتر مستند")+"="+str(v) for k,v in result.params.items()), result.source, result.revision, result.project_id,
                 ]
                 added += 1
             for col, value in enumerate(values):
@@ -538,6 +540,7 @@ class ManualTakeoffDialog(QDialog):
                 if col == 6:
                     cell.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
                 self.table.setItem(row, col, cell)
+            self.table.item(row,0).setData(Qt.UserRole,'draft' if isinstance(result,ManualTakeoffDraft) else 'legacy')
         self.table.setSortingEnabled(True)
         self.filter_rows()
         messages = []

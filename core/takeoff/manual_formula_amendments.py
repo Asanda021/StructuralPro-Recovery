@@ -37,8 +37,8 @@ def proposal(service,pid,key,data,*,expected_revision,created_by,reason):
     actor=text(created_by,'سازنده اصلاحیه');reason=text(reason,'علت اصلاح');project,token=read(service,pid);reg=verified(project);old=reg[key];revision(expected_revision,old['revision'])
     if old['status']!='committed':raise ValueError('اصلاحیه فقط برای ردیف قطعی است')
     d=clean(data)
-    for field in ('source_id','family','unit','member','floor','references'):
-        if d[field]!=old['data'][field]:raise ValueError('تغییر هویت، محل، واحد یا مراجع نیازمند گردش مستقل است')
+    for field in ('source_id','family','unit','member','floor','references','block','location'):
+        if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت، محل، واحد یا مراجع نیازمند گردش مستقل است')
     candidate=deepcopy(reg);candidate[key]['data']=d;values=evaluate_rows(graph(candidate))
     if number(values[key],'مقدار اصلاح')<=0:raise ValueError('مقدار اصلاح باید مثبت باشد')
     a={'id':'MA-'+uuid4().hex,'row_id':key,'source_id':d['source_id'],'revision':1,'base_revision':old['revision'],'created_by':actor,'reason':reason,'created_at':datetime.now(timezone.utc).isoformat(),'original_digest':digest(project['manual_formula_register'][key]),'base_digest':digest(old),'proposal':d,'quantity':values[key],'status':'draft','numeric_policy':POLICY}

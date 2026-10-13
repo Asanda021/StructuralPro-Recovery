@@ -46,7 +46,7 @@ def export(service,pid,path,*,format):
     keys=sorted(reg)
     for key in keys:
         row=reg[key];d=row['data'];q=str(row['quantity']);unit=UNITS[d['unit']]
-        entry=[key,d['floor'],d['member'],titles[d['family']],d['title'],q,unit,d['expression'],d['basis'],d['source_id'],str(row['revision']),STATES[row['status']]];details.append(entry)
+        entry=[key,d['floor'],d['member'],titles[d['family']],d['title'],q,unit,d['expression'],d['basis'],d['source_id'],str(row['revision']),STATES[row['status']],d.get('block',''),d.get('location','')];details.append(entry)
         if row['status']=='draft':unreviewed.append(entry)
         for name,value in d['variables'].items():parameters.append([key,name,str(value),d['basis']])
         sources.append([key,d['source_id'],d['basis'],', '.join(d['references'].values()),row.get('review',{}).get('reviewer','')])
@@ -55,7 +55,7 @@ def export(service,pid,path,*,format):
         links.append([key,d['source_id'],STATES[row['status']],str(len(matched)),q,unit])
         for name,group in [('خلاصه متره','پروژه'),('هر طبقه',d['floor']),('هر آیتم',titles[d['family']]),('هر عضو',d['member'])]:summaries[name][(group,unit,row['status'])]+=number(row['quantity'],'جمع متره')
     for item in project.get('manual_formula_history',[]):history.append([item['row_id'],str(item['revision']),item['reason'],item['at']])
-    headers=['شناسه','طبقه','عضو','خانواده','شرح','مقدار دقیق','واحد','فرمول','مبنا و واحد ورودی','منبع','نسخه','وضعیت']
+    headers=['شناسه','طبقه','عضو','خانواده','شرح','مقدار دقیق','واحد','فرمول','مبنا و واحد ورودی','منبع','نسخه','وضعیت','بلوک','محل اجرا']
     datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا','منبع هندسی'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
     for name,groups in summaries.items():datasets[name]=(['گروه','واحد','وضعیت','جمع دقیق'],[[a,b,STATES[c],str(v)] for (a,b,c),v in sorted(groups.items())])
     datasets['اصلاحیه قطعی']=(['شناسه اصلاحیه','ردیف','نسخه مبنا','علت','سازنده','بازبین','مقدار پیشنهادی','وضعیت'],[[a['id'],a['row_id'],str(a['base_revision']),a['reason'],a['created_by'],a.get('review',{}).get('reviewer',''),str(a['quantity']),{'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]] for a in project.get('manual_formula_amendments',{}).values()])

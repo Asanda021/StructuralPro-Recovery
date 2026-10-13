@@ -397,6 +397,10 @@ class StructuralProApp:
         from core.takeoff.manual_formula_deductions import summary
         return summary(self,project_id,row_id)
 
+    def relocate_manual_formulas(self, project_id, row_ids, *, destination, mode, expected_revisions, reason, deduction_sources=None):
+        from core.takeoff.manual_formula_locations import relocate
+        return relocate(self,project_id,row_ids,destination=destination,mode=mode,expected_revisions=expected_revisions,reason=reason,deduction_sources=deduction_sources)
+
     def save_manual_formula(self, project_id, row_id, data, *, expected_revision, reason):
         from core.takeoff.manual_formula_register import save
         return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)
