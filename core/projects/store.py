@@ -63,14 +63,19 @@ class ProjectStore:
 
     def get(self, project_id: str) -> dict[str,Any] | None:
         pid=str(project_id)
-        # SQLite version is authoritative even when another connection writes.
+        # Check the small SQLite version column before fetching a large payload.
+        # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
+        version_row=self.db.execute("SELECT version FROM projects WHERE id=?",(pid,)).fetchone()
+        if not version_row:
+            self._cache.pop(pid,None)
+            return None
+        cached=self._cache.get(pid)
+        if cached is not None and cached[0] == int(version_row["version"]):
+            return deepcopy(cached[1])
         row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
         if not row:
             self._cache.pop(pid,None)
             return None
-        cached=self._cache.get(pid)
-        if cached is not None and cached[0] == int(row["version"]):
-            return deepcopy(cached[1])
         data=json.loads(row["payload"])
         data["_meta"]={"id":row["id"],"version":row["version"],"updated_at":row["updated_at"]}
         self._cache[pid]=(int(row["version"]), deepcopy(data))
