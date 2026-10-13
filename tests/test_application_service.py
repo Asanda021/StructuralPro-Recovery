@@ -144,10 +144,11 @@ def test_financial_control_filters_exposure_matrix_and_integrity(tmp_path):
     assert a.project_financial_integrity_audit("fc1")["healthy"] is True
 
 
-def test_statement_activity_snapshot_and_exports(tmp_path):
+def test_statement_activity_snapshot_and_exports(tmp_path, approve_test_pricebook):
     a=StructuralProApp(tmp_path); a.create_project("صورت","st1")
-    a.add_takeoff("st1","building","slab",length=2,width=3,member_code="S1", count=1, source_id="fixture:test_application_service:2")
+    a.add_takeoff("st1","building","slab",length=2,width=3,member_code="S1", count=1, source_id="fixture:test_application_service:2",price_code="S1",unit_price=100)
     p=a.open_project("st1"); p["boq"][0]["price_code"]="S1"; p["boq"][0]["unit_price"]=100; p["boq"][0]["quantity"]=6; a.store.save("st1",p)
+    approve_test_pricebook(a,"st1",{"S1":{"unit":"m2","unit_price":100}})
     period=a.save_statement_period("st1",current_quantities={"S1":2})
     assert period["gross_current"] == 200
     assert a.project_statement_summary("st1")["period_count"]==1
