@@ -41,7 +41,7 @@ def test_invalid_estimate_factor_does_not_persist(tmp_path, approve_test_pricebo
                     price_code="P33-SLAB", unit_price=100)
     approve_test_pricebook(app, "P33", {"P33-SLAB": {"unit": "m3", "unit_price": 100}})
     before = app.open_project("P33")
-    with pytest.raises((ValueError, TypeError)):
+    with pytest.raises(ValueError, match="could not convert|عدد معتبر"):
         app.recalculate_estimate("P33", factors={"bad": "not-a-number"})
     after = app.open_project("P33")
     assert after == before
