@@ -155,3 +155,49 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
             })
     boq = build_boq(inputs)
     return takeoffs, boq
+
+
+
+def require_reset_of_changed_approvals(previous: dict | None, updated: dict) -> None:
+    """No engineering approval survives a substantive edit to its reviewed scope.
+
+    The client must first save the changed scope as unreviewed/needs_review,
+    then explicitly approve it in a subsequent revision. This prevents stale
+    approver names from silently legitimizing new quantities or dimensions.
+    """
+    if not isinstance(previous, dict) or not isinstance(updated, dict):
+        return
+    for name in ("geometry", "formwork"):
+        before, after = previous.get(name), updated.get(name)
+        if not isinstance(before, dict) or not isinstance(after, dict):
+            continue
+        original = {k: v for k, v in before.items() if k not in ("approved_by", "status")}
+        changed = {k: v for k, v in after.items() if k not in ("approved_by", "status")}
+        if original == changed:
+            continue
+        was_approved = (before.get("status") in ("confirmed", "not_applicable")
+                        or bool(before.get("approved_by")))
+        still_approved = (after.get("status") in ("confirmed", "not_applicable")
+                          or bool(after.get("approved_by")))
+        if was_approved and still_approved:
+            raise ValueError(
+                f"اطلاعات تأییدشده {name} تغییر کرده؛ ابتدا تأیید پیشین را لغو و نسخه جدید را بازبینی کنید"
+            )
+    for group_field in ("bars", "rebars", "components"):
+        former, current = previous.get(group_field), updated.get(group_field)
+        if not isinstance(former, dict) or not isinstance(current, dict):
+            continue
+        for key, before in former.items():
+            after = current.get(key)
+            if not isinstance(before, dict) or not isinstance(after, dict):
+                continue
+            original = {k: v for k, v in before.items() if k not in ("approved_by", "status")}
+            changed = {k: v for k, v in after.items() if k not in ("approved_by", "status")}
+            if original == changed:
+                continue
+            if before.get("status") in ("confirmed", "not_applicable") and (
+                after.get("status") in ("confirmed", "not_applicable")
+            ):
+                raise ValueError(
+                    f"دیتایل تأییدشده {key} تغییر کرده؛ وضعیت گروه باید قبل از تأیید مجدد نیازمند بازبینی شود"
+                )
