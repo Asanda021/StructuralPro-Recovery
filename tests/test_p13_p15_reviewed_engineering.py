@@ -238,3 +238,75 @@ def test_atomic_aec_steel_and_timber_boq_sqlite(tmp_path):
     assert len(saved["boq"])==len(saved["takeoffs"])==3
     assert {x["unit"] for x in saved["boq"]} == {"kg","m3"}
     store.close()
+
+
+
+def _reviewed_structural(kind, ident, geometry):
+    from core.takeoff.reviewed_structural import empty_member
+    d=empty_member(kind, "L1", ident)
+    d["source"]={"mode":"manual","source_id":f"manual:{kind}:{ident}"}
+    d["geometry"]={"count":1, "source_ref":"plan-section-A2",
+                   "approved_by":"structural-checker", "intersections":[], **geometry}
+    d["formwork"]={"status":"not_applicable", "reason":"no-contact-formwork per reviewed detail",
+                   "source_ref":"detail-A2","approved_by":"checker"}
+    for name in d["rebars"]:
+        d["rebars"][name]={"status":"not_applicable","reason":"not in the reviewed structural schedule",
+                           "source_ref":f"detail-A2:{name}", "approved_by":"checker"}
+    return d
+
+
+def test_round_column_volume_from_real_diameter_without_box_approximation():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("column","C-R",{"shape":"circular_column",
+              "diameter":.5,"height":3.0})
+    report=preview_member(d,TakeoffEngine())
+    assert report["ready"],report["blockers"]
+    assert report["rows"][0]["quantity"]==pytest.approx(math.pi*(.5/2)**2*3)
+
+
+def test_circular_column_requires_diameter_and_rejects_conflicting_box_shape():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("column","C-R",{"shape":"circular_column","height":3})
+    assert not preview_member(d,TakeoffEngine())["ready"]
+    d["geometry"]["diameter"]=.5
+    d["geometry"]["width"]=.5
+    assert not preview_member(d,TakeoffEngine())["ready"]
+
+
+def test_stepped_footing_uses_reviewed_separate_concrete_regions():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("isolated_footing","F-ST",{
+        "shape":"reviewed_sections", "sections":[
+            {"id":"base","length_m":2,"width_m":2,"thickness_m":.4,
+             "source_ref":"F1:base","approved_by":"checker"},
+            {"id":"step","length_m":1,"width_m":1,"thickness_m":.3,
+             "source_ref":"F1:step","approved_by":"checker"},
+        ]})
+    report=preview_member(d,TakeoffEngine())
+    assert report["ready"], report["blockers"]
+    assert report["rows"][0]["quantity"]==pytest.approx(1.9)
+
+
+def test_duplicate_or_incomplete_footing_sections_never_commit():
+    from core.takeoff.reviewed_structural import preview_member
+    a={"id":"same","length_m":2,"width_m":2,"thickness_m":.4,
+       "source_ref":"detail","approved_by":"checker"}
+    d=_reviewed_structural("isolated_footing","F1",{
+        "shape":"reviewed_sections","sections":[a,deepcopy(a)]})
+    assert not preview_member(d,TakeoffEngine())["ready"]
+    d["geometry"]["sections"][1]["id"]="other"
+    del d["geometry"]["sections"][1]["source_ref"]
+    assert not preview_member(d,TakeoffEngine())["ready"]
+
+
+def test_approved_variable_height_column_has_explicit_area_of_each_segment():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("column","C1",{"shape":"reviewed_sections","sections":[
+        {"id":"L1","net_section_area_m2":.2,"height_m":2,
+         "source_ref":"C1:lower","approved_by":"checker"},
+        {"id":"L2","net_section_area_m2":.16,"height_m":1,
+         "source_ref":"C1:upper","approved_by":"checker"},
+    ]})
+    report=preview_member(d,TakeoffEngine())
+    assert report["ready"],report["blockers"]
+    assert report["rows"][0]["quantity"]==pytest.approx(.56)
