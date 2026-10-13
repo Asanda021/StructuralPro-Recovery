@@ -156,62 +156,69 @@ def calculate_assembly(code: str, **p: Any) -> AssemblyResult:
     # geometry.  Foam and joist quantities come from actual module dimensions;
     # reinforcement is only calculated when its specification is supplied.
     if k in {"joist_foam_roof_assembly", "joist_block_roof_assembly", "سقف_تیرچه_یونولیت"}:
-        L, W = _n(p, "length", 1e-12), _n(p, "width", 1e-12)
+        # The real joist and infill layout, *not* ceil(W/spacing), is required.
+        # Never double-count pre-manufactured joists as poured-in-place ribs.
+        is_foam = k != "joist_block_roof_assembly"
         count = _count(p, "count")
-        area = L * W * count
+        L, W = _n(p, "length", 1e-12), _n(p, "width", 1e-12)
         topping = _n(p, "topping_thickness", 1e-12)
-        spacing = _n(p, "joist_spacing", 1e-12)
-        jw = _n(p, "joist_width", 1e-12)
-        jd = _n(p, "joist_depth", 1e-12)
-        joist_count = _optional(p, "joist_count")
-        if joist_count is None:
-            joist_count = ceil(W / spacing) + 1
-        if joist_count is not None and (joist_count <= 0 or not float(joist_count).is_integer()):
-            raise ValueError("joist_count must be a positive integer when supplied")
-        joists = joist_count * count
-        concrete = area * topping + joists * L * jw * jd
-        foam_l = _optional(p, "foam_length")
-        foam_w = _optional(p, "foam_width")
-        foam_h = _optional(p, "foam_height")
-        if any(v is not None and v <= 0 for v in (foam_l, foam_w, foam_h)):
-            raise ValueError("ابعاد یونولیت باید مثبت باشند")
-        if None in (foam_l, foam_w, foam_h):
-            return AssemblyResult(
-                k, "سقف تیرچه یونولیت" if "foam" in k or "یونولیت" in k else "سقف تیرچه‌بلوک", (
-                    AssemblyComponent("concrete", "بتن", "m³",
-                                      "A×t رویه+تعداد تیرچه×L×b×h", concrete),
-                    AssemblyComponent("joist", "تیرچه", "عدد", "(ceil(W/s)+1)×تعداد", float(joists), warning="تعداد تیرچه از عرض و فاصله محاسبه شده؛ آرایش واقعی دهانه/لبه‌ها در صورت تفاوت باید با joist_count صریح وارد شود."),
-                ),
-                ("length", "width", "count", "topping_thickness", "joist_spacing",
-                 "joist_width", "joist_depth", "joist_count"),
-                ("foam_length", "foam_width", "foam_height"),
-            )
-        foam_per = foam_l * foam_w * foam_h
-        foam_count = ceil((area / (foam_l * foam_w)))
-        foam_total = foam_count
-        mesh_weight = _optional(p, "mesh_unit_weight")
-        components = [
-            AssemblyComponent("concrete", "بتن", "m³", "A×t رویه+تعداد تیرچه×L×b×h", concrete),
-            AssemblyComponent("joist", "تیرچه", "عدد", "(ceil(W/s)+1)×تعداد", float(joists),
-                              warning="تعداد تیرچه از عرض و فاصله مشتق شده؛ آرایش واقعی لبه‌ها و دهانه‌ها در صورت تفاوت نیازمند joist_count صریح است."),
-            AssemblyComponent("foam", "بلوک یونولیت", "عدد", "ceil(A/(Lf×Wf))", float(foam_total),
-                              warning=f"حجم اسمی هر بلوک {foam_per:g} m³"),
+        _n(p, "joist_spacing", 1e-12)
+        _n(p, "joist_width", 1e-12)
+        _n(p, "joist_depth", 1e-12)
+        physical_joists = _count(p, "joist_count")
+        infill = "foam" if is_foam else "block"
+        infill_count = _count(p, infill + "_count")
+        infill_dimensions = [
+            _n(p, infill + "_length", 1e-12),
+            _n(p, infill + "_width", 1e-12),
+            _n(p, infill + "_height", 1e-12),
         ]
-        missing = []
-        used = ["length", "width", "count", "topping_thickness", "joist_spacing",
-                "joist_width", "joist_depth", "foam_length", "foam_width", "foam_height"]
-        if "joist_count" in p and p["joist_count"] not in (None, ""):
-            used.append("joist_count")
+        # Count reflects the explicitly reviewed GROUP total. An overall count
+        # only multiplies topping area; it must not multiply already totalled
+        # joist/foam/block schedules for identical units.
+        area = L * W * count
+        topping_volume = area * topping
+        parts = [
+            AssemblyComponent("concrete", "بتن رویه سقف", "m³",
+                              "L×W×تعداد دهانه×ضخامت رویه", topping_volume,
+                              warning="بتن داخل تیرچه/کلاف و نواحی توپر فقط از دیتایل‌های جدا محاسبه می‌شود."),
+            AssemblyComponent("joist", "تیرچه واقعی", "عدد",
+                              "تعداد قطعات تأییدشده در چیدمان سقف", float(physical_joists)),
+            AssemblyComponent(infill, "بلوک یونولیت" if is_foam else "بلوک سقف",
+                              "عدد", "تعداد قطعات تأییدشده در چیدمان سقف",
+                              float(infill_count), warning="ابعاد هر قطعه: " +
+                              "×".join(f"{x:g}" for x in infill_dimensions) + " متر"),
+        ]
+        names = ["count", "length", "width", "topping_thickness", "joist_spacing",
+                 "joist_width", "joist_depth", "joist_count",
+                 infill + "_length", infill + "_width", infill + "_height",
+                 infill + "_count"]
+        # Cast-in-place ribs are completely different from purchased joists.
+        # If there is a rib detail, all three true inputs must be supplied.
+        optional_rib_inputs = ("cast_rib_count", "cast_rib_length_m", "cast_rib_area_m2")
+        if any(key in p for key in optional_rib_inputs):
+            if not all(key in p for key in optional_rib_inputs):
+                raise ValueError("بتن جان درجا: تعداد، طول و سطح واقعی مقطع هر سه لازم است")
+            rib_count = _count(p, "cast_rib_count")
+            rib_length = _n(p, "cast_rib_length_m", 1e-12)
+            rib_area = _n(p, "cast_rib_area_m2", 1e-12)
+            parts.append(AssemblyComponent("cast_rib_concrete", "بتن جان درجا", "m³",
+                           "تعداد جان×طول واقعی×سطح مقطع مستند",
+                           rib_count * rib_length * rib_area))
+            names += list(optional_rib_inputs)
+        mesh_weight = _optional(p, "mesh_unit_weight")
         if mesh_weight is not None:
-            components.append(AssemblyComponent("reinforcement_mesh", "مش/آرماتور شبکه‌ای", "kg",
-                                                "A×وزن واحد مش", area * mesh_weight))
-            used.append("mesh_unit_weight")
-        # Reinforcement is drawing/specification dependent; never invent it.
+            if mesh_weight <= 0:
+                raise ValueError("وزن واحد مش باید مثبت و دارای مرجع معتبر باشد")
+            if not str(p.get("mesh_unit_weight_source") or "").strip():
+                raise ValueError("وزن واحد مش باید مرجع جدول/دیتایل تأییدشده داشته باشد")
+            parts.append(AssemblyComponent("reinforcement_mesh", "مش آرماتور", "kg",
+                         "سطح رویه×وزن واحد مستند", area * mesh_weight))
+            names += ["mesh_unit_weight", "mesh_unit_weight_source"]
+        title = "سقف تیرچه‌یونولیت" if is_foam else "سقف تیرچه‌بلوک"
         return AssemblyResult(
-            "joist_foam_roof_assembly" if "foam" in k or "یونولیت" in k else "joist_block_roof_assembly",
-            "سقف تیرچه یونولیت" if "foam" in k or "یونولیت" in k else "سقف تیرچه‌بلوک",
-            tuple(components), tuple(used), tuple(missing)
-        )
+            "joist_foam_roof_assembly" if is_foam else "joist_block_roof_assembly",
+            title, tuple(parts), tuple(names))
 
     if k in {"concrete_column", "column_concrete"}:
         count = _count(p, "count")

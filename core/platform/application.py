@@ -607,7 +607,9 @@ class StructuralProApp:
                 "drawing_session_id": sid, "drawing_session_revision": record["revision"]}
 
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
-                             floor_id: str, description: str = "") -> dict[str, Any]:
+                             floor_id: str, description: str = "",
+                             measurement_source: str | None = None,
+                             approved_by: str | None = None) -> dict[str, Any]:
         """Commit all separately measured assembly parts as one reviewed transaction."""
         pid=str(project_id).strip()
         floor=str(floor_id or "").strip()
@@ -618,13 +620,19 @@ class StructuralProApp:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
         if not result.components:
             raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
+        measurement = str(measurement_source or "").strip()
+        reviewer = str(approved_by or "").strip()
+        if not measurement or not reviewer:
+            raise ValueError("شناسه واقعی برداشت و تأییدکننده عملیات مرکب الزامی‌اند")
         digest=self.store.current_digest(pid)
         self.store._cache.pop(pid,None)
         project=self.store.get(pid)
         if project is None:
             raise KeyError(pid)
         bundle_id=uuid4().hex
-        bundle_source=f"assembly:{bundle_id}"
+        # Stable physical identity independent of randomly generated bundle IDs.
+        # The same location cannot be re-billed as a new assembly.
+        bundle_source=f"manual-assembly:{pid}:{floor}:{measurement}"
         require_source_unused(project,bundle_source)
         created_at=datetime.now(timezone.utc).isoformat()
         parent={
@@ -632,6 +640,8 @@ class StructuralProApp:
             "description":str(description or result.title).strip(),"floor_id":floor,
             "inputs":deepcopy(dict(inputs)),"inputs_used":list(result.inputs_used),
             "revision":1,"created_at":created_at,"component_source_ids":[],
+            "measurement_source":measurement,"source_id":bundle_source,
+            "approved_by":reviewer,
         }
         rows=[]
         previous_count=len(project.get("takeoffs") or [])
@@ -646,7 +656,9 @@ class StructuralProApp:
                           "component_code":component.code,"inputs":deepcopy(dict(inputs))},
                 "revision":1,"assembly_id":bundle_id,
                 "description":title,"system":floor,
-                "provenance":{"mode":"manual","source_id":source_id,"assembly_id":bundle_id},
+                "provenance":{"mode":"manual","source_id":bundle_source,
+                              "source_component_id":source_id,
+                              "approved_by":reviewer,"assembly_id":bundle_id},
                 "quantities":[{
                     "code":component.code,"title":title,"system":floor,
                     "unit":component.unit,"amount":float(component.quantity),

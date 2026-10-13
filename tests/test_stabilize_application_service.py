@@ -66,7 +66,9 @@ def test_reviewed_assembly_parts_commit_in_one_sqlite_revision(tmp_path):
     app=_app(tmp_path)
     args={"count":1,"length":6,"width":4,"depth":.5}
     before=app.open_project("P1")["_meta"]["version"]
-    result=app.add_assembly_takeoff("P1","excavation",args,floor_id="L1")
+    result=app.add_assembly_takeoff("P1","excavation",args,floor_id="L1",
+                                    measurement_source="excavation:L1:zoneA",
+                                    approved_by="reviewer")
     after=app.open_project("P1")
     assert after["_meta"]["version"]==before+1
     assert len(result["rows"])==1
