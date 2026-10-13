@@ -341,6 +341,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine) -> lis
                      "item_code": code, "domain": declared_domain,
                      "quantity": amount, "unit": unit, "formula": formula,
                      "params": deepcopy(item.get("params") or {}),
+                     "measurement_ref": item.get("measurement_ref") if mode == "measured" else evidence,
                      "method": mode})
     return rows
 
@@ -429,8 +430,12 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
             blockers.append("حجم خالص سقف پس از کسورات نامعتبر است")
             continue
         target["params"]["gross_m3"] = target["quantity"]
+        deduction_measurement = require_text(source.get("measurement_ref"),
+                                             "شناسه واقعی هندسه کسر حجم")
         target["params"]["deduction"] = {
+            "id": f"void:{deduction_measurement}",
             "quantity_m3": source["quantity"], "source_ref": source["source_ref"],
+            "measurement_ref": deduction_measurement,
             "measurement_formula": source["formula"],
         }
         target["quantity"] = net
