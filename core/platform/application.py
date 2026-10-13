@@ -1028,6 +1028,38 @@ class StructuralProApp:
         }
 
 
+    def _amendment(self, project_id, op, actor, expected_project_version, **data):
+        from core.commercial.statement_amendment import StatementAmendmentService
+        return StatementAmendmentService(self.store).execute(project_id, op, actor, expected_project_version, **data)
+
+    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version):
+        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents)
+
+    def create_statement_amendment(self, project_id, period_no, *, created_by, expected_project_version, **data):
+        return self._amendment(project_id, 'create', created_by, expected_project_version, period_no=period_no, **data)
+
+    def edit_statement_amendment(self, project_id, amendment_id, *, edited_by, expected_project_version, **data):
+        return self._amendment(project_id, 'edit', edited_by, expected_project_version, id=amendment_id, **data)
+
+    def review_statement_amendment(self, project_id, amendment_id, *, reviewed_by, expected_project_version, **data):
+        return self._amendment(project_id, 'review', reviewed_by, expected_project_version, id=amendment_id, **data)
+
+    def approve_statement_amendment(self, project_id, amendment_id, *, approved_by, expected_project_version, **data):
+        return self._amendment(project_id, 'approve', approved_by, expected_project_version, id=amendment_id, **data)
+
+    def post_statement_amendment(self, project_id, amendment_id, *, posted_by, expected_project_version, **data):
+        return self._amendment(project_id, 'post', posted_by, expected_project_version, id=amendment_id, **data)
+
+    def reject_statement_amendment(self, project_id, amendment_id, *, rejected_by, expected_project_version, **data):
+        return self._amendment(project_id, 'reject', rejected_by, expected_project_version, id=amendment_id, **data)
+
+    def statement_amendments(self, project_id):
+        return self.open_project(project_id).get('statement_amendments', [])
+
+    def statement_amendment_summary(self, project_id, period_no):
+        from core.commercial.statement_amendment import summary
+        return summary(self.open_project(project_id), period_no)
+
     def save_statement_period(self, project_id: str, *, period_no: int | None = None,
                               current_quantities: dict[str, float] | None = None,
                               retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
@@ -1057,6 +1089,9 @@ class StructuralProApp:
                 str(x.get("code", "")): float(x.get("cumulative_quantity", 0) or 0)
                 for x in periods[-1].get("lines", [])
             }
+        if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
+            from core.commercial.statement_amendment import cumulative_quantities, legacy_float
+            previous = {code: legacy_float(value) for code, value in cumulative_quantities(p).items()}
         raw_quantities = current_quantities or {}
         known_codes = {str(row.get("price_code", "") or "") for row in p.get("boq", [])}
         if any(str(code) not in known_codes for code in raw_quantities):
@@ -1616,6 +1651,13 @@ class StructuralProApp:
         remaining = max(contract - cumulative, 0.0) if estimate else None
         percent = (cumulative / contract * 100.0) if estimate and contract else (0.0 if estimate else None)
         total_payable = sum(float(x.get("payable_current", 0) or 0) for x in periods)
+        if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
+            from core.commercial.statement_amendment import summary
+            net_periods = [summary(p, period['number'])['net'] for period in periods]
+            cumulative = sum(float(net['gross_current']) for net in net_periods)
+            total_payable = sum(float(net['payable_current']) for net in net_periods)
+            remaining = max(contract - cumulative, 0.0) if estimate else None
+            percent = cumulative / contract * 100.0 if estimate and contract else (0.0 if estimate else None)
         cost_summary = self.project_cost_summary(project_id)
         actual_cost = float(cost_summary["actual_cost"])
         gross_margin = cumulative - actual_cost if estimate else None
@@ -1630,7 +1672,7 @@ class StructuralProApp:
             "progress_percent": percent,
             "statement_count": len(periods),
             "latest_statement_no": latest.get("number") if latest else None,
-            "latest_payable": float(latest.get("payable_current", 0) or 0) if latest else 0.0,
+            "latest_payable": (float(net_periods[-1]["payable_current"]) if any(d.get("status") == "POSTED" for d in p.get("statement_amendments", [])) else float(latest.get("payable_current", 0) or 0)) if latest else 0.0,
             "total_payable": total_payable,
             "actual_cost": actual_cost,
             "gross_margin": gross_margin,

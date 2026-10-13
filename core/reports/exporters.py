@@ -270,7 +270,7 @@ def _pdf_column_plan(cols, rows, *, font, usable_width):
     if usable_width <= 100:
         raise ValueError("عرض قابل چاپ برای جدول PDF کافی نیست")
     anchor = next((key for key, _ in cols if key in
-                   ("item_no", "ردیف", "id", "شناسه", "item_code", "code", "source_id")), None)
+                   ("item_no", "ردیف", "id", "شناسه", "item_code", "price_code", "code", "کد", "source_id", "_pdf_row_id")), None)
     widths = {}
     for key, label in cols:
         values = [_display_value(row, key) for row in rows]
@@ -321,7 +321,26 @@ def _pdf_is_number(value):
         return True
     if not isinstance(value, str):
         return False
-    return bool(re.fullmatch(r"[+-]?[0-9۰-۹٠-٩]+(?:[.,٬][0-9۰-۹٠-٩]+)*", value.strip()))
+    return bool(re.fullmatch(r"[+-]?[0-9۰-۹٠-٩]+(?:[.,٬][0-9۰-۹٠-٩]+)*(?:[eE][+-]?[0-9۰-۹٠-٩]+)?", value.strip()))
+
+
+def _pdf_identity(rows, cols):
+    candidates=("item_no", "ردیف", "id", "شناسه", "item_code", "price_code", "code", "کد", "source_id")
+    for key, _ in cols:
+        if key in candidates:
+            values=[str(row.get(key, "")).strip() for row in rows]
+            if values and all(values) and len(set(values))==len(values):
+                return rows, [(key, dict(cols)[key]), *[(k, label) for k, label in cols if k != key]]
+    if not rows:
+        return rows, cols
+    key="_pdf_row_id"
+    while any(key in row for row in rows) or any(k==key for k,_ in cols):
+        key+="_"
+    # The ordinal is report metadata, not an inferred engineering quantity.
+    copies=[{**row, "_pdf_row_id": index} for index,row in enumerate(rows,1)]
+    if key!="_pdf_row_id":
+        raise ValueError("شناسه داخلی ردیف گزارش با داده ورودی تداخل دارد")
+    return copies, [(key,"شناسه ردیف گزارش"), *cols]
 
 
 def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
@@ -334,6 +353,7 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     cols = _columns(rows, columns)
+    rows, cols = _pdf_identity(rows, cols)
     font = _pdf_font()
     styles = getSampleStyleSheet()
     body = ParagraphStyle("StructuralProBody", parent=styles["BodyText"], fontName=font,
@@ -348,20 +368,27 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
     story = [Paragraph(_pdf_text(title), title_style), Spacer(1, 10),
              Paragraph(_pdf_text("خلاصه تجاری"), heading)]
     usable_width = doc.width
+    numeric_body = ParagraphStyle("StructuralProNumbers", parent=body,
+                                  splitLongWords=0, wordWrap=None)
     summary_rows = _summary_items(summary)
     if summary_rows:
         # RTL: labels appear on the right, values on the left.
         data = [[Paragraph(_pdf_text("مقدار"), body), Paragraph(_pdf_text("شرح"), body)]]
-        data += [[Paragraph(_pdf_text(b), body), Paragraph(_pdf_text(a), body)] for a, b in summary_rows]
-        table = Table(data, colWidths=[usable_width * .36, usable_width * .64], repeatRows=1)
+        from reportlab.pdfbase import pdfmetrics
+        number_width=max([usable_width*.36]+[
+            pdfmetrics.stringWidth(_pdf_text(value),font,8)+18
+            for _,value in summary_rows if _pdf_is_number(value)])
+        if number_width > usable_width-100:
+            raise ValueError("عدد مالی خلاصه برای عرض صفحه PDF بیش از حد طولانی است")
+        data += [[Paragraph(_pdf_text(b), numeric_body if _pdf_is_number(b) else body),
+                  Paragraph(_pdf_text(a), body)] for a, b in summary_rows]
+        table = Table(data, colWidths=[number_width, usable_width-number_width], repeatRows=1)
         table.setStyle(TableStyle([("GRID", (0,0), (-1,-1), .4, colors.grey),
                                    ("ALIGN", (0,0), (-1,-1), "RIGHT"),
                                    ("VALIGN", (0,0), (-1,-1), "TOP")]))
         story += [table, Spacer(1, 12)]
     from reportlab.platypus import LongTable, PageBreak
     plan = _pdf_column_plan(cols, rows, font=font, usable_width=usable_width)
-    numeric_body = ParagraphStyle("StructuralProNumbers", parent=body,
-                                  splitLongWords=0, wordWrap=None)
     for panel_no, panel in enumerate(plan, 1):
         if panel_no > 1:
             story.append(PageBreak())

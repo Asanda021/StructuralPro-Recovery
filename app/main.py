@@ -712,6 +712,14 @@ def main()->int:
             stperiods.setText(f"دوره‌های ذخیره‌شده: {len(service.statement_periods(project_id))}")
             status.setText(f'🟢 صورت‌وضعیت دوره {period["number"]} ذخیره شد')
         except Exception as e: QMessageBox.critical(w,"خطای صورت‌وضعیت",str(e))
+    stamend=QPushButton("اصلاحیه مستقل صورت‌وضعیت"); stamend.setObjectName("StatementAmendmentOpen"); sv.addWidget(stamend)
+    def open_statement_amendments():
+        try:
+            from app.statement_amendment import StatementAmendmentDialog
+            if not stid.text().strip(): raise ValueError("شناسه پروژه را وارد کنید")
+            StatementAmendmentDialog(service, stid.text().strip(), w).exec()
+        except Exception as e: QMessageBox.critical(w,"خطای اصلاحیه",str(e))
+    stamend.clicked.connect(open_statement_amendments)
     stgo.clicked.connect(statement_shortcut)
     stsave.clicked.connect(save_statement_period)
     pages.addWidget(p); idx_statement=pages.count()-1
