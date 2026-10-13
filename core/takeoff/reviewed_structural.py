@@ -14,7 +14,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
-from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, require_reset_of_changed_approvals
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.reviewed_components import (
     require_text, positive, reviewed_steel, net_concrete, net_formwork,
@@ -257,6 +257,7 @@ class ReviewedStructuralWorkflow:
         source_id = source.get("source_id") if isinstance(source, dict) else None
         if source_id:
             require_source_unused(project, source_id, exclude=(REGISTER, key))
+        require_reset_of_changed_approvals(previous["data"] if previous else None, draft)
         record = {"status": "draft", "revision": revision+1, "data": deepcopy(draft),
                   "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = record
