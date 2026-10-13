@@ -1523,7 +1523,19 @@ class StructuralProApp:
         # Cost / receipts / commitments can exist before the first BOQ item.
         # Such a project has no *known* contract or earned-value figures.
         # In particular, missing estimates must never be silently valued at 0.
-        estimate = (p.get("estimate") or self.recalculate_estimate(project_id)) if boq else None
+        # Independent cost/receipt/commitment ledgers remain viewable when
+        # physical BOQ exists but has no approved, traceable pricebook.
+        # Never infer a contract, margin or earned value from an unreviewed rate.
+        estimate = None
+        blocked_reason = None
+        if boq:
+            from core.reports.aec_office_package import audit_boq
+            try:
+                audit_boq(p, require_pricebook=True)
+            except ValueError as exc:
+                blocked_reason = str(exc)
+            else:
+                estimate = p.get("estimate") or self.recalculate_estimate(project_id)
         cost = (estimate.get("cost", {}) or {}) if estimate else {}
         contract = float(cost["grand_total"]) if estimate else None
         base = float(cost["base"]) if estimate else None
@@ -1558,7 +1570,9 @@ class StructuralProApp:
             "cost_entry_count": cost_summary["entry_count"],
             "cost_by_category": cost_summary["by_category"],
             "warnings": (list(estimate.get("warnings") or []) if estimate else
-                         ["برآورد قرارداد در دسترس نیست؛ BOQ تأییدشده ثبت نشده است"]),
+                         ["برآورد قرارداد در دسترس نیست؛ BOQ تأییدشده ثبت نشده است"
+                          if not boq else "برآورد تأییدشده در دسترس نیست؛ " +
+                          (blocked_reason or "فهرست‌بهای معتبر لازم است")]),
             "estimate_status": "verified" if estimate else "unavailable",
         }
 
