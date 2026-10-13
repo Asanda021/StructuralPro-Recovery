@@ -15,8 +15,8 @@ ALIASES = {
     "دیوار برشی": ("shear_wall", ("count","length","thickness","height")),
     "دال": ("solid_slab_roof", ("count","length","width","thickness")),
     "سقف دال": ("solid_slab_roof", ("count","length","width","thickness")),
-    "تیرچه بلوک": ("joist_block_roof", ("count","length","width","topping_thickness","joist_spacing","joist_width","joist_depth")),
-    "تیرچه یونولیت": ("joist_foam_roof", ("count","length","width","topping_thickness","joist_spacing","joist_width","joist_depth")),
+    "تیرچه بلوک": ("joist_block_roof", ("count","length","width","topping_thickness","joist_spacing","joist_width","joist_depth","joist_count"))
+    "تیرچه یونولیت": ("joist_foam_roof", ("count","length","width","topping_thickness","joist_spacing","joist_width","joist_depth","joist_count"))
     "پله": ("stair_concrete", ("count","sloped_length","width","waist_thickness")),
     "دیوار": ("wall", ("count","length","height","openings")),
     "خاکبرداری": ("excavation", ("length","width","depth")),
@@ -54,7 +54,7 @@ def _extract_named(text: str) -> dict[str, float]:
         "تعداد":"count","عدد":"count","طول":"length","عرض":"width","عمق":"depth",
         "ارتفاع":"height","ضخامت":"thickness","ضخامت رویه":"topping_thickness","ضخامت جان پله":"waist_thickness",
         "طول شیبدار":"sloped_length","بازشو":"openings","فاصله تیرچه":"joist_spacing",
-        "فاصله":"joist_spacing","عرض تیرچه":"joist_width","عمق تیرچه":"joist_depth",
+        "فاصله":"joist_spacing","تعداد تیرچه":"joist_count","عرض تیرچه":"joist_width","عمق تیرچه":"joist_depth",
         "وزن واحد":"unit_weight","وزن":"unit_weight",
     }
     out = {}
