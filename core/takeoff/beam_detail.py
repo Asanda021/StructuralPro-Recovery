@@ -13,6 +13,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.stirrup_zones import validate_stirrup_zones
 from core.takeoff.reviewed_components import cut_length as reviewed_cut_length, net_concrete, net_formwork
@@ -291,12 +292,7 @@ class BeamDetailWorkflow:
             if any(x["status"] in {"confirmed", "not_applicable"} for x in draft["bars"].values()):
                 raise ValueError("منبع نقشه تغییر کرده؛ ابتدا تأیید اقلام میلگرد را بازنشانی کنید")
         if source and source.get("source_id"):
-            sid = source["source_id"]
-            for other_key, other in register.items():
-                if other_key != key and other.get("data", {}).get("source", {}).get("source_id") == sid:
-                    raise ValueError("منبع برداشت تیر تکراری است")
-            if any(str(row.get("source_id", "")) == sid for row in project.get("takeoffs", [])):
-                raise ValueError("این منبع برداشت قبلاً در ریزمتره ثبت شده است")
+            require_source_unused(project, source["source_id"], exclude=(REGISTER, key))
         payload = deepcopy(draft)
         entry = {"status": "draft", "revision": revision + 1, "data": payload,
                  "updated_at": datetime.now(timezone.utc).isoformat()}
@@ -329,10 +325,7 @@ class BeamDetailWorkflow:
         data = entry["data"]
         source = data["source"]
         prior = project.get("takeoffs", [])
-        existing_ids = {str(x.get("source_id", "")) for x in prior}
         new_ids = {x["source_id"] for x in report["rows"]}
-        if existing_ids.intersection(new_ids) or source["source_id"] in existing_ids:
-            raise ValueError("متره تکراری است؛ انتقال دوباره متوقف شد")
         new_takeoffs = deepcopy(prior)
         for row in report["rows"]:
             new_takeoffs.append({
@@ -346,18 +339,11 @@ class BeamDetailWorkflow:
                                 "formula": row["formula"], "warning": "",
                                 "price_code": None, "unit_price": None}],
             })
-        boq_inputs = []
-        for takeoff in new_takeoffs:
-            for q in takeoff.get("quantities", []):
-                boq_inputs.append({"source": takeoff.get("source_id", "") or "manual",
-                                   "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                                   "description": q.get("title", ""), "quantity": q.get("amount", 0),
-                                   "unit": q.get("unit", ""), "item_code": q.get("code", ""),
-                                   "price_code": q.get("price_code"), "unit_price": q.get("unit_price"),
-                                   "category": takeoff.get("domain", "building"),
-                                   "group": takeoff.get("domain", "building")})
-        project["takeoffs"] = new_takeoffs
-        project["boq"] = build_boq(boq_inputs)
+        validated = validate_commit_rows(
+            project, new_takeoffs[len(prior):], source_id=source["source_id"],
+            expected_current_registry=(REGISTER, key))
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, list(prior) + validated)
         entry["status"] = "committed"
         entry["committed_at"] = datetime.now(timezone.utc).isoformat()
         entry["committed_source_ids"] = sorted(new_ids)
