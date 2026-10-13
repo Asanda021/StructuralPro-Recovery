@@ -146,7 +146,11 @@ class ManualTakeoffDialog(QDialog):
         if not project_id:
             return
         try:
-            project = self.service.open_project(project_id)
+            # Optimistic SQLite guard: another window/process may have written
+            # a takeoff since this dialog last loaded its cached project.
+            digest = self.service.store.current_digest(project_id)
+            self.service.store._cache.pop(project_id, None)
+            project = self.service.store.get(project_id)
             if project is None:
                 return
             timeline = project.setdefault("_manual_takeoff_audit", [])
@@ -156,7 +160,7 @@ class ManualTakeoffDialog(QDialog):
                 "details": dict(details or {}),
             })
             project["_manual_takeoff_audit"] = timeline[-500:]
-            self.service.store.save(project_id, project)
+            self.service.store.save(project_id, project, expected_digest=digest)
         except Exception:
             # Audit failures are visible to the user; they must not silently block takeoff.
             self.status.setText("هشدار: متره انجام شد اما ذخیره تاریخچه ممیزی ناموفق بود.")
