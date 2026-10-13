@@ -463,6 +463,9 @@ class StructuralProApp:
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
+                "provenance": {"mode": "drawing", "source_id": source_id,
+                               "drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                               "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{
                     "code": row["item_code"], "title": row["description"], "system": f"صفحه {row['page']}",
@@ -471,19 +474,10 @@ class StructuralProApp:
                     "source_ref": row["source"], "page": row["page"],
                 }],
             })
-        project.setdefault("takeoffs", []).extend(new_takeoffs)
-        boq_inputs = []
-        for takeoff in project.get("takeoffs", []):
-            for quantity in takeoff.get("quantities", []):
-                boq_inputs.append({
-                    "source": takeoff.get("source_id", "") or "manual",
-                    "source_id": takeoff.get("source_id", ""), "source_type": "takeoff",
-                    "description": quantity.get("title", ""), "quantity": quantity.get("amount", 0),
-                    "unit": quantity.get("unit", ""), "item_code": quantity.get("code", ""),
-                    "price_code": quantity.get("price_code"), "unit_price": quantity.get("unit_price"),
-                    "category": takeoff.get("domain", "manual"), "group": takeoff.get("domain", "manual"),
-                })
-        project["boq"] = build_boq(boq_inputs)
+        validated = validate_commit_rows(
+            project, new_takeoffs, source_id=f"drawing-session:{sid}:{current_revision}")
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, (project.get("takeoffs") or []) + validated)
         record["committed_item_ids"] = sorted(already.union(selected))
         record["ai_committed_item_ids"] = sorted(ai_already)
         record["revision"] = current_revision + 1
