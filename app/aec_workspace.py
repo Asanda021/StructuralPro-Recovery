@@ -161,13 +161,14 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
         try:
             p=service.open_project(pid)
             if not p:return
-            rows=[q for t in p.get("takeoffs",[]) for q in t.get("quantities",[]) if q.get("code")==item.currentData()]
+            rows=[(t,q) for t in p.get("takeoffs",[]) for q in t.get("quantities",[]) if q.get("code")==item.currentData()]
             table.setRowCount(0)
-            for i,q in enumerate(rows[-100:]):
+            for i,(takeoff,q) in enumerate(rows[-100:]):
                 table.insertRow(i)
-                vals=[q.get("id",""),q.get("title",""),q.get("amount",""),q.get("unit",""),q.get("formula",""),q.get("price_code","") or "—",q.get("source","manual"),q.get("warning","") or "—"]
+                vals=[takeoff.get("id",""),q.get("title",""),q.get("amount",""),q.get("unit",""),q.get("formula",""),q.get("price_code","") or "—",takeoff.get("source_id","") or "—",q.get("warning","") or "—"]
                 for j,v in enumerate(vals): table.setItem(i,j,QTableWidgetItem(str(v)))
-        except Exception: pass
+        except Exception as exc:
+            result.setText("خطا در خواندن ریزمتره پروژه: " + str(exc))
     def calculate():
         pid=project.text().strip()
         if not pid: QMessageBox.warning(root,"متره","ابتدا شناسه پروژه را وارد کنید."); return
