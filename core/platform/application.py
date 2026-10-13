@@ -755,6 +755,11 @@ class StructuralProApp:
             price=float(row["unit_price"])
             if not math.isfinite(price) or price<0:
                 raise ValueError("بهای واحد باید متناهی و نامنفی باشد")
+        # A nonempty hand-entered rate/code is not proof of a reviewed,
+        # user-imported pricebook. The same source-to-BOQ reconciliation gate
+        # used for financial exports must also protect the estimate service.
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(project, require_pricebook=True)
         normalized_factors={}
         for name,value in (factors or {}).items():
             if isinstance(value,bool):
