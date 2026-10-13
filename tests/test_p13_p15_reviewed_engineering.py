@@ -247,6 +247,9 @@ def _reviewed_structural(kind, ident, geometry):
     d["source"]={"mode":"manual","source_id":f"manual:{kind}:{ident}"}
     d["geometry"]={"count":1, "source_ref":"plan-section-A2",
                    "approved_by":"structural-checker", "intersections":[], **geometry}
+    if geometry.get("shape")=="reviewed_sections":
+        d["geometry"]["section_layout_ref"]="signed-section-layout-A2"
+        d["geometry"]["nonoverlap_reviewed_by"]="structural-checker"
     d["formwork"]={"status":"not_applicable", "reason":"no-contact-formwork per reviewed detail",
                    "source_ref":"detail-A2","approved_by":"checker"}
     for name in d["rebars"]:
