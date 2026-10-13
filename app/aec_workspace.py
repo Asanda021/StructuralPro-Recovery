@@ -55,7 +55,10 @@ FIELDS={
 "rib_width":"عرض تیرچه وافل","rib_depth":"عمق مؤثر تیرچه وافل","void_length":"طول فضای خالی",
 "void_width":"عرض فضای خالی","void_height":"ارتفاع فضای خالی","sheet_weight":"وزن ورق (kg/m²)",
 "joist_length":"طول تیرچه","joist_unit_weight":"وزن واحد تیرچه (kg/m)","joist_count":"تعداد تیرچه",
-"steel_length":"طول کل فولاد","block_length":"طول بلوک","block_height":"ارتفاع بلوک","block_thickness":"ضخامت بلوک",
+"steel_length":"طول کل فولاد","block_length":"طول بلوک","block_width":"عرض واقعی بلوک سقفی","block_height":"ارتفاع بلوک","block_thickness":"ضخامت بلوک",
+"block_count":"تعداد واقعی بلوک سقفی","foam_count":"تعداد واقعی یونولیت",
+"cast_rib_count":"تعداد جان بتنی درجا","cast_rib_length_m":"طول واقعی جان درجا",
+"cast_rib_area_m2":"سطح مقطع واقعی جان درجا",
 "joint_thickness":"ضخامت بند ملات","cement_parts":"سهم سیمان در ملات","sand_parts":"سهم ماسه در ملات",
 "block_waste_factor":"پرت تأمین بلوک","mortar_waste_factor":"پرت تأمین ملات","foam_length":"طول بلوک یونولیت",
 "foam_width":"عرض بلوک یونولیت","foam_height":"ارتفاع بلوک یونولیت","mesh_unit_weight":"وزن واحد مش (kg/m²)",
@@ -94,9 +97,15 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     specs={c:f for c,_,f in ITEMS[key]}; labels={c:l for c,l,_ in ITEMS[key]}
     for c,l,_ in ITEMS[key]: item.addItem(l,c)
     floor_input = QLineEdit()
-    floor_input.setPlaceholderText("برای عملیات مرکب: شناسه طبقه/ناحیه")
+    floor_input.setPlaceholderText("شناسه طبقه یا ناحیه واقعی")
     grid.addRow("پروژه",project)
     grid.addRow("طبقه / ناحیه",floor_input)
+    evidence_id=QLineEdit()
+    evidence_id.setPlaceholderText("مرجع اندازه‌گیری و شماره برداشت دستی")
+    grid.addRow("مرجع متره", evidence_id)
+    mesh_source=QLineEdit()
+    mesh_source.setPlaceholderText("شماره جدول یا دیتایل مش تأییدشده")
+    grid.addRow("مرجع وزن مش", mesh_source)
     grid.addRow("آیتم / نوع سقف",item)
     grid.addRow("کد فهرست‌بها (اختیاری)",price)
     assembly_mode=QCheckBox("متره به‌صورت Assembly (عملیات → اجزای مستقل)")
@@ -118,7 +127,11 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     def update_fields():
         active=set(specs[item.currentData()])
         if assembly_mode.isChecked() and item.currentData() in ASSEMBLY_CODES:
-            active.update({"foam_length","foam_width","foam_height","mesh_unit_weight"})
+            from core.takeoff.assembly_templates import AssemblyTemplateLibrary
+            template=AssemblyTemplateLibrary().get(ASSEMBLY_CODES[item.currentData()])
+            active = set(template.required_inputs) | set(template.optional_inputs)
+        grid.setRowVisible(mesh_source, assembly_mode.isChecked() and
+            item.currentData() in {"joist_foam_roof", "joist_block_roof"})
         for n,w in fields.items():
             w.setEnabled(n in active)
             grid.setRowVisible(w,n in active)
@@ -145,7 +158,12 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
         if assembly_mode.isChecked() and code not in ASSEMBLY_CODES:
             QMessageBox.warning(root, "عملیات مرکب", "برای این آیتم هنوز قالب مرکب تأییدشده وجود ندارد؛ تیک متره مرکب را بردارید")
             return
-        required_fields=specs[code]
+        if assembly_mode.isChecked():
+            from core.takeoff.assembly_templates import AssemblyTemplateLibrary
+            template=AssemblyTemplateLibrary().get(ASSEMBLY_CODES[code])
+            required_fields=tuple(n for n in template.required_inputs if n in fields)
+        else:
+            required_fields=specs[code]
         unfilled=[n for n in required_fields if n not in {"openings"} and fields[n].value()<=0]
         if unfilled:
             QMessageBox.warning(root, "دیتایل ناقص", "این فیلدها باید صریح تکمیل شوند: " + "، ".join(unfilled))
@@ -153,6 +171,11 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
         params={n:float(w.value()) for n,w in fields.items() if w.isEnabled()}
         if code in {"waffle_roof","uboot_roof","cobiax_roof","hollow_core_roof","steel_roof_composite_concrete"}:
             QMessageBox.warning(root, "کنترل مهندسی", "این سقف به دیتایل‌های واقعی و مسیر متره تأییدشده نیاز دارد؛ محاسبه مستقیم تقریبی مسدود است.")
+            return
+        pid_floor=floor_input.text().strip()
+        input_source=evidence_id.text().strip()
+        if not pid_floor or not input_source:
+            QMessageBox.warning(root,"مرجع متره","طبقه و مرجع واقعی برداشت دستی الزامی‌اند")
             return
         pc=price.text().strip()
         if pc:
@@ -162,25 +185,29 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
             params["price_code"]=pc; params["unit_price"]=resolved["unit_price"]
         else: params["price_code"]=None
         try:
-            p=service.open_project(pid); source_id=f"manual:{key}:{code}:{len(p.get('takeoffs',[]))+1}"
+            p=service.open_project(pid)
+            source_id=f"manual:{pid}:{pid_floor}:{key}:{code}:{input_source}"
             if assembly_mode.isChecked() and code in ASSEMBLY_CODES:
                 if pc:
                     raise ValueError("برای عملیات مرکب، هر ریزجزء کد فهرست‌بهای مستقل لازم دارد؛ یک قیمت برای تمام اجزا مجاز نیست")
-                floor_id=floor_input.text().strip()
-                if not floor_id:
-                    raise ValueError("برای ثبت عملیات مرکب باید طبقه یا ناحیه مشخص شود")
+                floor_id=pid_floor
                 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
                 assembly_code=ASSEMBLY_CODES[code]
                 template=AssemblyTemplateLibrary().get(assembly_code)
                 allowed=set(template.required_inputs)|set(template.optional_inputs)
                 inputs={k:v for k,v in params.items() if k in allowed and (k in template.required_inputs or v>0)}
+                if "mesh_unit_weight" in inputs:
+                    if not mesh_source.text().strip():
+                        raise ValueError("مرجع وزن واحد مش باید صریح وارد شود")
+                    inputs["mesh_unit_weight_source"]=mesh_source.text().strip()
                 result_bundle=service.add_assembly_takeoff(
                     pid, assembly_code, inputs, floor_id=floor_id, description=labels[code])
                 saved=result_bundle["rows"]
                 result.setText(f"🟢 عملیات مرکب ثبت شد | {labels[code]} | {len(saved)} ریزجزء مستقل")
             else:
                 effective_domain=ITEM_DOMAINS.get(code,domain)
-                row=service.add_takeoff(pid,effective_domain,code,source_id=source_id,description=labels[code],**params)
+                row=service.add_takeoff(pid,effective_domain,code,source_id=source_id,
+                                        system=pid_floor,description=labels[code],**params)
                 q=row["quantities"][0]
                 result.setText(f"🟢 ثبت شد | {labels[code]} | {q['amount']:,.4f} {q['unit']} | فرمول: {q['formula']}")
             refresh()
