@@ -33,3 +33,23 @@ Date: 2026-10-13. Existing Draft PR only; no merge, release or Actions.
   \`45 PASS / 0 FAIL / 0 SKIPPED / 4 DESELECTED\`. Python 3.13, pytest 9.0.2; this includes successful spawned-process SQLite persistence.
 - The 4 deselected tests exercise stale desktop conditions including PySide6 and were not within this specific pricebook regression scope.
 - This is NOT a full checkout of the current PR #18 HEAD, not Windows GUI acceptance and not the full ~2,750-test suite. **Do not decrement the original 58 FAIL or 5 SKIPPED before a fresh full-branch run.**
+
+## Follow-up: P31/P33/P35/P51 golden acceptance — 2026-10-13
+
+Four additional historic suites were revised, without changing production calculation gates:
+
+- tests/test_priority_31_deep_testing.py: approved source-backed slab-volume estimate; independent fixture source/physical count; duplicate identity; invalid factors now assert their actual validation message after a valid reviewed m2 pricebook rather than accidentally passing because of missing rates.
+- tests/test_priority_35_real_world_golden.py: reviewed individual concrete and reinforcement-related quantities with distinct price codes and explicit slab member count; recovery and three-part Golden acceptance now use approved local pricebook. Added a **negative** unreviewed-rate acceptance: rate/code alone cannot create an estimate or mutate persisted project.
+- tests/test_priority_51_golden_project_e2e.py: whole project with both slab area m2 and beam volume m3 has independently supplied reviewed price entries and explicit count; source, report and recovery checks retained.
+- tests/test_priority_33_edge_failure.py: duplicate source remains blocked; invalid factor failure is only counted after a valid approved pricebook; AI confirmation path is still read-only.
+
+Offline Python 3.13.5 / pytest 9.0.2 on owner's Dropbox archive, selectively overlaid with these corresponding changes and the same source-backed shared fixture:
+
+    tests/test_priority_31_deep_testing.py
+    tests/test_priority_35_real_world_golden.py
+    tests/test_priority_33_edge_failure.py
+    tests/test_priority_51_golden_project_e2e.py
+
+Result: **28 PASS, 0 FAIL, 0 SKIPPED** in 1.59 s.
+
+Scope caveat: archived repository at 4a6e7ebf55c7dccda90f14993656fd97f14ff362 is not a byte-identical checkout of the latest branch; this is targeted offline corroboration, not PR-head full regression and not Windows/PySide6 GUI acceptance. The last entire-worktree Work baseline remains 2686 PASS / 58 FAIL / 5 SKIPPED until rerun. All changes remain on the existing Draft PR #18 branch. Never weaken engineering provenance, pricing approval or quantity gates.
