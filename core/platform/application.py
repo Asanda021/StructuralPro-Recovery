@@ -736,23 +736,47 @@ class StructuralProApp:
         return deepcopy(row)
 
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
-        p=self.store.get(project_id)
-        if p is None: raise KeyError(project_id)
-        normalized_factors={str(k):float(v) for k,v in (factors or {}).items()}
-        estimate=build_estimate(p.get("boq",[]), factors=normalized_factors, aggregate=False)
-        # Keep the application service deterministic even if a downstream costing adapter is replaced.
+        """Financial estimate needs priced BOQ, finite rates and a version-safe save."""
+        pid=str(project_id or "").strip()
+        digest=self.store.current_digest(pid)
+        self.store._cache.pop(pid,None)
+        project=self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        boq=project.get("boq") or []
+        if not boq:
+            raise ValueError("برای برآورد مالی باید ریزمتره و BOQ موجود باشند")
+        for row in boq:
+            if row.get("unit_price") is None or not row.get("price_code"):
+                raise ValueError("قیمت واحد و کد فهرست‌بها برای همه ردیف‌های برآورد الزامی است")
+            price=float(row["unit_price"])
+            if not math.isfinite(price) or price<0:
+                raise ValueError("بهای واحد باید متناهی و نامنفی باشد")
+        normalized_factors={}
+        for name,value in (factors or {}).items():
+            if isinstance(value,bool):
+                raise ValueError("ضریب برآورد نباید بولی باشد")
+            rate=float(value)
+            if not math.isfinite(rate) or rate<0:
+                raise ValueError("ضرایب برآورد باید نامنفی و متناهی باشند")
+            normalized_factors[str(name)]=rate
+        estimate=build_estimate(boq,factors=normalized_factors,aggregate=False)
         if normalized_factors:
-            base=float(estimate["cost"].get("base",0) or 0)
+            base=float(estimate["cost"].get("base",0))
+            if not math.isfinite(base) or base<0:
+                raise ValueError("مبلغ پایه برآورد نامعتبر است")
             subtotal=base
             applied={}
             for name,rate in normalized_factors.items():
                 delta=subtotal*rate
                 applied[name]=delta
                 subtotal+=delta
+                if not math.isfinite(subtotal):
+                    raise ValueError("اعمال ضرایب موجب سرریز مبلغ شد")
             estimate["cost"]["factors"]=applied
             estimate["cost"]["grand_total"]=subtotal
-        p["estimate"]=estimate
-        self.store.save(project_id,p)
+        project["estimate"]=estimate
+        self.store.save(pid,project,expected_digest=digest)
         return estimate
 
     def build_commercial_snapshot(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
@@ -1074,6 +1098,8 @@ class StructuralProApp:
 
     def save_project_management(self, project_id: str, management: ProjectManagement) -> dict[str, Any]:
         """Persist a validated management snapshot without changing legacy project fields."""
+        digest=self.store.current_digest(project_id)
+        self.store._cache.pop(project_id,None)
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
@@ -1086,7 +1112,7 @@ class StructuralProApp:
             "project_materials": exported["materials"],
             "project_meetings": exported["meetings"],
         })
-        self.store.save(project_id, p)
+        self.store.save(project_id, p, expected_digest=digest)
         return self.project_management_snapshot(project_id)
 
     def project_activity_summary(self, project_id: str) -> dict[str, Any]:
