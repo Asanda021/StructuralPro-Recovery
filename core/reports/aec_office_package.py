@@ -4,6 +4,7 @@ Uses the existing StructuralPro XLSX/PDF exporters and project BOQ. Never turns
 missing unit prices into a zero-priced estimate or fabricates a statement.
 """
 from __future__ import annotations
+from core.commercial.exact_values import number,wire,exact
 
 import math
 import hashlib
@@ -86,6 +87,7 @@ def flatten_takeoffs(project: dict) -> list[dict]:
     return rows
 
 
+@exact
 def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     """Reconcile every BOQ source-group quantity to its original takeoff rows."""
     details = flatten_takeoffs(project)
@@ -115,6 +117,10 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
         price_rows = pricebook.get("rows_by_code")
         if not isinstance(price_rows, dict) or not price_rows:
             raise ValueError("ردیف‌های قیمت تأییدشده در فهرست‌بها موجود نیستند")
+    exact_source=False
+    if require_pricebook:
+        from core.pricing.import_service import verify_reviewed_rates
+        exact_source=verify_reviewed_rates(raw_path,pricebook)
     payable_sources = {(r["source_id"],q["code"],normalize_unit(q["unit"])) for r in project.get("takeoffs", []) for q in r.get("quantities", []) if _is_payable_quantity(r,q)}
     expected = {}
     for row in details:
@@ -151,28 +157,33 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
         if row.get("unit_price") is None or not row.get("price_code"):
             unpriced.append(n)
         elif require_pricebook:
-            price = finite_quantity(row["unit_price"], "قیمت واحد", zero=True)
+            price = number(row["unit_price"], "قیمت واحد")
             price_origin = price_rows.get(row["price_code"])
             if not isinstance(price_origin, dict):
                 raise ValueError("کد قیمت با فهرست‌بهای تأییدشده تطبیق ندارد")
             if normalize_unit(_required_text(price_origin.get("unit"), "واحد قیمت")) != unit:
                 raise ValueError("واحد ردیف قیمت با BOQ مطابقت ندارد")
-            expected_price = finite_quantity(price_origin.get("unit_price"),
-                                             "بهای واحد مستند", zero=True)
-            if not math.isclose(price, expected_price, rel_tol=1e-10, abs_tol=1e-8):
+            expected_price = number(price_origin.get("unit_price"), "بهای واحد مستند")
+            if price != expected_price:
                 raise ValueError("قیمت واحد BOQ با فهرست‌بهای واردشده برابر نیست")
-            factor = finite_quantity(row.get("factor", 1), "ضریب", zero=True)
-            effective = finite_quantity(row.get("effective_quantity", amount), "مقدار مؤثر", zero=True)
-            total = finite_quantity(row.get("total"), "مبلغ ردیف", zero=True)
-            if not math.isclose(total, effective * price * factor, rel_tol=1e-9, abs_tol=1e-6):
-                raise ValueError("مبلغ ردیف برآورد با مقدار، ضریب و قیمت واحد ناسازگار است")
+            if pricebook.get('numeric_encoding_version')==2:
+                factor=number(row.get('factor',1),'ضریب');effective=number(row.get('effective_quantity',amount),'مقدار مؤثر')
+                total=number(row.get('total'),'مبلغ ردیف')
+                if total!=effective*price*factor:raise ValueError('مبلغ ردیف برآورد با مقدار، ضریب و قیمت واحد ناسازگار است')
+            else:
+                # Keep the declared tolerance of previously stored legacy totals.
+                factor=finite_quantity(row.get('factor',1),'ضریب',zero=True)
+                effective=finite_quantity(row.get('effective_quantity',amount),'مقدار مؤثر',zero=True)
+                total=finite_quantity(row.get('total'),'مبلغ ردیف',zero=True)
+                if not math.isclose(total,effective*float(price)*factor,rel_tol=1e-9,abs_tol=1e-6):
+                    raise ValueError('مبلغ ردیف برآورد با مقدار، ضریب و قیمت واحد ناسازگار است')
     if set(expected) != set(actual):
         raise ValueError("برخی ریزمتره‌های پروژه در BOQ موجود نیستند")
     if require_pricebook and unpriced:
         raise ValueError("برای برآورد مالی، فهرست‌بهای واردشده و کد/قیمت همه ردیف‌ها الزامی است")
     return {"takeoff_count": len(details), "boq_count": len(boq),
             "unpriced_item_numbers": unpriced, "pricing_complete": not unpriced,
-            "reconciled": True}
+            "reconciled": True, "numeric_source_status": "EXACT_SOURCE_VERIFIED" if exact_source else "LEGACY_EXPLICIT_REVIEW_ONLY"}
 
 
 def prepare_office_rows(project: dict, mode: str, *, statement: dict | None = None) -> tuple[list[dict], tuple, dict]:

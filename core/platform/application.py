@@ -94,7 +94,7 @@ class StructuralProApp:
         source = Path(path).resolve()
         if hashlib.sha256(source.read_bytes()).hexdigest() != receipt.sha256:
             raise ValueError("فایل فهرست‌بها هنگام ورود تغییر کرده است؛ تأیید ثبت نشد")
-        review = {"status":"approved", "approved_by":reviewer, "path":str(source),
+        review = {"status":"approved", "numeric_encoding_version":2, "approved_by":reviewer, "path":str(source),
                   "sha256":receipt.sha256, "receipt":receipt.as_dict(),
                   "rows_by_code":{x.code:{"unit":x.unit,"unit_price":x.unit_price}
                                   for x in catalog.search("",year=year,limit=receipt.rows)}}

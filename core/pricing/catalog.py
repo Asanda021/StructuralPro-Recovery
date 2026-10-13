@@ -5,6 +5,7 @@ from typing import Iterable, Any
 import csv
 from io import StringIO
 import math
+from core.commercial.exact_values import number,wire
 
 @dataclass(frozen=True)
 class PriceItem:
@@ -36,12 +37,12 @@ class PriceCatalog:
         year = int(item.year)
         code = str(item.code).strip()
         unit = str(item.unit).strip()
-        price = float(item.unit_price)
+        price = wire(number(item.unit_price,"unit price"))
         if not code:
             raise ValueError("price code is required")
         if not unit:
             raise ValueError("price unit is required")
-        if not math.isfinite(price) or price < 0:
+        if number(price,"unit price") < 0:
             raise ValueError("unit price must be finite and non-negative")
         return PriceItem(year, str(item.group).strip(), str(item.chapter).strip(),
                          code, str(item.description).strip(), unit, price,
@@ -67,8 +68,8 @@ class PriceCatalog:
         base = self.get(code, year)
         if base is None:
             raise KeyError(code)
-        price = float(unit_price)
-        if not math.isfinite(price) or price < 0:
+        price = wire(number(unit_price,"custom price"))
+        if number(price,"unit price") < 0:
             raise ValueError("custom price must be finite and non-negative")
         custom = PriceItem(base.year, base.group, base.chapter, base.code,
                            base.description, base.unit, price, base.analysis,
@@ -125,8 +126,8 @@ class PriceCatalog:
         if item is None: return {"status":"not_found", "code":code}
         if unit and not self._units_compatible(item.unit, unit):
             return {"status":"unit_mismatch", "code":code, "expected_unit":item.unit, "actual_unit":unit}
-        if item.unit_price < 0: return {"status":"invalid_price", "code":code}
-        if item.unit_price == 0: return {"status":"zero_price", "code":code, "item":item}
+        if number(item.unit_price,"unit price") < 0: return {"status":"invalid_price", "code":code}
+        if number(item.unit_price,"unit price") == 0: return {"status":"zero_price", "code":code, "item":item}
         return {"status":"ok", "code":code, "item":item, "unit_price":item.unit_price}
 
     def source_info(self, year:int, discipline:str="building", source_id:str=""):
@@ -155,7 +156,8 @@ class PriceCatalog:
             rows.append(PriceItem(
                 year=int(raw["year"]), group=raw["group"].strip(), chapter=raw["chapter"].strip(),
                 code=raw["code"].strip(), description=raw["description"].strip(), unit=raw["unit"].strip(),
-                unit_price=float(raw["unit_price"]), analysis=raw.get("analysis",""), notes=raw.get("notes","")))
+                unit_price=wire(number(raw["unit_price"],"unit price")), analysis=raw.get("analysis",""), notes=raw.get("notes","")))
+        rows=[self._validate_item(x) for x in rows]
         if replace_year:
             years={x.year for x in rows}
             self._items={k:v for k,v in self._items.items() if k[0] not in years}

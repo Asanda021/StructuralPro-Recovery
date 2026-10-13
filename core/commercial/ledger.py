@@ -1,16 +1,18 @@
 """Project financial ledger with deterministic cumulative balance."""
 from __future__ import annotations
 from dataclasses import dataclass,asdict
+from core.commercial.exact_values import number,wire,exact
 @dataclass(frozen=True)
 class LedgerEntry:
     date:str; kind:str; description:str; amount:float
 class ProjectLedger:
     def __init__(self,entries=()): self.entries=list(entries)
     def add(self,entry): 
-        if float(entry.amount)<0: raise ValueError("amount must be non-negative")
+        if number(entry.amount,"amount")<0: raise ValueError("amount must be non-negative")
         self.entries.append(entry)
+    @exact
     def summary(self):
         by_kind={}
-        for e in self.entries: by_kind[e.kind]=by_kind.get(e.kind,0.0)+float(e.amount)
-        return {"entry_count":len(self.entries),"by_kind":by_kind,"total":sum(by_kind.values())}
-    def to_dict(self): return [asdict(e) for e in self.entries]
+        for e in self.entries: by_kind[e.kind]=by_kind.get(e.kind,0)+number(e.amount,"amount")
+        return wire({"entry_count":len(self.entries),"by_kind":by_kind,"total":sum(by_kind.values())})
+    def to_dict(self): return wire([asdict(e) for e in self.entries])

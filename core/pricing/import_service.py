@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 import csv
 import math
+import re
+from core.commercial.exact_values import number,wire
 from io import StringIO, BytesIO
 
 from core.pricing.catalog import PriceCatalog, PriceItem
@@ -70,23 +72,23 @@ class PricebookImportService:
         return mapping
 
     @staticmethod
-    def _number(value: Any) -> float:
-        raw = str("" if value is None else value).strip()
-        trans = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
-        raw = raw.translate(trans).replace(",", "").replace("٬", "").replace(" ", "")
-        if not raw:
-            raise ValueError("بهای واحد یا سال فهرست‌بها نباید خالی باشد")
-        value = float(raw)
-        if not math.isfinite(value) or value < 0:
-            raise ValueError("عدد فهرست‌بها باید متناهی و نامنفی باشد")
-        return value
+    def _number(value: Any):
+        if isinstance(value,bool) or value is None:raise ValueError("بهای واحد یا سال معتبر لازم است")
+        raw=str(value).strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩","01234567890123456789"))
+        raw=raw.replace('٫','.')
+        if any(c in raw for c in (',','٬',' ')):
+            if not re.fullmatch(r"[+]?[0-9]{1,3}(?:([,٬ ])[0-9]{3})+(?:\.[0-9]+)?",raw):
+                raise ValueError("جداکننده عدد فهرست‌بها مبهم یا نامعتبر است")
+            separators={c for c in raw if c in ',٬ '}
+            if len(separators)!=1:raise ValueError("جداکننده‌های ناسازگار عدد")
+            raw=raw.replace(next(iter(separators)),'')
+        return wire(number(raw,'عدد فهرست‌بها'))
 
     @classmethod
-    def _year(cls, value: Any) -> int:
-        number = cls._number(value)
-        if not number.is_integer() or number <= 0:
-            raise ValueError("سال فهرست‌بها باید عدد صحیح مثبت باشد")
-        return int(number)
+    def _year(cls,value: Any)->int:
+        n=number(cls._number(value),'سال')
+        if n!=n.to_integral_value() or n<=0:raise ValueError("سال فهرست‌بها باید عدد صحیح مثبت باشد")
+        return int(n)
 
     @classmethod
     def _rows_from_excel(cls, path: Path, *, fallback_year: int, raw_bytes: bytes | None = None) -> list[PriceItem]:
@@ -119,7 +121,10 @@ class PricebookImportService:
                     year_value = val("year", fallback_year)
                     group = str(val("group", "")).strip()
                     chapter = str(val("chapter", "")).strip()
-                    price = cls._number(val("unit_price"))
+                    raw_price=val("unit_price")
+                    if isinstance(raw_price,(int,float)) and not isinstance(raw_price,bool) and len(number(raw_price,'قیمت Excel').as_tuple().digits)>15:
+                        raise ValueError("قیمت بلند Excel باید سلول متنی باشد؛ رقم‌های قبلاً ازدست‌رفته حدس زده نمی‌شوند")
+                    price = cls._number(raw_price)
                     out.append(PriceItem(
                         year=cls._year(year_value),
                         group=group, chapter=chapter, code=code,
@@ -153,10 +158,11 @@ class PricebookImportService:
         for line in text.splitlines():
             cols=[x.strip() for x in line.split("|") if x.strip()]
             if len(cols)<4: continue
+            if {"code","description","unit","unit_price"}.issubset(cls._map_headers(cols)):continue
             code,desc,unit,raw_price=cols[0],cols[1],cols[2],cols[3]
             try: price=cls._number(raw_price)
-            except ValueError: continue
-            if code and desc and unit and price>=0:
+            except ValueError as e:raise ValueError("قیمت ردیف PDF نامعتبر است") from e
+            if code and desc and unit and number(price,"قیمت")>=0:
                 out.append(PriceItem(year=fallback_year,group="",chapter="",code=code,description=desc,unit=unit,unit_price=price))
         if not out:
             raise ValueError("PDF قابل تشخیص نیست؛ PDF باید متن واقعی با ستون‌های کد، شرح، واحد و بهای واحد داشته باشد.")
@@ -273,3 +279,43 @@ class PricebookImportService:
             verified_source=info["verified_source"],
             imported_at=datetime.now(timezone.utc).isoformat(), format=file_format,
         )
+
+
+def verify_reviewed_rates(path: Path, review: dict) -> bool:
+    """Verify structured source rates without rewriting old, rounded snapshots.
+
+    Opaque historical evidence remains an explicit human review, rather than
+    being represented as a parsed exact import. New imports require parsing.
+    """
+    raw=path.read_bytes();suffix=path.suffix.lower();version=review.get('numeric_encoding_version',0)
+    if sha256(raw).hexdigest()!=str(review.get('sha256','')).lower():raise ValueError('منبع قیمت هنگام کنترل تغییر کرده است')
+    if suffix=='.json':
+        import json
+        source=json.loads(raw)
+        if not isinstance(source,dict) or not all(isinstance(x,dict) and 'unit_price' in x and 'unit' in x for x in source.values()):
+            if version==2:raise ValueError('منبع قیمت دقیق قابل تشخیص نیست')
+            return False
+    elif suffix=='.csv':
+        headers=next(csv.reader(StringIO(raw.decode('utf-8-sig'))),[])
+        if not {'code','description','unit','unit_price'}.issubset(PricebookImportService._map_headers(headers)):
+            if version==2:raise ValueError('ستون‌های منبع قیمت دقیق موجود نیستند')
+            return False
+        items=PricebookImportService._rows_from_csv(path,fallback_year=(review.get('receipt') or {}).get('year',0),raw_bytes=raw)
+        if len({x.code for x in items})!=len(items):raise ValueError('منبع قیمت تکراری است')
+        source={x.code:{'unit':x.unit,'unit_price':x.unit_price} for x in items}
+    elif suffix in {'.xlsx','.xlsm','.pdf'}:
+        year=(review.get('receipt') or {}).get('year')
+        if year is None:
+            if version==2:raise ValueError('سال منبع قیمت دقیق نامعلوم است')
+            return False
+        items,_=PricebookImportService()._load_items(path,fallback_year=year,raw_bytes=raw)
+        if len({x.code for x in items})!=len(items):raise ValueError('منبع قیمت تکراری است')
+        source={x.code:{'unit':x.unit,'unit_price':x.unit_price} for x in items}
+    else:
+        if version==2:raise ValueError('قالب منبع قیمت دقیق نامعلوم است')
+        return False
+    for code,row in review['rows_by_code'].items():
+        actual=source.get(code)
+        if not actual or not PriceCatalog._units_compatible(actual['unit'],row['unit']) or number(actual['unit_price'],'قیمت منبع')!=number(row['unit_price'],'قیمت ذخیره‌شده'):
+            raise ValueError('قیمت ذخیره‌شده با رقم‌های منبع واقعی منطبق نیست؛ ورود و بازبینی مجدد لازم است')
+    return True
