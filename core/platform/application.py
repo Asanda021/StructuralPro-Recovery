@@ -679,8 +679,10 @@ class StructuralProApp:
             raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
         measurement = str(measurement_source or location_id or "").strip()
         reviewer = str(approved_by or "").strip()
-        if not measurement or not reviewer:
-            raise ValueError("شناسه واقعی برداشت و تأییدکننده عملیات مرکب الزامی‌اند")
+        if not measurement:
+            raise ValueError("شناسه ثابت محل یا مرجع واقعی برداشت عملیات مرکب الزامی است")
+        if not reviewer:
+            raise ValueError("نام تأییدکننده واقعی عملیات مرکب الزامی است")
         digest=self.store.current_digest(pid)
         self.store._cache.pop(pid,None)
         project=self.store.get(pid)
