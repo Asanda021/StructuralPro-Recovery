@@ -120,7 +120,7 @@ def preview_member(data: dict, engine: Any) -> dict:
     try:
         require_text(geometry.get("source_ref"), "مرجع هندسه")
         require_text(geometry.get("approved_by"), "تأییدکننده هندسه")
-        shape = geometry.get("shape", "rectangular")
+        shape = require_text(geometry.get("shape"), "نوع هندسه واقعی عضو")
         count = int(positive(geometry.get("count"), "تعداد فیزیکی عضو", integer=True))
         sections = []
         if shape == "rectangular":
