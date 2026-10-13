@@ -327,9 +327,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                 "net_surface": {"surface", "formwork", "forms", "tiles", "stone",
                     "membrane", "glazing", "finish_coats", "base_coats"},
                 "steel_profile_schedule": {"columns", "beams", "bracing", "steel",
-                    "steel_members", "profiles", "steel_members", "joists"},
+                    "steel_members", "profiles"},
                 "steel_plate_schedule": {"plates", "edge_plates", "steel_members", "steel"},
-                "timber_volume_schedule": {"members", "joists", "timber"},
+                "timber_volume_schedule": {"members", "timber"},
                 "piece_schedule": {"joists", "foam", "blocks", "bricks", "studs",
                     "precast_panels", "precast_units", "panels", "bolts",
                     "fasteners", "connectors", "shear_connectors"},
@@ -349,6 +349,12 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                     "kromit_roof", "composite_roof"}:
                 raise ValueError("متره حجم ناحیه‌بندی‌شده فقط برای سازه بتنی یا سقف مجاز است")
             checked = calculate_reviewed_detail(detail_kind, item.get("details"))
+            # For Uboot/Cobiax the existing *separate* verified_voids component
+            # already subtracts all cavities from gross_concrete. Never allow a
+            # second subtraction inside the gross-region detail itself.
+            if system_kind in {"uboot", "cobiax"} and name == "gross_concrete":
+                if any(region.get("voids") for region in checked["details"]):
+                    raise ValueError("حفره یوبوت/کوبیاکس فقط در گروه کسورات مستقل ثبت شود؛ کسر دوباره ممنوع")
             amount, unit, formula = checked["quantity"], checked["unit"], checked["formula"]
             params_evidence = {
                 "reviewed_detail_type": detail_kind, "details": checked["details"],
