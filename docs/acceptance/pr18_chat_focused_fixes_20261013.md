@@ -53,3 +53,22 @@ Offline Python 3.13.5 / pytest 9.0.2 on owner's Dropbox archive, selectively ove
 Result: **28 PASS, 0 FAIL, 0 SKIPPED** in 1.59 s.
 
 Scope caveat: archived repository at 4a6e7ebf55c7dccda90f14993656fd97f14ff362 is not a byte-identical checkout of the latest branch; this is targeted offline corroboration, not PR-head full regression and not Windows/PySide6 GUI acceptance. The last entire-worktree Work baseline remains 2686 PASS / 58 FAIL / 5 SKIPPED until rerun. All changes remain on the existing Draft PR #18 branch. Never weaken engineering provenance, pricing approval or quantity gates.
+
+## Further targeted repair: stale SQLite, explicit steel inputs, phase 10 — 2026-10-13
+
+- tests/test_audit_critical_persistence.py: stale estimator, snapshot and report scenarios now have real, approved, hash-verified fixture unit rate and explicit source/count. This continues to test that a stale desktop never discards an external measurement. The Qt audit UI variant is **not locally verified** due to absent PySide6.
+- tests/test_application_service.py: project statement/financial controls include reviewed file-backed pricing; previous arbitrary BOQ price mutations no longer count as verified provenance.
+- tests/test_p76_layer1_engineering_foundation.py: verified steel member count, independently specified plate density and its reference, weld unit weight; new fail-closed regressions reject missing density provenance, weld unit weight or element count. No engineering default introduced.
+- tests/test_roadmap_phase10.py: wall count explicit; price from a fixture with real on-disk hash and reviewer through estimate, statement and CSV report.
+
+### Actual offline verification
+
+On the user's Dropbox archive (archived git HEAD `4a6e7ebf55c7dccda90f14993656fd97f14ff362`) reconstructed with **selectively replicated** changes:
+
+- Combined 13-test-file regression: **88 passed, 0 failed, 4 deselected in 4.71s**.
+- Three separately executed non-GUI stale-desktop SQLite variants passed; the Qt variant was not executed because PySide6 is unavailable.
+- A diagnostic whole-suite pytest attempt on this reconstructed archive timed out after reaching ~85% of selected tests. A faster stopped run showed old archived test mismatches and missing local PySide6/arabic_reshaper; this is **not** the current branch's remaining-failure count.
+- The latest **genuine entire-worktree Work baseline** remains **2686 passed, 58 failed, 5 skipped**, pending a fresh full-suite run on exact PR #18 HEAD.
+- No Windows GUI evidence is claimed. No main merge, Actions run, build or release was requested.
+
+Note: The 88-case local sample is useful functional evidence, not final product acceptance.
