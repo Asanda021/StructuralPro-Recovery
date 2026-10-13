@@ -142,6 +142,10 @@ def preview_member(data: dict, engine: Any) -> dict:
             formula = "π×قطر²/۴×ارتفاع×تعداد منهای کسورات مستند"
             dims = {"diameter": diameter, "height": height, "count": count}
         elif shape == "reviewed_sections":
+            # A list of positive rectangle/section volumes alone does not
+            # establish nonoverlap. Require the checked layout and reviewer.
+            require_text(geometry.get("section_layout_ref"), "مرجع جانمایی ناحیه‌های مقطع")
+            require_text(geometry.get("nonoverlap_reviewed_by"), "تأییدکننده عدم هم‌پوشانی")
             if kind == "bored_pile":
                 raise ValueError("شمع با مقطع متغیر نیازمند دیتایل و روش تأیید مستقل است")
             if any(k in geometry for k in ("width", "depth", "thickness", "length")):
