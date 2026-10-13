@@ -69,6 +69,15 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
     root=QWidget(); root.setObjectName("AECWorkspace"); outer=QVBoxLayout(root); outer.setSpacing(14)
     h=QLabel(title); h.setObjectName("PageTitle"); d=QLabel(description); d.setObjectName("PageDescription"); d.setWordWrap(True)
     outer.addWidget(h); outer.addWidget(d)
+    complete_editor = QPushButton("متره دستی جامع و بازبینی‌شده همه خانواده‌های ابنیه")
+    complete_editor.setObjectName("OpenAECReviewedManualEditor")
+    outer.addWidget(complete_editor)
+    def open_complete_editor():
+        from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
+        open_reviewed_aec_editor(service, parent=root, project_id=project.text().strip(),
+                                 floor_id=floor_input.text().strip())
+        refresh()
+    complete_editor.clicked.connect(open_complete_editor)
     quick=QGroupBox("⚡ متره سریع دستی — بدون فرم‌های طولانی")
     quick_layout=QVBoxLayout(quick)
     quick_input=QLineEdit()
