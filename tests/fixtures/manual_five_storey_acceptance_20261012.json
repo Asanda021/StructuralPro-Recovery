@@ -289,14 +289,25 @@
       "item": "steel_roof_composite_concrete",
       "domain": "building",
       "inputs": {
-        "count": 1,
-        "length": 10,
-        "width": 8,
-        "thickness": 0.12
+        "composite_scope": "topping_only",
+        "deck_profile_ref": "synthetic:approved:deck-section-C1",
+        "reviewed_concrete_regions": {
+          "entries": [
+            {
+              "id": "topping-rect-C1",
+              "source_ref": "synthetic:approved:topping-detail-C1",
+              "approved_by": "synthetic-independent-reviewer",
+              "length_m": 10,
+              "width_m": 8,
+              "thickness_m": 0.12,
+              "voids": []
+            }
+          ]
+        }
       },
       "expected_per_floor": 9.6,
       "unit": "m3",
-      "reference": "10×8×0.12; flat slab layer only, corrugation excluded",
+      "reference": "Reviewed topping region 10×8×0.12 only; steel-deck trough/other concrete excluded from this BOQ row",
       "unit_price": 100
     },
     {

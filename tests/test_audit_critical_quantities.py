@@ -4,6 +4,21 @@ from core.takeoff.assembly import calculate_assembly
 from core.platform.application import StructuralProApp
 
 
+def _reviewed_composite_topping():
+    # Two independently reviewed topping zones; 2 × 4 × 3 × .2 = 4.8 m³.
+    return {
+        "composite_scope": "topping_only",
+        "deck_profile_ref": "synthetic:approved:deck-profile",
+        "reviewed_concrete_regions": {"entries": [
+            {"id": f"topping-bay-{i}", "source_ref": f"synthetic:topping:detail-{i}",
+             "approved_by": "synthetic-reviewer", "length_m": 4,
+             "width_m": 3, "thickness_m": .2, "voids": []}
+            for i in (1, 2)
+        ]},
+    }
+
+
+
 def test_floor_template_contract_deducts_opening_for_each_repeat():
     result = TakeoffEngine().calculate('building', 'slab', count=2, length=10, width=4, openings=5)
     assert result.quantity == (10 * 4 - 5) * 2 == 70
@@ -17,7 +32,7 @@ def test_floor_assembly_uses_same_per_repeat_contract():
 
 @pytest.mark.parametrize('item,inputs,expected,unit',[
     ('cable_tray', {'length':4, 'count':3}, 12, 'm'),
-    ('steel_roof_composite_concrete', {'length':4, 'width':3, 'thickness':.2, 'count':2},4.8,'m3'),
+    ('steel_roof_composite_concrete', _reviewed_composite_topping(),4.8,'m3'),
     ('stair_concrete', {'sloped_length':4, 'width':1.2, 'waist_thickness':.15, 'count':2},1.44,'m3')])
 def test_engine_quantities_persist_and_reopen(tmp_path,item,inputs,expected,unit):
     app=StructuralProApp(tmp_path);app.create_project('مقادیر مستقل','p')

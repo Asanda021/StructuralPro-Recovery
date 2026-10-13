@@ -45,7 +45,27 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     if k in {"slab","slab_area","floor","کف"}:
         q=_wall_area(p["length"],p["width"],p.get("openings",0))*_n(p.get("count",1),"count")
         return QuantityResult("ابنیه","سطح سقف/کف",q,"m2","(L×W−بازشوی هر تکرار)×تعداد")
-    if k in {"solid_slab_roof","solid_slab","flat_slab","steel_roof_composite_concrete"}:
+    if k == "steel_roof_composite_concrete":
+        # A flat bounding rectangle is NOT complete corrugated-deck concrete.
+        # Only individually reviewed flat topping zones can use this legacy
+        # item; complete roofs must use separately reviewed AEC detail parts.
+        required = {"composite_scope", "deck_profile_ref", "reviewed_concrete_regions"}
+        # Application bookkeeping metadata must never masquerade as geometry.
+        metadata = {"manual_location_id", "member_code", "price_code", "unit_price"}
+        if not required.issubset(p) or set(p) - required - metadata:
+            raise ValueError("سقف مرکب به دیتایل واقعی، مرجع پروفیل و نواحی بتن تأییدشده نیاز دارد")
+        if p["composite_scope"] != "topping_only":
+            raise ValueError("بتن کامل سقف مرکب فقط از مسیر دیتایل ناحیه‌ای تأییدشده مجاز است")
+        from core.takeoff.reviewed_components import require_text
+        from core.takeoff.reviewed_detail_calculators import calculate_reviewed_detail
+        require_text(p["deck_profile_ref"], "مرجع پروفیل عرشه فولادی")
+        checked = calculate_reviewed_detail("concrete_regions", p["reviewed_concrete_regions"])
+        if any(region["input"]["voids"] for region in checked["details"]):
+            raise ValueError("کسورات بتن جان عرشه نباید داخل دیتایل رویه با scope=topping_only محاسبه شود")
+        return QuantityResult("سقف مرکب — فقط رویه", item, checked["quantity"], "m3",
+                              "جمع حجم واقعی رویه از دیتایل ناحیه‌ای تأییدشده",
+                              ("این مقدار فقط بتن رویه است؛ حجم بتن جان عرشه و سایر نواحی نیازمند ریزمتره مستقل‌اند.",))
+    if k in {"solid_slab_roof","solid_slab","flat_slab"}:
         q=_rect_area(p["length"],p["width"])*_n(p["thickness"],"thickness", minimum=1e-12)*_n(p.get("count",1),"count")
         return QuantityResult("سقف بتن‌آرمه",item,q,"m3","L×W×t×تعداد")
     if k in {"joist_block_roof","joist_foam_roof"}:
