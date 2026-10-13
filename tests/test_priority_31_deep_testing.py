@@ -64,14 +64,16 @@ def test_takeoff_batch_and_summary_are_consistent():
     assert summary["quantity_by_unit"]["m3"] == pytest.approx(2.0)
 
 
-def test_invalid_estimate_factors_fail_closed(tmp_path):
+def test_invalid_estimate_factors_fail_closed(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("Factor Test", "P-31")
     app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2,
-                    count=1, source_id="fixture:P31:factor-invalid")
-    with pytest.raises(ValueError):
+                    count=1, source_id="fixture:P31:factor-invalid",
+                    price_code="P31-SLAB", unit_price=100)
+    approve_test_pricebook(app, "P-31", {"P31-SLAB": {"unit": "m2", "unit_price": 100}})
+    with pytest.raises(ValueError, match="ضرایب برآورد"):
         app.recalculate_estimate("P-31", factors={"overhead": -0.1})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="ضرایب برآورد"):
         app.recalculate_estimate("P-31", factors={"overhead": float("inf")})
 
 
