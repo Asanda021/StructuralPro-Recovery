@@ -67,7 +67,9 @@ def require_explicit_measurement_params(domain: str, item: str, params: dict[str
             number=float(value)
         except (ValueError, TypeError, OverflowError) as exc:
             raise ValueError(f"{key}: عدد معتبر لازم است") from exc
-        if not math.isfinite(number) or number <= 0:
-            raise ValueError(f"{key}: مقدار باید مثبت و متناهی باشد")
+        # Zero waste is valid only when the user has explicitly entered it.
+        # A missing waste field is still forbidden; it must never be guessed.
+        if not math.isfinite(number) or number < 0 or (number == 0 and key != "waste"):
+            raise ValueError(f"{key}: مقدار باید متناهی و برای تعداد/لایه مثبت باشد")
         if key in {"count", "layers"} and not number.is_integer():
             raise ValueError(f"{key}: تعداد صحیح لازم است")
