@@ -5,7 +5,6 @@ import os
 from pathlib import Path
 import json
 import math
-from uuid import uuid4
 
 from core.platform.logging import configure_logging, install_exception_hook
 
@@ -199,6 +198,11 @@ def main()->int:
     for x,l in ((qpid,"شناسه پروژه"),(discipline,"رشته/دیسپلین"),(item,"آیتم"),(length,"طول"),(width,"عرض"),(height,"ارتفاع"),(price_code,"کد فهرست‌بها")): form.addRow(l,x)
     qcount=QLineEdit();qcount.setObjectName("QuickTakeoffCount");qcount.setPlaceholderText("تعداد صریح اعضا؛ مقدار پیش‌فرض ندارد")
     form.addRow("تعداد",qcount)
+    qfloor=QLineEdit();qfloor.setObjectName("QuickTakeoffFloor")
+    qfloor.setPlaceholderText("طبقه یا ناحیه واقعی؛ بدون مقدار پیش‌فرض")
+    qsource=QLineEdit();qsource.setObjectName("QuickTakeoffSource")
+    qsource.setPlaceholderText("شناسه یکتای برداشت فیزیکی؛ برای جلوگیری از ثبت مجدد")
+    form.addRow("طبقه/ناحیه",qfloor);form.addRow("مرجع برداشت",qsource)
     def update_quick_fields():
         contract=quick_contracts[item.currentData()]
         for field,name,label in zip((length,width,height),contract[2],contract[3]):
@@ -208,6 +212,9 @@ def main()->int:
     def do_calc():
         try:
             code=item.currentData();contract=quick_contracts[code]
+            pid=qpid.text().strip();floor=qfloor.text().strip();source=qsource.text().strip()
+            if not pid or not floor or not source:
+                raise ValueError("شناسه پروژه، طبقه و مرجع یکتای برداشت باید صریح وارد شوند")
             params={"member_code":code,"discipline":discipline.currentData() or "building","price_code":price_code.text().strip() or None}
             if not qcount.text().strip():raise ValueError("تعداد اعضا را صریح وارد کنید")
             params["count"]=float(qcount.text())
@@ -227,7 +234,10 @@ def main()->int:
                 preview=service.takeoff.calculate(contract[1],code,**params)
                 if normalize_unit(resolved["item"].unit) != normalize_unit(preview.unit):raise ValueError("واحد فهرست‌بها با واحد متره یکسان نیست")
                 params["unit_price"]=resolved["unit_price"]
-            row=service.add_takeoff(qpid.text().strip(),contract[1],code,source_id="manual:"+uuid4().hex,**params)
+            # Identity is stable for the same physical measurement across sessions.
+            # JSON components avoid ambiguous delimiters, never fabricate a new source.
+            source_id="manual-quick:"+json.dumps([pid,floor,source],ensure_ascii=False,separators=(",",":"))
+            row=service.add_takeoff(pid,contract[1],code,source_id=source_id,system=floor,**params)
             out.setPlainText(f'ثبت شد\nمقدار: {row["quantities"][0]["amount"]} {row["quantities"][0]["unit"]}')
         except Exception as e: out.setPlainText("خطا: "+str(e))
     calc.clicked.connect(do_calc)

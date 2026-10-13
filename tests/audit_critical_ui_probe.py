@@ -24,6 +24,9 @@ def exercise(app):
     service.create_project('آزمون فرمان واقعی', 'UI')
     lines = page.findChildren(QLineEdit)
     page.findChild(QLineEdit,'QuickTakeoffCount').setText('1')
+    floor_input=page.findChild(QLineEdit,'QuickTakeoffFloor')
+    source_input=page.findChild(QLineEdit,'QuickTakeoffSource')
+    floor_input.setText('L1');source_input.setText('synthetic:UI:slab-1')
     lines[0].setText('UI'); lines[1].setText('2'); lines[2].setText('1'); lines[3].setText('1')
     output = page.findChild(QTextEdit)
     def persisted(): return service.open_project('UI')['takeoffs']
@@ -34,6 +37,12 @@ def exercise(app):
     quantity = persisted()[0]['quantities'][0]
     assert quantity['amount'] == 2 and quantity['unit'] == 'm2'
     assert persisted()[0]['source_id']
+    assert persisted()[0]['system'] == 'L1'
+    # The same real measurement cannot be billed twice by clicking again.
+    button.click()
+    assert 'تکراری' in output.toPlainText(), output.toPlainText()
+    assert len(persisted()) == 1
+    source_input.setText('synthetic:UI:slab-2')
     from PySide6.QtWidgets import QFrame
     ribbon_layout = window.findChild(QFrame, 'CommandRibbon').layout()
     ribbon = next(ribbon_layout.itemAt(i).widget() for i in range(ribbon_layout.count())
@@ -56,12 +65,14 @@ def exercise(app):
         discipline=next(c for c in page.findChildren(QComboBox) if c is not item)
         selection=next(i for i in range(discipline.count()) if discipline.itemData(i) and takeoff_domain(discipline.itemData(i))=='building')
         discipline.setCurrentIndex(selection)
+        floor_input.setText('L2')
         for index,(code,dimensions,expected,unit) in enumerate([
             ('slab',(10,4,1),40,'m2'),('wall',(10,1,3),30,'m2'),
             ('column',(.4,.5,3),.6,'m3'),('beam',(4,.3,.5),.6,'m3'),
             ('footing_concrete',(2,1,.4),.8,'m3')],1):
             chosen=item.findData(code) if item.findData(code)>=0 else item.findText(code)
             item.setCurrentIndex(chosen);lines[0].setText('M')
+            source_input.setText('synthetic:M:'+code)
             for field,value in zip(lines[1:4],dimensions):field.setText(str(value))
             button.click()
             assert 'خطا' not in output.toPlainText(),output.toPlainText()
@@ -88,7 +99,9 @@ def exercise(app):
         QFileDialog.getOpenFileName=lambda *a,**k:(str(price_path),'')
         click(p,'📥 ورود Excel / CSV / PDF')
         p=go('متره سریع');lines=p.findChildren(QLineEdit);lines[0].setText('F')
+        floor_input.setText('L1')
         for code,quantity in [('A',2),('B',3)]:
+            source_input.setText('synthetic:F:'+code)
             lines[1].setText(str(quantity));lines[2].setText('1');lines[4].setText(code)
             click(p,'محاسبه و ثبت');assert 'خطا' not in p.findChild(QTextEdit).toPlainText()
         assert len(service.open_project('F')['takeoffs'])==2
