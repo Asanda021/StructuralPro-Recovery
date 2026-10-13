@@ -35,7 +35,10 @@ def test_discipline_calculators_reject_non_finite_inputs(calculator, kwargs):
 
 def test_assembly_rejects_non_finite_inputs():
     with pytest.raises(ValueError, match="finite"):
-        calculate_assembly("joist_foam_roof_assembly", length=float("nan"), width=10)
+        calculate_assembly("joist_foam_roof_assembly", count=1, length=float("nan"), width=10,
+                           topping_thickness=.05, joist_spacing=.5, joist_width=.1,
+                           joist_depth=.2, joist_count=21, foam_length=.5,
+                           foam_width=.25, foam_height=.2, foam_count=750)
 
 
 def test_wall_openings_larger_than_gross_area_are_rejected_not_clamped():
