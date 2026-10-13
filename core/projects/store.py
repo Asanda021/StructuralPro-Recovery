@@ -63,16 +63,18 @@ class ProjectStore:
 
     def get(self, project_id: str) -> dict[str,Any] | None:
         pid=str(project_id)
-        cached=self._cache.get(pid)
-        if cached is not None:
-            _, data=cached
-            return deepcopy(data)
+        # SQLite version is authoritative even when another connection writes.
         row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
-        if not row: return None
+        if not row:
+            self._cache.pop(pid,None)
+            return None
+        cached=self._cache.get(pid)
+        if cached is not None and cached[0] == int(row["version"]):
+            return deepcopy(cached[1])
         data=json.loads(row["payload"])
         data["_meta"]={"id":row["id"],"version":row["version"],"updated_at":row["updated_at"]}
         self._cache[pid]=(int(row["version"]), deepcopy(data))
-        return data
+        return deepcopy(data)
 
     def list(self, *, limit: int | None = None, offset: int = 0) -> list[dict[str,Any]]:
         offset=int(offset)
