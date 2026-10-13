@@ -15,15 +15,27 @@ from core.takeoff.units import normalize_unit
 _REGISTRIES = ("beam_detail_register", "reviewed_structural_members", "reviewed_aec_systems")
 
 
+def _canonical_source_id(value: Any) -> str:
+    # Treat surrounding whitespace as presentation, not source identity.
+    # Do not fold case: CAD and source IDs can be case-sensitive.
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("شناسه یکتای برداشت الزامی است")
+    return value.strip()
+
+
+def _canonical_intersection_id(value: Any) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError("شناسه هم‌پوشانی کسرشده معتبر نیست")
+    return value.strip()
+
+
 def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, str] | None = None) -> None:
     """A measurement identity belongs to exactly one reviewed record across all domains.
 
     Multiple detail labels can refer to the same SHA-256 drawing; their measured
     region / source_id must still remain uniquely identified.
     """
-    if not isinstance(source_id, str) or not source_id.strip():
-        raise ValueError("شناسه یکتای برداشت الزامی است")
-    source_id = source_id.strip()
+    source_id = _canonical_source_id(source_id)
     for registry in _REGISTRIES:
         entries = project.get(registry) or {}
         if not isinstance(entries, dict):
@@ -33,14 +45,18 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
                 continue
             if not isinstance(record, dict):
                 raise ValueError("رکورد بازبینی متره نامعتبر است")
-            if (record.get("data") or {}).get("source", {}).get("source_id") == source_id:
+            if _canonical_source_id(
+                (record.get("data") or {}).get("source", {}).get("source_id")
+        ) == source_id:
                 raise ValueError("شناسه برداشت در عضو دیگری از پروژه تکرار شده است")
     for takeoff in project.get("takeoffs") or []:
         if not isinstance(takeoff, dict):
             raise ValueError("ساختار ردیف متره نامعتبر است")
         original = (takeoff.get("provenance") or {})
-        if takeoff.get("source_id") == source_id or (
-            isinstance(original, dict) and original.get("source_id") == source_id
+        existing_row_id = _canonical_source_id(takeoff.get("source_id"))
+        original_id = (original.get("source_id") if isinstance(original, dict) else None)
+        if existing_row_id == source_id or (
+            original_id is not None and _canonical_source_id(original_id) == source_id
         ):
             if exclude is None:
                 raise ValueError("منبع برداشت پیش‌تر وارد ریزمتره شده است")
@@ -66,8 +82,7 @@ def _intersection_ids(takeoff: dict) -> set[str]:
         if not isinstance(deduction, dict):
             raise ValueError("مستند کسر هم‌پوشانی نامعتبر است")
         ident = deduction.get("id")
-        if not isinstance(ident, str) or not ident.strip():
-            raise ValueError("شناسه هم‌پوشانی کسرشده معتبر نیست")
+        ident = _canonical_intersection_id(ident)
         if ident in result:
             raise ValueError("یک هم‌پوشانی دوبار در عضو محاسبه شده است")
         result.add(ident)
@@ -94,9 +109,7 @@ def validate_commit_rows(
     prior_ids: set[str] = set()
     already_deducted: set[str] = set()
     for row in existing:
-        identity = row.get("source_id")
-        if not isinstance(identity, str) or not identity:
-            raise ValueError("شناسه منبع متره قبلی معتبر نیست")
+        identity = _canonical_source_id(row.get("source_id"))
         if identity in prior_ids:
             raise ValueError("ریزمتره ذخیره‌شده دارای شناسه تکراری است")
         prior_ids.add(identity)
@@ -108,9 +121,11 @@ def validate_commit_rows(
     for row in incoming:
         if not isinstance(row, dict):
             raise ValueError("ساختار ردیف پیشنهادی نامعتبر است")
-        sid = row.get("source_id")
-        if not isinstance(sid, str) or not sid.strip() or sid in ids or sid in prior_ids:
+        sid = _canonical_source_id(row.get("source_id"))
+        if sid in ids or sid in prior_ids:
             raise ValueError("ردیف با شناسه تکراری یا خالی قابل انتقال به BOQ نیست")
+        if sid != row["source_id"]:
+            raise ValueError("شناسه منبع باید بدون فاصله ابتدا و انتها ذخیره شود")
         ids.add(sid)
         quantities = row.get("quantities")
         if not isinstance(quantities, list) or not quantities:
