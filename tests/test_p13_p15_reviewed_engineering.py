@@ -302,11 +302,51 @@ def test_duplicate_or_incomplete_footing_sections_never_commit():
 def test_approved_variable_height_column_has_explicit_area_of_each_segment():
     from core.takeoff.reviewed_structural import preview_member
     d=_reviewed_structural("column","C1",{"shape":"reviewed_sections","sections":[
-        {"id":"L1","net_section_area_m2":.2,"height_m":2,
+        {"id":"L1","net_section_area_m2":.2,"start_m":0,"end_m":2,
          "source_ref":"C1:lower","approved_by":"checker"},
-        {"id":"L2","net_section_area_m2":.16,"height_m":1,
+        {"id":"L2","net_section_area_m2":.16,"start_m":2,"end_m":3,
          "source_ref":"C1:upper","approved_by":"checker"},
     ]})
     report=preview_member(d,TakeoffEngine())
     assert report["ready"],report["blockers"]
     assert report["rows"][0]["quantity"]==pytest.approx(.56)
+
+
+
+def test_variable_column_rejects_gap_and_overlap_between_sections():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("column","C1",{"shape":"reviewed_sections","sections":[
+        {"id":"L1","net_section_area_m2":.2,"start_m":0,"end_m":2,
+         "source_ref":"C1:lower","approved_by":"checker"},
+        {"id":"L2","net_section_area_m2":.16,"start_m":2.1,"end_m":3,
+         "source_ref":"C1:upper","approved_by":"checker"}]})
+    assert not preview_member(d, TakeoffEngine())["ready"]
+    d["geometry"]["sections"][1]["start_m"]=1.9
+    assert not preview_member(d, TakeoffEngine())["ready"]
+
+
+def test_bored_pile_must_use_real_diameter_and_can_have_independent_rebar_groups():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("bored_pile","P1",{"shape":"circular_column",
+                                            "diameter":.6,"height":9})
+    report=preview_member(d, TakeoffEngine())
+    assert report["ready"],report["blockers"]
+    assert report["rows"][0]["quantity"]==pytest.approx(math.pi*.3**2*9)
+    assert {"longitudinal", "spiral_ties", "crossties", "starters"} == set(d["rebars"])
+
+
+def test_pile_cap_is_distinct_from_a_regular_footing():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("pile_cap","PC1",{
+        "length":2.4,"width":2.4,"thickness":.7})
+    report=preview_member(d,TakeoffEngine())
+    assert report["ready"],report["blockers"]
+    assert report["rows"][0]["quantity"]==pytest.approx(4.032)
+
+
+def test_pile_without_diameter_or_shape_is_rejected():
+    from core.takeoff.reviewed_structural import preview_member
+    d=_reviewed_structural("bored_pile","P1",{"height":9})
+    assert not preview_member(d, TakeoffEngine())["ready"]
+    d["geometry"]["shape"]="circular_column"
+    assert not preview_member(d, TakeoffEngine())["ready"]
