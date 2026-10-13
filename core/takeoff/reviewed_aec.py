@@ -14,6 +14,7 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.units import normalize_unit
 from core.takeoff.reviewed_components import require_text, positive
@@ -490,12 +491,7 @@ class ReviewedAECWorkflow:
                 raise ValueError("منبع متره تغییر کرده؛ تأییدهای قبلی باید بازنشانی شوند")
         source_id = source.get("source_id") if isinstance(source, dict) else None
         if source_id:
-            for registry_name in (REGISTER, "beam_detail_register", "reviewed_structural_members"):
-                for other_key, record in (project.get(registry_name) or {}).items():
-                    if registry_name == REGISTER and other_key == key:
-                        continue
-                    if record.get("data", {}).get("source", {}).get("source_id") == source_id:
-                        raise ValueError("منبع اندازه‌گیری برای چند عضو تکرار شده است")
+            require_source_unused(project, source_id, exclude=(REGISTER, key))
         entry = {"status": "draft", "revision": revision + 1, "data": deepcopy(data),
                  "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = entry
@@ -525,12 +521,7 @@ class ReviewedAECWorkflow:
         if not out["ready"]:
             raise ValueError("دیتایل یا تأیید ناقص است؛ ثبت قطعی متوقف شد: " + "؛ ".join(out["blockers"]))
         existing = project.get("takeoffs") or []
-        old_ids = {x.get("source_id") for x in existing}
         new_ids = {x["source_id"] for x in out["rows"]}
-        if old_ids & new_ids or out["source_id"] in old_ids:
-            raise ValueError("ریزمتره تکراری است")
-        if len(new_ids) != len(out["rows"]):
-            raise ValueError("شناسه ریزمتره تکراری است")
         takeoffs = deepcopy(existing)
         for row in out["rows"]:
             takeoffs.append({
@@ -547,19 +538,11 @@ class ReviewedAECWorkflow:
                                 "amount": row["quantity"], "formula": row["formula"],
                                 "price_code": None, "unit_price": None}]
             })
-        boq_data = []
-        for takeoff in takeoffs:
-            for quantity in takeoff.get("quantities", []):
-                boq_data.append({
-                    "source": takeoff.get("source_id"), "source_id": takeoff.get("source_id"),
-                    "source_type": "takeoff", "description": quantity.get("title"),
-                    "quantity": quantity.get("amount"), "unit": quantity.get("unit"),
-                    "item_code": quantity.get("code"), "price_code": quantity.get("price_code"),
-                    "unit_price": quantity.get("unit_price"), "category": takeoff.get("domain"),
-                    "group": takeoff.get("system") or takeoff.get("domain"),
-                })
-        project["boq"] = build_boq(boq_data)
-        project["takeoffs"] = takeoffs
+        validated = validate_commit_rows(
+            project, takeoffs[len(existing):], source_id=record["data"]["source"]["source_id"],
+            expected_current_registry=(REGISTER, _id(kind, floor, sid)))
+        project["takeoffs"], project["boq"] = rebuild_project_boq(
+            project, list(existing) + validated)
         record["status"] = "committed"
         record["committed_at"] = datetime.now(timezone.utc).isoformat()
         record["source_ids"] = sorted(new_ids)
