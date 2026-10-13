@@ -46,6 +46,7 @@ ITEMS={
 
 FIELDS={
 "length":"طول","width":"عرض","height":"ارتفاع","depth":"عمق","thickness":"ضخامت","perimeter":"محیط",
+"sloped_length":"طول شیب‌دار واقعی پله (متر)","waist_thickness":"ضخامت واقعی دال شیب‌دار (متر)",
 "count":"تعداد","unit_weight":"وزن واحد (kg/m)","openings":"کسر بازشو (m²)","waste":"ضریب پرت",
 "layers":"تعداد لایه","diameter":"قطر","excavation":"حجم خاکبرداری","deductions":"کسرها",
 "topping_thickness":"ضخامت بتن رویه","joist_spacing":"فاصله آکس تیرچه","joist_width":"عرض تیرچه",
