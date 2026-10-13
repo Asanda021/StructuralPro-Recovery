@@ -67,7 +67,7 @@ def test_performance_snapshot_matches_project_collection_sizes(tmp_path):
     for i in range(5):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=2 + i, width=3, thickness=0.2, source_id=f"S{i}"
+            length=2 + i, width=3, thickness=0.2, count=1, source_id=f"S{i}"
         )
     snap = app.project_performance_snapshot("P32")
     assert snap["project_id"] == "P32"
