@@ -17,7 +17,7 @@ def test_stale_desktop_does_not_erase_external_takeoff(tmp_path, operation):
         qt = QApplication.instance() or QApplication([])
         dialog = ManualTakeoffDialog(stale, 'p')
     writer.add_takeoff('p', 'building', 'slab_volume', length=2, width=2,
-                       thickness=1, source_id='external')
+                       thickness=1, count=1, source_id='external')
     if operation == 'estimate':
         stale.recalculate_estimate('p')
     elif operation == 'snapshot':
@@ -73,7 +73,7 @@ def test_spawned_estimator_preserves_another_process_takeoff(tmp_path):
     child.start()
     assert ready.wait(15)
     app.add_takeoff('p', 'building', 'slab_volume', length=2, width=2,
-                    thickness=1, source_id='process-source')
+                    thickness=1, count=1, source_id='process-source')
     written.set()
     child.join(20)
     assert child.exitcode == 0
