@@ -133,6 +133,9 @@ def build_aec_workspace(service,catalog,*,title,description,domain,key,status_ca
         pid=project.text().strip()
         if not pid: QMessageBox.warning(root,"متره","ابتدا شناسه پروژه را وارد کنید."); return
         code=item.currentData()
+        if assembly_mode.isChecked() and code not in ASSEMBLY_CODES:
+            QMessageBox.warning(root, "عملیات مرکب", "برای این آیتم هنوز قالب مرکب تأییدشده وجود ندارد؛ تیک متره مرکب را بردارید")
+            return
         required_fields=specs[code]
         unfilled=[n for n in required_fields if n not in {"openings"} and fields[n].value()<=0]
         if unfilled:
