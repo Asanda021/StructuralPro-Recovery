@@ -268,7 +268,7 @@ def preview_member(data: dict, engine: Any) -> dict:
                         # Physical ties need an actual zone plan. Merely giving
                         # spacing is not evidence of a count.
                         raw_axis = geometry.get("height" if kind == "column" else "length")
-                        if kind == "column" and shape == "reviewed_sections" and raw_axis is None:
+                        if kind == "column" and geometry.get("shape") == "reviewed_sections" and raw_axis is None:
                             raw_axis = sections[-1]["end_m"] if sections else None
                         axial_length = positive(raw_axis, "طول واقعی عضو برای جانمایی خاموت")
                         validate_stirrup_zones(bar.get("segments"), axial_length)
