@@ -70,7 +70,7 @@ def test_large_collection_pagination_scenario(tmp_path):
     app = _app(tmp_path)
     for i in range(120):
         app.add_takeoff("G35", "building", "slab_volume",
-                        length=1 + i, width=2, thickness=0.2, source_id=f"ROW-{i}")
+                        length=1 + i, width=2, thickness=0.2, count=1, source_id=f"ROW-{i}")
     page = app.project_collection_page("G35", "takeoffs", page=3, page_size=50)
     assert page["total"] == 120
     assert len(page["items"]) == 20
