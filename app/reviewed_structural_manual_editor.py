@@ -216,7 +216,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         keys=_FORM_COLUMNS if name=="formwork" else _REBAR_COLUMNS
         detail_table.setColumnCount(len(keys))
         detail_table.setHorizontalHeaderLabels(list(keys))
-        _show_table(detail_table,keys,part.get("surfaces") if name=="formwork" else part.get("segments") or [])
+        _show_table(detail_table, keys, (part.get("surfaces") or []) if name=="formwork"
+                    else (part.get("segments") or []))
 
     def apply_group(name=None):
         d=assure()
@@ -344,5 +345,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     preview.clicked.connect(inspect)
     commit.clicked.connect(finalize)
     detail.currentIndexChanged.connect(change_group)
-    reload()
+    if project.text().strip() and floor.text().strip() and ident.text().strip():
+        reload()
+    else:
+        message.setText("پروژه، طبقه، نوع و شناسه عضو را وارد کنید، سپس «بارگذاری» را بزنید.")
     return dialog.exec()
