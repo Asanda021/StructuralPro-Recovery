@@ -20,15 +20,15 @@ def _create(tmp_path):
 def test_missing_location_rejected_with_zero_side_effects(tmp_path):
     app = _create(tmp_path)
     with pytest.raises(ValueError, match="شناسه ثابت محل"):
-        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول")
+        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", approved_by="بازبین مستقل آزمون")
     assert app.open_project("p1")["takeoffs"] == []
 
 
 def test_same_operation_floor_location_is_not_registered_twice(tmp_path):
     app = _create(tmp_path)
-    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام")
+    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام", approved_by="بازبین مستقل آزمون")
     with pytest.raises(ValueError, match="تکراری"):
-        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام")
+        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام", approved_by="بازبین مستقل آزمون")
     project = app.open_project("p1")
     assert len(project["takeoff_assemblies"]) == 1
     assert len(project["takeoffs"]) == 3
@@ -43,7 +43,7 @@ def test_different_floor_location_and_operation_allow_real_distinct_work(tmp_pat
         ("wall_tile", "اول", "آشپزخانه"),
         ("wall_paint", "اول", "حمام"),
     ]:
-        app.add_assembly_takeoff("p1", code, FINISH, floor_id=floor, location_id=location)
+        app.add_assembly_takeoff("p1", code, FINISH, floor_id=floor, location_id=location, approved_by="بازبین مستقل آزمون")
     project = app.open_project("p1")
     assert len(project["takeoffs"]) == 12
     assert len(project["boq"]) == 2  # aggregated: wall_tile_work + wall_paint_work
@@ -55,7 +55,7 @@ def test_different_floor_location_and_operation_allow_real_distinct_work(tmp_pat
 def test_five_floors_round_trip_and_other_work_rebuilds_without_double_count(tmp_path):
     app = _create(tmp_path)
     for floor in range(1, 6):
-        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id=f"طبقه {floor}", location_id="حمام")
+        app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id=f"طبقه {floor}", location_id="حمام", approved_by="بازبین مستقل آزمون")
     app.store.close()
     reopened = StructuralProApp(tmp_path)
     before = reopened.open_project("p1")
@@ -74,7 +74,7 @@ def test_five_floors_round_trip_and_other_work_rebuilds_without_double_count(tmp
 
 def test_legacy_finish_rows_without_explicit_role_not_double_counted(tmp_path):
     app = _create(tmp_path)
-    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام")
+    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام", approved_by="بازبین مستقل آزمون")
     project = app.open_project("p1")
     for row in project["takeoffs"]:
         row.pop("component_role", None)
@@ -88,7 +88,7 @@ def test_legacy_finish_rows_without_explicit_role_not_double_counted(tmp_path):
 
 def test_unknown_explicit_role_fails_closed_on_rebuild(tmp_path):
     app = _create(tmp_path)
-    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام")
+    app.add_assembly_takeoff("p1", "wall_tile", FINISH, floor_id="اول", location_id="حمام", approved_by="بازبین مستقل آزمون")
     project = app.open_project("p1")
     project["takeoffs"][0]["quantities"][0]["role"] = "other"
     app.store.save("p1", project)
