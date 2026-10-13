@@ -218,14 +218,13 @@
         "length": 6,
         "width": 6,
         "thickness": 0.28,
-        "void_length": 0.5,
-        "void_width": 0.25,
-        "void_height": 0.2,
-        "void_count": 40
+        "void_count": 40,
+        "void_volume": 0.025,
+        "void_spec_ref": "SYNTHETIC-UBOOT-MANUFACTURER-VOID-VOLUME-001"
       },
       "expected_per_floor": 9.08,
       "unit": "m3",
-      "reference": "6×6×0.28−40×0.5×0.25×0.2; rectangular void specification",
+      "reference": "6×6×0.28−40×0.025; synthetic explicit reviewed void volume (not outer box)",
       "unit_price": 100
     },
     {

@@ -117,13 +117,18 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
         q = (gross - void) * _n(p.get("count",1), "count")
         return QuantityResult("سقف مجوف",item,q,"m3","(L×W×t − حجم تأییدشده هر حفره×تعداد حفره)×تعداد سقف",("حجم حفره از مشخصات صریح کاربر؛ هندسه تولیدکننده و نواحی توپر باید بازبینی شوند.",))
     if k == "uboot_roof":
-        area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
-        gross=area*_n(p["thickness"],"thickness")
-        void=_n(p["void_length"],"void_length")*_n(p["void_width"],"void_width")*_n(p["void_height"],"void_height")*_n(p["void_count"],"void_count")*_n(p.get("count",1),"count")
+        if not str(p.get("void_spec_ref", "")).strip() or "void_volume" not in p:
+            raise ValueError("uboot requires verified void_volume and void_spec_ref; bounding-box dimensions cannot establish actual void volume")
+        # The void is a manufactured hollow shape, not necessarily the
+        # rectangular outer bounding box. Use independently reviewed volume.
+        count=_n(p.get("count",1),"count")
+        gross=_rect_area(p["length"],p["width"])*_n(p["thickness"],"thickness")
+        void=_n(p["void_volume"],"void_volume",minimum=1e-12)*_n(p["void_count"],"void_count",minimum=1)
         if void > gross:
             raise ValueError("void volume cannot exceed gross slab volume")
-        q=gross-void
-        return QuantityResult("سقف مجوف",item,q,"m3","L×W×t − حجم واقعی فضاهای خالی",())
+        q=(gross-void)*count
+        return QuantityResult("سقف مجوف",item,q,"m3","(حجم ناخالص − حجم واقعی مستند حفره‌ها)×تعداد سقف",
+                              ("نواحی توپر، کلاف‌ها و دیتایل واقعی سازنده باید جداگانه بررسی شوند.",))
     if k in {"slab_volume","concrete_slab","بتن_سقف"}:
         q=_rect_area(p["length"],p["width"])*_n(p["thickness"],"thickness")*_n(p.get("count",1),"count"); return QuantityResult("ابنیه","بتن سقف",q,"m3","L×W×t×تعداد")
     if k in {"tie_beam","tie_beam_concrete","شناژ"}:

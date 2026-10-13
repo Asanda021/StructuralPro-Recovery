@@ -44,7 +44,7 @@ def test_all_concrete_roof_families_are_deterministic():
             "uboot_roof",
             dict(
                 length=10, width=10, thickness=0.28,
-                void_length=0.50, void_width=0.25, void_height=0.20,
+                void_volume=0.025, void_spec_ref="SYNTHETIC-UBOOT-VOID-001",
                 void_count=100, count=1,
             ),
             25.5,
@@ -82,7 +82,7 @@ def test_all_concrete_roof_families_are_deterministic():
         ), "spacing_y"),
         ("uboot_roof", dict(
             length=10, width=10, thickness=0.28,
-            void_length=0.5, void_width=0.25, void_height=0.2,
+            void_volume=0.025, void_spec_ref="SYNTHETIC-UBOOT-VOID-001",
             void_count=-1,
         ), "void_count"),
     ],
@@ -99,9 +99,8 @@ def test_uboot_void_volume_larger_than_gross_slab_is_rejected():
             length=1,
             width=1,
             thickness=0.10,
-            void_length=1,
-            void_width=1,
-            void_height=1,
+            void_volume=1,
+            void_spec_ref="SYNTHETIC-UBOOT-INVALID",
             void_count=100,
         )
 

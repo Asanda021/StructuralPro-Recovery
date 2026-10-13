@@ -68,7 +68,7 @@ def test_uboot_void_volume_larger_than_slab_is_rejected():
     with pytest.raises(ValueError, match="void volume cannot exceed gross slab"):
         calculate_building_item(
             "uboot_roof", length=10, width=10, thickness=0.2,
-            void_length=0.5, void_width=0.5, void_height=0.3, void_count=1000,
+            void_volume=0.075, void_spec_ref="SYNTHETIC-UBOOT-INVALID", void_count=1000,
         )
 
 
