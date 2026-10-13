@@ -38,6 +38,12 @@ KINDS = {
     "mat_footing": ("پی گسترده", "advanced", "footing_concrete",
                     ("length", "width", "thickness", "count"),
                     ("bottom_x", "bottom_y", "top_x", "top_y", "starters", "additional")),
+    "pile_cap": ("کلاهک شمع", "advanced", "footing_concrete",
+                 ("length", "width", "thickness", "count"),
+                 ("bottom_x", "bottom_y", "top_x", "top_y", "starters", "additional")),
+    "bored_pile": ("شمع بتنی درجا", "building", "column",
+                   ("diameter", "height", "count"),
+                   ("longitudinal", "spiral_ties", "crossties", "starters")),
 }
 
 
@@ -118,6 +124,8 @@ def preview_member(data: dict, engine: Any) -> dict:
         count = int(positive(geometry.get("count"), "تعداد فیزیکی عضو", integer=True))
         sections = []
         if shape == "rectangular":
+            if kind == "bored_pile":
+                raise ValueError("شمع درجا به قطر واقعی و شکل دایره‌ای تأییدشده نیاز دارد")
             dims = {field: (count if field == "count" else positive(geometry.get(field), field))
                     for field in fields}
             gross = engine.calculate(domain, item, description=f"بتن {title} {member_id}", **dims)
@@ -125,7 +133,7 @@ def preview_member(data: dict, engine: Any) -> dict:
                 raise ValueError("واحد حجم سازه ناسازگار است")
             gross_m3 = gross.quantity
             formula = "حجم مستطیلی موتور اصلی منهای کسورات مستقل تأییدشده"
-        elif shape == "circular_column" and kind == "column":
+        elif shape == "circular_column" and kind in {"column", "bored_pile"}:
             if any(k in geometry for k in ("width", "depth", "sections")):
                 raise ValueError("ابعاد مستطیلی و دایره‌ای نباید برای یک ستون ترکیب شوند")
             diameter = positive(geometry.get("diameter"), "قطر واقعی ستون")
@@ -134,6 +142,10 @@ def preview_member(data: dict, engine: Any) -> dict:
             formula = "π×قطر²/۴×ارتفاع×تعداد منهای کسورات مستند"
             dims = {"diameter": diameter, "height": height, "count": count}
         elif shape == "reviewed_sections":
+            if kind == "bored_pile":
+                raise ValueError("شمع با مقطع متغیر نیازمند دیتایل و روش تأیید مستقل است")
+            if any(k in geometry for k in ("width", "depth", "thickness", "length")):
+                raise ValueError("ابعاد کلی با جدول ناحیه‌های هندسی مستقل تعارض دارد")
             parts = geometry.get("sections")
             if not isinstance(parts, list) or not parts:
                 raise ValueError("مقطع متغیر باید جدول ناحیه‌های واقعی داشته باشد")
@@ -149,8 +161,22 @@ def preview_member(data: dict, engine: Any) -> dict:
                 ref = require_text(part.get("source_ref"), "مرجع هندسه ناحیه")
                 reviewer = require_text(part.get("approved_by"), "تأییدکننده ناحیه")
                 if kind == "column":
+                    if set(part) != {"id", "source_ref", "approved_by",
+                                    "net_section_area_m2", "start_m", "end_m"}:
+                        raise ValueError("ستون چندمقطعی به ابتدا و انتهای واقعی هر ناحیه نیاز دارد")
                     area = positive(part.get("net_section_area_m2"), "سطح واقعی مقطع")
-                    span = positive(part.get("height_m"), "ارتفاع ناحیه ستون")
+                    start = positive(part.get("start_m"), "موقعیت شروع", allow_zero=True)
+                    end = positive(part.get("end_m"), "موقعیت پایان")
+                    if end <= start:
+                        raise ValueError("ارتفاع ناحیه ستون باید مثبت باشد")
+                    span = end - start
+                    # Boundaries cannot overlap, repeat or silently leave gaps.
+                    if sections:
+                        expected_start = sections[-1]["end_m"]
+                    else:
+                        expected_start = 0.0
+                    if not math.isclose(start, expected_start, abs_tol=1e-9):
+                        raise ValueError("ناحیه‌های ستون دارای فاصله یا هم‌پوشانی‌اند")
                     qty = area * span * count
                 else:
                     if set(part) != {"id", "source_ref", "approved_by",
@@ -161,8 +187,11 @@ def preview_member(data: dict, engine: Any) -> dict:
                     thickness = positive(part.get("thickness_m"), "ضخامت واقعی قطعه")
                     qty = length * width * thickness * count
                 volumes.append(qty)
-                sections.append({"id": identity, "source_ref": ref,
-                                 "approved_by": reviewer, "volume_m3": qty})
+                section_info = {"id": identity, "source_ref": ref,
+                                "approved_by": reviewer, "volume_m3": qty}
+                if kind == "column":
+                    section_info["start_m"], section_info["end_m"] = start, end
+                sections.append(section_info)
             gross_m3 = math.fsum(volumes)
             positive(gross_m3, "حجم ناحیه‌بندی‌شده")
             dims = {"count": count, "sections": sections}
@@ -238,9 +267,10 @@ def preview_member(data: dict, engine: Any) -> dict:
                             raise ValueError("خاموت اعضای تکراری باید برای هر عضو جداگانه متره شود")
                         # Physical ties need an actual zone plan. Merely giving
                         # spacing is not evidence of a count.
-                        axial_length = positive(
-                            geometry.get("height" if kind == "column" else "length"),
-                            "طول واقعی عضو برای جانمایی خاموت")
+                        raw_axis = geometry.get("height" if kind == "column" else "length")
+                        if kind == "column" and shape == "reviewed_sections" and raw_axis is None:
+                            raw_axis = sections[-1]["end_m"] if sections else None
+                        axial_length = positive(raw_axis, "طول واقعی عضو برای جانمایی خاموت")
                         validate_stirrup_zones(bar.get("segments"), axial_length)
                     mass, parts = reviewed_steel(bar, label=group_name, engine=engine)
                     rows.append({"source_id": prefix + ":rebar:" + group_name,
