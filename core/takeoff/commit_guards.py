@@ -63,7 +63,7 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
             original_id is not None and _canonical_source_id(original_id) == source_id
         ):
             if exclude is None:
-                raise ValueError("منبع برداشت تکراری قبلاً وارد ریزمتره شده است")
+                raise ValueError("منبع برداشت تکراری قبلاً وارد ریزمتره شده است؛ ثبت دوباره مجاز نیست")
             # Committed records cannot be modified. This exception is for
             # idempotent checks of the current record in read-only contexts.
             raise ValueError("منبع برداشت قبلاً قطعی شده است")

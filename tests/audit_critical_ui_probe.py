@@ -3,13 +3,17 @@ import sys
 from pathlib import Path
 import json
 import traceback
+import os
+# This probe owns Qt shutdown; the application smoke timer must not destroy
+# widgets during a nested native dialog or before interaction completes.
+os.environ.pop("STRUCTURALPRO_SMOKE", None)
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 home = Path(sys.argv[1]); home.mkdir(parents=True, exist_ok=True)
 Path.home = classmethod(lambda cls: home)
 from PySide6.QtWidgets import QApplication, QMainWindow, QTabBar, QStackedWidget, QLineEdit, QComboBox, QPushButton, QTextEdit, QFileDialog
 from app.main import main
 from core.platform.application import StructuralProApp
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt, QCoreApplication, QEvent
 
 
 def exercise(app):
@@ -95,6 +99,7 @@ def exercise(app):
         sheet.append([1404,'ابنیه','01','A','سطح نمونه','m2',100]);sheet.append([1404,'ابنیه','01','B','سطح دوم','m2',20])
         price_path=home/'explicit-prices.xlsx';book.save(price_path)
         p=go('فهرست‌بها');entry(p,'سال').setText('1404')
+        p.findChild(QLineEdit,'PricebookReviewer').setText('بازبین مستقل داده مصنوعی آزمون')
         page.findChildren(QLineEdit)[0].setText('F')
         QFileDialog.getOpenFileName=lambda *a,**k:(str(price_path),'')
         click(p,'📥 ورود Excel / CSV / PDF')
@@ -131,11 +136,23 @@ def exercise(app):
 
 native_exec = QApplication.exec
 def run_event_loop(app):
-    result=exercise(app)
-    # Let the real Qt event loop process native ownership/deferred cleanup,
-    # as the existing desktop smoke does; do not quit mid-signal callback.
-    QTimer.singleShot(100, app.quit)
+    result = {"code": 1}
+    def interact():
+        try:
+            result["code"] = exercise(app)
+        except Exception:
+            traceback.print_exc()
+        finally:
+            def close_windows():
+                for widget in app.topLevelWidgets():
+                    widget.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+                    widget.close()
+                QTimer.singleShot(100, app.quit)
+            QTimer.singleShot(0, close_windows)
+    QTimer.singleShot(0, interact)
     native_exec()
-    return result
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    app.processEvents()
+    return result["code"]
 QApplication.exec = run_event_loop
 raise SystemExit(main())

@@ -9,6 +9,7 @@ from core.platform.application import StructuralProApp
 from core.pricing.catalog import PriceCatalog, PriceItem
 from core.takeoff.estimate import build_estimate
 import hashlib
+import pytest
 
 
 def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
@@ -68,6 +69,15 @@ def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
     assert period["gross_current"] == 2000.0
     assert period["retention"] == 200.0
 
+    # A missing period quantity is unknown, not implicit zero. The engineer
+    # explicitly records no additional work before previewing the next period.
+    with pytest.raises(ValueError, match="صریح"):
+        app.build_statement("acceptance-001", retention_rate=0.10)
+    project = app.open_project("acceptance-001")
+    project["boq"][0]["current_quantity"] = 0
+    app.store.save("acceptance-001", project,
+                   expected_digest=app.store.current_digest("acceptance-001"))
+    assert app.statement_periods("acceptance-001")[0] == period
     statement = app.build_statement(
         "acceptance-001",
         retention_rate=0.10,

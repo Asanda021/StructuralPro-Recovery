@@ -974,10 +974,20 @@ class StructuralProApp:
         advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
         tax_rate = _statement_rate(tax_rate, "مالیات")
         insurance_rate = _statement_rate(insurance_rate, "بیمه")
+        if isinstance(previous_paid, bool):
+            raise ValueError("پرداخت قبلی باید مبلغ عددی معتبر باشد")
+        try:
+            previous_paid = float(previous_paid)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("پرداخت قبلی باید مبلغ عددی معتبر باشد") from exc
+        if not math.isfinite(previous_paid):
+            raise ValueError("پرداخت قبلی باید مبلغ متناهی باشد")
         if min(previous_paid, retention_rate, advance_recovery_rate, tax_rate, insurance_rate) < 0:
             raise ValueError("statement rates and previous payment cannot be negative")
         lines = []
         for row in p.get("boq", []):
+            if row.get("current_quantity") is None or isinstance(row.get("current_quantity"), bool):
+                raise ValueError("کارکرد دوره باید صریح وارد شود؛ مقدار نامعلوم صفر نیست")
             lines.append({
                 "code": row.get("price_code", ""),
                 "description": row.get("description", ""),
@@ -2408,6 +2418,17 @@ class StructuralProApp:
             selected=next((x for x in periods if int(x.get("number",0))==int(period_no)),None)
             if selected is None: raise KeyError(f"statement period {period_no}")
         if selected is None:
+            if any(row.get("current_quantity") is None for row in p.get("boq", [])):
+                # An estimate is reportable without inventing unknown period work.
+                # Only an explicit current-period input can produce a statement.
+                summary = {**estimate.get("cost", {}),
+                           "statement_status": "کارکرد دوره وارد نشده است"}
+                rows = [{"کد": row.get("price_code", ""), "شرح": row.get("description", ""),
+                         "واحد": row.get("unit", ""), "مقدار قرارداد": row["quantity"],
+                         "قیمت واحد": row["unit_price"], "مبلغ قرارداد": row["total"],
+                         "منابع متره": "، ".join(row.get("source_ids", []))}
+                        for row in p.get("boq", [])]
+                return build_report(p.get("name", ""), rows, summary).export(path, fmt)
             statement=self.build_statement(project_id)
             title=p.get("name","")
         else:

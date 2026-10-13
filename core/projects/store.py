@@ -63,6 +63,14 @@ class ProjectStore:
                 assert_unchanged(current, expected_digest)
             if row is not None:
                 previous = json.loads(row["payload"])
+                issued = previous.get("statement_periods") or []
+                if issued:
+                    next_periods = clean_project.get("statement_periods") or []
+                    if not isinstance(next_periods, list) or next_periods[:len(issued)] != issued:
+                        raise ValueError("تغییر یا حذف صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                    for family in ("takeoffs", "takeoff_assemblies"):
+                        if (previous.get(family) or []) != (clean_project.get(family) or []):
+                            raise ValueError("تغییر مبنای متره صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
                 if (previous.get("estimate") or previous.get("statement_periods")) and \
                         _contract_basis(previous) != _contract_basis(clean_project):
                     if previous.get("statement_periods"):
