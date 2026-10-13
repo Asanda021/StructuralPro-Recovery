@@ -26,6 +26,9 @@ def test_all_concrete_roof_families_are_deterministic():
             dict(
                 length=10, width=5, thickness=0.20,
                 void_diameter=0.10, void_count=20, count=1,
+                void_effective_length_m=10, void_cross_section="circular",
+                void_spec_ref="SYNTHETIC-HOLLOWCORE-SECTION-001",
+                void_reviewed_by="synthetic-structural-reviewer",
             ),
             8.429203673,
             "m3",
@@ -34,10 +37,12 @@ def test_all_concrete_roof_families_are_deterministic():
             "waffle_roof",
             dict(
                 length=10, width=10, top_thickness=0.06,
-                spacing_x=0.60, spacing_y=0.60,
+                rib_count_x=16, rib_count_y=16, intersection_count=256,
+                rib_run_length_x_m=10, rib_run_length_y_m=10,
+                layout_ref="SYNTHETIC-WAFFLE-LAYOUT-001", approved_by="synthetic-checker",
                 rib_width=0.12, rib_depth=0.18, count=1,
             ),
-            12.48,
+            12.248448,
             "m3",
         ),
         (
@@ -77,9 +82,11 @@ def test_all_concrete_roof_families_are_deterministic():
         ), "joist_spacing"),
         ("waffle_roof", dict(
             length=10, width=10, top_thickness=0.06,
-            spacing_x=0.6, spacing_y=0,
+            rib_count_x=10, rib_count_y=0, intersection_count=100,
+            rib_run_length_x_m=10, rib_run_length_y_m=10,
+            layout_ref="synthetic:waffle", approved_by="checker",
             rib_width=0.12, rib_depth=0.18,
-        ), "spacing_y"),
+        ), "rib_count_y"),
         ("uboot_roof", dict(
             length=10, width=10, thickness=0.28,
             void_volume=0.025, void_spec_ref="SYNTHETIC-UBOOT-VOID-001",
