@@ -72,3 +72,13 @@ On the user's Dropbox archive (archived git HEAD `4a6e7ebf55c7dccda90f14993656fd
 - No Windows GUI evidence is claimed. No main merge, Actions run, build or release was requested.
 
 Note: The 88-case local sample is useful functional evidence, not final product acceptance.
+
+
+## Follow-up: per-floor BOQ provenance and five-storey golden evidence — 2026-10-13
+
+- Updated `tests/test_finish_recovery_pr481.py` so aggregations are evaluated at their actual `(floor, item_code)` grain: distinct floors retain separate BOQ rows while locations sharing an item and floor may aggregate.
+- The fixtures retain original engineering quantities (three 28 m² wall-tile cases and one 28 m² paint case; five floors totaling 140 m²). Added assertions that `source_ids` contain **every** physical payable source exactly once, before and after SQLite reopen/BOQ rebuild.
+- Updated `tests/test_golden_five_storey_building.py` with stable explicit synthetic `measurement_source` per case/floor and named reviewer. The reference component quantities are now checked against **all stored takeoff components**; procurement materials (block/mortar/cement/sand) must stay **out** of payable BOQ, whose source lineage must equal the set of payable component origins.
+- No production quantity formula or guard was relaxed. No hidden counts/prices, skipped tests, removed tests, or unreviewed pricing.
+- **Local validation**: 34 PASSED / 0 FAILED / 0 SKIPPED across `test_finish_recovery_pr481.py`, `test_finish_takeoff_assemblies.py`, and `test_golden_five_storey_building.py`, using Dropbox archive `StructuralPro_PR18_Followup_20261013.zip` (archive HEAD `4a6e7ebf55c7dccda90f14993656fd97f14ff362`) with selectively applied latest test fixtures/expectations. A first run of the unmodified archive yielded 25 PASSED / 9 FAILED. The 34-pass result is **not** an entire-tree pytest of GitHub HEAD.
+- GitHub commits: `c63ab709c916fc32100566fdde15254a4902afca`, `c49f76462602704dae1cbd64625759dd839c6a88`. PR #18 remains Draft, based on PR #17; `main` was not changed. Workflow activation, Actions, merge, build and release were not performed. Five Windows-native skipped cases remain unverified; a fresh full-suite run against the precise PR HEAD is still mandatory.
