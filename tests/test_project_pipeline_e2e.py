@@ -5,19 +5,22 @@ from core.takeoff.estimate import build_estimate
 
 
 # CI trigger: keep this acceptance test in the main verification path.
-def test_project_pipeline_persists_estimate_and_snapshot(tmp_path):
+def test_project_pipeline_persists_estimate_and_snapshot(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه آزمایشی", "P1")
     app.add_takeoff(
         "P1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:P1:wall-1",
     )
     app.add_takeoff(
         "P1", "building", "wall",
         length=5, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:P1:wall-2",
     )
+    approve_test_pricebook(app, "P1", {"W001": {"unit": "m2", "unit_price": 1200}})
 
     project_before_estimate = app.open_project("P1")
     estimate = build_estimate(project_before_estimate["boq"], factors={"سربار": 0.10}, aggregate=False)
@@ -37,14 +40,16 @@ def test_project_pipeline_persists_estimate_and_snapshot(tmp_path):
     assert saved["estimate"]["cost"]["grand_total"] == snapshot["estimate"]["cost"]["grand_total"]
     assert saved["boq"][0]["price_code"] == "W001"
 
-def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_path):
+def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه مالی", "D1")
     app.add_takeoff(
         "D1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:D1:wall-1",
     )
+    approve_test_pricebook(app, "D1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("D1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("D1", p)
@@ -60,14 +65,16 @@ def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_pat
     assert 0 <= dash["progress_percent"] <= 100
 
 
-def test_project_financial_control_calculates_cost_variance(tmp_path):
+def test_project_financial_control_calculates_cost_variance(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("کنترل مالی", "F1")
     app.add_takeoff(
         "F1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:F1:wall-1",
     )
+    approve_test_pricebook(app, "F1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("F1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("F1", p)
@@ -78,14 +85,16 @@ def test_project_financial_control_calculates_cost_variance(tmp_path):
     assert control["cost_performance_index"] == pytest.approx(1.5)
 
 
-def test_project_cost_ledger_persists_and_feeds_financial_control(tmp_path):
+def test_project_cost_ledger_persists_and_feeds_financial_control(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("دفتر هزینه", "C1")
     app.add_takeoff(
         "C1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:C1:wall-1",
     )
+    approve_test_pricebook(app, "C1", {"W001": {"unit": "m2", "unit_price": 1200}})
     app.open_project("C1")["boq"][0]["current_quantity"] = 5
     p = app.open_project("C1")
     p["boq"][0]["current_quantity"] = 5
@@ -119,14 +128,16 @@ def test_project_cost_report_exports_rows_and_category_totals(tmp_path):
     assert "دستمزد" in values
 
 
-def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path):
+def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("داشبورد مالی", "FD1")
     app.add_takeoff(
         "FD1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:FD1:wall-1",
     )
+    approve_test_pricebook(app, "FD1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("FD1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("FD1", p)
@@ -138,10 +149,11 @@ def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path):
     assert dash["cost_by_category"]["مصالح"] == 1500
 
 
-def test_project_receipts_and_financial_position(tmp_path):
+def test_project_receipts_and_financial_position(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("دریافتی", "R1")
-    app.add_takeoff("R1", "building", "wall", length=10, width=0.2, height=3, price_code="W001", unit_price=1200)
+    app.add_takeoff("R1", "building", "wall", length=10, width=0.2, height=3, price_code="W001", unit_price=1200, count=1, source_id="fixture:R1:wall-1")
+    approve_test_pricebook(app, "R1", {"W001": {"unit": "m2", "unit_price": 1200}})
     app.add_project_cost("R1", "مصالح", 1000)
     app.add_project_receipt("R1", 5000, description="پرداخت کارفرما", reference="REC-1")
     app.add_project_receipt("R1", 2000, description="علی‌الحساب")
