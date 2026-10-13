@@ -85,3 +85,17 @@ def test_large_collection_pagination_scenario(tmp_path):
     assert len(page["items"]) == 20
     assert page["has_previous"] is True
     assert page["has_next"] is False
+
+
+def test_golden_unreviewed_rate_never_generates_financial_estimate(tmp_path):
+    import pytest
+    app = _app(tmp_path)
+    app.add_takeoff("G35", "building", "slab_volume", length=5, width=4,
+                    thickness=0.2, count=1, source_id="fixture:G35:unreviewed",
+                    price_code="G35-SLAB", unit_price=100)
+    before = app.open_project("G35")
+    with pytest.raises(ValueError, match="بازبینی و تأیید"):
+        app.recalculate_estimate("G35")
+    assert app.open_project("G35") == before
+    assert not app.open_project("G35").get("estimate")
+    app.store.close()
