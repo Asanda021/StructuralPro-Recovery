@@ -168,9 +168,12 @@ def test_two_processes_only_one_post_commits(tmp_path):
     a=StructuralProApp(tmp_path/'db');assert a.statement_amendment_summary('P',1)['amendment_deltas']['payable_current']=='-90.95';a.store.close()
 
 
-def test_high_precision_net_quantity_is_preserved_or_blocks_legacy_float(tmp_path):
+def test_high_precision_net_quantity_is_preserved_in_following_period(tmp_path):
     a,docs,_,_=fixture(tmp_path);advance(a,draft(a,docs,'4.12345678901234567890123456789'))
     assert a.statement_amendment_summary('P',1)['lines'][0]['net_quantity']=='4.12345678901234567890123456789'
     before=a.open_project('P')
-    with pytest.raises(ValueError,match='دقت اصلاحیه'):a.save_statement_period('P',current_quantities={'W':1})
-    assert a.open_project('P')==before;a.store.close()
+    period=a.save_statement_period('P',current_quantities={'W':'1'})
+    from decimal import Decimal
+    assert Decimal(str(period['lines'][0]['previous_quantity']))==Decimal('6.12345678901234567890123456789')
+    assert Decimal(str(period['lines'][0]['cumulative_quantity']))==Decimal('7.12345678901234567890123456789')
+    assert a.open_project('P')['statement_periods'][:-1]==before['statement_periods'];a.store.close()

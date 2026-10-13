@@ -55,15 +55,11 @@ def _normalize_date_key(value: str) -> str | None:
         return None
     return f"{y:04d}/{m:02d}/{d:02d}"
 
-def _statement_rate(value: Any, name: str) -> float:
-    if isinstance(value, bool):
-        raise ValueError(f"{name}: نرخ باید عددی باشد")
-    try:
-        rate = float(value)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{name}: نرخ نامعتبر است") from exc
-    if not math.isfinite(rate) or not 0 <= rate <= 1:
-        raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
+from core.commercial.exact_values import number, wire, exact, display_percent
+
+def _statement_rate(value: Any, name: str):
+    rate=number(value,name)
+    if rate>1:raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
     return rate
 
 class StructuralProApp:
@@ -920,25 +916,11 @@ class StructuralProApp:
         for name,value in (factors or {}).items():
             if isinstance(value,bool):
                 raise ValueError("ضریب برآورد نباید بولی باشد")
-            rate=float(value)
-            if not math.isfinite(rate) or rate<0:
-                raise ValueError("ضرایب برآورد باید نامنفی و متناهی باشند")
-            normalized_factors[str(name)]=rate
+            rate=number(value,'ضرایب برآورد')
+            normalized_factors[str(name)]=wire(rate)
         estimate=build_estimate(boq,factors=normalized_factors,aggregate=False)
-        if normalized_factors:
-            base=float(estimate["cost"].get("base",0))
-            if not math.isfinite(base) or base<0:
-                raise ValueError("مبلغ پایه برآورد نامعتبر است")
-            subtotal=base
-            applied={}
-            for name,rate in normalized_factors.items():
-                delta=subtotal*rate
-                applied[name]=delta
-                subtotal+=delta
-                if not math.isfinite(subtotal):
-                    raise ValueError("اعمال ضرایب موجب سرریز مبلغ شد")
-            estimate["cost"]["factors"]=applied
-            estimate["cost"]["grand_total"]=subtotal
+        estimate["numeric_encoding_version"]=2
+        estimate["financial_policy_status"]="EXPLICIT_OWNER_POLICY" if project.get("statement_amendment_policy") else "LEGACY_PREVIEW_NOT_FINANCIALLY_APPROVED"
         project["estimate"]=estimate
         self.store.save(pid,project,expected_digest=digest)
         return estimate
@@ -961,6 +943,7 @@ class StructuralProApp:
         return {"project_id":project_id,"estimate":estimate,"progress":progress,
                 "boq_summary":boq_summary(p.get("boq",[]))}
 
+    @exact
     def build_statement(self, project_id: str, *, previous_paid: float = 0.0,
                         retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
                         tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
@@ -974,16 +957,7 @@ class StructuralProApp:
         advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
         tax_rate = _statement_rate(tax_rate, "مالیات")
         insurance_rate = _statement_rate(insurance_rate, "بیمه")
-        if isinstance(previous_paid, bool):
-            raise ValueError("پرداخت قبلی باید مبلغ عددی معتبر باشد")
-        try:
-            previous_paid = float(previous_paid)
-        except (TypeError, ValueError, OverflowError) as exc:
-            raise ValueError("پرداخت قبلی باید مبلغ عددی معتبر باشد") from exc
-        if not math.isfinite(previous_paid):
-            raise ValueError("پرداخت قبلی باید مبلغ متناهی باشد")
-        if min(previous_paid, retention_rate, advance_recovery_rate, tax_rate, insurance_rate) < 0:
-            raise ValueError("statement rates and previous payment cannot be negative")
+        previous_paid=number(previous_paid,'پرداخت قبلی')
         lines = []
         for row in p.get("boq", []):
             if row.get("current_quantity") is None or isinstance(row.get("current_quantity"), bool):
@@ -1002,31 +976,38 @@ class StructuralProApp:
             "gross_current": 0, "deductions": 0, "payable_current": 0,
             "payments": 0, "balance_current": 0, "remaining_contract": 0, "progress_percent": 0,
         }
-        gross = float(progress.get("gross_current", 0) or 0)
-        retention = gross * float(retention_rate)
-        advance = gross * float(advance_recovery_rate)
-        taxable = max(gross - retention - advance, 0.0)
-        tax = taxable * float(tax_rate)
-        insurance = taxable * float(insurance_rate)
-        payable = max(taxable + tax - insurance, 0.0)
-        return {
-            **progress,
-            "retention": retention,
-            "advance_recovery": advance,
-            "taxable_current": taxable,
-            "tax": tax,
-            "insurance": insurance,
-            "payable_current": payable,
-            "previous_paid": float(previous_paid),
-            "balance_after_current": payable - float(previous_paid),
-            "rates": {
-                "retention_rate": float(retention_rate),
-                "advance_recovery_rate": float(advance_recovery_rate),
-                "tax_rate": float(tax_rate),
-                "insurance_rate": float(insurance_rate),
-            },
-        }
+        rates={'retention_rate':retention_rate,'advance_recovery_rate':advance_recovery_rate,'tax_rate':tax_rate,'insurance_rate':insurance_rate}
+        amounts,status,money=self._statement_money(p,progress['lines'],rates)
+        return wire({**progress,**amounts,'previous_paid':previous_paid,'balance_after_current':number(amounts['payable_current'],'پرداختنی')-previous_paid,
+                     'rates':rates,'financial_policy_status':status,**({'money_policy':money} if money else {})})
 
+    @exact
+    def _statement_money(self, project, lines, rates):
+        from core.commercial.statement_amendment import _money,policy,check_documents
+        money=None;status='LEGACY_RECORD_NOT_FINANCIALLY_APPROVED'
+        if project.get('statement_amendment_policy'):
+            configured=policy(project);check_documents(configured['source_documents'])
+            money=configured['money'];status='EXPLICIT_OWNER_POLICY'
+        quantities={line['code']:number(line['current_quantity'],'کارکرد') for line in lines}
+        prices={line['code']:number(line['unit_price'],'بهای واحد') for line in lines}
+        values=_money(quantities,prices,{k:number(v,k) for k,v in rates.items()},money)
+        return {k:wire(number(v,k)) for k,v in values.items()},status,money
+
+    def create_contract_change_request(self, project_id, *, created_by, reason, source_documents, lines, expected_project_version):
+        from core.commercial.contract_requests import create_request
+        return create_request(self.store,project_id,'contract',created_by,reason,source_documents,expected_project_version,lines=lines)
+
+    def create_settlement_request(self, project_id, *, created_by, reason, source_documents, receipt_ids, expected_project_version):
+        from core.commercial.contract_requests import create_request
+        return create_request(self.store,project_id,'settlement',created_by,reason,source_documents,expected_project_version,receipt_ids=receipt_ids)
+
+    def post_contract_change_request(self, *args, **kwargs):
+        from core.commercial.contract_requests import post_request
+        return post_request(*args,**kwargs)
+
+    def post_settlement_request(self, *args, **kwargs):
+        from core.commercial.contract_requests import post_request
+        return post_request(*args,**kwargs)
 
     def _amendment(self, project_id, op, actor, expected_project_version, **data):
         from core.commercial.statement_amendment import StatementAmendmentService
@@ -1060,6 +1041,7 @@ class StructuralProApp:
         from core.commercial.statement_amendment import summary
         return summary(self.open_project(project_id), period_no)
 
+    @exact
     def save_statement_period(self, project_id: str, *, period_no: int | None = None,
                               current_quantities: dict[str, float] | None = None,
                               retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
@@ -1086,32 +1068,32 @@ class StructuralProApp:
         previous = {}
         if periods:
             previous = {
-                str(x.get("code", "")): float(x.get("cumulative_quantity", 0) or 0)
+                str(x.get("code", "")): number(x.get('cumulative_quantity',0),'کارکرد تجمعی')
                 for x in periods[-1].get("lines", [])
             }
         if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
-            from core.commercial.statement_amendment import cumulative_quantities, legacy_float
-            previous = {code: legacy_float(value) for code, value in cumulative_quantities(p).items()}
+            from core.commercial.statement_amendment import cumulative_quantities
+            previous = {code: value for code, value in cumulative_quantities(p).items()}
         raw_quantities = current_quantities or {}
         known_codes = {str(row.get("price_code", "") or "") for row in p.get("boq", [])}
         if any(str(code) not in known_codes for code in raw_quantities):
             raise ValueError("کد کارکرد در BOQ پروژه وجود ندارد")
         if any(isinstance(value, bool) for value in raw_quantities.values()):
             raise ValueError("کارکرد باید عددی باشد، نه مقدار منطقی")
-        overrides = {str(k): float(v) for k, v in raw_quantities.items()}
+        overrides = {str(k): number(v,'کارکرد دوره') for k, v in raw_quantities.items()}
         lines = []
         for row in p.get("boq", []):
             code = str(row.get("price_code", "") or "")
             if code not in overrides and row.get("current_quantity") is None:
                 raise ValueError("کارکرد دوره باید صریح وارد شود؛ مقدار نامعلوم صفر نیست")
-            cur = float(overrides.get(code, row.get("current_quantity")))
-            prev = float(previous.get(code, row.get("previous_quantity", 0)) or 0)
+            cur = number(overrides.get(code, row.get('current_quantity')),'کارکرد دوره')
+            prev = number(previous.get(code,row.get('previous_quantity',0)),'کارکرد قبلی')
             if not all(math.isfinite(value) and value >= 0 for value in (cur, prev)):
                 raise ValueError("statement quantities must be finite and non-negative")
             lines.append({
                 "code": code, "description": row.get("description", ""), "unit": row.get("unit", ""),
-                "contract_quantity": float(row.get("quantity", 0) or 0),
-                "unit_price": float(row.get("unit_price", 0) or 0),
+                "contract_quantity": number(row.get('quantity'),'مقدار قرارداد'),
+                "unit_price": number(row.get('unit_price'),'بهای واحد'),
                 "previous_quantity": prev, "current_quantity": cur,
             })
         progress = build_progress(lines)
@@ -1123,20 +1105,15 @@ class StructuralProApp:
             "remaining_contract": progress["remaining_contract"],
             "progress_percent": progress["progress_percent"],
             "rates": {
-                "retention_rate": float(retention_rate), "advance_recovery_rate": float(advance_recovery_rate),
-                "tax_rate": float(tax_rate), "insurance_rate": float(insurance_rate),
+                "retention_rate": wire(retention_rate), "advance_recovery_rate": wire(advance_recovery_rate),
+                "tax_rate": wire(tax_rate), "insurance_rate": wire(insurance_rate),
             },
         }
-        gross = float(period["gross_current"])
-        retention = gross * float(retention_rate)
-        advance = gross * float(advance_recovery_rate)
-        taxable = max(gross - retention - advance, 0.0)
-        tax = taxable * float(tax_rate)
-        insurance = taxable * float(insurance_rate)
-        period.update({
-            "retention": retention, "advance_recovery": advance, "taxable_current": taxable,
-            "tax": tax, "insurance": insurance, "payable_current": max(taxable + tax - insurance, 0.0),
-        })
+        amounts,status,money=self._statement_money(p,period['lines'],period['rates'])
+        period.update(amounts);period['financial_policy_status']=status
+        if money:period['money_policy']=dict(money)
+        period["numeric_encoding_version"]=2
+        period=wire(period)
         periods.append(period)
         p["statement_periods"] = periods
         if persist:
@@ -1541,7 +1518,7 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
+        amount = number(amount, 'مبلغ')
         if amount < 0:
             raise ValueError("cost amount cannot be negative")
         categories = {"مصالح", "دستمزد", "پیمانکار", "تجهیزات", "سایر"}
@@ -1554,7 +1531,7 @@ class StructuralProApp:
         entry = {
             "id": len(entries) + 1,
             "category": category,
-            "amount": amount,
+            "amount": wire(amount),
             "description": str(description).strip(),
             "date": str(date).strip(),
             "counterparty": str(counterparty).strip(),
@@ -1572,18 +1549,19 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("cost_entries", []))
 
+    @exact
     def project_cost_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_costs(project_id)
         by_category = {}
         for entry in entries:
             category = str(entry.get("category", "سایر"))
-            by_category[category] = by_category.get(category, 0.0) + float(entry.get("amount", 0) or 0)
-        return {
+            by_category[category] = by_category.get(category, 0) + number(entry.get('amount'), 'مبلغ هزینه')
+        return wire({
             "project_id": project_id,
             "entry_count": len(entries),
             "actual_cost": sum(by_category.values()),
             "by_category": by_category,
-        }
+        })
 
     def project_financial_control(self, project_id: str, *, planned_cost: float | None = None,
                                   actual_cost: float = 0.0) -> dict[str, Any]:
@@ -1616,6 +1594,7 @@ class StructuralProApp:
             "progress_percent": dashboard["progress_percent"],
         }
 
+    @exact
     def financial_dashboard(self, project_id: str) -> dict[str, Any]:
         """Return a compact financial/progress snapshot for the project dashboard."""
         p = self.store.get(project_id)
@@ -1639,29 +1618,29 @@ class StructuralProApp:
             else:
                 estimate = p.get("estimate") or self.recalculate_estimate(project_id)
         cost = (estimate.get("cost", {}) or {}) if estimate else {}
-        contract = float(cost["grand_total"]) if estimate else None
-        base = float(cost["base"]) if estimate else None
+        contract = number(cost['grand_total'],'برآورد') if estimate else None
+        base = number(cost['base'],'مبنا') if estimate else None
         snapshot = self.build_commercial_snapshot(project_id) if estimate else {}
         progress = snapshot.get("progress", {}) or {}
         periods = list(p.get("statement_periods", []))
         latest = periods[-1] if periods else None
-        cumulative = float(progress.get("completed_total", 0) or 0) if estimate else None
+        cumulative = number(progress.get('completed_total',0),'کارکرد') if estimate else None
         if estimate and latest is not None:
-            cumulative = float(latest.get("completed_total", cumulative) or cumulative)
+            cumulative = number(latest.get('completed_total',cumulative),'کارکرد')
         remaining = max(contract - cumulative, 0.0) if estimate else None
-        percent = (cumulative / contract * 100.0) if estimate and contract else (0.0 if estimate else None)
-        total_payable = sum(float(x.get("payable_current", 0) or 0) for x in periods)
+        percent = display_percent(cumulative,contract) if estimate and contract else (0.0 if estimate else None)
+        total_payable = sum(number(x.get('payable_current',0),'پرداختنی') for x in periods)
         if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
             from core.commercial.statement_amendment import summary
             net_periods = [summary(p, period['number'])['net'] for period in periods]
-            cumulative = sum(float(net['gross_current']) for net in net_periods)
-            total_payable = sum(float(net['payable_current']) for net in net_periods)
+            cumulative = sum(number(net['gross_current'],'کارکرد') for net in net_periods)
+            total_payable = sum(number(net['payable_current'],'پرداختنی') for net in net_periods)
             remaining = max(contract - cumulative, 0.0) if estimate else None
-            percent = cumulative / contract * 100.0 if estimate and contract else (0.0 if estimate else None)
+            percent = display_percent(cumulative,contract) if estimate and contract else (0.0 if estimate else None)
         cost_summary = self.project_cost_summary(project_id)
-        actual_cost = float(cost_summary["actual_cost"])
+        actual_cost = number(cost_summary['actual_cost'],'هزینه')
         gross_margin = cumulative - actual_cost if estimate else None
-        return {
+        return wire({
             "project_id": project_id,
             "project_name": p.get("name", ""),
             "line_count": len(boq),
@@ -1672,7 +1651,7 @@ class StructuralProApp:
             "progress_percent": percent,
             "statement_count": len(periods),
             "latest_statement_no": latest.get("number") if latest else None,
-            "latest_payable": (float(net_periods[-1]["payable_current"]) if any(d.get("status") == "POSTED" for d in p.get("statement_amendments", [])) else float(latest.get("payable_current", 0) or 0)) if latest else 0.0,
+            "latest_payable": (number(net_periods[-1]['payable_current'],'پرداختنی') if any(d.get("status") == "POSTED" for d in p.get("statement_amendments", [])) else number(latest.get('payable_current',0),'پرداختنی')) if latest else 0.0,
             "total_payable": total_payable,
             "actual_cost": actual_cost,
             "gross_margin": gross_margin,
@@ -1683,7 +1662,7 @@ class StructuralProApp:
                           if not boq else "برآورد تأییدشده در دسترس نیست؛ " +
                           (blocked_reason or "فهرست‌بهای معتبر لازم است")]),
             "estimate_status": "verified" if estimate else "unavailable",
-        }
+        })
 
     def _finance_depth_control(self, project_id: str) -> FinancePaymentControl:
         p = self.store.get(project_id)
@@ -1692,7 +1671,7 @@ class StructuralProApp:
         payments = [
             PaymentRecord(
                 id=str(x.get("id")),
-                amount=float(x.get("amount", 0) or 0),
+                amount=number(x.get("amount"),"پرداخت"),
                 date=str(x.get("date", "")),
                 reference=str(x.get("reference", "")),
                 document_id=int(x["document_id"]) if x.get("document_id") is not None else None,
@@ -1709,7 +1688,7 @@ class StructuralProApp:
                 payment_id=str(x.get("payment_id")),
                 target_type=str(x.get("target_type")),
                 target_id=x.get("target_id"),
-                amount=float(x.get("amount", 0) or 0),
+                amount=number(x.get("amount"),"پرداخت"),
             )
             for x in p.get("payment_allocations", [])
         ]
@@ -1718,7 +1697,7 @@ class StructuralProApp:
                 code=str(x.get("code")),
                 category=str(x.get("category", "")),
                 description=str(x.get("description", "")),
-                planned=float(x.get("planned", 0) or 0),
+                planned=number(x.get("planned"),"بودجه"),
             )
             for x in p.get("financial_budget", [])
         ]
@@ -1741,7 +1720,7 @@ class StructuralProApp:
         entries = list(p.get("payment_entries", []))
         payment_id = f"PAY{len(entries) + 1:05d}"
         entry = {
-            "id": payment_id, "amount": float(amount), "date": str(date).strip(),
+            "id": payment_id, "amount": wire(number(amount,"پرداخت")), "date": str(date).strip(),
             "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None,
             "commitment_id": int(commitment_id) if commitment_id is not None else None,
             "counterparty_id": str(counterparty_id) if counterparty_id is not None else None,
@@ -1764,13 +1743,13 @@ class StructuralProApp:
         allocation_id = f"ALC{len(p.get('payment_allocations', [])) + 1:05d}"
         allocation = PaymentAllocation(
             id=allocation_id, payment_id=str(payment_id), target_type=str(target_type),
-            target_id=target_id, amount=float(amount),
+            target_id=target_id, amount=wire(number(amount,"پرداخت")),
         )
         control.allocate(allocation)
         records = list(p.get("payment_allocations", []))
         row = {
             "id": allocation_id, "payment_id": str(payment_id), "target_type": str(target_type),
-            "target_id": target_id, "amount": float(amount),
+            "target_id": target_id, "amount": wire(number(amount,"پرداخت")),
         }
         records.append(row)
         p["payment_allocations"] = records
@@ -1793,10 +1772,10 @@ class StructuralProApp:
             raise KeyError(project_id)
         records = list(p.get("financial_budget", []))
         row = {"code": str(code).strip(), "category": str(category).strip(),
-               "description": str(description).strip(), "planned": float(planned)}
+               "description": str(description).strip(), "planned": wire(number(planned,"بودجه"))}
         candidate = FinancePaymentControl(budget=[
             BudgetLine(str(x.get("code")), str(x.get("category", "")), str(x.get("description", "")),
-                       float(x.get("planned", 0) or 0)) for x in records + [row]
+                       number(x.get("planned"),"بودجه")) for x in records + [row]
         ])
         _ = candidate
         if any(str(x.get("code", "")).strip() == row["code"] for x in records):
@@ -1865,14 +1844,14 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
-        paid_amount = float(paid_amount)
+        amount = number(amount, 'مبلغ')
+        paid_amount = number(paid_amount, 'پرداخت تعهد')
         if amount < 0 or paid_amount < 0 or paid_amount > amount:
             raise ValueError("invalid commitment amount")
         if document_id is not None and not any(int(x.get("id", 0)) == int(document_id) for x in p.get("financial_documents", [])):
             raise KeyError(f"financial document {document_id}")
         entries = list(p.get("commitment_entries", []))
-        entry = {"id": len(entries) + 1, "amount": amount, "paid_amount": paid_amount, "category": str(category).strip() or "سایر", "description": str(description).strip(), "date": str(date).strip(), "due_date": str(due_date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
+        entry = {"id": len(entries) + 1, "amount": wire(amount), "paid_amount": wire(paid_amount), "category": str(category).strip() or "سایر", "description": str(description).strip(), "date": str(date).strip(), "due_date": str(due_date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
         entries.append(entry)
         p["commitment_entries"] = entries
         self.store.save(project_id, p)
@@ -1884,23 +1863,24 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("commitment_entries", []))
 
+    @exact
     def project_commitment_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_commitments(project_id)
-        total = sum(float(x.get("amount", 0) or 0) for x in entries)
-        paid = sum(float(x.get("paid_amount", 0) or 0) for x in entries)
-        return {"project_id": project_id, "entry_count": len(entries), "committed_total": total, "paid_total": paid, "unpaid_total": max(total - paid, 0.0)}
+        total = sum(number(x.get('amount'), 'مبلغ') for x in entries)
+        paid = sum(number(x.get('paid_amount'), 'پرداخت تعهد') for x in entries)
+        return wire({"project_id": project_id, "entry_count": len(entries), "committed_total": total, "paid_total": paid, "unpaid_total": max(total - paid, 0)})
 
     def add_project_receipt(self, project_id: str, amount: float, *, description: str = "", date: str = "", reference: str = "", document_id: int | None = None, counterparty: str = "") -> dict[str, Any]:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
+        amount = number(amount, 'مبلغ')
         if amount < 0:
             raise ValueError("receipt amount cannot be negative")
         if document_id is not None and not any(int(x.get("id", 0)) == int(document_id) for x in p.get("financial_documents", [])):
             raise KeyError(f"financial document {document_id}")
         entries = list(p.get("receipt_entries", []))
-        entry = {"id": len(entries) + 1, "amount": amount, "description": str(description).strip(), "date": str(date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
+        entry = {"id": len(entries) + 1, "amount": wire(amount), "description": str(description).strip(), "date": str(date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
         entries.append(entry)
         p["receipt_entries"] = entries
         self.store.save(project_id, p)
@@ -1912,32 +1892,34 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("receipt_entries", []))
 
+    @exact
     def project_receipt_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_receipts(project_id)
-        return {"project_id": project_id, "entry_count": len(entries), "total_received": sum(float(x.get("amount", 0) or 0) for x in entries)}
+        return wire({"project_id": project_id, "entry_count": len(entries), "total_received": sum(number(x.get('amount'), 'مبلغ') for x in entries)})
 
+    @exact
     def project_financial_position(self, project_id: str) -> dict[str, Any]:
         dashboard = self.financial_dashboard(project_id)
         receipts = self.project_receipt_summary(project_id)
         commitments = self.project_commitment_summary(project_id)
-        contract = (float(dashboard["contract_amount"])
+        contract = (number(dashboard["contract_amount"],"مبلغ")
                     if dashboard["contract_amount"] is not None else None)
-        received = float(receipts["total_received"])
+        received = number(receipts["total_received"],"مبلغ")
         receivable = max(contract - received, 0.0) if contract is not None else None
-        committed = float(commitments["committed_total"])
-        return {
+        committed = number(commitments["committed_total"],"مبلغ")
+        return wire({
             "project_id": project_id, "contract_amount": contract,
-            "earned_value": (float(dashboard["cumulative_work"])
+            "earned_value": (number(dashboard["cumulative_work"],"مبلغ")
                              if dashboard["cumulative_work"] is not None else None),
-            "actual_cost": float(dashboard["actual_cost"]),
+            "actual_cost": number(dashboard["actual_cost"],"مبلغ"),
             "received": received, "receivable": receivable,
-            "committed_cost": committed, "unpaid_commitments": float(commitments["unpaid_total"]),
+            "committed_cost": committed, "unpaid_commitments": number(commitments["unpaid_total"],"مبلغ"),
             "cash_exposure": max(committed - received, 0.0),
-            "cost_margin": (float(dashboard["gross_margin"])
+            "cost_margin": (number(dashboard["gross_margin"],"مبلغ",True)
                             if dashboard["gross_margin"] is not None else None),
             "receipt_count": receipts["entry_count"],
             "commitment_count": commitments["entry_count"],
-        }
+        })
 
     def project_cost_report(self, project_id: str, fmt: str, path):
         """Export the project's persisted cost ledger with category totals."""
@@ -1951,7 +1933,7 @@ class StructuralProApp:
             "دسته": entry.get("category", ""),
             "شرح": entry.get("description") or entry.get("category", ""),
             "تاریخ": entry.get("date", ""),
-            "مبلغ": float(entry.get("amount", 0) or 0),
+            "مبلغ": entry.get("amount"),
         } for entry in entries]
         by_category = summary["by_category"]
         summary_payload = {
@@ -2381,7 +2363,7 @@ class StructuralProApp:
                 "شماره سند": entry.get("document_number", ""),
                 "نوع سند": entry.get("document_type", ""),
                 "طرف حساب": entry.get("counterparty", ""),
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": entry.get("due_date", ""),
                 "وضعیت پرداخت": entry.get("payment_status", ""),
@@ -2397,7 +2379,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": entry.get("category", ""),
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": entry.get("due_date", ""),
                 "وضعیت پرداخت": "paid" if float(entry.get("paid_amount", 0) or 0) >= float(entry.get("amount", 0) or 0) else "unpaid",
@@ -2413,7 +2395,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": entry.get("category", ""),
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": "",
                 "وضعیت پرداخت": "",
@@ -2429,7 +2411,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": "دریافتی",
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": "",
                 "وضعیت پرداخت": "received",

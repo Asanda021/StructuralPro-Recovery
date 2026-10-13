@@ -2,12 +2,11 @@
 from __future__ import annotations
 from typing import Iterable, Any
 import math
-def _finite_nonnegative(value, field):
-    number=float(value)
-    if not math.isfinite(number) or number<0: raise ValueError(f"{field} must be finite and non-negative")
-    return number
+from core.commercial.exact_values import number,wire,exact
+def _finite_nonnegative(value,field):return number(value,field)
+@exact
 def cost_breakdown(rows:Iterable[Any], factors:dict[str,float]|None=None)->dict[str,Any]:
-    factors=factors or {}; base=0.0; by_group={}; by_code={}
+    factors=factors or {}; base=0; by_group={}; by_code={}
     for r in rows:
         d=r if isinstance(r,dict) else vars(r)
         if str(d.get("status") or "active").strip().lower()=="cancelled": continue
@@ -27,4 +26,4 @@ def cost_breakdown(rows:Iterable[Any], factors:dict[str,float]|None=None)->dict[
         applied[key]=delta; sequence.append({"name":key,"base":subtotal,"rate":rate,"delta":delta,"subtotal":subtotal+delta})
         subtotal+=delta
         if not math.isfinite(subtotal): raise ValueError("grand total overflow")
-    return {"base":base,"factors":applied,"factor_sequence":sequence,"grand_total":subtotal,"by_group":by_group,"by_code":by_code}
+    return wire({"base":base,"factors":applied,"factor_sequence":sequence,"grand_total":subtotal,"by_group":by_group,"by_code":by_code})

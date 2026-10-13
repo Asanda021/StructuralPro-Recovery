@@ -143,6 +143,7 @@ def _money(quantities,prices,rates,m):
     raw['taxable_current']=max(gross-raw['retention']-raw['advance_recovery'],Decimal(0))
     raw['tax']=raw['taxable_current']*rates['tax_rate'];raw['insurance']=raw['taxable_current']*rates['insurance_rate']
     raw['payable_current']=max(raw['taxable_current']+raw['tax']-raw['insurance'],Decimal(0))
+    if m is None:return {k:format(v,'f') for k,v in raw.items()}
     quantum=Decimal(1).scaleb(-m['decimal_places'])
     with localcontext() as ctx:
         ctx.traps[Inexact]=False;ctx.traps[Rounded]=False

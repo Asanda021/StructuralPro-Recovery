@@ -3,6 +3,7 @@
 Requires full StructuralProApp dependencies. No GUI, Workflows or packaged build.
 """
 from __future__ import annotations
+from decimal import Decimal
 
 import pytest
 from core.platform.application import StructuralProApp
@@ -166,7 +167,7 @@ def test_estimate_requires_file_hash_and_approved_pricebook_row_equality(tmp_pat
     }
     app.store.save("P1", document, expected_digest=app.store.current_digest("P1"))
     actual=app.recalculate_estimate("P1")
-    assert actual["cost"]["grand_total"] > 0
+    assert Decimal(str(actual["cost"]["grand_total"])) > 0
     catalog.write_text("tampered", encoding="utf-8")
     with pytest.raises(ValueError, match="تغییر"):
         app.recalculate_estimate("P1")

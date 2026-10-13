@@ -8,17 +8,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 import math
+from core.commercial.exact_values import number,wire,exact
 from typing import Any, Iterable
 
 
 PAYMENT_STATUSES = {"unallocated", "partial", "allocated", "cancelled"}
 
 
-def _money(value: Any, label: str = "amount") -> float:
-    value = float(value)
-    if not math.isfinite(value) or value < 0:
-        raise ValueError(f"{label} must be finite and non-negative")
-    return value
+def _money(value: Any, label: str = "amount"):
+    return number(value,label)
 
 
 def _text(value: Any, label: str, required: bool = False) -> str:
@@ -51,6 +49,10 @@ class PaymentRecord:
     status: str = "unallocated"
 
 
+    def __post_init__(self):
+        object.__setattr__(self,"amount",_money(self.amount,"amount"))
+
+
 @dataclass(frozen=True)
 class PaymentAllocation:
     id: str
@@ -60,12 +62,20 @@ class PaymentAllocation:
     amount: float
 
 
+    def __post_init__(self):
+        object.__setattr__(self,"amount",_money(self.amount,"amount"))
+
+
 @dataclass(frozen=True)
 class BudgetLine:
     code: str
     category: str
     description: str
     planned: float
+
+
+    def __post_init__(self):
+        object.__setattr__(self,"planned",_money(self.planned,"planned"))
 
 
 class FinancePaymentControl:
@@ -128,13 +138,14 @@ class FinancePaymentControl:
         self._validate_payment_totals()
         return self
 
+    @exact
     def _validate_payment_totals(self) -> None:
         by_payment: dict[str, float] = {}
         for a in self.allocations:
-            by_payment[a.payment_id] = by_payment.get(a.payment_id, 0.0) + a.amount
+            by_payment[a.payment_id] = by_payment.get(a.payment_id, 0) + a.amount
         payments = {p.id: p for p in self.payments}
         for pid, allocated in by_payment.items():
-            if allocated > payments[pid].amount + 1e-9:
+            if allocated > payments[pid].amount:
                 raise ValueError(f"payment over-allocated: {pid}")
 
     def add_payment(self, payment: PaymentRecord) -> PaymentRecord:
@@ -157,6 +168,7 @@ class FinancePaymentControl:
             raise
         return allocation
 
+    @exact
     def payment_status(self, payment_id: str) -> str:
         payment = next((x for x in self.payments if x.id == payment_id), None)
         if payment is None:
@@ -170,6 +182,7 @@ class FinancePaymentControl:
             return "allocated"
         return "partial"
 
+    @exact
     def payment_summary(self) -> dict[str, Any]:
         rows = []
         for p in self.payments:
@@ -177,24 +190,26 @@ class FinancePaymentControl:
             rows.append({
                 **asdict(p),
                 "allocated_amount": allocated,
-                "unallocated_amount": max(p.amount - allocated, 0.0),
+                "unallocated_amount": max(p.amount - allocated, 0),
                 "derived_status": self.payment_status(p.id),
             })
-        return {
+        return wire({
             "payment_count": len(rows),
             "payment_total": sum(x["amount"] for x in rows),
             "allocated_total": sum(x["allocated_amount"] for x in rows),
             "unallocated_total": sum(x["unallocated_amount"] for x in rows),
             "rows": rows,
-        }
+        })
 
+    @exact
     def allocation_summary(self) -> dict[str, Any]:
-        return {
+        return wire({
             "allocation_count": len(self.allocations),
             "allocated_total": sum(x.amount for x in self.allocations),
             "rows": [asdict(x) for x in self.allocations],
-        }
+        })
 
+    @exact
     def budget_control(self, *, actual_costs: Iterable[dict[str, Any]] = (),
                        commitments: Iterable[dict[str, Any]] = ()) -> dict[str, Any]:
         rows = []
@@ -202,21 +217,21 @@ class FinancePaymentControl:
         committed_by_category: dict[str, float] = {}
         for x in actual_costs:
             category = _text(x.get("category", ""), "cost category") or "سایر"
-            actual_by_category[category] = actual_by_category.get(category, 0.0) + _money(x.get("amount", 0), "cost amount")
+            actual_by_category[category] = actual_by_category.get(category, 0) + _money(x.get("amount", 0), "cost amount")
         for x in commitments:
             category = _text(x.get("category", ""), "commitment category") or "سایر"
-            committed_by_category[category] = committed_by_category.get(category, 0.0) + _money(x.get("amount", 0), "commitment amount")
+            committed_by_category[category] = committed_by_category.get(category, 0) + _money(x.get("amount", 0), "commitment amount")
         categories = {x.category for x in self.budget} | set(actual_by_category) | set(committed_by_category)
         for b in self.budget:
             # Multiple budget lines in one category are aggregated below.
             _ = b
         planned_by_category: dict[str, float] = {}
         for b in self.budget:
-            planned_by_category[b.category] = planned_by_category.get(b.category, 0.0) + b.planned
+            planned_by_category[b.category] = planned_by_category.get(b.category, 0) + b.planned
         for category in sorted(categories):
-            planned = planned_by_category.get(category, 0.0)
-            committed = committed_by_category.get(category, 0.0)
-            actual = actual_by_category.get(category, 0.0)
+            planned = planned_by_category.get(category, 0)
+            committed = committed_by_category.get(category, 0)
+            actual = actual_by_category.get(category, 0)
             rows.append({
                 "category": category,
                 "planned": planned,
@@ -227,7 +242,7 @@ class FinancePaymentControl:
                 "committed_over_budget": committed > planned if planned else committed > 0,
                 "actual_over_budget": actual > planned if planned else actual > 0,
             })
-        return {
+        return wire({
             "rows": rows,
             "planned_total": sum(x["planned"] for x in rows),
             "committed_total": sum(x["committed"] for x in rows),
@@ -235,8 +250,9 @@ class FinancePaymentControl:
             "committed_variance": sum(x["committed_variance"] for x in rows),
             "actual_variance": sum(x["actual_variance"] for x in rows),
             "over_budget_categories": [x["category"] for x in rows if x["committed_over_budget"] or x["actual_over_budget"]],
-        }
+        })
 
+    @exact
     def cash_flow(self, *, receipts: Iterable[dict[str, Any]] = (),
                   costs: Iterable[dict[str, Any]] = (),
                   payments: Iterable[dict[str, Any]] = (),
@@ -245,7 +261,7 @@ class FinancePaymentControl:
 
         def bucket(date: Any) -> dict[str, float]:
             key = _date_key(date) or "بدون تاریخ"
-            return buckets.setdefault(key, {"cash_in": 0.0, "cash_out": 0.0, "committed_out": 0.0})
+            return buckets.setdefault(key, {"cash_in": 0, "cash_out": 0, "committed_out": 0})
 
         for x in receipts:
             bucket(x.get("date"))["cash_in"] += _money(x.get("amount", 0), "receipt amount")
@@ -257,22 +273,23 @@ class FinancePaymentControl:
             bucket(x.get("due_date") or x.get("date"))["committed_out"] += _money(x.get("amount", 0), "commitment amount")
 
         rows = []
-        cumulative = 0.0
+        cumulative = 0
         for date in sorted(buckets):
             row = {"date": date, **buckets[date]}
             row["net_cash"] = row["cash_in"] - row["cash_out"]
             cumulative += row["net_cash"]
             row["cumulative_cash"] = cumulative
             rows.append(row)
-        return {
+        return wire({
             "rows": rows,
             "cash_in": sum(x["cash_in"] for x in rows),
             "cash_out": sum(x["cash_out"] for x in rows),
             "committed_out": sum(x["committed_out"] for x in rows),
             "net_cash": sum(x["net_cash"] for x in rows),
-            "minimum_cumulative_cash": min((x["cumulative_cash"] for x in rows), default=0.0),
-        }
+            "minimum_cumulative_cash": min((x["cumulative_cash"] for x in rows), default=0),
+        })
 
+    @exact
     def control_snapshot(self, *, actual_costs: Iterable[dict[str, Any]] = (),
                          commitments: Iterable[dict[str, Any]] = (),
                          receipts: Iterable[dict[str, Any]] = (),
@@ -281,21 +298,21 @@ class FinancePaymentControl:
         budget = self.budget_control(actual_costs=actual_costs, commitments=commitments)
         cash = self.cash_flow(receipts=receipts, costs=costs, payments=payments, commitments=commitments)
         payment = self.payment_summary()
-        return {
+        return wire({
             "payments": payment,
             "allocations": self.allocation_summary(),
             "budget": budget,
             "cash_flow": cash,
             "warnings": {
-                "unallocated_payment": payment["unallocated_total"] > 0,
+                "unallocated_payment": number(payment["unallocated_total"],"پرداخت") > 0,
                 "over_budget": bool(budget["over_budget_categories"]),
-                "negative_cash": cash["minimum_cumulative_cash"] < 0,
+                "negative_cash": number(cash["minimum_cumulative_cash"],"نقد",True) < 0,
             },
-        }
+        })
 
     def export_dict(self) -> dict[str, Any]:
-        return {
+        return wire({
             "payments": [asdict(x) for x in self.payments],
             "allocations": [asdict(x) for x in self.allocations],
             "budget": [asdict(x) for x in self.budget],
-        }
+        })

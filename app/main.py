@@ -692,12 +692,12 @@ def main()->int:
             if "=" not in token: raise ValueError("کارکرد را به شکل کد=مقدار وارد کنید")
             key,val=token.split("=",1)
             if not key.strip() or key.strip() in values: raise ValueError("کد کارکرد خالی یا تکراری است")
-            values[key.strip()]=float(val.strip())
+            values[key.strip()]=val.strip()
         return values
     def statement_arguments():
         return {"period_no":int(stperiod.text()) if stperiod.text().strip() else None,
                 "current_quantities":parse_statement_quantities(),
-                **{key:float(field.text()) for key,field in statement_rates.items()}}
+                **{key:field.text() for key,field in statement_rates.items()}}
     def statement_shortcut():
         try:
             preview=service.save_statement_period(stid.text().strip(),persist=False,**statement_arguments())

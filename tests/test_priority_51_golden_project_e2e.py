@@ -1,5 +1,6 @@
 """Priority 51 — realistic project journey from creation to verified outputs."""
 from __future__ import annotations
+from decimal import Decimal
 
 import json
 from pathlib import Path
@@ -51,7 +52,7 @@ def test_priority_51_golden_project_end_to_end(tmp_path: Path, approve_test_pric
     })
     estimate = app.recalculate_estimate(project_id, factors={"waste": 0.05})
     assert estimate["validation"]["valid"]
-    assert estimate["cost"]["grand_total"] > 0
+    assert Decimal(str(estimate["cost"]["grand_total"])) > 0
     assert len(estimate["boq"]) == 2
 
     report_path = tmp_path / "golden-report.csv"

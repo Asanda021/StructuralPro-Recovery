@@ -70,14 +70,14 @@ def test_manual_five_floors_independent_reference_priced_boq_statement_and_expor
  with pytest.raises(ValueError):app.add_assembly_takeoff('manual-five',CODES[0],explicit_inputs(CODES[0]),floor_id='L1',location_id='ROOM-001',approved_by='explicit-synthetic-checker')
  estimate=app.recalculate_estimate('manual-five',factors={'سربار':.1,'منطقه':.05})
  expected_total=reference_base*Decimal('1.10')*Decimal('1.05')
- assert estimate['cost']['base']==pytest.approx(float(reference_base),abs=1e-7)
- assert estimate['cost']['grand_total']==pytest.approx(float(expected_total),abs=1e-7)
+ assert abs(Decimal(str(estimate['cost']['base']))-reference_base)<=Decimal('1e-7')
+ assert abs(Decimal(str(estimate['cost']['grand_total']))-expected_total)<=Decimal('1e-7')
  quantities={r['price_code']:r['quantity']*.4 for r in p['boq']}
  digest=app.store.current_digest('manual-five');preview=app.save_statement_period('manual-five',period_no=1,current_quantities=quantities,retention_rate=.1,persist=False)
  assert app.store.current_digest('manual-five')==digest and app.statement_periods('manual-five')==[]
  period=app.save_statement_period('manual-five',period_no=1,current_quantities=quantities,retention_rate=.1)
- assert period==preview;assert period['gross_current']==pytest.approx(float(reference_base*Decimal('.4')))
- assert period['payable_current']==pytest.approx(float(reference_base*Decimal('.4')*Decimal('.9')))
+ assert period==preview;assert abs(Decimal(str(period['gross_current']))-reference_base*Decimal('.4'))<=Decimal('1e-7')
+ assert abs(Decimal(str(period['payable_current']))-reference_base*Decimal('.4')*Decimal('.9'))<=Decimal('1e-7')
  before=app.open_project('manual-five')['takeoffs']
  outputs=[]
  for fmt in ['csv','xlsx','docx','pdf']:
@@ -88,7 +88,7 @@ def test_manual_five_floors_independent_reference_priced_boq_statement_and_expor
  doc[0].get_pixmap().save(str(output_path(tmp_path,'گزارش_پنج‌طبقه_صفحه۱.png')));pdf_pages=len(doc);doc.close()
  app.store.close();app=StructuralProApp(tmp_path/'manual-db');final=app.open_project('manual-five')
  assert final['takeoffs']==before and app.statement_periods('manual-five')[0]==period
- assert final['estimate']['cost']['grand_total']==pytest.approx(float(expected_total))
+ assert abs(Decimal(str(final['estimate']['cost']['grand_total']))-expected_total)<=Decimal('1e-7')
  output_path(tmp_path,'manual_five_floor_result.json').write_text(json.dumps(dict(status='PASS',scope='synthetic Linux source acceptance; Windows BLOCKED',cases=len(data['cases']),floors=5,takeoffs=len(final['takeoffs']),assemblies=65,boq=len(final['boq']),reference_base=str(reference_base),reference_total=str(expected_total),statement_gross=period['gross_current'],statement_payable=period['payable_current'],pdf_pages=pdf_pages,outputs=outputs,comparisons=comparisons),ensure_ascii=False,indent=2))
  app.store.close()
 

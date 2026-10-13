@@ -36,7 +36,7 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -81,6 +81,8 @@ class ProjectStore:
                     payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
             from core.commercial.statement_amendment import guard_change
             guard_change(json.loads(row["payload"]) if row else {}, clean_project, amendment_command)
+            from core.commercial.contract_requests import guard
+            guard(json.loads(row["payload"]) if row else {}, clean_project, financial_request_command)
             version=int(row["version"])+1 if row else 1
             self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
                             (pid,str(clean_project.get("name","")),version,now,payload))
