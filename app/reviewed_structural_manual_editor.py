@@ -69,6 +69,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     main.addLayout(basic)
     form=QFormLayout()
     shape=QComboBox()
+    shape.addItem("نوع هندسه را صریح انتخاب کنید", None)
     for title,key in (("مستطیلی / منشوری","rectangular"),
                       ("ستون یا شمع دایره‌ای","circular_column"),
                       ("مقطع‌بندی واقعی تأییدشده","reviewed_sections")):
@@ -171,6 +172,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         d=assure()
         k=d["kind"]
         selected_shape=shape.currentData()
+        if selected_shape not in {"rectangular", "circular_column", "reviewed_sections"}:
+            raise ValueError("انتخاب صریح نوع هندسه برای عضو الزامی است")
         if selected_shape=="circular_column" and k not in {"column","bored_pile"}:
             raise ValueError("هندسه دایره‌ای فقط برای ستون یا شمع درجا است")
         if selected_shape=="rectangular" and k=="bored_pile":
@@ -196,8 +199,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         approver=geometry_reviewer.text().strip()
         if ref: dimensions["source_ref"]=ref
         if approver: dimensions["approved_by"]=approver
-        if selected_shape!="rectangular":
-            dimensions["shape"]=selected_shape
+        dimensions["shape"]=selected_shape
         before=d["geometry"]
         if dimensions!=before:
             state["dirty"]=True
@@ -283,7 +285,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             d=assure()
             source_id.setText(str(d.get("source",{}).get("source_id") or ""))
             geo=d.get("geometry") or {}
-            shape.setCurrentIndex(max(shape.findData(geo.get("shape","rectangular")),0))
+            shape.setCurrentIndex(max(shape.findData(geo.get("shape")),0))
             for key,w in numeric.items():
                 w.setText(str(geo[key]) if key in geo else "")
             geometry_ref.setText(str(geo.get("source_ref") or ""))
