@@ -6,9 +6,10 @@ from core.projects.store import ProjectStore
 
 
 @pytest.mark.parametrize('operation', ['estimate', 'snapshot', 'audit', 'report'])
-def test_stale_desktop_does_not_erase_external_takeoff(tmp_path, operation):
+def test_stale_desktop_does_not_erase_external_takeoff(tmp_path, operation, approve_test_pricebook):
     writer = StructuralProApp(tmp_path)
     writer.create_project('پروژه ایمن', 'p')
+    approve_test_pricebook(writer, 'p', {'TEST-SLAB': {'unit': 'm3', 'unit_price': 100}})
     stale = StructuralProApp(tmp_path)
     stale.open_project('p')
     if operation == 'audit':
@@ -17,7 +18,8 @@ def test_stale_desktop_does_not_erase_external_takeoff(tmp_path, operation):
         qt = QApplication.instance() or QApplication([])
         dialog = ManualTakeoffDialog(stale, 'p')
     writer.add_takeoff('p', 'building', 'slab_volume', length=2, width=2,
-                       thickness=1, count=1, source_id='external')
+                       thickness=1, count=1, source_id='external',
+                       price_code='TEST-SLAB', unit_price=100)
     if operation == 'estimate':
         stale.recalculate_estimate('p')
     elif operation == 'snapshot':
