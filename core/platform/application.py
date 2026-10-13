@@ -1487,6 +1487,8 @@ class StructuralProApp:
         if actual_cost < 0 or (planned_cost is not None and planned_cost < 0):
             raise ValueError("cost values cannot be negative")
         dashboard = self.financial_dashboard(project_id)
+        if dashboard["contract_amount"] is None or dashboard["cumulative_work"] is None:
+            raise ValueError("برای شاخص‌های ارزش کسب‌شده و پیشرفت، BOQ و برآورد تأییدشده الزامی است")
         contract = float(dashboard["contract_amount"])
         work = float(dashboard["cumulative_work"])
         planned = contract if planned_cost is None else float(planned_cost)
@@ -1515,24 +1517,27 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        estimate = p.get("estimate") or self.recalculate_estimate(project_id)
-        cost = estimate.get("cost", {}) or {}
         boq = p.get("boq", []) or []
-        contract = float(cost.get("grand_total", 0) or 0)
-        base = float(cost.get("base", 0) or 0)
-        snapshot = self.build_commercial_snapshot(project_id)
+        # Cost / receipts / commitments can exist before the first BOQ item.
+        # Such a project has no *known* contract or earned-value figures.
+        # In particular, missing estimates must never be silently valued at 0.
+        estimate = (p.get("estimate") or self.recalculate_estimate(project_id)) if boq else None
+        cost = (estimate.get("cost", {}) or {}) if estimate else {}
+        contract = float(cost["grand_total"]) if estimate else None
+        base = float(cost["base"]) if estimate else None
+        snapshot = self.build_commercial_snapshot(project_id) if estimate else {}
         progress = snapshot.get("progress", {}) or {}
         periods = list(p.get("statement_periods", []))
         latest = periods[-1] if periods else None
-        cumulative = float(progress.get("completed_total", 0) or 0)
-        if latest is not None:
+        cumulative = float(progress.get("completed_total", 0) or 0) if estimate else None
+        if estimate and latest is not None:
             cumulative = float(latest.get("completed_total", cumulative) or cumulative)
-        remaining = max(contract - cumulative, 0.0)
-        percent = (cumulative / contract * 100.0) if contract else 0.0
+        remaining = max(contract - cumulative, 0.0) if estimate else None
+        percent = (cumulative / contract * 100.0) if estimate and contract else (0.0 if estimate else None)
         total_payable = sum(float(x.get("payable_current", 0) or 0) for x in periods)
         cost_summary = self.project_cost_summary(project_id)
         actual_cost = float(cost_summary["actual_cost"])
-        gross_margin = cumulative - actual_cost
+        gross_margin = cumulative - actual_cost if estimate else None
         return {
             "project_id": project_id,
             "project_name": p.get("name", ""),
@@ -1550,7 +1555,9 @@ class StructuralProApp:
             "gross_margin": gross_margin,
             "cost_entry_count": cost_summary["entry_count"],
             "cost_by_category": cost_summary["by_category"],
-            "warnings": list((estimate.get("warnings") or [])),
+            "warnings": (list(estimate.get("warnings") or []) if estimate else
+                         ["برآورد قرارداد در دسترس نیست؛ BOQ تأییدشده ثبت نشده است"]),
+            "estimate_status": "verified" if estimate else "unavailable",
         }
 
     def _finance_depth_control(self, project_id: str) -> FinancePaymentControl:
@@ -1788,17 +1795,22 @@ class StructuralProApp:
         dashboard = self.financial_dashboard(project_id)
         receipts = self.project_receipt_summary(project_id)
         commitments = self.project_commitment_summary(project_id)
-        contract = float(dashboard["contract_amount"])
+        contract = (float(dashboard["contract_amount"])
+                    if dashboard["contract_amount"] is not None else None)
         received = float(receipts["total_received"])
-        receivable = max(contract - received, 0.0)
+        receivable = max(contract - received, 0.0) if contract is not None else None
         committed = float(commitments["committed_total"])
         return {
             "project_id": project_id, "contract_amount": contract,
-            "earned_value": float(dashboard["cumulative_work"]), "actual_cost": float(dashboard["actual_cost"]),
+            "earned_value": (float(dashboard["cumulative_work"])
+                             if dashboard["cumulative_work"] is not None else None),
+            "actual_cost": float(dashboard["actual_cost"]),
             "received": received, "receivable": receivable,
             "committed_cost": committed, "unpaid_commitments": float(commitments["unpaid_total"]),
             "cash_exposure": max(committed - received, 0.0),
-            "cost_margin": float(dashboard["gross_margin"]), "receipt_count": receipts["entry_count"],
+            "cost_margin": (float(dashboard["gross_margin"])
+                            if dashboard["gross_margin"] is not None else None),
+            "receipt_count": receipts["entry_count"],
             "commitment_count": commitments["entry_count"],
         }
 
