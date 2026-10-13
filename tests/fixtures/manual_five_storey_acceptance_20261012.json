@@ -185,11 +185,15 @@
         "width": 4,
         "thickness": 0.2,
         "void_diameter": 0.1,
-        "void_count": 20
+        "void_count": 20,
+        "void_effective_length_m": 10,
+        "void_cross_section": "circular",
+        "void_spec_ref": "SYNTHETIC-HOLLOW-SECTION-001",
+        "void_reviewed_by": "synthetic-structural-reviewer"
       },
       "expected_per_floor": 6.429203673205103,
       "unit": "m3",
-      "reference": "10×4×0.2−π×0.05²×10×20; precast only, topping excluded",
+      "reference": "Reviewed circular precast hollow sections: 10×4×.2 − π×.05²×10×20; topping excluded",
       "unit_price": 100
     },
     {
@@ -200,14 +204,19 @@
         "length": 6,
         "width": 6,
         "top_thickness": 0.06,
-        "spacing_x": 0.6,
-        "spacing_y": 0.6,
         "rib_width": 0.12,
-        "rib_depth": 0.18
+        "rib_depth": 0.18,
+        "rib_count_x": 10,
+        "rib_count_y": 10,
+        "intersection_count": 100,
+        "rib_run_length_x_m": 6,
+        "rib_run_length_y_m": 6,
+        "layout_ref": "SYNTHETIC-WAFFLE-SIGNED-LAYOUT-001",
+        "approved_by": "synthetic-reviewer"
       },
       "expected_per_floor": 4.4928,
       "unit": "m3",
-      "reference": "2.16+1.296+1.296−0.2592; ideal uniform grid only",
+      "reference": "Topping + 10 signed 6m ribs each direction − 100 counted intersections, per floor",
       "unit_price": 100
     },
     {
