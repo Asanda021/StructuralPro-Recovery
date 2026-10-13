@@ -11,6 +11,7 @@ def test_confirmed_assembly_components_persist_to_takeoffs_and_boq(tmp_path):
         {"count": 2, "length": 5, "width": 0.3, "depth": 0.5,
          "formwork_sides": 2, "rebar_kg_per_m3": 120},
         floor_id="طبقه ۱", description="تیر بتنی محور A",
+        measurement_source="A1/B1/approved-shop-detail",approved_by="مسئول متره",
     )
     assert len(result["rows"]) == 3
     assert len(result["assembly"]["component_source_ids"]) == 3
@@ -53,3 +54,32 @@ def test_assembly_save_requires_explicit_project_and_floor(tmp_path):
     with pytest.raises(ValueError, match="طبقه"):
         app.add_assembly_takeoff("assembly-p3", "concrete_column", inputs, floor_id="")
     assert app.open_project("assembly-p3")["takeoffs"] == []
+
+
+
+def test_same_real_assembly_source_cannot_be_billed_twice(tmp_path):
+    app=StructuralProApp(tmp_path)
+    app.create_project("بازبینی تکرار", "P-dup")
+    inputs={"count":1, "width":.4, "depth":.5, "height":3}
+    app.add_assembly_takeoff("P-dup", "concrete_column", inputs,
+                             floor_id="L1", measurement_source="C1/plan",
+                             approved_by="checker")
+    with pytest.raises(ValueError, match="تکرار|قبلاً"):
+        app.add_assembly_takeoff("P-dup", "concrete_column", inputs,
+                                 floor_id="L1", measurement_source="C1/plan",
+                                 approved_by="checker")
+    assert len(app.open_project("P-dup")["takeoffs"])==1
+    app.store.close()
+
+
+def test_unsourced_or_unreviewed_assembly_never_modifies_sqlite(tmp_path):
+    app=StructuralProApp(tmp_path)
+    app.create_project("مسدودسازی", "P-safe")
+    inputs={"count":1, "width":.4, "depth":.5, "height":3}
+    for source,reviewer in [("", "checker"), ("real:C1", "")]:
+        with pytest.raises(ValueError):
+            app.add_assembly_takeoff("P-safe", "concrete_column", inputs,
+                     floor_id="L1", measurement_source=source, approved_by=reviewer)
+    assert not app.open_project("P-safe")["takeoffs"]
+    assert not app.open_project("P-safe")["boq"]
+    app.store.close()
