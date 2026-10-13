@@ -10,6 +10,7 @@ from core.projects.store import ProjectStore
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.boq import build_boq, boq_summary
 from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.explicit_inputs import require_explicit_measurement_params
 from core.takeoff.estimate import build_estimate
 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
 from core.commercial.progress import build_progress
@@ -345,6 +346,7 @@ class StructuralProApp:
         require_source_unused(p,source_id)
         calculation_params=deepcopy(params)
         normalized_domain=takeoff_domain(domain)
+        require_explicit_measurement_params(normalized_domain,item,calculation_params)
         result=self.takeoff.calculate(normalized_domain,item,description=description or item,**calculation_params)
         row={"id":f"{len(p.get('takeoffs') or [])+1}",
              "member_code":str(params.get("member_code",item)),
@@ -703,6 +705,7 @@ class StructuralProApp:
 
         normalized_domain = takeoff_domain(domain)
         calculation_params = deepcopy(params)
+        require_explicit_measurement_params(normalized_domain,item,calculation_params)
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
                                         **calculation_params)
