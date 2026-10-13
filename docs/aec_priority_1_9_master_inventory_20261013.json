@@ -5,8 +5,8 @@
   "source_pr": 14,
   "base_branch": "audit/items-priorities-1-9-20261013",
   "scope": "StructuralPro priorities 1 to 9, full-building AEC",
-  "priority_family_count": 83,
-  "component_mentions_count": 856,
+  "priority_family_count": 85,
+  "component_mentions_count": 879,
   "review_schema_family_count": 61,
   "coverage_semantics": {
     "review_contract": "Review component workflow schema exists; does NOT prove formula/drawing/UI integration or tested acceptance",
@@ -1781,6 +1781,51 @@
       ],
       "coverage_level": "requires_dedicated_acceptance",
       "route_file": null,
+      "tests_verified": false,
+      "fully_accepted": false
+    },
+    {
+      "priority": 5,
+      "code": "pile_cap",
+      "title": "کلاهک شمع",
+      "components": [
+        "بتن کلاهک",
+        "قالب لبه کلاهک",
+        "شبکه میلگرد پایین X",
+        "شبکه میلگرد پایین Y",
+        "شبکه میلگرد بالا X",
+        "شبکه میلگرد بالا Y",
+        "میلگرد ریشه",
+        "پرت تأییدشده",
+        "اتصال شمع و کلاهک",
+        "جزئیات انتظار و مهاری"
+      ],
+      "coverage_level": "structural_review_contract",
+      "route_file": "core/takeoff/reviewed_structural.py",
+      "tests_verified": false,
+      "fully_accepted": false
+    },
+    {
+      "priority": 5,
+      "code": "bored_pile",
+      "title": "شمع بتنی درجا",
+      "components": [
+        "موقعیت شمع",
+        "قطر واقعی",
+        "عمق حفاری",
+        "آرماتور طولی",
+        "خاموت مارپیچ",
+        "سنجاقی",
+        "ریشه و انتظار",
+        "بتن شمع",
+        "طول اورلب",
+        "لوله ترمی",
+        "حفاری و دفع خاک",
+        "آزمایش یکپارچگی",
+        "فهرست عمق و تعداد شمع"
+      ],
+      "coverage_level": "structural_review_contract",
+      "route_file": "core/takeoff/reviewed_structural.py",
       "tests_verified": false,
       "fully_accepted": false
     }
