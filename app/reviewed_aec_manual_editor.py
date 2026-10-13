@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from core.takeoff.reviewed_aec import (
+    MECHANICAL_SYSTEMS, ELECTRICAL_SYSTEMS, CIVIL_SYSTEMS,
+)
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout,
@@ -94,7 +97,8 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     for button in (load_button, save_button, preview_button, commit_button):
         actions.addWidget(button)
     outer.addLayout(actions)
-    state = {"draft": None, "revision": 0, "editing_component": None}
+    state = {"draft": None, "revision": 0, "editing_component": None,
+             "project_id": None, "changed": False}
 
     def context() -> tuple[str, str, str, str]:
         pid, fl, code, sid = (
@@ -113,7 +117,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     def ensure_draft():
         pid, fl, code, sid = context()
         draft = state["draft"]
-        if draft is None or (
+        if draft is None or state["project_id"] != pid or (
             draft["kind"], draft["floor_id"], draft["system_id"],
         ) != (code, fl, sid):
             current = service.get_aec_system(pid, code, fl, sid)
@@ -123,6 +127,8 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
                 state["draft"] = service.new_aec_system(code, fl, sid)
                 state["revision"] = 0
             state["editing_component"] = None
+            state["project_id"] = pid
+            state["changed"] = False
         return state["draft"]
 
     def paint_component():
@@ -155,9 +161,10 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         group_selector.blockSignals(False)
         paint_component()
 
-    def capture_component():
+    def capture_component(name=None):
         d = ensure_draft()
-        name = group_selector.currentData()
+        name = name or group_selector.currentData()
+        before = deepcopy(d["components"].get(name))
         if name not in d["components"]:
             raise ValueError("گروه عملیات انتخاب نشده است")
         status = choice.currentData()
@@ -181,15 +188,9 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
                     raise ValueError(f"ردیف {row+1}: مقدار عددی نامعتبر است") from exc
                 raw.update({"mode": "measured",
                             "domain": (
-                                "mechanical" if d["kind"] in __import__(
-                                    "core.takeoff.reviewed_aec", fromlist=["MECHANICAL_SYSTEMS"]
-                                ).MECHANICAL_SYSTEMS else
-                                "electrical" if d["kind"] in __import__(
-                                    "core.takeoff.reviewed_aec", fromlist=["ELECTRICAL_SYSTEMS"]
-                                ).ELECTRICAL_SYSTEMS else
-                                "civil" if d["kind"] in __import__(
-                                    "core.takeoff.reviewed_aec", fromlist=["CIVIL_SYSTEMS"]
-                                ).CIVIL_SYSTEMS else "building"),
+                                "mechanical" if d["kind"] in MECHANICAL_SYSTEMS else
+                                "electrical" if d["kind"] in ELECTRICAL_SYSTEMS else
+                                "civil" if d["kind"] in CIVIL_SYSTEMS else "building"),
                 })
                 items.append(raw)
             if not items:
@@ -210,6 +211,8 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         else:
             d["components"][name] = {"status": "unreviewed"}
         state["editing_component"] = name
+        if before != d["components"][name]:
+            state["changed"] = True
         report.setText(f"گروه «{name}» در پیش‌نویس اعمال شد؛ هنوز ثبت قطعی نشده است.")
 
     def load():
@@ -217,6 +220,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
             state["draft"] = None
             state["revision"] = 0
             populate_components()
+            identity.setText(str(state["draft"].get("source", {}).get("source_id") or ""))
             report.setText("نسخه فعلی بارگذاری شد؛ گروه‌ها را تکمیل و سپس ذخیره کنید.")
         except Exception as exc:
             show_failure(exc)
@@ -226,8 +230,14 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
             # Unsubmitted edits must never silently be discarded.
             former = state["editing_component"]
             if former and former != group_selector.currentData():
-                capture_error = "تغییر گروه بدون اعمال تغییرات قبلی مجاز نیست؛ ابتدا «اعمال گروه» را بزنید."
-                report.setText(capture_error)
+                try:
+                    capture_component(former)
+                except Exception:
+                    idx = group_selector.findData(former)
+                    group_selector.blockSignals(True)
+                    group_selector.setCurrentIndex(idx)
+                    group_selector.blockSignals(False)
+                    raise
             paint_component()
         except Exception as exc:
             show_failure(exc)
@@ -237,22 +247,28 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         src = identity.text().strip()
         if not src:
             raise ValueError("شناسه واقعی منبع برداشت را وارد کنید")
-        d["source"] = {"mode": "manual", "source_id": src}
+        source = {"mode": "manual", "source_id": src}
+        if d.get("source") != source:
+            state["changed"] = True
+        d["source"] = source
         return d
 
     def save():
         try:
+            capture_component()
             draft = prepare_save()
             pid, *_ = context()
             entry = service.save_aec_system_draft(
                 pid, draft, expected_revision=state["revision"])
             state["revision"] = entry["revision"]
+            state["changed"] = False
             report.setText(f"پیش‌نویس در SQLite ثبت شد؛ نسخه {entry['revision']}.")
         except Exception as exc:
             show_failure(exc)
 
     def preview():
         try:
+            capture_component()
             d = prepare_save()
             from core.takeoff.engine import TakeoffEngine
             from core.takeoff.reviewed_aec import preview_system
@@ -270,6 +286,10 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     def commit():
         try:
             pid, fl, code, sid = context()
+            capture_component()
+            prepare_save()
+            if state["changed"]:
+                raise ValueError("پیش از ثبت قطعی، همه تغییرات و منبع برداشت را در SQLite ذخیره کنید")
             if state["revision"] < 1:
                 raise ValueError("ابتدا پیش‌نویس را در SQLite ذخیره کنید")
             result = service.commit_aec_system(
