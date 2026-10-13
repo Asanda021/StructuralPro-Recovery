@@ -6,7 +6,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_aec_ui_functional::test_validated_assemblies_are_available_from_real_aec_workspace",
@@ -15,7 +15,7 @@
     "cause": "stale_static_wiring_contract",
     "priority": "P1",
     "engineering_effect": "Assertion کد ایستا با مسیر اتمیک جدید ناسازگار؛ باید با شاهد رفتاری جایگزین/تکمیل شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_aec_ui_functional::test_assembly_ui_never_saves_partial_components",
@@ -24,7 +24,7 @@
     "cause": "stale_static_wiring_contract",
     "priority": "P1",
     "engineering_effect": "Assertion کد ایستا با مسیر اتمیک جدید ناسازگار؛ باید با شاهد رفتاری جایگزین/تکمیل شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_application_service::test_application_service_offline_project_takeoff_report",
@@ -33,7 +33,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_application_service::test_financial_rollup_report_kpi_audit_and_id_ledger",
@@ -42,7 +42,7 @@
     "cause": "empty_boq_finance_dependency",
     "priority": "P1",
     "engineering_effect": "گزارش دفتر هزینه مستقل نباید به برآورد خالی وابسته شود؛ نیازمند بررسی محصول",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_application_service::test_statement_activity_snapshot_and_exports",
@@ -51,7 +51,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_finance::test_report_and_snapshot_retain_explicit_factor_rates",
@@ -60,7 +60,7 @@
     "cause": "missing_real_pricebook_review",
     "priority": "P1",
     "engineering_effect": "مسیر مالی بدون Import واقعی/بازبینی مسدود است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_audit_critical_finance::test_statement_preview_save_report_reopen_agree",
@@ -69,7 +69,7 @@
     "cause": "missing_real_pricebook_review",
     "priority": "P1",
     "engineering_effect": "مسیر مالی بدون Import واقعی/بازبینی مسدود است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_audit_critical_persistence::test_stale_desktop_does_not_erase_external_takeoff[estimate]",
@@ -78,7 +78,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_persistence::test_stale_desktop_does_not_erase_external_takeoff[snapshot]",
@@ -87,7 +87,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_persistence::test_stale_desktop_does_not_erase_external_takeoff[audit]",
@@ -96,7 +96,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_persistence::test_stale_desktop_does_not_erase_external_takeoff[report]",
@@ -105,7 +105,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_persistence::test_spawned_estimator_preserves_another_process_takeoff",
@@ -114,7 +114,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_quantities::test_actual_aec_button_commits_correct_geometry[structural_concrete-stair_concrete-inputs0-1.44-m3]",
@@ -123,7 +123,7 @@
     "cause": "aec_callback_integration",
     "priority": "P0",
     "engineering_effect": "عدم تولید ردیف از دکمه واقعی؛ شکست می‌تواند ورود مهندسی را مسدود کند",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_audit_critical_quantities::test_actual_aec_button_commits_correct_geometry[structural_steel-steel_roof_composite_concrete-inputs1-4.8-m3]",
@@ -132,7 +132,7 @@
     "cause": "aec_callback_integration",
     "priority": "P0",
     "engineering_effect": "عدم تولید ردیف از دکمه واقعی؛ شکست می‌تواند ورود مهندسی را مسدود کند",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_audit_critical_quantities::test_actual_aec_button_commits_correct_geometry[electrical-cable_tray-inputs2-12-m]",
@@ -141,7 +141,7 @@
     "cause": "aec_callback_integration",
     "priority": "P0",
     "engineering_effect": "عدم تولید ردیف از دکمه واقعی؛ شکست می‌تواند ورود مهندسی را مسدود کند",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_calculation_audit_guardrails::test_assembly_rejects_non_finite_inputs",
@@ -150,7 +150,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_report_export_formats",
@@ -159,7 +159,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_report_service_uses_project_data",
@@ -168,7 +168,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_xlsx_contains_commercial_summary",
@@ -177,7 +177,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_payment_statement_calculates_period_and_deductions",
@@ -186,7 +186,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_statement_export_contains_period_columns",
@@ -195,7 +195,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_statement_periods_roll_previous_quantities_forward",
@@ -204,7 +204,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_statement_period_accepts_explicit_quantities_and_rejects_duplicate",
@@ -213,7 +213,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_selected_statement_period_is_exported_with_summary",
@@ -222,7 +222,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_commercial_outputs::test_report_rejects_missing_statement_period",
@@ -231,7 +231,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_core_priority_1::test_application_rejects_duplicate_takeoff_source",
@@ -240,7 +240,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_missing_location_rejected_with_zero_side_effects",
@@ -249,7 +249,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_same_operation_floor_location_is_not_registered_twice",
@@ -258,7 +258,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_different_floor_location_and_operation_allow_real_distinct_work",
@@ -267,7 +267,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_five_floors_round_trip_and_other_work_rebuilds_without_double_count",
@@ -276,7 +276,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_legacy_finish_rows_without_explicit_role_not_double_counted",
@@ -285,7 +285,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_recovery_pr481::test_unknown_explicit_role_fails_closed_on_rebuild",
@@ -294,7 +294,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_takeoff_assemblies::test_finish_assembly_persists_distinct_work_and_material_rows_to_boq",
@@ -303,7 +303,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_finish_takeoff_assemblies::test_five_floor_synthetic_finish_takeoff_keeps_floor_and_item_provenance",
@@ -312,7 +312,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_golden_five_storey_building::test_five_storey_golden_dataset_round_trips_through_persistent_project_and_boq",
@@ -321,67 +321,61 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_real_form_routes_existing_operations_to_correct_engine[architecture-facade-params0-10-m2]",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed71c84a0>, <function ui.<locals>.make at 0x7faed758bd80>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\nkey = 'architecture', code = 'facade'\nparams = {'length': 4, 'height': 3, 'openings': 2}, quantity = 10, unit = 'm2'\n\n    @pytest.mark.parametrize('key,code,params,quantity,unit',[\n     ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),\n     ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),\n     ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),\n     ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),\n     ('structural_steel','steel_sandwich_roof',dict(length=4,width=3,count=2),24,'m2'),\n    ])\n    def test_real_form_routes_existing_operations_to_correct_engine(ui,key,code,params,quantity,unit):\n     app,make,messages=ui;w=make(key);select(w,code,params);click(w)\n     app.store._cache.clear();p=app.open_project('p')\n>    assert len(p['takeoffs'])==1,messages\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\n\ntests/test_manual_building_safety.py:96: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_real_form_routes_existing_operations_to_correct_engine[architecture-ceiling-params1-24-m2]",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed71caea0>, <function ui.<locals>.make at 0x7faed7544220>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\nkey = 'architecture', code = 'ceiling'\nparams = {'length': 4, 'width': 3, 'count': 2}, quantity = 24, unit = 'm2'\n\n    @pytest.mark.parametrize('key,code,params,quantity,unit',[\n     ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),\n     ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),\n     ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),\n     ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),\n     ('structural_steel','steel_sandwich_roof',dict(length=4,width=3,count=2),24,'m2'),\n    ])\n    def test_real_form_routes_existing_operations_to_correct_engine(ui,key,code,params,quantity,unit):\n     app,make,messages=ui;w=make(key);select(w,code,params);click(w)\n     app.store._cache.clear();p=app.open_project('p')\n>    assert len(p['takeoffs'])==1,messages\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\n\ntests/test_manual_building_safety.py:96: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_real_form_routes_existing_operations_to_correct_engine[renovation-demolition-params2-4.8-m3]",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed71c8620>, <function ui.<locals>.make at 0x7faed75451c0>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\nkey = 'renovation', code = 'demolition'\nparams = {'length': 4, 'width': 3, 'height': 0.2, 'count': 2}, quantity = 4.8\nunit = 'm3'\n\n    @pytest.mark.parametrize('key,code,params,quantity,unit',[\n     ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),\n     ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),\n     ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),\n     ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),\n     ('structural_steel','steel_sandwich_roof',dict(length=4,width=3,count=2),24,'m2'),\n    ])\n    def test_real_form_routes_existing_operations_to_correct_engine(ui,key,code,params,quantity,unit):\n     app,make,messages=ui;w=make(key);select(w,code,params);click(w)\n     app.store._cache.clear();p=app.open_project('p')\n>    assert len(p['takeoffs'])==1,messages\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\n\ntests/test_manual_building_safety.py:96: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_real_form_routes_existing_operations_to_correct_engine[renovation-screed-params3-2.4-m3]",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed7205880>, <function ui.<locals>.make at 0x7faed7545940>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\nkey = 'renovation', code = 'screed'\nparams = {'length': 4, 'width': 3, 'thickness': 0.1, 'count': 2}, quantity = 2.4\nunit = 'm3'\n\n    @pytest.mark.parametrize('key,code,params,quantity,unit',[\n     ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),\n     ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),\n     ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),\n     ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),\n     ('structural_steel','steel_sandwich_roof',dict(length=4,width=3,count=2),24,'m2'),\n    ])\n    def test_real_form_routes_existing_operations_to_correct_engine(ui,key,code,params,quantity,unit):\n     app,make,messages=ui;w=make(key);select(w,code,params);click(w)\n     app.store._cache.clear();p=app.open_project('p')\n>    assert len(p['takeoffs'])==1,messages\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\n\ntests/test_manual_building_safety.py:96: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_real_form_routes_existing_operations_to_correct_engine[structural_steel-steel_sandwich_roof-params4-24-m2]",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed7299be0>, <function ui.<locals>.make at 0x7faed7545f80>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\nkey = 'structural_steel', code = 'steel_sandwich_roof'\nparams = {'length': 4, 'width': 3, 'count': 2}, quantity = 24, unit = 'm2'\n\n    @pytest.mark.parametrize('key,code,params,quantity,unit',[\n     ('architecture','facade',dict(length=4,height=3,openings=2),10,'m2'),\n     ('architecture','ceiling',dict(length=4,width=3,count=2),24,'m2'),\n     ('renovation','demolition',dict(length=4,width=3,height=.2,count=2),4.8,'m3'),\n     ('renovation','screed',dict(length=4,width=3,thickness=.1,count=2),2.4,'m3'),\n     ('structural_steel','steel_sandwich_roof',dict(length=4,width=3,count=2),24,'m2'),\n    ])\n    def test_real_form_routes_existing_operations_to_correct_engine(ui,key,code,params,quantity,unit):\n     app,make,messages=ui;w=make(key);select(w,code,params);click(w)\n     app.store._cache.clear();p=app.open_project('p')\n>    assert len(p['takeoffs'])==1,messages\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\n\ntests/test_manual_building_safety.py:96: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_block_assembly_real_button_saves_atomically_and_rejects_repeat",
     "message": "AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nassert 0 == 1\n +  where 0 = len([])\n +    where [] = <built-in method get of dict object at 0x7faed734d080>('takeoff_assemblies', [])\n +      where <built-in method get of dict object at 0x7faed734d080> = {'id': 'p', 'name': 'فرم واقعی', 'takeoffs': [], 'boq': [], ...}.get",
     "details": "ui = (<core.platform.application.StructuralProApp object at 0x7faed7556b10>, <function ui.<locals>.make at 0x7faed7546de0>, ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند'])\n\n    def test_block_assembly_real_button_saves_atomically_and_rejects_repeat(ui):\n     app,make,messages=ui;w=make('masonry')\n     select(w,'block_wall',dict(length=4,height=3,thickness=.2,openings=0,block_length=.4,block_height=.2,block_thickness=.2,joint_thickness=.01,cement_parts=1,sand_parts=4,block_waste_factor=0,mortar_waste_factor=0))\n     w.findChild(QCheckBox).setChecked(True);click(w)\n>    p=app.open_project('p');assert len(p.get('takeoff_assemblies',[]))==1,messages\n                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE    AssertionError: ['طبقه و مرجع واقعی برداشت دستی الزامی\\u200cاند']\nE    assert 0 == 1\nE     +  where 0 = len([])\nE     +    where [] = <built-in method get of dict object at 0x7faed734d080>('takeoff_assemblies', [])\nE     +      where <built-in method get of dict object at 0x7faed734d080> = {'id': 'p', 'name': 'فرم واقعی', 'takeoffs': [], 'boq': [], ...}.get\n\ntests/test_manual_building_safety.py:110: AssertionError",
     "cause": "ui_missing_physical_floor_source",
-    "priority": "P0",
+    "priority": "P1",
     "engineering_effect": "Fixture فرم بدون طبقه/محل؛ تکمیل ورودی و اجرای callback واقعی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون",
-    "cause_detail": "پس از تکمیل طبقه/محل صریح، مسیر موتور نامناسب نیز بازتولید شد؛ نام‌های فیلد و routing اصلاح شدند."
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_nonfinish_assembly_explicit_location_rejects_cross_instance_duplicate",
@@ -390,7 +384,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_building_safety::test_assembly_component_price_is_explicit_unit_checked_and_atomic",
@@ -399,7 +393,7 @@
     "cause": "missing_assembly_reviewer_or_location",
     "priority": "P1",
     "engineering_effect": "اعتبار هویت/تأیید مجموعه؛ افزودن ورودی صریح به Fixture لازم است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_manual_takeoff_ui_wiring::test_manual_takeoff_workbench_exposes_phase_two_controls",
@@ -408,7 +402,7 @@
     "cause": "stale_static_wiring_contract",
     "priority": "P1",
     "engineering_effect": "Assertion کد ایستا با مسیر اتمیک جدید ناسازگار؛ باید با شاهد رفتاری جایگزین/تکمیل شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_p76_layer1_engineering_foundation::test_steel_domain_covers_member_connection_shop_items",
@@ -417,7 +411,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_31_deep_testing::test_end_to_end_project_takeoff_boq_estimate",
@@ -426,7 +420,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_31_deep_testing::test_invalid_estimate_factors_fail_closed",
@@ -435,7 +429,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_31_deep_testing::test_backup_and_project_export_import_round_trip",
@@ -444,7 +438,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_31_deep_testing::test_database_reopen_preserves_project_data",
@@ -453,7 +447,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_32_integration_regression::test_recalculate_is_idempotent_and_persists",
@@ -462,7 +456,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_32_integration_regression::test_recovery_round_trip_preserves_estimate_inputs",
@@ -471,7 +465,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_32_integration_regression::test_ai_review_does_not_change_estimate_or_takeoff_state",
@@ -480,7 +474,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_32_integration_regression::test_performance_snapshot_matches_project_collection_sizes",
@@ -489,7 +483,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_32_integration_regression::test_report_and_recalculation_share_same_takeoff_count",
@@ -498,7 +492,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_33_edge_failure::test_duplicate_source_is_fail_closed",
@@ -507,7 +501,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_33_edge_failure::test_invalid_estimate_factor_does_not_persist",
@@ -516,7 +510,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_33_edge_failure::test_ai_confirmation_gate_does_not_mutate_state",
@@ -525,7 +519,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_34_windows_validation::test_runtime_data_paths_remain_platform_neutral",
@@ -534,7 +528,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_35_real_world_golden::test_residential_concrete_quantity_workflow",
@@ -543,7 +537,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_35_real_world_golden::test_recovery_and_recalculation_scenario",
@@ -552,7 +546,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_35_real_world_golden::test_golden_acceptance_covers_multiple_project_surfaces",
@@ -561,7 +555,7 @@
     "cause": "golden_workflow_failure",
     "priority": "P0",
     "engineering_effect": "پذیرش مرجع جامع False؛ علت ثانویه باید بررسی شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_35_real_world_golden::test_large_collection_pagination_scenario",
@@ -570,7 +564,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_36_full_qa::test_json_serialization_contract_is_stable",
@@ -579,7 +573,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_37_stabilization::test_repeated_recalculation_is_stable",
@@ -588,7 +582,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_37_stabilization::test_recovery_round_trip_after_recalculation",
@@ -597,7 +591,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_38_pre_release_freeze::test_freeze_smoke_project",
@@ -606,7 +600,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_priority_51_golden_project_e2e::test_priority_51_golden_project_end_to_end",
@@ -615,7 +609,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_product_gates::test_windows_shared_application_workflow",
@@ -624,7 +618,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_product_workflow_acceptance::test_existing_product_workflow_project_to_report_and_persistence",
@@ -633,7 +627,7 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_pipeline_persists_estimate_and_snapshot",
@@ -642,7 +636,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_financial_dashboard_summarizes_contract_progress_and_statements",
@@ -651,7 +645,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_financial_control_calculates_cost_variance",
@@ -660,7 +654,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_cost_ledger_persists_and_feeds_financial_control",
@@ -669,7 +663,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_cost_report_exports_rows_and_category_totals",
@@ -678,7 +672,7 @@
     "cause": "empty_boq_finance_dependency",
     "priority": "P1",
     "engineering_effect": "گزارش دفتر هزینه مستقل نباید به برآورد خالی وابسته شود؛ نیازمند بررسی محصول",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_financial_dashboard_includes_actual_cost_and_gross_margin",
@@ -687,7 +681,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_receipts_and_financial_position",
@@ -696,7 +690,7 @@
     "cause": "missing_unique_source",
     "priority": "P1",
     "engineering_effect": "منشأ/ردیابی؛ Fixture قبل از رسیدن به محاسبه متوقف می‌شود",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_commitment_ledger_and_cash_exposure",
@@ -705,7 +699,7 @@
     "cause": "empty_boq_finance_dependency",
     "priority": "P1",
     "engineering_effect": "گزارش دفتر هزینه مستقل نباید به برآورد خالی وابسته شود؛ نیازمند بررسی محصول",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_project_pipeline_e2e::test_project_financial_report_exports_consolidated_rows",
@@ -714,7 +708,7 @@
     "cause": "empty_boq_finance_dependency",
     "priority": "P1",
     "engineering_effect": "گزارش دفتر هزینه مستقل نباید به برآورد خالی وابسته شود؛ نیازمند بررسی محصول",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   },
   {
     "test": "tests.test_recovery_persian_presentation::test_manual_preview_and_missing_geometry_use_persian_labels",
@@ -723,7 +717,7 @@
     "cause": "persian_label_regression",
     "priority": "P2",
     "engineering_effect": "نام انگلیسی در پیش‌نمایش فارسی",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "PASS in final full suite"
   },
   {
     "test": "tests.test_roadmap_phase10::test_phase10_takeoff_to_boq_estimate_statement_and_report",
@@ -732,6 +726,6 @@
     "cause": "missing_explicit_count",
     "priority": "P1",
     "engineering_effect": "تعداد یا آرایش نامشخص؛ گیت مانع عدد حدسی است",
-    "resolution": "OPEN؛ علت اولیه از traceback؛ اصلاح نیازمند آزمون"
+    "resolution": "OPEN in final full suite"
   }
 ]
