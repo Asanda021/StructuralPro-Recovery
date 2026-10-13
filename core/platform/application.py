@@ -381,6 +381,8 @@ class StructuralProApp:
         if p is None:
             raise KeyError(pid)
         require_source_unused(p,source_id)
+        if source_id in (p.get("deleted_takeoff_sources") or []):
+            raise ValueError("منبع متره حذف‌شده قبلاً استفاده شده است؛ ثبت دوباره با همان منشأ مجاز نیست")
         location=str(params.get("manual_location_id", "")).strip()
         if location and not system: raise ValueError("شناسه عضو به طبقه صریح نیاز دارد")
         if location and any(str(r.get("system", ""))==system and str(r.get("item", ""))==str(item) and str(r.get("params",{}).get("manual_location_id", ""))==location for r in p.get("takeoffs", [])):
@@ -836,6 +838,59 @@ class StructuralProApp:
             project, project.get("takeoffs") or [])
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(row)
+
+    def delete_takeoff(self, project_id: str, source_id: str, *, expected_revision: int) -> dict[str, Any]:
+        """Safely retire a single manual measurement without erasing its audit trail.
+
+        Issued statements and reviewed/graphical measurement families require
+        dedicated adjustment workflows; a generic delete must never bypass them.
+        """
+        pid = str(project_id or "").strip()
+        source = str(source_id or "").strip()
+        if not pid or not source:
+            raise ValueError("شناسه پروژه و منبع متره برای حذف الزامی است")
+        if isinstance(expected_revision, bool):
+            raise ValueError("نسخه متره برای حذف باید عدد صحیح مثبت باشد")
+        try:
+            expected = int(expected_revision)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise ValueError("نسخه متره برای حذف معتبر نیست") from exc
+        if expected < 1 or expected != expected_revision:
+            raise ValueError("نسخه متره برای حذف باید عدد صحیح مثبت باشد")
+        digest = self.store.current_digest(pid)
+        self.store._cache.pop(pid, None)
+        project = self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        if project.get("statement_periods"):
+            raise ValueError("متره دارای صورت‌وضعیت صادرشده است؛ حذف مستقیم ممنوع و اصلاحیه رسمی لازم است")
+        rows = project.get("takeoffs") or []
+        matches = [row for row in rows if str(row.get("source_id", "")).strip() == source]
+        if len(matches) != 1:
+            raise KeyError("منبع متره برای حذف باید دقیقاً یک ردیف موجود باشد")
+        row = matches[0]
+        if (row.get("review") or row.get("assembly_id") or row.get("drawing_session_id") or
+                row.get("domain") in {"assembly", "drawing", "drawing_ai"} or
+                source.startswith(("beam-detail:", "structural:", "aec:"))):
+            raise ValueError("حذف این متره باید از گردش اصلاحیه تخصصی عضو یا نقشه انجام شود")
+        current = int(row.get("revision", 1))
+        if current != expected:
+            raise RuntimeError("نسخه متره تغییر کرده است؛ حذف نسخه قدیمی رد شد")
+        left = [other for other in rows if other is not row]
+        project["takeoffs"], project["boq"] = rebuild_project_boq(project, left)
+        tombstones = list(project.get("deleted_takeoff_sources") or [])
+        if source in tombstones:
+            raise ValueError("منبع قبلاً حذف شده است")
+        tombstones.append(source)
+        project["deleted_takeoff_sources"] = tombstones
+        history = list(project.get("takeoff_revision_history") or [])
+        history.append({"source_id": source, "event": "deleted", "from_revision": current,
+                        "changed_at": datetime.now(timezone.utc).isoformat(),
+                        "previous_row": deepcopy(row)})
+        project["takeoff_revision_history"] = history
+        self.store.save(pid, project, expected_digest=digest)
+        return {"source_id": source, "deleted_revision": current,
+                "remaining_takeoffs": len(project["takeoffs"]), "status": "retired"}
 
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
         """Financial estimate needs priced BOQ, finite rates and a version-safe save."""
