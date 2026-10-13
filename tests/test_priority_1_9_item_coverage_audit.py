@@ -116,3 +116,21 @@ def test_manual_aec_assembly_is_not_committed_as_multiple_partial_transactions()
     assert "joist_count" in ui
     assert "این سقف به دیتایل‌های واقعی" in ui
     assert 'w.setValue(0)' in ui
+
+
+def test_every_legacy_aec_screen_item_has_a_real_input_widget():
+    import re
+    ui = (Path(__file__).resolve().parents[1] / "app" / "aec_workspace.py"
+          ).read_text(encoding="utf-8")
+    all_items = ui[ui.index("ITEMS={"):ui.index("FIELDS={")]
+    all_fields = ui[ui.index("FIELDS={"):ui.index("ITEM_DOMAINS=")]
+    provided = set(re.findall(r'"([a-z_]+)"\s*:', all_fields))
+    records = re.findall(r'\("([a-z_]+)","[^"]+",\(([^)]*)\)\)', all_items)
+    assert records
+    missing = {}
+    for code, declaration in records:
+        required = re.findall(r'"([a-z_]+)"', declaration)
+        absent = [x for x in required if x not in provided]
+        if absent:
+            missing[code] = absent
+    assert not missing, f"ورودی‌های عملیاتی در فرم موجود نیست: {missing}"
