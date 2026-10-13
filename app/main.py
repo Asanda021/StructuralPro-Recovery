@@ -332,11 +332,13 @@ def main()->int:
     p,v=page("فهرست‌بها","📥 فایل فهرست‌بهای خودت را وارد کن، کنترل کن، جستجو کن و همان کدها را در متره و BOQ استفاده کن.")
     ptools=QFrame(); ptools.setObjectName("DashboardSection"); pform=QHBoxLayout(ptools); pform.setContentsMargins(14,12,14,12); pform.setSpacing(10)
     pyear=QLineEdit(); pyear.setPlaceholderText("سال؛ اگر داخل فایل نیست وارد کن")
+    price_reviewer=QLineEdit(); price_reviewer.setObjectName("PricebookReviewer")
+    price_reviewer.setPlaceholderText("هویت واقعی بازبین فهرست‌بهای همین پروژه؛ تأیید خودکار ممنوع")
     pquery=QLineEdit(); pquery.setPlaceholderText("🔎 کد، شرح، فصل یا واحد")
     load=QPushButton("📥 ورود Excel / CSV / PDF"); load.setObjectName("PrimaryAction")
     export_prices=QPushButton("⬇️ خروجی CSV"); export_prices.setObjectName("SecondaryAction")
     search=QPushButton("🔎 جستجو"); search.setObjectName("SecondaryAction")
-    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
+    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(QLabel("بازبین")); pform.addWidget(price_reviewer,2); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
     import_status=QLabel("🟡 هنوز فهرست‌بهایی وارد نشده است. فایل Excel یا PDF متنی خودت را انتخاب کن؛ هیچ فهرست‌بهای داخلی اجباری وجود ندارد."); import_status.setObjectName("DashboardNotice"); import_status.setWordWrap(True); v.addWidget(import_status)
     ptitle=QLabel("📚 کتابخانه فهرست‌بهای پروژه"); ptitle.setObjectName("SectionTitle"); v.addWidget(ptitle)
     ptable=QTableWidget(0,7); ptable.setAlternatingRowColors(True); ptable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows); ptable.setHorizontalHeaderLabels(["سال","کد","شرح","واحد","بهای واحد","فصل","رشته"]); ptable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch); v.addWidget(ptable,1)
@@ -353,22 +355,27 @@ def main()->int:
         if not path:return
         try:
             selected_year=int(pyear.text()) if pyear.text().strip() else 0
+            project_id=qpid.text().strip() or pid.text().strip()
+            bound_project=bool(project_id and service.open_project(project_id))
+            reviewer=price_reviewer.text().strip()
+            if bound_project and not reviewer:
+                raise ValueError("نام یا شناسه بازبین فهرست‌بهای پروژه باید صریح وارد شود؛ تأیید خودکار مجاز نیست")
             info=pricebook_importer.inspect(path,year=selected_year or 0,discipline="building",source_id="user-import")
             if not info["valid"]:
                 raise ValueError("؛ ".join(info["errors"][:5]))
             receipt=pricebook_importer.import_file(path,year=selected_year or 0,discipline="building",source_id="user-import",replace_year=True)
             if receipt.sha256 != info["sha256"]:raise ValueError("فایل فهرست‌بها پس از بررسی تغییر کرده است")
-            project_id=qpid.text().strip() or pid.text().strip()
-            if project_id and service.open_project(project_id):
-                service.import_project_pricebook(project_id,path,year=receipt.year,approved_by="کاربر واردکننده فهرست‌بها")
+            if bound_project:
+                service.import_project_pricebook(project_id,path,year=receipt.year,approved_by=reviewer)
             pricebook_store.parent.mkdir(parents=True, exist_ok=True)
             pricebook_store.write_text(catalog.export_csv(receipt.year or selected_year or None), encoding="utf-8-sig")
             pyear.setText(str(receipt.year if receipt.year else selected_year))
             pquery.setText("")
             search_prices()
             verification="منبع کاربر" if not receipt.verified_source else "منبع رسمیِ ثبت‌شده"
-            import_status.setText(f"🟢 ورود موفق | {receipt.rows:,} ردیف | {receipt.format.upper()} | {verification} | SHA-256: {receipt.sha256[:12]}…")
-            status.setText(f"🟢 فهرست‌بها آماده استفاده است | {receipt.rows:,} ردیف")
+            review_note = f" | تأیید پروژه توسط: {reviewer}" if bound_project else " | فقط کتابخانه؛ تأیید مالی پروژه انجام نشده"
+            import_status.setText(f"🟢 ورود موفق | {receipt.rows:,} ردیف | {receipt.format.upper()} | {verification}{review_note} | SHA-256: {receipt.sha256[:12]}…")
+            status.setText(f"🟢 فهرست‌بها وارد شد | {receipt.rows:,} ردیف{review_note}")
         except Exception as e:
             QMessageBox.critical(w,"خطای ورود فهرست‌بها",str(e))
             import_status.setText("🔴 ورود انجام نشد؛ فایل تغییر داده نشد.")
