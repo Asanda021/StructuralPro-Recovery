@@ -79,34 +79,66 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
         joist_depth=_n(p["joist_depth"],"joist_depth", minimum=1e-12)
         if joist_width > spacing:
             raise ValueError("joist_width cannot exceed joist_spacing")
-        import math
         joist_count=_n(p["joist_count"],"joist_count", minimum=1e-12)
         ribs=joist_count*L*joist_width*joist_depth*count
         q=topping+ribs
         return QuantityResult("سقف سبک بتنی",item,q,"m3","A×t رویه + تعداد تیرچه×L×b×h",("تعداد تیرچه باید صریح از نقشه چیدمان مستند وارد شود؛ تیرچه‌های پیش‌ساخته بتن درجا نیستند و حجم کلاف‌ها و بازشوها باید جداگانه کنترل شود.",))
     if k in {"hollow_core_roof","دال_مجوف"}:
-        area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
-        gross=area*_n(p["thickness"],"thickness", minimum=1e-12)
+        # Precast voids are not implicitly as long as the outer slab.
+        # A real section schedule must confirm both shape and effective length.
+        from core.takeoff.reviewed_components import require_text
+        require_text(p.get("void_spec_ref"), "مرجع واقعی پروفیل فضای خالی هالوکور")
+        require_text(p.get("void_reviewed_by"), "بازبین پروفیل هالوکور")
+        if p.get("void_cross_section") != "circular":
+            raise ValueError("فقط فضای خالی دایره‌ای با مقطع تأییدشده قابل محاسبه است")
+        effective = _n(p.get("void_effective_length_m"), "void_effective_length_m", minimum=1e-12)
+        length = _n(p["length"], "length")
+        width = _n(p["width"], "width")
+        thick = _n(p["thickness"], "thickness")
+        count = _n(p.get("count", 1), "count")
         diameter = _n(p["void_diameter"], "void_diameter", minimum=1e-12)
         void_count = _n(p["void_count"], "void_count", minimum=1)
-        void=3.141592653589793*(diameter/2)**2*_n(p["length"],"length")*void_count*_n(p.get("count",1),"count")
-        if void > gross:
+        if effective > length:
+            raise ValueError("طول واقعی حفره نمی‌تواند از طول قطعه بیشتر باشد")
+        if diameter > thick or diameter * void_count > width:
+            raise ValueError("هندسه فضای خالی هالوکور در ضخامت یا عرض واقعی نمی‌گنجد")
+        gross = length * width * thick
+        void = math.pi * (diameter / 2)**2 * effective * void_count
+        if void >= gross:
             raise ValueError("hollow-core void volume cannot exceed gross slab volume")
-        if diameter > _n(p["thickness"], "thickness") or diameter * void_count > _n(p["width"], "width"):
-            raise ValueError("hollow-core void geometry does not fit slab thickness/width")
-        q=gross-void
-        return QuantityResult("سقف دال مجوف",item,q,"m3","L×W×t − π(d/2)²×L×تعداد فضای خالی",())
+        return QuantityResult("سقف دال مجوف", item, (gross-void)*count, "m3",
+                              "(حجم قطعه − π×قطر²/۴×طول واقعی حفره×تعداد)×تعداد قطعه",
+                              ("فقط مقطع دایره‌ای دارای مرجع؛ بتن رویه و درزها جداگانه متره شوند.",))
     if k in {"waffle_roof","وافل"}:
-        if _n(p["rib_width"], "rib_width", minimum=1e-12) > min(_n(p["spacing_x"], "spacing_x", minimum=1e-12), _n(p["spacing_y"], "spacing_y", minimum=1e-12)):
-            raise ValueError("rib_width cannot exceed spacing_x/spacing_y")
-        _n(p["top_thickness"], "top_thickness", minimum=1e-12)
-        area=_rect_area(p["length"],p["width"])*_n(p.get("count",1),"count")
-        top=area*_n(p["top_thickness"],"top_thickness")
-        dx=(area/_n(p["spacing_x"],"spacing_x", minimum=1e-12))*_n(p["rib_width"],"rib_width", minimum=1e-12)*_n(p["rib_depth"],"rib_depth", minimum=1e-12)
-        dy=(area/_n(p["spacing_y"],"spacing_y", minimum=1e-12))*_n(p["rib_width"],"rib_width")*_n(p["rib_depth"],"rib_depth")
-        overlap=(area/(_n(p["spacing_x"],"spacing_x")*_n(p["spacing_y"],"spacing_y")))*_n(p["rib_width"],"rib_width")**2*_n(p["rib_depth"],"rib_depth")
-        q=top+dx+dy-overlap
-        return QuantityResult("سقف وافل",item,q,"m3","A×t رویه + A/sx×b×h + A/sy×b×h − تقاطع تیرچه‌ها",("مدل شبکه یکنواخت؛ نواحی توپر، لبه‌ها، کلاف و بازشو باید مستقل و با هندسه واقعی متره شوند.",))
+        # Grid spacing is not a schedule of physical ribs. Use signed real
+        # rib counts and run lengths, and deduct intersections exactly once.
+        from core.takeoff.reviewed_components import require_text
+        require_text(p.get("layout_ref"), "مرجع جانمایی واقعی وافل")
+        require_text(p.get("approved_by"), "تأییدکننده جانمایی وافل")
+        L=_n(p["length"], "length")
+        W=_n(p["width"], "width")
+        count=_n(p.get("count",1), "count")
+        topping=_n(p["top_thickness"], "top_thickness", minimum=1e-12)
+        rib_width=_n(p["rib_width"], "rib_width", minimum=1e-12)
+        rib_depth=_n(p["rib_depth"], "rib_depth", minimum=1e-12)
+        nx=_n(p.get("rib_count_x"), "rib_count_x", minimum=1)
+        ny=_n(p.get("rib_count_y"), "rib_count_y", minimum=1)
+        ix=_n(p.get("intersection_count"), "intersection_count", minimum=0)
+        lx=_n(p.get("rib_run_length_x_m"), "rib_run_length_x_m", minimum=1e-12)
+        ly=_n(p.get("rib_run_length_y_m"), "rib_run_length_y_m", minimum=1e-12)
+        for field, num in (("rib_count_x",nx),("rib_count_y",ny),("intersection_count",ix)):
+            if not num.is_integer(): raise ValueError(f"{field} باید عدد صحیح واقعی باشد")
+        if rib_width >= min(L,W) or lx > L or ly > W or ix > nx*ny:
+            raise ValueError("جانمایی تیرچه‌های وافل با طول، عرض یا تعداد تقاطع‌ها سازگار نیست")
+        gross_topping = L*W*topping
+        ribs = (nx*lx+ny*ly)*rib_width*rib_depth
+        overlaps = ix*rib_width*rib_width*rib_depth
+        if overlaps >= ribs:
+            raise ValueError("حجم تقاطع‌ها از حجم جان تیرچه‌ها بیشتر است")
+        q = (gross_topping+ribs-overlaps)*count
+        return QuantityResult("سقف وافل — جانمایی بازبینی‌شده",item,q,"m3",
+                              "(حجم رویه + حجم جان‌های شمارش‌شده − تقاطع‌های واقعی)×تعداد سقف",
+                              ("کلاف‌ها، نواحی توپر، لبه‌ها و بازشوها در این مقدار نیستند.",))
     if k == "cobiax_roof":
         if not str(p.get("void_spec_ref", "")).strip() or "void_volume" not in p:
             raise ValueError("cobiax requires verified void_volume and void_spec_ref; bounding-box dimensions are not void volume")
