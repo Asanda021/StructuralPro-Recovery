@@ -302,3 +302,19 @@ def test_valid_separate_intersections_are_allowed_across_two_sources():
     candidate = _t("two", intersections=[{
         "id": "joint:C1-F2", "volume_m3": .1, "source_ref": "detail"}])
     assert len(validate_commit_rows(project, [candidate], source_id="drawing:two")) == 1
+
+
+
+def test_explicit_zero_waste_is_valid_but_omitted_waste_is_not():
+    from core.takeoff.explicit_inputs import require_explicit_measurement_params
+    with pytest.raises(ValueError, match="waste"):
+        require_explicit_measurement_params(
+            "building", "tile", {"length": 4, "height": 2, "openings": 0}
+        )
+    require_explicit_measurement_params(
+        "building", "tile", {"length": 4, "height": 2, "openings": 0, "waste": 0}
+    )
+    with pytest.raises(ValueError):
+        require_explicit_measurement_params("building", "tile", {"waste": -1})
+    with pytest.raises(ValueError):
+        require_explicit_measurement_params("building", "tile", {"waste": float("nan")})
