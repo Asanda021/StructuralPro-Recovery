@@ -204,3 +204,46 @@ def test_approved_geometry_and_formwork_edits_require_reset():
         require_reset_of_changed_approvals(old, new)
     new["formwork"]["approved_by"] = ""
     require_reset_of_changed_approvals(old, new)
+
+
+
+def test_second_connection_refreshes_cache_after_external_commit(tmp_path):
+    db = tmp_path / "project.db"
+    writer = ProjectStore(db)
+    writer.save("P1", _project())
+    reader = ProjectStore(db)
+    assert reader.get("P1")["_meta"]["version"] == 1
+    updated = writer.get("P1")
+    updated["name"] = "نسخه جدید"
+    writer.save("P1", updated, expected_digest=writer.begin_write("P1"))
+    assert reader.get("P1")["name"] == "نسخه جدید"
+    assert reader.get("P1")["_meta"]["version"] == 2
+    writer.close()
+    reader.close()
+
+
+def test_same_waffle_void_source_cannot_be_billed_twice():
+    project = _project()
+    project["takeoffs"] = [_t("roof-A")]
+    project["takeoffs"][0]["params"]["deduction"] = {
+        "id": "void:roof-one-same-pocket", "quantity_m3": .5,
+        "source_ref": "drawing-1"}
+    incoming = _t("roof-B")
+    incoming["params"]["deduction"] = {
+        "id": "void:roof-one-same-pocket", "quantity_m3": .5,
+        "source_ref": "drawing-1"}
+    with pytest.raises(ValueError, match="کسر حجم"):
+        validate_commit_rows(project, [incoming], source_id="roof-B-source")
+
+
+def test_rebuild_boq_preserves_explicit_cost_factor_without_defaulting():
+    project = _project()
+    line = _t("costed")
+    q = line["quantities"][0]
+    q["price_code"] = "USER-1405-01"
+    q["unit_price"] = 200
+    q["factor"] = 1.17
+    takeoffs, boq = rebuild_project_boq(project, [line])
+    assert takeoffs[0]["quantities"][0]["factor"] == 1.17
+    assert boq[0]["factor"] == 1.17
+    assert boq[0]["total"] == pytest.approx(1.2 * 200 * 1.17)
