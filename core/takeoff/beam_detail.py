@@ -21,6 +21,13 @@ from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.stirrup_zones import validate_stirrup_zones
 from core.takeoff.reviewed_components import cut_length as reviewed_cut_length, net_concrete, net_formwork
 
+
+def component_fingerprint(row):
+    from hashlib import sha256
+    return sha256(json.dumps({k:v for k,v in row.items() if k not in ('review_status','reviewed_by','review_digest','approved_by')},sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+def component_reviewed(row):
+    if 'review_status' in row and (row.get('review_status')!='confirmed' or not row.get('reviewed_by') or row.get('review_digest')!=component_fingerprint(row)):raise ValueError('سری یا جزء نیازمند بازبینی معتبر پس از ویرایش است')
+
 BAR_TYPES = ("longitudinal", "stirrups", "side_bars", "crossties", "additional")
 BAR_LABELS = {
     "longitudinal": "میلگرد طولی", "stirrups": "خاموت", "side_bars": "کمرکش تیر",
@@ -163,6 +170,8 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                 if not isinstance(sections,list) or not sections or len(sections)>128:raise ValueError('نواحی مقطع تیر ناقص یا بیش از حدند')
                 previous=exact_number(0,'شروع');ids=set();volumes=[]
                 for part in sections:
+                    reviewed=component_reviewed
+                    reviewed(part)
                     ident=_text(part.get('id'),'شناسه ناحیه مقطع');ref=_text(part.get('source_ref'),'مرجع ناحیه');_text(part.get('approved_by'),'بازبین ناحیه')
                     start=exact_number(part.get('start_m'),'شروع ناحیه',True);end=exact_number(part.get('end_m'),'پایان ناحیه')
                     if ident in ids or start!=previous or end<=start or end>exact_number(geometry['length'],'طول'):raise ValueError('ناحیه مقطع تکراری، دارای فاصله یا هم‌پوشانی است')
@@ -173,6 +182,8 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                 if previous!=exact_number(geometry['length'],'طول'):raise ValueError('ناحیه‌های مقطع کل طول تیر را پوشش نمی‌دهند')
                 exact_gross=wire(sum(volumes,exact_number(0,'جمع')))
         if "intersections" in geometry:
+            reviewed=component_reviewed
+            for item in geometry["intersections"]:reviewed(item)
             net, checked_intersections = net_concrete(gross.quantity, geometry["intersections"])
             deduction = gross.quantity - net
             if "deductions_m3" in geometry and not math.isclose(
@@ -210,7 +221,26 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
         _text(formwork.get("approved_by"), "تأییدکننده قالب‌بندی")
         _text(formwork.get("source_ref"), "مرجع سطوح در تماس با قالب")
         if "surfaces" in formwork:
-            area, verified_faces = net_formwork(formwork)
+            reviewed=component_reviewed
+            faces=[];gross_faces=[]
+            for raw in formwork['surfaces']:
+                reviewed(raw)
+                if 'gross_area_m2' not in raw:faces.append(raw);continue
+                if raw.get('role') not in ('bottom_face','side1','side2','end','other'):raise ValueError('نقش سطح قالب نامعتبر است')
+                if type(raw.get('contact')) is not bool:raise ValueError('تماس سطح با قالب باید صریح باشد')
+                gross_area=exact_number(raw['gross_area_m2'],'سطح ناخالص')
+                deductions=raw.get('deductions',[]);seen=set();ded=exact_number(0,'کسر')
+                for v in deductions:
+                    reviewed(v);sid=_text(v.get('id'),'شناسه کسر سطح');_text(v.get('source_ref'),'مرجع کسر سطح')
+                    if sid in seen:raise ValueError('کسر سطح تکراری است')
+                    seen.add(sid);ded+=exact_number(v.get('area_m2'),'مساحت کسر')
+                net_area=gross_area-ded
+                if gross_area<=0 or net_area<0:raise ValueError('مساحت سطح یا کسورات نامعتبر است')
+                _text(raw.get('approved_by'),'بازبین سطح');_text(raw.get('source_ref'),'مرجع سطح')
+                gross_faces.append(gross_area)
+                if raw['contact'] and net_area>0:faces.append({**raw,'net_area_m2':wire(net_area)})
+            if not faces:raise ValueError('سطح مثبت در تماس با قالب موجود نیست؛ عدم کاربرد نیازمند قرارداد مستقل است')
+            area, verified_faces = net_formwork({**formwork,'surfaces':faces})
             if "net_area_m2" in formwork and not math.isclose(
                     _number(formwork["net_area_m2"], "مساحت خالص قالب‌بندی"), area,
                     rel_tol=1e-9, abs_tol=1e-9):
@@ -225,11 +255,11 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
             _text(formwork.get('area_scope_ref'),'مرجع دامنه مساحت قالب')
             if scope=='per_member':area*=repeat
         if specialist:
-            raw_area=sum((exact_number(face['net_area_m2'],'سطح') for face in formwork['surfaces']),exact_number(0,'جمع')) if 'surfaces' in formwork else exact_number(formwork['net_area_m2'],'سطح')
+            raw_area=sum((exact_number(face['net_area_m2'],'سطح') for face in faces),exact_number(0,'جمع')) if 'surfaces' in formwork else exact_number(formwork['net_area_m2'],'سطح')
             area=evaluate('area*repeat',{'area':str(raw_area),'repeat':repeat if scope=='per_member' else 1},variable_units={'area':'m2','repeat':'عدد'},output_unit='m2')
         rows.append({"source_id": base_id+":formwork", "code": "formwork", "domain": "building",
                      "description": f"قالب‌بندی تیر {beam_id}", "quantity": area, "unit": "m2",
-                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area, "surfaces": verified_faces,"area_scope":scope,"member_count":repeat}})
+                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area, "surfaces": deepcopy(formwork.get("surfaces",verified_faces)),"gross_area_m2":wire(sum(gross_faces,exact_number(0,"جمع"))*(repeat if scope=="per_member" else 1)) if "surfaces" in formwork and gross_faces else None,"area_scope":scope,"member_count":repeat}})
     except (ValueError, TypeError) as exc:
         errors.append("قالب‌بندی: " + str(exc))
 
@@ -260,6 +290,9 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                 if len({json.dumps(x,sort_keys=True,ensure_ascii=False) for x in raw_segments})!=len(raw_segments):raise ValueError('بازه میلگرد عیناً تکرار شده است')
                 if specialist:
                     for segment in raw_segments:
+                        reviewed=component_reviewed
+                        reviewed(segment)
+                        for piece in segment.get('length_parts_m',[]):reviewed(piece)
                         ident=_text(segment.get('id'),'شناسه مستقل میلگرد')
                         if ident in physical_bars:raise ValueError('شناسه میلگرد فیزیکی در گروه‌ها تکرار شده است')
                         physical_bars.add(ident)
@@ -356,14 +389,16 @@ class BeamDetailWorkflow:
         return project, digest
 
     def get(self, project_id: str, floor_id: str, beam_id: str) -> dict[str, Any] | None:
+        self.store._cache.pop(project_id,None)
         project = self.store.get(project_id)
         if project is None:
             raise KeyError(project_id)
         key = _beam_key(_text(floor_id, "طبقه"), _text(beam_id, "شناسه تیر"))
         record = (project.get(REGISTER) or {}).get(key)
-        return deepcopy(record) if record else None
+        from core.takeoff.manual_formula_amendments import beam_current
+        return beam_current(project,key) if record else None
 
-    def save_draft(self, project_id: str, draft: dict[str, Any], *, expected_revision: int = 0) -> dict[str, Any]:
+    def save_draft(self, project_id: str, draft: dict[str, Any], *, expected_revision: int = 0, reason: str = "ثبت پیش‌نویس") -> dict[str, Any]:
         floor_id, beam_id = _validate_identity(draft)
         _validate_bar_shape(draft.get("bars"))
         # Reject malformed source at the time it is supplied; an empty source is okay for a draft.
@@ -392,7 +427,14 @@ class BeamDetailWorkflow:
                 raise ValueError("منبع نقشه تغییر کرده؛ ابتدا تأیید اقلام میلگرد را بازنشانی کنید")
         if source and source.get("source_id"):
             require_source_unused(project, source["source_id"], exclude=(REGISTER, key))
-        require_reset_of_changed_approvals(previous["data"] if previous else None, draft)
+        from core.takeoff.manual_formula_amendments import digest as payload_digest
+        proposal=deepcopy(draft);review=proposal.pop('component_review',None)
+        fresh=isinstance(review,dict) and review.get('base_revision')==revision and review.get('reviewer') and review.get('digest')==payload_digest(proposal)
+        if fresh:
+            report=preview_beam(proposal,self.engine)
+            if not report['ready']:raise ValueError('بازبینی نسخه ناقص معتبر نیست')
+        else:require_reset_of_changed_approvals(previous['data'] if previous else None,draft)
+        if previous:project.setdefault('beam_detail_history',[]).append({'beam_key':key,'revision':revision+1,'reason':_text(reason,'علت اصلاح'),'previous':deepcopy(previous),'at':datetime.now(timezone.utc).isoformat()})
         payload = deepcopy(draft)
         entry = {"status": "draft", "revision": revision + 1, "data": payload,
                  "updated_at": datetime.now(timezone.utc).isoformat()}

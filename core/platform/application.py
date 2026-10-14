@@ -106,6 +106,18 @@ class StructuralProApp:
         from core.reports.beam_detail_report import export
         return export(self,project_id,floor_id,beam_id,path,format=format)
 
+    def create_beam_amendment(self,project_id,floor_id,beam_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,beam_id,data,**kwargs)
+
+    def review_beam_amendment(self,project_id,amendment_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_review
+        return beam_review(self,project_id,amendment_id,**kwargs)
+
+    def apply_beam_amendment(self,project_id,amendment_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_apply
+        return beam_apply(self,project_id,amendment_id,**kwargs)
+
     def beam_detail_workflow(self):
         """Use the canonical SQLite project store and quantity engine for beam details."""
         from core.takeoff.beam_detail import BeamDetailWorkflow
@@ -116,9 +128,9 @@ class StructuralProApp:
         return empty_beam(floor_id, beam_id)
 
     def save_beam_detail_draft(self, project_id: str, draft: dict[str, Any], *,
-                               expected_revision: int = 0) -> dict[str, Any]:
+                               expected_revision: int = 0, reason: str = "ثبت پیش‌نویس") -> dict[str, Any]:
         return self.beam_detail_workflow().save_draft(
-            project_id, draft, expected_revision=expected_revision
+            project_id, draft, expected_revision=expected_revision,reason=reason
         )
 
     def get_beam_detail(self, project_id: str, floor_id: str,
