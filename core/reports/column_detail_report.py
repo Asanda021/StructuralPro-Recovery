@@ -2,7 +2,9 @@
 from core.reports.exporters import export_pdf,export_xlsx
 from core.reports.beam_legacy_mapping_report import LABELS,STATUS
 
-LABELS={**LABELS,'building_id':'ساختمان','axis':'محور','gross_m3':'بتن ناخالص','net_m3':'بتن خالص','series':'سری میلگرد','surfaces':'سطوح قالب','geometry':'هندسه','intersections':'کسورات','width':'عرض','depth':'عمق','height':'ارتفاع','count':'تعداد','gross_area_m2':'قالب ناخالص','unit_weight_kg_m':'وزن واحد مستند','cut_length_m':'طول برش','nominal_diameter_mm':'قطر میلی‌متر'}
+LABELS={**LABELS,'building_id':'ساختمان','axis':'محور','gross_m3':'بتن ناخالص','net_m3':'بتن خالص','series':'سری میلگرد','surfaces':'سطوح قالب','geometry':'هندسه','intersections':'کسورات','width':'عرض','depth':'عمق','height':'ارتفاع','count':'تعداد','gross_area_m2':'قالب ناخالص','unit_weight_kg_m':'وزن واحد مستند','cut_length_m':'طول برش','nominal_diameter_mm':'قطر میلی‌متر','diameter':'قطر ستون، متر','curved_wall':'قالب جانبی منحنی','axis_diameter_m':'قطر محور مارپیچ، متر','pitch_m':'گام مارپیچ، متر','turns':'تعداد دور مستند','cover_m':'پوشش واقعی، متر','start_m':'آغاز ناحیه، متر','end_m':'پایان ناحیه، متر','end_parts_m':'اجزای انتهایی مستند','end_condition':'قرارداد انتهایی','end_condition_ref':'مرجع جزئیات انتهایی','helix_length_policy':'سیاست دقت محاسبه طول مارپیچ','pi_policy':'سیاست عددی پی','count_scope':'دامنه تعداد','shape_kind':'شکل خاموت','coverage':'پوشش سطح','area_method':'روش محاسبه سطح','cut_length_ref':'مرجع طول برش','source_ref':'مرجع دیتایل'}
+
+VALUE_NAMES={**STATUS,'spiral':'مارپیچ','circular_column':'ستون دایره‌ای','full_lateral':'سطح جانبی کامل','circular_lateral':'محاسبه جانبی دایره‌ای','detailed_extensions':'افزودنی‌های انتهایی مستند','no_extension_reviewed':'بدون طول اضافی با تأیید صریح'}
 
 def export(service,pid,floor,member,path,*,format):
  r=service.preview_structural_member(pid,'column',floor,member)
@@ -13,7 +15,7 @@ def export(service,pid,floor,member,path,*,format):
    for k,v in value.items():walk(component,label+' / '+LABELS.get(k,k),v)
   elif isinstance(value,list):
    for i,v in enumerate(value,1):walk(component,label+' '+str(i),v)
-  else:rows.append({'component':component,'field':label,'value':str(STATUS.get(str(value),value))})
+  else:rows.append({'component':component,'field':label,'value':str(VALUE_NAMES.get(str(value),value))})
  for q in r['rows']:
   walk(q['description'],'مقدار دقیق',q['quantity']);walk(q['description'],'واحد',{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[q['unit']]);walk(q['description'],'فرمول',q['formula']);walk(q['description'],'منبع',q['source_id']);walk(q['description'],'جزئیات',q['params'])
  walk('هویت و منشأ','نسخه',record['revision']);walk('هویت و منشأ','منبع اصلی',record['data']['source'])
