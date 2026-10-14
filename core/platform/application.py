@@ -106,6 +106,15 @@ class StructuralProApp:
         from core.reports.beam_detail_report import export
         return export(self,project_id,floor_id,beam_id,path,format=format)
 
+    def inspect_beam_history(self,project_id):
+        from core.takeoff.manual_formula_amendments import inspect_beam_history
+        return inspect_beam_history(self,project_id)
+
+    def create_beam_migration(self,project_id,floor_id,beam_id,data,*,evidence_path,evidence_sha256,evidence_reference,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        evidence={'evidence_path':evidence_path,'evidence_sha256':evidence_sha256,'evidence_reference':evidence_reference}
+        return beam_create(self,project_id,floor_id,beam_id,data,migration=evidence,**kwargs)
+
     def create_beam_amendment(self,project_id,floor_id,beam_id,data,**kwargs):
         from core.takeoff.manual_formula_amendments import beam_create
         return beam_create(self,project_id,floor_id,beam_id,data,**kwargs)

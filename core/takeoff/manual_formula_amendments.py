@@ -136,13 +136,45 @@ def guard(previous,updated,command):
 # digest/revision boundaries and the same ProjectStore transaction.
 BEAM_FIELDS=('beam_amendments','beam_amendment_applied')
 
+
+def beam_review_payload(a):
+    value={'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']}
+    if 'migration' in a:value['migration']=a['migration']
+    return value
+
+def beam_migration_evidence(migration):
+    from pathlib import Path
+    document=Path(text(migration.get('evidence_path'),'مسیر مدرک مهاجرت'))
+    expected=text(migration.get('evidence_sha256'),'هش مدرک مهاجرت')
+    text(migration.get('evidence_reference'),'مرجع مدرک مهاجرت')
+    if not document.is_file() or sha256(document.read_bytes()).hexdigest()!=expected:raise ValueError('مدرک واقعی مهاجرت در دسترس نیست یا تغییر کرده است')
+
+def beam_migration_identity(old,new):
+    if old.get('measurement_policy')=='beam_specialist_v1':raise ValueError('این تیر قبلاً دارای قرارداد جدید است؛ مهاجرت تکراری ممنوع')
+    if any(new.get(k)!=old.get(k) for k in ('floor_id','beam_id')):raise ValueError('هویت تاریخی تیر قابل تغییر نیست')
+    source=old.get('source');target=new.get('source')
+    if not isinstance(source,dict) or not isinstance(target,dict) or not source.get('source_id'):raise ValueError('منشأ تاریخی معتبر نیازمند تکمیل مستقل است')
+    for key,value in source.items():
+        if key in ('plan_ref','detail_ref') and value in (None,''):continue
+        if target.get(key)!=value:raise ValueError('منشأ تاریخی معتبر تغییر کرده است')
+    if set(target)-set(source)-{'plan_ref','detail_ref'}:raise ValueError('افزودن هویت منبع خارج از قرارداد مهاجرت ممنوع')
+    def identifiers(value):
+        if isinstance(value,dict):return ({str(value['id'])} if value.get('id') is not None else set())|set().union(*(identifiers(v) for v in value.values()),set())
+        if isinstance(value,list):return set().union(*(identifiers(v) for v in value),set())
+        return set()
+    if not identifiers(old)<=identifiers(new):raise ValueError('شناسه تاریخی جزء حذف یا تغییر کرده است')
+    for group in new.get('bars',{}).values():
+        if group.get('status')!='confirmed':continue
+        for series in group.get('segments',[group]):text(series.get('shape_ref'),'شکل مستند هر سری برای مهاجرت')
+
+
 def beam_current(project,key):
     original=project.get('beam_detail_register',{}).get(key)
     if original is None:raise KeyError(key)
     aid=project.get(BEAM_FIELDS[1],{}).get(key)
     if not aid:return deepcopy(original)
     a=project.get(BEAM_FIELDS[0],{})[aid]
-    if a['status']!='applied' or a['beam_key']!=key or a['original_digest']!=digest(original) or a['review']['digest']!=digest({'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']}):raise ValueError('اصلاحیه تیر با اصل و بازبینی مطابقت ندارد')
+    if a['status']!='applied' or a['beam_key']!=key or a['original_digest']!=digest(original) or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اصلاحیه تیر با اصل و بازبینی مطابقت ندارد')
     return {**deepcopy(original),'data':deepcopy(a['proposal']),'revision':a['base_revision']+1,'amendment_id':aid}
 
 def beam_rows(data,version):
@@ -158,7 +190,7 @@ def beam_effective_takeoffs(project,rows):
         record=beam_current(project,key);a=project[BEAM_FIELDS[0]][aid]
         computed=beam_rows(record['data'],record['revision'])
         if computed!=a['rows']:raise ValueError('مقادیر مؤثر تیر با دیتایل بازبینی‌شده مطابقت ندارند')
-        ids=set(project['beam_detail_register'][key]['committed_source_ids'])
+        ids=set(project['beam_detail_register'][key].get('committed_source_ids',[]))
         if not ids<=set(v['source_id'] for v in result):raise ValueError('اصل تیر در ریزمتره یافت نشد')
         result=[v for v in result if v['source_id'] not in ids]+deepcopy(a['rows'])
     ids=[v['source_id'] for v in result]
@@ -176,17 +208,20 @@ def beam_base(project,a):
     if current['revision']!=a['base_revision'] or digest(current)!=a['base_digest']:raise RuntimeError('مبنای اصلاحیه تیر تغییر کرده است')
     return current
 
-def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reason):
+def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reason,migration=None):
     from core.takeoff.beam_detail import _beam_key
     project,token=read(service,pid);key=_beam_key(floor,beam);old=beam_current(project,key);revision(expected_revision,old['revision'])
-    if old['status']!='committed':raise ValueError('اصلاحیه فقط برای تیر قطعی است')
+    if old['status']!='committed' and not (migration is not None and old['status']=='draft'):raise ValueError('اصلاحیه فقط برای تیر قطعی یا مهاجرت پیش‌نویس است')
     d=deepcopy(data)
     if d.get('measurement_policy')!='beam_specialist_v1':raise ValueError('اصلاحیه تیر نیازمند قرارداد تخصصی معتبر است')
-    for field in ('floor_id','beam_id','source'):
-        if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت یا منبع اصلی تیر نیازمند گردش مستقل است')
+    if migration is not None:
+        beam_migration_identity(old['data'],d);beam_migration_evidence(migration)
+    else:
+        for field in ('floor_id','beam_id','source'):
+            if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت یا منبع اصلی تیر نیازمند گردش مستقل است')
     rows=beam_rows(d,old['revision']+1)
     current_rows=beam_effective_takeoffs(project,project.get('takeoffs',[]))
-    current_ids=set(project['beam_detail_register'][key]['committed_source_ids'])
+    current_ids=set(project['beam_detail_register'][key].get('committed_source_ids',[]))
     if old.get('amendment_id'):current_ids|={r['source_id'] for r in project[BEAM_FIELDS[0]][old['amendment_id']]['rows']}
     temporary=deepcopy(project);temporary['takeoffs']=[r for r in current_rows if r['source_id'] not in current_ids]
     from core.takeoff.commit_guards import validate_commit_rows
@@ -196,25 +231,32 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
     @exact
     def delta():return {k:wire(after.get(k,number(0,'صفر'))-before.get(k,number(0,'صفر'))) for k in sorted(set(before)|set(after))}
     a={'id':'BA-'+uuid4().hex,'beam_key':key,'revision':1,'base_revision':old['revision'],'base_digest':digest(old),'original_digest':digest(project['beam_detail_register'][key]),'previous':deepcopy(old),'proposal':d,'rows':rows,'delta':delta(),'created_by':text(created_by,'سازنده'),'reason':text(reason,'علت اصلاح'),'status':'draft','created_at':datetime.now(timezone.utc).isoformat()}
+    if migration is not None:a['migration']={**deepcopy(migration),'version':1,'from_policy':old['data'].get('measurement_policy'),'to_policy':'beam_specialist_v1'}
     project.setdefault(BEAM_FIELDS[0],{})[a['id']]=a;service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_create','id':a['id']});return deepcopy(a)
 
 def beam_review(service,pid,aid,*,expected_revision,reviewer,note):
     project,token=read(service,pid);a=project[BEAM_FIELDS[0]][aid];revision(expected_revision,a['revision']);beam_base(project,a);actor=text(reviewer,'بازبین مستقل')
+    if a.get('migration'):beam_migration_evidence(a['migration'])
     if a['status']!='draft' or actor.casefold()==a['created_by'].casefold():raise ValueError('بازبینی مستقل اصلاحیه تیر معتبر نیست')
     if beam_rows(a['proposal'],a['base_revision']+1)!=a['rows']:raise ValueError('مقدار پیشنهاد تغییر کرده است')
-    a.update(status='reviewed',review={'reviewer':actor,'note':text(note,'یادداشت کنترل'),'digest':digest({'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']})});service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_review','id':aid});return deepcopy(a)
+    a.update(status='reviewed',review={'reviewer':actor,'note':text(note,'یادداشت کنترل'),'digest':digest(beam_review_payload(a))});service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_review','id':aid});return deepcopy(a)
 
 def beam_apply(service,pid,aid,*,expected_revision):
     project,token=read(service,pid);a=project[BEAM_FIELDS[0]][aid];revision(expected_revision,a['revision'])
-    if a['status']!='reviewed' or a['review']['digest']!=digest({'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']}):raise ValueError('اعمال تکراری یا بدون بازبینی معتبر ممنوع است')
+    if a['status']!='reviewed' or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اعمال تکراری یا بدون بازبینی معتبر ممنوع است')
     beam_base(project,a);financial_block(project)
-    a.update(status='applied',applied_at=datetime.now(timezone.utc).isoformat());project.setdefault(BEAM_FIELDS[1],{})[a['beam_key']]=aid
+    if a.get('migration'):beam_migration_evidence(a['migration'])
+    a.update(status='applied',applied_at=datetime.now(timezone.utc).isoformat())
+    if a.get('migration') and a['previous']['status']=='draft':
+        project['beam_detail_register'][a['beam_key']]={**deepcopy(a['previous']),'data':deepcopy(a['proposal']),'revision':a['base_revision']+1,'migration_id':aid,'updated_at':a['applied_at']}
+        project.setdefault('beam_detail_history',[]).append({'beam_key':a['beam_key'],'revision':a['base_revision']+1,'previous':deepcopy(a['previous']),'reason':a['reason'],'migration_id':aid,'at':a['applied_at']})
+    else:project.setdefault(BEAM_FIELDS[1],{})[a['beam_key']]=aid
     from core.takeoff.commit_guards import rebuild_project_boq
     _,project['boq']=rebuild_project_boq(project,project.get('takeoffs',[]));service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_apply','id':aid});return deepcopy(a)
 
 def beam_checked_delta(project,a):
     from core.commercial.exact_values import wire,exact
-    base=beam_current(project,a['beam_key']);ids=set(project['beam_detail_register'][a['beam_key']]['committed_source_ids'])
+    base=beam_current(project,a['beam_key']);ids=set(project['beam_detail_register'][a['beam_key']].get('committed_source_ids',[]))
     if base.get('amendment_id'):ids|={r['source_id'] for r in project[BEAM_FIELDS[0]][base['amendment_id']]['rows']}
     before={r['source_id']:number(r['quantities'][0]['amount'],'مبنا') for r in beam_effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] in ids};after={r['source_id']:number(r['quantities'][0]['amount'],'پیشنهاد') for r in a['rows']}
     @exact
@@ -222,6 +264,8 @@ def beam_checked_delta(project,a):
     return calc()
 
 def beam_guard(previous,updated,command):
+    for snapshot in previous.get('beam_detail_history',[]):
+        if snapshot.get('migration_id') and snapshot not in updated.get('beam_detail_history',[]):raise ValueError('حذف یا تغییر اصل تاریخچه مهاجرت ممنوع است')
     protected=set()
     for key,r in previous.get('beam_detail_register',{}).items():
         if r.get('status')!='committed':continue
@@ -235,21 +279,31 @@ def beam_guard(previous,updated,command):
         aid=command['id'];old=previous.get(BEAM_FIELDS[0],{});new=updated.get(BEAM_FIELDS[0],{});a=new.get(aid)
         if not a or set(old)-set(new) or any(v!=new.get(k) for k,v in old.items() if k!=aid) or set(new)-set(old)-{aid}:raise ValueError('تغییر غیرمجاز دفتر اصلاحیه تیر')
         pointer=previous.get(BEAM_FIELDS[1],{});action=command['action']
+        if a.get('migration'):beam_migration_evidence(a['migration'])
         if action=='beam_create':
             if aid in old or a['status']!='draft':raise ValueError('ثبت اصلاحیه تیر تکراری است')
             base=beam_base(previous,a)
-            if a['previous']!=base or a['original_digest']!=digest(previous['beam_detail_register'][a['beam_key']]) or any(a['proposal'].get(k)!=base['data'].get(k) for k in ('floor_id','beam_id','source')) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
+            if a['previous']!=base or a['original_digest']!=digest(previous['beam_detail_register'][a['beam_key']]) or (not a.get('migration') and any(a['proposal'].get(k)!=base['data'].get(k) for k in ('floor_id','beam_id','source'))) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
+            if a.get('migration'):
+                beam_migration_identity(base['data'],a['proposal']);beam_migration_evidence(a['migration'])
+                if a['migration'].get('from_policy')!=base['data'].get('measurement_policy') or a['migration'].get('to_policy')!='beam_specialist_v1' or a['migration'].get('version')!=1:raise ValueError('قرارداد مهاجرت معتبر نیست')
             if beam_rows(a['proposal'],a['base_revision']+1)!=a['rows']:raise ValueError('مقادیر پیشنهادی نامعتبرند')
         else:
             before=old.get(aid);allowed={'status','review'} if action=='beam_review' else {'status','applied_at'}
             if not before or {k:v for k,v in before.items() if k not in allowed}!={k:v for k,v in a.items() if k not in allowed}:raise ValueError('اصل اصلاحیه تیر تغییر کرده است')
             beam_base(previous,before)
             if action=='beam_review':
-                if before['status']!='draft' or a['status']!='reviewed' or a['review']['reviewer'].casefold()==a['created_by'].casefold() or a['review']['digest']!=digest({'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']}):raise ValueError('بازبینی تیر معتبر نیست')
+                text(a['review']['reviewer'],'بازبین مستقل');text(a['review']['note'],'یادداشت بازبینی')
+                if before['status']!='draft' or a['status']!='reviewed' or a['review']['reviewer'].casefold()==a['created_by'].casefold() or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('بازبینی تیر معتبر نیست')
             else:
                 financial_block(previous)
                 if before['status']!='reviewed' or a['status']!='applied':raise ValueError('اعمال تکراری یا بدون بازبینی')
-                pointer={**pointer,a['beam_key']:aid}
+                if not(a.get('migration') and a['previous']['status']=='draft'):pointer={**pointer,a['beam_key']:aid}
+        expected_register=deepcopy(previous.get('beam_detail_register',{}))
+        if action=='beam_apply' and a.get('migration') and a['previous']['status']=='draft':
+            beam_migration_evidence(a['migration'])
+            expected_register[a['beam_key']]={**deepcopy(a['previous']),'data':deepcopy(a['proposal']),'revision':a['base_revision']+1,'migration_id':aid,'updated_at':a['applied_at']}
+        if updated.get('beam_detail_register',{})!=expected_register:raise ValueError('نسخه تاریخی خارج از مهاجرت مجاز تغییر کرد')
         if updated.get(BEAM_FIELDS[1],{})!=pointer or previous.get('takeoffs',[])!=updated.get('takeoffs',[]):raise ValueError('اصل یا اشاره‌گر اصلاحیه تیر غیرمجاز تغییر کرد')
     if protected or updated.get(BEAM_FIELDS[1]):
         from core.takeoff.commit_guards import rebuild_project_boq
@@ -257,3 +311,26 @@ def beam_guard(previous,updated,command):
         current=protected|{r['source_id'] for aid in updated.get(BEAM_FIELDS[1],{}).values() for r in updated[BEAM_FIELDS[0]][aid]['rows']}
         def view(rows):return [(r.get('source_ids') or [r.get('source_id')],r['unit'],r['item_code'],number(r['quantity'],'مقدار')) for r in rows if current&set(r.get('source_ids') or [r.get('source_id')])]
         if view(boq)!=view(updated.get('boq',[])):raise ValueError('BOQ مؤثر تیر با دفتر اصلاحیه مطابقت ندارد')
+
+
+def inspect_beam_history(service,pid):
+    from core.takeoff.beam_detail import preview_beam
+    project,_=read(service,pid);result=[];linked=set()
+    entries=project.get('beam_detail_register',{})
+    if not isinstance(entries,dict):return [{'status':'INCOMPATIBLE','blockers':['ساختار دفتر تیر نامعتبر است']}]
+    for key,original in entries.items():
+        try:
+            record=beam_current(project,key);data=record['data'];source=data.get('source',{});linked.update(original.get('committed_source_ids',[]))
+            probe=deepcopy(data);probe['measurement_policy']='beam_specialist_v1'
+            report=preview_beam(probe,service.takeoff)
+            valid_version=type(record.get('revision')) is int and record['revision']>=1
+            valid_source=isinstance(source,dict) and bool(source.get('source_id'))
+            status='CURRENT_CONTRACT' if data.get('measurement_policy')=='beam_specialist_v1' and report['ready'] else 'LEGACY_REVIEW_REQUIRED' if report['ready'] else 'NEEDS_ENGINEER_INPUT'
+            if not valid_version or not valid_source:status='INCOMPATIBLE'
+            result.append({'beam_key':key,'status':status,'revision':record.get('revision'),'record_status':record.get('status'),'measurement_policy':data.get('measurement_policy'),'source_id':source.get('source_id'),'variable_units':deepcopy(data.get('geometry',{}).get('variable_units')),'blockers':report['blockers'],'migration_id':record.get('migration_id') or record.get('amendment_id')})
+        except (ValueError,TypeError,KeyError,AttributeError):result.append({'beam_key':key,'status':'INCOMPATIBLE','blockers':['نسخه، قرارداد یا ساختار تاریخی نامعتبر؛ اصلاح مستقل لازم است']})
+    for row in project.get('takeoffs',[]):
+        if isinstance(row,dict) and row.get('item') in ('beam','beam_concrete','بتن_تیر') and row.get('source_id') not in linked:result.append({'source_id':row.get('source_id'),'status':'UNLINKED_LEGACY','blockers':['ریزقلم تاریخی فاقد دفتر تیر و دیتایل مستقل؛ مهاجرت خودکار ممنوع']})
+    for assembly in project.get('takeoff_assemblies',[]):
+        if isinstance(assembly,dict) and assembly.get('assembly_code') in ('concrete_beam','beam_concrete'):result.append({'source_id':assembly.get('source_id'),'status':'UNLINKED_LEGACY','blockers':['مجموعه تاریخی تیر قرارداد مستقل دارد؛ نگاشت به دفتر تیر و مجوز مالی لازم است؛ تبدیل خودکار ممنوع']})
+    return result

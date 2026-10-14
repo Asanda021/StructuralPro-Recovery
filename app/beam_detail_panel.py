@@ -154,6 +154,12 @@ class BeamDetailPanel(QWidget):
         self.amend_create_button=QPushButton('ثبت درخواست اصلاح تیر قطعی');self.amend_review_button=QPushButton('بازبینی مستقل اصلاحیه');self.amend_apply_button=QPushButton('اعمال اتمیک اصلاحیه');self.history_button=QPushButton('تاریخچه نسخه‌های تیر')
         for b in (self.amend_create_button,self.amend_review_button,self.amend_apply_button,self.history_button):root.addWidget(b)
         self.amend_create_button.clicked.connect(lambda:self.amend('create'));self.amend_review_button.clicked.connect(lambda:self.amend('review'));self.amend_apply_button.clicked.connect(lambda:self.amend('apply'));self.history_button.clicked.connect(self.show_history)
+        self.migration_evidence_path=QLineEdit();self.migration_evidence_path.setPlaceholderText('مسیر فایل مدرک واقعی تکمیل تاریخی')
+        self.migration_reference=QLineEdit();self.migration_reference.setPlaceholderText('مرجع مستقل مدرک مهاجرت')
+        self.migration_button=QPushButton('درخواست مهاجرت نسخه تاریخی؛ بازبینی مستقل لازم است')
+        self.migration_inspect_button=QPushButton('وضعیت سازگاری تیرهای تاریخی')
+        for widget in (self.migration_evidence_path,self.migration_reference,self.migration_button,self.migration_inspect_button):root.addWidget(widget)
+        self.migration_button.clicked.connect(self.migrate_history);self.migration_inspect_button.clicked.connect(self.inspect_history)
         self.xlsx_button=QPushButton('ریزمتره تیر Excel');self.pdf_button=QPushButton('ریزمتره تیر PDF');buttons.addWidget(self.xlsx_button);buttons.addWidget(self.pdf_button)
         self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
         self.setLayoutDirection(Qt.RightToLeft)
@@ -600,3 +606,22 @@ class BeamDetailPanel(QWidget):
             project,floor,beam=self._identity();key=_beam_key(floor,beam);p=self.service.open_project(project);history=[r for r in p.get('beam_detail_history',[]) if r['beam_key']==key];notes=['نسخه '+str(r['revision'])+'؛ '+r['reason'] for r in history]
             notes += ['اصلاحیه '+a['id']+'؛ '+a['reason'] for a in p.get('beam_amendments',{}).values() if a['beam_key']==key];QMessageBox.information(self,'تاریخچه تیر','\n'.join(notes) or 'سابقه اصلاح موجود نیست')
         except Exception as e:QMessageBox.warning(self,'تاریخچه',str(e))
+
+
+    def migrate_history(self):
+        try:
+            from pathlib import Path
+            from hashlib import sha256
+            project,floor,beam=self._identity();_,draft=self._draft();path=Path(self.migration_evidence_path.text().strip())
+            if not path.is_file():raise ValueError('فایل مدرک واقعی مهاجرت لازم است')
+            a=self.service.create_beam_migration(project,floor,beam,draft,expected_revision=self.revision,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text(),evidence_path=str(path.resolve()),evidence_sha256=sha256(path.read_bytes()).hexdigest(),evidence_reference=self.migration_reference.text())
+            self.beam_amend_id.setText(a['id']);self.message.setText('پیشنهاد مهاجرت ثبت شد؛ اصل ثابت است. بازبینی مستقل و سپس اعمال لازم است. دلتا: '+str(a['delta']))
+        except Exception as e:QMessageBox.warning(self,'مهاجرت تیر تاریخی',str(e))
+
+    def inspect_history(self):
+        try:
+            project,_,_=self._identity();rows=self.service.inspect_beam_history(project)
+            labels={'CURRENT_CONTRACT':'قرارداد جدید معتبر','LEGACY_REVIEW_REQUIRED':'تاریخی؛ نیازمند بازبینی مستقل','NEEDS_ENGINEER_INPUT':'نیازمند ورودی صریح مهندس','INCOMPATIBLE':'ناسازگار؛ اصلاح مستقل لازم','UNLINKED_LEGACY':'ریزقلم تاریخی فاقد دیتایل دفتر تیر'}
+            text='\n'.join(str(r.get('beam_key',r.get('source_id','دفتر تیر')))+'؛ '+labels[r['status']]+'؛ '+'؛ '.join(r.get('blockers',[])) for r in rows)
+            QMessageBox.information(self,'سازگاری تاریخی تیر',text or 'رکورد تاریخی یافت نشد')
+        except Exception as e:QMessageBox.warning(self,'سازگاری تاریخی تیر',str(e))
