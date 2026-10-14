@@ -106,6 +106,18 @@ class StructuralProApp:
         from core.reports.beam_detail_report import export
         return export(self,project_id,floor_id,beam_id,path,format=format)
 
+    def create_beam_legacy_mapping(self,project_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import mapping_create
+        return mapping_create(self,project_id,**kwargs)
+
+    def inspect_beam_legacy_mapping(self,project_id):
+        from core.takeoff.manual_formula_amendments import mapping_inventory,read
+        return mapping_inventory(read(self,project_id)[0])
+
+    def export_beam_legacy_mapping_report(self,project_id,path,*,format):
+        from core.reports.beam_legacy_mapping_report import export
+        return export(self,project_id,path,format=format)
+
     def inspect_beam_history(self,project_id):
         from core.takeoff.manual_formula_amendments import inspect_beam_history
         return inspect_beam_history(self,project_id)

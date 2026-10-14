@@ -160,6 +160,15 @@ class BeamDetailPanel(QWidget):
         self.migration_inspect_button=QPushButton('وضعیت سازگاری تیرهای تاریخی')
         for widget in (self.migration_evidence_path,self.migration_reference,self.migration_button,self.migration_inspect_button):root.addWidget(widget)
         self.migration_button.clicked.connect(self.migrate_history);self.migration_inspect_button.clicked.connect(self.inspect_history)
+        self.legacy_rows=QComboBox();self.legacy_original=QLabel();self.legacy_original.setWordWrap(True)
+        self.legacy_target_source=QLineEdit();self.legacy_target_source.setPlaceholderText('شناسه واقعی منبع عضو مقصد؛ شناسه ردیف قدیمی تغییر نمی‌کند')
+        self.legacy_refresh_button=QPushButton('فهرست رکوردهای تاریخی و وضعیت نگاشت')
+        self.legacy_mapping_button=QPushButton('ثبت پیشنهاد نگاشت رکورد انتخابی به تیر مقصد')
+        self.legacy_report_buttons={}
+        for widget in (self.legacy_refresh_button,self.legacy_rows,self.legacy_original,self.legacy_target_source,self.legacy_mapping_button):root.addWidget(widget)
+        for fmt,label in [('xlsx','Excel'),('pdf','PDF')]:
+            b=QPushButton('گزارش نگاشت تاریخی '+label);root.addWidget(b);self.legacy_report_buttons[fmt]=b;b.clicked.connect(lambda _=False,f=fmt:self.export_legacy_mapping(f))
+        self.legacy_refresh_button.clicked.connect(self.refresh_legacy_rows);self.legacy_rows.currentIndexChanged.connect(self.show_legacy_original);self.legacy_mapping_button.clicked.connect(self.create_legacy_mapping)
         self.xlsx_button=QPushButton('ریزمتره تیر Excel');self.pdf_button=QPushButton('ریزمتره تیر PDF');buttons.addWidget(self.xlsx_button);buttons.addWidget(self.pdf_button)
         self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
         self.setLayoutDirection(Qt.RightToLeft)
@@ -598,7 +607,12 @@ class BeamDetailPanel(QWidget):
             if action=='create':
                 _,draft=self._draft();a=self.service.create_beam_amendment(project,floor,beam,draft,expected_revision=self.revision,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text());self.beam_amend_id.setText(a['id']);self.message.setText('درخواست مستقل ثبت شد؛ دلتا: '+str(a['delta']))
             elif action=='review':self.service.review_beam_amendment(project,self.beam_amend_id.text().strip(),expected_revision=1,reviewer=self.beam_amend_reviewer.text(),note=self.beam_amend_note.text());self.message.setText('اصلاحیه مستقل بازبینی شد؛ هنوز اعمال نشده است')
-            else:self.service.apply_beam_amendment(project,self.beam_amend_id.text().strip(),expected_revision=1);self.load();self.message.setText('اصلاحیه اعمال شد؛ اصل تیر و مدارک مالی ثابت‌اند')
+            else:
+                aid=self.beam_amend_id.text().strip();is_mapping=self.service.open_project(project)['beam_amendments'][aid].get('kind')=='legacy_link'
+                self.service.apply_beam_amendment(project,aid,expected_revision=1)
+                if is_mapping:self.refresh_legacy_rows()
+                else:self.load()
+                self.message.setText('اعمال موفق؛ اصل داده و مدارک مالی ثابت‌اند')
         except Exception as e:QMessageBox.warning(self,'اصلاحیه تیر',str(e))
     def show_history(self):
         try:
@@ -625,3 +639,45 @@ class BeamDetailPanel(QWidget):
             text='\n'.join(str(r.get('beam_key',r.get('source_id','دفتر تیر')))+'؛ '+labels[r['status']]+'؛ '+'؛ '.join(r.get('blockers',[])) for r in rows)
             QMessageBox.information(self,'سازگاری تاریخی تیر',text or 'رکورد تاریخی یافت نشد')
         except Exception as e:QMessageBox.warning(self,'سازگاری تاریخی تیر',str(e))
+
+
+    def refresh_legacy_rows(self):
+        try:
+            project=self.project_id_getter().strip();records=self.service.inspect_beam_legacy_mapping(project);p=self.service.open_project(project);self.legacy_rows.clear();added=set()
+            labels={'LINKED':'متصل معتبر','NEEDS_MAPPING':'نیازمند نگاشت','AMBIGUOUS':'ارتباط مبهم','SOURCE_DUPLICATE':'منبع تکراری','INCOMPLETE':'اطلاعات ناقص','FINANCIAL_LOCKED':'مبنای مالی قفل‌شده'}
+            for r in records:
+                sid=r['source_id'];members=[sid]
+                for group in p.get('takeoff_assemblies',[]):
+                    if sid in group.get('component_source_ids',[]):members=group['component_source_ids'];break
+                ident=tuple(members)
+                if ident in added:continue
+                added.add(ident);self.legacy_rows.addItem(str(sid)+'؛ '+labels[r['status']],{'source_ids':members,'records':[v for v in records if v['source_id'] in members]})
+            self.show_legacy_original()
+        except Exception as e:QMessageBox.warning(self,'فهرست تاریخی',str(e))
+
+    def show_legacy_original(self):
+        value=self.legacy_rows.currentData()
+        if not value:self.legacy_original.setText('رکورد تاریخی انتخاب نشده است');return
+        operations={'beam':'بتن تیر','concrete':'بتن','beam_concrete':'بتن تیر','rebar':'میلگرد','reinforcement':'میلگرد','formwork':'قالب'}
+        lines=[]
+        for r in value['records']:
+            lines.append('منبع '+str(r['source_id'])+'؛ نسخه '+str(r['revision'])+'؛ طبقه اولیه '+str(r['floor'])+'؛ عضو اولیه '+str(r['member']))
+            for q in r.get('quantities') or []:lines.append(operations.get(q.get('code'),'عملیات تاریخی')+'؛ مقدار اولیه '+('نامشخص' if q.get('amount') is None else str(q['amount']))+' '+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}.get(q.get('unit'),'واحد نامعتبر'))
+        self.legacy_original.setText('\n'.join(lines))
+
+    def create_legacy_mapping(self):
+        try:
+            project,floor,beam=self._identity();value=self.legacy_rows.currentData()
+            if not value:raise ValueError('رکورد تاریخی را انتخاب کنید')
+            path=Path(self.migration_evidence_path.text().strip())
+            if not path.is_file():raise ValueError('فایل واقعی مدرک لازم است')
+            target={'floor_id':floor,'beam_id':beam,'source_id':self.legacy_target_source.text().strip(),'plan_ref':self.plan_ref.text().strip(),'detail_ref':self.detail_ref.text().strip()}
+            a=self.service.create_beam_legacy_mapping(project,source_ids=value['source_ids'],target=target,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text(),evidence_path=str(path.resolve()),evidence_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),evidence_reference=self.migration_reference.text())
+            self.beam_amend_id.setText(a['id']);self.message.setText('پیشنهاد نگاشت ثبت شد؛ بازبینی مستقل و اعمال لازم است؛ کمیت و دیتایل جدید تولید نمی‌شود')
+        except Exception as e:QMessageBox.warning(self,'نگاشت تاریخی تیر',str(e))
+
+    def export_legacy_mapping(self,format):
+        try:
+            path,_=QFileDialog.getSaveFileName(self,'گزارش نگاشت تاریخی','legacy-mapping.'+format,'گزارش (*.'+format+')')
+            if path:self.service.export_beam_legacy_mapping_report(self.project_id_getter().strip(),path,format=format);self.message.setText('گزارش اصل، نگاشت و موارد مسدود ذخیره شد')
+        except Exception as e:QMessageBox.warning(self,'گزارش نگاشت',str(e))

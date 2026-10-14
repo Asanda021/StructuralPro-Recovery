@@ -124,7 +124,7 @@ def guard(previous,updated,command):
         if not before:raise ValueError('اصلاحیه پایه وجود ندارد')
         allowed={'status','review'} if action=='review' else {'status','applied_at'}
         if {k:v for k,v in before.items() if k not in allowed}!={k:v for k,v in a.items() if k not in allowed}:raise ValueError('اصل داده اصلاحیه ثابت است')
-        if action=='review' and (before['status']!='draft' or a['status']!='reviewed' or a['review']['reviewer'].casefold()==a['created_by'].casefold()):raise ValueError('بازبینی مستقل معتبر نیست')
+        if action=='review' and (before['status']!='draft' or a['status']!='reviewed' or text(a['review']['reviewer'],'بازبین').casefold()==text(a['created_by'],'سازنده').casefold()):raise ValueError('بازبینی مستقل معتبر نیست')
         if action=='apply':
             financial_block(previous)
             if before['status']!='reviewed' or a['status']!='applied':raise ValueError('اعمال اصلاحیه تکراری یا بدون بازبینی است')
@@ -134,10 +134,11 @@ def guard(previous,updated,command):
 
 # Beam corrections share this immutable correction service, financial gate,
 # digest/revision boundaries and the same ProjectStore transaction.
-BEAM_FIELDS=('beam_amendments','beam_amendment_applied')
+BEAM_FIELDS=('beam_amendments','beam_amendment_applied','beam_legacy_links')
 
 
 def beam_review_payload(a):
+    if a.get('kind')=='legacy_link':return {'mapping':a['mapping']}
     value={'proposal':a['proposal'],'rows':a['rows'],'delta':a['delta']}
     if 'migration' in a:value['migration']=a['migration']
     return value
@@ -235,6 +236,7 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
     project.setdefault(BEAM_FIELDS[0],{})[a['id']]=a;service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_create','id':a['id']});return deepcopy(a)
 
 def beam_review(service,pid,aid,*,expected_revision,reviewer,note):
+    if read(service,pid)[0].get('beam_amendments',{}).get(aid,{}).get('kind')=='legacy_link':return mapping_transition(service,pid,aid,'review',expected_revision=expected_revision,reviewer=reviewer,note=note)
     project,token=read(service,pid);a=project[BEAM_FIELDS[0]][aid];revision(expected_revision,a['revision']);beam_base(project,a);actor=text(reviewer,'بازبین مستقل')
     if a.get('migration'):beam_migration_evidence(a['migration'])
     if a['status']!='draft' or actor.casefold()==a['created_by'].casefold():raise ValueError('بازبینی مستقل اصلاحیه تیر معتبر نیست')
@@ -242,6 +244,7 @@ def beam_review(service,pid,aid,*,expected_revision,reviewer,note):
     a.update(status='reviewed',review={'reviewer':actor,'note':text(note,'یادداشت کنترل'),'digest':digest(beam_review_payload(a))});service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_review','id':aid});return deepcopy(a)
 
 def beam_apply(service,pid,aid,*,expected_revision):
+    if read(service,pid)[0].get('beam_amendments',{}).get(aid,{}).get('kind')=='legacy_link':return mapping_transition(service,pid,aid,'apply',expected_revision=expected_revision)
     project,token=read(service,pid);a=project[BEAM_FIELDS[0]][aid];revision(expected_revision,a['revision'])
     if a['status']!='reviewed' or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اعمال تکراری یا بدون بازبینی معتبر ممنوع است')
     beam_base(project,a);financial_block(project)
@@ -264,6 +267,8 @@ def beam_checked_delta(project,a):
     return calc()
 
 def beam_guard(previous,updated,command):
+    mapping_guard(previous,updated,command)
+    if isinstance(command,dict) and command.get('action','').startswith('mapping_'):return
     for snapshot in previous.get('beam_detail_history',[]):
         if snapshot.get('migration_id') and snapshot not in updated.get('beam_detail_history',[]):raise ValueError('حذف یا تغییر اصل تاریخچه مهاجرت ممنوع است')
     protected=set()
@@ -294,7 +299,7 @@ def beam_guard(previous,updated,command):
             beam_base(previous,before)
             if action=='beam_review':
                 text(a['review']['reviewer'],'بازبین مستقل');text(a['review']['note'],'یادداشت بازبینی')
-                if before['status']!='draft' or a['status']!='reviewed' or a['review']['reviewer'].casefold()==a['created_by'].casefold() or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('بازبینی تیر معتبر نیست')
+                if before['status']!='draft' or a['status']!='reviewed' or text(a['review']['reviewer'],'بازبین').casefold()==text(a['created_by'],'سازنده').casefold() or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('بازبینی تیر معتبر نیست')
             else:
                 financial_block(previous)
                 if before['status']!='reviewed' or a['status']!='applied':raise ValueError('اعمال تکراری یا بدون بازبینی')
@@ -334,3 +339,174 @@ def inspect_beam_history(service,pid):
     for assembly in project.get('takeoff_assemblies',[]):
         if isinstance(assembly,dict) and assembly.get('assembly_code') in ('concrete_beam','beam_concrete'):result.append({'source_id':assembly.get('source_id'),'status':'UNLINKED_LEGACY','blockers':['مجموعه تاریخی تیر قرارداد مستقل دارد؛ نگاشت به دفتر تیر و مجوز مالی لازم است؛ تبدیل خودکار ممنوع']})
     return result
+
+
+# Links describe identity only. They never construct engineering data or payable rows.
+MAPPING_UNITS={'beam':'m3','beam_concrete':'m3','بتن_تیر':'m3','concrete':'m3','rebar':'kg','reinforcement':'kg','formwork':'m2'}
+
+def mapping_record_rows(project,ids):
+    if not isinstance(ids,list) or not ids or len(set(ids))!=len(ids):raise ValueError('انتخاب منبع یکتا و غیرخالی لازم است')
+    rows=[]
+    for sid in ids:
+        text(sid,'شناسه واقعی منبع');matches=[r for r in project.get('takeoffs',[]) if r.get('source_id')==sid]
+        if len(matches)!=1:raise ValueError('منبع تاریخی مفقود یا تکراری است')
+        row=matches[0]
+        if type(row.get('revision')) is not int or row['revision']<1:raise ValueError('نسخه تاریخی معتبر لازم است')
+        qs=row.get('quantities')
+        if not isinstance(qs,list) or not qs:raise ValueError('کمیت تاریخی نامشخص است')
+        from core.takeoff.units import normalize_unit
+        for q in qs:
+            if q.get('code') not in MAPPING_UNITS or normalize_unit(q.get('unit'))!=MAPPING_UNITS[q['code']]:raise ValueError('عملیات یا واحد تاریخی با قرارداد نگاشت سازگار نیست')
+            if number(q.get('amount'),'مقدار تاریخی')<0:raise ValueError('مقدار تاریخی منفی است')
+        rows.append(deepcopy(row))
+    assemblies=[]
+    for group in project.get('takeoff_assemblies',[]):
+        members=set(group.get('component_source_ids',[]))
+        if members&set(ids):
+            if group.get('assembly_code') not in ('concrete_beam','beam_concrete') or not members<=set(ids):raise ValueError('همه اجزای مستقل مجموعه تیر باید صریحاً انتخاب شوند')
+            assemblies.append(deepcopy(group))
+    return rows,assemblies
+
+def mapping_target(project,target):
+    from core.takeoff.beam_detail import _beam_key
+    if not isinstance(target,dict) or set(target)!={'floor_id','beam_id','source_id','plan_ref','detail_ref'}:raise ValueError('عضو، طبقه، منبع و مراجع واقعی مقصد لازم است')
+    for k,v in target.items():text(v,k)
+    key=_beam_key(target['floor_id'],target['beam_id']);record=project.get('beam_detail_register',{}).get(key)
+    if record and record.get('data',{}).get('source',{}).get('source_id')!=target['source_id']:raise ValueError('منبع مقصد با دفتر تیر مطابقت ندارد')
+    for other,r in project.get('beam_detail_register',{}).items():
+        if other!=key and r.get('data',{}).get('source',{}).get('source_id')==target['source_id']:raise ValueError('منبع فیزیکی مقصد به تیر دیگری تعلق دارد')
+    for aid in set(project.get('beam_legacy_links',{}).values()):
+        m=project['beam_amendments'][aid]['mapping'];same_key=m['beam_key']==key;same_source=m['target']['source_id']==target['source_id']
+        if same_key!=same_source:raise ValueError('هویت فیزیکی مقصد با نگاشت قبلی ناسازگار است')
+    return key,deepcopy(record)
+
+def mapping_validate(project,mapping,*,applied=False):
+    beam_migration_evidence(mapping['evidence']);rows,assemblies=mapping_record_rows(project,mapping['source_ids'])
+    if rows!=mapping['original_rows'] or assemblies!=mapping['original_assemblies']:raise RuntimeError('اصل داده تاریخی پس از پیشنهاد تغییر کرده است')
+    key,record=mapping_target(project,mapping['target'])
+    if key!=mapping['beam_key'] or record!=mapping['target_snapshot']:raise RuntimeError('نسخه مقصد نگاشت تغییر کرده است')
+    if not applied and any(sid in project.get('beam_legacy_links',{}) for sid in mapping['source_ids']):raise ValueError('منبع تاریخی قبلاً نگاشت شده است')
+    known=set().union(*(set(r.get('committed_source_ids',[])) for r in project.get('beam_detail_register',{}).values()),set())
+    if set(mapping['source_ids'])&known:raise ValueError('منبع از قبل به دفتر معتبر متصل است')
+    linked_ids=[]
+    if record:linked_ids+=record.get('committed_source_ids',[])
+    for sid,aid in project.get('beam_legacy_links',{}).items():
+        if sid not in mapping['source_ids'] and project['beam_amendments'][aid]['mapping']['beam_key']==key:linked_ids.append(sid)
+    if record:
+        from core.takeoff.beam_detail import preview_beam
+        from core.takeoff.engine import TakeoffEngine
+        report=preview_beam(record['data'],TakeoffEngine())
+        from core.commercial.exact_values import exact
+        @exact
+        def totals(values):
+            result={}
+            for unit,amount in values:result[unit]=result.get(unit,number(0,'صفر صریح'))+number(amount,'مقدار مستند')
+            return result
+        historic=totals((MAPPING_UNITS[q['code']],q['amount']) for row in rows for q in row['quantities'])
+        current=totals((q['unit'],q['quantity']) for q in report['rows'] if report['ready'] or q['unit']!='kg')
+        if any(unit in current and current[unit]!=amount for unit,amount in historic.items()):raise ValueError('مقدار تاریخی با مقدار مستند مقصد برابر نیست؛ تطبیق مهندسی مستقل لازم است')
+
+    prior=[r for r in project.get('takeoffs',[]) if r.get('source_id') in linked_ids]
+    def operation(q):return (MAPPING_UNITS.get(q['code']),q['unit'])
+    if {operation(q) for r in rows for q in r['quantities']}&{operation(q) for r in prior for q in r['quantities']}:raise ValueError('عملیات هم‌واحد برای تیر مقصد مبهم یا تکراری است؛ تطبیق مهندسی مستقل لازم است')
+
+def mapping_create(service,pid,*,source_ids,target,created_by,reason,evidence_path,evidence_sha256,evidence_reference):
+    project,token=read(service,pid);rows,assemblies=mapping_record_rows(project,source_ids);key,snapshot=mapping_target(project,target)
+    mapping={'version':1,'project_id':pid,'source_ids':deepcopy(source_ids),'target':deepcopy(target),'beam_key':key,'target_snapshot':snapshot,'original_rows':rows,'original_assemblies':assemblies,'evidence':{'evidence_path':evidence_path,'evidence_sha256':evidence_sha256,'evidence_reference':evidence_reference},'needs_detail':True}
+    mapping_validate(project,mapping)
+    a={'id':'BA-'+uuid4().hex,'kind':'legacy_link','beam_key':key,'revision':1,'status':'draft','created_by':text(created_by,'سازنده نگاشت'),'reason':text(reason,'علت نگاشت'),'mapping':mapping,'created_at':datetime.now(timezone.utc).isoformat()}
+    project.setdefault('beam_amendments',{})[a['id']]=a;service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'mapping_create','id':a['id']});return deepcopy(a)
+
+def mapping_transition(service,pid,aid,action,*,expected_revision,reviewer=None,note=None):
+    project,token=read(service,pid);a=project['beam_amendments'][aid];revision(expected_revision,a['revision']);mapping_validate(project,a['mapping'])
+    if action=='review':
+        actor=text(reviewer,'بازبین مستقل');text(note,'یادداشت بازبینی')
+        if a['status']!='draft' or actor.casefold()==a['created_by'].casefold():raise ValueError('بازبینی مستقل معتبر نیست')
+        a.update(status='reviewed',review={'reviewer':actor,'note':note,'digest':digest(beam_review_payload(a))})
+    else:
+        financial_block(project)
+        if a['status']!='reviewed' or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اعمال بدون بازبینی یا تکراری ممنوع')
+        a.update(status='applied',applied_at=datetime.now(timezone.utc).isoformat());project.setdefault('beam_legacy_links',{}).update({sid:aid for sid in a['mapping']['source_ids']})
+    service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'mapping_'+action,'id':aid});return deepcopy(a)
+
+def mapping_guard(previous,updated,command):
+    old=previous.get('beam_amendments',{});new=updated.get('beam_amendments',{});links=previous.get('beam_legacy_links',{})
+    for sid,aid in links.items():
+        a=old[aid]
+        target=a['mapping']['target'];key=a['mapping']['beam_key']
+        for registered_key,r in updated.get('beam_detail_register',{}).items():
+            physical=r.get('data',{}).get('source',{}).get('source_id')
+            if physical and ((registered_key==key)!=(physical==target['source_id'])):raise ValueError('تغییر یا استفاده مجدد هویت عضو نگاشت‌شده ممنوع است')
+        if new.get(aid)!=a or updated.get('beam_legacy_links',{}).get(sid)!=aid:raise ValueError('اصل نگاشت اعمال‌شده قابل تغییر نیست')
+        for row in a['mapping']['original_rows']:
+            if [r for r in updated.get('takeoffs',[]) if r.get('source_id')==row['source_id']]!=[row]:raise ValueError('اصل متره نگاشت‌شده قابل تغییر نیست')
+        for assembly in a['mapping']['original_assemblies']:
+            if assembly not in updated.get('takeoff_assemblies',[]):raise ValueError('اصل مجموعه تاریخی قابل تغییر نیست')
+    if links:
+        from core.takeoff.commit_guards import rebuild_project_boq
+        _,expected=rebuild_project_boq(updated,updated.get('takeoffs',[]))
+        def view(rows):return [(r.get('source_ids'),r['unit'],r['item_code'],number(r['quantity'],'کمیت')) for r in rows if set(r.get('source_ids',[]))&set(links)]
+        if view(expected)!=view(updated.get('boq',[])):raise ValueError('BOQ مرتبط با اصل نگاشت تغییر کرده است')
+    if not isinstance(command,dict) or not command.get('action','').startswith('mapping_'):
+        if links!=updated.get('beam_legacy_links',{}):raise ValueError('نگاشت فقط از گردش رسمی مجاز است')
+        return
+    aid=command['id'];a=new.get(aid);action=command['action']
+    if not a or a.get('kind')!='legacy_link' or any(v!=new.get(k) for k,v in old.items() if k!=aid) or set(new)-set(old)-{aid} or set(old)-set(new):raise ValueError('تغییر نامعتبر دفتر نگاشت')
+    mapping_validate(previous,a['mapping'])
+    expected_links=deepcopy(links)
+    if action=='mapping_create':
+        if aid in old or a['status']!='draft':raise ValueError('درخواست نگاشت تکراری')
+        text(a['created_by'],'سازنده');text(a['reason'],'علت')
+    else:
+        prior=old.get(aid);allowed={'status','review'} if action=='mapping_review' else {'status','applied_at'}
+        if not prior or {k:v for k,v in prior.items() if k not in allowed}!={k:v for k,v in a.items() if k not in allowed}:raise ValueError('پیشنهاد نگاشت تغییر کرد')
+        if action=='mapping_review':
+            text(a['review']['reviewer'],'بازبین');text(a['review']['note'],'یادداشت')
+            if prior['status']!='draft' or a['status']!='reviewed' or text(a['review']['reviewer'],'بازبین').casefold()==text(a['created_by'],'سازنده').casefold() or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('بازبینی نگاشت معتبر نیست')
+        elif action=='mapping_apply':
+            financial_block(previous)
+            if prior['status']!='reviewed' or a['status']!='applied' or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اعمال نگاشت نامعتبر است')
+            expected_links.update({sid:aid for sid in a['mapping']['source_ids']})
+        else:raise ValueError('فرمان نگاشت ناشناخته است')
+    if updated.get('beam_legacy_links',{})!=expected_links:raise ValueError('اشاره‌گر نگاشت نامعتبر است')
+    for field in ('takeoffs','boq','takeoff_assemblies','beam_detail_register','beam_amendment_applied','beam_detail_history'):
+        if previous.get(field)!=updated.get(field):raise ValueError('نگاشت حق تغییر اصل، دفتر تیر یا کمیت مالی را ندارد')
+
+def mapping_inventory(project):
+    rows=[];known=set().union(*(set(r.get('committed_source_ids',[])) for r in project.get('beam_detail_register',{}).values()),set());assembly_ids=set().union(*(set(a.get('component_source_ids',[])) for a in project.get('takeoff_assemblies',[]) if a.get('assembly_code') in ('concrete_beam','beam_concrete')),set())
+    complete_known=set()
+    from core.takeoff.beam_detail import preview_beam
+    from core.takeoff.engine import TakeoffEngine
+    for key,record in project.get('beam_detail_register',{}).items():
+        try:
+            current=beam_current(project,key)
+            if current['data'].get('measurement_policy')=='beam_specialist_v1' and preview_beam(current['data'],TakeoffEngine())['ready']:complete_known.update(record.get('committed_source_ids',[]))
+        except (ValueError,TypeError,KeyError):pass
+    try:financial_block(project);locked=False
+    except ValueError:locked=True
+    for r in project.get('takeoffs',[]):
+        if r.get('item') not in MAPPING_UNITS and r.get('source_id') not in assembly_ids:continue
+        sid=r.get('source_id');aid=project.get('beam_legacy_links',{}).get(sid);status='LINKED' if aid or sid in known else 'NEEDS_MAPPING';blockers=[]
+        try:mapping_record_rows(project,[sid])
+        except ValueError as e:
+            # Whole assemblies are inspected together; a partial selection is not a defect in their rows.
+            if sid in assembly_ids:
+                ids=next(a['component_source_ids'] for a in project['takeoff_assemblies'] if sid in a.get('component_source_ids',[]))
+                try:mapping_record_rows(project,ids)
+                except ValueError as err:status='INCOMPLETE';blockers.append(str(err))
+            else:status='SOURCE_DUPLICATE' if sum(x.get('source_id')==sid for x in project.get('takeoffs',[]))>1 else 'INCOMPLETE';blockers.append(str(e))
+        proposals=[a for a in project.get('beam_amendments',{}).values() if a.get('kind')=='legacy_link' and sid in a['mapping']['source_ids'] and a['status']!='applied']
+        if not aid and len({a['beam_key'] for a in proposals})>1:status='AMBIGUOUS'
+        if locked and status=='NEEDS_MAPPING':status='FINANCIAL_LOCKED'
+        rows.append({'source_id':sid,'project_id':project.get('id'),'floor':r.get('system'),'member':r.get('member_code'),'operation':r.get('item'),'revision':r.get('revision'),'quantities':deepcopy(r.get('quantities')),'status':status,'financial_locked':locked,'needs_detail':sid not in complete_known or status!='LINKED','evidence_required':not aid and sid not in known,'blockers':blockers,'mapping_id':aid,'target':deepcopy(project['beam_amendments'][aid]['mapping']['target']) if aid else None,'original':deepcopy(r)})
+    return rows
+
+
+def mapping_guard_new_rows(project,incoming,source_id,expected_current_registry):
+    targets=set()
+    if expected_current_registry and expected_current_registry[0]=='beam_detail_register':targets.add(expected_current_registry[1])
+    proposals=[project['beam_amendments'][aid]['mapping'] for aid in set(project.get('beam_legacy_links',{}).values())]
+    for m in proposals:
+        if m['beam_key'] not in targets and m['target']['source_id']!=source_id:continue
+        original_units={MAPPING_UNITS[q['code']] for row in m['original_rows'] for q in row['quantities']}
+        if original_units&{MAPPING_UNITS.get(q['code']) for row in incoming for q in row.get('quantities',[])}:raise ValueError('عملیات تیر از منبع تاریخی نگاشت‌شده موجود است؛ ثبت دوباره بدون تطبیق رسمی ممنوع')

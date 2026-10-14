@@ -20,6 +20,7 @@ def export(service,pid,floor,beam,path,*,format):
   component=row['description'];add(component,'مقدار دقیق',row['quantity']);add(component,'واحد',row['unit']);add(component,'فرمول',row['formula']);add(component,'منبع',row['source_id']);walk(component,'جزئیات',row['params'])
  project=service.open_project(pid)
  for a in project.get('beam_amendments',{}).values():
+  if a.get('kind')=='legacy_link':continue
   if a['proposal']['floor_id']==floor and a['proposal']['beam_id']==beam:
    add('اصلاحیه','شناسه',a['id']);add('اصلاحیه','علت',a['reason']);add('اصلاحیه','سازنده',a['created_by']);add('اصلاحیه','بازبین',a.get('review',{}).get('reviewer','بررسی نشده'));walk('اصلاحیه','دلتا',a['delta']);walk('اصل','دیتایل پیشین',a['previous']['data']);add('اصلاحیه','وضعیت',a['status'])
    if a.get('migration'):walk('مهاجرت تاریخی','مدرک و قرارداد',a['migration'])
