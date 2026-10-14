@@ -105,6 +105,8 @@ def preview_member(data: dict, engine: Any) -> dict:
     """Preview every individually approved row, block commit on any missing group."""
     kind, floor, member_id = _structural_shape(data)
     if kind=='column' and data.get('measurement_policy')=='column_specialist_v1':return _preview_column_specialist(data,engine)
+    if data.get('measurement_policy')=='foundation_tie_specialist_v1':
+        return _preview_foundation_tie_specialist(data,engine)
     title, domain, item, fields, groups = KINDS[kind]
     blockers: list[str] = []
     rows: list[dict] = []
@@ -340,6 +342,14 @@ class ReviewedStructuralWorkflow:
         if previous and previous['data'].get('measurement_policy')=='column_specialist_v1':
             if draft.get('measurement_policy')!='column_specialist_v1':raise ValueError('حذف قرارداد تخصصی ستون ممنوع است')
             if any(draft.get(k)!=previous['data'].get(k) for k in ('building_id','axis','member_id','floor_id')) or any(draft.get('source',{}).get(k)!=previous['data'].get('source',{}).get(k) for k in ('source_id','mode')):raise ValueError('تغییر هویت فیزیکی ستون نیازمند گردش مستقل است')
+        if previous and previous['data'].get('measurement_policy')=='foundation_tie_specialist_v1':
+            if draft.get('measurement_policy')!='foundation_tie_specialist_v1':
+                raise ValueError('حذف قرارداد واحدهای تخصصی پی و شناژ ممنوع است')
+            if (any(draft.get(k)!=previous['data'].get(k) for k in
+                    ('building_id','kind','member_id','floor_id')) or
+                any(draft.get('source',{}).get(k)!=previous['data'].get('source',{}).get(k)
+                    for k in ('source_id','mode'))):
+                raise ValueError('تغییر هویت فیزیکی پی و شناژ نیازمند گردش مستقل است')
         if previous and previous.get("status") == "committed":
             raise ValueError("عضو قبلاً به ریزمتره انتقال یافته است")
         revision = previous["revision"] if previous else 0
@@ -633,3 +643,216 @@ def _preview_column_specialist(data,engine):
             rows.append({'source_id':prefix+':rebar:'+group,'item':'rebar','code':'rebar','domain':'building','description':{'longitudinal':'میلگرد طولی','ties':'خاموت','crossties':'سنجاقی','starters':'انتظار و وصله'}[group]+' ستون '+member,'quantity':_wire(mass),'unit':'kg','formula':'تعداد صریح × برش مستند × وزن واحد × دامنه','params':{'series':deepcopy(series),'count_scope':scope,**({'helix_length_policy':_HELIX_LENGTH_POLICY,'pi_policy':_CIRCULAR_PI_POLICY} if group=='ties' and data['geometry'].get('shape')=='circular_column' else {})}})
         except (ValueError,TypeError,KeyError) as e:errors.append('میلگرد '+group+': '+str(e))
     return {'kind':'column','floor_id':floor,'member_id':member,'source_id':data.get('source',{}).get('source_id'),'ready':not errors,'blockers':errors,'rows':rows,'preview_only':True}
+
+
+# Stage 2.3: a versioned specialization of the SAME register, Decimal AST,
+# source guards, SQLite CAS and BOQ. Historical records retain old behavior.
+_STAGE23_KINDS = frozenset({"tie_beam", "isolated_footing", "strip_footing", "mat_footing", "pile_cap"})
+
+
+@_exact
+def _preview_foundation_tie_specialist(data, engine):
+    """Reviewed concrete, contact form and bar series; no design inference.
+
+    This is the calculation core, NOT approval of a real foundation or an
+    amendment mechanism for already committed quantities. Only explicit
+    section geometry and physical bar schedules may become payable rows.
+    """
+    from core.takeoff.formulas import evaluate
+    from core.takeoff.reviewed_components import PARTS
+    from core.takeoff.beam_detail import component_reviewed
+
+    kind, floor, member = _structural_shape(data)
+    errors, rows = [], []
+    prefix = f"structural:{kind}:{floor}:{member}"
+    if kind not in _STAGE23_KINDS:
+        return {"kind": kind, "floor_id": floor, "member_id": member,
+                "source_id": "", "ready": False, "blockers": ["قرارداد تخصصی برای این عضو تعریف نشده است"],
+                "rows": [], "preview_only": True}
+
+    def txt(value, label):
+        return require_text(value, label)
+
+    def num(value, label, zero=False, integer=False):
+        value = _decimal(value, label, True)
+        if value < 0 or (value == 0 and not zero) or (integer and value != value.to_integral_value()):
+            raise ValueError(label + ": مقدار مثبت/نامنفی مستند لازم است")
+        return value
+
+    def checked(record, label):
+        if not isinstance(record, dict):
+            raise ValueError(label + ": ساختار معتبر لازم است")
+        txt(record.get('source_ref'), label + ': مرجع')
+        txt(record.get('approved_by'), label + ': بازبین')
+        return record
+
+    def calc(expr, values, units, output):
+        return _decimal(evaluate(expr, values, variable_units=units, output_unit=output), 'مقدار محاسبه')
+
+    source_id = ''
+    quantity_count = None
+    axis = None
+    try:
+        source = data.get('source')
+        source_id = _validate_source(source, member)
+        txt(source.get('plan_ref'), 'مرجع پلان')
+        txt(source.get('detail_ref'), 'مرجع دیتایل')
+        txt(data.get('building_id'), 'ساختمان')
+        checked(data.get('geometry'), 'هندسه')
+        geometry = data['geometry']
+        if geometry.get('shape') != 'rectangular':
+            raise ValueError('هندسه منشوری مستطیلی لازم است؛ شکل متغیر به قرارداد مستقل نیاز دارد')
+        if geometry.get('repeat_scope') != 'identical_members':
+            raise ValueError('تکرار اعضای هم‌تیپ باید صریح باشد')
+        fields = ('length','width','depth','count') if kind=='tie_beam' else ('length','width','thickness','count')
+        units = geometry.get('variable_units')
+        if not isinstance(units, dict) or set(units) != set(fields):
+            raise ValueError('واحد ساختاریافته تمام ابعاد و تعداد لازم است')
+        values = {k:geometry.get(k) for k in fields}
+        quantity_count = num(calc('count',{'count':values['count']},{'count':units['count']},'عدد'), 'تعداد اعضا',integer=True)
+        dims = {}
+        for field in fields[:-1]:
+            dims[field] = calc(field,{field:values[field]},{field:units[field]},'m')
+            num(dims[field],field)
+        if kind == 'tie_beam':
+            axis = dims['length']
+            expression='length*width*depth*count'
+        else:expression='length*width*thickness*count'
+        gross=calc(expression,values,units,'m3');num(gross,'حجم ناخالص')
+        intersections=geometry.get('intersections')
+        if not isinstance(intersections,list) or geometry.get('intersection_scope') not in ('per_member','total_group'):
+            raise ValueError('کسورات و دامنه آن‌ها باید صریح باشند')
+        txt(geometry.get('intersection_ref'),'مرجع کسورات')
+        ids=set();deductions=_D(0)
+        for item in intersections:
+            checked(item,'کسر حجم')
+            ident=txt(item.get('id'),'شناسه کسر')
+            if ident in ids:raise ValueError('کسر حجم تکراری است')
+            ids.add(ident)
+            deductions+=num(item.get('volume_m3'),'حجم کسر')
+        effective_deductions=deductions*(quantity_count if geometry['intersection_scope']=='per_member' else 1)
+        net=gross-effective_deductions;num(net,'بتن خالص')
+        rows.append({'source_id':prefix+':concrete','item':KINDS[kind][2],
+                     'code':'concrete','domain':KINDS[kind][1],
+                     'description':'بتن خالص '+KINDS[kind][0]+' '+member,
+                     'quantity':_wire(net),'unit':'m3',
+                     'formula':'حجم منشوری دقیق با واحدهای مستند × تعداد − کسورات تأییدشده',
+                     'params':{'geometry':deepcopy(geometry),'gross_m3':_wire(gross),
+                               'deductions_m3':_wire(effective_deductions),'net_m3':_wire(net),
+                               'intersections':deepcopy(intersections),'building_id':data['building_id'],
+                               'numeric_policy':'dimensional_decimal_v1'}})
+    except (TypeError,ValueError,KeyError,AttributeError) as exc:
+        errors.append('بتن و منشأ: '+str(exc));quantity_count=None
+
+    try:
+        if quantity_count is None:raise ValueError('هندسه و تعداد معتبر نیست')
+        form=checked(data.get('formwork'),'قالب')
+        if form.get('status')=='not_applicable':
+            txt(form.get('reason'),'دلیل عدم کاربرد قالب')
+        elif form.get('status')=='confirmed':
+            scope=form.get('area_scope')
+            if scope not in ('per_member','total_group'):raise ValueError('دامنه قالب صریح نیست')
+            txt(form.get('area_scope_ref'),'مرجع دامنه قالب')
+            surfaces=form.get('surfaces')
+            if not isinstance(surfaces,list) or not surfaces:raise ValueError('سطوح قالب مستند نیست')
+            seen=set();gross_area=_D(0);net_area=_D(0)
+            for item in surfaces:
+                checked(item,'سطح تماس')
+                sid=txt(item.get('id'),'شناسه سطح')
+                if sid in seen:raise ValueError('شناسه سطح قالب تکراری است')
+                seen.add(sid)
+                if type(item.get('contact')) is not bool:raise ValueError('تماس سطح باید صریح و بولی باشد')
+                area=num(item.get('gross_area_m2'),'مساحت ناخالص سطح')
+                sub=_D(0);seen_ded=set()
+                for deduction in item.get('deductions',[]):
+                    checked(deduction,'کسر سطح')
+                    did=txt(deduction.get('id'),'شناسه کسر سطح')
+                    if did in seen_ded:raise ValueError('کسر سطح تکراری است')
+                    seen_ded.add(did)
+                    sub+=num(deduction.get('area_m2'),'مساحت کسر')
+                if sub>area:raise ValueError('کسر قالب از سطح بیشتر است')
+                if item['contact']:
+                    gross_area+=area;net_area+=area-sub
+            if not net_area>0:raise ValueError('هیچ سطح واقعی قالب در تماس نیست')
+            factor=quantity_count if scope=='per_member' else _D(1)
+            rows.append({'source_id':prefix+':formwork','item':'formwork','code':'formwork',
+                         'domain':'building','description':'قالب '+KINDS[kind][0]+' '+member,
+                         'quantity':_wire(net_area*factor),'unit':'m2',
+                         'formula':'جمع سطوح واقعی تماس منهای کسورات، در دامنه تأییدشده',
+                         'params':{'surfaces':deepcopy(surfaces),'gross_area_m2':_wire(gross_area*factor),
+                                   'area_scope':scope}})
+        else:raise ValueError('وضعیت قالب باید مستند و بازبینی‌شده باشد')
+    except (ValueError,TypeError,KeyError,AttributeError) as exc:errors.append('قالب: '+str(exc))
+
+    rebars=data.get('rebars')
+    groups=KINDS[kind][4]
+    if not isinstance(rebars,dict) or set(rebars)!=set(groups):
+        errors.append('گروه‌های میلگرد ناقص یا اضافه هستند')
+    else:
+        physical_ids=set()
+        for group in groups:
+            try:
+                if quantity_count is None:raise ValueError('تعداد عضو معتبر نیست')
+                bar=checked(rebars[group],'گروه میلگرد '+group)
+                if bar.get('status')=='not_applicable':
+                    txt(bar.get('reason'),'دلیل عدم کاربرد میلگرد');continue
+                if bar.get('status')!='confirmed':raise ValueError('میلگرد نیازمند بازبینی است')
+                scope=bar.get('count_scope')
+                if scope not in ('per_member','total_group'):raise ValueError('دامنه میلگرد صریح نیست')
+                txt(bar.get('count_scope_ref'),'مرجع دامنه میلگرد')
+                segments=bar.get('segments')
+                if not isinstance(segments,list) or not segments:raise ValueError('سری میلگرد لازم است')
+                used=set();mass=_D(0);cursor=_D(0);previous_station=None
+                for segment in segments:
+                    checked(segment,'سری میلگرد')
+                    ident=txt(segment.get('id'),'شناسه سری میلگرد')
+                    if ident in used or ident in physical_ids:raise ValueError('شناسه فیزیکی سری تکراری است')
+                    used.add(ident);physical_ids.add(ident)
+                    quantity=num(segment.get('count'),'تعداد میلگرد',integer=True)
+                    num(segment.get('nominal_diameter_mm'),'قطر اسمی میلگرد')
+                    txt(segment.get('shape_ref'),'مرجع شکل میلگرد')
+                    unit_weight=num(segment.get('unit_weight_kg_m'),'وزن واحد میلگرد')
+                    txt(segment.get('unit_weight_source'),'منبع وزن واحد')
+                    if ('cut_length_m' in segment)==('length_parts_m' in segment):
+                        raise ValueError('طول برش باید دقیقاً یک روش داشته باشد')
+                    if 'cut_length_m' in segment:
+                        length=num(segment['cut_length_m'],'طول برش');txt(segment.get('cut_length_ref'),'مرجع طول برش')
+                    else:
+                        parts=segment['length_parts_m']
+                        if not isinstance(parts,list) or not any(isinstance(p,dict) and p.get('kind')=='straight' for p in parts):
+                            raise ValueError('طول مستقیم و اجزای برش لازم است')
+                        length=_D(0)
+                        for part in parts:
+                            if not isinstance(part,dict) or part.get('kind') not in PARTS:
+                                raise ValueError('شکل جزء میلگرد نامعتبر است')
+                            txt(part.get('source_ref'),'مرجع جزء برش')
+                            length+=num(part.get('length_m'),'طول جزء میلگرد')
+                    if kind=='tie_beam' and group=='stirrups':
+                        if scope!='per_member':raise ValueError('خاموت شناژ باید دامنه هر عضو داشته باشد')
+                        start=num(segment.get('start_m'),'شروع ناحیه',True)
+                        end=num(segment.get('end_m'),'پایان ناحیه')
+                        first=num(segment.get('first_bar_m'),'اولین خاموت',True)
+                        last=num(segment.get('last_bar_m'),'آخرین خاموت',True)
+                        spacing=num(segment.get('spacing_m'),'فاصله خاموت')
+                        if start!=cursor or end<=start or first<start or last>end or first>last:
+                            raise ValueError('مرز خاموت/جانمایی ناسازگار')
+                        if last-first!=(quantity-1)*spacing:
+                            raise ValueError('تعداد و فاصله خاموت با موقعیت‌ها ناسازگار است')
+                        if previous_station is not None and first<=previous_station:
+                            raise ValueError('خاموت مرزی دوبار شمرده شده است')
+                        if first-start>spacing or end-last>spacing:
+                            raise ValueError('فاصله ابتدا یا انتهای ناحیه بیش از گام صریح است')
+                        previous_station=last;cursor=end
+                    mass+=quantity*length*unit_weight
+                if kind=='tie_beam' and group=='stirrups' and cursor!=axis:
+                    raise ValueError('خاموت‌ها کل محور شناژ را پوشش نمی‌دهند')
+                factor=quantity_count if scope=='per_member' else _D(1)
+                rows.append({'source_id':prefix+':rebar:'+group,'item':'rebar','code':'rebar',
+                             'domain':'building','description':'میلگرد '+group+' '+KINDS[kind][0]+' '+member,
+                             'quantity':_wire(mass*factor),'unit':'kg',
+                             'formula':'تعداد واقعی × طول برش مستند × وزن واحد × دامنه شمارش',
+                             'params':{'series':deepcopy(segments),'count_scope':scope}})
+            except (ValueError,TypeError,KeyError,AttributeError) as exc:
+                errors.append('میلگرد '+group+': '+str(exc))
+    return {'kind':kind,'floor_id':floor,'member_id':member,'source_id':source_id,
+            'ready':not errors,'blockers':errors,'rows':rows,'preview_only':True}
