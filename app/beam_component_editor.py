@@ -14,15 +14,15 @@ SCHEMAS={
  'face_deductions':[('id','شناسه کسر سطح'),('area_m2','مساحت کسر متر مربع'),('source_ref','مرجع هندسی')],
  'parts':[('id','شناسه جزء'),('kind','مستقیم/خم/قلاب/مهاری/وصله'),('length_m','طول واقعی متر'),('source_ref','مرجع جزء')],
 }
-FA={'top':'بالا','bottom':'پایین','span':'دهانه','support':'تکیه‌گاه','side':'کمرکش','crosstie':'سنجاقی','bottom_face':'کف','side1':'جان اول','side2':'جان دوم','end':'انتها','other':'سایر','straight':'مستقیم','bend':'خم','hook':'قلاب','anchorage':'مهاری','lap':'وصله','confirmed':'بازبینی‌شده','needs_review':'نیازمند بازبینی',True:'بله',False:'خیر'}
+FA={'side3':'وجه سوم','side4':'وجه چهارم','rectangular':'مستطیلی','top':'بالا','bottom':'پایین','span':'دهانه','support':'تکیه‌گاه','side':'کمرکش','crosstie':'سنجاقی','bottom_face':'کف','side1':'جان اول','side2':'جان دوم','end':'انتها','other':'سایر','straight':'مستقیم','bend':'خم','hook':'قلاب','anchorage':'مهاری','lap':'وصله','confirmed':'بازبینی‌شده','needs_review':'نیازمند بازبینی',True:'بله',False:'خیر'}
 REV={v:k for k,v in FA.items()}
-ENUMS={'position','role','contact','kind','review_status'}
+ENUMS={'shape_kind','position','role','contact','kind','review_status'}
 def shown(k,v):return FA.get(v,v) if k in ENUMS and (isinstance(v,str) or type(v) is bool) else v
 from core.takeoff.beam_detail import component_fingerprint as fingerprint, component_reviewed as reviewed
 
 class BeamComponentEditor(QDialog):
- def __init__(self,kind,rows=None,parent=None):
-  super().__init__(parent);self.kind=kind;self.rows=None;self.fields=SCHEMAS[kind]+[('review_status','وضعیت بازبینی'),('reviewed_by','بازبین')];self.setWindowTitle('ویرایش ردیفی دیتایل تیر');self.resize(1100,520);self.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(self)
+ def __init__(self,kind,rows=None,parent=None,extra_fields=None):
+  super().__init__(parent);self.kind=kind;self.rows=None;self.fields=SCHEMAS[kind]+(extra_fields or [])+[('review_status','وضعیت بازبینی'),('reviewed_by','بازبین')];self.setWindowTitle('ویرایش ردیفی دیتایل تیر');self.resize(1100,520);self.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(self)
   layout.addWidget(QLabel('واحدها در سربرگ صریح‌اند؛ داده ناقص، عدد یا دیتایل حدسی مجاز نیست.'))
   self.table=QTableWidget(0,len(self.fields)+(1 if kind=='series' else 0));self.table.setHorizontalHeaderLabels([v for k,v in self.fields]+(['پیش‌نمایش وزن بر اساس تعداد سری؛ کیلوگرم'] if kind=='series' else []));layout.addWidget(self.table);self.reviewer=QLineEdit();self.reviewer.setPlaceholderText('نام بازبین صریح');layout.addWidget(self.reviewer);bar=QHBoxLayout();layout.addLayout(bar)
   self.add_button=QPushButton('افزودن');self.copy_button=QPushButton('کپی با شناسه جدید');self.delete_button=QPushButton('حذف ردیف منتخب');self.review_button=QPushButton('بازبینی ردیف منتخب');self.nested_button=QPushButton('اجزای برش' if kind=='series' else 'کسورات سطح');self.save_button=QPushButton('انتقال به پیش‌نویس')

@@ -127,6 +127,14 @@ class StructuralProApp:
         evidence={'evidence_path':evidence_path,'evidence_sha256':evidence_sha256,'evidence_reference':evidence_reference}
         return beam_create(self,project_id,floor_id,beam_id,data,migration=evidence,**kwargs)
 
+    def export_column_detail_report(self,project_id,floor_id,member_id,path,*,format):
+        from core.reports.column_detail_report import export
+        return export(self,project_id,floor_id,member_id,path,format=format)
+
+    def create_column_amendment(self,project_id,floor_id,member_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,member_id,data,column=True,**kwargs)
+
     def create_beam_amendment(self,project_id,floor_id,beam_id,data,**kwargs):
         from core.takeoff.manual_formula_amendments import beam_create
         return beam_create(self,project_id,floor_id,beam_id,data,**kwargs)
@@ -189,9 +197,9 @@ class StructuralProApp:
         return empty_member(kind, floor_id, member_id)
 
     def save_structural_member_draft(self, project_id: str, draft: dict[str, Any], *,
-                                      expected_revision: int = 0) -> dict[str, Any]:
+                                      expected_revision: int = 0, reason: str = "ثبت پیش‌نویس") -> dict[str, Any]:
         return self.structural_member_workflow().save_draft(
-            project_id, draft, expected_revision=expected_revision)
+            project_id, draft, expected_revision=expected_revision,reason=reason)
 
     def get_structural_member(self, project_id: str, kind: str, floor_id: str,
                               member_id: str) -> dict[str, Any] | None:
