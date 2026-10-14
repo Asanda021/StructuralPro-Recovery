@@ -3,14 +3,14 @@ import ast
 from copy import deepcopy
 from core.commercial.exact_values import number,wire,exact
 from core.takeoff.formulas import evaluate_rows,evaluate
-from core.takeoff.manual_formula_register import load,save,clean,text,revision
+from core.takeoff.manual_formula_register import load,save,clean,text,revision,graph
 
 @exact
 def summary(service,pid,key):
     reg=load(service,pid);row=reg[key];d=row['data'];variables=deepcopy(d['variables'])
     for item in d['deductions']:variables[item.get('variable',item['id'])]='0'
-    values=evaluate_rows({k:{'expression':v['data']['expression'],'variables':v['data']['variables'],'references':v['data']['references'],'unit':v['data']['unit']} for k,v in reg.items()})
-    variables.update({name:values[target] for name,target in d['references'].items()});gross=number(evaluate(d['expression'],variables),'مقدار پیش از کسر');net=number(row['quantity'],'خالص')
+    values=evaluate_rows(graph(reg))
+    variables.update({name:values[target] for name,target in d['references'].items()});units={**d.get('variable_units',{}),**{name:reg[target]['data']['unit'] for name,target in d['references'].items()}};gross=number(evaluate(d['expression'],variables,variable_units=units,output_unit=d['unit']) if 'variable_units' in d else evaluate(d['expression'],variables),'مقدار پیش از کسر');net=number(row['quantity'],'خالص')
     return wire({'gross':gross,'net':net,'deducted':gross-net,'unit':d['unit']})
 
 def change_data(data,item=None,remove_id=None):
@@ -23,7 +23,7 @@ def change_data(data,item=None,remove_id=None):
                 node=self.generic_visit(node)
                 if isinstance(node.op,ast.Sub) and isinstance(node.right,ast.Name) and node.right.id==variable:return node.left
                 return node
-        tree=Remove().visit(ast.parse(d['expression'],mode='eval'));d['expression']=ast.unparse(tree);d['variables'].pop(variable,None);d['deductions']=[v for v in d['deductions'] if v['id']!=sid]
+        tree=Remove().visit(ast.parse(d['expression'],mode='eval'));d['expression']=ast.unparse(tree);d['variables'].pop(variable,None);d.get('variable_units',{}).pop(variable,None);d['deductions']=[v for v in d['deductions'] if v['id']!=sid]
     else:
         item=deepcopy(item);text(item.get('source_id'),'منبع هندسی کسر');variable=text(item.get('variable'),'نام پارامتر کسر')
         if item['source_id']!=sid:raise ValueError('شناسه کسر باید همان هویت هندسی صریح باشد')
@@ -31,6 +31,7 @@ def change_data(data,item=None,remove_id=None):
         if not variable.isidentifier() or variable in d['references']:raise ValueError('نام پارامتر کسر نامعتبر است')
         if not old and variable in d['variables']:raise ValueError('نام کسر با پارامتر موجود تداخل دارد')
         if not old:d['expression']='('+d['expression']+')-'+variable
+        if 'variable_units' in d:d['variable_units'][variable]=item['unit']
         d['variables'][variable]=item['quantity'];d['deductions']=[v for v in d['deductions'] if v['id']!=sid]+[item]
     return clean(d)
 

@@ -6,8 +6,8 @@ from test_manual_formula_persistence import data
 
 def test_reports_exact_text_live_safe_and_injection(tmp_path):
  s=StructuralProApp(tmp_path/'db');s.create_project('مصنوعی','P')
- s.save_manual_formula('P','A',data(expression='n*2',variables={'n':'10'},unit='m2',title='=HYPERLINK("x")'),expected_revision=0,reason='اول')
- s.save_manual_formula('P','B',data(source_id='B',member='B',expression='n',variables={'n':'12345678901234567890.123456789'}),expected_revision=0,reason='اول')
+ s.save_manual_formula('P','A',data(expression='n*2',variables={'n':'10'},variable_units={'n':'m2'},unit='m2',title='=HYPERLINK("x")'),expected_revision=0,reason='اول')
+ s.save_manual_formula('P','B',data(source_id='B',member='B',expression='n',variables={'n':'12345678901234567890.123456789'},variable_units={'n':'m3'}),expected_revision=0,reason='اول')
  assert callable(getattr(s,'export_manual_formula_report',None)), 'گزارش فرمول و تاریخچه وجود ندارد'
  path=tmp_path/'report.xlsx';s.export_manual_formula_report('P',path,format='xlsx')
  from openpyxl import load_workbook

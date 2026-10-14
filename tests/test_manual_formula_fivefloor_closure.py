@@ -37,6 +37,10 @@ def test_real_qt_fourteen_operations_five_floors_and_all_reports(tmp_path,monkey
  _qt=QApplication.instance() or QApplication([]);s=StructuralProApp(tmp_path/'db');s.create_project('ساختمان پنج‌طبقه کاملاً مصنوعی','P');d=ManualTakeoffDialog(s,'P');d.show();d.manual_tabs.setCurrentIndex(1);_qt.processEvents()
  for i,(label,family,unit,expression,variables,expected) in enumerate(CASES):
   d.formula_id.setText('A'+str(i));d._formula_revision=0;d._formula_selected=None;d.formula_source.setText('synthetic:fivefloor:A'+str(i));d.formula_member.setText('عضو-'+label);d.floor_id.setText('طبقه۱');d.formula_family.setCurrentIndex(d.formula_family.findData(family));d.formula_unit.setCurrentIndex(d.formula_unit.findData(unit));d.formula_title.setText(label);d.formula_expression.setText(expression);d.formula_variables.setPlainText('\n'.join(k+'='+v for k,v in variables.items()));d.formula_basis.setText('مصنوعی؛ ابعاد متر، تعداد عدد، وزن واحد کیلوگرم بر متر؛ بدون پرت یا دیتایل حدسی');d.formula_reason.setText('ورود صریح مصنوعی')
+  explicit_units={'طول':'m','عرض':'m','ارتفاع':'m','ضخامت':'m','تعداد':'عدد','وزن':'kg/m','بازشو':'m2'}
+  from core.takeoff.manual_form_fields import canonical
+  for name in variables:
+   combo=d.dynamic_units[canonical(name)];combo.setCurrentIndex(combo.findData(explicit_units[name]))
   click(d.formula_save_button,_qt);row=s.load_manual_formulas('P')['A'+str(i)];assert Decimal(str(row['quantity']))==Decimal(expected)
  for floor in ['طبقه۲','طبقه۳','طبقه۴','طبقه۵']:
   d.formula_search.setText('طبقه۱');_qt.processEvents();d.formula_table.setFocus();QTest.keyClick(d.formula_table,Qt.Key_A,Qt.ControlModifier);_qt.processEvents()
@@ -55,4 +59,4 @@ def test_real_qt_fourteen_operations_five_floors_and_all_reports(tmp_path,monkey
  for fmt,button in [('xlsx',d.formula_xlsx_button),('pdf',d.formula_pdf_button)]:
   path=tmp_path/('fivefloor.'+fmt);monkeypatch.setattr(QFileDialog,'getSaveFileName',lambda *a,p=path,**kw:(str(p),''));click(button,_qt);assert path.exists(),d.status.text()
  d.grab().save(str(tmp_path/'fivefloor.png'));(tmp_path/'scenario.json').write_text(json.dumps({'synthetic':True,'cases':CASES,'floors':5,'rows':70},ensure_ascii=False,indent=2))
- d.close();d.deleteLater();_qt.processEvents();s.store.close();s=StructuralProApp(tmp_path/'db');reg=s.load_manual_formulas('P');assert len(reg)==70 and all(r['status']=='committed' for r in reg.values());assert len(s.open_project('P')['boq'])==70;s.store.close()
+ d.close();d.deleteLater();_qt.processEvents();s.store.close();s=StructuralProApp(tmp_path/'db');reg=s.load_manual_formulas('P');assert len(reg)==70 and all(r['status']=='committed' for r in reg.values());assert all(r['data']['unit_policy']=='dimensional_decimal_v1' for r in reg.values());assert len(s.open_project('P')['boq'])==70;s.store.close()

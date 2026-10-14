@@ -5,7 +5,12 @@ from core.platform.application import StructuralProApp
 
 def data(**kw):
  d=dict(family='column',title='ستون مصنوعی',floor='اول',member='C1',unit='m3',expression='length*width*height',variables={'length':'10','width':'0.2','height':'3'},references={},source_id='manual:test:A',basis='ورودی صریح مصنوعی؛ طول و عرض و ارتفاع متر',deductions=[])
- d.update(kw);return d
+ d.update(kw)
+ if 'variable_units' not in kw:
+  explicit={'length':'m','width':'m','height':'m','طول':'m','عرض':'m','ارتفاع':'m','تعداد':'عدد'}
+  d['variable_units']={k:explicit[k] for k in d['variables'] if k in explicit}
+ d.setdefault('unit_policy','dimensional_decimal_v1')
+ return d
 
 def app(tmp_path):
  s=StructuralProApp(tmp_path);s.create_project('مصنوعی','P');return s

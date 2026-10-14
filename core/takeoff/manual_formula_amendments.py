@@ -37,6 +37,8 @@ def proposal(service,pid,key,data,*,expected_revision,created_by,reason):
     actor=text(created_by,'سازنده اصلاحیه');reason=text(reason,'علت اصلاح');project,token=read(service,pid);reg=verified(project);old=reg[key];revision(expected_revision,old['revision'])
     if old['status']!='committed':raise ValueError('اصلاحیه فقط برای ردیف قطعی است')
     d=clean(data)
+    if 'variable_units' not in d:raise ValueError('اصلاحیه تازه نیازمند واحد ساختاریافته و کنترل ابعادی است')
+    if 'variable_units' in old['data'] and 'variable_units' not in d:raise ValueError('حذف قرارداد واحد در اصلاحیه مجاز نیست')
     for field in ('source_id','family','unit','member','floor','references','block','location'):
         if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت، محل، واحد یا مراجع نیازمند گردش مستقل است')
     candidate=deepcopy(reg);candidate[key]['data']=d;values=evaluate_rows(graph(candidate))

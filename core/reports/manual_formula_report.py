@@ -7,7 +7,7 @@ from core.takeoff.manual_formula_register import load,catalog
 from core.commercial.exact_values import number,exact
 from core.reports.exporters import export_pdf
 
-UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن','عدد':'عدد','cm':'سانتی‌متر','mm':'میلی‌متر','cm2':'سانتی‌متر مربع','mm2':'میلی‌متر مربع','cm3':'سانتی‌متر مکعب','mm3':'میلی‌متر مکعب'}
+UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن','عدد':'عدد','cm':'سانتی‌متر','mm':'میلی‌متر','cm2':'سانتی‌متر مربع','mm2':'میلی‌متر مربع','cm3':'سانتی‌متر مکعب','mm3':'میلی‌متر مکعب','1':'بدون بُعد / ضریب','s':'ثانیه','min':'دقیقه','h':'ساعت','m/s':'متر بر ثانیه','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب'}
 STATES={'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','committed':'قطعی'}
 
 def safe_integer(v):
@@ -48,7 +48,7 @@ def export(service,pid,path,*,format):
         row=reg[key];d=row['data'];q=str(row['quantity']);unit=UNITS[d['unit']]
         entry=[key,d['floor'],d['member'],titles[d['family']],d['title'],q,unit,d['expression'],d['basis'],d['source_id'],str(row['revision']),STATES[row['status']],d.get('block',''),d.get('location','')];details.append(entry)
         if row['status']=='draft':unreviewed.append(entry)
-        for name,value in d['variables'].items():parameters.append([key,name,str(value),d['basis']])
+        for name,value in d['variables'].items():parameters.append([key,name,str(value),d['basis'],UNITS[d['variable_units'][name]] if 'variable_units' in d else 'نامشخص؛ نیازمند تعیین صریح و بازبینی',d.get('unit_policy','قرارداد تاریخی بدون کنترل ابعادی')])
         sources.append([key,d['source_id'],d['basis'],', '.join(d['references'].values()),row.get('review',{}).get('reviewer','')])
         for item in d['deductions']:deductions.append([key,item['id'],str(item['quantity']),UNITS[item['unit']],item['basis'],item.get('source_id',item['id'])])
         matched=[b for b in project.get('boq',[]) if d['source_id'] in b.get('source_ids',[]) or b.get('source_id')==d['source_id']]
@@ -56,7 +56,7 @@ def export(service,pid,path,*,format):
         for name,group in [('خلاصه متره','پروژه'),('هر طبقه',d['floor']),('هر آیتم',titles[d['family']]),('هر عضو',d['member'])]:summaries[name][(group,unit,row['status'])]+=number(row['quantity'],'جمع متره')
     for item in project.get('manual_formula_history',[]):history.append([item['row_id'],str(item['revision']),item['reason'],item['at']])
     headers=['شناسه','طبقه','عضو','خانواده','شرح','مقدار دقیق','واحد','فرمول','مبنا و واحد ورودی','منبع','نسخه','وضعیت','بلوک','محل اجرا']
-    datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا','منبع هندسی'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
+    datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا','واحد ساختاریافته','قرارداد واحد'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا','منبع هندسی'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
     for name,groups in summaries.items():datasets[name]=(['گروه','واحد','وضعیت','جمع دقیق'],[[a,b,STATES[c],str(v)] for (a,b,c),v in sorted(groups.items())])
     datasets['اصلاحیه قطعی']=(['شناسه اصلاحیه','ردیف','نسخه مبنا','علت','سازنده','بازبین','مقدار پیشنهادی','وضعیت'],[[a['id'],a['row_id'],str(a['base_revision']),a['reason'],a['created_by'],a.get('review',{}).get('reviewer',''),str(a['quantity']),{'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]] for a in project.get('manual_formula_amendments',{}).values()])
     from core.takeoff.manual_formula_deductions import summary as deduction_summary
@@ -84,7 +84,7 @@ def export(service,pid,path,*,format):
     calc=w.create_sheet('محاسبه امن');calc.sheet_view.rightToLeft=True
     for j,v in enumerate(['شناسه','مقدار دقیق مرجع','فرمول زنده یا مقدار دقیق','هشدار'],1):put(calc,1,j,v)
     parameter_locations={};pindex={}
-    for i,(key,name,value,basis) in enumerate(parameters,2):
+    for i,(key,name,value,basis,unit,policy) in enumerate(parameters,2):
         parameter_locations[(key,name)]=(f"'ورودی‌ها'!C{i}",value);pindex[(key,name)]=i
     cells={key:i+2 for i,key in enumerate(keys)};live={};active=set()
     def build(key):
@@ -92,6 +92,9 @@ def export(service,pid,path,*,format):
         if key in active:raise ValueError('حلقه')
         active.add(key);row=reg[key];d=row['data'];refs={}
         try:
+            if 'variable_units' in d:
+                from core.takeoff.units import unit_contract
+                if any(unit_contract(v)[1]!=1 for v in d['variable_units'].values()) or unit_contract(d['unit'])[1]!=1 or any(unit_contract(reg[t]['data']['unit'])[1]!=1 for t in d['references'].values()):raise ValueError('تبدیل واحد در فرمول زنده فعلی پشتیبانی نمی‌شود؛ مقدار دقیق متنی محفوظ است')
             for name,target in d['references'].items():
                 if build(target) is None:raise ValueError('مرجع فرمول زنده دقیق نیست')
                 refs[name]=(f"'محاسبه امن'!C{cells[target]}",reg[target]['quantity'])

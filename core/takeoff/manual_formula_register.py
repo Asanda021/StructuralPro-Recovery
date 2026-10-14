@@ -30,7 +30,7 @@ def revision(value,current):
 
 def clean(data):
     if not isinstance(data,dict):raise ValueError('ساختار ورودی فرمول نامعتبر است')
-    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions','block','location'}
+    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions','block','location','variable_units','unit_policy'}
     if set(data)-allowed:raise ValueError('فیلد تعریف‌نشده در قرارداد فرمول')
     d=deepcopy(data)
     for k,label in {'family':'خانواده','title':'شرح','floor':'طبقه','member':'شناسه عضو','expression':'فرمول','source_id':'منبع','basis':'مبنای محاسبه و واحد ورودی‌ها'}.items():d[k]=text(d.get(k),label)
@@ -42,6 +42,9 @@ def clean(data):
         if not isinstance(d.get(key),dict) or len(d[key])>128:raise ValueError('پارامترها و مراجع باید صریح باشند')
         if any(not isinstance(k,str) or not k.isidentifier() or len(k)>64 for k in d[key]):raise ValueError('نام پارامتر معتبر نیست')
     for k,v in d['variables'].items():number(v,'پارامتر '+k,True)
+    if 'variable_units' in d or 'unit_policy' in d:
+        if d.get('unit_policy')!='dimensional_decimal_v1' or not isinstance(d.get('variable_units'),dict) or set(d['variable_units'])!=set(d['variables']):raise ValueError('واحد ساختاریافته همه پارامترها باید صریح و نسخه‌دار باشد')
+        d['variable_units']={k:normalize_unit(v) for k,v in d['variable_units'].items()}
     for k,v in d['references'].items():d['references'][k]=text(v,'مرجع ردیف')
     deductions=d.get('deductions',[])
     if not isinstance(deductions,list) or len(deductions)>128:raise ValueError('فهرست کسورات نامعتبر است')
@@ -64,7 +67,7 @@ def clean(data):
     d['deductions']=deductions
     return d
 
-def graph(register):return {k:{'expression':r['data']['expression'],'variables':r['data']['variables'],'references':r['data']['references'],'unit':r['data']['unit']} for k,r in register.items()}
+def graph(register):return {k:{'expression':r['data']['expression'],'variables':r['data']['variables'],'references':r['data']['references'],'unit':r['data']['unit'],**{k:r['data'][k] for k in ('variable_units','unit_policy') if k in r['data']}} for k,r in register.items()}
 
 def fingerprints(register):
     out={}
@@ -111,6 +114,8 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
         text(key,'شناسه ردیف');old=register.get(key);
         if not old and key in project.get('manual_formula_deleted',{}):raise ValueError('شناسه حذف‌شده فقط با واگرد قابل بازیابی است')
         revision(expected_revisions[key],old['revision'] if old else 0);d=clean(data)
+        if 'variable_units' not in d:raise ValueError('ثبت یا ویرایش تازه نیازمند تعیین صریح واحد ساختاریافته همه پارامترها است')
+        if old and 'variable_units' in old['data'] and 'variable_units' not in d:raise ValueError('حذف قرارداد واحد ساختاریافته مجاز نیست')
         if old and old['status']=='committed':raise ValueError('ردیف قطعی قابل تغییر مستقیم نیست')
         if old and d['source_id']!=old['data']['source_id']:raise ValueError('هویت منبع در ویرایش قابل تغییر نیست')
         require_source_unused(project,d['source_id'])
@@ -143,14 +148,14 @@ def save(service,pid,key,data,*,expected_revision,reason):
 def bulk_edit(service,pid,keys,*,changes,expected_revisions,reason):
     reg=load(service,pid)
     if not keys or len(keys)!=len(set(keys)) or set(keys)!=set(expected_revisions):raise ValueError('انتخاب و نسخه‌ها باید یکتا باشند')
-    if not isinstance(changes,dict) or not changes or set(changes)-{'variables','floor','member','title'}:raise ValueError('فیلد گروهی مجاز نیست')
+    if not isinstance(changes,dict) or not changes or set(changes)-{'variables','variable_units','floor','member','title'}:raise ValueError('فیلد گروهی مجاز نیست')
     proposed={}
     for key in keys:
         row=reg[key];revision(expected_revisions[key],row['revision']);d=deepcopy(row['data'])
         for field,val in changes.items():
-            if field=='variables':
-                if not isinstance(val,dict) or not val or set(val)-set(d['variables']):raise ValueError('ویرایش گروهی فقط پارامتر موجود را تغییر می‌دهد')
-                d['variables'].update(val)
+            if field in {'variables','variable_units'}:
+                if not isinstance(val,dict) or not val or set(val)-set(d.get(field,{})):raise ValueError('ویرایش گروهی فقط پارامتر موجود را تغییر می‌دهد')
+                d[field].update(val)
             else:d[field]=val
         proposed[key]=d
     return save_many(service,pid,proposed,expected_revisions=expected_revisions,reason=reason)
@@ -174,11 +179,13 @@ def load(service,pid):return verified(read(service,pid)[0])
 def review(service,pid,key,*,expected_revision,reviewer,note):
     reviewer=text(reviewer,'بازبین');note=text(note,'یادداشت کنترل فرمول و واحد');project,digest=read(service,pid);reg=verified(project);row=reg[key];revision(expected_revision,row['revision'])
     if row['status']=='committed':raise ValueError('ردیف قطعی دوباره بازبینی نمی‌شود')
+    if 'variable_units' not in row['data']:raise ValueError('ردیف تاریخی بدون قرارداد واحد نیازمند مهاجرت صریح و بازبینی است')
     row.update(status='reviewed',review={'reviewer':reviewer,'note':note,'digest':fingerprints(reg)[key],'at':datetime.now(timezone.utc).isoformat()})
     project['manual_formula_register']=preserve_originals(project,reg);service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
 
 def commit(service,pid,key,*,expected_revision):
     project,digest=read(service,pid);reg=verified(project);r=reg[key];revision(expected_revision,r['revision'])
+    if 'variable_units' not in r['data']:raise ValueError('انتقال تازه بدون قرارداد واحد ساختاریافته مجاز نیست')
     if r['status']!='reviewed':raise ValueError('انتقال فقط برای فرمول بازبینی‌شده مجاز است')
     d=r['data'];sid=d['source_id'];amount=r['quantity']
     if number(amount,'مقدار')<=0:raise ValueError('مقدار انتقال باید مثبت باشد')
