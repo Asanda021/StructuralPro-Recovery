@@ -216,7 +216,9 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         dimensions["shape"]=selected_shape
         if active:
             d['measurement_policy']='column_specialist_v1';d['building_id']=building.text().strip();d['axis']=axis.text().strip()
-            dimensions.update(height=numeric['height'].text().strip(),variable_units={'width':'m','depth':'m','height':'m','count':'عدد'},repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
+            dimensions.update(height=numeric['height'].text().strip(),variable_units=({'diameter':'m','height':'m','count':'عدد'} if selected_shape=='circular_column' else {'width':'m','depth':'m','height':'m','count':'عدد'}),repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
+            for obsolete in (('width','depth','sections') if selected_shape=='circular_column' else ('diameter',)):
+                dimensions.pop(obsolete,None)
             if 'intersections' not in dimensions:raise ValueError('فهرست کسورات یا فهرست خالی صریح لازم است؛ ویرایش کسورات را باز کنید')
         before=d["geometry"]
         if dimensions!=before:
@@ -318,7 +320,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             shape.setCurrentIndex(max(shape.findData(geo.get("shape")),0))
             for key,w in numeric.items():
                 value=geo.get(key)
-                if value is not None and d.get('measurement_policy')=='column_specialist_v1' and key in ('width','depth','height'):
+                if value is not None and d.get('measurement_policy')=='column_specialist_v1' and key in ('width','depth','height','diameter'):
                     from core.takeoff.formulas import evaluate
                     value=evaluate('value',{'value':value},variable_units={'value':geo.get('variable_units',{}).get(key)},output_unit='m')
                 w.setText(str(value) if value is not None else '')
@@ -387,8 +389,30 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             name=detail.currentData();field='sections' if kind=='sections' else 'intersections' if kind=='intersections' else 'surfaces' if name=='formwork' else 'segments'
             target=d['geometry'] if kind else d['formwork'] if name=='formwork' else d['rebars'][name]
             editor_kind=kind or ('surfaces' if name=='formwork' else 'series')
-            extra=[(k,label) for k,label in [('shape_kind','نوع خاموت؛ مستطیلی'),('name','نام ناحیه'),('start_m','شروع متر'),('end_m','پایان متر'),('first_bar_m','اولین خاموت متر'),('last_bar_m','آخرین خاموت متر'),('spacing_m','فاصله واقعی متر')]] if name=='ties' and not kind else []
-            child=BeamComponentEditor(editor_kind,target.get(field,[]),dialog,extra_fields=extra);child.setWindowTitle('دیتایل صریح ستون')
+            circular=(d.get('geometry',{}).get('shape')=='circular_column' or
+                      shape.currentData()=='circular_column')
+            spiral=circular and name=='ties' and not kind
+            if spiral:
+                extra=[('shape_kind','شکل خاموت: مارپیچ'),('start_m','شروع ناحیه، متر'),
+                       ('end_m','پایان ناحیه، متر'),('pitch_m','گام، متر'),
+                       ('turns','تعداد دور صریح'),('axis_diameter_m','قطر مسیر محور، متر'),
+                       ('cover_m','پوشش، متر'),('end_condition','قرارداد انتهای مارپیچ'),
+                       ('end_condition_ref','مرجع انتهای مارپیچ')]
+            elif name=='ties' and not kind:
+                extra=[('shape_kind','شکل خاموت: مستطیلی'),('name','نام ناحیه'),
+                       ('start_m','شروع متر'),('end_m','پایان متر'),
+                       ('first_bar_m','اولین خاموت متر'),('last_bar_m','آخرین خاموت متر'),
+                       ('spacing_m','فاصله خاموت متر')]
+            elif circular and name=='formwork' and not kind:
+                extra=[('coverage','دامنه پوشش سطح جانبی'),
+                       ('area_method','روش محاسبه سطح جانبی'),
+                       ('approved_by','بازبین سطح')]
+            else:extra=[]
+            child=BeamComponentEditor(editor_kind,target.get(field,[]),dialog,
+                 extra_fields=extra,spiral_mode=spiral,
+                 spiral_column_diameter=numeric['diameter'].text().strip() if spiral else None,
+                 circular_formwork_mode=circular and name=='formwork' and not kind)
+            child.setWindowTitle('ویرایش مستند مارپیچ ستون' if spiral else 'دیتایل صریح ستون')
             if child.exec()!=QDialog.DialogCode.Accepted:return
             target[field]=child.rows;d.pop('component_review',None);state['dirty']=True
             if not kind:show_group()
@@ -430,7 +454,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     advanced.clicked.connect(lambda:edit_column());section_button.clicked.connect(lambda:edit_column('sections'));ded_button.clicked.connect(lambda:edit_column('intersections'));review_column.clicked.connect(review_current_column)
     for action,button in amend_buttons.items():button.clicked.connect(lambda _=False,a=action:amend_column(a))
     for fmt,button in reports.items():button.clicked.connect(lambda _=False,f=fmt:export_column(f))
-    dialog.column_controls={'scroll':scroll,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
+    dialog.column_controls={'scroll':scroll,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
     add.clicked.connect(lambda: detail_table.insertRow(detail_table.rowCount()))
     def remove_selected():
         selected=sorted({x.row() for x in detail_table.selectedIndexes()},reverse=True)

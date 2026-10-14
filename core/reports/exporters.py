@@ -275,6 +275,9 @@ def _pdf_column_plan(cols, rows, *, font, usable_width):
     for key, label in cols:
         values = [_display_value(row, key) for row in rows]
         numeric = bool(values) and all(_pdf_is_number(v) or v in (None, "") for v in values)
+        numeric_values = [v for v in values if _pdf_is_number(v)]
+        numeric_width = max((pdfmetrics.stringWidth(_pdf_text(v), font, 8)
+                             for v in numeric_values), default=0) + 18
         label_width = pdfmetrics.stringWidth(_pdf_text(label), font, 8) + 17
         if numeric:
             # Numeric cells must not soft-wrap into misleading digit fragments.
@@ -285,8 +288,12 @@ def _pdf_column_plan(cols, rows, *, font, usable_width):
             # Long prose wraps at words, but no arbitrary fixed minimum 1/N.
             preferred = 178 if key in ("description", "شرح", "source_id", "notes") else 96
             width = max(54, min(preferred, max(label_width, 68)))
+            # A detail column mixes source labels with exact engineering numbers.
+            # Its numeric cells still use the non-wrapping numeric paragraph.
+            if numeric_values:
+                width = max(width, numeric_width)
         if width > usable_width - 12:
-            if numeric:
+            if numeric_values:
                 raise ValueError("عدد مالی یا مهندسی برای عرض صفحه PDF بیش از حد طولانی است")
             width = usable_width - 12
         widths[key] = width
