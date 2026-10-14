@@ -12,7 +12,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton,
-    QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog,
+    QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog, QFileDialog,
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
@@ -35,6 +35,7 @@ class BeamDetailPanel(QWidget):
         self.service = service
         self.project_id_getter = project_id_getter
         self.drawing_context_getter = drawing_context_getter
+        self._advanced_geometry=False
         self.revision = 0
         self._loaded_identity = None
         self._segmented_kinds = set()
@@ -68,26 +69,33 @@ class BeamDetailPanel(QWidget):
                               ("تأییدکننده", self.reviewer)):
             identity_form.addRow(label, editor)
         column.addWidget(identity)
+        self.specialist_policy=QComboBox();self.specialist_policy.addItem('قرارداد تخصصی — کنترل دقیق و دیتایل صریح',True);self.specialist_policy.addItem('نمایش قرارداد تاریخی — نیازمند بازبینی',False)
+        self.plan_ref=QLineEdit();self.detail_ref=QLineEdit();identity_form.addRow('قرارداد متره',self.specialist_policy);identity_form.addRow('مرجع پلان',self.plan_ref);identity_form.addRow('مرجع دیتایل',self.detail_ref)
+        def scope():
+            c=QComboBox();c.addItem('دامنه را صریح انتخاب کنید',None);c.addItem('برای هر تیر هم‌تیپ', 'per_member');c.addItem('جمع کل گروه تیرها','total_group');return c
+        self.deduction_scope=scope();self.formwork_scope=scope();self.bar_scopes={};self.bar_positions={}
         self.geometry = {}
         box = QGroupBox("ابعاد و بتن تیر — واحد متر")
         f = QFormLayout(box)
         for key, label in (("length", "طول"), ("width", "عرض"),
                            ("depth", "ارتفاع مقطع"), ("count", "تعداد"),
                            ("deductions_m3", "کسر هم‌پوشانی (مترمکعب)"),
-                           ("source_ref", "مرجع دیتایل ابعاد")):
+                           ("source_ref", "مرجع دیتایل ابعاد"),("cover_m","پوشش بتن (متر)"),("cover_ref","مرجع پوشش"),("deduction_scope_ref","مرجع دامنه کسورات")):
             editor = QLineEdit()
             self.geometry[key] = editor
             f.addRow(label, editor)
+        f.addRow("دامنه کسورات",self.deduction_scope)
         column.addWidget(box)
         self.formwork = {}
         box = QGroupBox("قالب‌بندی — سطح خالص تأییدشده")
         f = QFormLayout(box)
         for key, label in (("net_area_m2", "مساحت خالص (مترمربع)"),
-                           ("source_ref", "مرجع سطوح قالب")):
+                           ("source_ref", "مرجع سطوح قالب"),("area_scope_ref","مرجع دامنه قالب")):
             editor = QLineEdit()
             self.formwork[key] = editor
             f.addRow(label, editor)
         column.addWidget(box)
+        f.addRow("دامنه مساحت قالب",self.formwork_scope)
         self.bars = {}
         for kind in BAR_TYPES:
             box = QGroupBox(BAR_LABELS[kind])
@@ -100,10 +108,14 @@ class BeamDetailPanel(QWidget):
             for field, label in (("count", "تعداد"), ("nominal_diameter_mm", "قطر اسمی از دیتایل (میلی‌متر)"), ("cut_length_m", "طول برش تأییدشده (متر)"),
                                  ("unit_weight_kg_m", "وزن واحد (کیلوگرم/متر)"),
                                  ("unit_weight_source", "مرجع وزن واحد میلگرد"),
-                                 ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد")):
+                                 ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد"),("id","شناسه مستقل میلگرد"),("cut_length_ref","مرجع طول محور برش و جزئیات خم/قلاب/مهار"),("count_scope_ref","مرجع دامنه تعداد")):
                 editor = QLineEdit()
                 widgets[field] = editor
                 form.addRow(label, editor)
+            self.bar_scopes[kind]=scope();form.addRow('دامنه تعداد',self.bar_scopes[kind])
+            position=QComboBox();position.addItem('موقعیت را انتخاب کنید',None)
+            for code,label in [('top','بالا'),('bottom','پایین'),('span','دهانه'),('support','تکیه‌گاه'),('side','کمرکش'),('crosstie','سنجاقی')]:position.addItem(label,code)
+            self.bar_positions[kind]=position;form.addRow('موقعیت میلگرد',position)
             self.bars[kind] = widgets
             if kind == "stirrups":
                 self.stirrup_zones_button = QPushButton("ویرایش نواحی چندبازه‌ای خاموت")
@@ -129,6 +141,9 @@ class BeamDetailPanel(QWidget):
         self.save_button.clicked.connect(self.save)
         self.preview_button.clicked.connect(self.preview)
         self.commit_button.clicked.connect(self.commit)
+        self.xlsx_button=QPushButton('ریزمتره تیر Excel');self.pdf_button=QPushButton('ریزمتره تیر PDF');buttons.addWidget(self.xlsx_button);buttons.addWidget(self.pdf_button)
+        self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
+        self.setLayoutDirection(Qt.RightToLeft)
         self.reset_form()
 
     def reset_form(self):
@@ -149,14 +164,15 @@ class BeamDetailPanel(QWidget):
         raw = value.strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789"))
         if not raw:
             return None
-        number = float(raw)
-        if integral and not number.is_integer():
+        from core.commercial.exact_values import number as parse,wire
+        number = parse(raw,'ورودی تیر',True)
+        if integral and number!=number.to_integral_value():
             raise ValueError("تعداد باید صحیح باشد")
-        return int(number) if integral else number
+        return int(number) if integral else wire(number)
 
     def _drawing_source(self):
         """Use exact drawing bytes and selected viewport rectangle, never guessed scale."""
-        context = self.drawing_context_getter()
+        context = self.drawing_context_getter() or {}
         path = Path(context.get("path", "")) if context.get("path") else None
         region = context.get("region")
         if not path or not path.is_file():
@@ -185,7 +201,7 @@ class BeamDetailPanel(QWidget):
         """Ask the engineer to select an evidence reference; never approve quantities."""
         try:
             _, _, beam_id = self._identity()
-            context = self.drawing_context_getter()
+            context = self.drawing_context_getter() or {}
             path = Path(context.get("path") or "")
             if not path.is_file():
                 raise ValueError("ابتدا نقشه PDF، DWG یا DXF را باز کنید")
@@ -337,7 +353,7 @@ class BeamDetailPanel(QWidget):
             if length is None or length <= 0:
                 raise ValueError("ابتدا طول واقعی تیر را وارد کنید")
             from app.beam_stirrup_zone_editor import StirrupZoneEditor
-            dialog = StirrupZoneEditor(beam_length_m=length, zones=self._stirrup_segments, parent=self)
+            dialog = StirrupZoneEditor(beam_length_m=length, zones=self._stirrup_segments, specialist=self.specialist_policy.currentData(), parent=self)
             if dialog.exec() != dialog.DialogCode.Accepted:
                 return
             self._stirrup_segments = deepcopy(dialog.zones)
@@ -352,18 +368,24 @@ class BeamDetailPanel(QWidget):
         draft = empty_beam(floor, beam)
         source = self._drawing_source()
         # Without a verified region, preserve a draft but never claim a drawing link.
+        if self.specialist_policy.currentData():
+            draft['measurement_policy']='beam_specialist_v1'
+            source.update(plan_ref=self.plan_ref.text().strip(),detail_ref=self.detail_ref.text().strip())
         draft["source"] = source
         reviewer = self.reviewer.text().strip()
         geometry = {"approved_by": reviewer, "source_ref": self.geometry["source_ref"].text().strip()}
-        for key in ("length", "width", "depth", "count", "deductions_m3"):
+        for key in ("length", "width", "depth", "count", "deductions_m3", "cover_m"):
             value = self._maybe_number(self.geometry[key].text(), integral=(key == "count"))
             if value is not None:
                 geometry[key] = value
+        if self.specialist_policy.currentData():geometry.update(variable_units={'length':'m','width':'m','depth':'m','count':'عدد'},cover_ref=self.geometry['cover_ref'].text().strip())
+        geometry.update(deduction_scope=self.deduction_scope.currentData(),deduction_scope_ref=self.geometry['deduction_scope_ref'].text().strip())
         draft["geometry"] = geometry
         formwork = {"approved_by": reviewer, "source_ref": self.formwork["source_ref"].text().strip()}
         area = self._maybe_number(self.formwork["net_area_m2"].text())
         if area is not None:
             formwork["net_area_m2"] = area
+        formwork.update(area_scope=self.formwork_scope.currentData(),area_scope_ref=self.formwork['area_scope_ref'].text().strip())
         draft["formwork"] = formwork
         for kind, widgets in self.bars.items():
             bar = {"status": widgets["status"].currentData()}
@@ -378,6 +400,8 @@ class BeamDetailPanel(QWidget):
                         bar[name] = value
             if bar["status"] in ("confirmed", "needs_review"):
                 bar["unit_weight_source"] = widgets["unit_weight_source"].text().strip()
+                bar.update(count_scope=self.bar_scopes[kind].currentData(),count_scope_ref=widgets['count_scope_ref'].text().strip())
+                if self.specialist_policy.currentData():bar.update(id=widgets['id'].text().strip(),position=self.bar_positions[kind].currentData(),cut_length_ref=widgets['cut_length_ref'].text().strip())
             if bar["status"] == "not_applicable":
                 bar["reason"] = widgets["reason"].text().strip()
             if kind == "stirrups" and self._stirrup_segments is not None:
@@ -414,6 +438,9 @@ class BeamDetailPanel(QWidget):
                 self.message.setText(f"{len(self._stirrup_segments)} ناحیه خاموت بارگذاری شد؛ جزئیات در ویرایشگر نواحی قابل اصلاح هستند.")
             if self._segmented_kinds:
                 self.message.setText("بازه‌های غیرخاموت در فرم ساده قابل ویرایش نیستند؛ اطلاعات پیشین محفوظ است.")
+            self._advanced_geometry=any(k in draft.get('geometry',{}) for k in ('sections','intersections')) or 'surfaces' in draft.get('formwork',{})
+            self.specialist_policy.setCurrentIndex(0 if draft.get('measurement_policy')=='beam_specialist_v1' else 1);self.plan_ref.setText(draft.get('source',{}).get('plan_ref',''));self.detail_ref.setText(draft.get('source',{}).get('detail_ref',''))
+            self.deduction_scope.setCurrentIndex(max(0,self.deduction_scope.findData(draft.get('geometry',{}).get('deduction_scope'))));self.formwork_scope.setCurrentIndex(max(0,self.formwork_scope.findData(draft.get('formwork',{}).get('area_scope'))))
             self.floor.setText(draft["floor_id"])
             self.beam.setText(draft["beam_id"])
             self.geometry["source_ref"].setText(str(draft.get("geometry", {}).get("source_ref", "")))
@@ -430,6 +457,8 @@ class BeamDetailPanel(QWidget):
                 for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m",
                               "unit_weight_source", "source_ref", "reason"):
                     widgets[field].setText(str(data.get(field, "")))
+                for field in ("id","cut_length_ref","count_scope_ref"):widgets[field].setText(str(data.get(field,"")))
+                self.bar_scopes[name].setCurrentIndex(max(0,self.bar_scopes[name].findData(data.get('count_scope'))));self.bar_positions[name].setCurrentIndex(max(0,self.bar_positions[name].findData(data.get('position'))))
             if record and record["status"] == "committed":
                 self.save_button.setEnabled(False)
                 self.commit_button.setEnabled(False)
@@ -443,6 +472,7 @@ class BeamDetailPanel(QWidget):
 
     def save(self):
         try:
+            if self._advanced_geometry:raise ValueError('هندسه یا سطوح ساختاریافته از فرم ساده قابل بازنویسی نیست؛ داده قبلی محفوظ است')
             project, draft = self._draft()
             if self._segmented_kinds:
                 raise ValueError("ویرایش بازه‌های غیرخاموت از این فرم پشتیبانی نمی‌شود؛ داده قبلی محفوظ است")
@@ -471,7 +501,7 @@ class BeamDetailPanel(QWidget):
         result = self.service.preview_beam_detail(project, floor, beam)
         if result["ready"]:
             self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
-                                 "؛ ".join(f"{x['description']}: {x['quantity']:.3f} {x['unit']}" for x in result["rows"]))
+                                 "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"]))
         else:
             self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
         return bool(result["ready"])
@@ -496,3 +526,10 @@ class BeamDetailPanel(QWidget):
             self.commit_button.setEnabled(False)
         except Exception as exc:
             QMessageBox.warning(self, "ثبت نهایی", str(exc))
+
+    def export(self,format):
+        try:
+            project,floor,beam=self._identity()
+            path,_=QFileDialog.getSaveFileName(self,'ریزمتره مستند تیر','',format.upper()+' (*.'+format+')')
+            if path:self.service.export_beam_detail_report(project,floor,beam,path,format=format);self.message.setText('گزارش از نسخه ذخیره‌شده تولید شد: '+path)
+        except Exception as exc:QMessageBox.warning(self,'گزارش تیر',str(exc))

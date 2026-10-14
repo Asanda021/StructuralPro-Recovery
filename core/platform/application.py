@@ -102,6 +102,10 @@ class StructuralProApp:
         self.store.save(project_id,project,expected_digest=digest)
         return deepcopy(review)
 
+    def export_beam_detail_report(self, project_id, floor_id, beam_id, path, *, format):
+        from core.reports.beam_detail_report import export
+        return export(self,project_id,floor_id,beam_id,path,format=format)
+
     def beam_detail_workflow(self):
         """Use the canonical SQLite project store and quantity engine for beam details."""
         from core.takeoff.beam_detail import BeamDetailWorkflow

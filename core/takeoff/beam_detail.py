@@ -13,6 +13,9 @@ import math
 from typing import Any
 
 from core.takeoff.boq import build_boq
+from core.takeoff.formulas import evaluate
+from core.commercial.exact_values import number as exact_number, wire, exact
+from core.takeoff.units import normalize_unit
 from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, require_reset_of_changed_approvals
 from core.drawings.beam_detail_match import validate_evidence_link
 from core.takeoff.stirrup_zones import validate_stirrup_zones
@@ -38,6 +41,10 @@ def _text(value: Any, label: str) -> str:
 
 
 def _number(value: Any, label: str, *, zero: bool = False, integer: bool = False) -> float:
+    if integer:
+        n=exact_number(value,label,True)
+        if n<n.__class__(0) or (n==0 and not zero) or n!=n.to_integral_value():raise ValueError(label+' باید صحیح و مثبت باشد')
+        return int(n)
     if isinstance(value, bool):
         raise ValueError(f"{label} باید عدد معتبر باشد")
     try:
@@ -104,6 +111,7 @@ def _validate_bar_shape(bars: dict[str, Any]) -> None:
                 raise ValueError("قطر اسمی میلگرد خارج از محدوده معتبر است")
 
 
+@exact
 def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
     """Return individually approved rows and blockers; never invent missing values.
 
@@ -114,10 +122,15 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
     _validate_bar_shape(bars)
     errors: list[str] = []
     rows: list[dict[str, Any]] = []
+    specialist=data.get('measurement_policy')=='beam_specialist_v1'
+    if data.get('measurement_policy') not in (None,'beam_specialist_v1'):errors.append('قرارداد متره تیر ناشناخته است')
+    physical_bars=set()
     source = data.get("source", {})
     try:
         _validate_source(source)
         validate_evidence_link(source, beam_id)
+        if specialist:
+            _text(source.get('plan_ref'),'مرجع پلان تیر');_text(source.get('detail_ref'),'مرجع دیتایل تیر')
     except ValueError as exc:
         errors.append(str(exc))
 
@@ -131,7 +144,34 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
         _text(geometry.get("source_ref"), "مرجع ابعاد تیر")
         dims = {key: _number(geometry.get(key), key) for key in ("length", "width", "depth")}
         dims["count"] = int(_number(geometry.get("count"), "تعداد تیر", integer=True))
+        member_count=dims['count']
+        if specialist:
+            cover=exact_number(geometry.get('cover_m'),'پوشش صریح بتن')
+            if cover<=0 or cover*2>=min(exact_number(geometry['width'],'عرض'),exact_number(geometry['depth'],'ارتفاع')):raise ValueError('پوشش بتن با مقطع تیر سازگار نیست')
+            _text(geometry.get('cover_ref'),'مرجع پوشش بتن')
+            expected={'length','width','depth','count'}
+            if not isinstance(geometry.get('variable_units'),dict) or set(geometry['variable_units'])!=expected:raise ValueError('واحدهای ساختاریافته ابعاد تیر ناقص‌اند')
+            if any(normalize_unit(geometry['variable_units'][k])!='m' for k in ('length','width','depth')) or normalize_unit(geometry['variable_units']['count'])!='عدد':raise ValueError('قرارداد ابعاد تیر متر و تعداد عدد است')
+        if 'sections' in geometry and not specialist:raise ValueError('مقطع متغیر نیازمند قرارداد تخصصی و نواحی مستند است')
         gross = engine.calculate("building", "beam", description=f"بتن تیر {beam_id}", **dims)
+        if specialist:
+            dims={k:wire(exact_number(geometry[k],'ابعاد '+k)) for k in ('length','width','depth','count')}
+            exact_gross=evaluate('length*width*depth*count',dims,variable_units=geometry['variable_units'],output_unit='m3')
+            checked_sections=[]
+            if 'sections' in geometry:
+                sections=geometry['sections']
+                if not isinstance(sections,list) or not sections or len(sections)>128:raise ValueError('نواحی مقطع تیر ناقص یا بیش از حدند')
+                previous=exact_number(0,'شروع');ids=set();volumes=[]
+                for part in sections:
+                    ident=_text(part.get('id'),'شناسه ناحیه مقطع');ref=_text(part.get('source_ref'),'مرجع ناحیه');_text(part.get('approved_by'),'بازبین ناحیه')
+                    start=exact_number(part.get('start_m'),'شروع ناحیه',True);end=exact_number(part.get('end_m'),'پایان ناحیه')
+                    if ident in ids or start!=previous or end<=start or end>exact_number(geometry['length'],'طول'):raise ValueError('ناحیه مقطع تکراری، دارای فاصله یا هم‌پوشانی است')
+                    for k in ('width_m','depth_m'):
+                        if exact_number(part.get(k),'بعد ناحیه')<=cover*2:raise ValueError('بعد ناحیه با پوشش سازگار نیست')
+                    q=evaluate('(end-start)*width*depth*count',{'end':str(end),'start':str(start),'width':part['width_m'],'depth':part['depth_m'],'count':member_count},variable_units={'end':'m','start':'m','width':'m','depth':'m','count':'عدد'},output_unit='m3')
+                    ids.add(ident);previous=end;volumes.append(exact_number(q,'حجم'));checked_sections.append({**deepcopy(part),'volume_m3':q})
+                if previous!=exact_number(geometry['length'],'طول'):raise ValueError('ناحیه‌های مقطع کل طول تیر را پوشش نمی‌دهند')
+                exact_gross=wire(sum(volumes,exact_number(0,'جمع')))
         if "intersections" in geometry:
             net, checked_intersections = net_concrete(gross.quantity, geometry["intersections"])
             deduction = gross.quantity - net
@@ -143,12 +183,23 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
             deduction = _number(geometry.get("deductions_m3"), "کسر هم‌پوشانی بتن", zero=True)
             net = gross.quantity - deduction
             checked_intersections = []
-        if not math.isfinite(net) or net <= 0:
+        if member_count>1 or specialist:
+            scope=geometry.get('deduction_scope')
+            if scope not in ('per_member','total_group'):raise ValueError('دامنه کسورات تیرهای هم‌تیپ باید صریح باشد')
+            _text(geometry.get('deduction_scope_ref'),'مرجع دامنه کسورات')
+            if scope=='per_member':deduction*=member_count;net=gross.quantity-deduction
+        if specialist:
+            if 'intersections' in geometry:
+                raw_ded=sum((exact_number(x['volume_m3'],'کسر') for x in geometry['intersections']),exact_number(0,'جمع'))
+            else:raw_ded=exact_number(geometry.get('deductions_m3'),'کسورات',True)
+            deduction=wire(raw_ded*(member_count if geometry['deduction_scope']=='per_member' else 1))
+            net=evaluate('gross-deduction',{'gross':exact_gross,'deduction':deduction},variable_units={'gross':'m3','deduction':'m3'},output_unit='m3')
+        if not math.isfinite(float(net)) or exact_number(net,'خالص',True) <= 0:
             raise ValueError("کسر هم‌پوشانی، حجم خالص بتن تیر را نامعتبر می‌کند")
         rows.append({"source_id": base_id+":concrete", "code": "beam", "domain": "building",
                      "description": f"بتن خالص تیر {beam_id}", "quantity": net, "unit": "m3",
-                     "formula": f"{gross.formula} − کسر هم‌پوشانی مستند {deduction:g} m³",
-                     "params": {**dims, "deductions_m3": deduction, "intersections": checked_intersections}})
+                     "formula": f"{gross.formula if not specialist or not checked_sections else 'جمع حجم ناحیه‌های مقطع مستند'} − کسر هم‌پوشانی مستند {deduction} m³",
+                     "params": {**dims, "deductions_m3": deduction, "intersections": checked_intersections,**({"gross_m3":exact_gross,"sections":checked_sections,"variable_units":geometry["variable_units"],"deduction_scope":geometry["deduction_scope"]} if specialist else {})}})
     except (ValueError, TypeError, KeyError) as exc:
         errors.append("بتن تیر: " + str(exc))
 
@@ -167,9 +218,18 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
         else:
             area = _number(formwork.get("net_area_m2"), "مساحت خالص قالب‌بندی")
             verified_faces = []
+        repeat=int(_number(geometry.get('count'),'تعداد تیر',integer=True))
+        scope=formwork.get('area_scope')
+        if repeat>1 or specialist:
+            if scope not in ('per_member','total_group'):raise ValueError('دامنه مساحت قالب تیرهای هم‌تیپ باید صریح باشد')
+            _text(formwork.get('area_scope_ref'),'مرجع دامنه مساحت قالب')
+            if scope=='per_member':area*=repeat
+        if specialist:
+            raw_area=sum((exact_number(face['net_area_m2'],'سطح') for face in formwork['surfaces']),exact_number(0,'جمع')) if 'surfaces' in formwork else exact_number(formwork['net_area_m2'],'سطح')
+            area=evaluate('area*repeat',{'area':str(raw_area),'repeat':repeat if scope=='per_member' else 1},variable_units={'area':'m2','repeat':'عدد'},output_unit='m2')
         rows.append({"source_id": base_id+":formwork", "code": "formwork", "domain": "building",
                      "description": f"قالب‌بندی تیر {beam_id}", "quantity": area, "unit": "m2",
-                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area, "surfaces": verified_faces}})
+                     "formula": "سطوح واقعی و تأییدشده در تماس با قالب", "params": {"net_area_m2": area, "surfaces": verified_faces,"area_scope":scope,"member_count":repeat}})
     except (ValueError, TypeError) as exc:
         errors.append("قالب‌بندی: " + str(exc))
 
@@ -189,7 +249,37 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                 _text(bar.get("source_ref"), "مرجع دیتایل میلگرد")
                 # Explicit segments support variable stirrup zones and differing bar sizes.
                 # Cut length includes reviewed hooks, laps and bends; never infer it from span.
-                segments = bar.get("segments", [bar])
+                repeat=int(_number(geometry.get('count'),'تعداد تیر',integer=True));scope=bar.get('count_scope')
+                if repeat>1 or specialist:
+                    if scope not in ('per_member','total_group'):raise ValueError('دامنه تعداد میلگرد تیرهای هم‌تیپ باید صریح باشد')
+                    _text(bar.get('count_scope_ref'),'مرجع دامنه تعداد میلگرد')
+                if specialist and kind=='stirrups' and 'segments' not in bar:raise ValueError('خاموت تخصصی نیازمند جانمایی و تعداد واقعی ناحیه‌ها است')
+                if specialist and repeat>1 and kind=='stirrups' and scope!='per_member':raise ValueError('جانمایی خاموت تکراری باید برای یک عضو با تکرار صریح باشد')
+                raw_segments=bar.get('segments',[bar])
+                if not isinstance(raw_segments,list) or not raw_segments:raise ValueError('بازه‌های میلگرد ناقص‌اند')
+                if len({json.dumps(x,sort_keys=True,ensure_ascii=False) for x in raw_segments})!=len(raw_segments):raise ValueError('بازه میلگرد عیناً تکرار شده است')
+                if specialist:
+                    for segment in raw_segments:
+                        ident=_text(segment.get('id'),'شناسه مستقل میلگرد')
+                        if ident in physical_bars:raise ValueError('شناسه میلگرد فیزیکی در گروه‌ها تکرار شده است')
+                        physical_bars.add(ident)
+                        diameter=_number(segment.get('nominal_diameter_mm'),'قطر مستند')
+                        if diameter>100:raise ValueError('قطر خارج از قرارداد معتبر است')
+                        _text(segment.get('cut_length_ref'),'مرجع طول برش محور شامل خم، قلاب و مهار')
+                        if 'length_parts_m' in segment and 'cut_length_m' in segment:raise ValueError('روش طول برش مبهم است؛ تنها یکی از طول مستقیم تأییدشده یا اجزای طول مجاز است')
+                        if kind=='stirrups':
+                            _text(segment.get('shape_ref'),'مرجع شکل خاموت');_text(segment.get('section_ref'),'مرجع ابعاد خاموت')
+                            if segment.get('shape_kind')!='rectangular':raise ValueError('شکل خاموت خارج از قرارداد این نوبت است')
+                            for field,limit in [('section_width_m',geometry['width']),('section_depth_m',geometry['depth'])]:
+                                size=exact_number(segment.get(field),'بعد واقعی خاموت')
+                                if size<=0 or size>exact_number(limit,'بعد تیر')-2*exact_number(geometry['cover_m'],'پوشش'):raise ValueError('ابعاد بیرونی خاموت با پوشش و مقطع تیر ناسازگار است')
+                            distance=evaluate('last-first',{'last':segment.get('last_bar_m'),'first':segment.get('first_bar_m')},variable_units={'last':'m','first':'m'},output_unit='m')
+                            travel=evaluate('(count-1)*spacing',{'count':segment.get('count'),'spacing':segment.get('spacing_m')},variable_units={'count':'عدد','spacing':'m'},output_unit='m')
+                            if exact_number(distance,'فاصله')!=exact_number(travel,'جانمایی'):raise ValueError('تعداد و جانمایی واقعی خاموت با فاصله صریح ناسازگار است')
+                        else:
+                            position=_text(segment.get('position'),'موقعیت مستقل میلگرد')
+                            if position not in ('top','bottom','span','support','side','crosstie'):raise ValueError('موقعیت میلگرد نامعتبر است')
+                segments = raw_segments
                 if kind == "stirrups" and "segments" in bar:
                     # A partial or overlapping zone schedule must never enter BOQ.
                     segments = validate_stirrup_zones(segments, geometry.get("length"))
@@ -223,12 +313,21 @@ def preview_beam(data: dict[str, Any], engine: Any) -> dict[str, Any]:
                             "name", "start_m", "end_m", "spacing_m", "first_bar_m", "last_bar_m")})
                     validated.append(segment_parameters)
                 total = math.fsum(quantities)
-                if not math.isfinite(total) or total <= 0:
+                if repeat>1 and scope=='per_member':total*=repeat
+                if specialist:
+                    weights=[]
+                    for raw,checked in zip(raw_segments,validated):
+                        cut=evaluate('+'.join('p'+str(i) for i in range(len(raw['length_parts_m']))),{'p'+str(i):part['length_m'] for i,part in enumerate(raw['length_parts_m'])},variable_units={'p'+str(i):'m' for i in range(len(raw['length_parts_m']))},output_unit='m') if 'length_parts_m' in raw else raw['cut_length_m']
+                        q=evaluate('count*cut*weight*repeat',{'count':raw['count'],'cut':cut,'weight':raw['unit_weight_kg_m'],'repeat':repeat if scope=='per_member' else 1},variable_units={'count':'عدد','cut':'m','weight':'kg/m','repeat':'عدد'},output_unit='kg')
+                        weights.append(exact_number(q,'وزن'));checked['cut']={**deepcopy(checked['cut']),'cut_length_m':cut,'length_parts_m':deepcopy(raw.get('length_parts_m',[]))};checked.update(id=raw['id'],nominal_diameter_mm=raw['nominal_diameter_mm'],position=raw.get('position','stirrup'),length=cut,unit_weight=raw['unit_weight_kg_m'],variable_units={'count':'عدد','length':'m','unit_weight':'kg/m'},cut_length_ref=raw['cut_length_ref'],**{k:raw[k] for k in ('shape_kind','shape_ref','section_width_m','section_depth_m','section_ref') if k in raw})
+                    total=wire(sum(weights,exact_number(0,'جمع')))
+
+                if exact_number(total,'وزن کل',True) <= 0:
                     raise ValueError("مجموع وزن میلگرد معتبر نیست")
                 rows.append({"source_id": base_id+":"+kind, "code": "rebar", "domain": "building",
                              "description": f"{BAR_LABELS[kind]} تیر {beam_id}", "quantity": total,
                              "unit": "kg", "formula": "جمع (تعداد × طول برش × وزن واحد) بازه‌های تأییدشده",
-                             "params": {"segments": validated}})
+                             "params": {"segments": validated,"count_scope":scope,"member_count":repeat}})
             except (ValueError, TypeError, KeyError) as exc:
                 errors.append(f"{BAR_LABELS[kind]}: {exc}")
         else:
@@ -281,6 +380,7 @@ class BeamDetailWorkflow:
             raise ValueError("ساختار دفتر متره تیر معتبر نیست")
         key = _beam_key(floor_id, beam_id)
         previous = register.get(key)
+        if previous and previous["data"].get("measurement_policy")=="beam_specialist_v1" and draft.get("measurement_policy")!="beam_specialist_v1":raise ValueError("حذف قرارداد تخصصی تیر مجاز نیست")
         if previous and previous.get("status") == "committed":
             raise ValueError("تیر به ریزمتره منتقل شده؛ تغییر آن نیازمند فرایند اصلاح نسخه است")
         revision = previous.get("revision", 0) if previous else 0
