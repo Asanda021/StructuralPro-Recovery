@@ -410,6 +410,67 @@ class ReviewedStructuralWorkflow:
                 "takeoff_rows": len(report["rows"]), "source_ids": sorted(ids)}
 
 
+# Circular-column geometry is a versioned subset of the existing column contract.
+# PI is a fixed explicit 50-decimal approximation, not an exact real number.
+# Square roots in helix geometry use a documented 50-significant-digit
+# ROUND_HALF_EVEN policy; all non-irrational arithmetic remains Decimal.
+from decimal import (
+    Decimal as _D, localcontext as _localcontext,
+    ROUND_HALF_EVEN as _HALF_EVEN, Inexact as _Inexact, Rounded as _Rounded,
+)
+
+_CIRCULAR_PI = _D('3.14159265358979323846264338327950288419716939937510')
+_CIRCULAR_PI_POLICY = 'pi_fixed_50_decimal_v1'
+_HELIX_LENGTH_POLICY = 'decimal_sqrt_50_sig_half_even_v1'
+
+
+def _reviewed_spiral_length(part, column_diameter, *, check, require):
+    """Helical centreline length from an explicit reviewed pitch/turn schedule.
+
+    Does not infer the number of turns, end details, hooks or extra bars.
+    Adjacent half-open axial zones share a point, not a measurable length.
+    """
+    if part.get('shape_kind') != 'spiral':
+        raise ValueError('نوع خاموت مارپیچ معتبر نیست')
+    if 'cut_length_m' in part or 'length_parts_m' in part:
+        raise ValueError('برش دستی با محاسبه محور مارپیچ نباید ترکیب شود')
+    start = check(part.get('start_m'),'شروع ناحیه',True)
+    end = check(part.get('end_m'),'پایان ناحیه')
+    pitch = check(part.get('pitch_m'),'گام مارپیچ')
+    turns = check(part.get('turns'),'تعداد دور مارپیچ',integer=True)
+    axis = check(part.get('axis_diameter_m'),'قطر محور مارپیچ')
+    cover = check(part.get('cover_m'),'پوشش مستند')
+    bar_diameter = check(part.get('nominal_diameter_mm'),'قطر میلگرد')/_D(1000)
+    if end <= start or end-start != turns*pitch:
+        raise ValueError('ارتفاع ناحیه، گام و تعداد دور صریح ناسازگارند')
+    if axis + bar_diameter + 2*cover != column_diameter:
+        raise ValueError('قطر محور، پوشش و قطر میلگرد با ستون ناسازگارند')
+    require(part.get('cut_length_ref'),'مرجع طول هندسی مارپیچ')
+    require(part.get('end_condition_ref'),'مرجع جزئیات انتهای مارپیچ')
+    extras=part.get('end_parts_m')
+    if not isinstance(extras,list):raise ValueError('اجزای انتهایی مارپیچ باید صریح باشند')
+    if not extras and part.get('end_condition')!='no_extension_reviewed':
+        raise ValueError('نبود طول اضافی انتهایی نیازمند تأیید صریح است')
+    if extras and part.get('end_condition')!='detailed_extensions':
+        raise ValueError('قرارداد اجزای انتهایی مارپیچ مشخص نیست')
+    from core.takeoff.reviewed_components import PARTS
+    extra=_D(0)
+    for piece in extras:
+        if not isinstance(piece,dict) or piece.get('kind') not in PARTS:
+            raise ValueError('نوع جزء انتهایی نامعتبر است')
+        require(piece.get('source_ref'),'مرجع جزء انتهایی')
+        extra += check(piece.get('length_m'),'طول جزء انتهایی')
+    # Decimal sqrt is irrational in general: the only intentional rounding
+    # boundary, to 50 significant digits, is isolated from @exact traps.
+    with _localcontext() as ctx:
+        ctx.prec=50
+        ctx.rounding=_HALF_EVEN
+        ctx.traps[_Inexact]=False
+        ctx.traps[_Rounded]=False
+        length_per_turn = ((_CIRCULAR_PI*axis)**2+pitch**2).sqrt()
+    return start,end,turns*length_per_turn+extra
+
+
 # Contract adapter over the shared dimensional AST/Decimal evaluator. No new engine.
 from core.commercial.exact_values import exact as _exact,number as _decimal,wire as _wire
 
@@ -447,6 +508,15 @@ def _preview_column_specialist(data,engine):
         if g.get('shape')=='rectangular':
             num(g.get('width'),'عرض');num(g.get('depth'),'عمق')
             gross=calc('width*depth*height*count',{k:g.get(k) for k in ('width','depth','height','count')},{k:units.get(k) for k in ('width','depth','height','count')},'m3');num(gross,'حجم')
+        elif g.get('shape')=='circular_column':
+            if any(k in g for k in ('width','depth','sections')):
+                raise ValueError('ابعاد مستطیلی و دایره‌ای نباید ترکیب شوند')
+            diameter=calc('diameter',{'diameter':g.get('diameter')},{'diameter':units.get('diameter')},'m')
+            num(diameter,'قطر ستون')
+            gross=calc('pi*diameter**2*height*count/4',
+                       {'pi':str(_CIRCULAR_PI),'diameter':str(diameter),'height':str(height),'count':str(n)},
+                       {'pi':'1','diameter':'m','height':'m','count':'عدد'},'m3')
+            num(gross,'حجم ستون دایره‌ای')
         elif g.get('shape')=='reviewed_sections':
             parts=g.get('sections');seen=set();cursor=_decimal(0,'شروع محور');gross=_decimal(0,'جمع')
             if not isinstance(parts,list) or not parts:raise ValueError('نواحی مقطع واقعی لازم است')
@@ -467,7 +537,7 @@ def _preview_column_specialist(data,engine):
             seen.add(ident);ded+=num(p.get('volume_m3'),'کسر حجم')
         if g['intersection_scope']=='per_member':ded*=n
         net=gross-ded;num(net,'بتن خالص')
-        rows.append({'source_id':prefix+':concrete','item':'column','code':'concrete','domain':'building','description':'بتن ستون '+member,'quantity':_wire(net),'unit':'m3','formula':'جمع حجم نواحی واقعی × تعداد − کسورات مستند','params':{'gross_m3':_wire(gross),'net_m3':_wire(net),'deductions_m3':_wire(ded),'intersections':deepcopy(deductions),'geometry':deepcopy(g),'building_id':data['building_id'],'axis':data['axis']}})
+        rows.append({'source_id':prefix+':concrete','item':'column','code':'concrete','domain':'building','description':'بتن ستون '+member,'quantity':_wire(net),'unit':'m3','formula':('π ثابت ۵۰رقمی × قطر² × ارتفاع × تعداد / ۴ − کسورات مستند' if g.get('shape')=='circular_column' else 'جمع حجم نواحی واقعی × تعداد − کسورات مستند'),'params':{'gross_m3':_wire(gross),'net_m3':_wire(net),'deductions_m3':_wire(ded),'intersections':deepcopy(deductions),'geometry':deepcopy(g),'building_id':data['building_id'],'axis':data['axis'],**({'pi_policy':_CIRCULAR_PI_POLICY} if g.get('shape')=='circular_column' else {})}})
     except (ValueError,TypeError,KeyError) as e:errors.append('بتن و منشأ: '+str(e));n=None;height=None
     try:
         if n is None:raise ValueError('تعداد معتبر برای محاسبه قالب موجود نیست')
@@ -478,13 +548,26 @@ def _preview_column_specialist(data,engine):
             if scope not in ('per_member','total_group'):raise ValueError('دامنه قالب صریح لازم است')
             faces=f.get('surfaces');seen=set();area=_decimal(0,'جمع');grossarea=_decimal(0,'جمع')
             if not isinstance(faces,list) or not faces:raise ValueError('سطوح واقعی لازم است')
-            if not {'side1','side2','side3','side4'}<=set(v.get('role') for v in faces):raise ValueError('هر چهار وجه ستون، حتی وجه بدون تماس، باید صریح اعلام شود')
+            circular=data['geometry'].get('shape')=='circular_column'
+            if circular:
+                if len(faces)!=1 or faces[0].get('role')!='curved_wall':
+                    raise ValueError('قالب دایره‌ای ساده باید یک سطح جانبی کامل و صریح داشته باشد')
+            elif not {'side1','side2','side3','side4'}<=set(v.get('role') for v in faces):
+                raise ValueError('هر چهار وجه ستون، حتی وجه بدون تماس، باید صریح اعلام شود')
             for face in faces:
                 reviewed(face);ident=text(face.get('id'),'شناسه سطح')
                 if ident in seen:raise ValueError('سطح تکراری')
                 seen.add(ident)
                 if type(face.get('contact')) is not bool:raise ValueError('تماس واقعی قالب باید صریح باشد')
-                value=num(face.get('gross_area_m2'),'سطح ناخالص');grossarea+=value;loss=_decimal(0,'جمع');subseen=set()
+                if circular:
+                    if face.get('coverage')!='full_lateral' or face.get('area_method')!='circular_lateral' or 'gross_area_m2' in face:
+                        raise ValueError('سطح جانبی دایره‌ای باید از قطر و ارتفاع مستند محاسبه شود')
+                    diameter=calc('diameter',{'diameter':data['geometry'].get('diameter')},
+                                  {'diameter':data['geometry'].get('variable_units',{}).get('diameter')},'m')
+                    value=calc('pi*diameter*height',{'pi':str(_CIRCULAR_PI),'diameter':str(diameter),'height':str(height)},
+                               {'pi':'1','diameter':'m','height':'m'},'m2')
+                else:value=num(face.get('gross_area_m2'),'سطح ناخالص')
+                grossarea+=value;loss=_decimal(0,'جمع');subseen=set()
                 for p in face.get('deductions',[]):
                     reviewed(p);pid=text(p.get('id'),'شناسه کسر سطح')
                     if pid in subseen:raise ValueError('کسر سطح تکراری')
@@ -508,27 +591,45 @@ def _preview_column_specialist(data,engine):
             if not isinstance(series,list) or not series:raise ValueError('سری واقعی لازم است')
             if group=='ties':
                 if scope!='per_member':raise ValueError('جانمایی خاموت باید برای یک ستون باشد')
-                normalized=deepcopy(series)
-                for p in normalized:p['cut_length_m']=str(cutting(p))
-                validate_stirrup_zones(normalized,str(height))
+                circular=data['geometry'].get('shape')=='circular_column'
+                if circular:
+                    if not all(p.get('shape_kind')=='spiral' for p in series):
+                        raise ValueError('ستون دایره‌ای در این قرارداد فقط مارپیچ مستند دارد')
+                else:
+                    normalized=deepcopy(series)
+                    for p in normalized:p['cut_length_m']=str(cutting(p))
+                    validate_stirrup_zones(normalized,str(height))
                 cursor=_decimal(0,'شروع');last=None
                 for p in series:
-                    if p.get('shape_kind')!='rectangular':raise ValueError('قرارداد خاموت این نوبت فقط مستطیلی است؛ مارپیچ مسدود')
-                    start=num(p.get('start_m'),'شروع ناحیه',True);end=num(p.get('end_m'),'پایان ناحیه');first=num(p.get('first_bar_m'),'اولین خاموت',True);final=num(p.get('last_bar_m'),'آخرین خاموت',True)
-                    if start!=cursor or end<=start or first<start or final>end or (last is not None and first<=last):raise ValueError('مرز یا جانمایی واقعی خاموت تکراری/ناسازگار است')
-                    cursor=end;last=final
+                    if circular:
+                        diameter=calc('diameter',{'diameter':data['geometry'].get('diameter')},
+                                      {'diameter':data['geometry'].get('variable_units',{}).get('diameter')},'m')
+                        start,end,_=_reviewed_spiral_length(p,diameter,check=num,require=text)
+                        if start!=cursor or end<=start:raise ValueError('مرز نواحی مارپیچ فاصله یا هم‌پوشانی دارد')
+                        cursor=end
+                    else:
+                        if p.get('shape_kind')!='rectangular':raise ValueError('قرارداد خاموت مستطیلی فقط شکل مستطیلی دارد')
+                        start=num(p.get('start_m'),'شروع ناحیه',True);end=num(p.get('end_m'),'پایان ناحیه');first=num(p.get('first_bar_m'),'اولین خاموت',True);final=num(p.get('last_bar_m'),'آخرین خاموت',True)
+                        if start!=cursor or end<=start or first<start or final>end or (last is not None and first<=last):raise ValueError('مرز یا جانمایی واقعی خاموت تکراری/ناسازگار است')
+                        cursor=end;last=final
                 if cursor!=height:raise ValueError('نواحی خاموت ارتفاع واقعی را پوشش نمی‌دهند')
             mass=_decimal(0,'جمع')
             for p in series:
                 reviewed(p);ident=text(p.get('id'),'شناسه فیزیکی میلگرد')
                 if ident in physical:raise ValueError('میلگرد فیزیکی تکراری است')
                 physical.add(ident);num(p.get('nominal_diameter_mm'),'قطر');text(p.get('shape_ref'),'شکل');text(p.get('cut_length_ref'),'مرجع برش');text(p.get('unit_weight_source'),'مرجع وزن واحد');count=num(p.get('count'),'تعداد',integer=True);weight=num(p.get('unit_weight_kg_m'),'وزن واحد')
-                cut=cutting(p)
-                if group=='ties':
+                if group=='ties' and data['geometry'].get('shape')=='circular_column':
+                    if count!=1:raise ValueError('هر ناحیه مارپیچ یک قطعه فیزیکی مستقل و صریح دارد')
+                    diameter=calc('diameter',{'diameter':data['geometry'].get('diameter')},
+                                  {'diameter':data['geometry'].get('variable_units',{}).get('diameter')},'m')
+                    _,_,cut=_reviewed_spiral_length(p,diameter,check=num,require=text)
+                else:
+                    cut=cutting(p)
+                if group=='ties' and data['geometry'].get('shape')!='circular_column':
                     distance=num(p['last_bar_m'],'آخرین خاموت',True)-num(p['first_bar_m'],'اولین خاموت',True)
                     if distance!=(count-1)*num(p['spacing_m'],'فاصله'):raise ValueError('تعداد و جانمایی خاموت ناسازگار')
                 mass+=calc('count*cut*weight',{'count':str(count),'cut':str(cut),'weight':str(weight)},{'count':'عدد','cut':'m','weight':'kg/m'},'kg')
             if scope=='per_member':mass*=n
-            rows.append({'source_id':prefix+':rebar:'+group,'item':'rebar','code':'rebar','domain':'building','description':{'longitudinal':'میلگرد طولی','ties':'خاموت','crossties':'سنجاقی','starters':'انتظار و وصله'}[group]+' ستون '+member,'quantity':_wire(mass),'unit':'kg','formula':'تعداد صریح × برش مستند × وزن واحد × دامنه','params':{'series':deepcopy(series),'count_scope':scope}})
+            rows.append({'source_id':prefix+':rebar:'+group,'item':'rebar','code':'rebar','domain':'building','description':{'longitudinal':'میلگرد طولی','ties':'خاموت','crossties':'سنجاقی','starters':'انتظار و وصله'}[group]+' ستون '+member,'quantity':_wire(mass),'unit':'kg','formula':'تعداد صریح × برش مستند × وزن واحد × دامنه','params':{'series':deepcopy(series),'count_scope':scope,**({'helix_length_policy':_HELIX_LENGTH_POLICY,'pi_policy':_CIRCULAR_PI_POLICY} if group=='ties' and data['geometry'].get('shape')=='circular_column' else {})}})
         except (ValueError,TypeError,KeyError) as e:errors.append('میلگرد '+group+': '+str(e))
     return {'kind':'column','floor_id':floor,'member_id':member,'source_id':data.get('source',{}).get('source_id'),'ready':not errors,'blockers':errors,'rows':rows,'preview_only':True}
