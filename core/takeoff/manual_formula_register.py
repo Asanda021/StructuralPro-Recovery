@@ -57,6 +57,12 @@ def clean(data):
         if 'source_id' in item:text(item['source_id'],'منبع هندسی کسر')
         if not isinstance(variable,str) or not variable.isidentifier() or variable not in d['variables'] or number(d['variables'][variable],'پارامتر کسر')!=number(item['quantity'],'کسر'):
             raise ValueError('کسر باید به پارامتر همنام و مقدار دقیق در فرمول متصل باشد')
+        # A quantity documented in m3 cannot be subtracted as the same numeric
+        # value in cm3: both share a dimension, but their physical amounts differ.
+        # The deduction variable is an exact *unconverted* copy of item.quantity.
+        # Fail closed on any scale mismatch instead of silently changing the BOQ.
+        if 'variable_units' in d and d['variable_units'].get(variable)!=normalize_unit(item['unit']):
+            raise ValueError('واحد پارامتر کسر باید دقیقاً با واحد مستند کسر برابر باشد')
         try:tree=ast.parse(d['expression'],mode='eval')
         except (SyntaxError,ValueError) as exc:raise ValueError('فرمول کسر معتبر نیست') from exc
         subtracts=[n for n in ast.walk(tree) if isinstance(n,ast.BinOp) and isinstance(n.op,ast.Sub) and isinstance(n.right,ast.Name) and n.right.id==variable]
