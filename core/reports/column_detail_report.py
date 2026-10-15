@@ -55,9 +55,5 @@ def export(service,pid,floor,member,path,*,format,kind="column"):
  destination=Path(path);destination.parent.mkdir(parents=True,exist_ok=True)
  with TemporaryDirectory(dir=destination.parent) as folder:
   temporary=Path(folder)/'column.xlsx';export_xlsx(rows,temporary,**kwargs);book=load_workbook(temporary)
-  for sheet in book:
-   for row in sheet:
-    for cell in row:
-     if cell.value is not None:cell.value=str(cell.value);cell.data_type='s'
   book.save(destination)
  return destination

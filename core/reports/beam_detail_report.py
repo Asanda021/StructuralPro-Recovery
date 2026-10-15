@@ -35,10 +35,6 @@ def export(service,pid,floor,beam,path,*,format):
   with TemporaryDirectory(dir=destination.parent) as folder:
    temp=Path(folder)/'beam.xlsx';fn(rows,temp,title='ریزمتره مستند تیر '+beam,columns=[('component','جزء تیر'),('field','عنوان'),('value','مقدار و مرجع')])
    book=load_workbook(temp)
-   for sheet in book:
-    for rr in sheet:
-     for cell in rr:
-      if cell.value is not None:cell.value=str(cell.value);cell.data_type='s'
    book.save(destination)
   return destination
  return fn(rows,path,title='ریزمتره مستند تیر '+beam,columns=[('component','جزء تیر'),('field','عنوان'),('value','مقدار و مرجع')])

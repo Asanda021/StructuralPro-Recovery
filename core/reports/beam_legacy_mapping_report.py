@@ -25,10 +25,6 @@ def export(service,pid,path,*,format):
   destination=Path(path);destination.parent.mkdir(parents=True,exist_ok=True)
   with TemporaryDirectory(dir=destination.parent) as folder:
    temporary=Path(folder)/'mapping.xlsx';fn(rows,temporary,**kwargs);book=load_workbook(temporary)
-   for sheet in book:
-    for cells in sheet:
-     for cell in cells:
-      if cell.value is not None:cell.value=str(cell.value);cell.data_type='s'
    book.save(destination)
   return destination
  return fn(rows,path,**kwargs)

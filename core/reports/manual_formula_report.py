@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from core.takeoff.manual_formula_register import load,catalog
 from core.commercial.exact_values import number,exact
-from core.reports.exporters import export_pdf
+from core.reports.exporters import export_pdf,write_excel_cell,style_workbook
 
 UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن','عدد':'عدد','cm':'سانتی‌متر','mm':'میلی‌متر','cm2':'سانتی‌متر مربع','mm2':'میلی‌متر مربع','cm3':'سانتی‌متر مکعب','mm3':'میلی‌متر مکعب','1':'بدون بُعد / ضریب','s':'ثانیه','min':'دقیقه','h':'ساعت','m/s':'متر بر ثانیه','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب'}
 STATES={'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','committed':'قطعی'}
@@ -75,7 +75,7 @@ def export(service,pid,path,*,format):
     from openpyxl.styles import Alignment,Font
     w=Workbook();w.remove(w.active)
     def put(sheet,row,col,val,formula=False):
-        cell=sheet.cell(row,col);cell.value=val if formula else str(val);cell.data_type='f' if formula else 's';cell.alignment=Alignment(horizontal='right',readingOrder=2,wrap_text=True);cell.font=Font(name='DejaVu Sans',size=10)
+        cell=sheet.cell(row,col);label=str(sheet.cell(1,col).value or '');numeric=any(x in label for x in ('مقدار','جمع','نسخه','پارامتر')) and not any(x in label for x in ('شناسه','منبع','فرمول','پارامتر'));write_excel_cell(cell,val,numeric=numeric,formula=formula);cell.alignment=Alignment(horizontal='right',readingOrder=2,wrap_text=True);cell.font=Font(name='DejaVu Sans',size=10)
     for name,(cols,records) in datasets.items():
         sheet=w.create_sheet(name);sheet.sheet_view.rightToLeft=True;sheet.freeze_panes='A2';sheet.auto_filter.ref=f'A1:{__import__("openpyxl").utils.get_column_letter(len(cols))}{len(records)+1}'
         for i,values in enumerate([cols]+records,1):
@@ -108,4 +108,4 @@ def export(service,pid,path,*,format):
     for key in keys:
         i=cells[key];row=reg[key];put(calc,i,1,key);put(calc,i,2,str(row['quantity']));put(calc,i,3,live[key] or str(row['quantity']),formula=bool(live[key]));put(calc,i,4,'دقت متنی محفوظ؛ فرمول زنده به‌علت محدودیت دقت یا عملیات Excel مسدود است' if not live[key] else 'ورودی و تمام نتایج صحیح کمتر از15رقم؛ Excel واقعی باید بازحساب شود؛ تغییر فایل BOQ را تغییر نمی‌دهد')
     from openpyxl.workbook.properties import CalcProperties
-    w.calculation=CalcProperties(fullCalcOnLoad=True,forceFullCalc=True,calcMode='auto');w.save(path);return path
+    w.calculation=CalcProperties(fullCalcOnLoad=True,forceFullCalc=True,calcMode='auto');style_workbook(w,'متره دستی مستند — '+project['name']);w.save(path);return path
