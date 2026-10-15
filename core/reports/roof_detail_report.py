@@ -2,7 +2,7 @@
 from decimal import Decimal
 from core.commercial.exact_values import wire,exact
 from core.reports.exporters import export_pdf,export_xlsx,export_docx,export_csv
-from core.takeoff.roof_detail import preview,POLICY,LABELS,HOLLOW_KIND
+from core.takeoff.roof_detail import preview,POLICY,LABELS,HOLLOW_KIND,VOID_KINDS
 from core.takeoff.reviewed_aec import SPECS,_id
 
 
@@ -16,6 +16,11 @@ def export(service,pid,kind,floor,sid,path,*,format):
  for v in result['rows']:
   params=v['params'];notes='ورودی‌ها برای هر سقف هم‌تیپ؛ مرجع: '+str(v['source_ref'])+'؛ نقش: '+('عملیات قابل پرداخت مستقل' if v['role']=='work' else ('قطعات قالب وافل؛ بدون استنتاج سطح تماس یا نرخ مالی' if v['item_code']=='waffle_molds' else 'مصالح داخل تیرچه خریداری‌شده؛ غیرقابل پرداخت مستقل'))
   if kind==HOLLOW_KIND and v['role']!='work':notes='ورودی مستند هر سقف هم‌تیپ؛ غیرقابل پرداخت مستقل؛ مرجع: '+str(v['source_ref'])
+  if 'void_former' in params:
+   v=params['void_former']
+   notes+='؛ شناسه حفره‌ساز: '+str(v['id'])+'؛ سلول: '+str(v['region_id'])+'؛ هندسه: '+str(v['shape'])+'؛ مقدار گواهی‌شده کسر حفره (مترمکعب): '+str(v['certified_void_volume_m3'])+'؛ مرجع حجم: '+str(v['volume_source_ref'])+'؛ گواهی محصول: '+str(v['spec_ref'])+'؛ جانمایی: '+str(v['source_ref'])
+   for key,label in (('x','شروع طول'),('y','شروع عرض'),('z','تراز ابتدا'),('length','طول پوش'),('width','عرض پوش'),('height','ارتفاع پوش'),('diameter_m','قطر کروی')):
+    if v.get(key) not in (None,''):notes+='؛ '+label+': '+str(v[key])
   if 'panel' in params:
    p=params['panel'];notes+='؛ قطعه: '+p['id']+'؛ مقطع: '+p['spec_ref']+'؛ مدرک قطعه نهایی: '+p['fabrication_ref']+'؛ حجم حفره (متر مکعب): '+str(p['void_volume_m3'])+'؛ منبع حفره: '+p['void_source_ref']
    for key,label in [('length','طول (متر)'),('width','عرض (متر)'),('height','ارتفاع (متر)'),('net_volume_m3','حجم خالص گواهی‌شده'),('volume_source_ref','منبع حجم خالص'),('unit_mass_kg','جرم کل شامل فولاد کارخانه‌ای (کیلوگرم)'),('mass_source_ref','منبع جرم')]:
@@ -47,9 +52,13 @@ def export(service,pid,kind,floor,sid,path,*,format):
    rows.append({'description':'مقایسه مقدار پیشین، پیشنهادی و اختلاف اصلاحیه','quantity':delta,'unit':old.get('unit') or new.get('quantities',[{}])[0].get('unit',''),'source':source_id,'notes':'پیشین: '+str(old.get('quantity',0))+'؛ پیشنهادی: '+str(new.get('quantities',[{'amount':0}])[0]['amount'])+'؛ اختلاف: '+str(delta)})
  effective_review=project.get('beam_amendments',{}).get(record.get('amendment_id'),{}).get('review',{}).get('reviewer')
  meta={'project_name':project['name'],'building_id':d['building_id'],'floor':floor,'member':sid,'revision':record['revision'],'status':{'draft':'پیش‌نویس','committed':'قطعی'}[record['status']],'source':d['source']['source_id'],'پلان':d['source']['plan_ref'],'دیتایل':d['source']['detail_ref'],'بازبین':effective_review or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی'),'طول (متر)':d['roof_detail']['geometry']['length'],'عرض (متر)':d['roof_detail']['geometry']['width'],'ارتفاع کل (متر)':d['roof_detail']['geometry']['depth'],'تعداد سقف هم‌تیپ':d['roof_detail']['geometry']['count'],'منبع کسورات':d['roof_detail']['deductions_ref']}
+ if kind in VOID_KINDS:
+  meta['ضخامت بتن رویه (متر)']=d['roof_detail']['geometry']['topping_thickness']
+  meta['ضخامت بتن زیرین (متر)']=d['roof_detail']['geometry']['bottom_thickness']
+  meta['محدودیت هندسی']='فقط سلول مستطیلی و یک قطعه گواهی‌شده در هر سلول؛ برش قطعه ممنوع'
  totals={}
  units={'m3':'متر مکعب','kg':'کیلوگرم','m2':'متر مربع','عدد':'عدد'}
- labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی','waffle_molds':'تعداد قالب وافل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی داخل قطعه'}
+ labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی','waffle_molds':'تعداد قالب وافل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی داخل قطعه','void_formers':'حفره‌ساز مستند خریداری‌شده'}
  for row in result['rows']:
   name=labels[row['item_code']]
   if kind==HOLLOW_KIND and row['item_code']=='rebar':name='میلگرد معمولی '+('کارخانه‌ای، داخل قطعه' if row['role']=='material' else 'کارگاهی')
