@@ -120,3 +120,37 @@ def test_unmodified_source_is_not_auto_promoted_to_product_acceptance():
     assert all(r["fully_accepted"] is False for r in document["rows"])
     assert all(r["evidence"]["input_type"] in {"synthetic_documented", "not_verified"}
                for r in document["rows"])
+
+
+@pytest.mark.parametrize("code", sorted(_LIMITED_SOURCES))
+def test_documented_families_cannot_claim_unverified_report_formats(tmp_path, code):
+    document = _matrix()
+    row = next(r for r in document["rows"] if r["code"] == code)
+    row["evidence"]["formats"].append("unverified-format")
+    assert not _check(tmp_path, document)["valid"]
+
+
+@pytest.mark.parametrize("code,extra_variant", (
+    ("waffle", "waffle_unverified_3d"),
+    ("hollow_core", "hollow_core_unverified_panels"),
+))
+def test_specialist_variant_requires_documented_parent_and_evidence(tmp_path, code, extra_variant):
+    document = _matrix()
+    row = next(r for r in document["rows"] if r["code"] == code)
+    row["evidence"]["variants"].append(extra_variant)
+    assert not _check(tmp_path, document)["valid"]
+
+
+def test_source_catalog_blob_sha_cannot_be_replaced_by_a_claim(tmp_path):
+    document = _matrix()
+    document["source_inventory_blob_sha"] = "0" * 40
+    result = _check(tmp_path, document)
+    assert not result["valid"]
+    assert any("اثر انگشت" in s for s in result["issues"])
+
+
+def test_uncorroborated_family_cannot_invent_report_format(tmp_path):
+    document = _matrix()
+    row = next(r for r in document["rows"] if r["code"] == "cobiax")
+    row["evidence"]["formats"] = ["pdf"]
+    assert not _check(tmp_path, document)["valid"]
