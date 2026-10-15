@@ -131,6 +131,24 @@ class StructuralProApp:
         from core.reports.column_detail_report import export
         return export(self,project_id,floor_id,member_id,path,format=format)
 
+    def export_foundation_detail_report(self,project_id,kind,floor_id,member_id,path,*,format):
+        from core.takeoff.manual_formula_amendments import FOUNDATION_KINDS
+        from core.reports.column_detail_report import export
+        if kind not in FOUNDATION_KINDS:raise ValueError('نوع پی و شناژ معتبر نیست')
+        return export(self,project_id,floor_id,member_id,path,format=format,kind=kind)
+
+    def copy_structural_member(self,project_id,kind,floor_id,member_id,**kwargs):
+        from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
+        return ReviewedStructuralWorkflow(self.store,self.takeoff).copy_draft(project_id,kind,floor_id,member_id,**kwargs)
+
+    def delete_structural_member_draft(self,project_id,kind,floor_id,member_id,**kwargs):
+        from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
+        return ReviewedStructuralWorkflow(self.store,self.takeoff).delete_draft(project_id,kind,floor_id,member_id,**kwargs)
+
+    def create_foundation_amendment(self,project_id,kind,floor_id,member_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,member_id,data,foundation_kind=kind,**kwargs)
+
     def create_column_amendment(self,project_id,floor_id,member_id,data,**kwargs):
         from core.takeoff.manual_formula_amendments import beam_create
         return beam_create(self,project_id,floor_id,member_id,data,column=True,**kwargs)

@@ -350,7 +350,7 @@ def _pdf_identity(rows, cols):
     return copies, [(key,"شناسه ردیف گزارش"), *cols]
 
 
-def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None):
+def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, columns=None, fill_width=False):
     from reportlab.lib.enums import TA_RIGHT
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -396,6 +396,8 @@ def export_pdf(rows, path, title="StructuralPro", summary=None, metadata=None, c
         story += [table, Spacer(1, 12)]
     from reportlab.platypus import LongTable, PageBreak
     plan = _pdf_column_plan(cols, rows, font=font, usable_width=usable_width)
+    if fill_width:
+        plan=[[(key,label,width*usable_width/sum(w for _,_,w in panel)) for key,label,width in panel] for panel in plan]
     for panel_no, panel in enumerate(plan, 1):
         if panel_no > 1:
             story.append(PageBreak())

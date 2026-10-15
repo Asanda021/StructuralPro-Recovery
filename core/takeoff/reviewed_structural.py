@@ -315,12 +315,12 @@ class ReviewedStructuralWorkflow:
         if project is None:
             raise KeyError(project_id)
         record=(project.get(REGISTER) or {}).get(_key(kind,floor,member_id))
-        if record and kind=='column':
+        if record and record['data'].get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1'):
             from core.takeoff.manual_formula_amendments import beam_current
             return beam_current(project,_key(kind,floor,member_id))
         return deepcopy(record)
 
-    def save_draft(self, project_id: str, draft: dict, *, expected_revision: int = 0, reason: str = "ثبت پیش‌نویس"):
+    def save_draft(self, project_id: str, draft: dict, *, expected_revision: int = 0, reason: str = "ثبت پیش‌نویس", _copy_source=None):
         kind, floor, member_id = _structural_shape(draft)
         source = draft.get("source")
         if source:
@@ -335,9 +335,16 @@ class ReviewedStructuralWorkflow:
             raise ValueError("ساختار ثبت اعضای سازه نامعتبر است")
         key = _key(kind, floor, member_id)
         previous = register.get(key)
+        if previous is None and any(h.get('member_key')==key and h.get('action')=='delete_draft' for h in project.get('structural_member_history',[])):
+            raise ValueError('شناسه حذف‌شده قابل استفاده مجدد نیست؛ شناسه مستقل لازم است')
         from core.takeoff.manual_formula_amendments import digest as payload_digest
+        if _copy_source is not None:
+            source_key,source_digest=_copy_source
+            from core.takeoff.manual_formula_amendments import beam_current
+            current=beam_current(project,source_key) if (project.get(REGISTER,{}).get(source_key,{}).get('data',{}).get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1')) else project.get(REGISTER,{}).get(source_key)
+            if payload_digest(current)!=source_digest:raise RuntimeError('مبنای کپی هم‌زمان تغییر کرده است')
         proposal=deepcopy(draft);review=proposal.pop('component_review',None)
-        fresh=kind=='column' and draft.get('measurement_policy')=='column_specialist_v1' and isinstance(review,dict) and review.get('base_revision')==expected_revision and bool(review.get('reviewer')) and review.get('digest')==payload_digest(proposal)
+        fresh=draft.get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1') and isinstance(review,dict) and review.get('base_revision')==expected_revision and bool(review.get('reviewer')) and review.get('digest')==payload_digest(proposal)
         if fresh and not preview_member(proposal,self.engine)['ready']:raise ValueError('بازبینی داده ناقص معتبر نیست')
         if previous and previous['data'].get('measurement_policy')=='column_specialist_v1':
             if draft.get('measurement_policy')!='column_specialist_v1':raise ValueError('حذف قرارداد تخصصی ستون ممنوع است')
@@ -370,6 +377,45 @@ class ReviewedStructuralWorkflow:
         register[key] = record
         self.store.save(project_id, project, expected_digest=digest)
         return deepcopy(record)
+
+    def copy_draft(self, project_id, kind, floor, member_id, *, new_member_id,
+                   new_source_id, expected_revision, reason):
+        from uuid import uuid4
+        original = self.get(project_id, kind, floor, member_id)
+        if original is None:raise KeyError(member_id)
+        if original['revision'] != expected_revision:raise RuntimeError('تعارض نسخه؛ دوباره بارگذاری کنید')
+        new_member_id=require_text(new_member_id,'شناسه عضو جدید')
+        new_source_id=require_text(new_source_id,'منبع مستقل جدید')
+        if new_member_id==member_id or new_source_id==original['data'].get('source',{}).get('source_id'):
+            raise ValueError('کپی نیازمند هویت و منبع مستقل است')
+        if self.get(project_id,kind,floor,new_member_id) is not None:raise ValueError('عضو مقصد موجود است')
+        data=deepcopy(original['data']);data['member_id']=new_member_id
+        data['source']['source_id']=new_source_id
+        def reset(value):
+            if isinstance(value,dict):
+                for key in ('approved_by','reviewed_by','review_digest','component_review'):
+                    value.pop(key,None)
+                if 'id' in value:value['id']='SC-'+uuid4().hex
+                if 'status' in value:value['status']='unreviewed'
+                for child in value.values():reset(child)
+            elif isinstance(value,list):
+                for child in value:reset(child)
+        reset(data)
+        return self.save_draft(project_id,data,expected_revision=0,reason=require_text(reason,'علت کپی'),_copy_source=(_key(kind,floor,member_id),hashlib.sha256(json.dumps(original,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()))
+
+    def delete_draft(self, project_id, kind, floor, member_id, *, expected_revision, reason):
+        project,token=self._load(project_id);key=_key(kind,floor,member_id)
+        record=project.get(REGISTER,{}).get(key)
+        if record is None:raise KeyError(member_id)
+        if record['status']=='committed':raise ValueError('حذف عضو قطعی ممنوع است')
+        if record['revision']!=expected_revision:raise RuntimeError('تعارض نسخه؛ حذف رد شد')
+        project.setdefault('structural_member_history',[]).append({
+            'member_key':key,'previous':deepcopy(record),'revision':record['revision']+1,
+            'reason':require_text(reason,'علت حذف'),'action':'delete_draft',
+            'at':datetime.now(timezone.utc).isoformat()})
+        del project[REGISTER][key]
+        self.store.save(project_id,project,expected_digest=token)
+        return {'status':'deleted','member_key':key}
 
     def preview(self, project_id: str, kind: str, floor: str, member_id: str):
         item = self.get(project_id, kind, floor, member_id)

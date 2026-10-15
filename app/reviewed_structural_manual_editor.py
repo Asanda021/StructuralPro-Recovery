@@ -16,6 +16,8 @@ from PySide6.QtWidgets import (
 )
 from core.takeoff.reviewed_structural import KINDS, preview_member
 from core.takeoff.reviewed_components import positive
+from core.takeoff.manual_formula_amendments import FOUNDATION_KINDS
+_SPECIALIST_KINDS = FOUNDATION_KINDS | {"column"}
 
 _REBAR_COLUMNS = (
     "count", "cut_length_m", "unit_weight_kg_m",
@@ -138,19 +140,25 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     message=QLabel("گروه بررسی‌نشده هرگز به معنی میلگرد صفر یا نبود قالب نیست.")
     message.setWordWrap(True)
     main.addWidget(message)
-    specialist=QCheckBox('قرارداد تخصصی ستون؛ واحد ابعاد متر و وزن کیلوگرم');main.addWidget(specialist)
+    specialist=QCheckBox('قرارداد تخصصی ستون، پی و شناژ؛ واحد ابعاد متر و وزن کیلوگرم');main.addWidget(specialist)
     building=QLineEdit();axis=QLineEdit();plan=QLineEdit();drawing_detail=QLineEdit();reason=QLineEdit()
     for w,label in [(building,'شناسه ساختمان'),(axis,'محور ستون'),(plan,'مرجع پلان'),(drawing_detail,'مرجع دیتایل'),(reason,'علت اصلاح نسخه')]:w.setPlaceholderText(label);main.addWidget(w)
-    repeat_scope=QComboBox();repeat_scope.addItem('دامنه تعداد ستون را صریح انتخاب کنید',None);repeat_scope.addItem('ستون‌های هم‌تیپ با تکرار صریح','identical_members');main.addWidget(repeat_scope)
-    column_scope=QComboBox();column_scope.addItem('دامنه گروه را انتخاب کنید',None);column_scope.addItem('هر ستون','per_member');column_scope.addItem('کل گروه ستون‌ها','total_group');main.addWidget(column_scope)
-    ded_scope=QComboBox();ded_scope.addItem('دامنه کسورات را انتخاب کنید',None);ded_scope.addItem('هر ستون','per_member');ded_scope.addItem('کل گروه','total_group');main.addWidget(ded_scope)
+    repeat_scope=QComboBox();repeat_scope.addItem('دامنه تعداد عضو را صریح انتخاب کنید',None);repeat_scope.addItem('اعضای هم‌تیپ با تکرار صریح','identical_members');main.addWidget(repeat_scope)
+    column_scope=QComboBox();column_scope.addItem('دامنه گروه را انتخاب کنید',None);column_scope.addItem('هر عضو','per_member');column_scope.addItem('کل گروه اعضا','total_group');main.addWidget(column_scope)
+    ded_scope=QComboBox();ded_scope.addItem('دامنه کسورات را انتخاب کنید',None);ded_scope.addItem('هر عضو','per_member');ded_scope.addItem('کل گروه','total_group');main.addWidget(ded_scope)
     ded_ref=QLineEdit();ded_ref.setPlaceholderText('مرجع کسورات یا نبود تقاطع؛ بدون حدس');main.addWidget(ded_ref)
-    advanced=QPushButton('ویرایش ردیفی دیتایل ستون انتخابی');section_button=QPushButton('نواحی مقطع ستون');ded_button=QPushButton('کسورات مستند ستون');review_column=QPushButton('بازبینی نسخه جاری ستون')
+    advanced=QPushButton('ویرایش ردیفی دیتایل عضو انتخابی');section_button=QPushButton('نواحی مقطع ستون');ded_button=QPushButton('کسورات مستند عضو');review_column=QPushButton('بازبینی نسخه جاری عضو')
     creator=QLineEdit();reviewer=QLineEdit();note=QLineEdit();amend_id=QLineEdit()
-    for w,label in [(creator,'سازنده اصلاحیه ستون'),(reviewer,'بازبین مستقل اصلاحیه'),(note,'یادداشت بازبینی'),(amend_id,'شناسه اصلاحیه')]:w.setPlaceholderText(label);main.addWidget(w)
-    amend_buttons={k:QPushButton(label) for k,label in [('create','درخواست اصلاح ستون قطعی'),('review','بازبینی مستقل اصلاحیه ستون'),('apply','اعمال اتمیک اصلاحیه ستون')]}
-    reports={k:QPushButton('گزارش ستون '+label) for k,label in [('xlsx','Excel'),('pdf','PDF')]}
+    for w,label in [(creator,'سازنده اصلاحیه عضو'),(reviewer,'بازبین مستقل اصلاحیه'),(note,'یادداشت بازبینی'),(amend_id,'شناسه اصلاحیه')]:w.setPlaceholderText(label);main.addWidget(w)
+    evidence_path=QLineEdit();evidence_ref=QLineEdit();evidence_path.setPlaceholderText('مسیر فایل مدرک جدید اصلاحیه پی و شناژ');evidence_ref.setPlaceholderText('مرجع مدرک جدید');main.addWidget(evidence_path);main.addWidget(evidence_ref)
+    amend_buttons={k:QPushButton(label) for k,label in [('create','درخواست اصلاح عضو قطعی'),('review','بازبینی مستقل اصلاحیه عضو'),('apply','اعمال اتمیک اصلاحیه عضو')]}
+    reports={k:QPushButton('گزارش عضو '+label) for k,label in [('xlsx','Excel'),('pdf','PDF')]}
     for b in [advanced,section_button,ded_button,review_column,*amend_buttons.values(),*reports.values()]:main.addWidget(b)
+    new_member=QLineEdit();new_source=QLineEdit()
+    new_member.setPlaceholderText('شناسه مستقل عضو کپی');new_source.setPlaceholderText('منبع مستقل عضو کپی')
+    copy_member=QPushButton('کپی عضو با هویت جدید و ابطال تأییدها')
+    delete_member=QPushButton('حذف کنترل‌شده پیش‌نویس؛ با حفظ تاریخچه')
+    for w in (new_member,new_source,copy_member,delete_member):main.addWidget(w)
     state={"data":None,"project_id":None,"revision":0,"current":None,"dirty":False}
 
     def error(exc):
@@ -193,7 +201,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             raise ValueError("شمع درجا باید قطر و هندسه تأییدشده داشته باشد")
         actual_keys=("count","diameter","height") if selected_shape=="circular_column" else (
             ("count",) if selected_shape=="reviewed_sections" else KINDS[k][3])
-        active=specialist.isChecked() and k=='column'
+        active=specialist.isChecked() and k in _SPECIALIST_KINDS
         dimensions=deepcopy(d.get('geometry',{})) if active else {}
         for key in actual_keys:
             raw=numeric[key].text().strip()
@@ -215,8 +223,9 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         if approver: dimensions["approved_by"]=approver
         dimensions["shape"]=selected_shape
         if active:
-            d['measurement_policy']='column_specialist_v1';d['building_id']=building.text().strip();d['axis']=axis.text().strip()
-            dimensions.update(height=numeric['height'].text().strip(),variable_units=({'diameter':'m','height':'m','count':'عدد'} if selected_shape=='circular_column' else {'width':'m','depth':'m','height':'m','count':'عدد'}),repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
+            d['measurement_policy']='column_specialist_v1' if k=='column' else 'foundation_tie_specialist_v1';d['building_id']=building.text().strip()
+            if k=='column' or axis.text().strip() or 'axis' in d:d['axis']=axis.text().strip()
+            dimensions.update(variable_units={key:('عدد' if key=='count' else 'm') for key in actual_keys},repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
             for obsolete in (('width','depth','sections') if selected_shape=='circular_column' else ('diameter',)):
                 dimensions.pop(obsolete,None)
             if 'intersections' not in dimensions:raise ValueError('فهرست کسورات یا فهرست خالی صریح لازم است؛ ویرایش کسورات را باز کنید')
@@ -246,7 +255,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         group_reason.setText(str(part.get("reason") or ""))
         scope.setText(str(part.get("count_scope") or part.get("area_scope") or ""))
         scope_ref.setText(str(part.get("count_scope_ref") or part.get("area_scope_ref") or ""))
-        active=specialist.isChecked() and d['kind']=='column'
+        active=specialist.isChecked() and d['kind'] in _SPECIALIST_KINDS
         column_scope.setCurrentIndex(max(0,column_scope.findData(part.get('area_scope') if name=='formwork' else part.get('count_scope'))))
         detail_table.setEnabled(not active)
         keys=_FORM_COLUMNS if name=="formwork" else _REBAR_COLUMNS
@@ -265,7 +274,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         status_name=status.currentData()
         reviewer=group_approver.text().strip()
         ref=group_ref.text().strip()
-        active=specialist.isChecked() and d['kind']=='column'
+        active=specialist.isChecked() and d['kind'] in _SPECIALIST_KINDS
         new={**deepcopy(old),'status':status_name} if active else {'status':status_name}
         if status_name=="confirmed":
             if not reviewer or not ref:
@@ -307,7 +316,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         detail.clear()
         detail.addItem("قالب‌بندی","formwork")
         for name in KINDS[d["kind"]][4]:
-            detail.addItem({'longitudinal':'میلگرد طولی','ties':'خاموت','crossties':'سنجاقی','starters':'انتظار و وصله'}.get(name,'آرماتور '+name),name)
+            detail.addItem({'longitudinal':'میلگرد طولی','ties':'خاموت','crossties':'سنجاقی','starters':'انتظار و وصله','stirrups':'خاموت شناژ','bottom_x':'میلگرد تحتانی راستای یک','bottom_y':'میلگرد تحتانی راستای دو','top_x':'میلگرد فوقانی راستای یک','top_y':'میلگرد فوقانی راستای دو','reinforcement':'میلگرد تقویتی','transverse':'میلگرد عرضی','additional':'میلگرد تقویتی'}.get(name,'آرماتور '+name),name)
         detail.blockSignals(False)
         show_group()
 
@@ -320,7 +329,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             shape.setCurrentIndex(max(shape.findData(geo.get("shape")),0))
             for key,w in numeric.items():
                 value=geo.get(key)
-                if value is not None and d.get('measurement_policy')=='column_specialist_v1' and key in ('width','depth','height','diameter'):
+                if value is not None and d.get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1') and key in ('length','width','depth','height','diameter','thickness'):
                     from core.takeoff.formulas import evaluate
                     value=evaluate('value',{'value':value},variable_units={'value':geo.get('variable_units',{}).get(key)},output_unit='m')
                 w.setText(str(value) if value is not None else '')
@@ -329,7 +338,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             section_layout_ref.setText(str(geo.get("section_layout_ref") or ""))
             section_nonoverlap_approver.setText(str(geo.get("nonoverlap_reviewed_by") or ""))
             sections.setPlainText(json.dumps(geo.get("sections",[]),ensure_ascii=False) if geo.get("sections") else "")
-            specialist.setChecked(d.get('measurement_policy')=='column_specialist_v1')
+            specialist.setChecked(d.get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1'))
             building.setText(d.get('building_id',''));axis.setText(d.get('axis',''));plan.setText(d.get('source',{}).get('plan_ref',''));drawing_detail.setText(d.get('source',{}).get('detail_ref',''));repeat_scope.setCurrentIndex(max(0,repeat_scope.findData(geo.get('repeat_scope'))));ded_scope.setCurrentIndex(max(0,ded_scope.findData(geo.get('intersection_scope'))));ded_ref.setText(geo.get('intersection_ref',''))
             refresh_groups()
             message.setText("پیش‌نویس بازیابی شد. تکمیل همه گروه‌ها برای ثبت قطعی الزامی است.")
@@ -385,7 +394,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         try:
             from app.beam_component_editor import BeamComponentEditor
             d=assure()
-            if d['kind']!='column' or not specialist.isChecked():raise ValueError('قرارداد تخصصی ستون را انتخاب کنید')
+            if d['kind'] not in _SPECIALIST_KINDS or not specialist.isChecked():raise ValueError('قرارداد تخصصی ستون را انتخاب کنید')
             name=detail.currentData();field='sections' if kind=='sections' else 'intersections' if kind=='intersections' else 'surfaces' if name=='formwork' else 'segments'
             target=d['geometry'] if kind else d['formwork'] if name=='formwork' else d['rebars'][name]
             editor_kind=kind or ('surfaces' if name=='formwork' else 'series')
@@ -398,7 +407,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
                        ('turns','تعداد دور صریح'),('axis_diameter_m','قطر مسیر محور، متر'),
                        ('cover_m','پوشش، متر'),('end_condition','قرارداد انتهای مارپیچ'),
                        ('end_condition_ref','مرجع انتهای مارپیچ')]
-            elif name=='ties' and not kind:
+            elif name in ('ties','stirrups') and not kind:
                 extra=[('shape_kind','شکل خاموت: مستطیلی'),('name','نام ناحیه'),
                        ('start_m','شروع متر'),('end_m','پایان متر'),
                        ('first_bar_m','اولین خاموت متر'),('last_bar_m','آخرین خاموت متر'),
@@ -438,23 +447,50 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     def amend_column(action):
         try:
             pid,fl,k,mid=context()
-            if k!='column':raise ValueError('این گردش فقط ستون است')
+            if k not in _SPECIALIST_KINDS:raise ValueError('قرارداد تخصصی این عضو تعریف نشده است')
             if action=='create':
-                apply_group();d=physical_geometry();a=service.create_column_amendment(pid,fl,mid,d,expected_revision=state['revision'],created_by=creator.text(),reason=reason.text());amend_id.setText(a['id']);message.setText('پیشنهاد ثبت شد؛ دلتا: '+str(a['delta']))
+                apply_group();d=physical_geometry()
+                kwargs=dict(expected_revision=state['revision'],created_by=creator.text(),reason=reason.text())
+                if k in FOUNDATION_KINDS:
+                    from pathlib import Path
+                    from hashlib import sha256
+                    document=Path(evidence_path.text().strip())
+                    kwargs['evidence']={'evidence_path':str(document),'evidence_sha256':sha256(document.read_bytes()).hexdigest(),'evidence_reference':evidence_ref.text().strip()}
+                    a=service.create_foundation_amendment(pid,k,fl,mid,d,**kwargs)
+                else:a=service.create_column_amendment(pid,fl,mid,d,**kwargs)
+                amend_id.setText(a['id']);message.setText('پیشنهاد ثبت شد؛ دلتا: '+str(a['delta']))
             elif action=='review':service.review_beam_amendment(pid,amend_id.text(),expected_revision=1,reviewer=reviewer.text(),note=note.text());message.setText('بازبینی مستقل انجام شد؛ هنوز اعمال نشده')
-            else:service.apply_beam_amendment(pid,amend_id.text(),expected_revision=1);reload();message.setText('اصلاحیه اعمال شد؛ اصل ستون ثابت است')
+            else:service.apply_beam_amendment(pid,amend_id.text(),expected_revision=1);reload();message.setText('اصلاحیه اعمال شد؛ اصل عضو ثابت است')
         except Exception as exc:error(exc)
     def export_column(fmt):
         try:
             pid,fl,k,mid=context()
-            if k!='column':raise ValueError('گزارش فقط برای ستون')
-            path,_=QFileDialog.getSaveFileName(dialog,'گزارش ستون','column.'+fmt,'گزارش (*.'+fmt+')')
-            if path:service.export_column_detail_report(pid,fl,mid,path,format=fmt);message.setText('گزارش ستون ذخیره شد')
+            if k not in _SPECIALIST_KINDS:raise ValueError('گزارش تخصصی این عضو تعریف نشده است')
+            path,_=QFileDialog.getSaveFileName(dialog,'گزارش عضو','column.'+fmt,'گزارش (*.'+fmt+')')
+            if path:
+                if k in FOUNDATION_KINDS:service.export_foundation_detail_report(pid,k,fl,mid,path,format=fmt)
+                else:service.export_column_detail_report(pid,fl,mid,path,format=fmt)
+                message.setText('گزارش عضو ذخیره شد')
         except Exception as exc:error(exc)
+    def copy_current_member():
+        try:
+            pid,fl,k,mid=context()
+            service.copy_structural_member(pid,k,fl,mid,new_member_id=new_member.text(),new_source_id=new_source.text(),expected_revision=state['revision'],reason=reason.text())
+            ident.setText(new_member.text().strip());reload()
+            message.setText('عضو مستقل کپی شد؛ تأییدهای قبلی باطل‌اند')
+        except Exception as exc:error(exc)
+    def delete_current_member():
+        try:
+            pid,fl,k,mid=context()
+            service.delete_structural_member_draft(pid,k,fl,mid,expected_revision=state['revision'],reason=reason.text())
+            state.update(data=None,revision=0,current=None,dirty=False)
+            message.setText('پیش‌نویس حذف و سابقه آن حفظ شد')
+        except Exception as exc:error(exc)
+    copy_member.clicked.connect(copy_current_member);delete_member.clicked.connect(delete_current_member)
     advanced.clicked.connect(lambda:edit_column());section_button.clicked.connect(lambda:edit_column('sections'));ded_button.clicked.connect(lambda:edit_column('intersections'));review_column.clicked.connect(review_current_column)
     for action,button in amend_buttons.items():button.clicked.connect(lambda _=False,a=action:amend_column(a))
     for fmt,button in reports.items():button.clicked.connect(lambda _=False,f=fmt:export_column(f))
-    dialog.column_controls={'scroll':scroll,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
+    dialog.column_controls={'scroll':scroll,'new_member':new_member,'new_source':new_source,'copy_member':copy_member,'delete_member':delete_member,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'evidence_path':evidence_path,'evidence_ref':evidence_ref,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
     add.clicked.connect(lambda: detail_table.insertRow(detail_table.rowCount()))
     def remove_selected():
         selected=sorted({x.row() for x in detail_table.selectedIndexes()},reverse=True)
