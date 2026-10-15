@@ -265,6 +265,17 @@ class StructuralProApp:
         return self.aec_workflow().commit(
             project_id, kind, floor_id, system_id, expected_revision=expected_revision)
 
+    def review_roof_system(self,project_id,kind,floor_id,system_id,*,expected_revision,reviewer,note):
+        return self.aec_workflow().review_roof(project_id,kind,floor_id,system_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def create_roof_amendment(self,project_id,kind,floor_id,system_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,system_id,data,roof_kind=kind,**kwargs)
+
+    def export_roof_detail_report(self,project_id,kind,floor_id,system_id,path,*,format):
+        from core.reports.roof_detail_report import export
+        return export(self,project_id,kind,floor_id,system_id,path,format=format)
+
     def office_aec_report(self, project_id: str, mode: str, fmt: str, path,
                           *, statement: dict[str, Any] | None = None):
         from core.reports.aec_office_package import export_office_package
