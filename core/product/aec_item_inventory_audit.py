@@ -15,16 +15,48 @@ from core.takeoff.reviewed_structural import KINDS
 _FILE = (Path(__file__).resolve().parents[2] / "docs" /
          "aec_priority_1_9_master_inventory_20261013.json")
 _REQUIRED = frozenset({
-    "drawing_sources", "drawing_selection", "beam_schedule",
-    "beam_reinforcement", "beam_concrete_formwork", "column",
-    "isolated_footing", "strip_footing", "mat_footing", "tie_beam",
-    "shear_wall", "stair", "solid_slab", "joist_block", "joist_foam",
-    "waffle", "uboot", "cobiax", "hollow_core", "steel_deck",
-    "steel_frame", "block_wall", "plaster_finish", "ceramic_finish",
-    "paint_finish", "waterproofing", "floor_finish", "door_window",
-    "plumbing", "hvac", "fire_protection", "electrical_power",
-    "lighting", "low_voltage", "manual_workbench", "boq",
-    "pricebook", "estimate", "statement", "reporting", "audit_provenance",
+    # Immutable family IDs: never derive this guard from editable inventory counters.
+    # Legacy inventory group 1 (not the approved eight project phases).
+    "beam_schedule", "drawing_selection", "drawing_sources",
+    # Legacy inventory group 2 (not the approved eight project phases).
+    "beam_reinforcement",
+    # Legacy inventory group 3 (not the approved eight project phases).
+    "beam_concrete_formwork",
+    # Legacy inventory group 4 (not the approved eight project phases).
+    "column", "column_joint",
+    # Legacy inventory group 5 (not the approved eight project phases).
+    "bored_pile", "isolated_footing", "mat_footing",
+    "pile_cap", "pile_foundation", "strip_footing",
+    "tie_beam",
+    # Legacy inventory group 6 (not the approved eight project phases).
+    "shear_wall", "stair", "stair_metal",
+    # Legacy inventory group 7 (not the approved eight project phases).
+    "cobiax", "composite_roof", "hollow_core",
+    "joist_block", "joist_foam", "kromit_roof",
+    "precast_roof", "sandwich_roof", "solid_slab",
+    "steel_deck", "timber_roof", "uboot",
+    "waffle",
+    # Legacy inventory group 8 (not the approved eight project phases).
+    "acoustic_insulation", "blinding_concrete", "block_wall",
+    "brick_wall", "cement_render", "ceramic_finish",
+    "composite_frame", "concrete_repair", "data_network",
+    "demolition", "door_window", "electrical_power",
+    "elevator", "emergency_power", "external_earthwork",
+    "external_works", "facade_cladding", "fire_alarm",
+    "fire_protection", "floor_finish", "glass_curtain_wall",
+    "gypsum_partition", "handrails_metalwork", "historic_restoration",
+    "hvac", "lighting", "low_voltage",
+    "mechanical_ventilation", "natural_gas", "paint_finish",
+    "plantroom", "plaster_finish", "plumbing",
+    "retaining_structures", "sanitary_drainage", "security_systems",
+    "seismic_retrofit", "site_drains", "steel_frame",
+    "stone_cladding", "stone_floor", "suspended_ceiling",
+    "thermal_insulation", "timber_frame", "upvc_aluminium_windows",
+    "waterproofing",
+    # Legacy inventory group 9 (not the approved eight project phases).
+    "audit_provenance", "boq", "cost_control",
+    "estimate", "manual_workbench", "pricebook",
+    "reporting", "scheduling", "statement",
 })
 _ROUTES = frozenset({
     "review_contract", "structural_review_contract",
@@ -56,7 +88,7 @@ def verify_priority_inventory(path: str | Path = _FILE) -> dict[str, Any]:
             issues.append(f"اولویت خارج از محدوده: {key}")
         else:
             seen_priorities.add(p)
-        if not isinstance(key, str) or not key.strip() or key in ids:
+        if not isinstance(key, str) or not key.strip() or key != key.strip() or key in ids:
             issues.append(f"شناسه نامعتبر یا تکراری: {key}")
         else:
             ids.add(key)
@@ -88,12 +120,14 @@ def verify_priority_inventory(path: str | Path = _FILE) -> dict[str, Any]:
             # Explicit acceptance must be proven by a separate audited process.
             issues.append(f"پذیرش بدون شاهد یا آزمون: {key}")
     missing_family_ids = sorted(_REQUIRED - ids)
+    unexpected_family_ids = sorted(ids - _REQUIRED)
     if set(variants) & ids:
         issues.append("قرارداد تخصصی هم‌زمان به‌عنوان خانواده مستقل تکرار شده است")
     missing_aec_contracts = sorted(set(SPECS) - ids - set(variants))
     missing_structure_contracts = sorted(set(KINDS) - ids)
     missing_priorities = sorted(_PRIORITY_SET - seen_priorities)
     for label, missing in (("خانواده الزامی", missing_family_ids),
+                           ("خانواده اضافی یا ناشناخته", unexpected_family_ids),
                            ("قرارداد AEC", missing_aec_contracts),
                            ("عضو سازه‌ای", missing_structure_contracts),
                            ("اولویت", missing_priorities)):
