@@ -6,7 +6,17 @@ LABELS={**LABELS,'building_id':'ساختمان','axis':'محور','gross_m3':'ب
 
 LABELS.update({'approved_by':'بازبین دیتایل','intersection_scope':'دامنه کسورات','intersection_ref':'مرجع کسورات','repeat_scope':'دامنه تکرار','variable_units':'واحد ابعاد','length':'طول','thickness':'ضخامت','deductions_m3':'حجم کسورات','volume_m3':'حجم کسر','area_m2':'مساحت کسر','contact':'تماس قالب','shape':'هندسه','id':'شناسه','status':'وضعیت','longitudinal':'میلگرد طولی','stirrups':'خاموت شناژ','bottom_x':'تحتانی راستای یک','bottom_y':'تحتانی راستای دو','top_x':'فوقانی راستای یک','top_y':'فوقانی راستای دو','additional':'تقویتی','crossties':'سنجاقی','starters':'انتظار','rebars':'میلگردها','source':'منشأ','source_id':'شناسه منبع','plan_ref':'مرجع نقشه','detail_ref':'مرجع دیتایل','measurement_policy':'قرارداد محاسبات','kind':'نوع عضو','floor_id':'طبقه','member_id':'شناسه عضو','reason':'علت','mode':'روش ورود','count_scope_ref':'مرجع دامنه شمارش','area_scope':'دامنه قالب','area_scope_ref':'مرجع دامنه قالب','deductions':'کسورات','segments':'گروه میلگرد','reviewer':'بازبین مستقل','note':'یادداشت بازبینی','digest':'اثر انگشت بازبینی','evidence_path':'مسیر مدرک','evidence_sha256':'هش مدرک','evidence_reference':'مرجع مدرک','cut_length_ref':'مرجع برش','first_bar_m':'موقعیت خاموت اول','last_bar_m':'موقعیت خاموت آخر','spacing_m':'گام خاموت','shape_ref':'مرجع شکل برش'})
 
-VALUE_NAMES={**STATUS,'spiral':'مارپیچ','circular_column':'ستون دایره‌ای','full_lateral':'سطح جانبی کامل','circular_lateral':'محاسبه جانبی دایره‌ای','detailed_extensions':'افزودنی‌های انتهایی مستند','no_extension_reviewed':'بدون طول اضافی با تأیید صریح','per_member':'برای هر عضو','total_group':'برای کل گروه','identical_members':'اعضای هم‌تیپ','rectangular':'منشوری مستطیلی','foundation_tie_specialist_v1':'قرارداد تخصصی پی و شناژ، نسخه یک','manual':'ورود دستی','m':'متر','cm':'سانتی‌متر','mm':'میلی‌متر','True':'بله','False':'خیر'}
+LABELS.update({'length_m':'طول جزء برش، متر','role':'نقش وجه قالب','formwork':'قالب‌بندی','numeric_policy':'قرارداد دقت عددی','length_parts_m':'اجزای طول برش','unit_weight_source':'مرجع وزن واحد','position':'موقعیت میلگرد','review_status':'وضعیت بازبینی جزء','reviewed_by':'بازبین جزء','review_digest':'اثر انگشت بازبینی جزء','name':'نام ناحیه','component_review':'بازبینی کل عضو','base_revision':'نسخه مبنا','reason':'علت'})
+
+
+def _field_title(key):
+ # Dynamic correction keys identify quantity sources; their printed title is
+ # Persian while the unchanged source identifier remains in the source rows.
+ if key.startswith('structural:'):
+  return 'اختلاف '+{'concrete':'بتن','formwork':'قالب‌بندی',**LABELS}.get(key.rsplit(':',1)[-1],'مقدار عضو')
+ return LABELS.get(key, 'داده تکمیلی' if any('a'<=c.lower()<='z' for c in key) else key)
+
+VALUE_NAMES={**STATUS,'spiral':'مارپیچ','circular_column':'ستون دایره‌ای','full_lateral':'سطح جانبی کامل','circular_lateral':'محاسبه جانبی دایره‌ای','detailed_extensions':'افزودنی‌های انتهایی مستند','no_extension_reviewed':'بدون طول اضافی با تأیید صریح','per_member':'برای هر عضو','total_group':'برای کل گروه','identical_members':'اعضای هم‌تیپ','rectangular':'منشوری مستطیلی','foundation_tie_specialist_v1':'قرارداد تخصصی پی و شناژ، نسخه یک','manual':'ورود دستی','m':'متر','cm':'سانتی‌متر','mm':'میلی‌متر','True':'بله','False':'خیر','confirmed':'تأییدشده','not_applicable':'عدم کاربرد مستند','unreviewed':'نیازمند بازبینی','needs_review':'نیازمند بازبینی','dimensional_decimal_v1':'محاسبات اعشاری با کنترل ابعادی، نسخه یک','straight':'مستقیم','bend':'خم','hook':'قلاب','anchorage':'مهاری','lap':'وصله','support':'تکیه‌گاه','span':'دهانه','top':'بالا','bottom':'پایین','side1':'وجه اول','side2':'وجه دوم','side3':'وجه سوم','side4':'وجه چهارم'}
 
 def export(service,pid,floor,member,path,*,format,kind="column"):
  from core.takeoff.reviewed_structural import KINDS
@@ -16,7 +26,10 @@ def export(service,pid,floor,member,path,*,format,kind="column"):
  record=service.get_structural_member(pid,kind,floor,member);rows=[]
  def walk(component,label,value):
   if isinstance(value,dict):
-   for k,v in value.items():walk(component,label+' / '+LABELS.get(k,k),v)
+   for k,v in value.items():
+    title=_field_title(k)
+    if title=='داده تکمیلی':walk(component,label+' / شناسه فنی داده تکمیلی',k)
+    walk(component,label+' / '+title,v)
   elif isinstance(value,list):
    for i,v in enumerate(value,1):walk(component,label+' '+str(i),v)
   else:rows.append({'component':component,'field':label,'value':str(VALUE_NAMES.get(str(value),value))})

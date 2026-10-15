@@ -203,10 +203,15 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             ("count",) if selected_shape=="reviewed_sections" else KINDS[k][3])
         active=specialist.isChecked() and k in _SPECIALIST_KINDS
         dimensions=deepcopy(d.get('geometry',{})) if active else {}
+        preserved=set()
         for key in actual_keys:
             raw=numeric[key].text().strip()
-            if raw:
+            if active and raw==state.get('display_geometry',{}).get(key) and key in state.get('loaded_geometry',{}):
+                preserved.add(key)
+                dimensions[key]=state['loaded_geometry'][key]
+            elif raw:
                 dimensions[key]=(raw if active else int(positive(raw,key,integer=True)) if key=='count' else positive(raw,key))
+            elif active:dimensions.pop(key,None)
         if selected_shape=="reviewed_sections":
             if sections.toPlainText().strip():
                 positions=json.loads(sections.toPlainText())
@@ -225,7 +230,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         if active:
             d['measurement_policy']='column_specialist_v1' if k=='column' else 'foundation_tie_specialist_v1';d['building_id']=building.text().strip()
             if k=='column' or axis.text().strip() or 'axis' in d:d['axis']=axis.text().strip()
-            dimensions.update(variable_units={key:('عدد' if key=='count' else 'm') for key in actual_keys},repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
+            dimensions.update(variable_units={key:(state['loaded_geometry'].get('variable_units',{}).get(key) if key in preserved else 'عدد' if key=='count' else 'm') for key in actual_keys},repeat_scope=repeat_scope.currentData(),intersection_scope=ded_scope.currentData(),intersection_ref=ded_ref.text().strip())
             for obsolete in (('width','depth','sections') if selected_shape=='circular_column' else ('diameter',)):
                 dimensions.pop(obsolete,None)
             if 'intersections' not in dimensions:raise ValueError('فهرست کسورات یا فهرست خالی صریح لازم است؛ ویرایش کسورات را باز کنید')
@@ -258,6 +263,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         active=specialist.isChecked() and d['kind'] in _SPECIALIST_KINDS
         column_scope.setCurrentIndex(max(0,column_scope.findData(part.get('area_scope') if name=='formwork' else part.get('count_scope'))))
         detail_table.setEnabled(not active)
+        add.setEnabled(not active);remove.setEnabled(not active)
+        section_button.setEnabled(not (active and d["kind"] in FOUNDATION_KINDS))
         keys=_FORM_COLUMNS if name=="formwork" else _REBAR_COLUMNS
         detail_table.setColumnCount(len(keys))
         if active:
@@ -325,6 +332,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             state["data"]=None
             d=assure()
             source_id.setText(str(d.get("source",{}).get("source_id") or ""))
+            if d['kind']=='tie_beam' and d.get('measurement_policy')=='foundation_tie_specialist_v1':
+                d['rebars'].setdefault('starters',{'status':'unreviewed'})
             geo=d.get("geometry") or {}
             shape.setCurrentIndex(max(shape.findData(geo.get("shape")),0))
             for key,w in numeric.items():
@@ -333,6 +342,8 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
                     from core.takeoff.formulas import evaluate
                     value=evaluate('value',{'value':value},variable_units={'value':geo.get('variable_units',{}).get(key)},output_unit='m')
                 w.setText(str(value) if value is not None else '')
+            state['display_geometry']={key:w.text().strip() for key,w in numeric.items()}
+            state['loaded_geometry']=deepcopy(geo)
             geometry_ref.setText(str(geo.get("source_ref") or ""))
             geometry_reviewer.setText(str(geo.get("approved_by") or ""))
             section_layout_ref.setText(str(geo.get("section_layout_ref") or ""))
@@ -421,7 +432,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
                  extra_fields=extra,spiral_mode=spiral,
                  spiral_column_diameter=numeric['diameter'].text().strip() if spiral else None,
                  circular_formwork_mode=circular and name=='formwork' and not kind)
-            child.setWindowTitle('ویرایش مستند مارپیچ ستون' if spiral else 'دیتایل صریح ستون')
+            child.setWindowTitle('ویرایش مستند مارپیچ ستون' if spiral else 'دیتایل صریح '+KINDS[d['kind']][0])
             if child.exec()!=QDialog.DialogCode.Accepted:return
             target[field]=child.rows;d.pop('component_review',None);state['dirty']=True
             if not kind:show_group()
@@ -490,7 +501,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     advanced.clicked.connect(lambda:edit_column());section_button.clicked.connect(lambda:edit_column('sections'));ded_button.clicked.connect(lambda:edit_column('intersections'));review_column.clicked.connect(review_current_column)
     for action,button in amend_buttons.items():button.clicked.connect(lambda _=False,a=action:amend_column(a))
     for fmt,button in reports.items():button.clicked.connect(lambda _=False,f=fmt:export_column(f))
-    dialog.column_controls={'scroll':scroll,'new_member':new_member,'new_source':new_source,'copy_member':copy_member,'delete_member':delete_member,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'evidence_path':evidence_path,'evidence_ref':evidence_ref,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
+    dialog.column_controls={'geometry_ref':geometry_ref,'source_id':source_id,'group_approver':group_approver,'group_ref':group_ref,'group_reason':group_reason,'scope_ref':scope_ref,'apply':apply,'add':add,'remove':remove,'scroll':scroll,'new_member':new_member,'new_source':new_source,'copy_member':copy_member,'delete_member':delete_member,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'evidence_path':evidence_path,'evidence_ref':evidence_ref,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
     add.clicked.connect(lambda: detail_table.insertRow(detail_table.rowCount()))
     def remove_selected():
         selected=sorted({x.row() for x in detail_table.selectedIndexes()},reverse=True)
@@ -505,6 +516,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     preview.clicked.connect(inspect)
     commit.clicked.connect(finalize)
     detail.currentIndexChanged.connect(change_group)
+    specialist.toggled.connect(lambda _:show_group() if state['data'] is not None else None)
     if project.text().strip() and floor.text().strip() and ident.text().strip():
         reload()
     else:

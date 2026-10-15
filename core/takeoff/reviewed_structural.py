@@ -28,7 +28,7 @@ KINDS = {
                ("longitudinal", "ties", "crossties", "starters")),
     "tie_beam": ("شناژ", "building", "tie_beam",
                  ("length", "width", "depth", "count"),
-                 ("longitudinal", "stirrups", "crossties", "additional")),
+                 ("longitudinal", "stirrups", "crossties", "additional", "starters")),
     "isolated_footing": ("پی منفرد", "advanced", "footing_concrete",
                          ("length", "width", "thickness", "count"),
                          ("bottom_x", "bottom_y", "top_x", "top_y", "starters", "additional")),
@@ -101,12 +101,12 @@ def _structural_shape(record: dict) -> tuple[str, str, str]:
             require_text(record.get("member_id"), "شناسه عضو"))
 
 
-def preview_member(data: dict, engine: Any) -> dict:
+def preview_member(data: dict, engine: Any, *, _historical_tie=False) -> dict:
     """Preview every individually approved row, block commit on any missing group."""
     kind, floor, member_id = _structural_shape(data)
     if kind=='column' and data.get('measurement_policy')=='column_specialist_v1':return _preview_column_specialist(data,engine)
     if data.get('measurement_policy')=='foundation_tie_specialist_v1':
-        return _preview_foundation_tie_specialist(data,engine)
+        return _preview_foundation_tie_specialist(data,engine,_historical_tie=_historical_tie)
     title, domain, item, fields, groups = KINDS[kind]
     blockers: list[str] = []
     rows: list[dict] = []
@@ -697,7 +697,7 @@ _STAGE23_KINDS = frozenset({"tie_beam", "isolated_footing", "strip_footing", "ma
 
 
 @_exact
-def _preview_foundation_tie_specialist(data, engine):
+def _preview_foundation_tie_specialist(data, engine, *, _historical_tie=False):
     """Reviewed concrete, contact form and bar series; no design inference.
 
     This is the calculation core, NOT approval of a real foundation or an
@@ -832,6 +832,10 @@ def _preview_foundation_tie_specialist(data, engine):
 
     rebars=data.get('rebars')
     groups=KINDS[kind][4]
+    if _historical_tie and kind=='tie_beam' and isinstance(rebars,dict) and 'starters' not in rebars:
+        # Re-evaluate only sealed historical rows under their original group schema.
+        # New previews/commits/proposals never enable this compatibility boundary.
+        groups=tuple(g for g in groups if g!='starters')
     if not isinstance(rebars,dict) or set(rebars)!=set(groups):
         errors.append('گروه‌های میلگرد ناقص یا اضافه هستند')
     else:
