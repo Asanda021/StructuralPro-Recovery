@@ -148,3 +148,68 @@ def test_certified_volume_follows_exact_decimals_not_default_sphere_formula(kind
         totals[r["item_code"]]=totals.get(r["item_code"],Decimal(0))+Decimal(str(r["quantity"]))
     baseline=Decimal("4.2168" if kind=="uboot" else "4.7983")
     assert totals["concrete"]==3*baseline and totals["void_formers"]==3
+
+
+
+@pytest.mark.parametrize("kind",KINDS)
+def test_multiple_certified_cells_are_independent_without_duplicate_payment(kind):
+    d=sample(kind);rd=d["roof_detail"]
+    cell=next(x for x in rd["regions"] if x["id"]=="CELL")
+    cell["id"]="CELL1";cell["length"]="1"
+    next_cell=deepcopy(cell);next_cell.update(id="CELL2",x="1")
+    rd["regions"].append(next_cell)
+    one=rd["void_formers"][0]
+    one["region_id"]="CELL1"
+    two=deepcopy(one)
+    two.update(id="FORMER-2",physical_key="physical-former-2",region_id="CELL2")
+    if kind=="uboot":
+        one.update(x=".1",length=".8",certified_void_volume_m3=".2592")
+        two.update(x="1.1",length=".8",certified_void_volume_m3=".2592")
+        reference=Decimal("4.2816")
+    else:
+        two["x"]="1.5"
+        reference=Decimal("4.7966")
+    rd["void_formers"].append(two)
+    report=preview_system(d,TakeoffEngine())
+    assert report["ready"],report["blockers"]
+    totals={}
+    for row in report["rows"]:
+        totals[row["item_code"]]=totals.get(row["item_code"],Decimal(0))+Decimal(str(row["quantity"]))
+    assert totals["concrete"]==reference
+    assert totals["void_formers"]==2
+    assert len({r["source_id"] for r in report["rows"]})==len(report["rows"])
+    # A repeated identity must be blocked even with a distinct region/certificate.
+    rd["void_formers"][1]["physical_key"]=rd["void_formers"][0]["physical_key"]
+    assert not preview_system(d,TakeoffEngine())["ready"]
+
+
+@pytest.mark.parametrize(("specialized","historical"),[
+    ("uboot","uboot"),("uboot","cobiax"),
+    ("cobiax","uboot"),("cobiax","cobiax"),
+])
+def test_existing_generic_roof_identity_cannot_be_reused(specialized,historical):
+    from core.takeoff.roof_detail import physical_identity_guard
+    d=sample(specialized)
+    previous={"kind":historical,"floor_id":"L1","system_id":"S1"}
+    project={"reviewed_aec_systems":{
+        "new":{"data":d},
+        "old":{"data":previous},
+    }}
+    with pytest.raises(ValueError, match="تاریخی"):
+        physical_identity_guard(project)
+
+
+@pytest.mark.parametrize("kind",KINDS)
+def test_unapproved_generic_to_specialist_upgrade_is_blocked(tmp_path,kind):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/"db")
+    app.create_project("آزمون مصنوعی مهاجرت","P")
+    d=empty_system(kind,"L1","S1")
+    d["source"]={"mode":"manual","source_id":"GENERIC-"+kind}
+    app.save_aec_system_draft("P",d,expected_revision=0)
+    specialist=sample(kind)
+    # The same stored key must not be silently rewritten with a new protocol.
+    with pytest.raises(ValueError,match="مهاجرت"):
+        app.save_aec_system_draft("P",specialist,expected_revision=1)
+    assert app.get_aec_system("P",kind,"L1","S1")["revision"]==1
+    app.store.close()
