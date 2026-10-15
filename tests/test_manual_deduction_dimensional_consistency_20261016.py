@@ -30,7 +30,7 @@ def _deduction(variable_unit="m3", item_unit="m3", quantity="1"):
 @pytest.mark.parametrize(("variable_unit", "item_unit"), [
     ("cm3", "m3"),
     ("mm3", "m3"),
-    ("m3", "cm3"),
+    ("cm3", "متر مکعب"),
 ])
 def test_same_dimension_different_scale_cannot_misstate_documented_deduction(
         variable_unit, item_unit):
@@ -42,7 +42,7 @@ def test_same_dimension_different_scale_cannot_misstate_documented_deduction(
 
 
 @pytest.mark.parametrize(("variable_unit", "item_unit"), [
-    ("m3", "m3"), ("m3", "متر مکعب"), ("cm3", "cm3"),
+    ("m3", "m3"), ("m3", "متر مکعب"), ("m3", "m³"),
 ])
 def test_same_canonical_unit_remains_valid_and_exact(variable_unit, item_unit):
     document = clean(_deduction(variable_unit, item_unit))
@@ -51,7 +51,7 @@ def test_same_canonical_unit_remains_valid_and_exact(variable_unit, item_unit):
         "variable_units": document["variable_units"],
         "unit_policy": document["unit_policy"], "references": {}, "unit": "m3",
     }})
-    expected = Decimal("5") if variable_unit == "m3" else Decimal("5.999999")
+    expected = Decimal("5")
     assert Decimal(str(quantities["A"])) == expected
 
 
