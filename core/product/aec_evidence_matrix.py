@@ -7,6 +7,7 @@ real engineering or Windows acceptance without a separately reviewed change.
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,15 @@ _LIMITED_SOURCES: dict[str, tuple[list[str], list[str]]] = {
     code: (["docs/acceptance/" + doc], ["tests/" + t for t in tests])
     for codes, doc, tests in _GROUPS for code in codes
 }
+_FORMATS = {
+    code: (["pdf", "xlsx", "docx", "csv"] if doc.startswith("roof_")
+           else ["pdf", "xlsx"])
+    for codes, doc, tests in _GROUPS for code in codes
+}
+_VARIANTS = {
+    "waffle": ["waffle_one_way", "waffle_two_way"],
+    "hollow_core": ["hollow_core_detail"],
+}
 _PHASE_2 = frozenset({"drawing_sources", "drawing_selection", "manual_workbench"})
 _PHASE_3 = frozenset({"boq", "pricebook", "estimate", "statement", "cost_control"})
 
@@ -62,8 +72,14 @@ def verify_family_evidence(
 ) -> dict[str, Any]:
     """Check matrix against the independent catalog and fixed evidence baseline."""
     matrix = json.loads(Path(matrix_path).read_text(encoding="utf-8"))
-    inventory = json.loads(Path(inventory_path).read_text(encoding="utf-8"))
+    source_bytes = Path(inventory_path).read_bytes()
+    inventory = json.loads(source_bytes.decode("utf-8"))
     issues: list[str] = []
+    git_blob = hashlib.sha1(
+        b"blob " + str(len(source_bytes)).encode("ascii") + b"\0" + source_bytes
+    ).hexdigest()
+    if matrix.get("source_inventory_blob_sha") != git_blob:
+        issues.append("اثر انگشت Git بانک مرجع با ماتریس متفاوت است")
 
     originals = inventory.get("items")
     rows = matrix.get("rows")
@@ -74,6 +90,9 @@ def verify_family_evidence(
     original_ids = [x.get("code") for x in originals if isinstance(x, dict)]
     source_by_code = {x["code"]: x for x in originals
                       if isinstance(x, dict) and isinstance(x.get("code"), str)}
+    if any(r.get("fully_accepted") is not False or r.get("tests_verified") is not False
+           for r in originals if isinstance(r, dict)):
+        issues.append("بانک مرجع دارای پذیرش بدون شاهد است")
     if set(original_ids) != _REQUIRED or len(original_ids) != len(set(original_ids)):
         issues.append("شناسه‌های مرجع با قرارداد ۸۵ خانواده برابر نیستند")
     if matrix.get("schema_version") != "phase1-8phase-evidence-v1":
@@ -135,13 +154,17 @@ def verify_family_evidence(
             for path in expected_docs + expected_tests:
                 if not (_ROOT / path).is_file():
                     issues.append(f"فایل شاهد در مخزن وجود ندارد: {path}")
-            if not isinstance(e.get("formats"), list) or not e["formats"]:
-                issues.append(f"قالب گزارش مستند نیست: {code}")
+            if e.get("formats") != _FORMATS[code]:
+                issues.append(f"قالب گزارش خارج از شواهد ثبت شده است: {code}")
+            if e.get("variants") != _VARIANTS.get(code, []):
+                issues.append(f"گونه تخصصی غیرمستند است: {code}")
         else:
             if (row.get("acceptance_status") != "not_individually_verified"
                     or any(gates[g] != "not_verified" for g in _DOCUMENTED_GATES)
                     or e.get("documents") != []
                     or e.get("tests") != []
+                    or e.get("formats") != []
+                    or e.get("variants") != []
                     or e.get("input_type") != "not_verified"):
                 issues.append(f"پذیرش تخصصی بدون شاهد برای خانواده: {code}")
         if not isinstance(e.get("description"), str) or not e["description"].strip():
