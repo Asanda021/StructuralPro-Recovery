@@ -580,6 +580,7 @@ class ReviewedAECWorkflow:
         if old and old.get("status") == "committed":
             raise ValueError("سیستم قبلاً به متره قطعی منتقل شده است")
         if old and old['data'].get('measurement_policy')=='roof_specialist_v1' and data.get('measurement_policy')!='roof_specialist_v1':raise ValueError('حذف قرارداد تخصصی سقف ممنوع است')
+        if old and kind in ('uboot','cobiax') and old['data'].get('measurement_policy')!='roof_specialist_v1' and data.get('measurement_policy')=='roof_specialist_v1':raise ValueError('جایگزینی رکورد تاریخی یوبوت یا کوبیاکس بدون مهاجرت رسمی ممنوع است')
         if data.get('measurement_policy')=='roof_specialist_v1' and 'roof_review' in data:
             from core.takeoff.roof_detail import review_digest
             rv=data['roof_review']
@@ -697,7 +698,7 @@ class ReviewedAECWorkflow:
             elif isinstance(v,list):
                 for child in v:reset(child)
         reset(data)
-        for piece in data['roof_detail']['pieces']+data['roof_detail'].get('panels',[]):piece['region_id']=replacements[piece['region_id']]
+        for piece in data['roof_detail']['pieces']+data['roof_detail'].get('panels',[])+data['roof_detail'].get('void_formers',[]):piece['region_id']=replacements[piece['region_id']]
         for group in data['roof_detail']['rebars'].values():
             for series in group.get('series',[]):
                 if series.get('panel_id'):series['panel_id']=replacements[series['panel_id']]
