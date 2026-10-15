@@ -51,6 +51,8 @@ SPECS = {
     "joist_foam": SystemSpec("سقف تیرچه‌یونولیت", ("topping", "ribs", "joists", "foam",
                                                 "ties", "reinforcement", "formwork",
                                                 "openings"), ("topping", "ribs", "joists", "foam")),
+    "waffle_one_way": SystemSpec("سقف وافل یک‌طرفه", ("topping", "ribs_x", "solid_zones", "reinforcement", "forms", "openings"), ("topping", "ribs_x")),
+    "waffle_two_way": SystemSpec("سقف وافل دوطرفه", ("topping", "ribs_x", "ribs_y", "junctions", "solid_zones", "reinforcement", "forms", "openings"), ("topping", "ribs_x", "ribs_y", "junctions")),
     "waffle": SystemSpec("سقف وافل", ("topping", "ribs_x", "ribs_y", "junction_adjustment",
                                     "solid_zones", "reinforcement", "forms", "openings"),
                          ("topping", "ribs_x", "ribs_y", "junction_adjustment")),
@@ -431,7 +433,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
 def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     if not isinstance(data, dict) or data.get("kind") not in SPECS:
         raise ValueError("نوع سیستم متره معتبر نیست")
-    if data.get('measurement_policy')=='roof_specialist_v1':
+    if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way'):
         from core.takeoff.roof_detail import preview
         return preview(data,engine)
     kind = data["kind"]
@@ -595,7 +597,7 @@ class ReviewedAECWorkflow:
         entry = {"status": "draft", "revision": revision + 1, "data": deepcopy(data),
                  "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = entry
-        if data.get('measurement_policy')=='roof_specialist_v1':
+        if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way'):
             from core.takeoff.roof_detail import physical_identity_guard
             physical_identity_guard(project)
         self.store.save(pid, project, expected_digest=digest)

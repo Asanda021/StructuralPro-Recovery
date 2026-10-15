@@ -14,15 +14,17 @@ def export(service,pid,kind,floor,sid,path,*,format):
  if not result['ready']:raise ValueError('گزارش قطعی برای داده ناقص مجاز نیست؛ '+'؛ '.join(result['blockers']))
  rows=[]
  for v in result['rows']:
-  params=v['params'];notes='ورودی‌ها برای هر سقف هم‌تیپ؛ مرجع: '+str(v['source_ref'])+'؛ نقش: '+('عملیات قابل پرداخت مستقل' if v['role']=='work' else 'مصالح داخل تیرچه خریداری‌شده؛ غیرقابل پرداخت مستقل')
+  params=v['params'];notes='ورودی‌ها برای هر سقف هم‌تیپ؛ مرجع: '+str(v['source_ref'])+'؛ نقش: '+('عملیات قابل پرداخت مستقل' if v['role']=='work' else ('قطعات قالب وافل؛ بدون استنتاج سطح تماس یا نرخ مالی' if v['item_code']=='waffle_molds' else 'مصالح داخل تیرچه خریداری‌شده؛ غیرقابل پرداخت مستقل'))
   if 'series' in params:
    s=params['series'];notes+='؛ قطر (میلی‌متر): '+str(s['diameter_mm'])+'؛ تعداد: '+str(s['count'])+'؛ طول برش (متر): '+str(s['cut_length_m'])+'؛ وزن واحد (کیلوگرم بر متر): '+str(s['unit_weight_kg_m'])+'؛ شکل: '+s['shape_ref']+'؛ منبع وزن: '+s['unit_weight_source']
    notes+='؛ اجزای برش: '+'؛ '.join(str(p['id'])+'، '+str(p['length_m'])+' متر، '+p['source_ref'] for p in s['cut_parts'])
   if 'geometry' in params:
    g=params['geometry'];notes+='؛ ناحیه: '+g['id']+'؛ ابتدا (متر): '+', '.join(str(g[k]) for k in ('x','y','z'))+'؛ طول، عرض، ارتفاع (متر): '+', '.join(str(g[k]) for k in ('length','width','height'))+'؛ ناخالص هر سقف: '+str(params['gross_m3'])+'؛ کسر هر سقف: '+str(params['deducted_m3'])
-  for key,label in [('length','طول قطعه'),('width','عرض قطعه'),('height','ارتفاع قطعه'),('nx','تعداد در طول'),('ny','تعداد در عرض'),('nz','تعداد در ارتفاع'),('count','تعداد'),('spec_ref','مشخصات قطعه'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر وجه (متر مربع)'),('height_m','ارتفاع شمع (متر)'),('system_ref','روش شمع‌بندی'),('spacing_m','فاصله تیرچه (متر)')]:
+  for key,label in [('length','طول قطعه'),('width','عرض قطعه'),('height','ارتفاع قطعه'),('nx','تعداد در طول'),('ny','تعداد در عرض'),('nz','تعداد در ارتفاع'),('count','تعداد'),('spec_ref','مشخصات قطعه'),('physical_key','هویت فیزیکی'),('approved_by','تأییدکننده'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر وجه (متر مربع)'),('height_m','ارتفاع شمع (متر)'),('system_ref','روش شمع‌بندی'),('spacing_m','فاصله تیرچه (متر)')]:
    if key in params:notes+='؛ '+label+': '+str(params[key])
   rows.append({'description':v['description'],'quantity':v['quantity'],'unit':v['unit'],'source':v['source_id'],'formula':v['formula'],'notes':notes})
+ for p in d['roof_detail'].get('rib_layout',[]):
+  rows.append({'description':'جانمایی مستند ریب '+('جهت طول' if p['axis']=='x' else 'جهت عرض')+'؛ ردیف مرجع غیرقابل پرداخت','source':p['id'],'notes':'مرجع: '+p['source_ref']+'؛ تأییدکننده: '+p['approved_by']+'؛ ابتدا (متر): '+', '.join(str(p[k]) for k in ('x','y','z'))+'؛ طول، عرض، ارتفاع (متر): '+', '.join(str(p[k]) for k in ('length','width','height'))})
  for group,p in {**d['roof_detail']['rebars'],'formwork':d['roof_detail']['formwork'],'shoring':d['roof_detail']['shoring']}.items():
   if p.get('status')=='not_applicable':rows.append({'description':LABELS[group]+' — عدم کاربرد مستند','notes':p['reason']+'؛ مرجع: '+p['source_ref']+'؛ تأییدکننده: '+p['approved_by']})
  for p in d['roof_detail']['deductions']:
@@ -41,7 +43,7 @@ def export(service,pid,kind,floor,sid,path,*,format):
  meta={'project_name':project['name'],'building_id':d['building_id'],'floor':floor,'member':sid,'revision':record['revision'],'status':{'draft':'پیش‌نویس','committed':'قطعی'}[record['status']],'source':d['source']['source_id'],'پلان':d['source']['plan_ref'],'دیتایل':d['source']['detail_ref'],'بازبین':effective_review or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی'),'طول (متر)':d['roof_detail']['geometry']['length'],'عرض (متر)':d['roof_detail']['geometry']['width'],'ارتفاع کل (متر)':d['roof_detail']['geometry']['depth'],'تعداد سقف هم‌تیپ':d['roof_detail']['geometry']['count'],'منبع کسورات':d['roof_detail']['deductions_ref']}
  totals={}
  units={'m3':'متر مکعب','kg':'کیلوگرم','m2':'متر مربع','عدد':'عدد'}
- labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی'}
+ labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی','waffle_molds':'تعداد قالب وافل'}
  for row in result['rows']:
   label=labels[row['item_code']]+' ('+units[row['unit']]+')';totals[label]=totals.get(label,Decimal(0))+Decimal(str(row['quantity']))
  for index,row in enumerate(rows,1):row['item_no']=index

@@ -30,6 +30,7 @@ _ROUTES = frozenset({
     "review_contract", "structural_review_contract",
     "beam_feature_path", "requires_dedicated_acceptance",
 })
+_SPECIALIST_PARENTS = {"waffle_one_way": "waffle", "waffle_two_way": "waffle"}
 _PRIORITY_SET = frozenset(range(1, 10))
 
 
@@ -40,6 +41,7 @@ def verify_priority_inventory(path: str | Path = _FILE) -> dict[str, Any]:
     if not isinstance(rows, list) or not rows:
         raise ValueError("فهرست آیتم‌های AEC خالی یا نامعتبر است")
     ids, seen_priorities = set(), set()
+    variants: dict[str, str] = {}
     subitems = 0
     issues: list[str] = []
     for row in rows:
@@ -69,11 +71,26 @@ def verify_priority_inventory(path: str | Path = _FILE) -> dict[str, Any]:
             subitems += len(names)
         if route not in _ROUTES:
             issues.append(f"نوع پوشش ناشناخته: {key}")
+        declared = row.get("review_contract_variants", [])
+        if not isinstance(declared, list):
+            issues.append(f"فهرست قراردادهای تخصصی خانواده نامعتبر است: {key}")
+            declared = []
+        for variant in declared:
+            if (not isinstance(variant, str) or variant not in SPECS
+                    or _SPECIALIST_PARENTS.get(variant) != key
+                    or route != "review_contract"):
+                issues.append(f"قرارداد تخصصی یا والد نامعتبر: {key}/{variant}")
+                continue
+            if variant in variants:
+                issues.append(f"قرارداد تخصصی تکراری: {variant}")
+            variants[variant] = key
         if row.get("fully_accepted") is not False or row.get("tests_verified") is not False:
             # Explicit acceptance must be proven by a separate audited process.
             issues.append(f"پذیرش بدون شاهد یا آزمون: {key}")
     missing_family_ids = sorted(_REQUIRED - ids)
-    missing_aec_contracts = sorted(set(SPECS) - ids)
+    if set(variants) & ids:
+        issues.append("قرارداد تخصصی هم‌زمان به‌عنوان خانواده مستقل تکرار شده است")
+    missing_aec_contracts = sorted(set(SPECS) - ids - set(variants))
     missing_structure_contracts = sorted(set(KINDS) - ids)
     missing_priorities = sorted(_PRIORITY_SET - seen_priorities)
     for label, missing in (("خانواده الزامی", missing_family_ids),

@@ -97,12 +97,12 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     for button in (load_button, save_button, preview_button, commit_button):
         actions.addWidget(button)
     outer.addLayout(actions)
-    roof_button=QPushButton('فرم تخصصی دال، تیرچه‌بلوک و تیرچه‌فوم')
+    roof_button=QPushButton('فرم تخصصی دال، تیرچه و وافل')
     outer.addWidget(roof_button)
     def open_specialist_roof():
         from core.takeoff.roof_detail import KINDS
         if kind.currentData() not in KINDS:
-            QMessageBox.warning(dialog,'انتخاب سقف','یکی از سه سیستم سقف بسته اول را انتخاب کنید');return
+            QMessageBox.warning(dialog,'انتخاب سقف','یکی از سیستم‌های سقف دارای قرارداد تخصصی را انتخاب کنید');return
         from app.roof_detail_editor import open_roof_editor
         open_roof_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
     roof_button.clicked.connect(open_specialist_roof)

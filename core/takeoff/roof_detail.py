@@ -11,9 +11,10 @@ from core.takeoff.reviewed_components import require_text
 from core.takeoff.reviewed_structural import _validate_source
 
 POLICY='roof_specialist_v1'
-KINDS=('solid_slab','joist_block','joist_foam')
+WAFFLE_KINDS=('waffle_one_way','waffle_two_way')
+KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS
 BARS=('main_x','main_y','distribution','thermal','rib','additional','opening','solid','tie')
-LABELS={'concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
+LABELS={'ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
 
 
 def n(v,label,zero=False,integer=False):
@@ -83,6 +84,62 @@ def review_digest(data):
  d=deepcopy(data);d.pop('roof_review',None);return digest(d)
 
 
+def validate_waffle(d,kind,regions,deductions,limit,identity,emit):
+ """Validate measured rib envelopes against a disjoint solid/void partition.
+
+ Cross-direction envelopes may intersect. Their intersection belongs solely to
+ junction regions. Same-direction overlap is never valid. No grid is inferred.
+ """
+ L,W,H=limit;g=d['geometry'];t=n(g.get('topping_thickness'),'ضخامت رویه وافل')
+ if t>=H:raise ValueError('ضخامت رویه وافل باید کمتر از ارتفاع باشد')
+ if d.get('joist_layout') or any(g.get(k) not in (None,'') for k in ('joist_axis','joist_count','joist_spacing','joist_supply_scope')):raise ValueError('دیتایل تیرچه در وافل مجاز نیست')
+ if g.get('action')!=('one_way' if kind=='waffle_one_way' else 'two_way'):raise ValueError('رفتار وافل با خانواده انتخابی تطبیق ندارد')
+ axis=g.get('rib_axis')
+ if axis not in ('x','y'):raise ValueError('جهت اصلی ریب باید مستند باشد')
+ tops=[b for p,b in regions if p['component']=='topping']
+ if not tops or any(b[0][2]!=H-t or b[1][2]!=H for b in tops):raise ValueError('رویه وافل باید در تراز و ضخامت مستند باشد')
+ if any(b[1][2]>H-t for p,b in regions if p['component'] not in ('topping','solid_zones')):raise ValueError('ناحیه زیرین وافل وارد رویه شده است')
+ layout=d.get('rib_layout')
+ if not isinstance(layout,list) or not 0<len(layout)<=128:raise ValueError('جانمایی مستقل یک تا۱۲۸ریب لازم است')
+ ribs={'x':[],'y':[]}
+ for p in layout:
+  strict(p,('id','axis','x','y','z','length','width','height','source_ref','approved_by'),'جانمایی ریب')
+  identity(p);a=p.get('axis')
+  if a not in ribs or (kind=='waffle_one_way' and a!=axis):raise ValueError('جهت ریب با قرارداد وافل تطبیق ندارد')
+  b=box(p,(L,W,H-t))
+  if b[0][2]!=0 or b[1][2]!=H-t:raise ValueError('ریب باید تمام ارتفاع زیر رویه باشد؛ ریب پله‌ای پشتیبانی نمی‌شود')
+  ribs[a].append(b)
+ if not ribs[axis] or (kind=='waffle_two_way' and (not ribs['x'] or not ribs['y'])):raise ValueError('جانمایی هر جهت ریب الزامی است')
+ if any(overlap(a,b)>0 for group in ribs.values() for a,b in combinations(group,2)):raise ValueError('ریب‌های هم‌جهت مشترک یا تکراری‌اند')
+ crossings=[(a,b) for a in ribs['x'] for b in ribs['y'] if overlap(a,b)>0]
+ if kind=='waffle_two_way' and not crossings:raise ValueError('وافل دوطرفه فاقد تقاطع مستند است')
+ rib_volume=Decimal(0)
+ for p,b in regions:
+  c=p['component'];vx=sum((overlap(b,r) for r in ribs['x']),Decimal(0));vy=sum((overlap(b,r) for r in ribs['y']),Decimal(0));v=volume(b)
+  if c=='ribs_x' and (vx!=v or vy):raise ValueError('ناحیه ریب طولی شامل تقاطع یا خارج از جانمایی است')
+  if c=='ribs_y' and (vy!=v or vx):raise ValueError('ناحیه ریب عرضی شامل تقاطع یا خارج از جانمایی است')
+  if c=='junctions' and (vx!=v or vy!=v):raise ValueError('ناحیه تقاطع باید دقیقاً تحت پوشش هر دو جهت باشد')
+  if c not in ('ribs_x','ribs_y','junctions') and (vx or vy):raise ValueError('جانمایی ریب با ناحیه توپر، رویه یا قالب تداخل دارد؛ قطعه‌بندی مستند لازم است')
+  if c in ('ribs_x','ribs_y','junctions'):rib_volume+=v
+ expected=sum((volume(b) for group in ribs.values() for b in group),Decimal(0))-sum((overlap(a,b) for a,b in crossings),Decimal(0))
+ if rib_volume!=expected:raise ValueError('ناحیه‌بندی ریب و تقاطع کامل نیست')
+ voids={p['id']:b for p,b in regions if p['component']=='void'};seen=set()
+ if not voids:raise ValueError('وافل فاقد ناحیه قالب مستند است')
+ for piece in d['pieces']:
+  strict(piece,('id','physical_key','region_id','count','length','width','height','nx','ny','nz','shape','source_ref','spec_ref','approved_by'),'قالب وافل')
+  ident=identity(piece,True);checked(piece);require_text(piece.get('spec_ref'),'مشخصات قالب')
+  if piece.get('shape')!='rectangular_prism':raise ValueError('فقط قالب منشوری مستطیلی با دیتایل واقعی پشتیبانی می‌شود؛ قالب شیب‌دار مسدود است')
+  rid=piece.get('region_id')
+  if rid not in voids or rid in seen:raise ValueError('ناحیه قالب تکراری یا فاقد جانمایی است')
+  seen.add(rid);b=voids[rid]
+  if b[0][2]!=0 or b[1][2]!=H-t:raise ValueError('قالب وافل باید از زیر سقف تا زیر رویه باشد؛ حفره معلق پذیرفته نیست')
+  dims=[n(piece.get(k),k) for k in ('length','width','height')];nums=[n(piece.get(k),k,integer=True) for k in ('nx','ny','nz')];qty=n(piece.get('count'),'تعداد قالب',integer=True)
+  if nums[2]!=1 or qty!=nums[0]*nums[1]*nums[2] or any(a*c!=e-s for a,c,s,e in zip(dims,nums,b[0],b[1])):raise ValueError('تعداد، ابعاد یا چیدمان قالب وافل با ناحیه حفره یکسان نیست')
+  emit('waffle_molds',qty,'عدد','waffle_molds',ident,'تعداد قالب در جانمایی مستند؛ مستقل از سطح تماس قالب',deepcopy(piece))
+ if seen!=set(voids):raise ValueError('همه نواحی حفره نیازمند دیتایل قالب هستند')
+ if any(overlap(b,c)>0 for p,b in regions if p['component']!='solid_zones' for _,c in deductions):raise ValueError('بازشو یا تقاطع وافل فقط در ناحیه توپر مستقل پذیرفته می‌شود؛ قطع ریب یا قالب نیازمند قرارداد قطعه‌بندی است')
+
+
 @exact
 def preview(data,engine,require_review=False):
  """Return the existing AEC preview shape; all persisted quantities use wire()."""
@@ -96,12 +153,13 @@ def preview(data,engine,require_review=False):
   require_text(data.get('building_id'),'شناسه ساختمان')
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')
   if any(part!={'status':'unreviewed'} for part in data['components'].values()):raise ValueError('دیتایل عمومی و تخصصی سقف نباید هم‌زمان شمرده شوند')
-  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout'),'دیتایل سقف')
-  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','source_ref','approved_by'),'هندسه');checked(g)
+  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout'),'دیتایل سقف')
+  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','source_ref','approved_by'),'هندسه');checked(g)
   if g.get('unit')!='m' or g.get('shape')!='rectangular':raise ValueError('فقط هندسه مستطیلی با واحد صریح متر پشتیبانی می‌شود')
   L,W,H=(n(g.get(k),k) for k in ('length','width','depth'));count=n(g.get('count'),'تعداد سقف',integer=True)
   if g.get('repeat_scope')!='identical_roofs':raise ValueError('تکرار صریح سقف‌های هم‌تیپ لازم است')
   if kind=='solid_slab' and g.get('action') not in ('one_way','two_way'):raise ValueError('جهت دال باید مستند باشد')
+  if kind not in WAFFLE_KINDS and (d.get('rib_layout') or g.get('rib_axis') not in (None,'')):raise ValueError('دیتایل ریب وافل در خانواده دیگر مجاز نیست')
   used=set();physical=set()
   def identity(part,physical_key=False):
    key=canonical(part.get('id'))
@@ -114,11 +172,12 @@ def preview(data,engine,require_review=False):
    return part['id']
   def emit(code,quantity,unit,component,ident,formula,params):
    if quantity<=0:return
-   rows.append({'source_id':prefix+':'+str(ident),'line_id':str(ident),'item_code':code,'quantity':wire(quantity*count),'unit':unit,'domain':'building','description':LABELS.get(component,component)+' سقف '+sid,'formula':formula+' × تعداد سقف هم‌تیپ','params':wire(params),'component':component,'method':POLICY,'source_ref':params.get('source_ref',g['source_ref']),'role':'material' if code=='precast_concrete' or params.get('series',{}).get('supply_scope')=='factory' else 'work'})
+   rows.append({'source_id':prefix+':'+str(ident),'line_id':str(ident),'item_code':code,'quantity':wire(quantity*count),'unit':unit,'domain':'building','description':LABELS.get(component,component)+' سقف '+sid,'formula':formula+' × تعداد سقف هم‌تیپ','params':wire(params),'component':component,'method':POLICY,'source_ref':params.get('source_ref',g['source_ref']),'role':'material' if code in ('precast_concrete','waffle_molds') or params.get('series',{}).get('supply_scope')=='factory' else 'work'})
   parts=d['regions']
   if not isinstance(parts,list) or not 0<len(parts)<=512:raise ValueError('جدول ناحیه‌ها باید شامل یک تا۵۱۲ناحیه واقعی باشد')
   regions=[]
   allowed={'concrete'} if kind=='solid_slab' else {'topping','ribs','ties','solid_zones','precast','void'}
+  if kind in WAFFLE_KINDS:allowed={'topping','ribs_x','ribs_y','junctions','solid_zones','void'}
   for p in parts:
    strict(p,('id','component','x','y','z','length','width','height','source_ref','approved_by'),'ناحیه')
    identity(p)
@@ -148,6 +207,8 @@ def preview(data,engine,require_review=False):
   pieces=d['pieces'];require_text(d.get('pieces_ref'),'مرجع قطعات یا عدم کاربرد')
   if kind=='solid_slab':
    if pieces or d['joist_layout']:raise ValueError('دال توپر نباید قطعات پرکننده یا تیرچه داشته باشد')
+  elif kind in WAFFLE_KINDS:
+   validate_waffle(d,kind,regions,deductions,(L,W,H),identity,emit)
   else:
    t=n(g.get('topping_thickness'),'ضخامت بتن رویه')
    if t>=H:raise ValueError('ضخامت رویه از ارتفاع سقف کمتر باشد')
@@ -189,13 +250,15 @@ def preview(data,engine,require_review=False):
   if set(bars)!=set(BARS):raise ValueError('گروه مستقل میلگرد ناقص یا ناشناخته است')
   for group in BARS:
    part=bars[group];strict(part,('status','approved_by','source_ref','reason','series'),'گروه میلگرد');required=group in (('main_x','main_y') if kind=='solid_slab' else ('rib','thermal')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions))
+   if kind in WAFFLE_KINDS:
+    required=group in ('thermal',('main_x' if g.get('rib_axis')=='x' else 'main_y')) or (kind=='waffle_two_way' and group in ('main_x','main_y')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions)) or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
    if not applicable(part,required):continue
    if not part.get('series'):raise ValueError('سری مستقل میلگرد لازم است')
    for series in part['series']:
     strict(series,('id','physical_key','diameter_mm','supply_scope','count','cut_length_m','unit_weight_kg_m','unit_weight_source','shape_ref','source_ref','cut_parts'),'سری میلگرد')
     ident=identity(series,True)
     for k in ('shape_ref','source_ref','unit_weight_source'):require_text(series.get(k),'دیتایل برش، مرجع و وزن واحد')
-    if series.get('supply_scope') not in ('site','factory') or (kind=='solid_slab' and series.get('supply_scope')!='site'):raise ValueError('دامنه میلگرد کارگاهی یا داخل تیرچه کارخانه‌ای باید صریح باشد')
+    if series.get('supply_scope') not in ('site','factory') or (kind in ('solid_slab',)+WAFFLE_KINDS and series.get('supply_scope')!='site'):raise ValueError('دامنه میلگرد کارگاهی یا داخل تیرچه کارخانه‌ای باید صریح باشد')
     n(series.get('diameter_mm'),'قطر میلگرد');qty=n(series.get('count'),'تعداد میلگرد',integer=True);cut=n(series.get('cut_length_m'),'طول برش');uw=n(series.get('unit_weight_kg_m'),'وزن واحد مستند')
     cut_parts=series.get('cut_parts');cut_ids=set();total=Decimal(0)
     if not isinstance(cut_parts,list) or not cut_parts:raise ValueError('ریز طول مستقیم، خم، قلاب و وصله صریح لازم است')
