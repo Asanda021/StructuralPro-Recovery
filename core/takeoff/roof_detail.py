@@ -47,6 +47,11 @@ def physical_identity_guard(project):
   key=tuple(canonical(d.get(k)) for k in ('building_id','floor_id','system_id'))
   if key in seen:raise ValueError('سقف فیزیکی با نوع سیستم متفاوت یا هویت تکراری ثبت شده است')
   seen.add(key)
+  if d.get('kind') in VOID_KINDS:
+   for previous in project.get('reviewed_aec_systems',{}).values():
+    old=previous.get('data',{})
+    if old.get('kind') in VOID_KINDS and old.get('measurement_policy')!=POLICY and all(canonical(old.get(k))==canonical(d.get(k)) for k in ('floor_id','system_id')):
+     raise ValueError('سقف حفره‌دار تاریخی هم‌هویت وجود دارد؛ مهاجرت مستند پیش از شمارش مجدد الزامی است')
   if d.get('kind')==HOLLOW_KIND:
    for previous in project.get('reviewed_aec_systems',{}).values():
     old=previous.get('data',{})
