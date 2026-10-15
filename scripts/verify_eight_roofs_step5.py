@@ -5,8 +5,10 @@ A successful legacy-core run is NEVER substituted for full HEAD acceptance.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
+import re
 import os
 import subprocess
 import sys
@@ -40,9 +42,12 @@ def run() -> int:
     args = parser.parse_args()
     out = args.output_dir.resolve()
     out.mkdir(parents=True, exist_ok=True)
+    for previous in ('pytest.xml', 'pytest.log'):
+        (out / previous).unlink(missing_ok=True)
     info = {
         'started_at_utc': datetime.now(timezone.utc).isoformat(),
         'source_ref_claim': args.source_ref,
+        'runner_sha256': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'mode': args.mode,
         'scope': 'archived six-roof math/SQLite only' if args.mode == 'legacy-core'
                  else 'full current eight-roof worktree',
@@ -52,6 +57,14 @@ def run() -> int:
         'blocking_reasons': [],
     }
     if args.mode == 'eight-roofs':
+        if not re.fullmatch(r'[a-fA-F0-9]{40}', args.source_ref):
+            info['blocking_reasons'].append('An exact 40-character Git SHA is required')
+        actual_head = subprocess.run(
+            ['git', 'rev-parse', 'HEAD'], cwd=ROOT, capture_output=True, text=True, check=False,
+        )
+        if actual_head.returncode != 0 or actual_head.stdout.strip() != args.source_ref:
+            info['blocking_reasons'].append('Checked-out Git HEAD differs from requested acceptance SHA')
+        info['verified_git_head'] = actual_head.stdout.strip() if actual_head.returncode == 0 else None
         required = {'PySide6': 'PySide6', 'arabic_reshaper': 'arabic-reshaper',
                     'bidi': 'python-bidi'}
         info['missing_dependencies'] = [p for mod, p in required.items()
