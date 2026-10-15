@@ -37,6 +37,12 @@ def sample(kind: str, *, identity: str = "S1"):
         data["system_id"] = identity
         data["source"]["source_id"] += ":" + identity
         return data
+    if kind == "hollow_core_detail":
+        from test_hollowcore_specialist_work import sample as hollow_sample
+        data = hollow_sample(kind)
+        data["system_id"] = identity
+        data["source"]["source_id"] += ":" + identity
+        return data
     d = empty_system(kind, "L1", identity)
     d["source"] = {"mode": "manual", "source_id": f"manual:{kind}:L1:{identity}"}
     for name in SPECS[kind].components:

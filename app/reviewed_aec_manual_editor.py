@@ -97,7 +97,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     for button in (load_button, save_button, preview_button, commit_button):
         actions.addWidget(button)
     outer.addLayout(actions)
-    roof_button=QPushButton('فرم تخصصی دال، تیرچه و وافل')
+    roof_button=QPushButton('فرم تخصصی دال، تیرچه، وافل و هالوکور')
     outer.addWidget(roof_button)
     def open_specialist_roof():
         from core.takeoff.roof_detail import KINDS

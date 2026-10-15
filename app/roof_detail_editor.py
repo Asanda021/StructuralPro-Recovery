@@ -4,7 +4,7 @@ from hashlib import sha256
 from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QTableWidgetItem,QMessageBox,QFileDialog,QScrollArea)
-from core.takeoff.roof_detail import KINDS,WAFFLE_KINDS,BARS,LABELS,POLICY,review_digest
+from core.takeoff.roof_detail import KINDS,WAFFLE_KINDS,HOLLOW_KIND,BARS,LABELS,POLICY,review_digest
 from core.takeoff.reviewed_aec import SPECS,preview_system,_id
 
 REGIONS=[('id','شناسه'),('component','نوع ناحیه'),('x','ابتدای طول'),('y','ابتدای عرض'),('z','تراز ابتدا'),('length','طول'),('width','عرض'),('height','ارتفاع'),('source_ref','مرجع'),('approved_by','تأییدکننده')]
@@ -14,9 +14,11 @@ LAYOUT=[field for field in REGIONS if field[0]!='component']
 RIB_LAYOUT=[LAYOUT[0],('axis','جهت ریب')]+LAYOUT[1:]
 WAFFLE_PIECES=[(key,'شناسه ناحیه حفره قالب' if key=='region_id' else title) for key,title in PIECES]+[('physical_key','هویت مستقل قالب'),('shape','هندسه قالب'),('approved_by','تأییدکننده قالب')]
 STEEL=[('id','شناسه سری'),('supply_scope','دامنه تأمین میلگرد'),('physical_key','هویت فیزیکی مستقل'),('diameter_mm','قطر (میلی‌متر)'),('count','تعداد'),('cut_length_m','طول برش (متر)'),('unit_weight_kg_m','وزن واحد (کیلوگرم بر متر)'),('unit_weight_source','منبع وزن واحد'),('shape_ref','شکل دیتایل'),('source_ref','مرجع سری')]
+HOLLOW_STEEL=STEEL+[('steel_kind','نوع فولاد'),('panel_id','شناسه قطعه مالک فولاد کارخانه‌ای')]
+PANELS=[('id','شناسه قطعه نهایی'),('physical_key','هویت فیزیکی قطعه'),('region_id','شناسه ناحیه پیش‌ساخته'),('count','تعداد مستقل؛ یک قطعه'),('length','طول (متر)'),('width','عرض (متر)'),('height','ارتفاع (متر)'),('shape','هندسه قطعه'),('spec_ref','گواهی مقطع'),('fabrication_ref','مدرک قطعه نهایی و قطعه‌بندی'),('source_ref','مرجع جانمایی'),('approved_by','تأییدکننده'),('void_volume_m3','حجم حفره (متر مکعب)'),('void_source_ref','منبع حجم حفره'),('net_volume_m3','حجم خالص گواهی‌شده (متر مکعب)'),('volume_source_ref','منبع حجم خالص'),('unit_mass_kg','جرم کل قطعه (کیلوگرم)'),('mass_source_ref','منبع جرم'),('mass_scope','دامنه جرم کل')]
 FACES=[('id','شناسه وجه'),('physical_key','هویت سطح مستقل'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر سطح مستند'),('source_ref','مرجع')]
 PROPS=[('id','شناسه شمع'),('physical_key','هویت مستقل'),('count','تعداد'),('height_m','ارتفاع (متر)'),('source_ref','مرجع'),('system_ref','روش و مشخصات')]
-ENUMS={'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
+ENUMS={'steel_kind':[('میلگرد معمولی','reinforcing_bar'),('رشته پیش‌تنیدگی کارخانه‌ای','prestressing_strand')],'mass_scope':[('جرم کل قطعه شامل فولاد کارخانه‌ای','whole_panel_including_factory_steel')],'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism'),('قطعه نهایی مستطیلی کارخانه','factory_finished_rectangle')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions','joints','cast_in_place')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
 
 
 def fill_table(table,cols,records):
@@ -29,6 +31,7 @@ def fill_table(table,cols,records):
     for label,value in ENUMS[key]:
      allowed=table.property('allowed_components') if key=='component' else None
      if allowed is None or value in allowed:w.addItem('حفره قالب وافل' if key=='component' and value=='void' and allowed and 'junctions' in allowed else label,value)
+    if key=='supply_scope' and table.property('is_hollow'):w.setItemText(w.findData('factory'),'داخل قطعه هالوکور؛ غیرقابل پرداخت مستقل')
     w.setCurrentIndex(max(0,w.findData(data.get(key))));table.setCellWidget(row,col,w)
    else:table.setItem(row,col,QTableWidgetItem(str(data.get(key,''))))
   table.item(row,0).setData(Qt.ItemDataRole.UserRole,deepcopy(data))
@@ -57,12 +60,14 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   for label,value in options:w.addItem(label,value)
   layout.addRow(title,w);controls[key]=w;return w
  def piece_columns():return WAFFLE_PIECES if kindbox.currentData() in WAFFLE_KINDS else PIECES
+ def steel_columns():return HOLLOW_STEEL if kindbox.currentData()==HOLLOW_KIND else STEEL
+ def columns_for(key,cols):return piece_columns() if key=='pieces' else steel_columns() if key=='bars' else cols
  def table(layout,key,cols):
   t=QTableWidget(0,len(cols));t.setHorizontalHeaderLabels([title for _,title in cols]);t.setAlternatingRowColors(True);layout.addWidget(t);controls[key]=t
   bar=QHBoxLayout();layout.addLayout(bar)
   for action,label in [('add','افزودن ردیف'),('remove','حذف ردیف انتخابی')]:
    b=QPushButton(label);bar.addWidget(b);controls[key+'_'+action]=b
-   if action=='add':b.clicked.connect(lambda _=False,t=t,c=cols,key=key:fill_table(t,piece_columns() if key=='pieces' else c,read_table(t,piece_columns() if key=='pieces' else c)+[{}]))
+   if action=='add':b.clicked.connect(lambda _=False,t=t,c=cols,key=key:fill_table(t,columns_for(key,c),read_table(t,columns_for(key,c))+[{}]))
    else:
     def remove(_=False,t=t):
      rows={x.row() for x in t.selectedIndexes()}
@@ -76,10 +81,11 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  for key,title in [('id','شناسه سقف'),('building','شناسه ساختمان'),('source','شناسه منبع مستقل'),('plan','پلان مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
  combo(f,'joist_supply_scope','دامنه تأمین تیرچه',[('تیرچه خریداری‌شده؛ بتن و میلگرد کارخانه‌ای غیرقابل پرداخت مستقل','purchased_joists')]);combo(f,'unit','واحد ابعاد',[('متر','m')]);combo(f,'shape','هندسه',[('مستطیلی و ناحیه‌های مستقل','rectangular')]);combo(f,'repeat_scope','دامنه تکرار',[('سقف‌های هم‌تیپ با تکرار صریح','identical_roofs')]);combo(f,'action','رفتار مستند دال',[('یک‌طرفه','one_way'),('دوطرفه','two_way')]);combo(f,'joist_axis','جهت تیرچه',[('امتداد طول','x'),('امتداد عرض','y')])
  for key,title in [('length','طول کل (متر)'),('width','عرض کل (متر)'),('depth','ارتفاع کل (متر)'),('count','تعداد سقف هم‌تیپ'),('topping_thickness','ضخامت رویه (متر)'),('joist_count','تعداد واقعی تیرچه'),('joist_spacing','فاصله واقعی محور تیرچه (متر)'),('geometry_ref','مرجع هندسه'),('geometry_approver','تأییدکننده هندسه'),('deductions_ref','مرجع کسورات یا نبود تقاطع'),('pieces_ref','مرجع چیدمان قطعات یا عدم کاربرد')]:line(f,key,title)
+ combo(f,'panel_axis','جهت نصب قطعات هالوکور',[('امتداد طول','x'),('امتداد عرض','y')])
  combo(f,'rib_axis','جهت اصلی ریب وافل',[('امتداد طول','x'),('امتداد عرض','y')])
  basic.addWidget(QLabel('قرارداد فعلی: ناحیه‌بندی مستطیلی کامل و غیرهم‌پوشان؛ بازشوی قطع‌کننده تیرچه/قطعه نیازمند قرارداد قطعه‌بندی مستقل است.'))
- table(page('جانمایی واقعی تیرچه‌ها'),'joist_layout',LAYOUT);table(page('نواحی بتن و پرکننده'),'regions',REGIONS);table(page('بازشو و تقاطع مستند'),'deductions',DEDUCTIONS);table(page('قطعات و قالب‌های وافل'),'pieces',piece_columns());table(page('جانمایی مستقل ریب‌های وافل'),'rib_layout',RIB_LAYOUT)
- steel=page('گروه‌های مستقل میلگرد');sf=QFormLayout();steel.addLayout(sf);group=combo(sf,'bar_group','گروه مستقل',[(LABELS[k],k) for k in BARS]);bar_state=combo(sf,'bar_status','وضعیت',[('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable'),('نیازمند دیتایل','unreviewed')]);line(sf,'bar_approver','تأییدکننده');line(sf,'bar_ref','مرجع گروه');line(sf,'bar_reason','دلیل عدم کاربرد');table(steel,'bars',STEEL)
+ table(page('جانمایی واقعی تیرچه‌ها'),'joist_layout',LAYOUT);table(page('نواحی بتن و پرکننده'),'regions',REGIONS);table(page('بازشو و تقاطع مستند'),'deductions',DEDUCTIONS);table(page('قطعات و قالب‌های وافل'),'pieces',piece_columns());table(page('جانمایی مستقل ریب‌های وافل'),'rib_layout',RIB_LAYOUT);table(page('قطعات نهایی هالوکور و گواهی‌ها'),'panels',PANELS)
+ steel=page('گروه‌های مستقل میلگرد');sf=QFormLayout();steel.addLayout(sf);group=combo(sf,'bar_group','گروه مستقل',[(LABELS[k],k) for k in BARS]);bar_state=combo(sf,'bar_status','وضعیت',[('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable'),('نیازمند دیتایل','unreviewed')]);line(sf,'bar_approver','تأییدکننده');line(sf,'bar_ref','مرجع گروه');line(sf,'bar_reason','دلیل عدم کاربرد');table(steel,'bars',steel_columns())
  cut=QPushButton('ریز اجزای برش، خم، قلاب و وصله');store_bar=QPushButton('اعمال گروه میلگرد');steel.addWidget(cut);steel.addWidget(store_bar);controls.update(cut=cut,store_bar=store_bar)
  for key,title,cols in [('formwork','وجه‌های مستقل قالب',FACES),('shoring','شمع‌بندی مستند',PROPS)]:
   layout=page(title);ff=QFormLayout();layout.addLayout(ff)
@@ -112,22 +118,24 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if not k:return
   p=bars_data[k];bar_state.setCurrentIndex(max(0,bar_state.findData(p.get('status'))))
   for suffix,field in [('approver','approved_by'),('ref','source_ref'),('reason','reason')]:controls['bar_'+suffix].setText(str(p.get(field,'')))
-  fill_table(controls['bars'],STEEL,p.get('series',[]));editing[0]=k
+  fill_table(controls['bars'],steel_columns(),p.get('series',[]));editing[0]=k
  def capture_bar():
   k=editing[0]
-  if k:bars_data[k]={'status':bar_state.currentData(),'approved_by':controls['bar_approver'].text().strip(),'source_ref':controls['bar_ref'].text().strip(),'reason':controls['bar_reason'].text().strip(),'series':read_table(controls['bars'],STEEL)}
+  if k:bars_data[k]={'status':bar_state.currentData(),'approved_by':controls['bar_approver'].text().strip(),'source_ref':controls['bar_ref'].text().strip(),'reason':controls['bar_reason'].text().strip(),'series':read_table(controls['bars'],steel_columns())}
  def paint(entry):
   state.update(record=deepcopy(entry),identity=context());d=entry['data'];rd=d.get('roof_detail',{});g=rd.get('geometry',{})
   for key,field in [('building','building_id')]:controls[key].setText(str(d.get(field,'')))
   for key,field in [('source','source_id'),('plan','plan_ref'),('detail','detail_ref')]:controls[key].setText(str(d.get('source',{}).get(field,'')))
-  for key in ('unit','shape','repeat_scope','action','joist_axis','joist_supply_scope','rib_axis'):controls[key].setCurrentIndex(max(0,controls[key].findData(g.get(key))))
+  for key in ('unit','shape','repeat_scope','action','joist_axis','joist_supply_scope','rib_axis','panel_axis'):controls[key].setCurrentIndex(max(0,controls[key].findData(g.get(key))))
   for key in ('length','width','depth','count','topping_thickness','joist_count','joist_spacing'):controls[key].setText(str(g.get(key,'')))
   for key,field in [('geometry_ref','source_ref'),('geometry_approver','approved_by')]:controls[key].setText(str(g.get(field,'')))
   for key in ('deductions_ref','pieces_ref'):controls[key].setText(str(rd.get(key,'')))
-  if d['kind'] in WAFFLE_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
+  if d['kind']==HOLLOW_KIND:controls['regions'].setProperty('allowed_components',['topping','precast','joints','cast_in_place','solid_zones'])
+  elif d['kind'] in WAFFLE_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
   else:controls['regions'].setProperty('allowed_components',['concrete','topping','ribs','ties','solid_zones','precast','void'])
+  controls['bars'].setProperty('is_hollow',d['kind']==HOLLOW_KIND);controls['bars'].setColumnCount(len(steel_columns()));controls['bars'].setHorizontalHeaderLabels([title for _,title in steel_columns()])
   controls['pieces'].setColumnCount(len(piece_columns()));controls['pieces'].setHorizontalHeaderLabels([title for _,title in piece_columns()])
-  for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT)]:fill_table(controls[key],cols,rd.get(key,[]))
+  for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT),('panels',PANELS)]:fill_table(controls[key],cols,rd.get(key,[]))
   bars_data.clear();bars_data.update(deepcopy(rd.get('rebars',{k:{'status':'unreviewed'} for k in BARS})));editing[0]=None;group.blockSignals(True);group.setCurrentIndex(1);group.blockSignals(False);show_bar()
   for key,cols,listkey in [('formwork',FACES,'faces'),('shoring',PROPS,'props')]:
    p=rd.get(key,{})
@@ -141,15 +149,25 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   controls['topping_thickness'].setEnabled(not is_slab)
   for key in ('joist_count','joist_spacing','joist_axis','joist_supply_scope','joist_layout','joist_layout_add','joist_layout_remove'):controls[key].setEnabled(not is_slab and not is_waffle)
   for key in ('rib_axis','rib_layout','rib_layout_add','rib_layout_remove'):controls[key].setEnabled(is_waffle)
+  is_hollow=d['kind']==HOLLOW_KIND
+  for i in range(tabs.count()):
+   if tabs.widget(i).isAncestorOf(controls['bars']):tabs.setTabText(i,'فولاد کارخانه‌ای و میلگرد کارگاهی' if is_hollow else 'گروه‌های مستقل میلگرد')
+   if tabs.widget(i).isAncestorOf(controls['panels']):tabs.setTabVisible(i,is_hollow)
+   if any(tabs.widget(i).isAncestorOf(controls[k]) for k in ('pieces','joist_layout','rib_layout')):tabs.setTabVisible(i,not is_hollow)
+  for key in ('panels','panels_add','panels_remove','panel_axis'):controls[key].setEnabled(is_hollow)
+  if is_hollow:
+   for key in ('pieces','pieces_add','pieces_remove','joist_count','joist_spacing','joist_axis','joist_supply_scope','joist_layout','joist_layout_add','joist_layout_remove'):controls[key].setEnabled(False)
   message.setText('نسخه '+str(entry['revision'])+'؛ '+('قطعی؛ تغییر فقط با اصلاحیه' if entry['status']=='committed' else 'پیش‌نویس؛ نیازمند بازبینی نسخه جاری'))
  def capture():
-  d=draft();capture_bar();g={key:(controls[key].currentData() if isinstance(controls[key],QComboBox) else controls[key].text().strip()) for key in ('unit','shape','repeat_scope','action','joist_axis','joist_supply_scope','rib_axis','length','width','depth','count','topping_thickness','joist_count','joist_spacing')}
+  d=draft();capture_bar();g={key:(controls[key].currentData() if isinstance(controls[key],QComboBox) else controls[key].text().strip()) for key in ('unit','shape','repeat_scope','action','joist_axis','joist_supply_scope','rib_axis','panel_axis','length','width','depth','count','topping_thickness','joist_count','joist_spacing')}
   if kindbox.currentData() not in WAFFLE_KINDS:g.pop('rib_axis',None)
+  if kindbox.currentData()!=HOLLOW_KIND:g.pop('panel_axis',None)
   g.update(source_ref=controls['geometry_ref'].text().strip(),approved_by=controls['geometry_approver'].text().strip());d['building_id']=controls['building'].text().strip()
   source=deepcopy(d.get('source',{}));source.update(mode=source.get('mode','manual'),source_id=controls['source'].text().strip(),plan_ref=controls['plan'].text().strip(),detail_ref=controls['detail'].text().strip());d['source']=source
   rd={'geometry':g,'rebars':deepcopy(bars_data)}
-  for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT)]:rd[key]=read_table(controls[key],cols)
+  for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT),('panels',PANELS)]:rd[key]=read_table(controls[key],cols)
   if kindbox.currentData() not in WAFFLE_KINDS:rd.pop('rib_layout',None)
+  if kindbox.currentData()!=HOLLOW_KIND:rd.pop('panels',None)
   for key in ('deductions_ref','pieces_ref'):rd[key]=controls[key].text().strip()
   for key,cols,listkey in [('formwork',FACES,'faces'),('shoring',PROPS,'props')]:rd[key]={'status':controls[key+'_status'].currentData(),'approved_by':controls[key+'_approver'].text().strip(),'source_ref':controls[key+'_ref'].text().strip(),'reason':controls[key+'_reason'].text().strip(),listkey:read_table(controls[key],cols)}
   d.update(measurement_policy=POLICY,roof_detail=rd)
@@ -206,8 +224,8 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  def cut_parts():
   row=controls['bars'].currentRow()
   if row<0:raise ValueError('یک سری میلگرد انتخاب کنید')
-  records=read_table(controls['bars'],STEEL);child=QDialog(dialog);child.setObjectName('RoofCutParts');child.setWindowTitle('اجزای طول برش مستند');child.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(child);cols=[('id','شناسه جزء'),('length_m','طول مستند (متر)'),('source_ref','مرجع مستقیم، خم، قلاب یا وصله')];t=table(layout,'cut_parts',cols);fill_table(t,cols,records[row].get('cut_parts',[]));actions=QHBoxLayout();layout.addLayout(actions);ok=QPushButton('اعمال اجزای برش');cancel=QPushButton('انصراف');actions.addWidget(ok);actions.addWidget(cancel);ok.clicked.connect(child.accept);cancel.clicked.connect(child.reject);child.cut_controls={'grid':t,'add':controls['cut_parts_add'],'remove':controls['cut_parts_remove'],'save':ok,'cancel':cancel}
-  if child.exec()==QDialog.Accepted:records[row]['cut_parts']=read_table(t,cols);fill_table(controls['bars'],STEEL,records)
+  records=read_table(controls['bars'],steel_columns());child=QDialog(dialog);child.setObjectName('RoofCutParts');child.setWindowTitle('اجزای طول برش مستند');child.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(child);cols=[('id','شناسه جزء'),('length_m','طول مستند (متر)'),('source_ref','مرجع مستقیم، خم، قلاب یا وصله')];t=table(layout,'cut_parts',cols);fill_table(t,cols,records[row].get('cut_parts',[]));actions=QHBoxLayout();layout.addLayout(actions);ok=QPushButton('اعمال اجزای برش');cancel=QPushButton('انصراف');actions.addWidget(ok);actions.addWidget(cancel);ok.clicked.connect(child.accept);cancel.clicked.connect(child.reject);child.cut_controls={'grid':t,'add':controls['cut_parts_add'],'remove':controls['cut_parts_remove'],'save':ok,'cancel':cancel}
+  if child.exec()==QDialog.Accepted:records[row]['cut_parts']=read_table(t,cols);fill_table(controls['bars'],steel_columns(),records)
   for k in ('cut_parts','cut_parts_add','cut_parts_remove'):controls.pop(k,None)
  def run(fn):
   try:fn()

@@ -12,9 +12,10 @@ from core.takeoff.reviewed_structural import _validate_source
 
 POLICY='roof_specialist_v1'
 WAFFLE_KINDS=('waffle_one_way','waffle_two_way')
-KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS
+HOLLOW_KIND='hollow_core_detail'
+KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS+(HOLLOW_KIND,)
 BARS=('main_x','main_y','distribution','thermal','rib','additional','opening','solid','tie')
-LABELS={'ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
+LABELS={'joints':'بتن درز هالوکور','cast_in_place':'بتن درجاریز مستقل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی کارخانه‌ای','ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
 
 
 def n(v,label,zero=False,integer=False):
@@ -45,6 +46,10 @@ def physical_identity_guard(project):
   key=tuple(canonical(d.get(k)) for k in ('building_id','floor_id','system_id'))
   if key in seen:raise ValueError('سقف فیزیکی با نوع سیستم متفاوت یا هویت تکراری ثبت شده است')
   seen.add(key)
+  if d.get('kind')==HOLLOW_KIND:
+   for previous in project.get('reviewed_aec_systems',{}).values():
+    old=previous.get('data',{})
+    if old.get('kind')=='hollow_core' and all(canonical(old.get(k))==canonical(d.get(k)) for k in ('floor_id','system_id')):raise ValueError('هالوکور تاریخی هم‌هویت وجود دارد؛ تبدیل یا شمارش مجدد بدون گردش مهاجرت معتبر ممنوع است')
 
 
 def checked(part):
@@ -140,6 +145,54 @@ def validate_waffle(d,kind,regions,deductions,limit,identity,emit):
  if any(overlap(b,c)>0 for p,b in regions if p['component']!='solid_zones' for _,c in deductions):raise ValueError('بازشو یا تقاطع وافل فقط در ناحیه توپر مستقل پذیرفته می‌شود؛ قطع ریب یا قالب نیازمند قرارداد قطعه‌بندی است')
 
 
+def validate_hollow_core(d,regions,deductions,limit,identity,emit):
+ """Final rectangular panels with certified hollow volumes; never infer density.
+
+ Envelope partitions separate factory panels from site concrete. An internal
+ hollow's shape is not approximated: its certified volume is a measured input.
+ """
+ L,W,H=limit;g=d['geometry'];t=n(g.get('topping_thickness'),'ضخامت رویه هالوکور',True)
+ if t>=H:raise ValueError('رویه باید کمتر از ارتفاع کل هالوکور باشد')
+ if g.get('panel_axis') not in ('x','y'):raise ValueError('جهت نصب قطعات باید مستند باشد')
+ if d.get('pieces') or d.get('joist_layout') or d.get('rib_layout') or any(g.get(k) not in (None,'') for k in ('action','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis')):raise ValueError('دیتایل دال، تیرچه یا وافل در هالوکور مجاز نیست')
+ tops=[b for p,b in regions if p['component']=='topping']
+ if bool(tops)!=bool(t) or any(b[0][2]!=H-t or b[1][2]!=H for b in tops):raise ValueError('تراز، ضخامت یا عدم کاربرد رویه باید دقیقاً با نواحی تطبیق داشته باشد')
+ if any(b[1][2]>H-t for p,b in regions if p['component'] not in ('topping','solid_zones','cast_in_place')):raise ValueError('قطعه یا درز وارد ناحیه رویه شده است')
+ precast={p['id']:(p,b) for p,b in regions if p['component']=='precast'};panels=d.get('panels');seen=set()
+ if not precast or not isinstance(panels,list) or not 0<len(panels)<=256:raise ValueError('جدول مستقل یک تا۲۵۶قطعه هالوکور لازم است')
+ for panel in panels:
+  strict(panel,('id','physical_key','region_id','count','length','width','height','shape','spec_ref','fabrication_ref','source_ref','approved_by','void_volume_m3','void_source_ref','net_volume_m3','volume_source_ref','unit_mass_kg','mass_source_ref','mass_scope'),'قطعه هالوکور')
+  ident=identity(panel,True);checked(panel)
+  for key in ('spec_ref','fabrication_ref','void_source_ref'):require_text(panel.get(key),'گواهی مقطع، قطعه نهایی و حفره')
+  if panel.get('shape')!='factory_finished_rectangle' or n(panel.get('count'),'تعداد قطعه مستقل',integer=True)!=1:raise ValueError('هر ردیف باید یک قطعه نهایی مستطیلی با دیتایل کارخانه باشد؛ تعداد یا قطعه‌بندی فرضی مسدود است')
+  rid=panel.get('region_id')
+  if rid not in precast or rid in seen:raise ValueError('قطعه باید به ناحیه پیش‌ساخته مستقل و غیرتکراری متصل باشد')
+  seen.add(rid);region,b=precast[rid]
+  if b[0][2]!=0 or b[1][2]!=H-t or any(n(panel.get(k),k)!=end-start for k,start,end in zip(('length','width','height'),b[0],b[1])):raise ValueError('ابعاد قطعه نهایی با پوش و تراز واقعی قطعه تطبیق ندارد')
+  gross=volume(b);void=n(panel.get('void_volume_m3'),'حجم حفره مستند')
+  if void>=gross:raise ValueError('حجم حفره از حجم پوش قطعه کمتر باشد')
+  net=gross-void;has_volume=panel.get('net_volume_m3') not in (None,'');has_mass=panel.get('unit_mass_kg') not in (None,'')
+  if not has_volume and not has_mass:raise ValueError('حجم خالص یا جرم گواهی‌شده قطعه لازم است')
+  if has_volume:
+   require_text(panel.get('volume_source_ref'),'منبع حجم خالص')
+   if n(panel['net_volume_m3'],'حجم خالص قطعه')!=net:raise ValueError('حجم خالص، حفره و پوش قطعه با هم تطبیق ندارند')
+  elif panel.get('volume_source_ref'):raise ValueError('مرجع حجم بدون مقدار صریح مجاز نیست')
+  if has_mass:
+   mass=n(panel['unit_mass_kg'],'جرم کل قطعه');require_text(panel.get('mass_source_ref'),'منبع جرم قطعه')
+   if panel.get('mass_scope')!='whole_panel_including_factory_steel':raise ValueError('جرم باید صریحاً جرم کل قطعه شامل فولاد کارخانه‌ای باشد')
+  elif panel.get('mass_source_ref') or panel.get('mass_scope'):raise ValueError('مرجع یا دامنه جرم بدون مقدار صریح مجاز نیست')
+  if any(overlap(b,c)>0 for _,c in deductions):raise ValueError('بازشوی قطع‌کننده قطعه پیش‌ساخته بدون قرارداد هندسی معتبر مسدود است')
+  params={'panel':deepcopy(panel),'geometry':deepcopy(region),'gross_m3':gross,'deducted_m3':void,'net_panel_m3':net,'source_ref':panel['source_ref'],'reviewed_by':panel['approved_by']}
+  emit('precast_concrete',net,'m3','precast',rid,'حجم پوش قطعه منهای حجم حفره گواهی‌شده؛ اطلاعات غیرقابل پرداخت مستقل',params)
+  emit('hollow_core_panels',Decimal(1),'عدد','hollow_core_panels',ident,'تعداد واقعی قطعات نهایی؛ بدون جمع مالی مجدد اجزای کارخانه‌ای',{'panel':deepcopy(panel),'source_ref':panel['source_ref']})
+  if has_mass:
+   mass_id=ident+':mass';identity({'id':mass_id})
+   emit('precast_panel_mass',mass,'kg','precast_panel_mass',mass_id,'جرم کل گواهی‌شده؛ شامل فولاد کارخانه‌ای و غیرقابل پرداخت مستقل',{'panel':deepcopy(panel),'source_ref':panel['mass_source_ref']})
+ if seen!=set(precast):raise ValueError('همه نواحی پیش‌ساخته نیازمند جدول قطعه هستند')
+ for p,b in deductions:
+  if b[0][2]!=0 or b[1][2]!=H or any(overlap(b,c)>0 for region,c in regions if region['component'] not in ('solid_zones','cast_in_place','topping')):raise ValueError('کسور هالوکور فقط تمام‌ارتفاع در ناحیه درجاریز مستقل با دیتایل معتبر پذیرفته می‌شود')
+
+
 @exact
 def preview(data,engine,require_review=False):
  """Return the existing AEC preview shape; all persisted quantities use wire()."""
@@ -153,13 +206,14 @@ def preview(data,engine,require_review=False):
   require_text(data.get('building_id'),'شناسه ساختمان')
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')
   if any(part!={'status':'unreviewed'} for part in data['components'].values()):raise ValueError('دیتایل عمومی و تخصصی سقف نباید هم‌زمان شمرده شوند')
-  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout'),'دیتایل سقف')
-  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','source_ref','approved_by'),'هندسه');checked(g)
+  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels'),'دیتایل سقف')
+  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','source_ref','approved_by'),'هندسه');checked(g)
   if g.get('unit')!='m' or g.get('shape')!='rectangular':raise ValueError('فقط هندسه مستطیلی با واحد صریح متر پشتیبانی می‌شود')
   L,W,H=(n(g.get(k),k) for k in ('length','width','depth'));count=n(g.get('count'),'تعداد سقف',integer=True)
   if g.get('repeat_scope')!='identical_roofs':raise ValueError('تکرار صریح سقف‌های هم‌تیپ لازم است')
   if kind=='solid_slab' and g.get('action') not in ('one_way','two_way'):raise ValueError('جهت دال باید مستند باشد')
   if kind not in WAFFLE_KINDS and (d.get('rib_layout') or g.get('rib_axis') not in (None,'')):raise ValueError('دیتایل ریب وافل در خانواده دیگر مجاز نیست')
+  if kind!=HOLLOW_KIND and (d.get('panels') or g.get('panel_axis') not in (None,'')):raise ValueError('جدول قطعات هالوکور در خانواده دیگر مجاز نیست')
   used=set();physical=set()
   def identity(part,physical_key=False):
    key=canonical(part.get('id'))
@@ -172,12 +226,13 @@ def preview(data,engine,require_review=False):
    return part['id']
   def emit(code,quantity,unit,component,ident,formula,params):
    if quantity<=0:return
-   rows.append({'source_id':prefix+':'+str(ident),'line_id':str(ident),'item_code':code,'quantity':wire(quantity*count),'unit':unit,'domain':'building','description':LABELS.get(component,component)+' سقف '+sid,'formula':formula+' × تعداد سقف هم‌تیپ','params':wire(params),'component':component,'method':POLICY,'source_ref':params.get('source_ref',g['source_ref']),'role':'material' if code in ('precast_concrete','waffle_molds') or params.get('series',{}).get('supply_scope')=='factory' else 'work'})
+   rows.append({'source_id':prefix+':'+str(ident),'line_id':str(ident),'item_code':code,'quantity':wire(quantity*count),'unit':unit,'domain':'building','description':LABELS.get(component,component)+' سقف '+sid,'formula':formula+' × تعداد سقف هم‌تیپ','params':wire(params),'component':component,'method':POLICY,'source_ref':params.get('source_ref',g['source_ref']),'role':'material' if code in ('precast_concrete','waffle_molds','precast_panel_mass') or params.get('series',{}).get('supply_scope')=='factory' else 'work'})
   parts=d['regions']
   if not isinstance(parts,list) or not 0<len(parts)<=512:raise ValueError('جدول ناحیه‌ها باید شامل یک تا۵۱۲ناحیه واقعی باشد')
   regions=[]
   allowed={'concrete'} if kind=='solid_slab' else {'topping','ribs','ties','solid_zones','precast','void'}
   if kind in WAFFLE_KINDS:allowed={'topping','ribs_x','ribs_y','junctions','solid_zones','void'}
+  if kind==HOLLOW_KIND:allowed={'topping','precast','joints','cast_in_place','solid_zones'}
   for p in parts:
    strict(p,('id','component','x','y','z','length','width','height','source_ref','approved_by'),'ناحیه')
    identity(p)
@@ -194,9 +249,10 @@ def preview(data,engine,require_review=False):
    if p['kind']=='beam_joint':require_text(p.get('owner_source_id'),'منبع مالک بتن مشترک تیر و سقف')
    deductions.append((p,box(p,(L,W,H))))
   if any(overlap(a,b)>0 for (_,a),(_,b) in combinations(deductions,2)):raise ValueError('کسورات مشترک یا هم‌پوشان تکراری ممنوع است')
+  if kind==HOLLOW_KIND:validate_hollow_core(d,regions,deductions,(L,W,H),identity,emit)
   allocations=[]
   for p,b in regions:
-   if p['component']=='void':continue
+   if p['component']=='void' or (kind==HOLLOW_KIND and p['component']=='precast'):continue
    deducted=sum((overlap(b,c) for _,c in deductions),Decimal(0))
    if p['component']=='precast' and deducted:raise ValueError('بازشو در قطعه پیش‌ساخته به هندسه و دیتایل قطعه اصلاح‌شده نیاز دارد')
    code='precast_concrete' if p['component']=='precast' else 'concrete'
@@ -207,6 +263,8 @@ def preview(data,engine,require_review=False):
   pieces=d['pieces'];require_text(d.get('pieces_ref'),'مرجع قطعات یا عدم کاربرد')
   if kind=='solid_slab':
    if pieces or d['joist_layout']:raise ValueError('دال توپر نباید قطعات پرکننده یا تیرچه داشته باشد')
+  elif kind==HOLLOW_KIND:
+   pass # Panel schedules were validated and emitted before region quantities.
   elif kind in WAFFLE_KINDS:
    validate_waffle(d,kind,regions,deductions,(L,W,H),identity,emit)
   else:
@@ -252,10 +310,11 @@ def preview(data,engine,require_review=False):
    part=bars[group];strict(part,('status','approved_by','source_ref','reason','series'),'گروه میلگرد');required=group in (('main_x','main_y') if kind=='solid_slab' else ('rib','thermal')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions))
    if kind in WAFFLE_KINDS:
     required=group in ('thermal',('main_x' if g.get('rib_axis')=='x' else 'main_y')) or (kind=='waffle_two_way' and group in ('main_x','main_y')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions)) or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
+   if kind==HOLLOW_KIND:required=(group=='thermal' and n(g.get('topping_thickness'),'ضخامت رویه',True)>0) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions)) or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
    if not applicable(part,required):continue
    if not part.get('series'):raise ValueError('سری مستقل میلگرد لازم است')
    for series in part['series']:
-    strict(series,('id','physical_key','diameter_mm','supply_scope','count','cut_length_m','unit_weight_kg_m','unit_weight_source','shape_ref','source_ref','cut_parts'),'سری میلگرد')
+    strict(series,('id','physical_key','diameter_mm','supply_scope','count','cut_length_m','unit_weight_kg_m','unit_weight_source','shape_ref','source_ref','cut_parts')+(('panel_id','steel_kind') if kind==HOLLOW_KIND else ()),'سری میلگرد')
     ident=identity(series,True)
     for k in ('shape_ref','source_ref','unit_weight_source'):require_text(series.get(k),'دیتایل برش، مرجع و وزن واحد')
     if series.get('supply_scope') not in ('site','factory') or (kind in ('solid_slab',)+WAFFLE_KINDS and series.get('supply_scope')!='site'):raise ValueError('دامنه میلگرد کارگاهی یا داخل تیرچه کارخانه‌ای باید صریح باشد')
@@ -267,7 +326,15 @@ def preview(data,engine,require_review=False):
      if ci in cut_ids:raise ValueError('جزء برش تکراری است')
      cut_ids.add(ci);require_text(cp.get('source_ref'),'مرجع جزء برش');total+=n(cp.get('length_m'),'طول جزء برش')
     if total!=cut:raise ValueError('جمع اجزای برش با طول برش یکسان نیست')
-    emit('rebar',qty*cut*uw,'kg',group,ident,'تعداد × مجموع برش مستند × وزن واحد مستند',{'series':deepcopy(series),'source_ref':part['source_ref'],'reviewed_by':part['approved_by']})
+    if kind==HOLLOW_KIND:
+     if series.get('steel_kind') not in ('reinforcing_bar','prestressing_strand'):raise ValueError('نوع فولاد هالوکور باید صریح باشد')
+     if series['supply_scope']=='factory':
+      if series.get('panel_id') not in {p['id'] for p in d['panels']}:raise ValueError('فولاد کارخانه‌ای باید به قطعه مستقل متصل باشد')
+     elif series.get('panel_id') or series['steel_kind']=='prestressing_strand':raise ValueError('فولاد کارگاهی نباید مالکیت قطعه کارخانه‌ای یا پیش‌تنیدگی نامعتبر داشته باشد')
+    emit('prestressing_steel' if kind==HOLLOW_KIND and series['steel_kind']=='prestressing_strand' else 'rebar',qty*cut*uw,'kg','prestressing_steel' if kind==HOLLOW_KIND and series['steel_kind']=='prestressing_strand' else group,ident,'تعداد × مجموع برش مستند × وزن واحد مستند',{'series':deepcopy(series),'source_ref':part['source_ref'],'reviewed_by':part['approved_by']})
+  if kind==HOLLOW_KIND:
+   covered={s.get('panel_id') for p in bars.values() if p.get('status')=='confirmed' for s in p.get('series',[]) if s.get('supply_scope')=='factory'}
+   if covered!={p['id'] for p in d['panels']}:raise ValueError('جدول فولاد کارخانه‌ای هر قطعه باید مستقل و مستند باشد؛ برآورد از جرم قطعه ممنوع است')
   part=d['formwork'];strict(part,('status','approved_by','source_ref','reason','faces'),'قالب')
   if applicable(part):
    if not part.get('faces'):raise ValueError('وجه قالب مستند لازم است')

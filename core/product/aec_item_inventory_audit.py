@@ -30,7 +30,7 @@ _ROUTES = frozenset({
     "review_contract", "structural_review_contract",
     "beam_feature_path", "requires_dedicated_acceptance",
 })
-_SPECIALIST_PARENTS = {"waffle_one_way": "waffle", "waffle_two_way": "waffle"}
+_SPECIALIST_PARENTS = {"waffle_one_way": "waffle", "waffle_two_way": "waffle", "hollow_core_detail": "hollow_core"}
 _PRIORITY_SET = frozenset(range(1, 10))
 
 

@@ -2,7 +2,7 @@
 from decimal import Decimal
 from core.commercial.exact_values import wire,exact
 from core.reports.exporters import export_pdf,export_xlsx,export_docx,export_csv
-from core.takeoff.roof_detail import preview,POLICY,LABELS
+from core.takeoff.roof_detail import preview,POLICY,LABELS,HOLLOW_KIND
 from core.takeoff.reviewed_aec import SPECS,_id
 
 
@@ -15,8 +15,14 @@ def export(service,pid,kind,floor,sid,path,*,format):
  rows=[]
  for v in result['rows']:
   params=v['params'];notes='ورودی‌ها برای هر سقف هم‌تیپ؛ مرجع: '+str(v['source_ref'])+'؛ نقش: '+('عملیات قابل پرداخت مستقل' if v['role']=='work' else ('قطعات قالب وافل؛ بدون استنتاج سطح تماس یا نرخ مالی' if v['item_code']=='waffle_molds' else 'مصالح داخل تیرچه خریداری‌شده؛ غیرقابل پرداخت مستقل'))
+  if kind==HOLLOW_KIND and v['role']!='work':notes='ورودی مستند هر سقف هم‌تیپ؛ غیرقابل پرداخت مستقل؛ مرجع: '+str(v['source_ref'])
+  if 'panel' in params:
+   p=params['panel'];notes+='؛ قطعه: '+p['id']+'؛ مقطع: '+p['spec_ref']+'؛ مدرک قطعه نهایی: '+p['fabrication_ref']+'؛ حجم حفره (متر مکعب): '+str(p['void_volume_m3'])+'؛ منبع حفره: '+p['void_source_ref']
+   for key,label in [('length','طول (متر)'),('width','عرض (متر)'),('height','ارتفاع (متر)'),('net_volume_m3','حجم خالص گواهی‌شده'),('volume_source_ref','منبع حجم خالص'),('unit_mass_kg','جرم کل شامل فولاد کارخانه‌ای (کیلوگرم)'),('mass_source_ref','منبع جرم')]:
+    if p.get(key) not in (None,''):notes+='؛ '+label+': '+str(p[key])
   if 'series' in params:
    s=params['series'];notes+='؛ قطر (میلی‌متر): '+str(s['diameter_mm'])+'؛ تعداد: '+str(s['count'])+'؛ طول برش (متر): '+str(s['cut_length_m'])+'؛ وزن واحد (کیلوگرم بر متر): '+str(s['unit_weight_kg_m'])+'؛ شکل: '+s['shape_ref']+'؛ منبع وزن: '+s['unit_weight_source']
+   if kind==HOLLOW_KIND:notes+='؛ نوع فولاد: '+('رشته پیش‌تنیدگی' if s['steel_kind']=='prestressing_strand' else 'میلگرد معمولی')+'؛ قطعه مالک: '+(s.get('panel_id') or 'کارگاهی، مستقل از کارخانه')
    notes+='؛ اجزای برش: '+'؛ '.join(str(p['id'])+'، '+str(p['length_m'])+' متر، '+p['source_ref'] for p in s['cut_parts'])
   if 'geometry' in params:
    g=params['geometry'];notes+='؛ ناحیه: '+g['id']+'؛ ابتدا (متر): '+', '.join(str(g[k]) for k in ('x','y','z'))+'؛ طول، عرض، ارتفاع (متر): '+', '.join(str(g[k]) for k in ('length','width','height'))+'؛ ناخالص هر سقف: '+str(params['gross_m3'])+'؛ کسر هر سقف: '+str(params['deducted_m3'])
@@ -43,9 +49,11 @@ def export(service,pid,kind,floor,sid,path,*,format):
  meta={'project_name':project['name'],'building_id':d['building_id'],'floor':floor,'member':sid,'revision':record['revision'],'status':{'draft':'پیش‌نویس','committed':'قطعی'}[record['status']],'source':d['source']['source_id'],'پلان':d['source']['plan_ref'],'دیتایل':d['source']['detail_ref'],'بازبین':effective_review or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی'),'طول (متر)':d['roof_detail']['geometry']['length'],'عرض (متر)':d['roof_detail']['geometry']['width'],'ارتفاع کل (متر)':d['roof_detail']['geometry']['depth'],'تعداد سقف هم‌تیپ':d['roof_detail']['geometry']['count'],'منبع کسورات':d['roof_detail']['deductions_ref']}
  totals={}
  units={'m3':'متر مکعب','kg':'کیلوگرم','m2':'متر مربع','عدد':'عدد'}
- labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی','waffle_molds':'تعداد قالب وافل'}
+ labels={'concrete':'بتن درجاریز','precast_concrete':'بتن پیش‌ساخته','rebar':'میلگرد','formwork':'قالب','joists':'تیرچه','blocks':'بلوک','foam':'فوم','shoring':'شمع‌بندی','waffle_molds':'تعداد قالب وافل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی داخل قطعه'}
  for row in result['rows']:
-  label=labels[row['item_code']]+' ('+units[row['unit']]+')';totals[label]=totals.get(label,Decimal(0))+Decimal(str(row['quantity']))
+  name=labels[row['item_code']]
+  if kind==HOLLOW_KIND and row['item_code']=='rebar':name='میلگرد معمولی '+('کارخانه‌ای، داخل قطعه' if row['role']=='material' else 'کارگاهی')
+  label=name+' ('+units[row['unit']]+')';totals[label]=totals.get(label,Decimal(0))+Decimal(str(row['quantity']))
  for index,row in enumerate(rows,1):row['item_no']=index
  exporters={'pdf':export_pdf,'xlsx':export_xlsx,'docx':export_docx,'csv':export_csv}
  if format not in exporters:raise ValueError('قالب گزارش معتبر نیست')

@@ -62,6 +62,7 @@ SPECS = {
     "cobiax": SystemSpec("سقف کوبیاکس", ("gross_concrete", "verified_voids", "solid_zones",
                                       "reinforcement", "formwork", "openings"),
                           ("gross_concrete", "verified_voids")),
+    "hollow_core_detail": SystemSpec("هالوکور — متره تخصصی قطعات", ("precast_panels", "joints", "topping", "reinforcement", "formwork", "openings"), ("precast_panels",)),
     "hollow_core": SystemSpec("سقف هالوکور", ("precast_panels", "joints", "topping",
                                            "reinforcement", "bearings", "openings"),
                               ("precast_panels",)),
@@ -433,7 +434,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
 def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     if not isinstance(data, dict) or data.get("kind") not in SPECS:
         raise ValueError("نوع سیستم متره معتبر نیست")
-    if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way'):
+    if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way','hollow_core_detail'):
         from core.takeoff.roof_detail import preview
         return preview(data,engine)
     kind = data["kind"]
@@ -597,7 +598,7 @@ class ReviewedAECWorkflow:
         entry = {"status": "draft", "revision": revision + 1, "data": deepcopy(data),
                  "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = entry
-        if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way'):
+        if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way','hollow_core_detail'):
             from core.takeoff.roof_detail import physical_identity_guard
             physical_identity_guard(project)
         self.store.save(pid, project, expected_digest=digest)
@@ -696,7 +697,10 @@ class ReviewedAECWorkflow:
             elif isinstance(v,list):
                 for child in v:reset(child)
         reset(data)
-        for piece in data['roof_detail']['pieces']:piece['region_id']=replacements[piece['region_id']]
+        for piece in data['roof_detail']['pieces']+data['roof_detail'].get('panels',[]):piece['region_id']=replacements[piece['region_id']]
+        for group in data['roof_detail']['rebars'].values():
+            for series in group.get('series',[]):
+                if series.get('panel_id'):series['panel_id']=replacements[series['panel_id']]
         entry={'status':'draft','revision':1,'data':data,'updated_at':datetime.now(timezone.utc).isoformat()}
         project.setdefault(REGISTER,{})[key]=entry
         project.setdefault('aec_system_history',[]).append({'action':'copy','source_key':_id(kind,floor,sid),'target_key':key,'reason':why,'previous':deepcopy(original),'at':entry['updated_at']})
