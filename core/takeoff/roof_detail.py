@@ -13,9 +13,10 @@ from core.takeoff.reviewed_structural import _validate_source
 POLICY='roof_specialist_v1'
 WAFFLE_KINDS=('waffle_one_way','waffle_two_way')
 HOLLOW_KIND='hollow_core_detail'
-KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS+(HOLLOW_KIND,)
+VOID_KINDS=('uboot','cobiax')
+KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS+(HOLLOW_KIND,)+VOID_KINDS
 BARS=('main_x','main_y','distribution','thermal','rib','additional','opening','solid','tie')
-LABELS={'joints':'بتن درز هالوکور','cast_in_place':'بتن درجاریز مستقل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی کارخانه‌ای','ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
+LABELS={'joints':'بتن درز هالوکور','cast_in_place':'بتن درجاریز مستقل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی کارخانه‌ای','ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','void_formers':'حفره‌ساز خریداری‌شده مستقل','void_cells':'بتن خالص سلول دارای حفره‌ساز','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
 
 
 def n(v,label,zero=False,integer=False):
@@ -193,6 +194,80 @@ def validate_hollow_core(d,regions,deductions,limit,identity,emit):
   if b[0][2]!=0 or b[1][2]!=H or any(overlap(b,c)>0 for region,c in regions if region['component'] not in ('solid_zones','cast_in_place','topping')):raise ValueError('کسور هالوکور فقط تمام‌ارتفاع در ناحیه درجاریز مستقل با دیتایل معتبر پذیرفته می‌شود')
 
 
+
+def validate_void_formers(d,kind,regions,deductions,limit,identity,emit):
+ """Certified U-Boot rectangular voids or Cobiax spherical voids in disjoint cells.
+
+ The cell is a FULL CONCRETE ENVELOPE, not an empty box. Certified former void
+ volume is subtracted once per cell. One independently identified former per
+ cell avoids guessing spacing, overlap, group placement and cut pieces.
+ """
+ L,W,H=limit;g=d['geometry']
+ top=n(g.get('topping_thickness'),'ضخامت بالایی سقف')
+ bottom=n(g.get('bottom_thickness'),'ضخامت پایینی سقف')
+ if top+bottom>=H:raise ValueError('ضخامت بالایی و پایینی فضای میانی معتبر باقی نمی‌گذارند')
+ if deductions:raise ValueError('بازشو یا قطع حفره‌ساز نیازمند قرارداد هندسی و قطعه‌بندی مستقل است')
+ if d.get('pieces') or d.get('panels') or d.get('joist_layout') or d.get('rib_layout'):
+  raise ValueError('قطعات تیرچه/وافل/هالوکور در یوبوت و کوبیاکس مجاز نیستند')
+ if any(g.get(k) not in (None,'') for k in ('action','rib_axis','panel_axis','joist_axis','joist_count','joist_spacing','joist_supply_scope')):
+  raise ValueError('پارامتر دال/تیرچه/وافل به یوبوت یا کوبیاکس تعلق ندارد')
+ tops=[b for p,b in regions if p['component']=='topping']
+ if not tops or any(b[0][2]!=H-top or b[1][2]!=H for b in tops) or sum((volume(b) for b in tops),Decimal(0))!=L*W*top:
+  raise ValueError('بتن رویه باید کل لایه بالایی مستند را بدون هم‌پوشانی پوشش دهد')
+ bottoms=[b for p,b in regions if p['component']=='solid_zones' and b[0][2]==0 and b[1][2]==bottom]
+ if not bottoms or sum((volume(b) for b in bottoms),Decimal(0))!=L*W*bottom:
+  raise ValueError('بتن زیره باید تمام سطح و ضخامت مستند زیرین را پوشش دهد')
+ core_top=H-top
+ for p,b in regions:
+  c=p['component']
+  if c=='topping':continue
+  if b[0][2]<bottom and not (c=='solid_zones' and b[0][2]==0 and b[1][2]==bottom):
+   raise ValueError('پوش بتن زیرین نباید با سلول حفره‌دار یا ریب مخلوط شود')
+  if c=='void' and (b[0][2]!=bottom or b[1][2]!=core_top):
+   raise ValueError('سلول حفره‌دار باید از روی زیره تا زیر رویه ارتفاع کامل داشته باشد')
+  if b[1][2]>core_top and c!='solid_zones':
+   raise ValueError('ناحیه میانی وارد رویه بالایی شده است')
+ void_cells={p['id']:(p,b) for p,b in regions if p['component']=='void'}
+ formers=d.get('void_formers')
+ if not void_cells or not isinstance(formers,list) or len(formers)!=len(void_cells) or len(formers)>512:
+  raise ValueError('هر سلول حفره‌دار دقیقاً به یک قطعه واقعی و مستند نیاز دارد')
+ seen=set()
+ for former in formers:
+  strict(former,('id','physical_key','region_id','shape','count','x','y','z','length','width','height','diameter_m','certified_void_volume_m3','volume_source_ref','spec_ref','source_ref','approved_by'),'حفره‌ساز مستقل')
+  ident=identity(former,True);checked(former)
+  require_text(former.get('spec_ref'),'گواهی قطعه حفره‌ساز')
+  require_text(former.get('volume_source_ref'),'گواهی حجم واقعی حفره')
+  rid=former.get('region_id')
+  if rid not in void_cells or rid in seen:raise ValueError('شناسه سلول حفره‌ساز تکراری یا نامعتبر است')
+  seen.add(rid);region,cell=void_cells[rid]
+  if n(former.get('count'),'تعداد قطعه در سلول',integer=True)!=1:
+   raise ValueError('قطعه‌بندی فعلی فقط یک حفره‌ساز دارای جانمایی مستقل در هر سلول می‌پذیرد')
+  bbox=box(former,limit)
+  if any(a<s or b>e for (a,b),(s,e) in zip(zip(bbox[0],bbox[1]),zip(cell[0],cell[1]))):
+   raise ValueError('پوش فیزیکی حفره‌ساز خارج از سلول یا لایه میانی است')
+  certified=n(former.get('certified_void_volume_m3'),'حجم واقعی گواهی‌شده حفره')
+  if kind=='uboot':
+   if former.get('shape')!='rectangular_prism' or former.get('diameter_m') not in ('',None):
+    raise ValueError('یوبوت فعلاً فقط حفره منشوری مستطیلی گواهی‌شده را می‌پذیرد')
+   if certified!=volume(bbox):
+    raise ValueError('حجم یوبوت منشوری با ابعاد مستند حفره برابر نیست')
+  else:
+   if former.get('shape')!='certified_sphere':
+    raise ValueError('کوبیاکس نیازمند حفره کروی با حجم مستقل گواهی‌شده است')
+   diameter=n(former.get('diameter_m'),'قطر گواهی‌شده حفره کروی')
+   if any(b-a!=diameter for a,b in zip(bbox[0],bbox[1])):
+    raise ValueError('ابعاد پوش کوبیاکس باید با قطر کروی گواهی‌شده برابر باشد')
+   if certified>=volume(bbox):
+    raise ValueError('حجم کروی گواهی‌شده باید از حجم پوش مکعبی کمتر باشد')
+  if certified>=volume(cell):
+   raise ValueError('حجم حفره باید از حجم سلول واقعی کوچک‌تر باشد')
+  params={'geometry':deepcopy(region),'void_former':deepcopy(former),'gross_m3':volume(cell),'deducted_m3':certified,'source_ref':former['volume_source_ref'],'reviewed_by':former['approved_by']}
+  emit('concrete',volume(cell)-certified,'m3','void_cells',rid,'حجم سلول واقعی منهای یک حفره گواهی‌شده با جانمایی مستقل',params)
+  emit('void_formers',Decimal(1),'عدد','void_formers',ident,'تعداد حفره‌ساز خریداری‌شده با هویت مستقل، بدون کسر مالی مضاعف بتن',{'void_former':deepcopy(former),'source_ref':former['source_ref']})
+ if seen!=set(void_cells):
+  raise ValueError('جدول حفره‌سازها با ناحیه‌بندی سقف کامل نیست')
+
+
 @exact
 def preview(data,engine,require_review=False):
  """Return the existing AEC preview shape; all persisted quantities use wire()."""
@@ -206,14 +281,15 @@ def preview(data,engine,require_review=False):
   require_text(data.get('building_id'),'شناسه ساختمان')
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')
   if any(part!={'status':'unreviewed'} for part in data['components'].values()):raise ValueError('دیتایل عمومی و تخصصی سقف نباید هم‌زمان شمرده شوند')
-  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels'),'دیتایل سقف')
-  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','source_ref','approved_by'),'هندسه');checked(g)
+  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels','void_formers'),'دیتایل سقف')
+  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','bottom_thickness','source_ref','approved_by'),'هندسه');checked(g)
   if g.get('unit')!='m' or g.get('shape')!='rectangular':raise ValueError('فقط هندسه مستطیلی با واحد صریح متر پشتیبانی می‌شود')
   L,W,H=(n(g.get(k),k) for k in ('length','width','depth'));count=n(g.get('count'),'تعداد سقف',integer=True)
   if g.get('repeat_scope')!='identical_roofs':raise ValueError('تکرار صریح سقف‌های هم‌تیپ لازم است')
   if kind=='solid_slab' and g.get('action') not in ('one_way','two_way'):raise ValueError('جهت دال باید مستند باشد')
   if kind not in WAFFLE_KINDS and (d.get('rib_layout') or g.get('rib_axis') not in (None,'')):raise ValueError('دیتایل ریب وافل در خانواده دیگر مجاز نیست')
   if kind!=HOLLOW_KIND and (d.get('panels') or g.get('panel_axis') not in (None,'')):raise ValueError('جدول قطعات هالوکور در خانواده دیگر مجاز نیست')
+  if kind not in VOID_KINDS and d.get('void_formers'):raise ValueError('جدول حفره‌ساز در نوع دیگر سقف مجاز نیست')
   used=set();physical=set()
   def identity(part,physical_key=False):
    key=canonical(part.get('id'))
@@ -233,6 +309,7 @@ def preview(data,engine,require_review=False):
   allowed={'concrete'} if kind=='solid_slab' else {'topping','ribs','ties','solid_zones','precast','void'}
   if kind in WAFFLE_KINDS:allowed={'topping','ribs_x','ribs_y','junctions','solid_zones','void'}
   if kind==HOLLOW_KIND:allowed={'topping','precast','joints','cast_in_place','solid_zones'}
+  if kind in VOID_KINDS:allowed={'topping','solid_zones','ribs_x','ribs_y','junctions','void'}
   for p in parts:
    strict(p,('id','component','x','y','z','length','width','height','source_ref','approved_by'),'ناحیه')
    identity(p)
@@ -250,6 +327,7 @@ def preview(data,engine,require_review=False):
    deductions.append((p,box(p,(L,W,H))))
   if any(overlap(a,b)>0 for (_,a),(_,b) in combinations(deductions,2)):raise ValueError('کسورات مشترک یا هم‌پوشان تکراری ممنوع است')
   if kind==HOLLOW_KIND:validate_hollow_core(d,regions,deductions,(L,W,H),identity,emit)
+  if kind in VOID_KINDS:validate_void_formers(d,kind,regions,deductions,(L,W,H),identity,emit)
   allocations=[]
   for p,b in regions:
    if p['component']=='void' or (kind==HOLLOW_KIND and p['component']=='precast'):continue
@@ -267,6 +345,8 @@ def preview(data,engine,require_review=False):
    pass # Panel schedules were validated and emitted before region quantities.
   elif kind in WAFFLE_KINDS:
    validate_waffle(d,kind,regions,deductions,(L,W,H),identity,emit)
+  elif kind in VOID_KINDS:
+   if pieces or d.get('joist_layout'):raise ValueError('حفره‌سازهای یوبوت و کوبیاکس فقط در جدول مستقل مستند مجازند')
   else:
    t=n(g.get('topping_thickness'),'ضخامت بتن رویه')
    if t>=H:raise ValueError('ضخامت رویه از ارتفاع سقف کمتر باشد')
@@ -310,6 +390,7 @@ def preview(data,engine,require_review=False):
    part=bars[group];strict(part,('status','approved_by','source_ref','reason','series'),'گروه میلگرد');required=group in (('main_x','main_y') if kind=='solid_slab' else ('rib','thermal')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions))
    if kind in WAFFLE_KINDS:
     required=group in ('thermal',('main_x' if g.get('rib_axis')=='x' else 'main_y')) or (kind=='waffle_two_way' and group in ('main_x','main_y')) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions)) or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
+   if kind in VOID_KINDS:required=group in ('main_x','main_y','thermal') or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
    if kind==HOLLOW_KIND:required=(group=='thermal' and n(g.get('topping_thickness'),'ضخامت رویه',True)>0) or (group=='opening' and any(p['kind']=='opening' for p,_ in deductions)) or (group=='solid' and any(p['component']=='solid_zones' for p,_ in regions))
    if not applicable(part,required):continue
    if not part.get('series'):raise ValueError('سری مستقل میلگرد لازم است')
@@ -317,7 +398,7 @@ def preview(data,engine,require_review=False):
     strict(series,('id','physical_key','diameter_mm','supply_scope','count','cut_length_m','unit_weight_kg_m','unit_weight_source','shape_ref','source_ref','cut_parts')+(('panel_id','steel_kind') if kind==HOLLOW_KIND else ()),'سری میلگرد')
     ident=identity(series,True)
     for k in ('shape_ref','source_ref','unit_weight_source'):require_text(series.get(k),'دیتایل برش، مرجع و وزن واحد')
-    if series.get('supply_scope') not in ('site','factory') or (kind in ('solid_slab',)+WAFFLE_KINDS and series.get('supply_scope')!='site'):raise ValueError('دامنه میلگرد کارگاهی یا داخل تیرچه کارخانه‌ای باید صریح باشد')
+    if series.get('supply_scope') not in ('site','factory') or (kind in ('solid_slab',)+WAFFLE_KINDS+VOID_KINDS and series.get('supply_scope')!='site'):raise ValueError('دامنه میلگرد کارگاهی یا داخل تیرچه کارخانه‌ای باید صریح باشد')
     n(series.get('diameter_mm'),'قطر میلگرد');qty=n(series.get('count'),'تعداد میلگرد',integer=True);cut=n(series.get('cut_length_m'),'طول برش');uw=n(series.get('unit_weight_kg_m'),'وزن واحد مستند')
     cut_parts=series.get('cut_parts');cut_ids=set();total=Decimal(0)
     if not isinstance(cut_parts,list) or not cut_parts:raise ValueError('ریز طول مستقیم، خم، قلاب و وصله صریح لازم است')
