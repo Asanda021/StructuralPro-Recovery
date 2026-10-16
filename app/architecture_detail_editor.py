@@ -10,7 +10,7 @@ from core.reports.architecture_detail_report import FIELD_LABELS,VALUES,export
 from core.takeoff.reviewed_aec import SPECS,_id
 GEOMETRY=('physical_wall_id','length_m','height_m','wall_thickness_m','count','repeat_ref','source_ref','approved_by')
 TABLES={'openings':OPENING_FIELDS,'masonry_layers':LAYER_FIELDS,'unit_regions':REGION_FIELDS,'surfaces':SURFACE_FIELDS}
-CHOICES={'material_kind':('brick','cement_block','clay_block','light_block','aac'),'face':('inside','outside'),'layer_code':('base_plaster','white_plaster','cement_render','levelling','protective'),'mode':('units','mortar'),'payment_unit':('m2','m3','kg'),'coverage_scope':('complete','partial'),'penetration':('full_wall',)}
+CHOICES={'operation':('floor_fill','floor_screed','floor_concrete','floor_subbase','floor_separator','floor_protection'),'method':('constant_rectangular',),'purchase_unit':('m2','m3','kg'),'material_kind':('brick','cement_block','clay_block','light_block','aac'),'face':('inside','outside'),'layer_code':('base_plaster','white_plaster','cement_render','levelling','protective'),'mode':('units','mortar'),'payment_unit':('m2','m3','kg'),'coverage_scope':('complete','partial'),'penetration':('full_wall','all_layers')}
 def fill_table(table,columns,records):
  table.setColumnCount(len(columns));table.setHorizontalHeaderLabels([x[1] for x in columns]);_fill_table(table,columns,records)
  for row,p in enumerate(records):
@@ -21,6 +21,8 @@ def fill_table(table,columns,records):
    w.setCurrentIndex(max(0,w.findData(p.get(key,''))));table.setCellWidget(row,col,w)
 
 def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall'):
+ from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS
+ floor_mode=kind=='floor_finish';geometry_keys=FLOOR_GEOMETRY if floor_mode else GEOMETRY;table_fields={'openings':FLOOR_OPENINGS,'layers':FLOOR_FIELDS} if floor_mode else TABLES;state_groups=[] if floor_mode else [('masonry','دیوارچینی'),('finishes','اندود مستقل'),('accessories','اتصال و مسلح‌سازی')]
  dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
  def line(layout,key,title,value=''):
   w=QLineEdit(str(value));layout.addRow(title,w);c[key]=w;return w
@@ -30,26 +32,28 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    w=QPushButton(title);row.addWidget(w);c[key]=w
  top=QFormLayout();outer.addLayout(top)
  for key,title,value in [('project','پروژه',project_id),('floor','طبقه',floor_id),('id','شناسه مستقل عضو','')]:line(top,key,title,value)
- family=QComboBox();[family.addItem(SPECS[k].title,k) for k in KINDS];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
+ family=QComboBox();[family.addItem(SPECS[k].title,k) for k in (('floor_finish',) if floor_mode else tuple(k for k in KINDS if k!='floor_finish'))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
  tabs=QTabWidget();outer.addWidget(tabs,1);c['tabs']=tabs
  def page(title):
   w=QWidget();layout=QVBoxLayout(w);tabs.addTab(w,title);return layout
  basic=page('هویت و هندسه');f=QFormLayout();basic.addLayout(f)
  for key,title in [('building','ساختمان'),('axis','فضا و موقعیت'),('source','شناسه منبع مستقل'),('plan','نقشه مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
  c['geometry_fields']={}
- for key in GEOMETRY:
-  w=QLineEdit();f.addRow(FIELD_LABELS[key],w);c['geometry_fields'][key]=w
- basic.addWidget(QLabel('تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
+ for key in geometry_keys:
+  w=QComboBox() if key=='shape' else QLineEdit()
+  if key=='shape':w.addItem('نیازمند انتخاب','');w.addItem('مستطیل مستند','rectangle')
+  f.addRow(FIELD_LABELS[key],w);c['geometry_fields'][key]=w
+ basic.addWidget(QLabel('تمام ابعاد بر حسب متر؛ ناحیه مستطیلی و ضخامت ثابت هر لایه با تراز مستقل. ضخامت متغیر نیازمند قرارداد است.' if floor_mode else 'تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
  states=page('بررسی گروه‌ها و پیشنهادها');f=QFormLayout();states.addLayout(f);c['states']={}
- for group,title in [('masonry','دیوارچینی'),('finishes','اندود مستقل'),('accessories','اتصال و مسلح‌سازی')]:
+ for group,title in state_groups:
   widgets={};combo=QComboBox();[combo.addItem(t,v) for t,v in [('نیازمند دیتایل','unreviewed'),('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable')]];f.addRow(title,combo);widgets['status']=combo
   for key,label in [('source_ref','مرجع'),('approved_by','تأییدکننده'),('reason','علت عدم کاربرد')]:
    w=QLineEdit();f.addRow(title+'؛ '+label,w);widgets[key]=w
   c['states'][group]=widgets
  buttons(states,[('suggest','پیشنهاد عملیات نیازمند دیتایل')]);proposals=QListWidget();states.addWidget(proposals);c['proposals']=proposals
  c['tables']={};c['columns']={}
- for name,title in [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]:
-  layout=page(title);table=QTableWidget();table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,FIELD_LABELS[k]) for k in COMMON+TABLES[name]];c['columns'][name]=columns;fill_table(table,columns,[])
+ for name,title in ([('openings','بازشوهای تمام لایه‌های کف'),('layers','لایه‌های مستقل کف و خرید مستند')] if floor_mode else [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]):
+  layout=page(title);table=QTableWidget();table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,('امتداد عرض ناحیه (متر)' if floor_mode and k=='height_m' else 'ابتدای عرض (متر)' if floor_mode and k=='y' else FIELD_LABELS[k])) for k in COMMON+table_fields[name]];c['columns'][name]=columns;fill_table(table,columns,[])
   buttons(layout,[(name+'_add','افزودن ردیف'),(name+'_remove','حذف ردیف انتخاب‌شده')])
  approval=page('بازبینی و اصلاحیه رسمی');f=QFormLayout();approval.addLayout(f)
  for key,title in [('reviewer','بازبین مستقل'),('note','یادداشت بازبینی'),('creator','درخواست‌کننده اصلاحیه'),('reason','علت اصلاح، کپی یا حذف'),('evidence_path','مسیر مدرک جدید'),('evidence_ref','مرجع مدرک جدید'),('amend_id','شناسه اصلاحیه'),('new_id','شناسه مستقل کپی'),('new_source','منبع مستقل کپی')]:line(f,key,title)
@@ -66,7 +70,9 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   for i in range(tabs.count()):tabs.setTabEnabled(i,True)
   for key,field in [('building','building_id'),('axis','axis')]:c[key].setText(str(d.get(field,'')))
   for key,field in [('source','source_id'),('plan','plan_ref'),('detail','detail_ref')]:c[key].setText(str(d.get('source',{}).get(field,'')))
-  for k,w in c['geometry_fields'].items():w.setText(str(a.get('geometry',{}).get(k,'')))
+  for k,w in c['geometry_fields'].items():
+   if isinstance(w,QComboBox):w.setCurrentIndex(max(0,w.findData(a.get('geometry',{}).get(k,''))))
+   else:w.setText(str(a.get('geometry',{}).get(k,'')))
   for group,ws in c['states'].items():
    g=a.get(group,{})
    for k,w in ws.items():
@@ -83,7 +89,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   d=deepcopy(state['data']);ctx=context()
   if ctx!=(state['project'],d['kind'],d['floor_id'],d['system_id']):raise ValueError('هویت فرم تغییر کرده؛ عضو جدید یا بازگشایی کنید')
   d.update(building_id=c['building'].text().strip(),axis=c['axis'].text().strip());d['source']={'mode':'manual','source_id':c['source'].text().strip(),'plan_ref':c['plan'].text().strip(),'detail_ref':c['detail'].text().strip()}
-  a=d['architecture_detail'];a['geometry']={k:w.text().strip() for k,w in c['geometry_fields'].items()};a['geometry']['unit']='m'
+  a=d['architecture_detail'];a['geometry']={k:(w.currentData() if isinstance(w,QComboBox) else w.text().strip()) for k,w in c['geometry_fields'].items()};a['geometry']['unit']='m'
   for group,ws in c['states'].items():a[group]={k:w.currentData() if k=='status' else w.text().strip() for k,w in ws.items()}
   for name,table in c['tables'].items():a[name]=read_table(table,c['columns'][name])
   if d.get('roof_review',{}).get('digest')!=review_digest(d):d.pop('roof_review',None)
@@ -92,7 +98,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   pid,k,floor,sid=context()
   if not pid or not floor or not sid or service.open_project(pid) is None:raise ValueError('پروژه، طبقه و شناسه لازم است')
   if service.get_aec_system(pid,k,floor,sid):raise ValueError('شناسه موجود است؛ بازگشایی کنید')
-  d=service.new_aec_system(k,floor,sid);d.update(measurement_policy=POLICY,architecture_detail={'geometry':{},**{k:[] for k in TABLES},**{k:{'status':'unreviewed'} for k in ('masonry','finishes','accessories')}});paint({'data':d,'revision':0,'status':'draft'})
+  d=service.new_aec_system(k,floor,sid);d.update(measurement_policy=POLICY,architecture_detail={'geometry':{},**{k:[] for k in table_fields},**{k:{'status':'unreviewed'} for k,title in state_groups}});paint({'data':d,'revision':0,'status':'draft'})
  def load():
   r=service.get_aec_system(*context())
   if not r or r['data'].get('measurement_policy')!=POLICY:raise ValueError('رکورد تخصصی یافت نشد؛ مهاجرت خاموش تاریخی ممنوع است')
@@ -150,7 +156,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    except (ValueError,RuntimeError,KeyError,TypeError,OSError) as exc:QMessageBox.warning(dialog,'کنترل مهندسی',str(exc))
   return run
  for key,fn in [('new',new),('load',load),('save',save),('preview',calculate),('review',review),('commit',commit),('create_amendment',create_amendment),('review_amendment',review_amendment),('apply_amendment',apply_amendment),('copy',copy),('delete',delete),('suggest',propose)]:c[key].clicked.connect(guarded(fn))
- for name in TABLES:
+ for name in table_fields:
   c[name+'_add'].clicked.connect(guarded(lambda name=name:add(name)));c[name+'_remove'].clicked.connect(guarded(lambda name=name:remove(name)))
  for fmt in ('pdf','xlsx','docx','csv'):c[fmt].clicked.connect(guarded(lambda fmt=fmt:report(fmt)))
  for key in ('save','preview','review','commit'):c[key].setEnabled(False)
