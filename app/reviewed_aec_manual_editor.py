@@ -114,6 +114,13 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         from app.steel_detail_editor import open_steel_editor
         open_steel_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
     steel_button.clicked.connect(open_specialist_steel)
+    architecture_button=QPushButton('فرم تخصصی دیوارچینی و اندود');outer.addWidget(architecture_button);dialog.architecture_button=architecture_button
+    def open_specialist_architecture():
+        if kind.currentData() not in ('block_wall','brick_wall','plaster_finish'):
+            QMessageBox.warning(dialog,'انتخاب عملیات','دیوار بلوکی، آجری یا اندود را انتخاب کنید');return
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
+    architecture_button.clicked.connect(open_specialist_architecture)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 
