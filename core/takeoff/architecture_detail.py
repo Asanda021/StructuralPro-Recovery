@@ -9,7 +9,7 @@ from core.commercial.exact_values import exact,wire
 from core.takeoff.roof_detail import n,canonical,checked,strict,review_digest,validate_roof_source
 from core.takeoff.reviewed_components import require_text
 POLICY='architecture_specialist_v1'
-KINDS=('block_wall','brick_wall','plaster_finish','floor_finish')
+KINDS=('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation')
 COMMON=('id','physical_key','source_ref','approved_by')
 LABELS={'masonry_work':'دیوارچینی کامل','masonry_units':'واحد بنایی نصب‌شده؛ اطلاعات مصالح','mortar':'ملات بند بیرونی؛ اطلاعات مصالح','base_plaster':'گچ و خاک','white_plaster':'گچ سفید','cement_render':'اندود ماسه سیمان','levelling':'زیرسازی و تسطیح','protective':'پوشش محافظ'}
 LAYER_FIELDS=('material_kind','offset_m','thickness_m','unit_length_m','unit_height_m','unit_depth_m','head_joint_m','bed_joint_m','unit_spec_ref','mortar_ref','payment_unit','payment_ref')
@@ -34,9 +34,9 @@ def group(g,required=False):
 
 @exact
 def preview(data,engine,require_review=False):
- if data.get('kind')=='floor_finish':
+ if data.get('kind') in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):
   from core.takeoff.floor_detail import preview as floor_preview
-  return floor_preview(data,engine,require_review=require_review)
+  return floor_preview(data,engine,require_review=require_review,insulation=data.get('kind')!='floor_finish')
  rows=[];errors=[];source=data.get('source',{});kind=data.get('kind')
  try:
   if kind not in KINDS or data.get('measurement_policy')!=POLICY:raise ValueError('قرارداد تخصصی معماری معتبر نیست')
@@ -153,7 +153,7 @@ def takeoffs(data,version):
 def remap_copy(data,replacements):
  from uuid import uuid4
  a=data['architecture_detail']
- if data['kind']=='floor_finish':
+ if data['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):
   a['geometry']['physical_region_id']='AF-'+uuid4().hex;keys={}
   for p in a['layers']:
    if p.get('layer_key'):
@@ -183,7 +183,7 @@ def guard(previous,updated):
  from core.takeoff.manual_formula_amendments import beam_current
  for key,r in register.items():
   if r.get('data',{}).get('measurement_policy')!=POLICY:continue
-  if r['data']['kind']=='floor_finish':continue
+  if r['data']['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):continue
   d=beam_current(updated,key)['data'];a=d.get('architecture_detail',{});g=a.get('geometry',{});building=canonical(d.get('building_id'));wall=(building,canonical(g.get('physical_wall_id')))
   for other,p in register.items():
    v=p.get('data',{})
@@ -216,7 +216,7 @@ def guard(previous,updated):
 
 def validate_amendment(previous,proposal,before_rows,after_rows):
  """An arithmetic delta cannot subtract unlike units or replace a physical wall."""
- identity='physical_region_id' if previous['kind']=='floor_finish' else 'physical_wall_id'
+ identity='physical_region_id' if previous['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation') else 'physical_wall_id'
  if canonical(previous['architecture_detail']['geometry'][identity])!=canonical(proposal['architecture_detail']['geometry'][identity]):raise ValueError('تغییر هویت فیزیکی دیوار در اصلاحیه ممنوع است')
  def dimensions(rows):return {r['source_id']:(r['item'],r['quantities'][0]['unit'],r['quantities'][0]['role']) for r in rows}
  before,after=dimensions(before_rows),dimensions(after_rows)

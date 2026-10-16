@@ -32,8 +32,8 @@ def test_current_matrix_is_conservative_and_matches_all_85_families():
     result = assert_family_evidence()
     assert result["valid"]
     assert result["family_count"] == 85
-    assert result["limited_documented_count"] == 14
-    assert result["unverified_count"] == 71
+    assert result["limited_documented_count"] == 17
+    assert result["unverified_count"] == 68
     assert result["fully_accepted_count"] == 0
     assert result["release_ready"] is False
     rows = _matrix()["rows"]

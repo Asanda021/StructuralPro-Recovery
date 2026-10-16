@@ -40,13 +40,16 @@ _GROUPS = (
      ("test_waffle_specialist_work.py", "test_waffle_specialist_ui.py")),
     (("hollow_core",), "roof_work2_package3_hollowcore_20261016.md",
      ("test_hollowcore_specialist_work.py", "test_hollowcore_specialist_ui.py")),
+    (("waterproofing", "thermal_insulation", "acoustic_insulation"),
+     "architecture_step6_package3_insulation_partial_20261016.md",
+     ("test_insulation_specialist_work.py", "test_insulation_specialist_ui.py")),
 )
 _LIMITED_SOURCES: dict[str, tuple[list[str], list[str]]] = {
     code: (["docs/acceptance/" + doc], ["tests/" + t for t in tests])
     for codes, doc, tests in _GROUPS for code in codes
 }
 _FORMATS = {
-    code: (["pdf", "xlsx", "docx", "csv"] if doc.startswith("roof_")
+    code: (["pdf", "xlsx", "docx", "csv"] if doc.startswith(("roof_", "architecture_step6_package3_"))
            else ["pdf", "xlsx"])
     for codes, doc, tests in _GROUPS for code in codes
 }

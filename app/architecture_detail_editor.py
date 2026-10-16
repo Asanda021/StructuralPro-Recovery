@@ -17,12 +17,12 @@ def fill_table(table,columns,records):
   for col,(key,_) in enumerate(columns):
    if key not in CHOICES:continue
    w=QComboBox();w.addItem('نیازمند انتخاب','')
-   for v in CHOICES[key]:w.addItem(VALUES[v],v)
+   for v in table.property('architecture_choices').get(key,CHOICES[key]) if table.property('architecture_choices') else CHOICES[key]:w.addItem(VALUES[v],v)
    w.setCurrentIndex(max(0,w.findData(p.get(key,''))));table.setCellWidget(row,col,w)
 
 def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall'):
- from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS
- floor_mode=kind=='floor_finish';geometry_keys=FLOOR_GEOMETRY if floor_mode else GEOMETRY;table_fields={'openings':FLOOR_OPENINGS,'layers':FLOOR_FIELDS} if floor_mode else TABLES;state_groups=[] if floor_mode else [('masonry','دیوارچینی'),('finishes','اندود مستقل'),('accessories','اتصال و مسلح‌سازی')]
+ from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS,INSULATION_KINDS,INSULATION_OPERATIONS
+ insulation=kind in INSULATION_KINDS;floor_mode=kind=='floor_finish' or insulation;geometry_keys=FLOOR_GEOMETRY+(('installation_plane','installation_ref') if insulation else ()) if floor_mode else GEOMETRY;table_fields={'openings':FLOOR_OPENINGS,'layers':FLOOR_FIELDS} if floor_mode else TABLES;state_groups=[] if floor_mode else [('masonry','دیوارچینی'),('finishes','اندود مستقل'),('accessories','اتصال و مسلح‌سازی')]
  dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
  def line(layout,key,title,value=''):
   w=QLineEdit(str(value));layout.addRow(title,w);c[key]=w;return w
@@ -32,7 +32,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    w=QPushButton(title);row.addWidget(w);c[key]=w
  top=QFormLayout();outer.addLayout(top)
  for key,title,value in [('project','پروژه',project_id),('floor','طبقه',floor_id),('id','شناسه مستقل عضو','')]:line(top,key,title,value)
- family=QComboBox();[family.addItem(SPECS[k].title,k) for k in (('floor_finish',) if floor_mode else tuple(k for k in KINDS if k!='floor_finish'))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
+ family=QComboBox();[family.addItem(SPECS[k].title,k) for k in ((kind,) if floor_mode else tuple(k for k in KINDS if k not in ('floor_finish',)+INSULATION_KINDS))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
  tabs=QTabWidget();outer.addWidget(tabs,1);c['tabs']=tabs
  def page(title):
   w=QWidget();layout=QVBoxLayout(w);tabs.addTab(w,title);return layout
@@ -40,10 +40,10 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  for key,title in [('building','ساختمان'),('axis','فضا و موقعیت'),('source','شناسه منبع مستقل'),('plan','نقشه مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
  c['geometry_fields']={}
  for key in geometry_keys:
-  w=QComboBox() if key=='shape' else QLineEdit()
-  if key=='shape':w.addItem('نیازمند انتخاب','');w.addItem('مستطیل مستند','rectangle')
+  w=QComboBox() if key in ('shape','installation_plane') else QLineEdit()
+  if key in ('shape','installation_plane'):w.addItem('نیازمند انتخاب','');w.addItem('سطح افقی مستند' if key=='installation_plane' else 'مستطیل مستند','horizontal' if key=='installation_plane' else 'rectangle')
   f.addRow(FIELD_LABELS[key],w);c['geometry_fields'][key]=w
- basic.addWidget(QLabel('تمام ابعاد بر حسب متر؛ ناحیه مستطیلی و ضخامت ثابت هر لایه با تراز مستقل. ضخامت متغیر نیازمند قرارداد است.' if floor_mode else 'تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
+ basic.addWidget(QLabel('عایق افقی مستطیلی با ضخامت ثابت؛ خرید، رول، هم‌پوشانی نوار، برگشت و شیب مسدود هستند.' if insulation else 'تمام ابعاد بر حسب متر؛ ناحیه مستطیلی و ضخامت ثابت هر لایه با تراز مستقل. ضخامت متغیر نیازمند قرارداد است.' if floor_mode else 'تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
  states=page('بررسی گروه‌ها و پیشنهادها');f=QFormLayout();states.addLayout(f);c['states']={}
  for group,title in state_groups:
   widgets={};combo=QComboBox();[combo.addItem(t,v) for t,v in [('نیازمند دیتایل','unreviewed'),('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable')]];f.addRow(title,combo);widgets['status']=combo
@@ -52,8 +52,8 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   c['states'][group]=widgets
  buttons(states,[('suggest','پیشنهاد عملیات نیازمند دیتایل')]);proposals=QListWidget();states.addWidget(proposals);c['proposals']=proposals
  c['tables']={};c['columns']={}
- for name,title in ([('openings','بازشوهای تمام لایه‌های کف'),('layers','لایه‌های مستقل کف و خرید مستند')] if floor_mode else [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]):
-  layout=page(title);table=QTableWidget();table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,('امتداد عرض ناحیه (متر)' if floor_mode and k=='height_m' else 'ابتدای عرض (متر)' if floor_mode and k=='y' else FIELD_LABELS[k])) for k in COMMON+table_fields[name]];c['columns'][name]=columns;fill_table(table,columns,[])
+ for name,title in ([('openings','بازشوهای تمام لایه‌های ناحیه' if insulation else 'بازشوهای تمام لایه‌های کف'),('layers','لایه‌های مستقل عایق؛ خرید مسدود' if insulation else 'لایه‌های مستقل کف و خرید مستند')] if floor_mode else [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]):
+  layout=page(title);table=QTableWidget();table.setProperty('architecture_choices',{'operation':INSULATION_OPERATIONS[kind]} if insulation else {});table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,('امتداد عرض ناحیه (متر)' if floor_mode and k=='height_m' else 'ابتدای عرض (متر)' if floor_mode and k=='y' else FIELD_LABELS[k])) for k in COMMON+table_fields[name]];c['columns'][name]=columns;fill_table(table,columns,[])
   buttons(layout,[(name+'_add','افزودن ردیف'),(name+'_remove','حذف ردیف انتخاب‌شده')])
  approval=page('بازبینی و اصلاحیه رسمی');f=QFormLayout();approval.addLayout(f)
  for key,title in [('reviewer','بازبین مستقل'),('note','یادداشت بازبینی'),('creator','درخواست‌کننده اصلاحیه'),('reason','علت اصلاح، کپی یا حذف'),('evidence_path','مسیر مدرک جدید'),('evidence_ref','مرجع مدرک جدید'),('amend_id','شناسه اصلاحیه'),('new_id','شناسه مستقل کپی'),('new_source','منبع مستقل کپی')]:line(f,key,title)

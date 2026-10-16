@@ -3,8 +3,8 @@
   "reviewed_at": "2026-10-16",
   "source_inventory": "docs/aec_priority_1_9_master_inventory_20261013.json",
   "source_inventory_blob_sha": "0f78cf09bb446f1b881c96533668923277980575",
-  "review_basis_commit": "613d65016c39e1c6107c902be624e5229e7a69a2",
-  "scope": "فهرست شواهد موجود و آزمون گزارش‌شده سابق؛ این Chat آزمون کامل مخزن/ویندوز را اجرا نکرده است.",
+  "review_basis_commit": "3c5148c4bd71854b1f3e394a12bc64f3eb9deded",
+  "scope": "خط مبنای شواهد تاریخی همراه آزمون اجرایی محدود عایق افقی بسته سوم؛ پذیرش نهایی، نقشه، Windows و پروژه واقعی احراز نشده‌اند.",
   "gate_keys": [
     "engineering_calculation",
     "manual_ui",
@@ -1300,25 +1300,35 @@
       "inventory_coverage_level": "review_contract",
       "inventory_route_file": "core/takeoff/reviewed_aec.py",
       "inventory_variants": [],
-      "acceptance_status": "not_individually_verified",
+      "acceptance_status": "limited_documented",
       "gates": {
-        "engineering_calculation": "not_verified",
-        "manual_ui": "not_verified",
-        "sqlite_history": "not_verified",
-        "review_amendment": "not_verified",
-        "boq_dedup": "not_verified",
-        "report_exports": "not_verified",
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
         "drawing_takeoff": "not_verified",
         "real_engineering_case": "not_verified",
         "windows_office_acceptance": "not_verified"
       },
       "evidence": {
-        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
-        "documents": [],
-        "tests": [],
-        "formats": [],
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
         "variants": [],
-        "input_type": "not_verified"
+        "input_type": "synthetic_documented"
       },
       "fully_accepted": false
     },
@@ -1330,25 +1340,35 @@
       "inventory_coverage_level": "review_contract",
       "inventory_route_file": "core/takeoff/reviewed_aec.py",
       "inventory_variants": [],
-      "acceptance_status": "not_individually_verified",
+      "acceptance_status": "limited_documented",
       "gates": {
-        "engineering_calculation": "not_verified",
-        "manual_ui": "not_verified",
-        "sqlite_history": "not_verified",
-        "review_amendment": "not_verified",
-        "boq_dedup": "not_verified",
-        "report_exports": "not_verified",
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
         "drawing_takeoff": "not_verified",
         "real_engineering_case": "not_verified",
         "windows_office_acceptance": "not_verified"
       },
       "evidence": {
-        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
-        "documents": [],
-        "tests": [],
-        "formats": [],
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
         "variants": [],
-        "input_type": "not_verified"
+        "input_type": "synthetic_documented"
       },
       "fully_accepted": false
     },
@@ -1360,25 +1380,35 @@
       "inventory_coverage_level": "review_contract",
       "inventory_route_file": "core/takeoff/reviewed_aec.py",
       "inventory_variants": [],
-      "acceptance_status": "not_individually_verified",
+      "acceptance_status": "limited_documented",
       "gates": {
-        "engineering_calculation": "not_verified",
-        "manual_ui": "not_verified",
-        "sqlite_history": "not_verified",
-        "review_amendment": "not_verified",
-        "boq_dedup": "not_verified",
-        "report_exports": "not_verified",
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
         "drawing_takeoff": "not_verified",
         "real_engineering_case": "not_verified",
         "windows_office_acceptance": "not_verified"
       },
       "evidence": {
-        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
-        "documents": [],
-        "tests": [],
-        "formats": [],
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
         "variants": [],
-        "input_type": "not_verified"
+        "input_type": "synthetic_documented"
       },
       "fully_accepted": false
     },
