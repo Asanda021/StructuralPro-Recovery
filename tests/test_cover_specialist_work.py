@@ -168,3 +168,7 @@ def test_stored_five_floor_scenario_extends_all_previous_layers(tmp_path):
 
 def test_zero_cuts_are_known_from_full_layout_not_an_unknown_default():
  d=sample();d['architecture_detail']['stocks'][1]['length_m']='1';d['architecture_detail']['pieces'][1]['piece_type']='full';r=result(d);assert r['ready'];assert next(v for v in r['rows'] if v['item_code']=='installed_pieces')['params']['cut_count']==0
+
+
+def test_unregistered_litre_unit_is_blocked_at_preview_not_only_at_commit():
+ d=sample();d['architecture_detail']['consumptions']=[obj('LIQUID',surface_id='LAYER',operation='adhesive',basis='area_rate',thickness_m='',rate='1.25',rate_ref='مصرف فرض آزمون نرم‌افزار؛ نه تأیید ماده',material_ref='چسب مایع آزمون',quantity_unit='litre')];assert not result(d)['ready']
