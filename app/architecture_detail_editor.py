@@ -39,7 +39,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    w=QPushButton(title);row.addWidget(w);c[key]=w
  top=QFormLayout();outer.addLayout(top)
  for key,title,value in [('project','پروژه',project_id),('floor','طبقه',floor_id),('id','شناسه مستقل عضو','')]:line(top,key,title,value)
- family=QComboBox();[family.addItem(SPECS[k].title,k) for k in ((kind,) if floor_mode or cover else tuple(k for k in KINDS if k not in ('floor_finish',)+INSULATION_KINDS+COVER_KINDS))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
+ family=QComboBox();[family.addItem('قرنیز؛ قرارداد طولی' if skirt else SPECS[k].title,k) for k in ((kind,) if floor_mode or cover else tuple(k for k in KINDS if k not in ('floor_finish',)+INSULATION_KINDS+COVER_KINDS))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
  tabs=QTabWidget();outer.addWidget(tabs,1);c['tabs']=tabs
  def page(title):
   w=QWidget();layout=QVBoxLayout(w);tabs.addTab(w,title);return layout
@@ -133,8 +133,9 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   from PySide6.QtWidgets import QTableWidgetItem
   old={v['source_id']:v for v in preview(am['previous']['data'],service.takeoff)['rows']};new={v['source_id']:v for v in am['rows']};comparison.setRowCount(len(am['delta']))
   for row,(src,delta) in enumerate(am['delta'].items()):
-   before=old.get(src,{});after=new.get(src,{});q=after.get('quantities',[{}])[0]
-   for col,value in enumerate([before.get('description') or after.get('description'),before.get('quantity',0),q.get('amount',0),delta,VALUES.get(before.get('unit') or q.get('unit'),before.get('unit') or q.get('unit'))]):comparison.setItem(row,col,QTableWidgetItem(str(value)))
+   before=old.get(src,{});after=new.get(src,{});q=after.get('quantities',[{}])[0];missing_info=not after and before.get('role')=='material'
+   for col,value in enumerate([before.get('description') or after.get('description'),before.get('quantity',0),'فاقد ردیف اطلاعاتی فعال' if missing_info else q.get('amount',0),'حذف ردیف اطلاعاتی؛ صفر استنتاج نمی‌شود' if missing_info else delta,VALUES.get(before.get('unit') or q.get('unit'),before.get('unit') or q.get('unit'))]):comparison.setItem(row,col,QTableWidgetItem(str(value)))
+  comparison.resizeColumnsToContents()
  def amendment_context():
   capture();pid,kind,floor,sid=context();am=service.open_project(pid).get('beam_amendments',{}).get(c['amend_id'].text())
   if not am or am['beam_key']!=_id(kind,floor,sid):raise ValueError('اصلاحیه متعلق به عضو نمایش‌داده‌شده نیست')

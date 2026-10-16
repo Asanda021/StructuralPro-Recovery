@@ -94,6 +94,9 @@ def test_skirting_workflow_store_history_boq(tmp_path,case):
     assert a.open_project('P')==locked
    else:
     a.apply_beam_amendment('P',am['id'],expected_revision=1);assert a.open_project('P')['takeoffs']==before['takeoffs'];assert a.open_project('P')['boq'][0]['quantity']==3;a.store.close();a=StructuralProApp(tmp_path/'db');assert a.get_aec_system('P',kind,'L1','S1')['revision']==3 and a.store.db.execute('pragma integrity_check').fetchone()[0]=='ok'
+ if case=='valid':
+  from core.reports.architecture_detail_report import export
+  export(a,'P',kind,'L1','S1',tmp_path/'amended.csv',format='csv');assert 'وضعیت جدید: فاقد ردیف اطلاعاتی فعال' in (tmp_path/'amended.csv').read_text(encoding='utf-8-sig')
  a.store.close()
 
 

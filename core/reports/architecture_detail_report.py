@@ -57,7 +57,8 @@ def export_project(service,pid,path,*,format,floor=None,member=None,family=None)
    add('اصلاحیه '+{'draft':'درخواست‌شده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[am['status']],source=am['id'],notes='علت: '+am['reason']+'؛ مدرک: '+am['evidence']['evidence_reference']+'؛ مسیر: '+am['evidence']['evidence_path']+'؛ هش: '+am['evidence']['evidence_sha256']+'؛ بازبین: '+am.get('review',{}).get('reviewer','نیازمند بازبینی'))
    old={v['source_id']:v for v in preview(am['previous']['data'],service.takeoff)['rows']};new={v['source_id']:v for v in am['rows']}
    for src,delta in am['delta'].items():
-    before=old.get(src,{});after=new.get(src,{});add('اختلاف اصلاحیه؛ در جمع نسخه مؤثر دوباره اضافه نمی‌شود',source=src,quantity=delta,unit=before.get('unit') or after.get('quantities',[{}])[0].get('unit',''),notes='پیشین: '+str(before.get('quantity',0))+'؛ پیشنهادی: '+str(after.get('quantities',[{'amount':0}])[0]['amount']))
+    before=old.get(src,{});after=new.get(src,{});missing_info=not after and before.get('role')=='material'
+    add('حذف ردیف اطلاعاتی؛ مقدار جدید صفر فرض نشده است' if missing_info else 'اختلاف اصلاحیه؛ در جمع نسخه مؤثر دوباره اضافه نمی‌شود',source=src,quantity=None if missing_info else delta,unit=before.get('unit') or after.get('quantities',[{}])[0].get('unit',''),notes='پیشین: '+str(before.get('quantity',0))+('؛ وضعیت جدید: فاقد ردیف اطلاعاتی فعال؛ از حذف ردیف، مقدار جدید استنتاج نمی‌شود؛ تغییر ثبتی: '+str(delta) if missing_info else '؛ پیشنهادی: '+str(after.get('quantities',[{'amount':0}])[0]['amount'])))
  if not found:raise ValueError('رکورد معماری معتبر یافت نشد')
  if format not in EXPORTERS:raise ValueError('قالب خروجی نامعتبر است')
  for i,row in enumerate(rows,1):row['item_no']=i
