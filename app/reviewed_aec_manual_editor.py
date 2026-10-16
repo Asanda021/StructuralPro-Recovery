@@ -107,6 +107,13 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         open_roof_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
     roof_button.clicked.connect(open_specialist_roof)
     dialog.roof_button=roof_button
+    steel_button=QPushButton('فرم تخصصی سازه فولادی و عرشه فولادی');outer.addWidget(steel_button);dialog.steel_button=steel_button
+    def open_specialist_steel():
+        if kind.currentData() not in ('steel_frame','steel_deck'):
+            QMessageBox.warning(dialog,'انتخاب سیستم','اسکلت فولادی یا سقف عرشه فولادی را انتخاب کنید');return
+        from app.steel_detail_editor import open_steel_editor
+        open_steel_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
+    steel_button.clicked.connect(open_specialist_steel)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 

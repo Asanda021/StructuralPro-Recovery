@@ -180,7 +180,7 @@ def beam_original(project,key):
         if original and original.get('data',{}).get('measurement_policy') not in STRUCTURAL_POLICIES:raise ValueError('این گردش فقط ستون است')
     if original is None:
         original=project.get('reviewed_aec_systems',{}).get(key)
-        if original and original.get('data',{}).get('measurement_policy')!='roof_specialist_v1':raise ValueError('این گردش نیازمند قرارداد تخصصی سقف است')
+        if original and original.get('data',{}).get('measurement_policy') not in ('roof_specialist_v1','steel_specialist_v1'):raise ValueError('این گردش نیازمند قرارداد تخصصی سقف است')
     if original is None:raise KeyError(key)
     return original
 
@@ -193,9 +193,9 @@ def beam_current(project,key):
     return {**deepcopy(original),'data':deepcopy(a['proposal']),'revision':a['base_revision']+1,'amendment_id':aid}
 
 def beam_rows(data,version,*,_historical_tie=False):
-    if data.get('measurement_policy')=='roof_specialist_v1':
-        from core.takeoff.roof_detail import takeoffs
-        return takeoffs(data,version)
+    if data.get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1'):
+        from core.takeoff.reviewed_aec import specialist_module
+        return specialist_module(data).takeoffs(data,version)
     from core.takeoff.beam_detail import preview_beam
     from core.takeoff.engine import TakeoffEngine
     if data.get('measurement_policy') in STRUCTURAL_POLICIES:
@@ -235,7 +235,8 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
     if foundation_kind is not None and foundation_kind not in FOUNDATION_KINDS:raise ValueError('نوع پی یا شناژ معتبر نیست')
     if roof_kind is not None:
         from core.takeoff.roof_detail import KINDS
-        if roof_kind not in KINDS:raise ValueError('نوع سقف معتبر نیست')
+        from core.takeoff.steel_detail import KINDS as STEEL_KINDS
+        if roof_kind not in KINDS+STEEL_KINDS:raise ValueError('نوع سقف معتبر نیست')
     if roof_kind and (migration is not None or column or foundation_kind):raise ValueError('مهاجرت یا تغییر خانواده در اصلاحیه سقف مجاز نیست')
     structural=column or foundation_kind is not None
     if roof_kind:
@@ -248,11 +249,11 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
     if old['status']!='committed' and not (migration is not None and old['status']=='draft'):raise ValueError('اصلاحیه فقط برای تیر قطعی یا مهاجرت پیش‌نویس است')
     d=deepcopy(data)
     if (roof_kind and d.get('kind')!=roof_kind) or (structural and d.get('kind')!=(foundation_kind or 'column')) or (not structural and not roof_kind and d.get('kind') not in (None,'beam')):raise ValueError('تغییر نوع عضو در اصلاحیه ممنوع است')
-    if d.get('measurement_policy')!=('roof_specialist_v1' if roof_kind else 'foundation_tie_specialist_v1' if foundation_kind else 'column_specialist_v1' if column else 'beam_specialist_v1'):raise ValueError('اصلاحیه تیر نیازمند قرارداد تخصصی معتبر است')
+    if d.get('measurement_policy')!=(old['data'].get('measurement_policy') if roof_kind else 'foundation_tie_specialist_v1' if foundation_kind else 'column_specialist_v1' if column else 'beam_specialist_v1'):raise ValueError('اصلاحیه تیر نیازمند قرارداد تخصصی معتبر است')
     if migration is not None:
         beam_migration_identity(old['data'],d);beam_migration_evidence(migration)
     else:
-        for field in (('floor_id','system_id','building_id','source') if roof_kind else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')):
+        for field in (('floor_id','system_id','building_id','axis','source') if roof_kind else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')):
             if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت یا منبع اصلی تیر نیازمند گردش مستقل است')
     rows=beam_rows(d,old['revision']+1)
     current_rows=beam_effective_takeoffs(project,project.get('takeoffs',[]))
@@ -312,6 +313,11 @@ def beam_checked_delta(project,a):
 def beam_guard(previous,updated,command):
     from core.takeoff.roof_detail import physical_identity_guard
     physical_identity_guard(updated)
+    from core.takeoff.steel_detail import physical_identity_guard as steel_guard
+    steel_guard(updated)
+    for key,record in previous.get('reviewed_aec_systems',{}).items():
+        new=updated.get('reviewed_aec_systems',{}).get(key)
+        if new and record['data'].get('kind') in ('steel_frame','steel_deck') and record['data'].get('measurement_policy')!=new['data'].get('measurement_policy') and 'steel_specialist_v1' in (record['data'].get('measurement_policy'),new['data'].get('measurement_policy')):raise ValueError('تغییر قرارداد تاریخی فولاد نیازمند مهاجرت صریح است')
     for snapshot in previous.get('aec_system_history',[]):
         if snapshot not in updated.get('aec_system_history',[]):raise ValueError('حذف یا تغییر تاریخچه سقف ممنوع است')
     for snapshot in previous.get('structural_member_history',[]):
@@ -334,7 +340,7 @@ def beam_guard(previous,updated,command):
             for sid in r.get('committed_source_ids',[]):
                 if [v for v in previous.get('takeoffs',[]) if v.get('source_id')==sid]!=[v for v in updated.get('takeoffs',[]) if v.get('source_id')==sid]:raise ValueError('اصل برداشت ستون قطعی قابل تغییر نیست')
     for key,r in previous.get('reviewed_aec_systems',{}).items():
-        if r.get('status')=='committed' and r.get('data',{}).get('measurement_policy')=='roof_specialist_v1':
+        if r.get('status')=='committed' and r.get('data',{}).get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1'):
             if updated.get('reviewed_aec_systems',{}).get(key)!=r:raise ValueError('اصل سقف قطعی قابل تغییر نیست')
             protected.update(r.get('committed_source_ids',[]))
             for sid in r.get('committed_source_ids',[]):
@@ -350,12 +356,12 @@ def beam_guard(previous,updated,command):
         if action=='beam_create':
             if aid in old or a['status']!='draft':raise ValueError('ثبت اصلاحیه تیر تکراری است')
             base=beam_base(previous,a)
-            roof=base['data'].get('measurement_policy')=='roof_specialist_v1'
+            roof=base['data'].get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1')
             if roof and any(v.get('beam_key')==a['beam_key'] and v.get('status') in ('draft','reviewed') for v in old.values()):raise ValueError('اصلاحیه باز تکراری سقف ممنوع است')
             structural=base['data'].get('measurement_policy') in STRUCTURAL_POLICIES
             expected_kind='roof_amendment' if roof else 'foundation_amendment' if base['data'].get('measurement_policy')=='foundation_tie_specialist_v1' else 'column_amendment' if structural else None
             if a.get('kind')!=expected_kind or ((structural or roof) and (a['proposal'].get('kind')!=base['data'].get('kind') or a['proposal'].get('measurement_policy')!=base['data'].get('measurement_policy'))) or (not structural and not roof and a['proposal'].get('kind') not in (None,'beam')):raise ValueError('نوع عضو یا گردش اصلاحیه نامعتبر است')
-            if a['previous']!=base or a['original_digest']!=digest(beam_original(previous,a['beam_key'])) or (not a.get('migration') and any(a['proposal'].get(k)!=base['data'].get(k) for k in (('floor_id','system_id','building_id','source') if roof else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')))) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
+            if a['previous']!=base or a['original_digest']!=digest(beam_original(previous,a['beam_key'])) or (not a.get('migration') and any(a['proposal'].get(k)!=base['data'].get(k) for k in (('floor_id','system_id','building_id','axis','source') if roof else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')))) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
             if a.get('migration'):
                 beam_migration_identity(base['data'],a['proposal']);beam_migration_evidence(a['migration'])
                 if a['migration'].get('from_policy')!=base['data'].get('measurement_policy') or a['migration'].get('to_policy')!='beam_specialist_v1' or a['migration'].get('version')!=1:raise ValueError('قرارداد مهاجرت معتبر نیست')
