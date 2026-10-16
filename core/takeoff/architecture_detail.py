@@ -9,7 +9,7 @@ from core.commercial.exact_values import exact,wire
 from core.takeoff.roof_detail import n,canonical,checked,strict,review_digest,validate_roof_source
 from core.takeoff.reviewed_components import require_text
 POLICY='architecture_specialist_v1'
-KINDS=('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation')
+KINDS=('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation','ceramic_finish','stone_floor','stone_cladding')
 COMMON=('id','physical_key','source_ref','approved_by')
 LABELS={'masonry_work':'دیوارچینی کامل','masonry_units':'واحد بنایی نصب‌شده؛ اطلاعات مصالح','mortar':'ملات بند بیرونی؛ اطلاعات مصالح','base_plaster':'گچ و خاک','white_plaster':'گچ سفید','cement_render':'اندود ماسه سیمان','levelling':'زیرسازی و تسطیح','protective':'پوشش محافظ'}
 LAYER_FIELDS=('material_kind','offset_m','thickness_m','unit_length_m','unit_height_m','unit_depth_m','head_joint_m','bed_joint_m','unit_spec_ref','mortar_ref','payment_unit','payment_ref')
@@ -34,6 +34,10 @@ def group(g,required=False):
 
 @exact
 def preview(data,engine,require_review=False):
+ from core.takeoff.skirting_detail import is_skirting,preview as skirt_preview
+ if is_skirting(data):return skirt_preview(data,engine,require_review=require_review)
+ from core.takeoff.interior_cover_detail import is_cover,preview as cover_preview
+ if is_cover(data):return cover_preview(data,engine,require_review=require_review)
  if data.get('kind') in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):
   from core.takeoff.floor_detail import preview as floor_preview
   return floor_preview(data,engine,require_review=require_review,insulation=data.get('kind')!='floor_finish')
@@ -153,6 +157,10 @@ def takeoffs(data,version):
 def remap_copy(data,replacements):
  from uuid import uuid4
  a=data['architecture_detail']
+ from core.takeoff.skirting_detail import is_skirting,remap_copy as skirt_copy
+ if is_skirting(data):return skirt_copy(data,replacements)
+ from core.takeoff.interior_cover_detail import is_cover,remap_copy as cover_copy
+ if is_cover(data):return cover_copy(data,replacements)
  if data['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):
   a['geometry']['physical_region_id']='AF-'+uuid4().hex;keys={}
   for p in a['layers']:
@@ -176,6 +184,11 @@ def suggestions(context):
 def guard(previous,updated):
  """Check physical ownership across records, effective amendments and old contracts."""
  old=previous.get('reviewed_aec_systems',{});register=updated.get('reviewed_aec_systems',{})
+ from core.takeoff.skirting_detail import is_skirting,guard as skirt_guard
+ from core.takeoff.interior_cover_detail import is_cover,guard as cover_guard
+ for key,r in old.items():
+  new=register.get(key)
+  if new and r['data'].get('architecture_detail',{}).get('contract')!=new['data'].get('architecture_detail',{}).get('contract'):raise ValueError('تغییر قرارداد تاریخی پوشش نیازمند مهاجرت صریح است')
  for key,r in old.items():
   new=register.get(key)
   if new and r['data'].get('kind') in KINDS and r['data'].get('measurement_policy')!=new['data'].get('measurement_policy') and POLICY in (r['data'].get('measurement_policy'),new['data'].get('measurement_policy')):raise ValueError('تغییر قرارداد تاریخی معماری نیازمند مهاجرت صریح است')
@@ -183,6 +196,7 @@ def guard(previous,updated):
  from core.takeoff.manual_formula_amendments import beam_current
  for key,r in register.items():
   if r.get('data',{}).get('measurement_policy')!=POLICY:continue
+  if is_cover(r['data']) or is_skirting(r['data']):continue
   if r['data']['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):continue
   d=beam_current(updated,key)['data'];a=d.get('architecture_detail',{});g=a.get('geometry',{});building=canonical(d.get('building_id'));wall=(building,canonical(g.get('physical_wall_id')))
   for other,p in register.items():
@@ -212,11 +226,19 @@ def guard(previous,updated):
    face_names[face]=surface
  from core.takeoff.floor_detail import guard as floor_guard
  floor_guard(updated)
+ cover_guard(updated)
+ skirt_guard(updated)
 
 
 def validate_amendment(previous,proposal,before_rows,after_rows):
  """An arithmetic delta cannot subtract unlike units or replace a physical wall."""
- identity='physical_region_id' if previous['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation') else 'physical_wall_id'
+ from core.takeoff.skirting_detail import is_skirting
+ from core.takeoff.interior_cover_detail import is_cover
+ if previous['architecture_detail'].get('contract')!=proposal['architecture_detail'].get('contract'):raise ValueError('تغییر قرارداد تخصصی در اصلاحیه ممنوع است')
+ if is_cover(previous):
+  for key in ('physical_surface_id','host_id','face','plane'):
+   if previous['architecture_detail']['geometry'][key]!=proposal['architecture_detail']['geometry'][key]:raise ValueError('تغییر هویت سطح یا وجه در اصلاحیه ممنوع است')
+ identity='physical_space_id' if is_skirting(previous) else 'physical_surface_id' if is_cover(previous) else 'physical_region_id' if previous['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation') else 'physical_wall_id'
  if canonical(previous['architecture_detail']['geometry'][identity])!=canonical(proposal['architecture_detail']['geometry'][identity]):raise ValueError('تغییر هویت فیزیکی دیوار در اصلاحیه ممنوع است')
  def dimensions(rows):return {r['source_id']:(r['item'],r['quantities'][0]['unit'],r['quantities'][0]['role']) for r in rows}
  before,after=dimensions(before_rows),dimensions(after_rows)

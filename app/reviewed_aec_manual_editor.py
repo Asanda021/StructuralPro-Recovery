@@ -114,13 +114,18 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         from app.steel_detail_editor import open_steel_editor
         open_steel_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
     steel_button.clicked.connect(open_specialist_steel)
-    architecture_button=QPushButton('فرم تخصصی دیوار، اندود، کف و عایق افقی');outer.addWidget(architecture_button);dialog.architecture_button=architecture_button
+    architecture_button=QPushButton('فرم تخصصی معماری، کف، عایق و پوشش قطعه‌ای');outer.addWidget(architecture_button);dialog.architecture_button=architecture_button
     def open_specialist_architecture():
-        if kind.currentData() not in ('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):
-            QMessageBox.warning(dialog,'انتخاب عملیات','دیوار، اندود، کف‌سازی یا عایق را انتخاب کنید');return
+        if kind.currentData() not in ('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation','ceramic_finish','stone_floor','stone_cladding'):
+            QMessageBox.warning(dialog,'انتخاب عملیات','یکی از عملیات معماری دارای قرارداد تخصصی را انتخاب کنید');return
         from app.architecture_detail_editor import open_architecture_editor
         open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
     architecture_button.clicked.connect(open_specialist_architecture)
+    skirting_button=QPushButton('فرم تخصصی قرنیز؛ قرارداد طولی');outer.addWidget(skirting_button);dialog.skirting_button=skirting_button
+    def open_skirting():
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='skirting')
+    skirting_button.clicked.connect(open_skirting)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 

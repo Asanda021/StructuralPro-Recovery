@@ -115,7 +115,9 @@ def guard(project):
      parts.add(k)
  for key,r in register.items():
   if r.get('data',{}).get('measurement_policy')!=POLICY or r['data'].get('kind') not in (KIND,)+INSULATION_KINDS:continue
-  d=beam_current(project,key)['data'];a=d['architecture_detail'];g=a['geometry'];region=(canonical(d.get('building_id')),canonical(g.get('physical_region_id')))
+  d=beam_current(project,key)['data'];a=d['architecture_detail']
+  if a.get('contract')=='interior_skirting_v1':continue
+  g=a['geometry'];region=(canonical(d.get('building_id')),canonical(g.get('physical_region_id')))
   if region in old_wall_ids:raise ValueError('هویت ناحیه کف با دیوار تداخل دارد')
   for other,v in register.items():
    old=v.get('data',{})

@@ -12,6 +12,20 @@ FIELD_LABELS.update(physical_region_id='شناسه فیزیکی ناحیه اف�
 FIELD_LABELS.update(installation_plane='جهت سطح نصب',installation_ref='مرجع سطح افقی')
 VALUES.update(horizontal='افقی مستند',**INSULATION_LABELS)
 VALUES.update(rectangle='مستطیل',constant_rectangular='مستطیل با ضخامت ثابت',all_layers='تمام لایه‌های ناحیه',**FLOOR_LABELS)
+from core.takeoff.interior_cover_detail import FIELD_LABELS as COVER_FIELDS,VALUES as COVER_VALUES,LABELS as COVER_LABELS,is_cover,TITLES as COVER_TITLES
+FIELD_LABELS.update(COVER_FIELDS);VALUES.update(COVER_VALUES);LABELS.update(COVER_LABELS)
+from core.takeoff.skirting_detail import FIELD_LABELS as SKIRT_FIELDS,VALUES as SKIRT_VALUES,LABELS as SKIRT_LABELS,is_skirting,TITLES as SKIRT_TITLES
+FIELD_LABELS.update(SKIRT_FIELDS);VALUES.update(SKIRT_VALUES);LABELS.update(SKIRT_LABELS)
+def field_label(key,record,cover=False,skirting=False,horizontal=False):
+ if skirting and key=='height_m':return 'ارتفاع مقطع قرنیز (متر)'
+ if cover:
+  if key=='width_m':return 'امتداد دوم سطح (متر)' if 'physical_surface_id' in record else 'عرض قطعه خرید (متر)' if 'length_m' in record else 'اندازه محدوده در راستای طول (متر)'
+  if key=='height_m':return 'اندازه محدوده در راستای دوم (متر)'
+  if key=='y':return 'ابتدای راستای دوم (متر)'
+ if horizontal and key=='height_m':return 'امتداد عرض ناحیه (متر)'
+ if horizontal and key=='y':return 'ابتدای عرض (متر)'
+ return FIELD_LABELS[key]
+
 EXPORTERS={'pdf':export_pdf,'xlsx':export_xlsx,'docx':export_docx,'csv':export_csv}
 
 @exact
@@ -25,13 +39,16 @@ def export_project(service,pid,path,*,format,floor=None,member=None,family=None)
   if not r['ready']:raise ValueError('؛ '.join(r['blockers']))
   found+=1;rv=project.get('beam_amendments',{}).get(record.get('amendment_id'),{}).get('review',{}).get('reviewer') or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی')
   add('مشخصات عضو؛ طبقه '+d['floor_id']+'؛ '+d['system_id'],source=d['source']['source_id'],notes='ساختمان: '+d['building_id']+'؛ محل: '+d['axis']+'؛ نسخه: '+str(record['revision'])+'؛ وضعیت: '+('قطعی' if record['status']=='committed' else 'پیش‌نویس')+'؛ بازبین: '+rv+'؛ نقشه: '+d['source']['plan_ref']+'؛ دیتایل: '+d['source']['detail_ref'])
-  def notes(p):return '؛ '.join(('امتداد عرض ناحیه (متر)' if d['kind'] in ('floor_finish',)+INSULATION_KINDS and k=='height_m' else 'ابتدای عرض (متر)' if d['kind'] in ('floor_finish',)+INSULATION_KINDS and k=='y' else FIELD_LABELS[k])+': '+str(VALUES.get(str(v),v) if k in ('material_kind','face','layer_code','mode','payment_unit','coverage_scope','penetration','unit','shape','operation','method','purchase_unit') else v) for k,v in p.items() if k in FIELD_LABELS and v not in ('',None))
-  add('هندسه و دامنه لایه‌های افقی' if d['kind'] in ('floor_finish',)+INSULATION_KINDS else 'هندسه و دامنه دیوار',notes=notes(a['geometry']))
+  def notes(p):return '؛ '.join(field_label(k,p,is_cover(d),is_skirting(d),d['kind'] in ('floor_finish',)+INSULATION_KINDS and not is_skirting(d))+': '+str(VALUES.get(str(v),v) if k in ('material_kind','face','layer_code','mode','payment_unit','coverage_scope','penetration','unit','shape','operation','method','purchase_unit','plane','layout_status','piece_type','basis','quantity_unit','corner_status','corner_type') else v) for k,v in p.items() if k in FIELD_LABELS and v not in ('',None))
+  add('هویت و دامنه قرنیز طولی' if is_skirting(d) else 'هندسه و هویت سطح پوشش' if is_cover(d) else 'هندسه و دامنه لایه‌های افقی' if d['kind'] in ('floor_finish',)+INSULATION_KINDS else 'هندسه و دامنه دیوار',notes=notes(a['geometry']))
   for v in r['rows']:
-   add(v['description'],quantity=v['quantity'],unit=v['unit'],source=v['source_id'],formula=v['formula'],notes=notes(v['params'])+'؛ '+('عملیات قابل پرداخت' if v['role']=='work' else 'خرید مستند اطلاعاتی؛ غیرقابل پرداخت مستقل' if v['item_code']=='floor_purchase' else 'مصالح اطلاعاتی؛ خرید و پرت تعیین نشده؛ غیرقابل پرداخت مستقل'))
+   add(v['description'],quantity=v['quantity'],unit=v['unit'],source=v['source_id'],formula=v['formula'],notes=notes(v['params'])+'؛ '+('عملیات قابل پرداخت' if v['role']=='work' else 'خرید مستند اطلاعاتی؛ غیرقابل پرداخت مستقل' if v['item_code']=='floor_purchase' else 'مقدار اطلاعاتی مستند؛ مستقل وارد پرداخت نمی‌شود' if is_cover(d) or is_skirting(d) else 'مصالح اطلاعاتی؛ خرید و پرت تعیین نشده؛ غیرقابل پرداخت مستقل'))
    group=LABELS[v['item_code']]+' ('+VALUES.get(v['unit'],v['unit'])+')';totals[group]=totals.get(group,Decimal(0))+Decimal(str(v['quantity']))
-  if d['kind'] in ('floor_finish',)+INSULATION_KINDS and all(not p.get('purchase_quantity') for p in a['layers']):add('خرید، رول، جانمایی نوار و هم‌پوشانی عایق در قرارداد فعلی مسدود است؛ مقدار نامعلوم صفر نیست' if d['kind'] in INSULATION_KINDS else 'مقدار خرید مصالح تعیین نشده؛ هیچ مقدار صفر یا ضریب پرت فرض نشده است')
-  for table,title in [('openings','بازشوی مستقل'),('unit_regions','جانمایی مستقل واحد و بند')]:
+  if not is_skirting(d) and d['kind'] in ('floor_finish',)+INSULATION_KINDS and all(not p.get('purchase_quantity') for p in a['layers']):add('خرید، رول، جانمایی نوار و هم‌پوشانی عایق در قرارداد فعلی مسدود است؛ مقدار نامعلوم صفر نیست' if d['kind'] in INSULATION_KINDS else 'مقدار خرید مصالح تعیین نشده؛ هیچ مقدار صفر یا ضریب پرت فرض نشده است')
+  if is_cover(d) and any(p.get('layout_status')=='area_only' for p in a['surfaces']):add('جانمایی کامل تعیین نشده؛ تعداد، برش و خرید این سطح نامعلوم‌اند و صفر تلقی نشده‌اند')
+  if is_skirting(d) and any(p.get('layout_status')=='length_only' for p in a['runs']):add('خرید و تعداد قطعات این ضلع نامعلوم‌اند؛ صفر فرض نشده‌اند')
+  if is_skirting(d) and a['geometry']['corner_status']=='unknown':add('تعداد کنج تعیین نشده؛ صفر فرض نشده است')
+  for table,title in ([(k,v) for k,v in SKIRT_TITLES.items() if k!='runs'] if is_skirting(d) else [('openings','بازشوی مستقل'),('unit_regions','جانمایی مستقل واحد و بند')]+([(k,v) for k,v in COVER_TITLES.items() if k in ('stocks','pieces','joints')] if is_cover(d) else [])):
    for p in a.get(table,[]):add(title,source=p['id'],notes=notes(p))
   for name,title in [('masonry','دیوارچینی'),('finishes','اندود'),('accessories','اتصال و مسلح‌سازی')]:
    if a.get(name,{}).get('status')=='not_applicable':add(title+'؛ عدم کاربرد مستند',notes=a[name]['reason']+'؛ مرجع: '+a[name]['source_ref']+'؛ تأییدکننده: '+a[name]['approved_by'])
