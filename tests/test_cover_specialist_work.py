@@ -172,3 +172,31 @@ def test_zero_cuts_are_known_from_full_layout_not_an_unknown_default():
 
 def test_unregistered_litre_unit_is_blocked_at_preview_not_only_at_commit():
  d=sample();d['architecture_detail']['consumptions']=[obj('LIQUID',surface_id='LAYER',operation='adhesive',basis='area_rate',thickness_m='',rate='1.25',rate_ref='مصرف فرض آزمون نرم‌افزار؛ نه تأیید ماده',material_ref='چسب مایع آزمون',quantity_unit='litre')];assert not result(d)['ready']
+
+@pytest.mark.parametrize('fault',['opposite_old_face','wall_as_floor','floor_as_wall','floor_dimensions','ignore_floor_hole','ignore_wall_hole'])
+def test_registered_host_face_dimensions_and_openings_are_authoritative(tmp_path,fault):
+ from core.platform.application import StructuralProApp
+ from test_floor_specialist_work import sample as floor_sample
+ from test_architecture_specialist_work import sample as wall_sample
+ a=StructuralProApp(tmp_path/'db');a.create_project('مصنوعی','P');d=sample();ar=d['architecture_detail'];ar['surfaces'][0]['layout_status']='area_only';ar['stocks']=[];ar['pieces']=[]
+ if fault in ('floor_as_wall','floor_dimensions','ignore_floor_hole'):
+  old=floor_sample();g=old['architecture_detail']['geometry'];ar['geometry'].update(host_id=g['physical_region_id'],length_m='5',width_m='4');ar['surfaces'][0].update(width_m='5',height_m='4',opening_ids='');ar['openings']=[]
+  if fault=='floor_as_wall':ar['geometry'].update(face='inside',plane='vertical')
+  if fault=='floor_dimensions':ar['geometry']['length_m']='6'
+ else:
+  old=wall_sample('plaster_finish');g=old['architecture_detail']['geometry'];ar['geometry'].update(host_id=g['physical_wall_id'],physical_surface_id='NEW',face='outside',plane='vertical',length_m=g['length_m'],width_m=g['height_m']);ar['surfaces'][0].update(width_m=g['length_m'],height_m=g['height_m'],opening_ids='');ar['openings']=[]
+  if fault=='opposite_old_face':ar['geometry']['physical_surface_id']=old['architecture_detail']['surfaces'][0]['surface_id']
+  if fault=='wall_as_floor':ar['geometry'].update(face='floor',plane='horizontal')
+  if fault=='ignore_wall_hole':old['architecture_detail']['openings']=[obj('HOST-HOLE',x='1',y='1',width_m='1',height_m='1',penetration='full_wall')];old['architecture_detail']['surfaces'][0]['opening_ids']='HOST-HOLE'
+ a.save_aec_system_draft('P',old,expected_revision=0)
+ with pytest.raises(ValueError):a.save_aec_system_draft('P',d,expected_revision=0)
+ a.store.close()
+
+@pytest.mark.parametrize('mode',['partial_away_from_host_hole','documented_larger_exclusion'])
+def test_valid_registered_floor_partial_and_extra_exclusion_remain_usable(tmp_path,mode):
+ from core.platform.application import StructuralProApp
+ from test_floor_specialist_work import sample as floor_sample
+ a=StructuralProApp(tmp_path/'db');a.create_project('مصنوعی','P');old=floor_sample();a.save_aec_system_draft('P',old,expected_revision=0);d=sample();ar=d['architecture_detail'];ar['geometry'].update(host_id=old['architecture_detail']['geometry']['physical_region_id'],length_m='5',width_m='4');ar['surfaces'][0].update(width_m='5',height_m='4',layout_status='area_only');ar['stocks']=[];ar['pieces']=[]
+ if mode=='partial_away_from_host_hole':ar['surfaces'][0].update(width_m='1',coverage_scope='partial',scope_ref='نوار مستقل خارج از بازشو',opening_ids='');ar['openings']=[];expected=Decimal(4)
+ else:ar['openings']=[obj('EXCLUSION',x='.9',y='.9',width_m='1.2',height_m='1.2')];ar['surfaces'][0]['opening_ids']='EXCLUSION';expected=Decimal('18.56')
+ assert result(d)['ready'];a.save_aec_system_draft('P',d,expected_revision=0);a.review_roof_system('P','ceramic_finish','L1','C1',expected_revision=1,reviewer='مستقل',note='کنترل مصنوعی');a.commit_aec_system('P','ceramic_finish','L1','C1',expected_revision=2);assert Decimal(str(a.open_project('P')['boq'][0]['quantity']))==expected;a.store.close()

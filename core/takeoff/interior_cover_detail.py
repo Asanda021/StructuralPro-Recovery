@@ -148,7 +148,7 @@ def remap_copy(data,replacements):
 @exact
 def guard(project):
  from core.takeoff.manual_formula_amendments import beam_current
- register=project.get('reviewed_aec_systems',{});hosts={};faces={};boxes={};parts=set();wall_geometry={};surface_owners={}
+ register=project.get('reviewed_aec_systems',{});hosts={};faces={};boxes={};parts=set();wall_geometry={};surface_owners={};legacy_hosts={};constraints=[]
  for key,r in register.items():
   if r.get('data',{}).get('measurement_policy')!=POLICY:continue
   d=beam_current(project,key)['data'];a=d.get('architecture_detail',{});g=a.get('geometry',{});building=canonical(d.get('building_id'))
@@ -159,6 +159,9 @@ def guard(project):
      if pk in parts:raise ValueError('جزء فیزیکی معماری در چند رکورد تکراری است')
      parts.add(pk)
   if not is_cover(d):
+   host_id=g.get('physical_wall_id') or (g.get('physical_region_id') if d.get('kind')=='floor_finish' and not a.get('contract') else None)
+   if host_id:
+    hk=(building,canonical(host_id));host=legacy_hosts.setdefault(hk,dict(type='wall' if g.get('physical_wall_id') else 'floor',floor=d.get('floor_id'),geometry=g,holes=[]));host['holes'].extend(a.get('openings',[]))
    if g.get('physical_wall_id'):
     for side in ('inside','outside'):wall_geometry[(building,canonical(g['physical_wall_id']),side)]=(str(d.get('floor_id','')),str(g.get('length_m','')),str(g.get('height_m','')),str(g.get('count','')))
     for p in a.get('surfaces',[]):
@@ -171,12 +174,26 @@ def guard(project):
   surface=(building,canonical(g['physical_surface_id']))
   if surface in surface_owners and surface_owners[surface]!=face:raise ValueError('هویت سطح نمی‌تواند برای دو وجه یا میزبان به‌کار رود')
   surface_owners[surface]=face
+  complete_holes=all(all(p.get(k) not in ('',None) for k in ('x','y','width_m','height_m')) for p in a.get('openings',[]))
+  new_holes=[rect(p,n(g['length_m'],'طول'),n(g['width_m'],'امتداد دوم')) for p in a.get('openings',[])] if complete_holes else None
   for p in a.get('surfaces',[]):
    if not all(p.get(k) not in ('',None) for k in ('x','y','width_m','height_m','layer_key')):continue
    b=rect(p,n(g['length_m'],'طول'),n(g['width_m'],'امتداد دوم'));scope=face
    if any(intersection(b,v)>0 for v in boxes.get(scope,[])):raise ValueError('یک پوشش فیزیکی در چند رکورد دوباره شمرده شده است')
    boxes.setdefault(scope,[]).append(b)
+   if new_holes is not None:constraints.append((face,b,new_holes))
  for face,identity in hosts.items():
+  if any(other[:2]==face[:2] and other[2]!=face[2] and sid==canonical(identity[2]) for other,sid in faces.items()):raise ValueError('هویت سطح پوشش متعلق به وجه مقابل دیوار است')
+  if face[:2] in legacy_hosts:
+   h=legacy_hosts[face[:2]];g=h['geometry'];checked(g)
+   if face[2] not in (('inside','outside') if h['type']=='wall' else ('floor',)):raise ValueError('وجه پوشش با نوع میزبان ثبت‌شده سازگار نیست')
+   L,H=n(g.get('length_m'),'طول میزبان'),n(g.get('height_m') if h['type']=='wall' else g.get('width_m'),'امتداد دوم میزبان')
+   if identity[0]!=h['floor'] or n(identity[5],'طول سطح')!=L or n(identity[6],'امتداد دوم سطح')!=H or n(identity[7],'تعداد سطح')!=n(g.get('count'),'تعداد میزبان'):raise ValueError('ابعاد، طبقه یا تکرار پوشش با میزبان ثبت‌شده منطبق نیست')
+   for f,b,new_holes in constraints:
+    if f!=face:continue
+    for opening in h['holes']:
+     old=rect(opening,L,H);clip=(max(b[0],old[0]),max(b[1],old[1]),min(b[2],old[2]),min(b[3],old[3]))
+     if intersection(b,old)>0 and sum((intersection(clip,v) for v in new_holes),Decimal(0))!=intersection(b,old):raise ValueError('بازشوی ثبت‌شده میزبان از پوشش مرتبط کسر نشده است')
   if face in faces and faces[face]!=canonical(identity[2]):raise ValueError('هویت سطح پوشش با وجه دیوار موجود ناسازگار است')
   if face in wall_geometry:
    floor,L,H,count=wall_geometry[face]
