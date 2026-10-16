@@ -213,3 +213,36 @@ def test_unapproved_generic_to_specialist_upgrade_is_blocked(tmp_path,kind):
         app.save_aec_system_draft("P",specialist,expected_revision=1)
     assert app.get_aec_system("P",kind,"L1","S1")["revision"]==1
     app.store.close()
+
+
+@pytest.mark.parametrize('kind', KINDS)
+@pytest.mark.parametrize('case', ['policy', 'source', 'concurrent', 'immutable', 'financial'])
+def test_specialist_persistence_guards(tmp_path, kind, case, monkeypatch):
+    """Run the established CAS/financial/identity gates on each void contract."""
+    import test_waffle_specialist_work as existing
+    monkeypatch.setattr(existing, 'sample', sample)
+    existing.test_persistence_guards(tmp_path, kind, case)
+
+
+@pytest.mark.parametrize('kind', KINDS)
+def test_report_former_rows_preserve_quantity_identity_and_certificate(tmp_path, kind):
+    from core.platform.application import StructuralProApp
+    from openpyxl import load_workbook
+    app = StructuralProApp(tmp_path/'db')
+    app.create_project('نمونه مصنوعی گزارش', 'P')
+    d = sample(kind)
+    app.save_aec_system_draft('P', d, expected_revision=0)
+    path = tmp_path/'verified.xlsx'
+    app.export_roof_detail_report('P', kind, 'L1', 'S1', path, format='xlsx')
+    workbook = load_workbook(path)
+    rows = list(workbook['ریز متره'].values)
+    header = next(i for i,r in enumerate(rows) if r[:3] == ('ردیف','شرح','مقدار'))
+    former_rows = [r for r in rows[header+1:] if r[4] == f'aec:{kind}:L1:S1:FORMER-1']
+    assert len(former_rows) == 1
+    assert former_rows[0][2] == 1
+    assert d['roof_detail']['void_formers'][0]['spec_ref'] in former_rows[0][6]
+    assert d['roof_detail']['void_formers'][0]['volume_source_ref'] in former_rows[0][6]
+    summary = {r[0].value:r[1].value for r in workbook['خلاصه'].iter_rows(min_row=4)}
+    assert summary['گروه: بتن درجاریز (متر مکعب)'] == (4.2168 if kind=='uboot' else 4.7983)
+    assert all(sheet.sheet_view.rightToLeft for sheet in workbook)
+    app.store.close()

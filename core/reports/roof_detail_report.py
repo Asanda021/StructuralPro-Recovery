@@ -17,10 +17,10 @@ def export(service,pid,kind,floor,sid,path,*,format):
   params=v['params'];notes='ورودی‌ها برای هر سقف هم‌تیپ؛ مرجع: '+str(v['source_ref'])+'؛ نقش: '+('عملیات قابل پرداخت مستقل' if v['role']=='work' else ('قطعات قالب وافل؛ بدون استنتاج سطح تماس یا نرخ مالی' if v['item_code']=='waffle_molds' else 'مصالح داخل تیرچه خریداری‌شده؛ غیرقابل پرداخت مستقل'))
   if kind==HOLLOW_KIND and v['role']!='work':notes='ورودی مستند هر سقف هم‌تیپ؛ غیرقابل پرداخت مستقل؛ مرجع: '+str(v['source_ref'])
   if 'void_former' in params:
-   v=params['void_former']
-   notes+='؛ شناسه حفره‌ساز: '+str(v['id'])+'؛ سلول: '+str(v['region_id'])+'؛ هندسه: '+str(v['shape'])+'؛ مقدار گواهی‌شده کسر حفره (مترمکعب): '+str(v['certified_void_volume_m3'])+'؛ مرجع حجم: '+str(v['volume_source_ref'])+'؛ گواهی محصول: '+str(v['spec_ref'])+'؛ جانمایی: '+str(v['source_ref'])
+   former=params['void_former']
+   notes+='؛ شناسه حفره‌ساز: '+str(former['id'])+'؛ سلول: '+str(former['region_id'])+'؛ هندسه: '+str(former['shape'])+'؛ مقدار گواهی‌شده کسر حفره (مترمکعب): '+str(former['certified_void_volume_m3'])+'؛ مرجع حجم: '+str(former['volume_source_ref'])+'؛ گواهی محصول: '+str(former['spec_ref'])+'؛ جانمایی: '+str(former['source_ref'])
    for key,label in (('x','شروع طول'),('y','شروع عرض'),('z','تراز ابتدا'),('length','طول پوش'),('width','عرض پوش'),('height','ارتفاع پوش'),('diameter_m','قطر کروی')):
-    if v.get(key) not in (None,''):notes+='؛ '+label+': '+str(v[key])
+    if former.get(key) not in (None,''):notes+='؛ '+label+': '+str(former[key])
   if 'panel' in params:
    p=params['panel'];notes+='؛ قطعه: '+p['id']+'؛ مقطع: '+p['spec_ref']+'؛ مدرک قطعه نهایی: '+p['fabrication_ref']+'؛ حجم حفره (متر مکعب): '+str(p['void_volume_m3'])+'؛ منبع حفره: '+p['void_source_ref']
    for key,label in [('length','طول (متر)'),('width','عرض (متر)'),('height','ارتفاع (متر)'),('net_volume_m3','حجم خالص گواهی‌شده'),('volume_source_ref','منبع حجم خالص'),('unit_mass_kg','جرم کل شامل فولاد کارخانه‌ای (کیلوگرم)'),('mass_source_ref','منبع جرم')]:
