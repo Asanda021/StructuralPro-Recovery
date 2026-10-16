@@ -3,7 +3,7 @@ from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QMessageBox,QFileDialog,QListWidget
+from PySide6.QtWidgets import QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QMessageBox,QFileDialog,QListWidget,QScrollArea
 from app.roof_detail_editor import fill_table as _fill_table,read_table
 from core.takeoff.architecture_detail import POLICY,KINDS,COMMON,LAYER_FIELDS,REGION_FIELDS,SURFACE_FIELDS,OPENING_FIELDS,review_digest,suggestions
 from core.reports.architecture_detail_report import FIELD_LABELS,VALUES,export,field_label
@@ -21,15 +21,21 @@ def fill_table(table,columns,records):
    for v in choices[key]:w.addItem(VALUES[v],v)
    w.setCurrentIndex(max(0,w.findData(p.get(key,''))));table.setCellWidget(row,col,w)
 
+ if table.property('fit_slope_headers'):
+  table.resizeColumnsToContents();table.resizeRowsToContents()
+
 def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall',specialism=''):
  from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS,INSULATION_KINDS,INSULATION_OPERATIONS
  from core.takeoff.interior_cover_detail import KINDS as COVER_KINDS,GEOMETRY as COVER_GEOMETRY,TABLES as COVER_TABLES,TITLES as COVER_TITLES,CHOICES as COVER_CHOICES,CONTRACT
  from core.takeoff.skirting_detail import GEOMETRY as SKIRT_GEOMETRY,TABLES as SKIRT_TABLES,TITLES as SKIRT_TITLES,CHOICES as SKIRT_CHOICES,CONTRACT as SKIRT_CONTRACT
+ from core.takeoff.slope_aec_detail import GEOMETRY as SLOPE_GEOMETRY,TABLES as SLOPE_TABLES,TITLES as SLOPE_TITLES,CHOICES as SLOPE_CHOICES,CONTRACT as SLOPE_CONTRACT
+ slope=kind=='floor_finish' and specialism=='slope'
  skirt=kind=='floor_finish' and specialism=='skirting'
  cover=kind in COVER_KINDS
  insulation=kind in INSULATION_KINDS;floor_mode=kind=='floor_finish' or insulation;geometry_keys=FLOOR_GEOMETRY+(('installation_plane','installation_ref') if insulation else ()) if floor_mode else GEOMETRY;table_fields={'openings':FLOOR_OPENINGS,'layers':FLOOR_FIELDS} if floor_mode else TABLES;state_groups=[] if floor_mode else [('masonry','دیوارچینی'),('finishes','اندود مستقل'),('accessories','اتصال و مسلح‌سازی')]
  if cover:geometry_keys=COVER_GEOMETRY;table_fields=COVER_TABLES;state_groups=[]
  if skirt:geometry_keys=SKIRT_GEOMETRY;table_fields=SKIRT_TABLES;state_groups=[]
+ if slope:geometry_keys=SLOPE_GEOMETRY;table_fields=SLOPE_TABLES;state_groups=[]
  dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
  def line(layout,key,title,value=''):
   w=QLineEdit(str(value));layout.addRow(title,w);c[key]=w;return w
@@ -39,11 +45,14 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    w=QPushButton(title);row.addWidget(w);c[key]=w
  top=QFormLayout();outer.addLayout(top)
  for key,title,value in [('project','پروژه',project_id),('floor','طبقه',floor_id),('id','شناسه مستقل عضو','')]:line(top,key,title,value)
- family=QComboBox();[family.addItem('قرنیز؛ قرارداد طولی' if skirt else SPECS[k].title,k) for k in ((kind,) if floor_mode or cover else tuple(k for k in KINDS if k not in ('floor_finish',)+INSULATION_KINDS+COVER_KINDS))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
+ family=QComboBox();[family.addItem('شیب‌بندی چندناحیه‌ای مستند' if slope else 'قرنیز؛ قرارداد طولی' if skirt else SPECS[k].title,k) for k in ((kind,) if floor_mode or cover else tuple(k for k in KINDS if k not in ('floor_finish',)+INSULATION_KINDS+COVER_KINDS))];family.setCurrentIndex(family.findData(kind));top.addRow('نوع عملیات',family);c['kind']=family
  tabs=QTabWidget();outer.addWidget(tabs,1);c['tabs']=tabs
  def page(title):
   w=QWidget();layout=QVBoxLayout(w);tabs.addTab(w,title);return layout
- basic=page('هویت و هندسه');f=QFormLayout();basic.addLayout(f)
+ basic=page('هویت و هندسه')
+ if slope:
+  content=QWidget();f=QFormLayout(content);scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setWidget(content);basic.addWidget(scroll);c['geometry_scroll']=scroll
+ else:f=QFormLayout();basic.addLayout(f)
  for key,title in [('building','ساختمان'),('axis','فضا و موقعیت'),('source','شناسه منبع مستقل'),('plan','نقشه مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
  c['geometry_fields']={}
  for key in geometry_keys:
@@ -52,7 +61,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
    w.addItem('نیازمند انتخاب','')
    for value in (SKIRT_CHOICES[key] if key=='corner_status' else COVER_CHOICES[key] if key in ('plane','face') else ('horizontal',) if key=='installation_plane' else ('rectangle',)):w.addItem(VALUES[value],value)
   f.addRow(field_label(key,{'physical_surface_id':''} if cover else {},cover,skirt),w);c['geometry_fields'][key]=w
- basic.addWidget(QLabel('قرنیز طولی مستند؛ درگاه و عدم اجرا با بازه مستقل کسر می‌شوند. قطعات، کنج‌ها و خرید بدون دیتایل ساخته نمی‌شوند.' if skirt else 'سطح مستطیلی با جانمایی مستقل قطعات؛ تعداد، برش و خرید فقط از نقشه چیدمان مستند. خرید و مصالح نصب اطلاعاتی و غیرقابل پرداخت مستقل هستند.' if cover else 'عایق افقی مستطیلی با ضخامت ثابت؛ خرید، رول، هم‌پوشانی نوار، برگشت و شیب مسدود هستند.' if insulation else 'تمام ابعاد بر حسب متر؛ ناحیه مستطیلی و ضخامت ثابت هر لایه با تراز مستقل. ضخامت متغیر نیازمند قرارداد است.' if floor_mode else 'تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
+ basic.addWidget(QLabel('نواحی مستطیلی متصل؛ ضخامت سه گوشه صریح و گوشه چهارم تابع صفحه است. زیرکار افقی مشترک و مدرک واقعی با هش لازم‌اند. ضخامت، خرید و پرت پیش‌فرض ندارند.' if slope else 'قرنیز طولی مستند؛ درگاه و عدم اجرا با بازه مستقل کسر می‌شوند. قطعات، کنج‌ها و خرید بدون دیتایل ساخته نمی‌شوند.' if skirt else 'سطح مستطیلی با جانمایی مستقل قطعات؛ تعداد، برش و خرید فقط از نقشه چیدمان مستند. خرید و مصالح نصب اطلاعاتی و غیرقابل پرداخت مستقل هستند.' if cover else 'عایق افقی مستطیلی با ضخامت ثابت؛ خرید، رول، هم‌پوشانی نوار، برگشت و شیب مسدود هستند.' if insulation else 'تمام ابعاد بر حسب متر؛ ناحیه مستطیلی و ضخامت ثابت هر لایه با تراز مستقل. ضخامت متغیر نیازمند قرارداد است.' if floor_mode else 'تمام ابعاد بر حسب متر؛ فقط دیوار مستطیلی و بند کامل مستند. مقدار، پرت و مصرف حدس زده نمی‌شوند.'))
  states=page('بررسی گروه‌ها و پیشنهادها');f=QFormLayout();states.addLayout(f);c['states']={}
  for group,title in state_groups:
   widgets={};combo=QComboBox();[combo.addItem(t,v) for t,v in [('نیازمند دیتایل','unreviewed'),('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable')]];f.addRow(title,combo);widgets['status']=combo
@@ -61,8 +70,8 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   c['states'][group]=widgets
  buttons(states,[('suggest','پیشنهاد عملیات نیازمند دیتایل')]);proposals=QListWidget();states.addWidget(proposals);c['proposals']=proposals
  c['tables']={};c['columns']={}
- for name,title in (list(SKIRT_TITLES.items()) if skirt else list(COVER_TITLES.items()) if cover else [('openings','بازشوهای تمام لایه‌های ناحیه' if insulation else 'بازشوهای تمام لایه‌های کف'),('layers','لایه‌های مستقل عایق؛ خرید مسدود' if insulation else 'لایه‌های مستقل کف و خرید مستند')] if floor_mode else [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]):
-  layout=page(title);table=QTableWidget();table.setProperty('architecture_choices',(SKIRT_CHOICES if skirt else {**COVER_CHOICES,'operation':(('ceramic_surface',) if kind=='ceramic_finish' else ('stone_surface',)) if name=='surfaces' else ('adhesive','bedding','grout')} if cover else {'operation':INSULATION_OPERATIONS[kind]} if insulation else {}));table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,field_label(k,{'length_m':''} if name=='stocks' else {},cover,skirt,floor_mode and not skirt)) for k in COMMON+table_fields[name]];c['columns'][name]=columns;fill_table(table,columns,[])
+ for name,title in (list(SLOPE_TITLES.items()) if slope else list(SKIRT_TITLES.items()) if skirt else list(COVER_TITLES.items()) if cover else [('openings','بازشوهای تمام لایه‌های ناحیه' if insulation else 'بازشوهای تمام لایه‌های کف'),('layers','لایه‌های مستقل عایق؛ خرید مسدود' if insulation else 'لایه‌های مستقل کف و خرید مستند')] if floor_mode else [('openings','بازشوها'),('masonry_layers','لایه‌های مستقل دیوار'),('unit_regions','جانمایی واحدها و بندها'),('surfaces','وجه‌ها و لایه‌های مستقل اندود')]):
+  layout=page(title);table=QTableWidget();table.setProperty('fit_slope_headers',slope);table.setProperty('architecture_choices',(SLOPE_CHOICES if slope else SKIRT_CHOICES if skirt else {**COVER_CHOICES,'operation':(('ceramic_surface',) if kind=='ceramic_finish' else ('stone_surface',)) if name=='surfaces' else ('adhesive','bedding','grout')} if cover else {'operation':INSULATION_OPERATIONS[kind]} if insulation else {}));table.setAlternatingRowColors(True);layout.addWidget(table);c['tables'][name]=table;columns=[(k,field_label(k,{'length_m':''} if name=='stocks' else {},cover,skirt,floor_mode and not skirt)) for k in COMMON+table_fields[name]];c['columns'][name]=columns;fill_table(table,columns,[])
   buttons(layout,[(name+'_add','افزودن ردیف'),(name+'_remove','حذف ردیف انتخاب‌شده')])
  approval=page('بازبینی و اصلاحیه رسمی');f=QFormLayout();approval.addLayout(f)
  for key,title in [('reviewer','بازبین مستقل'),('note','یادداشت بازبینی'),('creator','درخواست‌کننده اصلاحیه'),('reason','علت اصلاح، کپی یا حذف'),('evidence_path','مسیر مدرک جدید'),('evidence_ref','مرجع مدرک جدید'),('amend_id','شناسه اصلاحیه'),('new_id','شناسه مستقل کپی'),('new_source','منبع مستقل کپی')]:line(f,key,title)
@@ -74,7 +83,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  buttons(outer,[('new','عضو جدید'),('load','بازگشایی'),('save','ذخیره'),('preview','محاسبه و ریزمتره'),('review','بازبینی'),('commit','ثبت قطعی در فهرست مقادیر')])
  def context():return c['project'].text().strip(),family.currentData(),c['floor'].text().strip(),c['id'].text().strip()
  def paint(record):
-  state.update(record=deepcopy(record),data=deepcopy(record['data']),project=context()[0]);d=state['data'];a=d['architecture_detail'];dialog.setWindowTitle('متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[d['kind']].title)
+  state.update(record=deepcopy(record),data=deepcopy(record['data']),project=context()[0]);d=state['data'];a=d['architecture_detail'];dialog.setWindowTitle('متره تخصصی شیب‌بندی' if slope else 'متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[d['kind']].title)
   for key in ('save','preview','review','commit'):c[key].setEnabled(True)
   for i in range(tabs.count()):tabs.setTabEnabled(i,True)
   for key,field in [('building','building_id'),('axis','axis')]:c[key].setText(str(d.get(field,'')))
@@ -107,11 +116,11 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   pid,k,floor,sid=context()
   if not pid or not floor or not sid or service.open_project(pid) is None:raise ValueError('پروژه، طبقه و شناسه لازم است')
   if service.get_aec_system(pid,k,floor,sid):raise ValueError('شناسه موجود است؛ بازگشایی کنید')
-  d=service.new_aec_system(k,floor,sid);d.update(measurement_policy=POLICY,architecture_detail={**({'contract':SKIRT_CONTRACT} if skirt else {'contract':CONTRACT} if cover else {}),'geometry':{},**{k:[] for k in table_fields},**{k:{'status':'unreviewed'} for k,title in state_groups}});paint({'data':d,'revision':0,'status':'draft'})
+  d=service.new_aec_system(k,floor,sid);d.update(measurement_policy=POLICY,architecture_detail={**({'contract':SLOPE_CONTRACT} if slope else {'contract':SKIRT_CONTRACT} if skirt else {'contract':CONTRACT} if cover else {}),'geometry':{},**{k:[] for k in table_fields},**{k:{'status':'unreviewed'} for k,title in state_groups}});paint({'data':d,'revision':0,'status':'draft'})
  def load():
   r=service.get_aec_system(*context())
   if not r or r['data'].get('measurement_policy')!=POLICY:raise ValueError('رکورد تخصصی یافت نشد؛ مهاجرت خاموش تاریخی ممنوع است')
-  if r['data'].get('architecture_detail',{}).get('contract')!=(SKIRT_CONTRACT if skirt else CONTRACT if cover else None):raise ValueError('قرارداد فرم با رکورد سازگار نیست؛ تبدیل خاموش ممنوع است')
+  if r['data'].get('architecture_detail',{}).get('contract')!=(SLOPE_CONTRACT if slope else SKIRT_CONTRACT if skirt else CONTRACT if cover else None):raise ValueError('قرارداد فرم با رکورد سازگار نیست؛ تبدیل خاموش ممنوع است')
   paint(r)
  def unchanged():
   if review_digest(capture())!=review_digest(state['record']['data']):raise ValueError('ابتدا تغییرات پیش‌نویس را ذخیره کنید')

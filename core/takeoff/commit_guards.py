@@ -217,6 +217,26 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
                 "status": quantity.get("status", "active"),
             })
     boq = build_boq(inputs)
+    # JSON persistence may reorder the amendment-head map. Preserve the existing
+    # BOQ display order by physical/operation identity, never by stored amounts.
+    # Every quantity, price and total above still comes from the effective ledger.
+    def row_identity(row):
+        return (tuple(sorted(row.get('source_ids') or [row.get('source_id')])),
+                row.get('item_code'), row.get('unit'), row.get('price_code'),
+                row.get('category'), row.get('group'), row.get('status'))
+    rank = {row_identity(row): i for i, row in enumerate(project.get('boq', []))}
+    existing = {row_identity(row): row for row in project.get('boq', [])}
+    for row in boq:
+        old = existing.get(row_identity(row))
+        if old:
+            ids = old.get('source_ids') or [old.get('source_id')]
+            if len(ids) == len(set(ids)) and set(ids) == set(row['source_ids']):
+                row['source_ids'] = list(ids)
+                row['source_id'] = row['source'] = ids[0]
+    boq = [row for _, row in sorted(enumerate(boq),
+           key=lambda pair: (rank.get(row_identity(pair[1]), len(rank) + pair[0]), pair[0]))]
+    for i, row in enumerate(boq, 1):
+        row['item_no'] = i
     return takeoffs, boq
 
 

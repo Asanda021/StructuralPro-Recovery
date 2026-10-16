@@ -126,6 +126,11 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         from app.architecture_detail_editor import open_architecture_editor
         open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='skirting')
     skirting_button.clicked.connect(open_skirting)
+    slope_button=QPushButton('فرم تخصصی شیب‌بندی چندناحیه‌ای');outer.addWidget(slope_button);dialog.slope_button=slope_button
+    def open_slope():
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='slope')
+    slope_button.clicked.connect(open_slope)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 

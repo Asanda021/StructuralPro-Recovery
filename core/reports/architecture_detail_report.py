@@ -16,6 +16,8 @@ from core.takeoff.interior_cover_detail import FIELD_LABELS as COVER_FIELDS,VALU
 FIELD_LABELS.update(COVER_FIELDS);VALUES.update(COVER_VALUES);LABELS.update(COVER_LABELS)
 from core.takeoff.skirting_detail import FIELD_LABELS as SKIRT_FIELDS,VALUES as SKIRT_VALUES,LABELS as SKIRT_LABELS,is_skirting,TITLES as SKIRT_TITLES
 FIELD_LABELS.update(SKIRT_FIELDS);VALUES.update(SKIRT_VALUES);LABELS.update(SKIRT_LABELS)
+from core.takeoff.slope_aec_detail import FIELD_LABELS as SLOPE_FIELDS,VALUES as SLOPE_VALUES,LABELS as SLOPE_LABELS,is_slope,TITLES as SLOPE_TITLES
+FIELD_LABELS.update(SLOPE_FIELDS);FIELD_LABELS['thickness_11_m']='ضخامت گوشه چهارم؛ محاسبه‌شده (متر)';VALUES.update(SLOPE_VALUES);LABELS.update(SLOPE_LABELS)
 def field_label(key,record,cover=False,skirting=False,horizontal=False):
  if skirting and key=='height_m':return 'ارتفاع مقطع قرنیز (متر)'
  if cover:
@@ -40,15 +42,15 @@ def export_project(service,pid,path,*,format,floor=None,member=None,family=None)
   found+=1;rv=project.get('beam_amendments',{}).get(record.get('amendment_id'),{}).get('review',{}).get('reviewer') or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی')
   add('مشخصات عضو؛ طبقه '+d['floor_id']+'؛ '+d['system_id'],source=d['source']['source_id'],notes='ساختمان: '+d['building_id']+'؛ محل: '+d['axis']+'؛ نسخه: '+str(record['revision'])+'؛ وضعیت: '+('قطعی' if record['status']=='committed' else 'پیش‌نویس')+'؛ بازبین: '+rv+'؛ نقشه: '+d['source']['plan_ref']+'؛ دیتایل: '+d['source']['detail_ref'])
   def notes(p):return '؛ '.join(field_label(k,p,is_cover(d),is_skirting(d),d['kind'] in ('floor_finish',)+INSULATION_KINDS and not is_skirting(d))+': '+str(VALUES.get(str(v),v) if k in ('material_kind','face','layer_code','mode','payment_unit','coverage_scope','penetration','unit','shape','operation','method','purchase_unit','plane','layout_status','piece_type','basis','quantity_unit','corner_status','corner_type') else v) for k,v in p.items() if k in FIELD_LABELS and v not in ('',None))
-  add('هویت و دامنه قرنیز طولی' if is_skirting(d) else 'هندسه و هویت سطح پوشش' if is_cover(d) else 'هندسه و دامنه لایه‌های افقی' if d['kind'] in ('floor_finish',)+INSULATION_KINDS else 'هندسه و دامنه دیوار',notes=notes(a['geometry']))
+  add('هندسه شیب‌بندی مستند و زیرکار افقی' if is_slope(d) else 'هویت و دامنه قرنیز طولی' if is_skirting(d) else 'هندسه و هویت سطح پوشش' if is_cover(d) else 'هندسه و دامنه لایه‌های افقی' if d['kind'] in ('floor_finish',)+INSULATION_KINDS else 'هندسه و دامنه دیوار',notes=notes(a['geometry']))
   for v in r['rows']:
    add(v['description'],quantity=v['quantity'],unit=v['unit'],source=v['source_id'],formula=v['formula'],notes=notes(v['params'])+'؛ '+('عملیات قابل پرداخت' if v['role']=='work' else 'خرید مستند اطلاعاتی؛ غیرقابل پرداخت مستقل' if v['item_code']=='floor_purchase' else 'مقدار اطلاعاتی مستند؛ مستقل وارد پرداخت نمی‌شود' if is_cover(d) or is_skirting(d) else 'مصالح اطلاعاتی؛ خرید و پرت تعیین نشده؛ غیرقابل پرداخت مستقل'))
    group=LABELS[v['item_code']]+' ('+VALUES.get(v['unit'],v['unit'])+')';totals[group]=totals.get(group,Decimal(0))+Decimal(str(v['quantity']))
-  if not is_skirting(d) and d['kind'] in ('floor_finish',)+INSULATION_KINDS and all(not p.get('purchase_quantity') for p in a['layers']):add('خرید، رول، جانمایی نوار و هم‌پوشانی عایق در قرارداد فعلی مسدود است؛ مقدار نامعلوم صفر نیست' if d['kind'] in INSULATION_KINDS else 'مقدار خرید مصالح تعیین نشده؛ هیچ مقدار صفر یا ضریب پرت فرض نشده است')
+  if not is_slope(d) and not is_skirting(d) and d['kind'] in ('floor_finish',)+INSULATION_KINDS and all(not p.get('purchase_quantity') for p in a['layers']):add('خرید، رول، جانمایی نوار و هم‌پوشانی عایق در قرارداد فعلی مسدود است؛ مقدار نامعلوم صفر نیست' if d['kind'] in INSULATION_KINDS else 'مقدار خرید مصالح تعیین نشده؛ هیچ مقدار صفر یا ضریب پرت فرض نشده است')
   if is_cover(d) and any(p.get('layout_status')=='area_only' for p in a['surfaces']):add('جانمایی کامل تعیین نشده؛ تعداد، برش و خرید این سطح نامعلوم‌اند و صفر تلقی نشده‌اند')
   if is_skirting(d) and any(p.get('layout_status')=='length_only' for p in a['runs']):add('خرید و تعداد قطعات این ضلع نامعلوم‌اند؛ صفر فرض نشده‌اند')
   if is_skirting(d) and a['geometry']['corner_status']=='unknown':add('تعداد کنج تعیین نشده؛ صفر فرض نشده است')
-  for table,title in ([(k,v) for k,v in SKIRT_TITLES.items() if k!='runs'] if is_skirting(d) else [('openings','بازشوی مستقل'),('unit_regions','جانمایی مستقل واحد و بند')]+([(k,v) for k,v in COVER_TITLES.items() if k in ('stocks','pieces','joints')] if is_cover(d) else [])):
+  for table,title in (list(SLOPE_TITLES.items()) if is_slope(d) else [(k,v) for k,v in SKIRT_TITLES.items() if k!='runs'] if is_skirting(d) else [('openings','بازشوی مستقل'),('unit_regions','جانمایی مستقل واحد و بند')]+([(k,v) for k,v in COVER_TITLES.items() if k in ('stocks','pieces','joints')] if is_cover(d) else [])):
    for p in a.get(table,[]):add(title,source=p['id'],notes=notes(p))
   for name,title in [('masonry','دیوارچینی'),('finishes','اندود'),('accessories','اتصال و مسلح‌سازی')]:
    if a.get(name,{}).get('status')=='not_applicable':add(title+'؛ عدم کاربرد مستند',notes=a[name]['reason']+'؛ مرجع: '+a[name]['source_ref']+'؛ تأییدکننده: '+a[name]['approved_by'])
@@ -62,6 +64,6 @@ def export_project(service,pid,path,*,format,floor=None,member=None,family=None)
  if not found:raise ValueError('رکورد معماری معتبر یافت نشد')
  if format not in EXPORTERS:raise ValueError('قالب خروجی نامعتبر است')
  for i,row in enumerate(rows,1):row['item_no']=i
- return EXPORTERS[format](rows,path,title='ریزمتره تخصصی معماری؛ دیوار، اندود، کف و عایق افقی',metadata={'project_name':project['name'],'floor':floor or 'تمام طبقات','محدوده':'فقط قرارداد مستطیلی مستند؛ مصالح خرید و پرت استنتاج نشده‌اند'},summary={'amount_by_group':wire(totals)},columns=[('item_no','ردیف'),('description','شرح'),('quantity','مقدار'),('unit','واحد'),('source','منبع'),('formula','فرمول'),('notes','مدارک و دیتایل')])
+ return EXPORTERS[format](rows,path,title='ریزمتره تخصصی معماری؛ دیوار، اندود، کف، عایق و شیب‌بندی',metadata={'project_name':project['name'],'floor':floor or 'تمام طبقات','محدوده':'فقط قرارداد مستطیلی مستند؛ مصالح خرید و پرت استنتاج نشده‌اند'},summary={'amount_by_group':wire(totals)},columns=[('item_no','ردیف'),('description','شرح'),('quantity','مقدار'),('unit','واحد'),('source','منبع'),('formula','فرمول'),('notes','مدارک و دیتایل')])
 
 def export(service,pid,kind,floor,sid,path,*,format):return export_project(service,pid,path,format=format,floor=floor,member=_id(kind,floor,sid))

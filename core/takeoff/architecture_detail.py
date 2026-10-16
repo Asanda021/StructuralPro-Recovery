@@ -34,6 +34,8 @@ def group(g,required=False):
 
 @exact
 def preview(data,engine,require_review=False):
+ from core.takeoff.slope_aec_detail import is_slope,preview as slope_preview
+ if is_slope(data):return slope_preview(data,engine,require_review=require_review)
  from core.takeoff.skirting_detail import is_skirting,preview as skirt_preview
  if is_skirting(data):return skirt_preview(data,engine,require_review=require_review)
  from core.takeoff.interior_cover_detail import is_cover,preview as cover_preview
@@ -157,6 +159,8 @@ def takeoffs(data,version):
 def remap_copy(data,replacements):
  from uuid import uuid4
  a=data['architecture_detail']
+ from core.takeoff.slope_aec_detail import is_slope,remap_copy as slope_copy
+ if is_slope(data):return slope_copy(data,replacements)
  from core.takeoff.skirting_detail import is_skirting,remap_copy as skirt_copy
  if is_skirting(data):return skirt_copy(data,replacements)
  from core.takeoff.interior_cover_detail import is_cover,remap_copy as cover_copy
@@ -226,12 +230,16 @@ def guard(previous,updated):
    face_names[face]=surface
  from core.takeoff.floor_detail import guard as floor_guard
  floor_guard(updated)
+ from core.takeoff.slope_aec_detail import guard as slope_guard
+ slope_guard(updated)
  cover_guard(updated)
  skirt_guard(updated)
 
 
 def validate_amendment(previous,proposal,before_rows,after_rows):
  """An arithmetic delta cannot subtract unlike units or replace a physical wall."""
+ from core.takeoff.slope_aec_detail import is_slope,validate_amendment as validate_slope
+ if is_slope(previous):validate_slope(previous,proposal)
  from core.takeoff.skirting_detail import is_skirting
  from core.takeoff.interior_cover_detail import is_cover
  if previous['architecture_detail'].get('contract')!=proposal['architecture_detail'].get('contract'):raise ValueError('تغییر قرارداد تخصصی در اصلاحیه ممنوع است')
