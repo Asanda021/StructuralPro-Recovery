@@ -131,6 +131,12 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         from app.architecture_detail_editor import open_architecture_editor
         open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='slope')
     slope_button.clicked.connect(open_slope)
+    handoff_button=QPushButton('پیش‌ارزیابی بسته‌های سازه‌ای؛ ثبت مالی مسدود')
+    outer.addWidget(handoff_button);dialog.structural_handoff_button=handoff_button
+    def open_handoff_audit():
+        from app.structural_handoff_audit_editor import open_structural_handoff_audit
+        open_structural_handoff_audit(service,parent=dialog,project_id=project.text().strip())
+    handoff_button.clicked.connect(open_handoff_audit)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 

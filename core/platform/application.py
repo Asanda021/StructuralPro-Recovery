@@ -243,6 +243,12 @@ class StructuralProApp:
                       "essential": list(spec.essential)}
                 for key, spec in SPECS.items()}
 
+    def preview_structural_handoff(self, project_id, request, *, source_path, source_sha256):
+        """Read-only specialist audit against the current existing SQLite project."""
+        from core.takeoff.structural_handoff_work import preview
+        return preview(self, project_id, request, source_path=source_path,
+                       source_sha256=source_sha256)
+
     def new_aec_system(self, kind: str, floor_id: str, system_id: str) -> dict[str, Any]:
         from core.takeoff.reviewed_aec import empty_system
         return empty_system(kind, floor_id, system_id)
