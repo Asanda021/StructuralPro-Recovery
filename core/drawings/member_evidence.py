@@ -11,7 +11,7 @@ import re
 from typing import Any
 
 from core.drawings.beam_detail_match import (
-    cad_beam_evidence, pdf_beam_evidence, normalize_label, _beam_pattern,
+    cad_beam_evidence, pdf_beam_evidence, normalize_label, _unambiguous_member_statement,
 )
 
 _SUPPORTED = {
@@ -45,9 +45,9 @@ def explicit_member_dimensions(text: str, kind: str, tag: str) -> dict[str, floa
     """
     if kind not in _SUPPORTED:
         raise KeyError(kind)
-    if not isinstance(text, str) or not _beam_pattern(tag).search(normalize_label(text)):
+    text = _unambiguous_member_statement(text, tag)
+    if text is None:
         return None
-    text = normalize_label(text)
     values: dict[str, float] = {}
     for key in _SUPPORTED[kind]:
         labels = "|".join(re.escape(x) for x in _LABELS[key])

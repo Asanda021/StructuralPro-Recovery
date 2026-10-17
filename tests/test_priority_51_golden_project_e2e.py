@@ -1,5 +1,6 @@
 """Priority 51 — realistic project journey from creation to verified outputs."""
 from __future__ import annotations
+from decimal import Decimal
 
 import json
 from pathlib import Path
@@ -8,7 +9,7 @@ from core.platform.application import StructuralProApp
 from core.projects.backup import BackupManager
 
 
-def test_priority_51_golden_project_end_to_end(tmp_path: Path) -> None:
+def test_priority_51_golden_project_end_to_end(tmp_path: Path, approve_test_pricebook) -> None:
     """Exercise the main offline workflow without requiring the desktop UI."""
     app = StructuralProApp(tmp_path / "data")
     project_id = "golden-001"
@@ -27,6 +28,7 @@ def test_priority_51_golden_project_end_to_end(tmp_path: Path) -> None:
         price_code="SLAB-001",
         unit_price=1500000,
         source_id="drawing-A101-slab-01",
+        count=1,
     )
     beam = app.add_takeoff(
         project_id,
@@ -39,13 +41,18 @@ def test_priority_51_golden_project_end_to_end(tmp_path: Path) -> None:
         price_code="BEAM-001",
         unit_price=2500000,
         source_id="drawing-S201-beam-01",
+        count=1,
     )
     assert slab["quantities"][0]["amount"] > 0
     assert beam["quantities"][0]["amount"] > 0
 
+    approve_test_pricebook(app, project_id, {
+        "SLAB-001": {"unit": "m2", "unit_price": 1500000},
+        "BEAM-001": {"unit": "m3", "unit_price": 2500000},
+    })
     estimate = app.recalculate_estimate(project_id, factors={"waste": 0.05})
     assert estimate["validation"]["valid"]
-    assert estimate["cost"]["grand_total"] > 0
+    assert Decimal(str(estimate["cost"]["grand_total"])) > 0
     assert len(estimate["boq"]) == 2
 
     report_path = tmp_path / "golden-report.csv"

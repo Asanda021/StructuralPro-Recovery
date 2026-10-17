@@ -9,7 +9,8 @@ from typing import Any
 from core.projects.store import ProjectStore
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.boq import build_boq, boq_summary
-from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq
+from core.takeoff.commit_guards import require_source_unused, validate_commit_rows, rebuild_project_boq, _is_payable_quantity
+from core.takeoff.units import normalize_unit
 from core.takeoff.explicit_inputs import require_explicit_measurement_params
 from core.takeoff.estimate import build_estimate
 from core.takeoff.assembly_templates import AssemblyTemplateLibrary
@@ -26,7 +27,7 @@ from core.drawings.model_registry import ModelRegistry, ModelSource, ModelObject
 from core.performance.project_performance import paginate, project_performance_snapshot
 from core.recovery.recovery import export_project, import_project
 from core.aec.disciplines import takeoff_domain
-from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload
+from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload, verified_measurement_identities, assert_new_measurements
 from core.takeoff.ai_output_guard import validate_ai_takeoff_proposal
 
 
@@ -54,6 +55,13 @@ def _normalize_date_key(value: str) -> str | None:
         return None
     return f"{y:04d}/{m:02d}/{d:02d}"
 
+from core.commercial.exact_values import number, wire, exact, display_percent
+
+def _statement_rate(value: Any, name: str):
+    rate=number(value,name)
+    if rate>1:raise ValueError(f"{name}: نرخ باید متناهی و بین صفر و یک باشد")
+    return rate
+
 class StructuralProApp:
     def __init__(self,data_dir: str|Path):
         self.data_dir=Path(data_dir); self.data_dir.mkdir(parents=True,exist_ok=True)
@@ -69,6 +77,94 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+    def import_project_pricebook(self, project_id: str, path: str | Path, *, year: int,
+                                 approved_by: str) -> dict[str, Any]:
+        """Bind a real user import and explicit reviewer to this project's pricing gate."""
+        from core.pricing.catalog import PriceCatalog
+        from core.pricing.import_service import PricebookImportService
+        import hashlib
+        reviewer = str(approved_by or "").strip()
+        if not reviewer: raise ValueError("تأییدکننده فهرست‌بهای پروژه الزامی است")
+        digest = self.store.current_digest(project_id)
+        self.store._cache.pop(str(project_id), None)
+        project = self.store.get(project_id)
+        if project is None: raise KeyError(project_id)
+        catalog = PriceCatalog()
+        receipt = PricebookImportService(catalog).import_file(path, year=year, discipline="building", source_id="project-user-import")
+        source = Path(path).resolve()
+        if hashlib.sha256(source.read_bytes()).hexdigest() != receipt.sha256:
+            raise ValueError("فایل فهرست‌بها هنگام ورود تغییر کرده است؛ تأیید ثبت نشد")
+        review = {"status":"approved", "numeric_encoding_version":2, "approved_by":reviewer, "path":str(source),
+                  "sha256":receipt.sha256, "receipt":receipt.as_dict(),
+                  "rows_by_code":{x.code:{"unit":x.unit,"unit_price":x.unit_price}
+                                  for x in catalog.search("",year=year,limit=receipt.rows)}}
+        project["user_pricebook_review"] = review
+        self.store.save(project_id,project,expected_digest=digest)
+        return deepcopy(review)
+
+    def export_beam_detail_report(self, project_id, floor_id, beam_id, path, *, format):
+        from core.reports.beam_detail_report import export
+        return export(self,project_id,floor_id,beam_id,path,format=format)
+
+    def create_beam_legacy_mapping(self,project_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import mapping_create
+        return mapping_create(self,project_id,**kwargs)
+
+    def inspect_beam_legacy_mapping(self,project_id):
+        from core.takeoff.manual_formula_amendments import mapping_inventory,read
+        return mapping_inventory(read(self,project_id)[0])
+
+    def export_beam_legacy_mapping_report(self,project_id,path,*,format):
+        from core.reports.beam_legacy_mapping_report import export
+        return export(self,project_id,path,format=format)
+
+    def inspect_beam_history(self,project_id):
+        from core.takeoff.manual_formula_amendments import inspect_beam_history
+        return inspect_beam_history(self,project_id)
+
+    def create_beam_migration(self,project_id,floor_id,beam_id,data,*,evidence_path,evidence_sha256,evidence_reference,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        evidence={'evidence_path':evidence_path,'evidence_sha256':evidence_sha256,'evidence_reference':evidence_reference}
+        return beam_create(self,project_id,floor_id,beam_id,data,migration=evidence,**kwargs)
+
+    def export_column_detail_report(self,project_id,floor_id,member_id,path,*,format):
+        from core.reports.column_detail_report import export
+        return export(self,project_id,floor_id,member_id,path,format=format)
+
+    def export_foundation_detail_report(self,project_id,kind,floor_id,member_id,path,*,format):
+        from core.takeoff.manual_formula_amendments import FOUNDATION_KINDS
+        from core.reports.column_detail_report import export
+        if kind not in FOUNDATION_KINDS:raise ValueError('نوع پی و شناژ معتبر نیست')
+        return export(self,project_id,floor_id,member_id,path,format=format,kind=kind)
+
+    def copy_structural_member(self,project_id,kind,floor_id,member_id,**kwargs):
+        from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
+        return ReviewedStructuralWorkflow(self.store,self.takeoff).copy_draft(project_id,kind,floor_id,member_id,**kwargs)
+
+    def delete_structural_member_draft(self,project_id,kind,floor_id,member_id,**kwargs):
+        from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
+        return ReviewedStructuralWorkflow(self.store,self.takeoff).delete_draft(project_id,kind,floor_id,member_id,**kwargs)
+
+    def create_foundation_amendment(self,project_id,kind,floor_id,member_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,member_id,data,foundation_kind=kind,**kwargs)
+
+    def create_column_amendment(self,project_id,floor_id,member_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,member_id,data,column=True,**kwargs)
+
+    def create_beam_amendment(self,project_id,floor_id,beam_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,beam_id,data,**kwargs)
+
+    def review_beam_amendment(self,project_id,amendment_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_review
+        return beam_review(self,project_id,amendment_id,**kwargs)
+
+    def apply_beam_amendment(self,project_id,amendment_id,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_apply
+        return beam_apply(self,project_id,amendment_id,**kwargs)
+
     def beam_detail_workflow(self):
         """Use the canonical SQLite project store and quantity engine for beam details."""
         from core.takeoff.beam_detail import BeamDetailWorkflow
@@ -79,9 +175,9 @@ class StructuralProApp:
         return empty_beam(floor_id, beam_id)
 
     def save_beam_detail_draft(self, project_id: str, draft: dict[str, Any], *,
-                               expected_revision: int = 0) -> dict[str, Any]:
+                               expected_revision: int = 0, reason: str = "ثبت پیش‌نویس") -> dict[str, Any]:
         return self.beam_detail_workflow().save_draft(
-            project_id, draft, expected_revision=expected_revision
+            project_id, draft, expected_revision=expected_revision,reason=reason
         )
 
     def get_beam_detail(self, project_id: str, floor_id: str,
@@ -119,9 +215,9 @@ class StructuralProApp:
         return empty_member(kind, floor_id, member_id)
 
     def save_structural_member_draft(self, project_id: str, draft: dict[str, Any], *,
-                                      expected_revision: int = 0) -> dict[str, Any]:
+                                      expected_revision: int = 0, reason: str = "ثبت پیش‌نویس") -> dict[str, Any]:
         return self.structural_member_workflow().save_draft(
-            project_id, draft, expected_revision=expected_revision)
+            project_id, draft, expected_revision=expected_revision,reason=reason)
 
     def get_structural_member(self, project_id: str, kind: str, floor_id: str,
                               member_id: str) -> dict[str, Any] | None:
@@ -147,6 +243,12 @@ class StructuralProApp:
                       "essential": list(spec.essential)}
                 for key, spec in SPECS.items()}
 
+    def preview_structural_handoff(self, project_id, request, *, source_path, source_sha256):
+        """Read-only specialist audit against the current existing SQLite project."""
+        from core.takeoff.structural_handoff_work import preview
+        return preview(self, project_id, request, source_path=source_path,
+                       source_sha256=source_sha256)
+
     def new_aec_system(self, kind: str, floor_id: str, system_id: str) -> dict[str, Any]:
         from core.takeoff.reviewed_aec import empty_system
         return empty_system(kind, floor_id, system_id)
@@ -168,6 +270,21 @@ class StructuralProApp:
                           system_id: str, *, expected_revision: int) -> dict[str, Any]:
         return self.aec_workflow().commit(
             project_id, kind, floor_id, system_id, expected_revision=expected_revision)
+
+    def review_roof_system(self,project_id,kind,floor_id,system_id,*,expected_revision,reviewer,note):
+        return self.aec_workflow().review_roof(project_id,kind,floor_id,system_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def create_roof_amendment(self,project_id,kind,floor_id,system_id,data,**kwargs):
+        from core.takeoff.manual_formula_amendments import beam_create
+        return beam_create(self,project_id,floor_id,system_id,data,roof_kind=kind,**kwargs)
+
+    def export_shear_wall_detail_report(self,project_id,floor_id,system_id,path,*,format):
+        from core.reports.shear_wall_detail_report import export
+        return export(self,project_id,floor_id,system_id,path,format=format)
+
+    def export_roof_detail_report(self,project_id,kind,floor_id,system_id,path,*,format):
+        from core.reports.roof_detail_report import export
+        return export(self,project_id,kind,floor_id,system_id,path,format=format)
 
     def office_aec_report(self, project_id: str, mode: str, fmt: str, path,
                           *, statement: dict[str, Any] | None = None):
@@ -328,6 +445,74 @@ class StructuralProApp:
     def project_model_snapshot(self, project_id: str) -> dict[str, Any]:
         return self._model_registry(project_id).export_dict()
 
+    def create_manual_formula_amendment(self, project_id, row_id, data, *, expected_revision, created_by, reason):
+        from core.takeoff.manual_formula_amendments import proposal
+        return proposal(self,project_id,row_id,data,expected_revision=expected_revision,created_by=created_by,reason=reason)
+
+    def review_manual_formula_amendment(self, project_id, amendment_id, *, expected_revision, reviewer, note):
+        from core.takeoff.manual_formula_amendments import review
+        return review(self,project_id,amendment_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def apply_manual_formula_amendment(self, project_id, amendment_id, *, expected_revision):
+        from core.takeoff.manual_formula_amendments import apply
+        return apply(self,project_id,amendment_id,expected_revision=expected_revision)
+
+    def delete_manual_formulas(self, project_id, row_ids, *, expected_revisions, reason):
+        from core.takeoff.manual_formula_history import delete
+        return delete(self,project_id,row_ids,expected_revisions=expected_revisions,reason=reason)
+
+    def undo_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_history import step
+        return step(self,project_id)
+
+    def redo_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_history import step
+        return step(self,project_id,redo=True)
+
+    def set_manual_formula_deduction(self, project_id, row_id, item, *, expected_revision, reason):
+        from core.takeoff.manual_formula_deductions import set_item
+        return set_item(self,project_id,row_id,item,expected_revision=expected_revision,reason=reason)
+
+    def remove_manual_formula_deduction(self, project_id, row_id, source_id, *, expected_revision, reason):
+        from core.takeoff.manual_formula_deductions import remove
+        return remove(self,project_id,row_id,source_id,expected_revision=expected_revision,reason=reason)
+
+    def manual_formula_deduction_summary(self, project_id, row_id):
+        from core.takeoff.manual_formula_deductions import summary
+        return summary(self,project_id,row_id)
+
+    def relocate_manual_formulas(self, project_id, row_ids, *, destination, mode, expected_revisions, reason, deduction_sources=None):
+        from core.takeoff.manual_formula_locations import relocate
+        return relocate(self,project_id,row_ids,destination=destination,mode=mode,expected_revisions=expected_revisions,reason=reason,deduction_sources=deduction_sources)
+
+    def save_manual_formula(self, project_id, row_id, data, *, expected_revision, reason):
+        from core.takeoff.manual_formula_register import save
+        return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)
+
+    def bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions, reason):
+        from core.takeoff.manual_formula_register import bulk_edit
+        return bulk_edit(self,project_id,row_ids,changes=changes,expected_revisions=expected_revisions,reason=reason)
+
+    def copy_manual_formulas(self, project_id, row_ids, *, floor, expected_revisions, reason):
+        from core.takeoff.manual_formula_register import copy_rows
+        return copy_rows(self,project_id,row_ids,floor=floor,expected_revisions=expected_revisions,reason=reason)
+
+    def export_manual_formula_report(self, project_id, path, *, format):
+        from core.reports.manual_formula_report import export
+        return export(self,project_id,path,format=format)
+
+    def load_manual_formulas(self, project_id):
+        from core.takeoff.manual_formula_register import load
+        return load(self,project_id)
+
+    def review_manual_formula(self, project_id, row_id, *, expected_revision, reviewer, note):
+        from core.takeoff.manual_formula_register import review
+        return review(self,project_id,row_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+
+    def commit_manual_formula(self, project_id, row_id, *, expected_revision):
+        from core.takeoff.manual_formula_register import commit
+        return commit(self,project_id,row_id,expected_revision=expected_revision)
+
     def add_takeoff(self,project_id:str,domain:str,item:str,**params)->dict[str,Any]:
         """Save one explicitly sourced manual takeoff with a guarded SQLite CAS."""
         pid=str(project_id or "").strip()
@@ -344,6 +529,12 @@ class StructuralProApp:
         if p is None:
             raise KeyError(pid)
         require_source_unused(p,source_id)
+        if source_id in (p.get("deleted_takeoff_sources") or []):
+            raise ValueError("منبع متره حذف‌شده قبلاً استفاده شده است؛ ثبت دوباره با همان منشأ مجاز نیست")
+        location=str(params.get("manual_location_id", "")).strip()
+        if location and not system: raise ValueError("شناسه عضو به طبقه صریح نیاز دارد")
+        if location and any(str(r.get("system", ""))==system and str(r.get("item", ""))==str(item) and str(r.get("params",{}).get("manual_location_id", ""))==location for r in p.get("takeoffs", [])):
+            raise ValueError("عضو همین عملیات و طبقه قبلاً متره شده است")
         calculation_params=deepcopy(params)
         normalized_domain=takeoff_domain(domain)
         require_explicit_measurement_params(normalized_domain,item,calculation_params)
@@ -402,7 +593,7 @@ class StructuralProApp:
             ai_committed = list(previous.get("ai_committed_item_ids", []))
         sessions[sid] = {
             "id": sid, "revision": revision, "drawing_source": str(payload.get("drawing_source", "")),
-            "session": deepcopy(payload), "committed_item_ids": committed,
+            "session": deepcopy(payload), "source_sha256": str(payload.get("source_sha256", "")), "committed_item_ids": committed,
             "ai_committed_item_ids": ai_committed,
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -450,6 +641,8 @@ class StructuralProApp:
         if already.intersection(selected) or ai_already.intersection(selected):
             raise ValueError("برخی متره‌های انتخاب‌شده قبلاً از مسیر دستی یا هوشمند وارد BOQ شده‌اند؛ انتقال تکراری رد شد")
         rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=selected)
+        rows = verified_measurement_identities(record, rows)
+        assert_new_measurements(project, record, rows)
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         duplicate_sources = [row["source_id"] for row in rows if row["source_id"] in existing_sources]
         if duplicate_sources:
@@ -462,11 +655,15 @@ class StructuralProApp:
                 "member_code": row["item_code"], "source_id": source_id,
                 "domain": "drawing", "item": row["kind"],
                 "params": {"drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                           "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
+                           "calibration": row["calibration"], "holes": row.get("holes", []),
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
                 "provenance": {"mode": "drawing", "source_id": source_id,
                                "drawing_session_id": sid, "drawing_source": row["drawing_source"],
+                           "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
+                           "calibration": row["calibration"], "holes": row.get("holes", []),
                                "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{
@@ -532,6 +729,10 @@ class StructuralProApp:
         from core.drawings.takeoff_session import DrawingTakeoffSession
         session = DrawingTakeoffSession.from_dict(record.get("session", {}))
         known_pages = {session.current_page, *session.calibrations.keys(), *[item.page for item in session.items]}
+        canonical_rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=list(candidate_item_ids))
+        canonical_rows = verified_measurement_identities(record, canonical_rows)
+        assert_new_measurements(project, record, canonical_rows)
+        identities = {row["takeoff_id"]: row for row in canonical_rows}
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         new_rows = []
         seen_session_items: set[str] = set()
@@ -578,6 +779,11 @@ class StructuralProApp:
                 "domain": "drawing_ai", "item": candidate["kind"],
                 "params": {"drawing_session_id": sid, "drawing_revision": expected_session_revision,
                            "session_item_id": candidate["session_item_id"],
+                           "measurement_identity": identities[item_id]["measurement_identity"],
+                           "source_sha256": identities[item_id]["source_sha256"],
+                           "drawing_source": identities[item_id]["drawing_source"],
+                           "geometry": identities[item_id]["geometry"],
+                           "calibration": identities[item_id]["calibration"],
                            "geometry": [list(point) for point in measured_item.geometry],
                            "evidence": deepcopy(candidate["evidence"]), "confidence": candidate["confidence"],
                            "formula": candidate["formula"]},
@@ -609,7 +815,8 @@ class StructuralProApp:
     def add_assembly_takeoff(self, project_id: str, assembly_code: str, inputs: dict[str, Any], *,
                              floor_id: str, description: str = "",
                              measurement_source: str | None = None,
-                             approved_by: str | None = None) -> dict[str, Any]:
+                             approved_by: str | None = None, location_id: str = "",
+                             component_prices: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
         """Commit all separately measured assembly parts as one reviewed transaction."""
         pid=str(project_id).strip()
         floor=str(floor_id or "").strip()
@@ -620,10 +827,12 @@ class StructuralProApp:
             raise ValueError("ورودی‌های قالب کامل نیستند: " + "، ".join(result.missing_inputs))
         if not result.components:
             raise ValueError("قالب متره مرکب هیچ جزء قابل ثبتی تولید نکرد")
-        measurement = str(measurement_source or "").strip()
+        measurement = str(measurement_source or location_id or "").strip()
         reviewer = str(approved_by or "").strip()
-        if not measurement or not reviewer:
-            raise ValueError("شناسه واقعی برداشت و تأییدکننده عملیات مرکب الزامی‌اند")
+        if not measurement:
+            raise ValueError("شناسه ثابت محل یا مرجع واقعی برداشت عملیات مرکب الزامی است")
+        if not reviewer:
+            raise ValueError("نام تأییدکننده واقعی عملیات مرکب الزامی است")
         digest=self.store.current_digest(pid)
         self.store._cache.pop(pid,None)
         project=self.store.get(pid)
@@ -632,8 +841,22 @@ class StructuralProApp:
         bundle_id=uuid4().hex
         # Stable physical identity independent of randomly generated bundle IDs.
         # The same location cannot be re-billed as a new assembly.
-        bundle_source=f"manual-assembly:{pid}:{floor}:{measurement}"
+        bundle_source=f"manual-assembly:{pid}:{floor}:{result.code}:{measurement}"
         require_source_unused(project,bundle_source)
+        prices=deepcopy(component_prices or {})
+        if not isinstance(prices,dict) or set(prices)-{c.code for c in result.components}:
+            raise ValueError("نگاشت قیمت به جزء ناشناخته مجاز نیست")
+        for c in result.components:
+            if c.code not in prices:continue
+            price=prices[c.code]
+            if not isinstance(price,dict) or set(price)!={"price_code","unit","unit_price"}:
+                raise ValueError("قیمت جزء به کد، واحد و قیمت صریح نیاز دارد")
+            if not _is_payable_quantity({"params":{"assembly_code":result.code}},{"code":c.code}):
+                raise ValueError("مصالح تأمین و مصرف دوباره وارد پرداخت نمی‌شوند")
+            if not str(price["price_code"]).strip() or normalize_unit(price["unit"])!=normalize_unit(c.unit):
+                raise ValueError("کد یا واحد قیمت جزء نامعتبر است")
+            if isinstance(price["unit_price"],bool) or not math.isfinite(float(price["unit_price"])) or float(price["unit_price"])<0:
+                raise ValueError("قیمت جزء باید نامنفی و متناهی باشد")
         created_at=datetime.now(timezone.utc).isoformat()
         parent={
             "id":bundle_id,"assembly_code":result.code,"title":result.title,
@@ -641,6 +864,7 @@ class StructuralProApp:
             "inputs":deepcopy(dict(inputs)),"inputs_used":list(result.inputs_used),
             "revision":1,"created_at":created_at,"component_source_ids":[],
             "measurement_source":measurement,"source_id":bundle_source,
+            "location_id":str(location_id).strip(),"component_prices":prices,
             "approved_by":reviewer,
         }
         rows=[]
@@ -648,6 +872,8 @@ class StructuralProApp:
         for component in result.components:
             source_id=f"{bundle_source}:{component.code}"
             title=f"{parent['description']} — {component.title}"
+            payable=_is_payable_quantity({"params":{"assembly_code":result.code}},{"code":component.code})
+            role="work" if payable else "procurement" if component.code.endswith("_procurement") else "material"
             row={
                 "id":f"{previous_count+len(rows)+1}",
                 "member_code":component.code,"source_id":source_id,
@@ -655,15 +881,18 @@ class StructuralProApp:
                 "params":{"assembly_id":bundle_id,"assembly_code":result.code,
                           "component_code":component.code,"inputs":deepcopy(dict(inputs))},
                 "revision":1,"assembly_id":bundle_id,
+                "component_role":role,"location_id":str(location_id).strip(),
                 "description":title,"system":floor,
                 "provenance":{"mode":"manual","source_id":bundle_source,
                               "source_component_id":source_id,
                               "approved_by":reviewer,"assembly_id":bundle_id},
                 "quantities":[{
                     "code":component.code,"title":title,"system":floor,
+                    "role":role,
                     "unit":component.unit,"amount":float(component.quantity),
                     "formula":component.formula,"warning":component.warning,
-                    "price_code":None,"unit_price":None,
+                    "price_code":prices.get(component.code,{}).get("price_code"),
+                    "unit_price":prices.get(component.code,{}).get("unit_price"),
                 }],
             }
             rows.append(row)
@@ -717,6 +946,14 @@ class StructuralProApp:
 
         normalized_domain = takeoff_domain(domain)
         calculation_params = deepcopy(params)
+        for name in ("manual_location_id", "price_code", "unit_price"):
+            if name not in calculation_params and name in row.get("params", {}):
+                calculation_params[name]=row["params"][name]
+        effective_system=str(system).strip() if system is not None else row.get("system")
+        location=str(calculation_params.get("manual_location_id", "")).strip()
+        if location and not effective_system: raise ValueError("شناسه عضو به طبقه صریح نیاز دارد")
+        if location and any(other is not row and str(other.get("system", ""))==effective_system and str(other.get("item", ""))==str(item) and str(other.get("params",{}).get("manual_location_id", ""))==location for other in project.get("takeoffs", [])):
+            raise ValueError("نسخه جدید با عضو موجود تداخل دارد")
         require_explicit_measurement_params(normalized_domain,item,calculation_params)
         clean_description = str(description or row.get("description") or item).strip()
         result = self.takeoff.calculate(normalized_domain, item, description=clean_description,
@@ -750,6 +987,59 @@ class StructuralProApp:
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(row)
 
+    def delete_takeoff(self, project_id: str, source_id: str, *, expected_revision: int) -> dict[str, Any]:
+        """Safely retire a single manual measurement without erasing its audit trail.
+
+        Issued statements and reviewed/graphical measurement families require
+        dedicated adjustment workflows; a generic delete must never bypass them.
+        """
+        pid = str(project_id or "").strip()
+        source = str(source_id or "").strip()
+        if not pid or not source:
+            raise ValueError("شناسه پروژه و منبع متره برای حذف الزامی است")
+        if isinstance(expected_revision, bool):
+            raise ValueError("نسخه متره برای حذف باید عدد صحیح مثبت باشد")
+        try:
+            expected = int(expected_revision)
+        except (ValueError, TypeError, OverflowError) as exc:
+            raise ValueError("نسخه متره برای حذف معتبر نیست") from exc
+        if expected < 1 or expected != expected_revision:
+            raise ValueError("نسخه متره برای حذف باید عدد صحیح مثبت باشد")
+        digest = self.store.current_digest(pid)
+        self.store._cache.pop(pid, None)
+        project = self.store.get(pid)
+        if project is None:
+            raise KeyError(pid)
+        if project.get("statement_periods"):
+            raise ValueError("متره دارای صورت‌وضعیت صادرشده است؛ حذف مستقیم ممنوع و اصلاحیه رسمی لازم است")
+        rows = project.get("takeoffs") or []
+        matches = [row for row in rows if str(row.get("source_id", "")).strip() == source]
+        if len(matches) != 1:
+            raise KeyError("منبع متره برای حذف باید دقیقاً یک ردیف موجود باشد")
+        row = matches[0]
+        if (row.get("review") or row.get("assembly_id") or row.get("drawing_session_id") or
+                row.get("domain") in {"assembly", "drawing", "drawing_ai"} or
+                source.startswith(("beam-detail:", "structural:", "aec:"))):
+            raise ValueError("حذف این متره باید از گردش اصلاحیه تخصصی عضو یا نقشه انجام شود")
+        current = int(row.get("revision", 1))
+        if current != expected:
+            raise RuntimeError("نسخه متره تغییر کرده است؛ حذف نسخه قدیمی رد شد")
+        left = [other for other in rows if other is not row]
+        project["takeoffs"], project["boq"] = rebuild_project_boq(project, left)
+        tombstones = list(project.get("deleted_takeoff_sources") or [])
+        if source in tombstones:
+            raise ValueError("منبع قبلاً حذف شده است")
+        tombstones.append(source)
+        project["deleted_takeoff_sources"] = tombstones
+        history = list(project.get("takeoff_revision_history") or [])
+        history.append({"source_id": source, "event": "deleted", "from_revision": current,
+                        "changed_at": datetime.now(timezone.utc).isoformat(),
+                        "previous_row": deepcopy(row)})
+        project["takeoff_revision_history"] = history
+        self.store.save(pid, project, expected_digest=digest)
+        return {"source_id": source, "deleted_revision": current,
+                "remaining_takeoffs": len(project["takeoffs"]), "status": "retired"}
+
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
         """Financial estimate needs priced BOQ, finite rates and a version-safe save."""
         pid=str(project_id or "").strip()
@@ -772,29 +1062,17 @@ class StructuralProApp:
         # used for financial exports must also protect the estimate service.
         from core.reports.aec_office_package import audit_boq
         audit_boq(project, require_pricebook=True)
+        if factors is None:
+            factors = (project.get("estimate") or {}).get("factors", {})
         normalized_factors={}
         for name,value in (factors or {}).items():
             if isinstance(value,bool):
                 raise ValueError("ضریب برآورد نباید بولی باشد")
-            rate=float(value)
-            if not math.isfinite(rate) or rate<0:
-                raise ValueError("ضرایب برآورد باید نامنفی و متناهی باشند")
-            normalized_factors[str(name)]=rate
+            rate=number(value,'ضرایب برآورد')
+            normalized_factors[str(name)]=wire(rate)
         estimate=build_estimate(boq,factors=normalized_factors,aggregate=False)
-        if normalized_factors:
-            base=float(estimate["cost"].get("base",0))
-            if not math.isfinite(base) or base<0:
-                raise ValueError("مبلغ پایه برآورد نامعتبر است")
-            subtotal=base
-            applied={}
-            for name,rate in normalized_factors.items():
-                delta=subtotal*rate
-                applied[name]=delta
-                subtotal+=delta
-                if not math.isfinite(subtotal):
-                    raise ValueError("اعمال ضرایب موجب سرریز مبلغ شد")
-            estimate["cost"]["factors"]=applied
-            estimate["cost"]["grand_total"]=subtotal
+        estimate["numeric_encoding_version"]=2
+        estimate["financial_policy_status"]="EXPLICIT_OWNER_POLICY" if project.get("statement_amendment_policy") else "LEGACY_PREVIEW_NOT_FINANCIALLY_APPROVED"
         project["estimate"]=estimate
         self.store.save(pid,project,expected_digest=digest)
         return estimate
@@ -817,6 +1095,7 @@ class StructuralProApp:
         return {"project_id":project_id,"estimate":estimate,"progress":progress,
                 "boq_summary":boq_summary(p.get("boq",[]))}
 
+    @exact
     def build_statement(self, project_id: str, *, previous_paid: float = 0.0,
                         retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
                         tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
@@ -824,10 +1103,17 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        if min(previous_paid, retention_rate, advance_recovery_rate, tax_rate, insurance_rate) < 0:
-            raise ValueError("statement rates and previous payment cannot be negative")
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
+        previous_paid=number(previous_paid,'پرداخت قبلی')
         lines = []
         for row in p.get("boq", []):
+            if row.get("current_quantity") is None or isinstance(row.get("current_quantity"), bool):
+                raise ValueError("کارکرد دوره باید صریح وارد شود؛ مقدار نامعلوم صفر نیست")
             lines.append({
                 "code": row.get("price_code", ""),
                 "description": row.get("description", ""),
@@ -842,63 +1128,124 @@ class StructuralProApp:
             "gross_current": 0, "deductions": 0, "payable_current": 0,
             "payments": 0, "balance_current": 0, "remaining_contract": 0, "progress_percent": 0,
         }
-        gross = float(progress.get("gross_current", 0) or 0)
-        retention = gross * float(retention_rate)
-        advance = gross * float(advance_recovery_rate)
-        taxable = max(gross - retention - advance, 0.0)
-        tax = taxable * float(tax_rate)
-        insurance = taxable * float(insurance_rate)
-        payable = max(taxable + tax - insurance, 0.0)
-        return {
-            **progress,
-            "retention": retention,
-            "advance_recovery": advance,
-            "taxable_current": taxable,
-            "tax": tax,
-            "insurance": insurance,
-            "payable_current": payable,
-            "previous_paid": float(previous_paid),
-            "balance_after_current": payable - float(previous_paid),
-            "rates": {
-                "retention_rate": float(retention_rate),
-                "advance_recovery_rate": float(advance_recovery_rate),
-                "tax_rate": float(tax_rate),
-                "insurance_rate": float(insurance_rate),
-            },
-        }
+        rates={'retention_rate':retention_rate,'advance_recovery_rate':advance_recovery_rate,'tax_rate':tax_rate,'insurance_rate':insurance_rate}
+        amounts,status,money=self._statement_money(p,progress['lines'],rates)
+        return wire({**progress,**amounts,'previous_paid':previous_paid,'balance_after_current':number(amounts['payable_current'],'پرداختنی')-previous_paid,
+                     'rates':rates,'financial_policy_status':status,**({'money_policy':money} if money else {})})
 
+    @exact
+    def _statement_money(self, project, lines, rates):
+        from core.commercial.statement_amendment import _money,policy,check_documents
+        money=None;status='LEGACY_RECORD_NOT_FINANCIALLY_APPROVED'
+        if project.get('statement_amendment_policy'):
+            configured=policy(project);check_documents(configured['source_documents'])
+            money=configured['money'];status='EXPLICIT_OWNER_POLICY'
+        quantities={line['code']:number(line['current_quantity'],'کارکرد') for line in lines}
+        prices={line['code']:number(line['unit_price'],'بهای واحد') for line in lines}
+        values=_money(quantities,prices,{k:number(v,k) for k,v in rates.items()},money)
+        return {k:wire(number(v,k)) for k,v in values.items()},status,money
+
+    def create_contract_change_request(self, project_id, *, created_by, reason, source_documents, lines, expected_project_version):
+        from core.commercial.contract_requests import create_request
+        return create_request(self.store,project_id,'contract',created_by,reason,source_documents,expected_project_version,lines=lines)
+
+    def create_settlement_request(self, project_id, *, created_by, reason, source_documents, receipt_ids, expected_project_version):
+        from core.commercial.contract_requests import create_request
+        return create_request(self.store,project_id,'settlement',created_by,reason,source_documents,expected_project_version,receipt_ids=receipt_ids)
+
+    def post_contract_change_request(self, *args, **kwargs):
+        from core.commercial.contract_requests import post_request
+        return post_request(*args,**kwargs)
+
+    def post_settlement_request(self, *args, **kwargs):
+        from core.commercial.contract_requests import post_request
+        return post_request(*args,**kwargs)
+
+    def _amendment(self, project_id, op, actor, expected_project_version, **data):
+        from core.commercial.statement_amendment import StatementAmendmentService
+        return StatementAmendmentService(self.store).execute(project_id, op, actor, expected_project_version, **data)
+
+    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version):
+        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents)
+
+    def create_statement_amendment(self, project_id, period_no, *, created_by, expected_project_version, **data):
+        return self._amendment(project_id, 'create', created_by, expected_project_version, period_no=period_no, **data)
+
+    def edit_statement_amendment(self, project_id, amendment_id, *, edited_by, expected_project_version, **data):
+        return self._amendment(project_id, 'edit', edited_by, expected_project_version, id=amendment_id, **data)
+
+    def review_statement_amendment(self, project_id, amendment_id, *, reviewed_by, expected_project_version, **data):
+        return self._amendment(project_id, 'review', reviewed_by, expected_project_version, id=amendment_id, **data)
+
+    def approve_statement_amendment(self, project_id, amendment_id, *, approved_by, expected_project_version, **data):
+        return self._amendment(project_id, 'approve', approved_by, expected_project_version, id=amendment_id, **data)
+
+    def post_statement_amendment(self, project_id, amendment_id, *, posted_by, expected_project_version, **data):
+        return self._amendment(project_id, 'post', posted_by, expected_project_version, id=amendment_id, **data)
+
+    def reject_statement_amendment(self, project_id, amendment_id, *, rejected_by, expected_project_version, **data):
+        return self._amendment(project_id, 'reject', rejected_by, expected_project_version, id=amendment_id, **data)
+
+    def statement_amendments(self, project_id):
+        return self.open_project(project_id).get('statement_amendments', [])
+
+    def statement_amendment_summary(self, project_id, period_no):
+        from core.commercial.statement_amendment import summary
+        return summary(self.open_project(project_id), period_no)
+
+    @exact
     def save_statement_period(self, project_id: str, *, period_no: int | None = None,
                               current_quantities: dict[str, float] | None = None,
                               retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
-                              tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
+                              tax_rate: float = 0.0, insurance_rate: float = 0.0,
+                              persist: bool = True) -> dict[str, Any]:
         """Persist a numbered statement period and roll its quantities into the next period."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        retention_rate = _statement_rate(retention_rate, "تضمین")
+        advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
+        tax_rate = _statement_rate(tax_rate, "مالیات")
+        insurance_rate = _statement_rate(insurance_rate, "بیمه")
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
         periods = list(p.get("statement_periods", []))
         if period_no is None:
             period_no = (max((int(x.get("number", 0)) for x in periods), default=0) + 1)
+        if isinstance(period_no,bool) or float(period_no) != int(period_no):
+            raise ValueError("شماره دوره باید عدد صحیح مثبت باشد")
         period_no = int(period_no)
         if period_no <= 0 or any(int(x.get("number", 0)) == period_no for x in periods):
             raise ValueError("statement period number must be positive and unique")
         previous = {}
         if periods:
             previous = {
-                str(x.get("code", "")): float(x.get("cumulative_quantity", 0) or 0)
+                str(x.get("code", "")): number(x.get('cumulative_quantity',0),'کارکرد تجمعی')
                 for x in periods[-1].get("lines", [])
             }
-        overrides = {str(k): float(v) for k, v in (current_quantities or {}).items()}
+        if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
+            from core.commercial.statement_amendment import cumulative_quantities
+            previous = {code: value for code, value in cumulative_quantities(p).items()}
+        raw_quantities = current_quantities or {}
+        known_codes = {str(row.get("price_code", "") or "") for row in p.get("boq", [])}
+        if any(str(code) not in known_codes for code in raw_quantities):
+            raise ValueError("کد کارکرد در BOQ پروژه وجود ندارد")
+        if any(isinstance(value, bool) for value in raw_quantities.values()):
+            raise ValueError("کارکرد باید عددی باشد، نه مقدار منطقی")
+        overrides = {str(k): number(v,'کارکرد دوره') for k, v in raw_quantities.items()}
         lines = []
         for row in p.get("boq", []):
             code = str(row.get("price_code", "") or "")
-            cur = float(overrides.get(code, row.get("current_quantity", 0)) or 0)
-            prev = float(previous.get(code, row.get("previous_quantity", 0)) or 0)
-            if cur < 0 or prev < 0:
-                raise ValueError("statement quantities cannot be negative")
+            if code not in overrides and row.get("current_quantity") is None:
+                raise ValueError("کارکرد دوره باید صریح وارد شود؛ مقدار نامعلوم صفر نیست")
+            cur = number(overrides.get(code, row.get('current_quantity')),'کارکرد دوره')
+            prev = number(previous.get(code,row.get('previous_quantity',0)),'کارکرد قبلی')
+            if not all(math.isfinite(value) and value >= 0 for value in (cur, prev)):
+                raise ValueError("statement quantities must be finite and non-negative")
             lines.append({
                 "code": code, "description": row.get("description", ""), "unit": row.get("unit", ""),
-                "contract_quantity": float(row.get("quantity", 0) or 0),
-                "unit_price": float(row.get("unit_price", 0) or 0),
+                "contract_quantity": number(row.get('quantity'),'مقدار قرارداد'),
+                "unit_price": number(row.get('unit_price'),'بهای واحد'),
                 "previous_quantity": prev, "current_quantity": cur,
             })
         progress = build_progress(lines)
@@ -910,24 +1257,21 @@ class StructuralProApp:
             "remaining_contract": progress["remaining_contract"],
             "progress_percent": progress["progress_percent"],
             "rates": {
-                "retention_rate": float(retention_rate), "advance_recovery_rate": float(advance_recovery_rate),
-                "tax_rate": float(tax_rate), "insurance_rate": float(insurance_rate),
+                "retention_rate": wire(retention_rate), "advance_recovery_rate": wire(advance_recovery_rate),
+                "tax_rate": wire(tax_rate), "insurance_rate": wire(insurance_rate),
             },
         }
-        gross = float(period["gross_current"])
-        retention = gross * float(retention_rate)
-        advance = gross * float(advance_recovery_rate)
-        taxable = max(gross - retention - advance, 0.0)
-        tax = taxable * float(tax_rate)
-        insurance = taxable * float(insurance_rate)
-        period.update({
-            "retention": retention, "advance_recovery": advance, "taxable_current": taxable,
-            "tax": tax, "insurance": insurance, "payable_current": max(taxable + tax - insurance, 0.0),
-        })
+        amounts,status,money=self._statement_money(p,period['lines'],period['rates'])
+        period.update(amounts);period['financial_policy_status']=status
+        if money:period['money_policy']=dict(money)
+        period["numeric_encoding_version"]=2
+        period=wire(period)
         periods.append(period)
         p["statement_periods"] = periods
-        self.store.save(project_id, p)
+        if persist:
+            self.store.save(project_id, p)
         return period
+
 
     def statement_periods(self, project_id: str) -> list[dict[str, Any]]:
         p = self.store.get(project_id)
@@ -1326,7 +1670,7 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
+        amount = number(amount, 'مبلغ')
         if amount < 0:
             raise ValueError("cost amount cannot be negative")
         categories = {"مصالح", "دستمزد", "پیمانکار", "تجهیزات", "سایر"}
@@ -1339,7 +1683,7 @@ class StructuralProApp:
         entry = {
             "id": len(entries) + 1,
             "category": category,
-            "amount": amount,
+            "amount": wire(amount),
             "description": str(description).strip(),
             "date": str(date).strip(),
             "counterparty": str(counterparty).strip(),
@@ -1357,18 +1701,19 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("cost_entries", []))
 
+    @exact
     def project_cost_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_costs(project_id)
         by_category = {}
         for entry in entries:
             category = str(entry.get("category", "سایر"))
-            by_category[category] = by_category.get(category, 0.0) + float(entry.get("amount", 0) or 0)
-        return {
+            by_category[category] = by_category.get(category, 0) + number(entry.get('amount'), 'مبلغ هزینه')
+        return wire({
             "project_id": project_id,
             "entry_count": len(entries),
             "actual_cost": sum(by_category.values()),
             "by_category": by_category,
-        }
+        })
 
     def project_financial_control(self, project_id: str, *, planned_cost: float | None = None,
                                   actual_cost: float = 0.0) -> dict[str, Any]:
@@ -1376,6 +1721,8 @@ class StructuralProApp:
         if actual_cost < 0 or (planned_cost is not None and planned_cost < 0):
             raise ValueError("cost values cannot be negative")
         dashboard = self.financial_dashboard(project_id)
+        if dashboard["contract_amount"] is None or dashboard["cumulative_work"] is None:
+            raise ValueError("برای شاخص‌های ارزش کسب‌شده و پیشرفت، BOQ و برآورد تأییدشده الزامی است")
         contract = float(dashboard["contract_amount"])
         work = float(dashboard["cumulative_work"])
         planned = contract if planned_cost is None else float(planned_cost)
@@ -1399,30 +1746,53 @@ class StructuralProApp:
             "progress_percent": dashboard["progress_percent"],
         }
 
+    @exact
     def financial_dashboard(self, project_id: str) -> dict[str, Any]:
         """Return a compact financial/progress snapshot for the project dashboard."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        estimate = p.get("estimate") or self.recalculate_estimate(project_id)
-        cost = estimate.get("cost", {}) or {}
         boq = p.get("boq", []) or []
-        contract = float(cost.get("grand_total", 0) or 0)
-        base = float(cost.get("base", 0) or 0)
-        snapshot = self.build_commercial_snapshot(project_id)
+        # Cost / receipts / commitments can exist before the first BOQ item.
+        # Such a project has no *known* contract or earned-value figures.
+        # In particular, missing estimates must never be silently valued at 0.
+        # Independent cost/receipt/commitment ledgers remain viewable when
+        # physical BOQ exists but has no approved, traceable pricebook.
+        # Never infer a contract, margin or earned value from an unreviewed rate.
+        estimate = None
+        blocked_reason = None
+        if boq:
+            from core.reports.aec_office_package import audit_boq
+            try:
+                audit_boq(p, require_pricebook=True)
+            except ValueError as exc:
+                blocked_reason = str(exc)
+            else:
+                estimate = p.get("estimate") or self.recalculate_estimate(project_id)
+        cost = (estimate.get("cost", {}) or {}) if estimate else {}
+        contract = number(cost['grand_total'],'برآورد') if estimate else None
+        base = number(cost['base'],'مبنا') if estimate else None
+        snapshot = self.build_commercial_snapshot(project_id) if estimate else {}
         progress = snapshot.get("progress", {}) or {}
         periods = list(p.get("statement_periods", []))
         latest = periods[-1] if periods else None
-        cumulative = float(progress.get("completed_total", 0) or 0)
-        if latest is not None:
-            cumulative = float(latest.get("completed_total", cumulative) or cumulative)
-        remaining = max(contract - cumulative, 0.0)
-        percent = (cumulative / contract * 100.0) if contract else 0.0
-        total_payable = sum(float(x.get("payable_current", 0) or 0) for x in periods)
+        cumulative = number(progress.get('completed_total',0),'کارکرد') if estimate else None
+        if estimate and latest is not None:
+            cumulative = number(latest.get('completed_total',cumulative),'کارکرد')
+        remaining = max(contract - cumulative, 0.0) if estimate else None
+        percent = display_percent(cumulative,contract) if estimate and contract else (0.0 if estimate else None)
+        total_payable = sum(number(x.get('payable_current',0),'پرداختنی') for x in periods)
+        if any(d.get('status') == 'POSTED' for d in p.get('statement_amendments', [])):
+            from core.commercial.statement_amendment import summary
+            net_periods = [summary(p, period['number'])['net'] for period in periods]
+            cumulative = sum(number(net['gross_current'],'کارکرد') for net in net_periods)
+            total_payable = sum(number(net['payable_current'],'پرداختنی') for net in net_periods)
+            remaining = max(contract - cumulative, 0.0) if estimate else None
+            percent = display_percent(cumulative,contract) if estimate and contract else (0.0 if estimate else None)
         cost_summary = self.project_cost_summary(project_id)
-        actual_cost = float(cost_summary["actual_cost"])
-        gross_margin = cumulative - actual_cost
-        return {
+        actual_cost = number(cost_summary['actual_cost'],'هزینه')
+        gross_margin = cumulative - actual_cost if estimate else None
+        return wire({
             "project_id": project_id,
             "project_name": p.get("name", ""),
             "line_count": len(boq),
@@ -1433,14 +1803,18 @@ class StructuralProApp:
             "progress_percent": percent,
             "statement_count": len(periods),
             "latest_statement_no": latest.get("number") if latest else None,
-            "latest_payable": float(latest.get("payable_current", 0) or 0) if latest else 0.0,
+            "latest_payable": (number(net_periods[-1]['payable_current'],'پرداختنی') if any(d.get("status") == "POSTED" for d in p.get("statement_amendments", [])) else number(latest.get('payable_current',0),'پرداختنی')) if latest else 0.0,
             "total_payable": total_payable,
             "actual_cost": actual_cost,
             "gross_margin": gross_margin,
             "cost_entry_count": cost_summary["entry_count"],
             "cost_by_category": cost_summary["by_category"],
-            "warnings": list((estimate.get("warnings") or [])),
-        }
+            "warnings": (list(estimate.get("warnings") or []) if estimate else
+                         ["برآورد قرارداد در دسترس نیست؛ BOQ تأییدشده ثبت نشده است"
+                          if not boq else "برآورد تأییدشده در دسترس نیست؛ " +
+                          (blocked_reason or "فهرست‌بهای معتبر لازم است")]),
+            "estimate_status": "verified" if estimate else "unavailable",
+        })
 
     def _finance_depth_control(self, project_id: str) -> FinancePaymentControl:
         p = self.store.get(project_id)
@@ -1449,7 +1823,7 @@ class StructuralProApp:
         payments = [
             PaymentRecord(
                 id=str(x.get("id")),
-                amount=float(x.get("amount", 0) or 0),
+                amount=number(x.get("amount"),"پرداخت"),
                 date=str(x.get("date", "")),
                 reference=str(x.get("reference", "")),
                 document_id=int(x["document_id"]) if x.get("document_id") is not None else None,
@@ -1466,7 +1840,7 @@ class StructuralProApp:
                 payment_id=str(x.get("payment_id")),
                 target_type=str(x.get("target_type")),
                 target_id=x.get("target_id"),
-                amount=float(x.get("amount", 0) or 0),
+                amount=number(x.get("amount"),"پرداخت"),
             )
             for x in p.get("payment_allocations", [])
         ]
@@ -1475,7 +1849,7 @@ class StructuralProApp:
                 code=str(x.get("code")),
                 category=str(x.get("category", "")),
                 description=str(x.get("description", "")),
-                planned=float(x.get("planned", 0) or 0),
+                planned=number(x.get("planned"),"بودجه"),
             )
             for x in p.get("financial_budget", [])
         ]
@@ -1498,7 +1872,7 @@ class StructuralProApp:
         entries = list(p.get("payment_entries", []))
         payment_id = f"PAY{len(entries) + 1:05d}"
         entry = {
-            "id": payment_id, "amount": float(amount), "date": str(date).strip(),
+            "id": payment_id, "amount": wire(number(amount,"پرداخت")), "date": str(date).strip(),
             "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None,
             "commitment_id": int(commitment_id) if commitment_id is not None else None,
             "counterparty_id": str(counterparty_id) if counterparty_id is not None else None,
@@ -1521,13 +1895,13 @@ class StructuralProApp:
         allocation_id = f"ALC{len(p.get('payment_allocations', [])) + 1:05d}"
         allocation = PaymentAllocation(
             id=allocation_id, payment_id=str(payment_id), target_type=str(target_type),
-            target_id=target_id, amount=float(amount),
+            target_id=target_id, amount=wire(number(amount,"پرداخت")),
         )
         control.allocate(allocation)
         records = list(p.get("payment_allocations", []))
         row = {
             "id": allocation_id, "payment_id": str(payment_id), "target_type": str(target_type),
-            "target_id": target_id, "amount": float(amount),
+            "target_id": target_id, "amount": wire(number(amount,"پرداخت")),
         }
         records.append(row)
         p["payment_allocations"] = records
@@ -1550,10 +1924,10 @@ class StructuralProApp:
             raise KeyError(project_id)
         records = list(p.get("financial_budget", []))
         row = {"code": str(code).strip(), "category": str(category).strip(),
-               "description": str(description).strip(), "planned": float(planned)}
+               "description": str(description).strip(), "planned": wire(number(planned,"بودجه"))}
         candidate = FinancePaymentControl(budget=[
             BudgetLine(str(x.get("code")), str(x.get("category", "")), str(x.get("description", "")),
-                       float(x.get("planned", 0) or 0)) for x in records + [row]
+                       number(x.get("planned"),"بودجه")) for x in records + [row]
         ])
         _ = candidate
         if any(str(x.get("code", "")).strip() == row["code"] for x in records):
@@ -1622,14 +1996,14 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
-        paid_amount = float(paid_amount)
+        amount = number(amount, 'مبلغ')
+        paid_amount = number(paid_amount, 'پرداخت تعهد')
         if amount < 0 or paid_amount < 0 or paid_amount > amount:
             raise ValueError("invalid commitment amount")
         if document_id is not None and not any(int(x.get("id", 0)) == int(document_id) for x in p.get("financial_documents", [])):
             raise KeyError(f"financial document {document_id}")
         entries = list(p.get("commitment_entries", []))
-        entry = {"id": len(entries) + 1, "amount": amount, "paid_amount": paid_amount, "category": str(category).strip() or "سایر", "description": str(description).strip(), "date": str(date).strip(), "due_date": str(due_date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
+        entry = {"id": len(entries) + 1, "amount": wire(amount), "paid_amount": wire(paid_amount), "category": str(category).strip() or "سایر", "description": str(description).strip(), "date": str(date).strip(), "due_date": str(due_date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
         entries.append(entry)
         p["commitment_entries"] = entries
         self.store.save(project_id, p)
@@ -1641,23 +2015,24 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("commitment_entries", []))
 
+    @exact
     def project_commitment_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_commitments(project_id)
-        total = sum(float(x.get("amount", 0) or 0) for x in entries)
-        paid = sum(float(x.get("paid_amount", 0) or 0) for x in entries)
-        return {"project_id": project_id, "entry_count": len(entries), "committed_total": total, "paid_total": paid, "unpaid_total": max(total - paid, 0.0)}
+        total = sum(number(x.get('amount'), 'مبلغ') for x in entries)
+        paid = sum(number(x.get('paid_amount'), 'پرداخت تعهد') for x in entries)
+        return wire({"project_id": project_id, "entry_count": len(entries), "committed_total": total, "paid_total": paid, "unpaid_total": max(total - paid, 0)})
 
     def add_project_receipt(self, project_id: str, amount: float, *, description: str = "", date: str = "", reference: str = "", document_id: int | None = None, counterparty: str = "") -> dict[str, Any]:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        amount = float(amount)
+        amount = number(amount, 'مبلغ')
         if amount < 0:
             raise ValueError("receipt amount cannot be negative")
         if document_id is not None and not any(int(x.get("id", 0)) == int(document_id) for x in p.get("financial_documents", [])):
             raise KeyError(f"financial document {document_id}")
         entries = list(p.get("receipt_entries", []))
-        entry = {"id": len(entries) + 1, "amount": amount, "description": str(description).strip(), "date": str(date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
+        entry = {"id": len(entries) + 1, "amount": wire(amount), "description": str(description).strip(), "date": str(date).strip(), "reference": str(reference).strip(), "document_id": int(document_id) if document_id is not None else None, "counterparty": str(counterparty).strip(), "counterparty_id": self._counterparty_id_for_name(p, counterparty)}
         entries.append(entry)
         p["receipt_entries"] = entries
         self.store.save(project_id, p)
@@ -1669,27 +2044,34 @@ class StructuralProApp:
             raise KeyError(project_id)
         return list(p.get("receipt_entries", []))
 
+    @exact
     def project_receipt_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_receipts(project_id)
-        return {"project_id": project_id, "entry_count": len(entries), "total_received": sum(float(x.get("amount", 0) or 0) for x in entries)}
+        return wire({"project_id": project_id, "entry_count": len(entries), "total_received": sum(number(x.get('amount'), 'مبلغ') for x in entries)})
 
+    @exact
     def project_financial_position(self, project_id: str) -> dict[str, Any]:
         dashboard = self.financial_dashboard(project_id)
         receipts = self.project_receipt_summary(project_id)
         commitments = self.project_commitment_summary(project_id)
-        contract = float(dashboard["contract_amount"])
-        received = float(receipts["total_received"])
-        receivable = max(contract - received, 0.0)
-        committed = float(commitments["committed_total"])
-        return {
+        contract = (number(dashboard["contract_amount"],"مبلغ")
+                    if dashboard["contract_amount"] is not None else None)
+        received = number(receipts["total_received"],"مبلغ")
+        receivable = max(contract - received, 0.0) if contract is not None else None
+        committed = number(commitments["committed_total"],"مبلغ")
+        return wire({
             "project_id": project_id, "contract_amount": contract,
-            "earned_value": float(dashboard["cumulative_work"]), "actual_cost": float(dashboard["actual_cost"]),
+            "earned_value": (number(dashboard["cumulative_work"],"مبلغ")
+                             if dashboard["cumulative_work"] is not None else None),
+            "actual_cost": number(dashboard["actual_cost"],"مبلغ"),
             "received": received, "receivable": receivable,
-            "committed_cost": committed, "unpaid_commitments": float(commitments["unpaid_total"]),
+            "committed_cost": committed, "unpaid_commitments": number(commitments["unpaid_total"],"مبلغ"),
             "cash_exposure": max(committed - received, 0.0),
-            "cost_margin": float(dashboard["gross_margin"]), "receipt_count": receipts["entry_count"],
+            "cost_margin": (number(dashboard["gross_margin"],"مبلغ",True)
+                            if dashboard["gross_margin"] is not None else None),
+            "receipt_count": receipts["entry_count"],
             "commitment_count": commitments["entry_count"],
-        }
+        })
 
     def project_cost_report(self, project_id: str, fmt: str, path):
         """Export the project's persisted cost ledger with category totals."""
@@ -1701,9 +2083,9 @@ class StructuralProApp:
         rows = [{
             "ردیف": entry.get("id", ""),
             "دسته": entry.get("category", ""),
-            "شرح": entry.get("description", ""),
+            "شرح": entry.get("description") or entry.get("category", ""),
             "تاریخ": entry.get("date", ""),
-            "مبلغ": float(entry.get("amount", 0) or 0),
+            "مبلغ": entry.get("amount"),
         } for entry in entries]
         by_category = summary["by_category"]
         summary_payload = {
@@ -2133,7 +2515,7 @@ class StructuralProApp:
                 "شماره سند": entry.get("document_number", ""),
                 "نوع سند": entry.get("document_type", ""),
                 "طرف حساب": entry.get("counterparty", ""),
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": entry.get("due_date", ""),
                 "وضعیت پرداخت": entry.get("payment_status", ""),
@@ -2149,7 +2531,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": entry.get("category", ""),
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": entry.get("due_date", ""),
                 "وضعیت پرداخت": "paid" if float(entry.get("paid_amount", 0) or 0) >= float(entry.get("amount", 0) or 0) else "unpaid",
@@ -2165,7 +2547,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": entry.get("category", ""),
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": "",
                 "وضعیت پرداخت": "",
@@ -2181,7 +2563,7 @@ class StructuralProApp:
                 "شماره سند": "",
                 "نوع سند": "دریافتی",
                 "طرف حساب": "",
-                "مبلغ": float(entry.get("amount", 0) or 0),
+                "مبلغ": entry.get("amount"),
                 "تاریخ": entry.get("date", ""),
                 "سررسید": "",
                 "وضعیت پرداخت": "received",
@@ -2203,13 +2585,26 @@ class StructuralProApp:
     def report(self,project_id:str,fmt:str,path,*,period_no:int|None=None):
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
-        estimate=p.get("estimate") or build_estimate(p.get("boq",[]), aggregate=False)
+        from core.reports.aec_office_package import audit_boq
+        audit_boq(p, require_pricebook=True)
+        estimate=p.get("estimate") or self.recalculate_estimate(project_id)
         selected=None
         periods=p.get("statement_periods",[])
         if period_no is not None:
             selected=next((x for x in periods if int(x.get("number",0))==int(period_no)),None)
             if selected is None: raise KeyError(f"statement period {period_no}")
         if selected is None:
+            if any(row.get("current_quantity") is None for row in p.get("boq", [])):
+                # An estimate is reportable without inventing unknown period work.
+                # Only an explicit current-period input can produce a statement.
+                summary = {**estimate.get("cost", {}),
+                           "statement_status": "کارکرد دوره وارد نشده است"}
+                rows = [{"کد": row.get("price_code", ""), "شرح": row.get("description", ""),
+                         "واحد": row.get("unit", ""), "مقدار قرارداد": row["quantity"],
+                         "قیمت واحد": row["unit_price"], "مبلغ قرارداد": row["total"],
+                         "منابع متره": "، ".join(row.get("source_ids", []))}
+                        for row in p.get("boq", [])]
+                return build_report(p.get("name", ""), rows, summary).export(path, fmt)
             statement=self.build_statement(project_id)
             title=p.get("name","")
         else:

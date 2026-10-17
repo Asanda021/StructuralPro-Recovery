@@ -35,7 +35,10 @@ def test_discipline_calculators_reject_non_finite_inputs(calculator, kwargs):
 
 def test_assembly_rejects_non_finite_inputs():
     with pytest.raises(ValueError, match="finite"):
-        calculate_assembly("joist_foam_roof_assembly", length=float("nan"), width=10)
+        calculate_assembly("joist_foam_roof_assembly", count=1, length=float("nan"), width=10,
+                           topping_thickness=.05, joist_spacing=.5, joist_width=.1,
+                           joist_depth=.2, joist_count=21, foam_length=.5,
+                           foam_width=.25, foam_height=.2, foam_count=750)
 
 
 def test_wall_openings_larger_than_gross_area_are_rejected_not_clamped():
@@ -53,11 +56,14 @@ def test_backfill_deductions_larger_than_excavation_are_rejected_not_clamped():
         calculate_civil_item("backfill", excavation=10, deductions=11)
 
 
-def test_hollow_core_void_volume_larger_than_slab_is_rejected():
-    with pytest.raises(ValueError, match="void volume cannot exceed gross slab"):
+def test_hollow_core_section_must_fit_real_slab_dimensions():
+    with pytest.raises(ValueError, match="هندسه فضای خالی هالوکور"):
         calculate_building_item(
             "hollow_core_roof", length=10, width=10, thickness=0.2,
             void_diameter=1, void_count=100,
+            void_effective_length_m=10, void_cross_section="circular",
+            void_spec_ref="synthetic:invalid-section",
+            void_reviewed_by="synthetic-checker",
         )
 
 
@@ -65,7 +71,7 @@ def test_uboot_void_volume_larger_than_slab_is_rejected():
     with pytest.raises(ValueError, match="void volume cannot exceed gross slab"):
         calculate_building_item(
             "uboot_roof", length=10, width=10, thickness=0.2,
-            void_length=0.5, void_width=0.5, void_height=0.3, void_count=1000,
+            void_volume=0.075, void_spec_ref="SYNTHETIC-UBOOT-INVALID", void_count=1000,
         )
 
 

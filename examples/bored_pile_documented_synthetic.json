@@ -1,0 +1,20 @@
+{
+  "policy": "bored_pile_specialist_chat_v1",
+  "project_id": "P", "floor_id": "FND", "group_id": "PG1",
+  "source": {"source_id":"PILE-SOURCE-01","source_ref":"synthetic-sheet-1","approved_by":"GeometryAuthor"},
+  "datum": {"coordinate_ref":"coord-local-1","vertical_datum_ref":"benchmark-synthetic","axis_ref":"axis-S1"},
+  "piles": [{
+    "id":"BP1", "physical_id":"pile-physical-01", "diameter_m":"0.8", "top_elevation_m":"-1.25", "bottom_elevation_m":"-12.5",
+    "geometry":{"source_ref":"geometry-synthetic-BP1","approved_by":"GeometryAuthor"},
+    "concrete":{"status":"documented_nominal","mix_ref":"synthetic-mix","source_ref":"concrete-synthetic","approved_by":"ConcreteAuthor"},
+    "deductions":[],
+    "interface":{"pile_cap_id":"CAP1","column_id":"none","ownership_status":"review_required","source_ref":"joint-synthetic","approved_by":"JointAuthor"},
+    "formwork":{"status":"not_applicable","reason":"no externally verified form face in this hypothetical shaft","source_ref":"formwork-synthetic","approved_by":"FormworkAuthor"},
+    "rebars":{
+      "longitudinal":{"status":"confirmed","source_ref":"bars-synthetic","approved_by":"BarAuthor","series":[{"id":"L1","physical_id":"bar-physical-01","count":"8","unit_weight_kg_m":"1.58","unit_weight_ref":"synthetic-unit-mass","cut_length_m":"12.2","cut_length_ref":"synthetic-cut-schedule","approved_by":"BarAuthor"}]},
+      "spiral_ties":{"status":"confirmed","source_ref":"spiral-synthetic","approved_by":"SpiralAuthor","series":[{"id":"S1","physical_id":"spiral-physical-01","count":"1","unit_weight_kg_m":"0.395","unit_weight_ref":"synthetic-unit-mass","cut_length_m":"80.125","cut_length_ref":"synthetic-helical-cut","approved_by":"SpiralAuthor"}]},
+      "crossties":{"status":"not_applicable","reason":"reference states absent","source_ref":"none-crossties-ref","approved_by":"RebarAuthor"},
+      "starters":{"status":"not_applicable","reason":"not in shaft record; must be independently allocated","source_ref":"none-starters-ref","approved_by":"RebarAuthor"}
+    }
+  }]
+}

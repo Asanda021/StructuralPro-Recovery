@@ -30,6 +30,7 @@ def test_runtime_data_paths_remain_platform_neutral(tmp_path):
     data_dir = tmp_path / "Windows Data" / "StructuralPro"
     app = StructuralProApp(data_dir)
     app.create_project("Windows Smoke", "WIN34")
-    app.add_takeoff("WIN34", "building", "slab_volume", length=2, width=3, thickness=0.2)
+    app.add_takeoff("WIN34", "building", "slab_volume", length=2, width=3, thickness=0.2,
+                    count=1, source_id="synthetic:WIN34:slab:01")
     assert app.open_project("WIN34")["id"] == "WIN34"
     assert (data_dir / "projects.db").is_file()

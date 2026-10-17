@@ -1,0 +1,2743 @@
+{
+  "schema_version": "phase1-8phase-evidence-v1",
+  "reviewed_at": "2026-10-16",
+  "source_inventory": "docs/aec_priority_1_9_master_inventory_20261013.json",
+  "source_inventory_blob_sha": "0f78cf09bb446f1b881c96533668923277980575",
+  "review_basis_commit": "3c5148c4bd71854b1f3e394a12bc64f3eb9deded",
+  "scope": "خط مبنای شواهد تاریخی همراه آزمون اجرایی محدود عایق افقی بسته سوم؛ پذیرش نهایی، نقشه، Windows و پروژه واقعی احراز نشده‌اند.",
+  "gate_keys": [
+    "engineering_calculation",
+    "manual_ui",
+    "sqlite_history",
+    "review_amendment",
+    "boq_dedup",
+    "report_exports",
+    "drawing_takeoff",
+    "real_engineering_case",
+    "windows_office_acceptance"
+  ],
+  "gate_meanings": {
+    "engineering_calculation": "فرمول/هندسه تخصصی",
+    "manual_ui": "فرم واقعی",
+    "sqlite_history": "SQLite و تاریخچه",
+    "review_amendment": "بازبینی و اصلاحیه",
+    "boq_dedup": "اتصال BOQ و منع تکرار مالی",
+    "report_exports": "گزارش‌های موجود و بازگشایی",
+    "drawing_takeoff": "برداشت تخصصی از نقشه",
+    "real_engineering_case": "مدرک و محاسبه مرجع واقعی",
+    "windows_office_acceptance": "پذیرش Windows، Office، چاپ"
+  },
+  "status_meanings": {
+    "limited_documented": "شواهد محدود با نمونه مصنوعی، بدون پذیرش محصول",
+    "not_individually_verified": "در منابع منتخب، آزمون تخصصی مستقل کافی ثبت نشده؛ نبود قابلیت نتیجه نمی‌شود",
+    "documented_limited": "طبق سند Work و فایل آزمون موجود؛ این Chat مجدداً اجرا نکرده",
+    "not_verified": "شاهد کافی برای گیت موجود نیست"
+  },
+  "source_family_count": 85,
+  "source_subitem_mentions": 879,
+  "rows": [
+    {
+      "code": "drawing_sources",
+      "title": "بازکردن و مدیریت نقشه",
+      "primary_phase": 2,
+      "legacy_priority": 1,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "drawing_selection",
+      "title": "انتخاب و برداشت نقشه",
+      "primary_phase": 2,
+      "legacy_priority": 1,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_schedule",
+      "title": "جدول و دیتایل تیر",
+      "primary_phase": 1,
+      "legacy_priority": 1,
+      "inventory_coverage_level": "beam_feature_path",
+      "inventory_route_file": "core/takeoff/beam_detail.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/beam_stage2_1_closure_20261014.md"
+        ],
+        "tests": [
+          "tests/test_beam_closure.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "تیر بتنی، دیتایل صریح، محاسبه/فرم/اصلاحیه در دامنه مستند؛ تاریخچه و هندسه نامعلوم خارج قرارداد",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_reinforcement",
+      "title": "پنج گروه آرماتور تیر",
+      "primary_phase": 1,
+      "legacy_priority": 2,
+      "inventory_coverage_level": "beam_feature_path",
+      "inventory_route_file": "core/takeoff/beam_detail.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/beam_stage2_1_closure_20261014.md"
+        ],
+        "tests": [
+          "tests/test_beam_closure.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "تیر بتنی، دیتایل صریح، محاسبه/فرم/اصلاحیه در دامنه مستند؛ تاریخچه و هندسه نامعلوم خارج قرارداد",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_concrete_formwork",
+      "title": "بتن و قالب تیر",
+      "primary_phase": 1,
+      "legacy_priority": 3,
+      "inventory_coverage_level": "beam_feature_path",
+      "inventory_route_file": "core/takeoff/beam_detail.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/beam_stage2_1_closure_20261014.md"
+        ],
+        "tests": [
+          "tests/test_beam_closure.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "تیر بتنی، دیتایل صریح، محاسبه/فرم/اصلاحیه در دامنه مستند؛ تاریخچه و هندسه نامعلوم خارج قرارداد",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "column",
+      "title": "ستون بتنی",
+      "primary_phase": 1,
+      "legacy_priority": 4,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/column_stage2_2_20261014.md"
+        ],
+        "tests": [
+          "tests/test_column_stage22.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "ستون مستطیلی و چندمقطعی با هندسه/خاموت/میلگرد معتبر؛ هندسه فاقد قرارداد مسدود",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "column_joint",
+      "title": "اتصالات و المان های خاص ستون",
+      "primary_phase": 1,
+      "legacy_priority": 4,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "isolated_footing",
+      "title": "پی منفرد",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/foundation_three_gaps_20261015.md"
+        ],
+        "tests": [
+          "tests/test_foundation_close_three.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "پی، شناژ و کلاهک شمع با منشور مستطیلی و دیتایل مستند؛ هندسه نامنظم یا شمع درجا خارج از این دامنه",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "strip_footing",
+      "title": "پی نواری",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/foundation_three_gaps_20261015.md"
+        ],
+        "tests": [
+          "tests/test_foundation_close_three.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "پی، شناژ و کلاهک شمع با منشور مستطیلی و دیتایل مستند؛ هندسه نامنظم یا شمع درجا خارج از این دامنه",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "mat_footing",
+      "title": "پی گسترده",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/foundation_three_gaps_20261015.md"
+        ],
+        "tests": [
+          "tests/test_foundation_close_three.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "پی، شناژ و کلاهک شمع با منشور مستطیلی و دیتایل مستند؛ هندسه نامنظم یا شمع درجا خارج از این دامنه",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "tie_beam",
+      "title": "شناژ و کلاف",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/foundation_three_gaps_20261015.md"
+        ],
+        "tests": [
+          "tests/test_foundation_close_three.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "پی، شناژ و کلاهک شمع با منشور مستطیلی و دیتایل مستند؛ هندسه نامنظم یا شمع درجا خارج از این دامنه",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "pile_foundation",
+      "title": "پی عمیق و شمع",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "shear_wall",
+      "title": "دیوار برشی",
+      "primary_phase": 1,
+      "legacy_priority": 6,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "stair",
+      "title": "پله بتنی",
+      "primary_phase": 1,
+      "legacy_priority": 6,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "stair_metal",
+      "title": "پله فولادی و نرده",
+      "primary_phase": 1,
+      "legacy_priority": 6,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "solid_slab",
+      "title": "دال توپر",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/roof_work2_package1_20261015.md"
+        ],
+        "tests": [
+          "tests/test_roof_specialist_work.py",
+          "tests/test_roof_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "description": "سقف‌های دال/تیرچه در محدوده متره دستی مستطیلی؛ برداشت نقشه و قطع تیرچه/قطعه مسدود",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "joist_block",
+      "title": "سقف تیرچه بلوک",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/roof_work2_package1_20261015.md"
+        ],
+        "tests": [
+          "tests/test_roof_specialist_work.py",
+          "tests/test_roof_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "description": "سقف‌های دال/تیرچه در محدوده متره دستی مستطیلی؛ برداشت نقشه و قطع تیرچه/قطعه مسدود",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "joist_foam",
+      "title": "سقف تیرچه یونولیت",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/roof_work2_package1_20261015.md"
+        ],
+        "tests": [
+          "tests/test_roof_specialist_work.py",
+          "tests/test_roof_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "description": "سقف‌های دال/تیرچه در محدوده متره دستی مستطیلی؛ برداشت نقشه و قطع تیرچه/قطعه مسدود",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "waffle",
+      "title": "سقف وافل",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [
+        "waffle_one_way",
+        "waffle_two_way"
+      ],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/roof_work2_package2_waffle_20261015.md"
+        ],
+        "tests": [
+          "tests/test_waffle_specialist_work.py",
+          "tests/test_waffle_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "description": "گونه‌های یک‌طرفه و دوطرفه وافل منشوری؛ قالب شیب‌دار یا بازشوی برنده ریب مسدود",
+        "variants": [
+          "waffle_one_way",
+          "waffle_two_way"
+        ],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "uboot",
+      "title": "سقف یوبوت",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "cobiax",
+      "title": "سقف کوبیاکس",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "hollow_core",
+      "title": "هالوکور",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [
+        "hollow_core_detail"
+      ],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/roof_work2_package3_hollowcore_20261016.md"
+        ],
+        "tests": [
+          "tests/test_hollowcore_specialist_work.py",
+          "tests/test_hollowcore_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "description": "هالوکور با قطعه نهایی و گواهی حجم/جرم؛ برش قطعات یا مهاجرت تاریخی مسدود",
+        "variants": [
+          "hollow_core_detail"
+        ],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "steel_deck",
+      "title": "عرشه فولادی",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "kromit_roof",
+      "title": "سقف کرومیت",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "composite_roof",
+      "title": "سقف مرکب",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "sandwich_roof",
+      "title": "ساندویچ پانل سقف",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "timber_roof",
+      "title": "سقف چوبی",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "precast_roof",
+      "title": "سقف پیش ساخته",
+      "primary_phase": 1,
+      "legacy_priority": 7,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "steel_frame",
+      "title": "اسکلت فولادی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "composite_frame",
+      "title": "سازه مرکب",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "timber_frame",
+      "title": "سازه چوبی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "block_wall",
+      "title": "دیوار بلوکی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "brick_wall",
+      "title": "دیوار آجری",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "gypsum_partition",
+      "title": "دیوار خشک",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "plaster_finish",
+      "title": "گچ و خاک و سفیدکاری",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "cement_render",
+      "title": "سیمان کاری و اندود",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "ceramic_finish",
+      "title": "کاشی و سرامیک",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "paint_finish",
+      "title": "رنگ آمیزی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "waterproofing",
+      "title": "عایق رطوبتی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "thermal_insulation",
+      "title": "عایق حرارتی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "acoustic_insulation",
+      "title": "عایق صوتی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "آزموده در دامنه محدود مصنوعی سطح افقی مستطیلی؛ هر لایه و ضخامت مستقل؛ بدون پذیرش خرید، رول، هم‌پوشانی نوار، برگشت، شیب، نقشه یا Windows.",
+        "documents": [
+          "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+        ],
+        "tests": [
+          "tests/test_insulation_specialist_work.py",
+          "tests/test_insulation_specialist_ui.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "floor_finish",
+      "title": "کف سازی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "stone_floor",
+      "title": "سنگ کف و سنگ پله",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "suspended_ceiling",
+      "title": "سقف کاذب",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "door_window",
+      "title": "درب و پنجره",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "upvc_aluminium_windows",
+      "title": "پنجره UPVC و آلومینیوم",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "glass_curtain_wall",
+      "title": "نمای شیشه ای",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "stone_cladding",
+      "title": "نمای سنگی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "facade_cladding",
+      "title": "نمای خشک",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "handrails_metalwork",
+      "title": "نرده و فلزکاری",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "plumbing",
+      "title": "آبرسانی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "sanitary_drainage",
+      "title": "فاضلاب و باران",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "hvac",
+      "title": "گرمایش سرمایش تهویه",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "mechanical_ventilation",
+      "title": "تهویه مکانیکی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "plantroom",
+      "title": "موتورخانه",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "natural_gas",
+      "title": "گاز رسانی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "fire_protection",
+      "title": "اطفا حریق",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "electrical_power",
+      "title": "برق قدرت",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "lighting",
+      "title": "روشنایی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "low_voltage",
+      "title": "جریان ضعیف",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "fire_alarm",
+      "title": "اعلام حریق",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "data_network",
+      "title": "شبکه دیتا",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "security_systems",
+      "title": "دوربین و کنترل دسترسی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "emergency_power",
+      "title": "برق اضطراری",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "elevator",
+      "title": "آسانسور",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "external_earthwork",
+      "title": "عملیات خاکی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "blinding_concrete",
+      "title": "بتن مگر",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "retaining_structures",
+      "title": "سازه نگهبان",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "external_works",
+      "title": "محوطه سازی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "site_drains",
+      "title": "زهکشی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "demolition",
+      "title": "تخریب",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "concrete_repair",
+      "title": "ترمیم سازه",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "seismic_retrofit",
+      "title": "مقاوم سازی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "historic_restoration",
+      "title": "مرمت تاریخی",
+      "primary_phase": 1,
+      "legacy_priority": 8,
+      "inventory_coverage_level": "review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_aec.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "manual_workbench",
+      "title": "متره دستی",
+      "primary_phase": 2,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "boq",
+      "title": "ریز متره و BOQ",
+      "primary_phase": 3,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "pricebook",
+      "title": "فهرست بها",
+      "primary_phase": 3,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "estimate",
+      "title": "برآورد",
+      "primary_phase": 3,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "statement",
+      "title": "صورت وضعیت",
+      "primary_phase": 3,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "cost_control",
+      "title": "کنترل هزینه",
+      "primary_phase": 3,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "scheduling",
+      "title": "برنامه زمانبندی",
+      "primary_phase": 4,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "reporting",
+      "title": "گزارش حرفه ای",
+      "primary_phase": 7,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "audit_provenance",
+      "title": "حسابرسی و کنترل",
+      "primary_phase": 5,
+      "legacy_priority": 9,
+      "inventory_coverage_level": "requires_dedicated_acceptance",
+      "inventory_route_file": null,
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "pile_cap",
+      "title": "کلاهک شمع",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "limited_documented",
+      "gates": {
+        "engineering_calculation": "documented_limited",
+        "manual_ui": "documented_limited",
+        "sqlite_history": "documented_limited",
+        "review_amendment": "documented_limited",
+        "boq_dedup": "documented_limited",
+        "report_exports": "documented_limited",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "documents": [
+          "docs/acceptance/foundation_three_gaps_20261015.md"
+        ],
+        "tests": [
+          "tests/test_foundation_close_three.py"
+        ],
+        "formats": [
+          "pdf",
+          "xlsx"
+        ],
+        "description": "پی، شناژ و کلاهک شمع با منشور مستطیلی و دیتایل مستند؛ هندسه نامنظم یا شمع درجا خارج از این دامنه",
+        "variants": [],
+        "input_type": "synthetic_documented"
+      },
+      "fully_accepted": false
+    },
+    {
+      "code": "bored_pile",
+      "title": "شمع بتنی درجا",
+      "primary_phase": 1,
+      "legacy_priority": 5,
+      "inventory_coverage_level": "structural_review_contract",
+      "inventory_route_file": "core/takeoff/reviewed_structural.py",
+      "inventory_variants": [],
+      "acceptance_status": "not_individually_verified",
+      "gates": {
+        "engineering_calculation": "not_verified",
+        "manual_ui": "not_verified",
+        "sqlite_history": "not_verified",
+        "review_amendment": "not_verified",
+        "boq_dedup": "not_verified",
+        "report_exports": "not_verified",
+        "drawing_takeoff": "not_verified",
+        "real_engineering_case": "not_verified",
+        "windows_office_acceptance": "not_verified"
+      },
+      "evidence": {
+        "description": "در اسناد انتخاب‌شده شاهد پذیرش تخصصی مستقل برای این خانواده ثبت نشده است؛ وجود فرم یا قرارداد عمومی دلیل فقدان کد نیست.",
+        "documents": [],
+        "tests": [],
+        "formats": [],
+        "variants": [],
+        "input_type": "not_verified"
+      },
+      "fully_accepted": false
+    }
+  ]
+}

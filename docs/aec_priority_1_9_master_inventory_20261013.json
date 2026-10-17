@@ -7,7 +7,7 @@
   "scope": "StructuralPro priorities 1 to 9, full-building AEC",
   "priority_family_count": 85,
   "component_mentions_count": 879,
-  "review_schema_family_count": 61,
+  "review_schema_family_count": 64,
   "coverage_semantics": {
     "review_contract": "Review component workflow schema exists; does NOT prove formula/drawing/UI integration or tested acceptance",
     "structural_review_contract": "Reviewed structural workflow code exists; full production acceptance unverified",
@@ -457,7 +457,13 @@
       "coverage_level": "review_contract",
       "route_file": "core/takeoff/reviewed_aec.py",
       "tests_verified": false,
-      "fully_accepted": false
+      "fully_accepted": false,
+      "review_contract_variants": [
+        "waffle_one_way",
+        "waffle_two_way"
+      ],
+      "specialist_acceptance_evidence": "docs/acceptance/roof_work2_package2_waffle_20261015.md",
+      "specialist_contract_scope": "manual rectangular partitions and prismatic molds; openings only inside independent solid zones"
     },
     {
       "priority": 7,
@@ -523,7 +529,10 @@
       "coverage_level": "review_contract",
       "route_file": "core/takeoff/reviewed_aec.py",
       "tests_verified": false,
-      "fully_accepted": false
+      "fully_accepted": false,
+      "review_contract_variants": [
+        "hollow_core_detail"
+      ]
     },
     {
       "priority": 7,

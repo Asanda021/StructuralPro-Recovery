@@ -16,7 +16,7 @@ def test_all_concrete_roof_families_are_deterministic():
             "joist_block_roof",
             dict(
                 length=10, width=10, topping_thickness=0.05,
-                joist_spacing=0.50, joist_width=0.10, joist_depth=0.20, count=1,
+                joist_count=21, joist_spacing=0.50, joist_width=0.10, joist_depth=0.20, count=1,
             ),
             9.2,
             "m3",
@@ -26,6 +26,9 @@ def test_all_concrete_roof_families_are_deterministic():
             dict(
                 length=10, width=5, thickness=0.20,
                 void_diameter=0.10, void_count=20, count=1,
+                void_effective_length_m=10, void_cross_section="circular",
+                void_spec_ref="SYNTHETIC-HOLLOWCORE-SECTION-001",
+                void_reviewed_by="synthetic-structural-reviewer",
             ),
             8.429203673,
             "m3",
@@ -34,17 +37,19 @@ def test_all_concrete_roof_families_are_deterministic():
             "waffle_roof",
             dict(
                 length=10, width=10, top_thickness=0.06,
-                spacing_x=0.60, spacing_y=0.60,
+                rib_count_x=16, rib_count_y=16, intersection_count=256,
+                rib_run_length_x_m=10, rib_run_length_y_m=10,
+                layout_ref="SYNTHETIC-WAFFLE-LAYOUT-001", approved_by="synthetic-checker",
                 rib_width=0.12, rib_depth=0.18, count=1,
             ),
-            12.48,
+            12.248448,
             "m3",
         ),
         (
             "uboot_roof",
             dict(
                 length=10, width=10, thickness=0.28,
-                void_length=0.50, void_width=0.25, void_height=0.20,
+                void_volume=0.025, void_spec_ref="SYNTHETIC-UBOOT-VOID-001",
                 void_count=100, count=1,
             ),
             25.5,
@@ -54,7 +59,7 @@ def test_all_concrete_roof_families_are_deterministic():
             "cobiax_roof",
             dict(
                 length=10, width=10, thickness=0.28,
-                void_length=0.50, void_width=0.25, void_height=0.20,
+                void_volume=0.025, void_spec_ref="SYNTHETIC-VOID-001",
                 void_count=100, count=1,
             ),
             25.5,
@@ -77,12 +82,14 @@ def test_all_concrete_roof_families_are_deterministic():
         ), "joist_spacing"),
         ("waffle_roof", dict(
             length=10, width=10, top_thickness=0.06,
-            spacing_x=0.6, spacing_y=0,
+            rib_count_x=10, rib_count_y=0, intersection_count=100,
+            rib_run_length_x_m=10, rib_run_length_y_m=10,
+            layout_ref="synthetic:waffle", approved_by="checker",
             rib_width=0.12, rib_depth=0.18,
-        ), "spacing_y"),
+        ), "rib_count_y"),
         ("uboot_roof", dict(
             length=10, width=10, thickness=0.28,
-            void_length=0.5, void_width=0.25, void_height=0.2,
+            void_volume=0.025, void_spec_ref="SYNTHETIC-UBOOT-VOID-001",
             void_count=-1,
         ), "void_count"),
     ],
@@ -99,9 +106,8 @@ def test_uboot_void_volume_larger_than_gross_slab_is_rejected():
             length=1,
             width=1,
             thickness=0.10,
-            void_length=1,
-            void_width=1,
-            void_height=1,
+            void_volume=1,
+            void_spec_ref="SYNTHETIC-UBOOT-INVALID",
             void_count=100,
         )
 
@@ -133,3 +139,11 @@ def test_steel_roof_families_use_explicit_inputs():
 def test_steel_roof_calculations_fail_closed_on_invalid_geometry(item, params, field):
     with pytest.raises(ValueError, match=field):
         calculate_advanced_item(item, **params)
+
+
+def test_joist_roof_warning_never_claims_count_was_guessed():
+    result = calculate_building_item('joist_block_roof', length=10, width=10, topping_thickness=.05,
+                                     joist_count=21, joist_spacing=.5, joist_width=.1, joist_depth=.2, count=1)
+    assert result.quantity == pytest.approx(9.2)
+    assert any('صریح' in warning and 'پیش‌ساخته' in warning for warning in result.warnings)
+    assert all('مشتق شده' not in warning for warning in result.warnings)

@@ -6,6 +6,23 @@ from pathlib import Path
 from typing import Any
 from core.platform.concurrency import assert_unchanged, begin_write
 
+def _contract_basis(project: dict[str, Any]) -> str:
+    """Canonical payable BOQ and approved pricebook backing a financial estimate.
+
+    Current/previous period work quantities are deliberately not part of a
+    *contract* revision; changing a unit price, source, item, or amount is.
+    """
+    pricebook = project.get("user_pricebook_review") or {}
+    keys = ("item_code", "quantity", "unit", "source_ids", "source_id",
+            "price_code", "unit_price", "effective_quantity", "factor", "total")
+    return json.dumps({
+        "boq": [{key: row.get(key) for key in keys if key in row}
+                for row in (project.get("boq") or [])],
+        "pricebook": {key: pricebook.get(key) for key in
+                      ("status", "sha256", "approved_by", "path", "rows_by_code")},
+    }, ensure_ascii=False, sort_keys=True, allow_nan=False)
+
+
 class ProjectStore:
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
@@ -19,7 +36,7 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -33,11 +50,41 @@ class ProjectStore:
         self.db.execute("BEGIN IMMEDIATE")
         try:
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            incoming_version=(project.get("_meta") or {}).get("version")
+            if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
+                raise RuntimeError("project changed since write began")
+            if row is not None and expected_digest is None and pid in self._cache:
+                cached=deepcopy(self._cache[pid][1]);cached.pop("_meta",None)
+                assert_unchanged(json.loads(row["payload"]), begin_write(cached))
             if expected_digest is not None:
                 if row is None:
                     raise RuntimeError("project changed since write began")
                 current=json.loads(row["payload"])
                 assert_unchanged(current, expected_digest)
+            if row is not None:
+                previous = json.loads(row["payload"])
+                issued = previous.get("statement_periods") or []
+                if issued:
+                    next_periods = clean_project.get("statement_periods") or []
+                    if not isinstance(next_periods, list) or next_periods[:len(issued)] != issued:
+                        raise ValueError("تغییر یا حذف صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                    for family in ("takeoffs", "takeoff_assemblies"):
+                        if (previous.get(family) or []) != (clean_project.get(family) or []):
+                            raise ValueError("تغییر مبنای متره صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                if (previous.get("estimate") or previous.get("statement_periods")) and \
+                        _contract_basis(previous) != _contract_basis(clean_project):
+                    if previous.get("statement_periods"):
+                        raise ValueError("پس از صدور صورت‌وضعیت، تغییر مبنای BOQ یا فهرست‌بها نیازمند گردش اصلاحیه رسمی است")
+                    # An old estimate must never masquerade as current after a
+                    # quantity, approved pricebook or payable-unit change.
+                    clean_project.pop("estimate", None)
+                    payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.takeoff.manual_formula_amendments import guard as manual_guard
+            manual_guard(json.loads(row['payload']) if row else {},clean_project,manual_formula_command)
+            from core.commercial.statement_amendment import guard_change
+            guard_change(json.loads(row["payload"]) if row else {}, clean_project, amendment_command)
+            from core.commercial.contract_requests import guard
+            guard(json.loads(row["payload"]) if row else {}, clean_project, financial_request_command)
             version=int(row["version"])+1 if row else 1
             self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
                             (pid,str(clean_project.get("name","")),version,now,payload))

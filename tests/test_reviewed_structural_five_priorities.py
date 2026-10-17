@@ -25,7 +25,7 @@ def approved(kind="column", ident="C1", *, floor="L1"):
             "isolated_footing": {"length": 2, "width": 2, "thickness": .5, "count": 1},
             "strip_footing": {"length": 12, "width": .8, "thickness": .6, "count": 1},
             "mat_footing": {"length": 12, "width": 10, "thickness": .7, "count": 1}}[kind]
-    record["geometry"] = {**dims, "intersections": [], "source_ref": "approved-plan",
+    record["geometry"] = {**dims, "shape": "rectangular", "intersections": [], "source_ref": "approved-plan",
                           "approved_by": "structural-reviewer"}
     record["formwork"] = {"status": "confirmed", "approved_by": "structural-reviewer",
                           "area_scope": "total_group", "area_scope_ref": "approved-formwork-schedule",

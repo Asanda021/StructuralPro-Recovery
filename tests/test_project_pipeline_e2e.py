@@ -5,19 +5,22 @@ from core.takeoff.estimate import build_estimate
 
 
 # CI trigger: keep this acceptance test in the main verification path.
-def test_project_pipeline_persists_estimate_and_snapshot(tmp_path):
+def test_project_pipeline_persists_estimate_and_snapshot(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه آزمایشی", "P1")
     app.add_takeoff(
         "P1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:P1:wall-1",
     )
     app.add_takeoff(
         "P1", "building", "wall",
         length=5, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:P1:wall-2",
     )
+    approve_test_pricebook(app, "P1", {"W001": {"unit": "m2", "unit_price": 1200}})
 
     project_before_estimate = app.open_project("P1")
     estimate = build_estimate(project_before_estimate["boq"], factors={"سربار": 0.10}, aggregate=False)
@@ -37,14 +40,16 @@ def test_project_pipeline_persists_estimate_and_snapshot(tmp_path):
     assert saved["estimate"]["cost"]["grand_total"] == snapshot["estimate"]["cost"]["grand_total"]
     assert saved["boq"][0]["price_code"] == "W001"
 
-def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_path):
+def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه مالی", "D1")
     app.add_takeoff(
         "D1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:D1:wall-1",
     )
+    approve_test_pricebook(app, "D1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("D1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("D1", p)
@@ -60,14 +65,16 @@ def test_financial_dashboard_summarizes_contract_progress_and_statements(tmp_pat
     assert 0 <= dash["progress_percent"] <= 100
 
 
-def test_project_financial_control_calculates_cost_variance(tmp_path):
+def test_project_financial_control_calculates_cost_variance(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("کنترل مالی", "F1")
     app.add_takeoff(
         "F1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:F1:wall-1",
     )
+    approve_test_pricebook(app, "F1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("F1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("F1", p)
@@ -78,14 +85,16 @@ def test_project_financial_control_calculates_cost_variance(tmp_path):
     assert control["cost_performance_index"] == pytest.approx(1.5)
 
 
-def test_project_cost_ledger_persists_and_feeds_financial_control(tmp_path):
+def test_project_cost_ledger_persists_and_feeds_financial_control(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("دفتر هزینه", "C1")
     app.add_takeoff(
         "C1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:C1:wall-1",
     )
+    approve_test_pricebook(app, "C1", {"W001": {"unit": "m2", "unit_price": 1200}})
     app.open_project("C1")["boq"][0]["current_quantity"] = 5
     p = app.open_project("C1")
     p["boq"][0]["current_quantity"] = 5
@@ -119,14 +128,16 @@ def test_project_cost_report_exports_rows_and_category_totals(tmp_path):
     assert "دستمزد" in values
 
 
-def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path):
+def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("داشبورد مالی", "FD1")
     app.add_takeoff(
         "FD1", "building", "wall",
         length=10, width=0.2, height=3,
         price_code="W001", unit_price=1200,
+        count=1, source_id="fixture:FD1:wall-1",
     )
+    approve_test_pricebook(app, "FD1", {"W001": {"unit": "m2", "unit_price": 1200}})
     p = app.open_project("FD1")
     p["boq"][0]["current_quantity"] = 5
     app.store.save("FD1", p)
@@ -138,10 +149,11 @@ def test_financial_dashboard_includes_actual_cost_and_gross_margin(tmp_path):
     assert dash["cost_by_category"]["مصالح"] == 1500
 
 
-def test_project_receipts_and_financial_position(tmp_path):
+def test_project_receipts_and_financial_position(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path)
     app.create_project("دریافتی", "R1")
-    app.add_takeoff("R1", "building", "wall", length=10, width=0.2, height=3, price_code="W001", unit_price=1200)
+    app.add_takeoff("R1", "building", "wall", length=10, width=0.2, height=3, price_code="W001", unit_price=1200, count=1, source_id="fixture:R1:wall-1")
+    approve_test_pricebook(app, "R1", {"W001": {"unit": "m2", "unit_price": 1200}})
     app.add_project_cost("R1", "مصالح", 1000)
     app.add_project_receipt("R1", 5000, description="پرداخت کارفرما", reference="REC-1")
     app.add_project_receipt("R1", 2000, description="علی‌الحساب")
@@ -388,3 +400,61 @@ def test_financial_entries_auto_link_to_counterparty_master(tmp_path):
     assert cost["counterparty_id"] == "CP0001"
     assert receipt["counterparty_id"] == "CP0001"
     assert document["counterparty_id"] == "CP0001"
+
+
+
+def test_cost_ledger_and_financial_position_without_boq_do_not_invent_contract(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("دفتر هزینه مستقل", "NO-BOQ")
+    app.add_project_cost("NO-BOQ", "مصالح", 1200, description="فاکتور واقعی")
+    app.add_project_commitment("NO-BOQ", 3500, paid_amount=500)
+    app.add_project_receipt("NO-BOQ", 800)
+    before = app.open_project("NO-BOQ")
+    dashboard = app.financial_dashboard("NO-BOQ")
+    assert dashboard["estimate_status"] == "unavailable"
+    assert dashboard["contract_amount"] is None
+    assert dashboard["base_amount"] is None
+    assert dashboard["cumulative_work"] is None
+    assert dashboard["progress_percent"] is None
+    assert dashboard["gross_margin"] is None
+    assert dashboard["actual_cost"] == 1200
+    position = app.project_financial_position("NO-BOQ")
+    assert position["receivable"] is None
+    assert position["earned_value"] is None
+    assert position["cost_margin"] is None
+    assert position["committed_cost"] == 3500
+    assert position["unpaid_commitments"] == 3000
+    assert position["received"] == 800
+    assert position["cash_exposure"] == 2700
+    assert app.open_project("NO-BOQ") == before  # read-only: no empty estimate created
+    app.store.close()
+
+
+def test_cost_ledger_without_boq_never_authorizes_financial_estimate(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("پروژه فقط هزینه", "LEDGER-ONLY")
+    app.add_project_cost("LEDGER-ONLY", "دستمزد", 500)
+    with pytest.raises(ValueError, match="BOQ"):
+        app.recalculate_estimate("LEDGER-ONLY")
+    with pytest.raises(ValueError, match="BOQ"):
+        app.project_financial_control("LEDGER-ONLY")
+    project = app.open_project("LEDGER-ONLY")
+    assert not project.get("estimate")
+    assert not project.get("boq")
+    app.store.close()
+
+
+def test_independent_financial_ledgers_export_without_contract(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("مالی مستقل", "L-ONLY")
+    app.add_project_cost("L-ONLY", "مصالح", 250)
+    app.add_project_commitment("L-ONLY", 700)
+    app.add_project_receipt("L-ONLY", 300)
+    p1 = tmp_path / "cost.xlsx"
+    p2 = tmp_path / "finance.xlsx"
+    assert app.project_cost_report("L-ONLY", "xlsx", p1) == p1
+    assert app.project_financial_report("L-ONLY", "xlsx", p2) == p2
+    assert p1.exists() and p1.stat().st_size > 0
+    assert p2.exists() and p2.stat().st_size > 0
+    assert app.project_financial_position("L-ONLY")["contract_amount"] is None
+    app.store.close()

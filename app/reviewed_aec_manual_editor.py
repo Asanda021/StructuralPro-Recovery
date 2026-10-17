@@ -97,6 +97,51 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     for button in (load_button, save_button, preview_button, commit_button):
         actions.addWidget(button)
     outer.addLayout(actions)
+    roof_button=QPushButton('فرم تخصصی دال، تیرچه، وافل، هالوکور، یوبوت و کوبیاکس')
+    outer.addWidget(roof_button)
+    def open_specialist_roof():
+        from core.takeoff.roof_detail import KINDS
+        if kind.currentData() not in KINDS:
+            QMessageBox.warning(dialog,'انتخاب سقف','یکی از سیستم‌های سقف دارای قرارداد تخصصی را انتخاب کنید');return
+        from app.roof_detail_editor import open_roof_editor
+        open_roof_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
+    roof_button.clicked.connect(open_specialist_roof)
+    dialog.roof_button=roof_button
+    steel_button=QPushButton('فرم تخصصی سازه فولادی و عرشه فولادی');outer.addWidget(steel_button);dialog.steel_button=steel_button
+    def open_specialist_steel():
+        if kind.currentData() not in ('steel_frame','steel_deck'):
+            QMessageBox.warning(dialog,'انتخاب سیستم','اسکلت فولادی یا سقف عرشه فولادی را انتخاب کنید');return
+        from app.steel_detail_editor import open_steel_editor
+        open_steel_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
+    steel_button.clicked.connect(open_specialist_steel)
+    architecture_button=QPushButton('فرم تخصصی معماری، کف، عایق و پوشش قطعه‌ای');outer.addWidget(architecture_button);dialog.architecture_button=architecture_button
+    def open_specialist_architecture():
+        if kind.currentData() not in ('block_wall','brick_wall','plaster_finish','floor_finish','waterproofing','thermal_insulation','acoustic_insulation','ceramic_finish','stone_floor','stone_cladding'):
+            QMessageBox.warning(dialog,'انتخاب عملیات','یکی از عملیات معماری دارای قرارداد تخصصی را انتخاب کنید');return
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind=kind.currentData())
+    architecture_button.clicked.connect(open_specialist_architecture)
+    skirting_button=QPushButton('فرم تخصصی قرنیز؛ قرارداد طولی');outer.addWidget(skirting_button);dialog.skirting_button=skirting_button
+    def open_skirting():
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='skirting')
+    skirting_button.clicked.connect(open_skirting)
+    slope_button=QPushButton('فرم تخصصی شیب‌بندی چندناحیه‌ای');outer.addWidget(slope_button);dialog.slope_button=slope_button
+    def open_slope():
+        from app.architecture_detail_editor import open_architecture_editor
+        open_architecture_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip(),kind='floor_finish',specialism='slope')
+    slope_button.clicked.connect(open_slope)
+    handoff_button=QPushButton('پیش‌ارزیابی بسته‌های سازه‌ای؛ ثبت مالی مسدود')
+    outer.addWidget(handoff_button);dialog.structural_handoff_button=handoff_button
+    def open_handoff_audit():
+        from app.structural_handoff_audit_editor import open_structural_handoff_audit
+        open_structural_handoff_audit(service,parent=dialog,project_id=project.text().strip())
+    handoff_button.clicked.connect(open_handoff_audit)
+    wall_button=QPushButton('فرم تخصصی دیوار برشی');outer.addWidget(wall_button);dialog.shear_wall_button=wall_button
+    def open_wall():
+        from app.shear_wall_detail_editor import open_shear_wall_editor
+        open_shear_wall_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip())
+    wall_button.clicked.connect(open_wall)
     state = {"draft": None, "revision": 0, "editing_component": None,
              "project_id": None, "changed": False}
 

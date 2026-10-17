@@ -29,25 +29,63 @@ class PDFTakeoffAdapter:
 
     @staticmethod
     def normalize_scale(scale:str|float)->float:
-        if isinstance(scale,(int,float)): return float(scale)
-        m=re.search(r"1\s*[:/]\s*(\d+(?:\.\d+)?)",str(scale))
-        if not m: raise ValueError("Scale must look like 1:100")
-        return float(m.group(1))
+        # This adapter is for *explicit* printed scales; discovering a scale
+        # from surrounding text is a separate human-reviewed operation.
+        if isinstance(scale, bool):
+            raise ValueError("مقیاس نباید مقدار منطقی باشد")
+        if isinstance(scale, (int, float)):
+            factor = float(scale)
+        else:
+            match = re.fullmatch(r"\s*1\s*[:/]\s*(\d+(?:\.\d+)?)\s*", str(scale))
+            if not match:
+                raise ValueError("مقیاس باید صریح و یکتا به شکل 1:100 وارد شود")
+            factor = float(match.group(1))
+        if not math.isfinite(factor) or factor <= 0:
+            raise ValueError("مقیاس باید مثبت و متناهی باشد")
+        return factor
+
+    @staticmethod
+    def _measurement(value, name: str, *, allow_zero: bool = False) -> float:
+        if isinstance(value, bool):
+            raise ValueError(f"{name}: مقدار عددی معتبر لازم است")
+        try:
+            result = float(value)
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError(f"{name}: مقدار عددی معتبر لازم است") from exc
+        if not math.isfinite(result) or result < 0 or (result == 0 and not allow_zero):
+            raise ValueError(f"{name}: مقدار باید مثبت و متناهی باشد")
+        return result
+
+    @staticmethod
+    def _unit_divisor(unit: str) -> float:
+        if unit not in {"m", "cm", "mm"}:
+            raise ValueError("واحد نقشه باید صریحاً m، cm یا mm باشد")
+        return {"m": 1.0, "cm": 100.0, "mm": 1000.0}[unit]
 
     def pixel_to_model(self,drawing_distance:float,scale:str|float,unit="m")->float:
-        s=self.normalize_scale(scale); value=float(drawing_distance)*s
-        if unit=="mm": return value/1000
-        if unit=="cm": return value/100
-        return value
+        s = self.normalize_scale(scale)
+        distance = self._measurement(drawing_distance, "فاصله نقشه")
+        result = distance * s / self._unit_divisor(unit)
+        return self._measurement(result, "فاصله واقعی")
 
     def measure_line(self,x1:float,y1:float,x2:float,y2:float,scale:str|float,unit="m")->Measurement:
-        return Measurement("length",self.pixel_to_model(math.hypot(x2-x1,y2-y1),scale,unit),"m","pdf-scale",confidence=1.0)
+        coords = [self._signed_coordinate(v) for v in (x1, y1, x2, y2)]
+        return Measurement("length",self.pixel_to_model(math.hypot(coords[2]-coords[0],coords[3]-coords[1]),scale,unit),"m","pdf-scale",confidence=1.0)
+
+    @staticmethod
+    def _signed_coordinate(value) -> float:
+        if isinstance(value, bool):
+            raise ValueError("مختصات باید عددی باشند")
+        value = float(value)
+        if not math.isfinite(value):
+            raise ValueError("مختصات باید متناهی باشند")
+        return value
 
     def measure_area(self,drawing_area:float,scale:str|float,unit="m")->Measurement:
-        s=self.normalize_scale(scale); value=float(drawing_area)*s*s
-        if unit=="mm": value/=1_000_000
-        elif unit=="cm": value/=10_000
-        return Measurement("area",value,"m2","pdf-scale",confidence=1.0)
+        s = self.normalize_scale(scale)
+        area = self._measurement(drawing_area, "مساحت نقشه")
+        result = area * s*s / self._unit_divisor(unit)**2
+        return Measurement("area",self._measurement(result,"مساحت واقعی"),"m2","pdf-scale",confidence=1.0)
 
     def calibrate(self, scale, drawing_unit="cm", model_unit="m"):
         return ScaleCalibration.parse(scale, drawing_unit, model_unit)

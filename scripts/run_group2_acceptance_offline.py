@@ -22,7 +22,23 @@ TESTS = (
     "tests/test_priority_1_9_item_coverage_audit.py",
     "tests/test_stabilize_cross_workflow.py",
     "tests/test_stabilize_application_service.py",
+    "tests/test_priority_b_execution_20261013.py",
 )
+
+
+def _summary_counts(stdout: str) -> dict[str, int]:
+    """Read pytest's terminal summary, never captured test output."""
+    fields = ("passed", "failed", "skipped", "xfailed", "xpassed", "error", "errors", "deselected")
+    counts = dict.fromkeys(fields, 0)
+    lines = stdout.strip().splitlines()
+    if not lines:
+        return counts
+    summary = lines[-1].strip().strip("=").strip()
+    if not re.fullmatch(r"(?:[0-9]+ (?:passed|failed|skipped|xfailed|xpassed|errors?|warnings?|deselected)(?:, )?)+ in [0-9.]+s(?: \(.*\))?", summary):
+        return counts
+    for number, label in re.findall(r"([0-9]+) (passed|failed|skipped|xfailed|xpassed|errors?|deselected)\b", summary):
+        counts[label] = int(number)
+    return counts
 
 
 def verify(out: Path | None = None) -> int:
@@ -36,6 +52,7 @@ def verify(out: Path | None = None) -> int:
         "command": None, "exit_code": 2 if missing else None,
         "passed": None, "skipped": None, "failed": None,
         "success": False,
+        "counts": _summary_counts(""),
         "stdout": "", "stderr": "",
         "source_commit": None,
         "note": "No GUI/Windows acceptance; local Python core tests only.",
@@ -61,14 +78,12 @@ def verify(out: Path | None = None) -> int:
             result["exit_code"] = completed.returncode
             result["stdout"] = completed.stdout[-40000:]
             result["stderr"] = completed.stderr[-20000:]
-            for field in ("passed", "failed", "skipped", "xfailed", "xpassed", "error", "errors"):
-                tokens = re.findall(r"\b([0-9]+)\s+" + field + r"\b",
-                                    completed.stdout)
-                result[field] = max((int(x) for x in tokens), default=0)
+            result["counts"] = _summary_counts(completed.stdout)
+            result.update(result["counts"])
             result["success"] = (completed.returncode == 0 and
                                  result["passed"] > 0 and
                                  not any(result.get(key) for key in (
-                                     "failed","skipped","xfailed","xpassed","errors","error")))
+                                     "failed","skipped","xfailed","xpassed","errors","error","deselected")))
         except (OSError, subprocess.TimeoutExpired) as exc:
             result["exit_code"] = 124
             result["stderr"] = str(exc)

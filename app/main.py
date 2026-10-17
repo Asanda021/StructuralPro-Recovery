@@ -4,6 +4,7 @@ import sys
 import os
 from pathlib import Path
 import json
+import math
 
 from core.platform.logging import configure_logging, install_exception_hook
 
@@ -53,7 +54,8 @@ def main()->int:
         from core.help.content import topics as help_topics, search as search_help_topics
         from app.dashboard import DashboardPage
         from core.drawings.dwg_capabilities import detect_dwg_capabilities
-        from core.aec.disciplines import all_disciplines
+        from core.aec.disciplines import all_disciplines, takeoff_domain
+        from core.takeoff.units import normalize_unit
         from core.collaboration.workspace import CollaborationWorkspace, Role, User, Assignment, Comment, Review, Notification
         from core.platform.product import packaged_edition
     except ImportError as exc:
@@ -182,20 +184,60 @@ def main()->int:
 
     # Quick takeoff
     p,v=page("متره سریع","ورود سریع مقادیر با فرم استاندارد")
-    form=QFormLayout(); qpid=QLineEdit(); item=QComboBox(); item.addItems(["slab","wall","column","beam","footing_concrete"])
+    form=QFormLayout(); qpid=QLineEdit(); item=QComboBox()
+    quick_contracts={
+        "slab":("سطح کف / سقف", "building", ("length","width",None), ("طول (m)","عرض (m)","برای سطح استفاده نمی‌شود")),
+        "wall":("سطح دیوار", "building", ("length",None,"height"), ("طول دیوار (m)","برای سطح استفاده نمی‌شود","ارتفاع دیوار (m)")),
+        "column":("حجم ستون بتنی", "building", ("depth","width","height"), ("عمق مقطع (m)","عرض مقطع (m)","ارتفاع ستون (m)")),
+        "beam":("حجم تیر بتنی", "building", ("length","width","depth"), ("طول تیر (m)","عرض مقطع (m)","عمق مقطع (m)")),
+        "footing_concrete":("حجم پی بتنی", "advanced", ("length","width","thickness"), ("طول پی (m)","عرض پی (m)","ضخامت پی (m)"))}
+    for code,contract in quick_contracts.items():item.addItem(contract[0],code)
     discipline=QComboBox(); discipline.addItem("همه ابنیه", "")
     for d in all_disciplines(): discipline.addItem(d.title_fa, d.key)
     length=QLineEdit(); width=QLineEdit(); height=QLineEdit(); price_code=QLineEdit()
     for x,l in ((qpid,"شناسه پروژه"),(discipline,"رشته/دیسپلین"),(item,"آیتم"),(length,"طول"),(width,"عرض"),(height,"ارتفاع"),(price_code,"کد فهرست‌بها")): form.addRow(l,x)
+    qcount=QLineEdit();qcount.setObjectName("QuickTakeoffCount");qcount.setPlaceholderText("تعداد صریح اعضا؛ مقدار پیش‌فرض ندارد")
+    form.addRow("تعداد",qcount)
+    qfloor=QLineEdit();qfloor.setObjectName("QuickTakeoffFloor")
+    qfloor.setPlaceholderText("طبقه یا ناحیه واقعی؛ بدون مقدار پیش‌فرض")
+    qsource=QLineEdit();qsource.setObjectName("QuickTakeoffSource")
+    qsource.setPlaceholderText("شناسه یکتای برداشت فیزیکی؛ برای جلوگیری از ثبت مجدد")
+    form.addRow("طبقه/ناحیه",qfloor);form.addRow("مرجع برداشت",qsource)
+    def update_quick_fields():
+        contract=quick_contracts[item.currentData()]
+        for field,name,label in zip((length,width,height),contract[2],contract[3]):
+            field.setEnabled(name is not None);form.labelForField(field).setText(label)
+    item.currentIndexChanged.connect(update_quick_fields);update_quick_fields()
     v.addLayout(form); calc=QPushButton("محاسبه و ثبت"); manual_button=QPushButton("📝 متره دستی حرفه‌ای"); out=QTextEdit(); out.setReadOnly(True); v.addWidget(calc); v.addWidget(manual_button); v.addWidget(out)
     def do_calc():
         try:
-            params={"length":float(length.text() or 0),"width":float(width.text() or 0),"height":float(height.text() or 0),"member_code":item.currentText(),"discipline":discipline.currentData() or "building","price_code":price_code.text().strip() or None}
+            code=item.currentData();contract=quick_contracts[code]
+            pid=qpid.text().strip();floor=qfloor.text().strip();source=qsource.text().strip()
+            if not pid or not floor or not source:
+                raise ValueError("شناسه پروژه، طبقه و مرجع یکتای برداشت باید صریح وارد شوند")
+            params={"member_code":code,"discipline":discipline.currentData() or "building","price_code":price_code.text().strip() or None}
+            if not qcount.text().strip():raise ValueError("تعداد اعضا را صریح وارد کنید")
+            params["count"]=float(qcount.text())
+            if not math.isfinite(params["count"]) or params["count"]<=0 or not params["count"].is_integer():raise ValueError("تعداد باید صحیح و مثبت باشد")
+            for field,name in zip((length,width,height),contract[2]):
+                if name is None:continue
+                if not field.text().strip():raise ValueError("ابعاد صریح متره را کامل وارد کنید")
+                value=float(field.text())
+                if not math.isfinite(value) or value<=0:raise ValueError("ابعاد متره باید مثبت و متناهی باشند")
+                params[name]=value
+            selected_domain=discipline.currentData()
+            if selected_domain and takeoff_domain(selected_domain) not in {"building","advanced"}:
+                raise ValueError("رشته انتخاب‌شده با عضو ابنیه سازگار نیست")
             if price_code.text().strip():
-                resolved=catalog.resolve(price_code.text().strip(), year=int(pyear.text()) if 'pyear' in locals() and pyear.text().strip() else None)
-                if resolved.get("status") == "ok":
-                    params["unit_price"]=resolved["unit_price"]
-            row=service.add_takeoff(qpid.text().strip(),discipline.currentData() or "building",item.currentText(),**params)
+                resolved=catalog.resolve(price_code.text().strip(), year=int(pyear.text()) if pyear.text().strip() else None)
+                if resolved.get("status") != "ok":raise ValueError("کد فهرست‌بها با سال صریح احراز نشد")
+                preview=service.takeoff.calculate(contract[1],code,**params)
+                if normalize_unit(resolved["item"].unit) != normalize_unit(preview.unit):raise ValueError("واحد فهرست‌بها با واحد متره یکسان نیست")
+                params["unit_price"]=resolved["unit_price"]
+            # Identity is stable for the same physical measurement across sessions.
+            # JSON components avoid ambiguous delimiters, never fabricate a new source.
+            source_id="manual-quick:"+json.dumps([pid,floor,source],ensure_ascii=False,separators=(",",":"))
+            row=service.add_takeoff(pid,contract[1],code,source_id=source_id,system=floor,**params)
             out.setPlainText(f'ثبت شد\nمقدار: {row["quantities"][0]["amount"]} {row["quantities"][0]["unit"]}')
         except Exception as e: out.setPlainText("خطا: "+str(e))
     calc.clicked.connect(do_calc)
@@ -290,11 +332,13 @@ def main()->int:
     p,v=page("فهرست‌بها","📥 فایل فهرست‌بهای خودت را وارد کن، کنترل کن، جستجو کن و همان کدها را در متره و BOQ استفاده کن.")
     ptools=QFrame(); ptools.setObjectName("DashboardSection"); pform=QHBoxLayout(ptools); pform.setContentsMargins(14,12,14,12); pform.setSpacing(10)
     pyear=QLineEdit(); pyear.setPlaceholderText("سال؛ اگر داخل فایل نیست وارد کن")
+    price_reviewer=QLineEdit(); price_reviewer.setObjectName("PricebookReviewer")
+    price_reviewer.setPlaceholderText("هویت واقعی بازبین فهرست‌بهای همین پروژه؛ تأیید خودکار ممنوع")
     pquery=QLineEdit(); pquery.setPlaceholderText("🔎 کد، شرح، فصل یا واحد")
     load=QPushButton("📥 ورود Excel / CSV / PDF"); load.setObjectName("PrimaryAction")
     export_prices=QPushButton("⬇️ خروجی CSV"); export_prices.setObjectName("SecondaryAction")
     search=QPushButton("🔎 جستجو"); search.setObjectName("SecondaryAction")
-    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
+    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(QLabel("بازبین")); pform.addWidget(price_reviewer,2); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
     import_status=QLabel("🟡 هنوز فهرست‌بهایی وارد نشده است. فایل Excel یا PDF متنی خودت را انتخاب کن؛ هیچ فهرست‌بهای داخلی اجباری وجود ندارد."); import_status.setObjectName("DashboardNotice"); import_status.setWordWrap(True); v.addWidget(import_status)
     ptitle=QLabel("📚 کتابخانه فهرست‌بهای پروژه"); ptitle.setObjectName("SectionTitle"); v.addWidget(ptitle)
     ptable=QTableWidget(0,7); ptable.setAlternatingRowColors(True); ptable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows); ptable.setHorizontalHeaderLabels(["سال","کد","شرح","واحد","بهای واحد","فصل","رشته"]); ptable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch); v.addWidget(ptable,1)
@@ -311,18 +355,27 @@ def main()->int:
         if not path:return
         try:
             selected_year=int(pyear.text()) if pyear.text().strip() else 0
+            project_id=qpid.text().strip() or pid.text().strip()
+            bound_project=bool(project_id and service.open_project(project_id))
+            reviewer=price_reviewer.text().strip()
+            if bound_project and not reviewer:
+                raise ValueError("نام یا شناسه بازبین فهرست‌بهای پروژه باید صریح وارد شود؛ تأیید خودکار مجاز نیست")
             info=pricebook_importer.inspect(path,year=selected_year or 0,discipline="building",source_id="user-import")
             if not info["valid"]:
                 raise ValueError("؛ ".join(info["errors"][:5]))
             receipt=pricebook_importer.import_file(path,year=selected_year or 0,discipline="building",source_id="user-import",replace_year=True)
+            if receipt.sha256 != info["sha256"]:raise ValueError("فایل فهرست‌بها پس از بررسی تغییر کرده است")
+            if bound_project:
+                service.import_project_pricebook(project_id,path,year=receipt.year,approved_by=reviewer)
             pricebook_store.parent.mkdir(parents=True, exist_ok=True)
             pricebook_store.write_text(catalog.export_csv(receipt.year or selected_year or None), encoding="utf-8-sig")
             pyear.setText(str(receipt.year if receipt.year else selected_year))
             pquery.setText("")
             search_prices()
             verification="منبع کاربر" if not receipt.verified_source else "منبع رسمیِ ثبت‌شده"
-            import_status.setText(f"🟢 ورود موفق | {receipt.rows:,} ردیف | {receipt.format.upper()} | {verification} | SHA-256: {receipt.sha256[:12]}…")
-            status.setText(f"🟢 فهرست‌بها آماده استفاده است | {receipt.rows:,} ردیف")
+            review_note = f" | تأیید پروژه توسط: {reviewer}" if bound_project else " | فقط کتابخانه؛ تأیید مالی پروژه انجام نشده"
+            import_status.setText(f"🟢 ورود موفق | {receipt.rows:,} ردیف | {receipt.format.upper()} | {verification}{review_note} | SHA-256: {receipt.sha256[:12]}…")
+            status.setText(f"🟢 فهرست‌بها وارد شد | {receipt.rows:,} ردیف{review_note}")
         except Exception as e:
             QMessageBox.critical(w,"خطای ورود فهرست‌بها",str(e))
             import_status.setText("🔴 ورود انجام نشد؛ فایل تغییر داده نشد.")
@@ -356,7 +409,7 @@ def main()->int:
             for token in bfactors.text().split(","):
                 if "=" in token:
                     k,val=token.split("=",1); factors[k.strip()]=float(val.strip())
-            estimate=service.recalculate_estimate(bpid.text().strip(),factors=factors)
+            estimate=service.recalculate_estimate(bpid.text().strip(),factors=factors if bfactors.text().strip() else None)
             rows=estimate["boq"]; btable.setRowCount(0)
             for i,r in enumerate(rows):
                 btable.insertRow(i)
@@ -445,7 +498,12 @@ def main()->int:
     tfv.addWidget(expr); tfv.addWidget(vars_); fe=QPushButton("محاسبه فرمول"); fo=QLabel(); tfv.addWidget(fe); tfv.addWidget(fo)
     def do_formula():
         try:
-            d={}; [d.__setitem__(x.split("=",1)[0].strip(),float(x.split("=",1)[1])) for x in vars_.text().split(",") if "=" in x]
+            d={}
+            for token in vars_.text().split(','):
+                if '=' not in token:raise ValueError('پارامتر فرمول باید نام=مقدار باشد')
+                name,value=token.split('=',1);name=name.strip()
+                if not name or name in d:raise ValueError('نام پارامتر خالی یا تکراری است')
+                d[name]=value.strip()
             fo.setText("نتیجه: "+str(evaluate(expr.text(),d)))
         except Exception as e: fo.setText("خطا: "+str(e))
     fe.clicked.connect(do_formula)
@@ -462,6 +520,8 @@ def main()->int:
     assembly_project_id.setPlaceholderText("شناسه پروژه برای ثبت دائمی")
     assembly_floor_id = QLineEdit()
     assembly_floor_id.setPlaceholderText("طبقه یا تراز (الزامی)")
+    assembly_location_id = QLineEdit()
+    assembly_location_id.setPlaceholderText("شناسه ثابت محل (برای نازک‌کاری الزامی؛ مثال: اتاق ۱۰۱)")
     assembly_save_button = QPushButton("ثبت اجزای تأییدشده در BOQ پروژه")
     assembly_save_button.setEnabled(False)
     assembly_preview_state = {}
@@ -473,6 +533,7 @@ def main()->int:
     tfv.addWidget(assembly_button)
     tfv.addWidget(assembly_project_id)
     tfv.addWidget(assembly_floor_id)
+    tfv.addWidget(assembly_location_id)
     tfv.addWidget(assembly_save_button)
     tfv.addWidget(assembly_output)
     def invalidate_assembly_preview(*_):
@@ -482,6 +543,7 @@ def main()->int:
     assembly_combo.currentIndexChanged.connect(invalidate_assembly_preview)
     assembly_project_id.textChanged.connect(invalidate_assembly_preview)
     assembly_floor_id.textChanged.connect(invalidate_assembly_preview)
+    assembly_location_id.textChanged.connect(invalidate_assembly_preview)
     def do_assembly_preview():
         assembly_preview_state.clear()
         assembly_save_button.setEnabled(False)
@@ -541,7 +603,8 @@ def main()->int:
                 raise ValueError("شناسه پروژه و طبقه/تراز برای ثبت دائمی الزامی است.")
             saved = service.add_assembly_takeoff(
                 project_id, assembly_preview_state["code"], assembly_preview_state["inputs"],
-                floor_id=floor_id, description=assembly_preview_state["title"]
+                floor_id=floor_id, description=assembly_preview_state["title"],
+                location_id=assembly_location_id.text().strip(),
             )
             assembly_output.setPlainText(json.dumps({
                 "status": "saved", "assembly": saved["assembly"],
@@ -615,34 +678,53 @@ def main()->int:
     stcur=QLineEdit(); stcur.setPlaceholderText("کارکرد: W001=3, W002=5")
     stgo=QPushButton("محاسبه دوره"); stsave=QPushButton("ذخیره دوره"); stsave.setObjectName("PrimaryAction")
     sv.addWidget(QLabel("پروژه")); sv.addWidget(stid,1); sv.addWidget(QLabel("دوره")); sv.addWidget(stperiod); sv.addWidget(stgo); sv.addWidget(stsave); v.addWidget(sttools)
+    statement_form=QFormLayout()
+    statement_form.addRow("کارکرد این دوره به تفکیک کد", stcur)
+    statement_rates={}
+    for rate_key,rate_title in (("retention_rate","تضمین"),("advance_recovery_rate","بازگشت پیش‌پرداخت"),("tax_rate","مالیات"),("insurance_rate","بیمه")):
+        rate_input=QLineEdit("0"); rate_input.setObjectName("Statement_"+rate_key)
+        rate_input.setPlaceholderText("نرخ بین صفر و یک")
+        statement_rates[rate_key]=rate_input
+        statement_form.addRow("نرخ "+rate_title, rate_input)
+    v.addLayout(statement_form)
     sttitle=QLabel("خلاصه مالی و پیشرفت"); sttitle.setObjectName("SectionTitle"); v.addWidget(sttitle)
     stout=QTextEdit(); stout.setReadOnly(True); v.addWidget(stout,1)
     stperiods=QLabel("دوره‌های ذخیره‌شده: ۰"); v.addWidget(stperiods)
     def parse_statement_quantities():
         values={}
         for token in stcur.text().split(","):
-            if "=" in token:
-                key,val=token.split("=",1); values[key.strip()]=float(val.strip())
+            if not token.strip(): continue
+            if "=" not in token: raise ValueError("کارکرد را به شکل کد=مقدار وارد کنید")
+            key,val=token.split("=",1)
+            if not key.strip() or key.strip() in values: raise ValueError("کد کارکرد خالی یا تکراری است")
+            values[key.strip()]=val.strip()
         return values
+    def statement_arguments():
+        return {"period_no":int(stperiod.text()) if stperiod.text().strip() else None,
+                "current_quantities":parse_statement_quantities(),
+                **{key:field.text() for key,field in statement_rates.items()}}
     def statement_shortcut():
         try:
-            snapshot=service.build_commercial_snapshot(stid.text().strip())
-            stout.setPlainText(json.dumps({
-                "خلاصه برآورد": snapshot["estimate"]["summary"],
-                "هزینه": snapshot["estimate"]["cost"],
-                "پیشرفت": snapshot["progress"]
-            },ensure_ascii=False,indent=2))
+            preview=service.save_statement_period(stid.text().strip(),persist=False,**statement_arguments())
+            stout.setPlainText(json.dumps(preview,ensure_ascii=False,indent=2))
         except Exception as e: stout.setPlainText("خطا: "+str(e))
     def save_statement_period():
         try:
             project_id=stid.text().strip()
             if not project_id: raise ValueError("شناسه پروژه را وارد کنید")
-            number=int(stperiod.text()) if stperiod.text().strip() else None
-            period=service.save_statement_period(project_id,period_no=number,current_quantities=parse_statement_quantities())
+            period=service.save_statement_period(project_id,**statement_arguments())
             stout.setPlainText(json.dumps(period,ensure_ascii=False,indent=2))
             stperiods.setText(f"دوره‌های ذخیره‌شده: {len(service.statement_periods(project_id))}")
             status.setText(f'🟢 صورت‌وضعیت دوره {period["number"]} ذخیره شد')
         except Exception as e: QMessageBox.critical(w,"خطای صورت‌وضعیت",str(e))
+    stamend=QPushButton("اصلاحیه مستقل صورت‌وضعیت"); stamend.setObjectName("StatementAmendmentOpen"); sv.addWidget(stamend)
+    def open_statement_amendments():
+        try:
+            from app.statement_amendment import StatementAmendmentDialog
+            if not stid.text().strip(): raise ValueError("شناسه پروژه را وارد کنید")
+            StatementAmendmentDialog(service, stid.text().strip(), w).exec()
+        except Exception as e: QMessageBox.critical(w,"خطای اصلاحیه",str(e))
+    stamend.clicked.connect(open_statement_amendments)
     stgo.clicked.connect(statement_shortcut)
     stsave.clicked.connect(save_statement_period)
     pages.addWidget(p); idx_statement=pages.count()-1
@@ -811,8 +893,8 @@ def main()->int:
         help_box.setPlainText("\n".join(blocks))
 
     help_topic.addItem("همه موضوعات","")
-    for item in help_topics():
-        help_topic.addItem(item.title,item.key)
+    for topic in help_topics():
+        help_topic.addItem(topic.title,topic.key)
     help_search.textChanged.connect(lambda text: render_help(help_topic.currentData(), text))
     help_topic.currentIndexChanged.connect(lambda _=0: render_help(help_topic.currentData(), help_search.text()))
     render_help()

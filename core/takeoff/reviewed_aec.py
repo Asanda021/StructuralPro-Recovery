@@ -51,6 +51,8 @@ SPECS = {
     "joist_foam": SystemSpec("سقف تیرچه‌یونولیت", ("topping", "ribs", "joists", "foam",
                                                 "ties", "reinforcement", "formwork",
                                                 "openings"), ("topping", "ribs", "joists", "foam")),
+    "waffle_one_way": SystemSpec("سقف وافل یک‌طرفه", ("topping", "ribs_x", "solid_zones", "reinforcement", "forms", "openings"), ("topping", "ribs_x")),
+    "waffle_two_way": SystemSpec("سقف وافل دوطرفه", ("topping", "ribs_x", "ribs_y", "junctions", "solid_zones", "reinforcement", "forms", "openings"), ("topping", "ribs_x", "ribs_y", "junctions")),
     "waffle": SystemSpec("سقف وافل", ("topping", "ribs_x", "ribs_y", "junction_adjustment",
                                     "solid_zones", "reinforcement", "forms", "openings"),
                          ("topping", "ribs_x", "ribs_y", "junction_adjustment")),
@@ -60,6 +62,7 @@ SPECS = {
     "cobiax": SystemSpec("سقف کوبیاکس", ("gross_concrete", "verified_voids", "solid_zones",
                                       "reinforcement", "formwork", "openings"),
                           ("gross_concrete", "verified_voids")),
+    "hollow_core_detail": SystemSpec("هالوکور — متره تخصصی قطعات", ("precast_panels", "joints", "topping", "reinforcement", "formwork", "openings"), ("precast_panels",)),
     "hollow_core": SystemSpec("سقف هالوکور", ("precast_panels", "joints", "topping",
                                            "reinforcement", "bearings", "openings"),
                               ("precast_panels",)),
@@ -264,6 +267,25 @@ _ENGINE_FIELDS = {
     ("electrical", "cable_tray"): ("length",),
 }
 
+# Equal units do not establish equal materials: reinforcement is not a steel
+# profile, and concrete volume is not timber volume. Apply the same physical
+# component restriction to canonical engine routes as to detail calculators.
+_ENGINE_MATERIAL_COMPONENTS = {
+    ("building", "shear_wall"): {"concrete"},
+    ("building", "stair_concrete"): {"waist_concrete"},
+    ("building", "solid_slab_roof"): {
+        "concrete", "topping", "gross_concrete", "deck_concrete",
+        "step_concrete", "landing_concrete", "solid_zones"},
+    ("advanced", "footing_concrete"): {
+        "concrete", "blinding_concrete", "foundations"},
+    ("advanced", "screed"): {"screed"},
+    ("building", "rebar"): {
+        "vertical_rebar", "horizontal_rebar", "boundary_rebar", "crossties",
+        "reinforcement", "top_rebar", "bottom_rebar", "mesh", "rebars",
+        "reinforcement_mesh"},
+    ("advanced", "steel_roof_deck_weight"): {"sheet_steel"},
+}
+
 
 def _id(kind: str, floor: str, name: str) -> str:
     digits = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
@@ -296,6 +318,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
     if not isinstance(data, list) or not data:
         raise ValueError("جزء تأییدشده باید ریزاقلام مستقل داشته باشد")
     seen = set()
+    seen_detail_members = set()
     rows = []
     for n, item in enumerate(data, 1):
         if not isinstance(item, dict):
@@ -349,6 +372,13 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                     "kromit_roof", "composite_roof"}:
                 raise ValueError("متره حجم ناحیه‌بندی‌شده فقط برای سازه بتنی یا سقف مجاز است")
             checked = calculate_reviewed_detail(detail_kind, item.get("details"))
+            # Physical schedule IDs remain unique across every line in this
+            # component, not just within one calculator invocation.
+            for member in checked["details"]:
+                member_id = member["id"]
+                if member_id in seen_detail_members:
+                    raise ValueError("جزء فیزیکی با شناسه تکراری در چند ریزقلم آمده است")
+                seen_detail_members.add(member_id)
             # For Uboot/Cobiax the existing *separate* verified_voids component
             # already subtracts all cavities from gross_concrete. Never allow a
             # second subtraction inside the gross-region detail itself.
@@ -370,6 +400,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
             required = _ENGINE_FIELDS.get(route)
             if required is None:
                 raise ValueError("فرمول موجود برای این ریزقلم معتبر/تأییدشده نیست")
+            allowed_components = _ENGINE_MATERIAL_COMPONENTS.get(route)
+            if allowed_components is not None and name not in allowed_components:
+                raise ValueError("فرمول موتور با نوع مصالح و عضو مطابقت ندارد")
             params = item.get("params")
             if not isinstance(params, dict) or set(params) != set(required):
                 raise ValueError("ورودی‌های فرمول ناقص یا دارای مقدار اضافی‌اند")
@@ -401,6 +434,18 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
 def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     if not isinstance(data, dict) or data.get("kind") not in SPECS:
         raise ValueError("نوع سیستم متره معتبر نیست")
+    if data.get('measurement_policy')=='shear_wall_specialist_v1':
+        from core.takeoff.shear_wall_detail import preview
+        return preview(data,engine)
+    if 'architecture_detail' in data or data.get('measurement_policy')=='architecture_specialist_v1':
+        from core.takeoff.architecture_detail import preview
+        return preview(data,engine)
+    if 'steel_detail' in data or data.get('measurement_policy')=='steel_specialist_v1':
+        from core.takeoff.steel_detail import preview
+        return preview(data,engine)
+    if data.get('measurement_policy')=='roof_specialist_v1' or data.get('kind') in ('waffle_one_way','waffle_two_way','hollow_core_detail'):
+        from core.takeoff.roof_detail import preview
+        return preview(data,engine)
     kind = data["kind"]
     floor = require_text(data.get("floor_id"), "طبقه")
     identity = require_text(data.get("system_id"), "شناسه سیستم")
@@ -516,7 +561,11 @@ class ReviewedAECWorkflow:
         project = self.store.get(pid)
         if project is None:
             raise KeyError(pid)
-        return deepcopy((project.get(REGISTER) or {}).get(_id(kind, floor, sid)))
+        record=(project.get(REGISTER) or {}).get(_id(kind,floor,sid))
+        if record and record['data'].get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):
+            from core.takeoff.manual_formula_amendments import beam_current
+            return beam_current(project,_id(kind,floor,sid))
+        return deepcopy(record)
 
     def save_draft(self, pid: str, data: dict, *, expected_revision: int = 0) -> dict:
         if not isinstance(data, dict) or data.get("kind") not in SPECS:
@@ -539,6 +588,13 @@ class ReviewedAECWorkflow:
         old = register.get(key)
         if old and old.get("status") == "committed":
             raise ValueError("سیستم قبلاً به متره قطعی منتقل شده است")
+        if old and old['data'].get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') and data.get('measurement_policy') not in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):raise ValueError('حذف قرارداد تخصصی سقف ممنوع است')
+        if old and kind in ('steel_frame','steel_deck') and old['data'].get('measurement_policy')!=data.get('measurement_policy'):raise ValueError('تغییر قرارداد تاریخی فولاد نیازمند مهاجرت صریح است')
+        if old and kind in ('uboot','cobiax') and old['data'].get('measurement_policy') not in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') and data.get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):raise ValueError('جایگزینی رکورد تاریخی یوبوت یا کوبیاکس بدون مهاجرت رسمی ممنوع است')
+        if data.get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') and 'roof_review' in data:
+            from core.takeoff.roof_detail import review_digest
+            rv=data['roof_review']
+            if rv.get('digest')!=review_digest(data) or rv.get('base_revision')!=expected_revision:raise ValueError('بازبینی کهنه یا ناسازگار سقف')
         revision = old["revision"] if old else 0
         if expected_revision != revision:
             raise RuntimeError("تعارض نسخه؛ اطلاعات را دوباره بارگذاری کنید")
@@ -553,6 +609,11 @@ class ReviewedAECWorkflow:
         entry = {"status": "draft", "revision": revision + 1, "data": deepcopy(data),
                  "updated_at": datetime.now(timezone.utc).isoformat()}
         register[key] = entry
+        if data.get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') or data.get('kind') in ('waffle_one_way','waffle_two_way','hollow_core_detail'):
+            from core.takeoff.roof_detail import physical_identity_guard
+            physical_identity_guard(project)
+        from core.takeoff.steel_detail import physical_identity_guard as steel_guard
+        steel_guard(project)
         self.store.save(pid, project, expected_digest=digest)
         return deepcopy(entry)
 
@@ -561,6 +622,9 @@ class ReviewedAECWorkflow:
         if not found:
             raise KeyError(sid)
         out = preview_system(found["data"], self.engine)
+        if found["data"].get("measurement_policy")=="shear_wall_specialist_v1":
+            try:specialist_module(found["data"]).project_gate(self.store.get(pid),_id(kind,floor,sid))
+            except (ValueError,KeyError,OSError) as exc:out["ready"]=False;out["blockers"].append(str(exc))
         out["revision"] = found["revision"]
         out["committed"] = found["status"] == "committed"
         return out
@@ -575,9 +639,17 @@ class ReviewedAECWorkflow:
             raise ValueError("متره قبلاً ثبت قطعی شده است")
         if record["revision"] != expected_revision:
             raise RuntimeError("تعارض نسخه؛ ثبت قطعی ممنوع")
-        out = preview_system(record["data"], self.engine)
+        if record['data'].get('measurement_policy') in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):
+            module=specialist_module(record['data'])
+            out=module.preview(record['data'],self.engine,require_review=True)
+            if record['data'].get('roof_review',{}).get('base_revision')!=record['revision']-1:raise ValueError('بازبینی نسخه جاری سقف لازم است')
+        else:out = preview_system(record["data"], self.engine)
         if not out["ready"]:
             raise ValueError("دیتایل یا تأیید ناقص است؛ ثبت قطعی متوقف شد: " + "؛ ".join(out["blockers"]))
+        if record["data"].get("measurement_policy")=="shear_wall_specialist_v1":
+            module.project_gate(project,_id(kind,floor,sid))
+            from core.takeoff.manual_formula_amendments import financial_block
+            financial_block(project)
         existing = project.get("takeoffs") or []
         new_ids = {x["source_id"] for x in out["rows"]}
         takeoffs = deepcopy(existing)
@@ -587,13 +659,14 @@ class ReviewedAECWorkflow:
                 "domain": row["domain"], "item": row["item_code"], "system": floor,
                 "description": row["description"], "params": row["params"],
                 "provenance": deepcopy(record["data"]["source"]),
-                "review": {"approved_by": record["data"]["components"][row["component"]]["approved_by"],
+                "review": {"approved_by": (record["data"].get("roof_review",{}).get("reviewer") if record["data"].get("measurement_policy") in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') else record["data"]["components"][row["component"]]["approved_by"]),
                            "component": row["component"], "method": row["method"],
                            "measurement_source": row["source_ref"]},
                 "revision": record["revision"],
                 "quantities": [{"code": row["item_code"], "title": row["description"],
                                 "system": floor, "unit": row["unit"],
                                 "amount": row["quantity"], "formula": row["formula"],
+                                **({"role":row["role"]} if record["data"].get("measurement_policy") in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1') else {}),
                                 "price_code": None, "unit_price": None}]
             })
         validated = validate_commit_rows(
@@ -604,6 +677,80 @@ class ReviewedAECWorkflow:
         record["status"] = "committed"
         record["committed_at"] = datetime.now(timezone.utc).isoformat()
         record["source_ids"] = sorted(new_ids)
+        if record["data"].get("measurement_policy") in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):record["committed_source_ids"]=sorted(new_ids)
         self.store.save(pid, project, expected_digest=digest)
         return {"status": "committed", "revision": record["revision"],
                 "takeoff_rows": len(out["rows"]), "source_ids": sorted(new_ids)}
+
+
+    def review_roof(self,pid,kind,floor,sid,*,expected_revision,reviewer,note):
+        record=self.get(pid,kind,floor,sid)
+        if not record or record['status']=='committed':raise ValueError('بازبینی فقط پیش‌نویس است')
+        if record['revision']!=expected_revision:raise RuntimeError('تعارض نسخه بازبینی سقف')
+        module=specialist_module(record['data'])
+        preview,review_digest,POLICY=module.preview,module.review_digest,module.POLICY
+        data=deepcopy(record['data'])
+        if data.get('measurement_policy')!=POLICY:raise ValueError('قرارداد تخصصی لازم است')
+        result=preview(data,self.engine)
+        if not result['ready']:raise ValueError('؛ '.join(result['blockers']))
+        if POLICY=='shear_wall_specialist_v1':
+            module.check_reviewer(data,reviewer);module.project_gate(self.store.get(pid),_id(kind,floor,sid))
+        data['roof_review']={'reviewer':require_text(reviewer,'بازبین سقف'),'note':require_text(note,'یادداشت بازبینی'),'base_revision':expected_revision,'digest':review_digest(data)}
+        return self.save_draft(pid,data,expected_revision=expected_revision)
+
+    def copy_roof(self,pid,kind,floor,sid,*,new_system_id,new_source_id,reason):
+        from uuid import uuid4
+        project,token=self._get_project(pid);original=self.get(pid,kind,floor,sid)
+        POLICY=specialist_module(original['data']).POLICY if original else None
+        if not original or original['data'].get('measurement_policy')!=POLICY:raise ValueError('سقف تخصصی مبنا یافت نشد')
+        target=require_text(new_system_id,'شناسه سقف جدید');src=require_text(new_source_id,'منبع سقف جدید');why=require_text(reason,'علت کپی')
+        key=_id(kind,floor,target)
+        if key in project.get(REGISTER,{}):raise ValueError('مقصد کپی موجود است')
+        require_source_unused(project,src)
+        data=deepcopy(original['data']);data['system_id']=target;data['source']['source_id']=src;data.pop('roof_review',None)
+        replacements={}
+        def reset(v):
+            if isinstance(v,dict):
+                if 'id' in v:
+                    old=v['id'];v['id']='RC-'+uuid4().hex;replacements[old]=v['id']
+                if 'physical_key' in v:v['physical_key']='RP-'+uuid4().hex
+                if 'approved_by' in v:v['approved_by']=''
+                if 'status' in v:v['status']='unreviewed'
+                for child in v.values():reset(child)
+            elif isinstance(v,list):
+                for child in v:reset(child)
+        reset(data)
+        module=specialist_module(data)
+        if hasattr(module,"remap_copy"):module.remap_copy(data,replacements)
+        for piece in data.get('roof_detail',{}).get('pieces',[])+data.get('roof_detail',{}).get('panels',[])+data.get('roof_detail',{}).get('void_formers',[]):piece['region_id']=replacements[piece['region_id']]
+        for group in data.get('roof_detail',{}).get('rebars',{}).values():
+            for series in group.get('series',[]):
+                if series.get('panel_id'):series['panel_id']=replacements[series['panel_id']]
+        entry={'status':'draft','revision':1,'data':data,'updated_at':datetime.now(timezone.utc).isoformat()}
+        project.setdefault(REGISTER,{})[key]=entry
+        project.setdefault('aec_system_history',[]).append({'action':'copy','source_key':_id(kind,floor,sid),'target_key':key,'reason':why,'previous':deepcopy(original),'at':entry['updated_at']})
+        self.store.save(pid,project,expected_digest=token);return deepcopy(entry)
+
+    def delete_roof(self,pid,kind,floor,sid,*,expected_revision,reason):
+        project,token=self._get_project(pid);key=_id(kind,floor,sid);entry=project.get(REGISTER,{}).get(key)
+        if not entry:raise KeyError(sid)
+        if entry['status']=='committed':raise ValueError('حذف سقف قطعی ممنوع است')
+        if entry['data'].get('measurement_policy') not in ('roof_specialist_v1','steel_specialist_v1','architecture_specialist_v1','shear_wall_specialist_v1'):raise ValueError('قرارداد سقف لازم است')
+        if entry['revision']!=expected_revision:raise RuntimeError('تعارض نسخه در حذف سقف')
+        project.setdefault('aec_system_history',[]).append({'action':'delete_draft','source_key':key,'previous':deepcopy(entry),'reason':require_text(reason,'علت حذف'),'at':datetime.now(timezone.utc).isoformat()})
+        del project[REGISTER][key];self.store.save(pid,project,expected_digest=token)
+        return {'status':'deleted'}
+
+
+def specialist_module(data):
+    if data.get("measurement_policy")=="shear_wall_specialist_v1":
+        from core.takeoff import shear_wall_detail
+        return shear_wall_detail
+    if data.get("measurement_policy")=="architecture_specialist_v1":
+        from core.takeoff import architecture_detail
+        return architecture_detail
+    if data.get("measurement_policy")=="steel_specialist_v1":
+        from core.takeoff import steel_detail
+        return steel_detail
+    from core.takeoff import roof_detail
+    return roof_detail

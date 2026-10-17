@@ -1,0 +1,23 @@
+{
+  "policy": "linear_rectangular_slope_geometry_v1",
+  "region_id": "SYNTHETIC-RECT-001",
+  "source_ref": "SYNTHETIC-PLAN-SLOPE-001",
+  "approved_by": "SYNTHETIC-REVIEWER-NOT-REAL-APPROVAL",
+  "material_ref": "SYNTHETIC-SLOPE-MATERIAL",
+  "length_m": "5",
+  "width_m": "4",
+  "direction": "x",
+  "start_thickness_m": "0.1",
+  "end_thickness_m": "0.3",
+  "openings": [
+    {
+      "id": "V1",
+      "source_ref": "SYNTHETIC-VOID-V1",
+      "x_m": "1",
+      "y_m": "1",
+      "length_m": "1",
+      "width_m": "1",
+      "penetration": "full_depth"
+    }
+  ]
+}

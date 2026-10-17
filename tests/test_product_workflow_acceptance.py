@@ -8,6 +8,8 @@ from core.aec.disciplines import all_disciplines, takeoff_domain
 from core.platform.application import StructuralProApp
 from core.pricing.catalog import PriceCatalog, PriceItem
 from core.takeoff.estimate import build_estimate
+import hashlib
+import pytest
 
 
 def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
@@ -30,6 +32,7 @@ def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
         price_code="W001",
         unit_price=price,
         source_id="acceptance-plan-01",
+        count=1,
     )
     assert row["quantities"][0]["amount"] == 15
     assert row["quantities"][0]["price_code"] == "W001"
@@ -39,6 +42,16 @@ def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
     assert len(project["boq"]) == 1
     assert project["boq"][0]["price_code"] == "W001"
     assert project["boq"][0]["quantity"] == 15
+    # The approved test catalog is real fixture data with a verifiable SHA-256.
+    pricebook_path = tmp_path / "pricebook_approved.csv"
+    pricebook_path.write_text("code,unit,price\nW001,m2,1000\n", encoding="utf-8")
+    project["user_pricebook_review"] = {
+        "status": "approved", "approved_by": "reviewer fixture",
+        "path": str(pricebook_path),
+        "sha256": hashlib.sha256(pricebook_path.read_bytes()).hexdigest(),
+        "rows_by_code": {"W001": {"unit": "m2", "unit_price": 1000}},
+    }
+    app.store.save("acceptance-001", project, expected_digest=app.store.current_digest("acceptance-001"))
     estimate = app.recalculate_estimate("acceptance-001", factors={"بالاسری": 0.10})
     assert estimate["finalizable"] is True
     assert estimate["cost"]["grand_total"] == 16500.0
@@ -56,6 +69,15 @@ def test_existing_product_workflow_project_to_report_and_persistence(tmp_path):
     assert period["gross_current"] == 2000.0
     assert period["retention"] == 200.0
 
+    # A missing period quantity is unknown, not implicit zero. The engineer
+    # explicitly records no additional work before previewing the next period.
+    with pytest.raises(ValueError, match="صریح"):
+        app.build_statement("acceptance-001", retention_rate=0.10)
+    project = app.open_project("acceptance-001")
+    project["boq"][0]["current_quantity"] = 0
+    app.store.save("acceptance-001", project,
+                   expected_digest=app.store.current_digest("acceptance-001"))
+    assert app.statement_periods("acceptance-001")[0] == period
     statement = app.build_statement(
         "acceptance-001",
         retention_rate=0.10,

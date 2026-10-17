@@ -2,6 +2,9 @@
 import importlib
 import json
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 from core.history.project_commands import ProjectHistory
 from core.projects.audit import AuditTrail
@@ -126,6 +129,6 @@ def test_workflow_health_has_structured_qc():
 
 
 def test_priority9_regression_surface_files_exist():
-    assert Path(".github/workflows/full-tests.yml").exists()
-    assert Path(".github/workflows/drawing-tests.yml").exists()
-    assert Path(".github/workflows/tests.yml").exists()
+    assert (HISTORY / ".github/workflows/full-tests.yml").exists()
+    assert (HISTORY / ".github/workflows/drawing-tests.yml").exists()
+    assert (HISTORY / ".github/workflows/tests.yml").exists()

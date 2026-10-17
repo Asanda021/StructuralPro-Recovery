@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+import hashlib
 
 from core.platform.application import StructuralProApp
 
@@ -11,13 +12,27 @@ def _app(tmp_path):
     app.create_project("Integration", "P32")
     return app
 
+def _approve_pricebook_fixture(app, tmp_path):
+    """An explicitly reviewed test-only pricebook, bound to real file bytes."""
+    catalog = tmp_path / "approved-fixture-p32.csv"
+    catalog.write_text("code,unit,price\nA-1,m3,100\n", encoding="utf-8")
+    project = app.open_project("P32")
+    project["user_pricebook_review"] = {
+        "status": "approved", "approved_by": "test-reviewer",
+        "path": str(catalog), "sha256": hashlib.sha256(catalog.read_bytes()).hexdigest(),
+        "rows_by_code": {"A-1": {"unit": "m3", "unit_price": 100}},
+    }
+    app.store.save("P32", project, expected_digest=app.store.current_digest("P32"))
+
 
 def test_recalculate_is_idempotent_and_persists(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=5, width=4, thickness=0.2, price_code="A-1"
+        length=5, width=4, thickness=0.2, price_code="A-1", unit_price=100,
+        count=1, source_id="fixture:test_priority_32_integration_regression:1"
     )
+    _approve_pricebook_fixture(app, tmp_path)
     first = app.recalculate_estimate("P32")
     second = app.recalculate_estimate("P32")
     assert first["boq"] == second["boq"]
@@ -34,8 +49,10 @@ def test_recovery_round_trip_preserves_estimate_inputs(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=3, width=4, thickness=0.2, price_code="A-1"
+        length=3, width=4, thickness=0.2, price_code="A-1", unit_price=100,
+        count=1, source_id="fixture:test_priority_32_integration_regression:2"
     )
+    _approve_pricebook_fixture(app, tmp_path)
     before = app.recalculate_estimate("P32")
     backup = tmp_path / "p32.json"
     app.export_project_backup("P32", backup)
@@ -50,8 +67,10 @@ def test_ai_review_does_not_change_estimate_or_takeoff_state(tmp_path):
     app = _app(tmp_path)
     app.add_takeoff(
         "P32", "building", "slab_volume",
-        length=2, width=3, thickness=0.2
+        length=2, width=3, thickness=0.2, price_code="A-1", unit_price=100,
+        count=1, source_id="fixture:test_priority_32_integration_regression:3"
     )
+    _approve_pricebook_fixture(app, tmp_path)
     estimate_before = app.recalculate_estimate("P32")
     before = app.open_project("P32")
     app.ai_assistant_respond("P32", "متره و برآورد پروژه را بررسی کن و ثبت کن")
@@ -67,7 +86,7 @@ def test_performance_snapshot_matches_project_collection_sizes(tmp_path):
     for i in range(5):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=2 + i, width=3, thickness=0.2, source_id=f"S{i}"
+            length=2 + i, width=3, thickness=0.2, count=1, source_id=f"S{i}"
         )
     snap = app.project_performance_snapshot("P32")
     assert snap["project_id"] == "P32"
@@ -80,8 +99,10 @@ def test_report_and_recalculation_share_same_takeoff_count(tmp_path):
     for i in range(3):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=2, width=2, thickness=0.2, source_id=f"R{i}"
+            length=2, width=2, thickness=0.2, source_id=f"R{i}",
+        count=1, price_code="A-1", unit_price=100
         )
+    _approve_pricebook_fixture(app, tmp_path)
     estimate = app.recalculate_estimate("P32")
     activity = app.project_activity_summary("P32")
     assert estimate["boq"]
@@ -94,7 +115,8 @@ def test_invalid_project_operations_fail_without_partial_creation(tmp_path):
     with pytest.raises(ValueError):
         app.add_takeoff(
             "P32", "building", "slab_volume",
-            length=-1, width=2, thickness=0.2
+            length=-1, width=2, thickness=0.2,
+        count=1, source_id="fixture:test_priority_32_integration_regression:6"
         )
     project = app.open_project("P32")
     assert project is not None

@@ -185,7 +185,8 @@ class TakeoffCanvas(QGraphicsView):
         try:
             self.session.add_count(
                 1, page=self.session.current_page, label="شمارش",
-                source=f"page:{self.session.current_page}:count:{len(self.session.items)+1}"
+                source=f"page:{self.session.current_page}:count:{len(self.session.items)+1}",
+                point=self.points[-1]
             )
             self.points = []
             self._notify()
