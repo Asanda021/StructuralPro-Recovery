@@ -576,7 +576,7 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
     cover_data=[[_pdf_paragraph(value,body,doc.width*.65-12),_pdf_paragraph(label,body,doc.width*.35-12)] for label,value in metadata_rows.items()]
     cover=Table(cover_data,colWidths=[doc.width*.65,doc.width*.35],hAlign='RIGHT')
     cover.setStyle(TableStyle([('GRID',(0,0),(-1,-1),.4,colors.lightgrey),('VALIGN',(0,0),(-1,-1),'TOP'),('TOPPADDING',(0,0),(-1,-1),7),('BOTTOMPADDING',(0,0),(-1,-1),7)]))
-    story.extend([cover,Spacer(1,16),Paragraph(_pdf_text('جمع‌بندی'),heading)])
+    story.extend([cover,Spacer(1,16),Paragraph(_pdf_text('جمع‌بندی'),ParagraphStyle('StructuralProSummaryHeading',parent=heading,keepWithNext=True))])
     usable_width = doc.width
     numeric_body = ParagraphStyle("StructuralProNumbers", parent=body,
                                   splitLongWords=0, wordWrap=None)
