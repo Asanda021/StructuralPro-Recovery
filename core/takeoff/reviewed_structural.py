@@ -107,6 +107,9 @@ def preview_member(data: dict, engine: Any, *, _historical_tie=False) -> dict:
     if kind=='column' and data.get('measurement_policy')=='column_specialist_v1':return _preview_column_specialist(data,engine)
     if data.get('measurement_policy')=='foundation_tie_specialist_v1':
         return _preview_foundation_tie_specialist(data,engine,_historical_tie=_historical_tie)
+    if data.get('measurement_policy')=='bored_pile_reviewed_draft_v1':
+        from core.takeoff.bored_pile_detail import preview
+        return preview(data,engine)
     title, domain, item, fields, groups = KINDS[kind]
     blockers: list[str] = []
     rows: list[dict] = []
@@ -343,6 +346,10 @@ class ReviewedStructuralWorkflow:
             from core.takeoff.manual_formula_amendments import beam_current
             current=beam_current(project,source_key) if (project.get(REGISTER,{}).get(source_key,{}).get('data',{}).get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1')) else project.get(REGISTER,{}).get(source_key)
             if payload_digest(current)!=source_digest:raise RuntimeError('مبنای کپی هم‌زمان تغییر کرده است')
+        if draft.get('measurement_policy')=='bored_pile_reviewed_draft_v1':
+            from core.takeoff.bored_pile_detail import preview
+            report=preview(draft,self.engine,project_id=project_id,project=project)
+            if not report['engineering_ready']:raise ValueError('؛ '.join(report['blockers']))
         proposal=deepcopy(draft);review=proposal.pop('component_review',None)
         fresh=draft.get('measurement_policy') in ('column_specialist_v1','foundation_tie_specialist_v1') and isinstance(review,dict) and review.get('base_revision')==expected_revision and bool(review.get('reviewer')) and review.get('digest')==payload_digest(proposal)
         if fresh and not preview_member(proposal,self.engine)['ready']:raise ValueError('بازبینی داده ناقص معتبر نیست')
@@ -421,7 +428,10 @@ class ReviewedStructuralWorkflow:
         item = self.get(project_id, kind, floor, member_id)
         if item is None:
             raise KeyError(member_id)
-        report = preview_member(item["data"], self.engine)
+        if item['data'].get('measurement_policy')=='bored_pile_reviewed_draft_v1':
+            from core.takeoff.bored_pile_detail import preview
+            project,_=self._load(project_id);item=deepcopy(project[REGISTER][_key(kind,floor,member_id)]);report=preview(item['data'],self.engine,project_id=project_id,project=project)
+        else:report = preview_member(item["data"], self.engine)
         report["revision"] = item["revision"]
         report["committed"] = item["status"] == "committed"
         return report

@@ -331,6 +331,8 @@ def beam_guard(previous,updated,command):
     wall_guard(previous,updated)
     from core.takeoff.stair_detail import guard as stair_guard
     stair_guard(previous,updated)
+    from core.takeoff.bored_pile_detail import guard as pile_guard
+    pile_guard(previous,updated)
     for key,record in previous.get('reviewed_aec_systems',{}).items():
         new=updated.get('reviewed_aec_systems',{}).get(key)
         if new and record['data'].get('kind') in ('steel_frame','steel_deck') and record['data'].get('measurement_policy')!=new['data'].get('measurement_policy') and 'steel_specialist_v1' in (record['data'].get('measurement_policy'),new['data'].get('measurement_policy')):raise ValueError('تغییر قرارداد تاریخی فولاد نیازمند مهاجرت صریح است')
