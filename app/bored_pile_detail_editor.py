@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget,
 )
 from app.bored_pile_draft_controller import PileDraftController
+from app.shear_wall_detail_editor import ExactCellDelegate
 
 
 def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', group_id=''):
@@ -82,10 +83,12 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
     piles = QTableWidget(0, 5)
     piles.setHorizontalHeaderLabels(['شناسه شمع','هویت فیزیکی','قطر (متر)','تراز بالا','تراز پایین'])
     piles.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    piles.setItemDelegate(ExactCellDelegate(('id','physical_part_id','diameter_m','top_elevation_m','bottom_elevation_m'), piles))
     geometry.addWidget(piles)
     rebars = QTableWidget(0, 5)
     rebars.setHorizontalHeaderLabels(['گروه','سری','هویت فیزیکی','تعداد','طول برش'])
     rebars.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    rebars.setItemDelegate(ExactCellDelegate(('kind','id','physical_bar_set_id','count','cut_length_m'), rebars))
     geometry.addWidget(rebars)
     controls['piles'], controls['rebars'] = piles, rebars
 
@@ -150,7 +153,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         for p in members:
             for kind, group in p.get('rebars',{}).items():
                 for series in group.get('series',[]):
-                    bar_rows.append((kind,series.get('id',''),series.get('physical_id',''),
+                    bar_rows.append(({'longitudinal':'میلگرد طولی','spiral_ties':'مارپیچ یا خاموت','crossties':'سنجاقی','starters':'میلگرد انتظار'}.get(kind,kind),series.get('id',''),series.get('physical_id',''),
                                      series.get('count',''),series.get('cut_length_m','')))
         show_rows(rebars, bar_rows)
         message.setText('نسخه پیش‌نویس: ' + str(controller.revision) + '؛ ثبت مالی مسدود است.')
@@ -183,10 +186,20 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             raise ValueError('در حالت دستی فیلد نقشه نباید وارد شود')
         return src
 
+    def check_context(*, include_source=True):
+        data = controller.data
+        if data is None:
+            raise ValueError('ابتدا گروه شمع را ایجاد یا بازگشایی کنید')
+        if (controls['floor'].text(), controls['group'].text()) != (data['floor_id'], data['member_id']):
+            raise ValueError('هویت نمایشی با گروه بارگذاری‌شده برابر نیست؛ گروه را بازگشایی یا گروه جدید ایجاد کنید')
+        if include_source and source() != data.get('source', {}):
+            raise ValueError('منبع نمایشی تغییر کرده است؛ دیتایل مستند را دوباره بارگذاری کنید')
+
     def attach_input():
         path, _ = QFileDialog.getOpenFileName(dialog,'دیتایل واقعی گروه شمع','','JSON (*.json)')
         if not path:
             return
+        check_context(include_source=False)
         controller.attach_input(path,source=source())
         fill()
         message.setText('دیتایل مستند بارگذاری شد؛ مالکیت قبلی باطل شد. هنوز ذخیره نشده است.')
@@ -199,6 +212,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         path, _ = QFileDialog.getOpenFileName(dialog,'سند مستقل مالکیت','','JSON (*.json)')
         if not path:
             return
+        check_context()
         # Unlike a blind fill(), preserve any entered review information.
         if controls['reviewer'].text().strip() or controls['ownership_claim'].text().strip():
             set_reviewer()
@@ -211,21 +225,24 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         message.setText('ممیزی مقدماتی ثبت شد؛ مالکیت مشترک و ثبت مالی هنوز مسدودند.')
 
     def save():
+        check_context()
         set_reviewer()
         controller.save()
         fill()
         message.setText('پیش‌نویس در SQLite ذخیره شد؛ نسخه ' + str(controller.revision))
 
     def preview():
+        check_context()
         set_reviewer()
         result = controller.preview()
         names = ('engineering_ready','ready','commit_allowed','totals_exact',
                  'ownership_audit','blockers')
         report.setPlainText(json.dumps({k:result.get(k) for k in names},ensure_ascii=False,indent=2))
-        message.setText('پیش‌نمایش انجام شد؛ گیت مالی همچنان بسته است.')
+        message.setText('پیش‌نمایش انجام شد؛ گیت مالی همچنان بسته است.' if result.get('engineering_ready') else 'پیش‌نمایش نامعتبر: ' + '؛ '.join(result.get('blockers', [])))
         tabs.setCurrentIndex(2)
 
     def refresh_history():
+        check_context(include_source=False)
         from core.takeoff.reviewed_structural import _key
         data = controller.data
         if data is None:
@@ -257,6 +274,6 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
     if group_id.strip() and floor_id.strip():
         try:
             load()
-        except ValueError:
-            message.setText('گروه موجود نیست؛ برای ساخت پیش‌نویس، گروه جدید را انتخاب کنید.')
+        except ValueError as exc:
+            message.setText('بازگشایی مسدود: ' + str(exc))
     return dialog.exec()

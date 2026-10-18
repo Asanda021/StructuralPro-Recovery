@@ -39,6 +39,7 @@ class Widget:
     def setWordWrap(self,*args):pass
     def setReadOnly(self,*args):pass
     def setEditTriggers(self,*args):pass
+    def setItemDelegate(self,delegate):self.delegate=delegate
     def setHorizontalHeaderLabels(self,*args):pass
     def resizeColumnsToContents(self):pass
     def setCurrentIndex(self,index):self.index=index
@@ -103,6 +104,9 @@ def qt_stub(monkeypatch):
     struct=ModuleType('core.takeoff.reviewed_structural')
     struct._key=lambda kind,floor,member:kind+'|'+floor+'|'+member
     monkeypatch.setitem(sys.modules,'core.takeoff.reviewed_structural',struct)
+    delegate_module=ModuleType('app.shear_wall_detail_editor')
+    delegate_module.ExactCellDelegate=Widget
+    monkeypatch.setitem(sys.modules,'app.shear_wall_detail_editor',delegate_module)
     sys.modules.pop('app.bored_pile_detail_editor',None)
     try:
         yield
