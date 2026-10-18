@@ -296,7 +296,7 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     return path
 
 
-def export_docx(rows, path, title="گزارش استراکچرال پرو", summary=None, metadata=None, columns=None):
+def export_docx(rows, path, title="گزارش استراکچرال پرو", summary=None, metadata=None, columns=None, *, landscape=False):
     from docx import Document
     from docx.enum.table import WD_TABLE_DIRECTION,WD_TABLE_ALIGNMENT
     from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -312,13 +312,16 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
         for attr in ('ascii','hAnsi','cs','eastAsia'):fonts.set(qn('w:'+attr),REPORT_FONT)
         lang=OxmlElement('w:lang');lang.set(qn('w:val'),'fa-IR');lang.set(qn('w:bidi'),'fa-IR');style.element.get_or_add_rPr().append(lang)
     section=d.sections[0];section.left_margin=section.right_margin=Inches(.6)
-    if len(cols)>6:section.orientation=WD_ORIENT.LANDSCAPE;section.page_width,section.page_height=section.page_height,section.page_width
+    if landscape or len(cols)>6:section.orientation=WD_ORIENT.LANDSCAPE;section.page_width,section.page_height=section.page_height,section.page_width
     def write(paragraph,value,technical=False):
         technical=technical or _technical_text(value)
         paragraph.alignment=WD_ALIGN_PARAGRAPH.RIGHT
         ppr=paragraph._p.get_or_add_pPr()
         if ppr.find(qn('w:bidi')) is None:
             bidi=OxmlElement('w:bidi');bidi.set(qn('w:val'),'0' if technical else '1');ppr.insert_element_before(bidi,'w:jc')
+        # Logical start is the right edge for RTL paragraphs in OOXML.
+        # Physical 'right' was mirrored to the left by LibreOffice.
+        if not technical:ppr.find(qn('w:jc')).set(qn('w:val'),'start')
         text=_cell(value)
         parts=[text] if technical else re.split(r'([A-Za-z][A-Za-z0-9_:/\\.\-+()=]*)',text)
         for part in parts:

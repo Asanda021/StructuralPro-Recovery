@@ -278,6 +278,10 @@ class StructuralProApp:
         from core.takeoff.manual_formula_amendments import beam_create
         return beam_create(self,project_id,floor_id,system_id,data,roof_kind=kind,**kwargs)
 
+    def export_stair_detail_report(self,project_id,floor_id,system_id,path,*,format):
+        from core.reports.stair_detail_report import export
+        return export(self,project_id,floor_id,system_id,path,format=format)
+
     def export_shear_wall_detail_report(self,project_id,floor_id,system_id,path,*,format):
         from core.reports.shear_wall_detail_report import export
         return export(self,project_id,floor_id,system_id,path,format=format)

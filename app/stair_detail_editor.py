@@ -141,4 +141,11 @@ def open_stair_editor(service,*,parent=None,project_id='',floor_id=''):
  for entries in [[('new','جدید',new),('input_file','خواندن دیتایل',load_input),('owner_file','خواندن مالکیت',load_owner),('write_input','فایل جدید دیتایل',write_input),('preview','پیش‌نمایش',show_preview),('save','ذخیره',save),('load','بازگشایی',load)],[('review','بازبینی',review),('commit','ثبت قطعی',commit),('copy','کپی',copy),('delete','حذف پیش‌نویس',delete),('create_amendment','درخواست اصلاحیه',create_amendment),('review_amendment','بازبینی اصلاحیه',review_amendment),('apply_amendment','اعمال اصلاحیه',apply_amendment),('history_refresh','بازخوانی تاریخچه',refresh_history)]]:
   row=QHBoxLayout();outer.addLayout(row)
   for key,title,fn in entries:button(row,key,title,fn)
+ def report(fmt):
+  if capture()!=c['state']['data']:raise ValueError('تغییرات را پیش از گزارش ذخیره یا از نسخه جاری بازگشایی کنید')
+  path,_=QFileDialog.getSaveFileName(dialog,'گزارش رسمی نسخه جاری','',fmt.upper()+' (*.'+fmt+')')
+  if path:
+   service.export_stair_detail_report(c['project'].text(),c['floor'].text(),c['id'].text(),path,format=fmt);message.setText('گزارش نسخه جاری ذخیره شد؛ مجوز پرداخت مستقل نیست.')
+ row=QHBoxLayout();outer.addLayout(row)
+ for fmt,title in [('pdf','گزارش پی‌دی‌اف'),('xlsx','گزارش اکسل'),('docx','گزارش ورد'),('csv','گزارش سی‌اس‌وی')]:button(row,'report_'+fmt,title,lambda fmt=fmt:report(fmt))
  row=QHBoxLayout();outer.addLayout(row);button(row,'close','بستن',dialog.reject);dialog.stair_controls=c;new();dialog.exec();return dialog
