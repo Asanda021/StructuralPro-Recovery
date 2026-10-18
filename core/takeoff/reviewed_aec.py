@@ -434,6 +434,9 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
 def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     if not isinstance(data, dict) or data.get("kind") not in SPECS:
         raise ValueError("نوع سیستم متره معتبر نیست")
+    if data.get('measurement_policy')=='stair_specialist_reviewed_v1':
+        from core.takeoff.stair_detail import preview
+        return preview(data,engine)
     if data.get('measurement_policy')=='shear_wall_specialist_v1':
         from core.takeoff.shear_wall_detail import preview
         return preview(data,engine)
@@ -621,7 +624,10 @@ class ReviewedAECWorkflow:
         found = self.get(pid, kind, floor, sid)
         if not found:
             raise KeyError(sid)
-        out = preview_system(found["data"], self.engine)
+        if found["data"].get("measurement_policy")=="stair_specialist_reviewed_v1":
+            from core.takeoff.stair_detail import preview
+            out=preview(found["data"],self.engine,project_id=pid)
+        else:out = preview_system(found["data"], self.engine)
         if found["data"].get("measurement_policy")=="shear_wall_specialist_v1":
             try:specialist_module(found["data"]).project_gate(self.store.get(pid),_id(kind,floor,sid))
             except (ValueError,KeyError,OSError) as exc:out["ready"]=False;out["blockers"].append(str(exc))
@@ -743,6 +749,9 @@ class ReviewedAECWorkflow:
 
 
 def specialist_module(data):
+    if data.get("measurement_policy")=="stair_specialist_reviewed_v1":
+        from core.takeoff import stair_detail
+        return stair_detail
     if data.get("measurement_policy")=="shear_wall_specialist_v1":
         from core.takeoff import shear_wall_detail
         return shear_wall_detail
