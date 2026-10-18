@@ -47,10 +47,10 @@ def fixture():
         'group_id':'PG1','input_sha256':H,'coordinate_ref':'COORD',
         'prepared_by':'OwnershipAuthor','reviewer':'OwnershipReviewer','allocations':allocations}
     cap={'status':'draft','revision':2, 'data':{'kind':'pile_cap','floor_id':'FND','member_id':'CAP1',
-         'geometry':{'physical_cap_id':'CAP-PH','top_elevation_m':'-0.50','bottom_elevation_m':'-2.00'},
+         'geometry':{'physical_cap_id':'CAP-PH','top_elevation_m':'-0.50','bottom_elevation_m':'-2.00','source_ref':'signed-geometry','source_sha256':E},
          'rebars':{'starters':{'series':[{'physical_id':'GROUP-CAP','bar_piece_ids':['BAR-1','BAR-2']}]}}}}
     col={'status':'committed','revision':1, 'data':{'kind':'column','floor_id':'FND','member_id':'COL1',
-         'geometry':{'physical_column_id':'COL-PH','top_elevation_m':'1','bottom_elevation_m':'0'},
+         'geometry':{'physical_column_id':'COL-PH','top_elevation_m':'1','bottom_elevation_m':'0','source_ref':'signed-geometry','source_sha256':E},
          'rebars':{}}}
     project={'id':'P','reviewed_structural_members':{'CAP':cap,'COLUMN':col},'boq':[],'takeoffs':[]}
     def link(record,other_kind,other_id,physical,status,otop,obottom,vol,deduction,owner):
@@ -124,6 +124,9 @@ def test_historical_rows_remain_untouched_and_block_payment():
     lambda x: x[3]['interfaces'][1].update(overlap_volume_m3='0.01'),
     lambda x: x[3]['interfaces'][1].update(other_top_m='-0.5'),
     lambda x: x[3]['interfaces'][0].update(geometry_sha256='bad'),
+    lambda x: x[3]['interfaces'][0].update(geometry_reference='fake-geometry'),
+    lambda x: x[3]['interfaces'][0].update(geometry_sha256='c'*64),
+    lambda x: x[2]['allocations'][1].update(payer_id='WRONG-CAP'),
     lambda x: x[3]['bar_transfers'].pop(),
     lambda x: x[3]['bar_transfers'].append(deepcopy(x[3]['bar_transfers'][0])),
     lambda x: x[3]['bar_transfers'][0].update(other_member_id='OTHER'),
@@ -175,3 +178,19 @@ def test_real_external_bar_never_migrates_or_changes_source():
     p=parts[4];original=deepcopy(p)
     check(*parts)
     assert p==original
+
+
+def test_duplicated_piece_in_third_member_fails_closed():
+    parts=list(fixture())
+    extra=deepcopy(parts[4]['reviewed_structural_members']['CAP'])
+    extra['data']['member_id']='UNRELATED'
+    extra['data']['geometry']['physical_cap_id']='ANOTHER-CAP'
+    parts[4]['reviewed_structural_members']['OTHER']=extra
+    with pytest.raises(OwnershipError):check(*parts)
+
+
+def test_target_record_requires_same_reference_and_digest_as_joint_evidence():
+    parts=list(fixture())
+    parts[4]['reviewed_structural_members']['CAP']['data']['geometry']['source_sha256']='0'*64
+    parts[3]['interfaces'][0]['other_record_sha256']=_digest(parts[4]['reviewed_structural_members']['CAP'])
+    with pytest.raises(OwnershipError):check(*parts)
