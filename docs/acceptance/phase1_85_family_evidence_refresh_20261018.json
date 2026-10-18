@@ -1,0 +1,1659 @@
+{
+  "schema_version": "phase1-family-evidence-refresh-v2",
+  "as_of_date": "2026-10-18",
+  "snapshot_head": "35fa76418041e1aa00ca1ade640c258a8df6dde7",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "snapshot_branch": "fix/integrated-priorities-1-15-20261013",
+  "inventory_path": "docs/aec_priority_1_9_master_inventory_20261013.json",
+  "inventory_blob_sha": "0f78cf09bb446f1b881c96533668923277980575",
+  "previous_matrix_path": "docs/acceptance/aec_85_family_evidence_matrix_8phases_20261016.json",
+  "previous_matrix_blob_sha": "eb8c56163488a4986fdbb32e9d5ae3f70eec5387",
+  "methodology": "A static, bounded audit: references and dated test claims are evidence pointers, not proof of rerunning the named tests. Family catalog presence is not operational acceptance.",
+  "summary": {
+    "families": 85,
+    "phase1_families": 74,
+    "other_phases": 11,
+    "subitem_mentions": 879,
+    "roof_system_variants": 8,
+    "roof_inventory_family_codes": 7,
+    "phase1_evidence_levels": {
+      "historical_limited_evidence": 12,
+      "no_family_specific_verified_evidence": 41,
+      "additional_specialist_evidence": 21
+    },
+    "fully_accepted_phase1_families": 0
+  },
+  "phase_counts": {
+    "1": 74,
+    "2": 3,
+    "3": 5,
+    "4": 1,
+    "5": 1,
+    "7": 1
+  },
+  "roof_variants": [
+    {
+      "name": "دال بتنی",
+      "family_code": "solid_slab",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "تیرچه‌بلوک",
+      "family_code": "joist_block",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "تیرچه‌فوم",
+      "family_code": "joist_foam",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "وافل یک‌طرفه",
+      "family_code": "waffle",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "وافل دوطرفه",
+      "family_code": "waffle",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "هالوکور",
+      "family_code": "hollow_core",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "یوبوت",
+      "family_code": "uboot",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    },
+    {
+      "name": "کوبیاکس",
+      "family_code": "cobiax",
+      "phase": 1,
+      "status": "limited_documented",
+      "full_acceptance": false,
+      "evidence_document": "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+    }
+  ],
+  "rows": [
+    {
+      "code": "drawing_sources",
+      "title": "بازکردن و مدیریت نقشه",
+      "primary_phase": 2,
+      "subitem_mentions": 12,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "drawing_selection",
+      "title": "انتخاب و برداشت نقشه",
+      "primary_phase": 2,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_schedule",
+      "title": "جدول و دیتایل تیر",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "beam_feature_path",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/beam_stage2_1_closure_20261014.md"
+      ],
+      "evidence_tests": [
+        "tests/test_beam_closure.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_reinforcement",
+      "title": "پنج گروه آرماتور تیر",
+      "primary_phase": 1,
+      "subitem_mentions": 18,
+      "inventory_route": "beam_feature_path",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/beam_stage2_1_closure_20261014.md"
+      ],
+      "evidence_tests": [
+        "tests/test_beam_closure.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "beam_concrete_formwork",
+      "title": "بتن و قالب تیر",
+      "primary_phase": 1,
+      "subitem_mentions": 14,
+      "inventory_route": "beam_feature_path",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/beam_stage2_1_closure_20261014.md"
+      ],
+      "evidence_tests": [
+        "tests/test_beam_closure.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "column",
+      "title": "ستون بتنی",
+      "primary_phase": 1,
+      "subitem_mentions": 18,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/column_stage2_2_20261014.md"
+      ],
+      "evidence_tests": [
+        "tests/test_column_stage22.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "column_joint",
+      "title": "اتصالات و المان های خاص ستون",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "isolated_footing",
+      "title": "پی منفرد",
+      "primary_phase": 1,
+      "subitem_mentions": 15,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/foundation_three_gaps_20261015.md"
+      ],
+      "evidence_tests": [
+        "tests/test_foundation_close_three.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "strip_footing",
+      "title": "پی نواری",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/foundation_three_gaps_20261015.md"
+      ],
+      "evidence_tests": [
+        "tests/test_foundation_close_three.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "mat_footing",
+      "title": "پی گسترده",
+      "primary_phase": 1,
+      "subitem_mentions": 13,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/foundation_three_gaps_20261015.md"
+      ],
+      "evidence_tests": [
+        "tests/test_foundation_close_three.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "tie_beam",
+      "title": "شناژ و کلاف",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/foundation_three_gaps_20261015.md"
+      ],
+      "evidence_tests": [
+        "tests/test_foundation_close_three.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "pile_foundation",
+      "title": "پی عمیق و شمع",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "shear_wall",
+      "title": "دیوار برشی",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/shear_wall_work_20261018.md"
+      ],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "stair",
+      "title": "پله بتنی",
+      "primary_phase": 1,
+      "subitem_mentions": 14,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/stair_stage3_acceptance_20261018.md"
+      ],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "stair_metal",
+      "title": "پله فولادی و نرده",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "solid_slab",
+      "title": "دال توپر",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/roof_work2_package1_20261015.md",
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_roof_specialist_work.py",
+        "tests/test_roof_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "joist_block",
+      "title": "سقف تیرچه بلوک",
+      "primary_phase": 1,
+      "subitem_mentions": 14,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/roof_work2_package1_20261015.md",
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_roof_specialist_work.py",
+        "tests/test_roof_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "joist_foam",
+      "title": "سقف تیرچه یونولیت",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/roof_work2_package1_20261015.md",
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_roof_specialist_work.py",
+        "tests/test_roof_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "waffle",
+      "title": "سقف وافل",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/roof_work2_package2_waffle_20261015.md",
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_waffle_specialist_work.py",
+        "tests/test_waffle_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "uboot",
+      "title": "سقف یوبوت",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_void_former_roofs_20261016.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "cobiax",
+      "title": "سقف کوبیاکس",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_void_former_roofs_20261016.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "hollow_core",
+      "title": "هالوکور",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/roof_work2_package3_hollowcore_20261016.md",
+        "docs/acceptance/roof_step5_eight_system_integrated_work_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_hollowcore_specialist_work.py",
+        "tests/test_hollowcore_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "steel_deck",
+      "title": "عرشه فولادی",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/steel_deck_manual_work_20261016.md"
+      ],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "kromit_roof",
+      "title": "سقف کرومیت",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "composite_roof",
+      "title": "سقف مرکب",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "sandwich_roof",
+      "title": "ساندویچ پانل سقف",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "timber_roof",
+      "title": "سقف چوبی",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "precast_roof",
+      "title": "سقف پیش ساخته",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "steel_frame",
+      "title": "اسکلت فولادی",
+      "primary_phase": 1,
+      "subitem_mentions": 15,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "composite_frame",
+      "title": "سازه مرکب",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "timber_frame",
+      "title": "سازه چوبی",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "block_wall",
+      "title": "دیوار بلوکی",
+      "primary_phase": 1,
+      "subitem_mentions": 14,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package1_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_architecture_specialist_work.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "brick_wall",
+      "title": "دیوار آجری",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package1_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_architecture_specialist_work.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "gypsum_partition",
+      "title": "دیوار خشک",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "plaster_finish",
+      "title": "گچ و خاک و سفیدکاری",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package1_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_architecture_specialist_work.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "cement_render",
+      "title": "سیمان کاری و اندود",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package1_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_architecture_specialist_work.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "ceramic_finish",
+      "title": "کاشی و سرامیک",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/cover_phase1_numeric_hardening_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_cover_phase1_numeric_failclosed.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "paint_finish",
+      "title": "رنگ آمیزی",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/paint_surface_phase1_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_paint_finish_phase1.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "waterproofing",
+      "title": "عایق رطوبتی",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_insulation_specialist_work.py",
+        "tests/test_insulation_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "thermal_insulation",
+      "title": "عایق حرارتی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_insulation_specialist_work.py",
+        "tests/test_insulation_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "acoustic_insulation",
+      "title": "عایق صوتی",
+      "primary_phase": 1,
+      "subitem_mentions": 6,
+      "inventory_route": "review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/architecture_step6_package3_insulation_partial_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_insulation_specialist_work.py",
+        "tests/test_insulation_specialist_ui.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "floor_finish",
+      "title": "کف سازی",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/interior_step6_package2_floor_partial_20261016.md"
+      ],
+      "evidence_tests": [
+        "tests/test_floor_specialist_work.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "stone_floor",
+      "title": "سنگ کف و سنگ پله",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/stone_stair_orthogonal_phase1_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_stone_stair_orthogonal_phase1.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "suspended_ceiling",
+      "title": "سقف کاذب",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/suspended_ceiling_phase1_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_suspended_ceiling_phase1.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "door_window",
+      "title": "درب و پنجره",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "upvc_aluminium_windows",
+      "title": "پنجره UPVC و آلومینیوم",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "glass_curtain_wall",
+      "title": "نمای شیشه ای",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "stone_cladding",
+      "title": "نمای سنگی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/cover_phase1_numeric_hardening_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_cover_phase1_numeric_failclosed.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "facade_cladding",
+      "title": "نمای خشک",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "handrails_metalwork",
+      "title": "نرده و فلزکاری",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "plumbing",
+      "title": "آبرسانی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "sanitary_drainage",
+      "title": "فاضلاب و باران",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "hvac",
+      "title": "گرمایش سرمایش تهویه",
+      "primary_phase": 1,
+      "subitem_mentions": 13,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "mechanical_ventilation",
+      "title": "تهویه مکانیکی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "plantroom",
+      "title": "موتورخانه",
+      "primary_phase": 1,
+      "subitem_mentions": 12,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "natural_gas",
+      "title": "گاز رسانی",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "fire_protection",
+      "title": "اطفا حریق",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "electrical_power",
+      "title": "برق قدرت",
+      "primary_phase": 1,
+      "subitem_mentions": 13,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "lighting",
+      "title": "روشنایی",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "low_voltage",
+      "title": "جریان ضعیف",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "fire_alarm",
+      "title": "اعلام حریق",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "data_network",
+      "title": "شبکه دیتا",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "security_systems",
+      "title": "دوربین و کنترل دسترسی",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "emergency_power",
+      "title": "برق اضطراری",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "elevator",
+      "title": "آسانسور",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "external_earthwork",
+      "title": "عملیات خاکی",
+      "primary_phase": 1,
+      "subitem_mentions": 11,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "blinding_concrete",
+      "title": "بتن مگر",
+      "primary_phase": 1,
+      "subitem_mentions": 5,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "retaining_structures",
+      "title": "سازه نگهبان",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "external_works",
+      "title": "محوطه سازی",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "site_drains",
+      "title": "زهکشی",
+      "primary_phase": 1,
+      "subitem_mentions": 8,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "demolition",
+      "title": "تخریب",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "concrete_repair",
+      "title": "ترمیم سازه",
+      "primary_phase": 1,
+      "subitem_mentions": 7,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "seismic_retrofit",
+      "title": "مقاوم سازی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "historic_restoration",
+      "title": "مرمت تاریخی",
+      "primary_phase": 1,
+      "subitem_mentions": 9,
+      "inventory_route": "review_contract",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "manual_workbench",
+      "title": "متره دستی",
+      "primary_phase": 2,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "boq",
+      "title": "ریز متره و BOQ",
+      "primary_phase": 3,
+      "subitem_mentions": 11,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "pricebook",
+      "title": "فهرست بها",
+      "primary_phase": 3,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "estimate",
+      "title": "برآورد",
+      "primary_phase": 3,
+      "subitem_mentions": 9,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "statement",
+      "title": "صورت وضعیت",
+      "primary_phase": 3,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "cost_control",
+      "title": "کنترل هزینه",
+      "primary_phase": 3,
+      "subitem_mentions": 8,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "scheduling",
+      "title": "برنامه زمانبندی",
+      "primary_phase": 4,
+      "subitem_mentions": 9,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "reporting",
+      "title": "گزارش حرفه ای",
+      "primary_phase": 7,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "audit_provenance",
+      "title": "حسابرسی و کنترل",
+      "primary_phase": 5,
+      "subitem_mentions": 10,
+      "inventory_route": "requires_dedicated_acceptance",
+      "evidence_level": "no_family_specific_verified_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [],
+      "evidence_tests": [],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "pile_cap",
+      "title": "کلاهک شمع",
+      "primary_phase": 1,
+      "subitem_mentions": 10,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "historical_limited_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "limited_documented",
+      "evidence_documents": [
+        "docs/acceptance/foundation_three_gaps_20261015.md"
+      ],
+      "evidence_tests": [
+        "tests/test_foundation_close_three.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    },
+    {
+      "code": "bored_pile",
+      "title": "شمع بتنی درجا",
+      "primary_phase": 1,
+      "subitem_mentions": 13,
+      "inventory_route": "structural_review_contract",
+      "evidence_level": "additional_specialist_evidence",
+      "history_as_of": "2026-10-16",
+      "historical_status": "not_individually_verified",
+      "evidence_documents": [
+        "docs/acceptance/bored_pile_stage2_stabilization_20261018.md"
+      ],
+      "evidence_tests": [
+        "tests/test_bored_pile_draft_amendment_real_application.py"
+      ],
+      "tests_reexecuted_for_this_audit": false,
+      "real_project_accepted": false,
+      "windows_office_accepted": false,
+      "fully_accepted": false
+    }
+  ],
+  "global_unverified_gates": [
+    "fresh complete HEAD test suite",
+    "full Windows/Qt/Office acceptance",
+    "real drawing and on-site engineering reference",
+    "physical shared-owner reconciliation for blocked legacy cases"
+  ],
+  "priority_gaps": [
+    {
+      "priority": 1,
+      "title": "Shared physical ownership and historic financial isolation",
+      "families": [
+        "bored_pile",
+        "pile_cap",
+        "column",
+        "pile_foundation"
+      ],
+      "gate": "No automatic BOQ financial unlock without signed cross-member evidence"
+    },
+    {
+      "priority": 2,
+      "title": "Independent acceptance of 8 roof variants on final HEAD",
+      "families": [
+        "solid_slab",
+        "joist_block",
+        "joist_foam",
+        "waffle",
+        "hollow_core",
+        "uboot",
+        "cobiax"
+      ],
+      "gate": "Run source-pinned full roof gate and Windows/Qt verification"
+    },
+    {
+      "priority": 3,
+      "title": "AEC specialist engine evidence for unverified MEP, wood and composite families",
+      "families": [
+        "plumbing",
+        "sanitary_drainage",
+        "hvac",
+        "electrical_power",
+        "timber_frame",
+        "composite_frame"
+      ],
+      "gate": "Dedicated example/review/quantity provenance; no inferred formula"
+    },
+    {
+      "priority": 4,
+      "title": "Remaining architectural geometric scope",
+      "families": [
+        "stone_floor",
+        "suspended_ceiling",
+        "ceramic_finish",
+        "stone_cladding",
+        "door_window"
+      ],
+      "gate": "No diagonal/curved/full irregular acceptance from orthogonal-only evidence"
+    }
+  ]
+}
