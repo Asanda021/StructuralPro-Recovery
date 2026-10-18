@@ -77,6 +77,10 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
                         ('reviewer','بازبین مقدماتی مستقل'),
                         ('ownership_claim','مرجع کنترل مقدماتی مالکیت')]:
         field(form, name, label)
+    field(form, 'amendment_reason', 'علت مستند اصلاحیه پیش‌نویس')
+    amendment_note = QLabel('اصلاحیه فقط برای نسخه ذخیره‌شده با همان شمع‌های فیزیکی است؛ تمام مدارک مالکیت و اتصال مشترک قبلی باطل خواهند شد.')
+    amendment_note.setWordWrap(True)
+    identity.addWidget(amendment_note)
 
     geometry = page('هندسه و آرماتور')
     note = QLabel('هیچ قطر، تراز، تعداد، طول یا وزن واحدی تخمین زده نمی‌شود؛ مقادیر از فایل مستند خوانده می‌شوند.')
@@ -243,6 +247,25 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             'blockers':result['blockers']},ensure_ascii=False,indent=2))
         message.setText('اتصال مشترک پیش‌ممیزی شد؛ هیچ مجوز پرداخت صادر نشده است.')
 
+    def amend_input():
+        check_context()
+        current = controller.data['pile_detail']['preflight']
+        if (controls['reviewer'].text() != current.get('reviewer','') or
+                controls['ownership_claim'].text() != current.get('ownership_reference_claim','')):
+            raise ValueError('تغییرات بازبین را پیش از اصلاحیه ذخیره کنید')
+        reason = controls['amendment_reason'].text()
+        # The controller also rechecks reason, old/new evidence digests and
+        # saved revision. No record is mutated if the file picker is cancelled.
+        path, _ = QFileDialog.getOpenFileName(
+            dialog,'نسخه جدید دیتایل مستند شمع','','JSON (*.json)')
+        if not path:
+            return
+        controller.amend_input(path, reason=reason)
+        fill()
+        controls['amendment_reason'].clear()
+        message.setText('اصلاحیه پیش‌نویس در SQLite و تاریخچه ذخیره شد؛ مالکیت و اتصال مشترک قبلی باطل هستند. ثبت مالی مسدود است.')
+        tabs.setCurrentIndex(2)
+
     def save():
         check_context()
         set_reviewer()
@@ -279,7 +302,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         (('new','گروه جدید',create),('load','بازگشایی از SQLite',load),
          ('input','خواندن دیتایل',attach_input),('owner','خواندن مالکیت',attach_owner),
          ('joint','خواندن اتصال مشترک',attach_joint)),
-        (('save','ذخیره نسخه‌دار',save),('preview','پیش‌نمایش',preview),
+        (('save','ذخیره نسخه‌دار',save),('amend','اصلاحیه مستند پیش‌نویس',amend_input),('preview','پیش‌نمایش',preview),
          ('history_refresh','بازخوانی تاریخچه',refresh_history)),
     ):
         bar = QHBoxLayout()
