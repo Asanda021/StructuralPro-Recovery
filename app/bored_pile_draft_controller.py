@@ -114,6 +114,7 @@ class PileDraftController:
         dt['input'] = document
         dt['input_document'] = {**evidence, 'reference': _text(src['source_ref'], 'مرجع دیتایل')}
         dt['ownership_document'] = {'path': '', 'sha256': '', 'reference': ''}
+        dt['joint_document'] = {'path': '', 'sha256': '', 'reference': ''}
         self.data = candidate
         return deepcopy(self.data)
 
@@ -130,8 +131,38 @@ class PileDraftController:
             raise ValueError('گیت مالی مالکیت نباید باز شود')
         candidate = deepcopy(self.data)
         candidate['pile_detail']['ownership_document'] = {**file, 'reference': reference}
+        candidate['pile_detail']['joint_document'] = {'path': '', 'sha256': '', 'reference': ''}
         self.data = candidate
         return deepcopy(result)
+
+    def attach_joint(self, path, *, reference):
+        """Attach a documented cross-member joint *audit*, never payment permission."""
+        if self.data is None:
+            raise ValueError('ابتدا گروه شمع را ایجاد یا بازگشایی کنید')
+        dt = self.data['pile_detail']
+        own = dt.get('ownership_document', {})
+        if not own.get('path') or not dt.get('input_document', {}).get('path'):
+            raise ValueError('ابتدا دیتایل و مالکیت مستقل شمع باید مستند شوند')
+        reference = _text(reference, 'مرجع هندسه و مالکیت مشترک')
+        # Re-read signed documents at the moment of attachment. Neither a
+        # cached JSON object nor a previous audit can substitute current bytes.
+        from core.takeoff.bored_pile_detail import validated
+        from core.takeoff.bored_pile_specialist_chat import compile_piles
+        from core.takeoff.bored_pile_ownership_preflight import read_evidence
+        from core.takeoff.bored_pile_joint_crosswalk import audit_joint_contract
+        validated(self.data, self.project_id)
+        data = dt['input']
+        compiled = compile_piles(data)
+        owner = read_evidence(own['path'], own['sha256'])
+        joint, file = _checked_document(path)
+        report = audit_joint_contract(data, compiled, owner, own['sha256'],
+                                      joint, self.service.open_project(self.project_id))
+        if report['commit_allowed'] or report['ready_for_boq'] or report.get('rows'):
+            raise ValueError('ممیزی مشترک نباید مجوز مالی یا ردیف BOQ صادر کند')
+        candidate = deepcopy(self.data)
+        candidate['pile_detail']['joint_document'] = {**file, 'reference': reference}
+        self.data = candidate
+        return deepcopy(report)
 
     def set_preflight(self, *, reviewer, ownership_reference):
         if self.data is None:
