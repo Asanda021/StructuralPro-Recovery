@@ -137,6 +137,11 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         from app.structural_handoff_audit_editor import open_structural_handoff_audit
         open_structural_handoff_audit(service,parent=dialog,project_id=project.text().strip())
     handoff_button.clicked.connect(open_handoff_audit)
+    stair_button=QPushButton('فرم تخصصی پله بتنی و پاگرد');outer.addWidget(stair_button);dialog.stair_button=stair_button
+    def open_stair():
+        from app.stair_detail_editor import open_stair_editor
+        open_stair_editor(service,parent=dialog,project_id=project.text().strip(),floor_id=floor.text().strip())
+    stair_button.clicked.connect(open_stair)
     wall_button=QPushButton('فرم تخصصی دیوار برشی');outer.addWidget(wall_button);dialog.shear_wall_button=wall_button
     def open_wall():
         from app.shear_wall_detail_editor import open_shear_wall_editor
