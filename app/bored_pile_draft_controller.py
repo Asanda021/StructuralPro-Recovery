@@ -164,6 +164,49 @@ class PileDraftController:
         self.data = candidate
         return deepcopy(report)
 
+    def amend_input(self, path, *, reason):
+        """Revise documented pile geometry through the existing CAS journal only.
+
+        Physical pile identities and primary source cannot change in place.
+        Changed input revokes ownership/joint audits. A new financial lifecycle
+        is *not* created here; the amended member remains a draft.
+        """
+        reason = _text(reason, 'علت اصلاحیه پیش‌نویس')
+        if self.data is None or self.saved_data is None or self.revision < 1:
+            raise ValueError('اصلاحیه فقط روی پیش‌نویس ذخیره‌شده معتبر است')
+        if self.dirty:
+            raise ValueError('ابتدا تغییرات ذخیره‌نشده را تعیین تکلیف کنید')
+        previous = deepcopy(self.data)
+        old = previous['pile_detail']
+        input_doc = old['input_document']
+        # Verify the old immutable evidence against its stored SHA first.
+        current, current_ref = _checked_document(input_doc['path'])
+        if current_ref['sha256'] != input_doc['sha256'] or current != old['input']:
+            raise ValueError('مدرک قبلی شمع تغییر کرده یا از نسخه ذخیره‌شده جدا شده است')
+        incoming, new_ref = _checked_document(path)
+        if new_ref['sha256'] == input_doc['sha256'] or incoming == current:
+            raise ValueError('اصلاحیه بدون تغییر واقعی دیتایل پذیرفته نیست')
+        if any(incoming.get(key) != current.get(key)
+               for key in ('project_id', 'floor_id', 'group_id', 'source', 'datum')):
+            raise ValueError('اصلاح هویت پروژه، منبع یا مبنای مختصات نیازمند گردش مستقل است')
+        from core.takeoff.bored_pile_specialist_chat import compile_piles
+        compiled_incoming = compile_piles(incoming)
+        def physical_ids(document):
+            return {(pile['id'], pile['physical_id']) for pile in document['piles']}
+        if physical_ids(incoming) != physical_ids(current):
+            raise ValueError('تغییر تعداد یا هویت فیزیکی شمع‌ها نیازمند پرونده مستقل است')
+        if compiled_incoming['source_sha256'] == compile_piles(current)['source_sha256']:
+            raise ValueError('اصلاحیه فاقد تغییر محاسباتی یا دیتایل معتبر است')
+        try:
+            self.attach_input(path, source=deepcopy(previous['source']))
+            # Existing ReviewedStructuralWorkflow.save_draft writes previous
+            # version + reason into structural_member_history under SQLite CAS.
+            return self.save(reason='اصلاحیه پیش‌نویس شمع: ' + reason)
+        except Exception:
+            # No local half-revision survives a rejected journal/CAS write.
+            self.data = previous
+            raise
+
     def set_preflight(self, *, reviewer, ownership_reference):
         if self.data is None:
             raise ValueError('گروه شمع بارگذاری نشده است')
@@ -182,11 +225,12 @@ class PileDraftController:
             raise ValueError('پیش‌نمایش شمع نباید مجوز ثبت قطعی یا مالی داشته باشد')
         return result
 
-    def save(self):
+    def save(self, *, reason=None):
         if self.data is None:
             raise ValueError('پیش‌نویس شمع موجود نیست')
+        kwargs = {} if reason is None else {'reason': _text(reason, 'علت نسخه')}
         record = self.service.save_structural_member_draft(
-            self.project_id, deepcopy(self.data), expected_revision=self.revision)
+            self.project_id, deepcopy(self.data), expected_revision=self.revision, **kwargs)
         if record.get('data',{}).get('measurement_policy') != POLICY:
             raise ValueError('پاسخ ذخیره با قرارداد شمع سازگار نیست')
         return self._set(record['data'],record['revision'])
