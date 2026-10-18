@@ -7,8 +7,8 @@ from copy import deepcopy
 from decimal import Decimal
 from uuid import uuid4
 from core.commercial.exact_values import exact,wire
-from core.takeoff.architecture_detail import POLICY,COMMON,rect,area,intersection
-from core.takeoff.roof_detail import n,strict,checked,canonical,review_digest,validate_roof_source
+from core.takeoff.architecture_detail import POLICY,COMMON,rect as _rect,area,intersection
+from core.takeoff.roof_detail import n as _n,strict,checked,canonical,review_digest,validate_roof_source
 from core.takeoff.reviewed_components import require_text
 CONTRACT='interior_cover_v1'
 KINDS=('ceramic_finish','stone_floor','stone_cladding')
@@ -23,6 +23,25 @@ LABELS={'ceramic_surface':'سطح اجرای کاشی و سرامیک','stone_su
 FIELD_LABELS={'physical_surface_id':'شناسه فیزیکی سطح','host_id':'شناسه میزبان فیزیکی','plane':'جهت سطح','stock_id':'شناسه قطعه خرید','piece_type':'وضعیت قطعه','stock_x':'ابتدای برش در طول قطعه خرید (متر)','stock_y':'ابتدای برش در عرض قطعه خرید (متر)','cut_ref':'مرجع قطعه و نقشه برش','layout_status':'مبنای جانمایی','layout_ref':'مرجع جانمایی یا مساحت مستقل','basis':'مبنای مصرف مستند','rate':'مصرف مستند (کیلوگرم بر مترمربع)','rate_ref':'مرجع نرخ مصرف','quantity_unit':'واحد مصالح','cut_count':'تعداد واقعی قطعات برش‌خورده','piece_area_m2':'سطح قطعات نصب‌شده (مترمربع)','joint_area_m2':'سطح بندها (مترمربع)','stock_area_m2':'سطح خرید مستند (مترمربع)','stock_used_m2':'سطح برش مستند از خرید (مترمربع)','offcut_area_m2':'باقیمانده واقعی خرید (مترمربع)'}
 VALUES={'floor':'کف','ceiling':'سقف','horizontal':'افقی','vertical':'قائم','documented':'جانمایی مستند','area_only':'فقط مساحت؛ شمارش و خرید نامعلوم','full':'قطعه کامل','cut':'قطعه برش‌خورده','net_surface':'سطح خالص مستند','constant_thickness':'ضخامت ثابت مستند','area_rate':'مصرف واحد سطح مستند','litre':'لیتر','عدد':'عدد',**LABELS}
 CHOICES={'face':('floor','inside','outside','ceiling'),'plane':('horizontal','vertical'),'operation':('ceramic_surface','stone_surface','adhesive','bedding','grout'),'layout_status':('area_only','documented'),'piece_type':('full','cut'),'basis':('constant_thickness','area_rate'),'quantity_unit':('m3','kg')}
+
+
+def n(value, label, zero=False, integer=False):
+    """Reject pre-rounded float inputs at the cover boundary.
+
+    All documented dimensions, counts and material rates remain lossless
+    Decimal/string/int values; a Python float is not source evidence.
+    """
+    if isinstance(value, (float, bool)):
+        raise ValueError(label + ': مقدار float یا boolean مجاز نیست؛ عدد مستند را دقیق وارد کنید')
+    return _n(value, label, zero=zero, integer=integer)
+
+
+def rect(part, length, height):
+    """Validate coordinates before the shared rectangle helper can coerce floats."""
+    for key in ('x', 'y', 'width_m', 'height_m'):
+        if isinstance(part.get(key), (float, bool)):
+            raise ValueError(key + ': مختصات float یا boolean مدرک معتبر نیست')
+    return _rect(part, length, height)
 
 def is_cover(data):return data.get('architecture_detail',{}).get('contract')==CONTRACT
 
@@ -130,7 +149,12 @@ def preview(data,engine,require_review=False):
   if require_review:
    rv=data.get('roof_review',{});require_text(rv.get('reviewer'),'بازبین');require_text(rv.get('note'),'یادداشت')
    if rv.get('digest')!=review_digest(data):raise ValueError('بازبینی نسخه جاری معتبر نیست')
- except (ValueError,KeyError,TypeError,AttributeError,OverflowError) as exc:errors.append(str(exc))
+ except (ValueError,KeyError,TypeError,AttributeError,OverflowError) as exc:
+  errors.append(str(exc))
+  # A failed validation must not expose earlier partial quantities.
+  # The shared AEC workflow still refuses commit, but callers must not
+  # mistake these partial rows for a complete engineering result.
+  rows.clear()
  return dict(kind=kind,floor_id=data.get('floor_id'),system_id=data.get('system_id'),source_id=source.get('source_id'),ready=not errors,blockers=errors,rows=rows,preview_only=True)
 
 
