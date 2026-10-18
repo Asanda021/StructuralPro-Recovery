@@ -369,8 +369,19 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             show_group()
         except Exception as exc:error(exc)
 
+    def prevent_generic_specialist_mutation():
+        # Read the authoritative SQLite record rather than the potentially
+        # stale generic-widget cache. Historical ordinary piles are unchanged.
+        pid,fl,k,mid=context()
+        if k!='bored_pile':
+            return
+        current=service.get_structural_member(pid,k,fl,mid)
+        if current and current.get('data',{}).get('measurement_policy')=='bored_pile_reviewed_draft_v1':
+            raise ValueError('این شمع در قرارداد تخصصی است؛ از «فرم تخصصی شمع بتنی درجا» استفاده کنید. مسیر عمومی مجاز به بازنویسی، بازبینی، ثبت، کپی یا حذف آن نیست.')
+
     def persist():
         try:
+            prevent_generic_specialist_mutation()
             apply_group()
             d=physical_geometry()
             pid,_,_,_=context()
@@ -382,6 +393,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
 
     def inspect():
         try:
+            prevent_generic_specialist_mutation()
             apply_group()
             d=physical_geometry()
             report=preview_member(d,service.takeoff)
@@ -391,6 +403,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
 
     def finalize():
         try:
+            prevent_generic_specialist_mutation()
             apply_group()
             physical_geometry()
             if state["dirty"]:
@@ -486,6 +499,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         except Exception as exc:error(exc)
     def copy_current_member():
         try:
+            prevent_generic_specialist_mutation()
             pid,fl,k,mid=context()
             service.copy_structural_member(pid,k,fl,mid,new_member_id=new_member.text(),new_source_id=new_source.text(),expected_revision=state['revision'],reason=reason.text())
             ident.setText(new_member.text().strip());reload()
@@ -493,6 +507,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         except Exception as exc:error(exc)
     def delete_current_member():
         try:
+            prevent_generic_specialist_mutation()
             pid,fl,k,mid=context()
             service.delete_structural_member_draft(pid,k,fl,mid,expected_revision=state['revision'],reason=reason.text())
             state.update(data=None,revision=0,current=None,dirty=False)
