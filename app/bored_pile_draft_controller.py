@@ -164,6 +164,46 @@ class PileDraftController:
         self.data = candidate
         return deepcopy(report)
 
+    def audit_spatial(self, path):
+        """Audit a physical 3-D document against the current saved SQLite snapshot.
+
+        A verified audit is ephemeral, not a stored signature or a BOQ approval.
+        Re-select the actual file after reopening; never cache a favourable audit.
+        """
+        if self.data is None or self.saved_data is None or self.revision < 1:
+            raise ValueError('ابتدا پیش‌نویس شمع را در SQLite ذخیره کنید')
+        if self.dirty:
+            raise ValueError('ممیزی سه‌بعدی روی تغییر ذخیره‌نشده مجاز نیست')
+        record = self.service.get_structural_member(
+            self.project_id, 'bored_pile', self.data['floor_id'], self.data['member_id'])
+        if not record or record.get('revision') != self.revision or record.get('data') != self.data:
+            raise ValueError('نسخه پیش‌نویس شمع در SQLite تغییر کرده؛ دوباره بازگشایی کنید')
+        dt = self.data['pile_detail']
+        owner = dt.get('ownership_document', {})
+        joint = dt.get('joint_document', {})
+        if not all(isinstance(doc, dict) and doc.get('path') and doc.get('sha256')
+                   for doc in (owner, joint)):
+            raise ValueError('برای ممیزی سه‌بعدی، مالکیت و اتصال مشترک ذخیره‌شده لازم است')
+        from core.takeoff.bored_pile_detail import validated
+        from core.takeoff.bored_pile_ownership_preflight import read_evidence
+        from core.takeoff.bored_pile_spatial_overlap import audit_spatial_overlap
+        compiled = validated(self.data, self.project_id)
+        owner_data = read_evidence(owner['path'], owner['sha256'])
+        joint_data = read_evidence(joint['path'], joint['sha256'])
+        # This document is not added to the draft data or signed historical record.
+        _spatial_data, reference = _checked_document(path)
+        project = self.service.open_project(self.project_id)
+        if not project:
+            raise ValueError('Snapshot واقعی پروژه پیدا نشد')
+        report = audit_spatial_overlap(
+            dt['input'], compiled, owner_data, owner['sha256'], joint_data,
+            project, evidence_path=reference['path'],
+            evidence_sha256=reference['sha256'])
+        if (report.get('commit_allowed') or report.get('ready_for_boq')
+                or report.get('rows') or report.get('status') != 'SPATIAL_PREVIEW_ONLY'):
+            raise ValueError('ممیزی هندسی اجازه ثبت مالی یا خروجی غیرمجاز صادر کرده است')
+        return deepcopy(report)
+
     def amend_input(self, path, *, reason):
         """Revise documented pile geometry through the existing CAS journal only.
 
