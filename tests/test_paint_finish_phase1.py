@@ -176,3 +176,20 @@ def test_disjoint_paint_and_cover_can_coexist(tmp_path):
     app.save_aec_system_draft('P',paint,expected_revision=0)
     assert len(app.open_project('P')['reviewed_aec_systems'])==2
     app.store.close()
+
+
+def test_copy_draft_remaps_zone_ids_without_leaking_approvals(tmp_path):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/'db');app.create_project('مصنوعی','P')
+    app.save_aec_system_draft('P',sample(),expected_revision=0)
+    entry=app.aec_workflow().copy_roof('P','paint_finish','L1','P1',
+        new_system_id='P2',new_source_id='COPY',reason='کپی صریح آزمایشی')
+    detail=entry['data']['architecture_detail']
+    assert entry['status']=='draft' and entry['revision']==1
+    assert detail['geometry']['host_id']!='WALL-1'
+    zone=detail['zones'][0]['id']
+    assert zone!='Z1'
+    assert all(p['zone_id']==zone for g in detail['stages'].values() for p in g['passes'])
+    assert not result(entry['data'])['ready']
+    assert app.open_project('P')['boq']==[]
+    app.store.close()
