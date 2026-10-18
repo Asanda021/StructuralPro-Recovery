@@ -164,3 +164,16 @@ def test_ceiling_and_ceiling_paint_same_host_conflict(tmp_path):
         app.save_aec_system_draft('P',paint,expected_revision=0)
     assert before==app.open_project('P')
     app.store.close()
+
+
+def test_same_physical_ceiling_id_on_different_host_is_rejected(tmp_path):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/'db');app.create_project('هویت تکراری','P')
+    app.save_aec_system_draft('P',sample(),expected_revision=0)
+    other=deepcopy(sample());other['system_id']='SC2';other['source']['source_id']='NEW-SOURCE'
+    other['architecture_detail']['geometry']['host_id']='OTHER-SLAB'
+    before=deepcopy(app.open_project('P'))
+    with pytest.raises(ValueError,match='هویت|شناسه|فیزیکی'):
+        app.save_aec_system_draft('P',other,expected_revision=0)
+    assert app.open_project('P')==before
+    app.store.close()
