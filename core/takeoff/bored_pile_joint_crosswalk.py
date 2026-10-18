@@ -122,6 +122,27 @@ def _count_shared_piece(record, bar_id):
     return matches
 
 
+
+def _require_independent_joint_reviewer(reviewer, *source_records):
+    """Disallow self-review by any preparer/approver in either member's evidence.
+
+    Source author identities are assertions from signed/recorded evidence;
+    this check cannot prove a person's real-world identity or authority.
+    """
+    for source in source_records:
+        pending = [source]
+        while pending:
+            node = pending.pop()
+            if isinstance(node, dict):
+                for key in ('approved_by', 'prepared_by'):
+                    actor = node.get(key)
+                    if actor is not None and _canonical(actor) == reviewer:
+                        raise OwnershipError('بازبین قرارداد مشترک از تهیه‌کننده یا تأییدکننده مستقل نیست')
+                pending.extend(node.values())
+            elif isinstance(node, (list, tuple)):
+                pending.extend(node)
+
+
 def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
                          joint_document, project):
     """Check actual register links and documented deductions, without paying.
@@ -150,6 +171,7 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
     reviewer = _canonical(joint_document['reviewer'])
     if reviewer == prepared or reviewer == _canonical(ownership_document['reviewer']):
         raise OwnershipError('بازبین قرارداد مشترک مستقل نیست')
+    _require_independent_joint_reviewer(reviewer, data, ownership_document)
 
     preliminary = ownership_audit(data, compiled, ownership_document)
     if preliminary['ready_for_boq'] or preliminary['commit_allowed']:
@@ -191,6 +213,7 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
         if status not in ('documented_no_overlap', 'documented_deduction'):
             raise OwnershipError('وضعیت مکانی نامعلوم برای تطبیق مشترک کافی نیست')
         record = _resolve_target(project, entry)
+        _require_independent_joint_reviewer(reviewer, record)
         target_physical = _canonical(entry['other_physical_id'])
         # The same physical target cannot be relabelled as several members.
         owner_key = (kind, entry['other_floor_id'], other)
