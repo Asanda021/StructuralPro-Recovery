@@ -194,3 +194,56 @@ def test_target_record_requires_same_reference_and_digest_as_joint_evidence():
     parts[4]['reviewed_structural_members']['CAP']['data']['geometry']['source_sha256']='0'*64
     parts[3]['interfaces'][0]['other_record_sha256']=_digest(parts[4]['reviewed_structural_members']['CAP'])
     with pytest.raises(OwnershipError):check(*parts)
+
+
+@pytest.mark.parametrize('alias_kind,alias_floor,alias_location', [
+    ('pile_cap', 'FND', 'physical_cap_id'),
+    ('pile_cap', 'F2', 'physical_cap_id'),
+    ('column', 'F2', 'physical_column_id'),
+    ('column', 'F2', 'physical_id'),
+])
+def test_target_physical_identity_cannot_be_aliased_to_another_member(
+        alias_kind, alias_floor, alias_location):
+    parts = list(fixture())
+    project = parts[4]
+    alias = deepcopy(project['reviewed_structural_members']['CAP'])
+    alias['data']['kind'] = alias_kind
+    alias['data']['member_id'] = 'ALIAS-MEMBER'
+    alias['data']['floor_id'] = alias_floor
+    alias['data']['geometry'] = {'top_elevation_m': '0', 'bottom_elevation_m': '-2'}
+    location = alias['data'] if alias_location == 'physical_id' else alias['data']['geometry']
+    location[alias_location] = 'CAP-PH'
+    project['reviewed_structural_members']['ALIAS'] = alias
+    original = deepcopy(parts)
+    with pytest.raises(OwnershipError, match='هویت فیزیکی.*تکرار'):
+        check(*parts)
+    assert parts == original  # Reject without altering the financial ledger.
+
+
+def test_unicode_normalized_cross_member_physical_alias_is_blocked():
+    parts = list(fixture())
+    project = parts[4]
+    cap = project['reviewed_structural_members']['CAP']
+    cap['data']['geometry']['physical_cap_id'] = 'CAP-کی'
+    parts[3]['interfaces'][0]['other_physical_id'] = 'CAP-کی'
+    cap['data']['rebars']['starters']['series'][0]['bar_piece_ids'] = ['BAR-1','BAR-2']
+    parts[2]['allocations'][1]['payer_id'] = 'CAP-کی'
+    parts[3]['interfaces'][0]['other_record_sha256'] = _digest(cap)
+    other = deepcopy(cap)
+    other['data']['member_id'] = 'CAP-ALIAS'
+    other['data']['geometry']['physical_cap_id'] = 'CAP-كي'
+    project['reviewed_structural_members']['ALIAS'] = other
+    with pytest.raises(OwnershipError, match='هویت فیزیکی.*تکرار'):
+        check(*parts)
+
+
+def test_distinct_target_physical_id_in_unrelated_member_is_not_conflict():
+    parts = list(fixture())
+    project = parts[4]
+    separate = deepcopy(project['reviewed_structural_members']['CAP'])
+    separate['data']['member_id'] = 'CAP-UNRELATED'
+    separate['data']['geometry']['physical_cap_id'] = 'UNRELATED-PH'
+    separate['data']['rebars']['starters']['series'][0]['bar_piece_ids'] = []
+    project['reviewed_structural_members']['ANOTHER'] = separate
+    result = check(*parts)
+    assert result['rows'] == [] and result['commit_allowed'] is False
