@@ -38,6 +38,8 @@ def preview(data,engine,require_review=False):
  if is_slope(data):return slope_preview(data,engine,require_review=require_review)
  from core.takeoff.skirting_detail import is_skirting,preview as skirt_preview
  if is_skirting(data):return skirt_preview(data,engine,require_review=require_review)
+ from core.takeoff.stone_stair_finish_detail import is_stair_stone,preview as stair_stone_preview
+ if is_stair_stone(data):return stair_stone_preview(data,engine,require_review=require_review)
  from core.takeoff.suspended_ceiling_detail import is_ceiling,preview as ceiling_preview
  if is_ceiling(data):return ceiling_preview(data,engine,require_review=require_review)
  from core.takeoff.paint_finish_detail import is_paint,preview as paint_preview
@@ -167,6 +169,8 @@ def remap_copy(data,replacements):
  if is_slope(data):return slope_copy(data,replacements)
  from core.takeoff.skirting_detail import is_skirting,remap_copy as skirt_copy
  if is_skirting(data):return skirt_copy(data,replacements)
+ from core.takeoff.stone_stair_finish_detail import is_stair_stone,remap_copy as stair_stone_copy
+ if is_stair_stone(data):return stair_stone_copy(data,replacements)
  from core.takeoff.suspended_ceiling_detail import is_ceiling,remap_copy as ceiling_copy
  if is_ceiling(data):return ceiling_copy(data,replacements)
  from core.takeoff.paint_finish_detail import is_paint,remap_copy as paint_copy
@@ -197,6 +201,7 @@ def guard(previous,updated):
  """Check physical ownership across records, effective amendments and old contracts."""
  old=previous.get('reviewed_aec_systems',{});register=updated.get('reviewed_aec_systems',{})
  from core.takeoff.skirting_detail import is_skirting,guard as skirt_guard
+ from core.takeoff.stone_stair_finish_detail import is_stair_stone,guard as stair_stone_guard
  from core.takeoff.suspended_ceiling_detail import is_ceiling,guard as ceiling_guard
  from core.takeoff.paint_finish_detail import is_paint,guard as paint_guard
  from core.takeoff.interior_cover_detail import is_cover,guard as cover_guard
@@ -210,7 +215,7 @@ def guard(previous,updated):
  from core.takeoff.manual_formula_amendments import beam_current
  for key,r in register.items():
   if r.get('data',{}).get('measurement_policy')!=POLICY:continue
-  if is_cover(r['data']) or is_skirting(r['data']) or is_paint(r['data']) or is_ceiling(r['data']):continue
+  if is_cover(r['data']) or is_skirting(r['data']) or is_paint(r['data']) or is_ceiling(r['data']) or is_stair_stone(r['data']):continue
   if r['data']['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation'):continue
   d=beam_current(updated,key)['data'];a=d.get('architecture_detail',{});g=a.get('geometry',{});building=canonical(d.get('building_id'));wall=(building,canonical(g.get('physical_wall_id')))
   for other,p in register.items():
@@ -246,6 +251,7 @@ def guard(previous,updated):
  skirt_guard(updated)
  paint_guard(updated)
  ceiling_guard(updated)
+ stair_stone_guard(updated)
 
 
 def validate_amendment(previous,proposal,before_rows,after_rows):
@@ -256,14 +262,18 @@ def validate_amendment(previous,proposal,before_rows,after_rows):
  from core.takeoff.interior_cover_detail import is_cover
  from core.takeoff.paint_finish_detail import is_paint
  from core.takeoff.suspended_ceiling_detail import is_ceiling
+ from core.takeoff.stone_stair_finish_detail import is_stair_stone
  if previous['architecture_detail'].get('contract')!=proposal['architecture_detail'].get('contract'):raise ValueError('تغییر قرارداد تخصصی در اصلاحیه ممنوع است')
+ if is_stair_stone(previous):
+  for key in ('physical_stair_id','host_id'):
+   if previous['architecture_detail']['geometry'][key]!=proposal['architecture_detail']['geometry'][key]:raise ValueError('تغییر هویت فیزیکی پله در اصلاحیه ممنوع است')
  if is_ceiling(previous):
   for key in ('physical_surface_id','host_id','space_id','face','plane'):
    if previous['architecture_detail']['geometry'][key]!=proposal['architecture_detail']['geometry'][key]:raise ValueError('تغییر هویت فیزیکی سقف در اصلاحیه ممنوع است')
  if is_cover(previous) or is_paint(previous):
   for key in ('physical_surface_id','host_id','face','plane'):
    if previous['architecture_detail']['geometry'][key]!=proposal['architecture_detail']['geometry'][key]:raise ValueError('تغییر هویت سطح یا وجه در اصلاحیه ممنوع است')
- identity='physical_space_id' if is_skirting(previous) else 'physical_surface_id' if (is_cover(previous) or is_paint(previous) or is_ceiling(previous)) else 'physical_region_id' if previous['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation') else 'physical_wall_id'
+ identity='physical_space_id' if is_skirting(previous) else 'physical_surface_id' if (is_cover(previous) or is_paint(previous) or is_ceiling(previous)) else 'physical_stair_id' if is_stair_stone(previous) else 'physical_region_id' if previous['kind'] in ('floor_finish','waterproofing','thermal_insulation','acoustic_insulation') else 'physical_wall_id'
  if canonical(previous['architecture_detail']['geometry'][identity])!=canonical(proposal['architecture_detail']['geometry'][identity]):raise ValueError('تغییر هویت فیزیکی دیوار در اصلاحیه ممنوع است')
  def dimensions(rows):return {r['source_id']:(r['item'],r['quantities'][0]['unit'],r['quantities'][0]['role']) for r in rows}
  before,after=dimensions(before_rows),dimensions(after_rows)
