@@ -16,6 +16,8 @@ from core.takeoff.bored_pile_ownership_preflight import (
 )
 
 POLICY = 'bored_pile_joint_crosswalk_v1'
+SOURCE_BAR_POLICY = 'bored_pile_joint_crosswalk_v2_source_bars'
+_SOURCE_LINK = ('path', 'sha256', 'reference')
 _REG = 'reviewed_structural_members'
 _EXTERNAL_KINDS = frozenset(('pile_cap', 'column'))
 _JOINT_KEYS = ('policy', 'project_id', 'floor_id', 'group_id', 'input_sha256',
@@ -29,6 +31,7 @@ _LINK_KEYS = ('pile_id', 'other_kind', 'other_floor_id', 'other_member_id',
 _BAR_KEYS = ('pile_id', 'bar_piece_id', 'other_kind', 'other_floor_id',
              'other_member_id', 'other_bar_physical_id', 'payer_kind',
              'source_ref', 'source_sha256')
+_JOINT_KEYS_V2 = _JOINT_KEYS + ('starter_source_document',)
 
 
 def _num(value, label, *, positive=False):
@@ -170,9 +173,13 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
     A successful crosswalk is still a preliminary observation. It cannot certify
     that the project ledger or historical bills are globally complete.
     """
-    _object(joint_document, _JOINT_KEYS, 'قرارداد مالکیت مشترک')
-    if joint_document['policy'] != POLICY:
+    if not isinstance(joint_document, dict):
+        raise OwnershipError('سند مشترک باید شیء نسخه‌دار باشد')
+    policy = joint_document.get('policy')
+    if policy not in (POLICY, SOURCE_BAR_POLICY):
         raise OwnershipError('نسخه قرارداد مشترک شمع نامعتبر است')
+    _object(joint_document, _JOINT_KEYS if policy == POLICY else _JOINT_KEYS_V2,
+            'قرارداد مالکیت مشترک')
     if not isinstance(project, dict) or project.get('id') != data['project_id']:
         raise OwnershipError('Snapshot واقعی پروژه با ورودی شمع تطابق ندارد')
     for key in ('project_id', 'floor_id', 'group_id'):
@@ -196,6 +203,30 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
     preliminary = ownership_audit(data, compiled, ownership_document)
     if preliminary['ready_for_boq'] or preliminary['commit_allowed']:
         raise OwnershipError('ممیزی مقدماتی به اشتباه به پرداخت مجوز داده است')
+
+    # Version two adds a *separate physical file* as the asserted origin of
+    # individual starter bar identities. Byte integrity is checked here and
+    # every identity must be reconciled with the original pile input series,
+    # then the independent ownership and receiving-member ledgers below.
+    # Version one is intentionally kept read-only and unpromoted.
+    source_audit = None
+    source_sha = None
+    source_ref = None
+    if policy == SOURCE_BAR_POLICY:
+        from core.takeoff.bored_pile_ownership_preflight import read_evidence
+        from core.takeoff.bored_pile_starter_source import audit_source
+        pointer = joint_document['starter_source_document']
+        _object(pointer, _SOURCE_LINK, 'فایل منشأ میلگرد انتظار شمع')
+        source_ref = _id(pointer['reference'], 'مرجع فایل منشأ')
+        source_sha = _hash(pointer['sha256'], 'هش فایل منشأ')
+        source_doc = read_evidence(_id(pointer['path'], 'مسیر فایل منشأ'), source_sha)
+        source_audit = audit_source(data, compiled, source_doc)
+        source_author = _canonical(source_doc['prepared_by'])
+        source_reviewer = _canonical(source_doc['reviewer'])
+        if reviewer in (source_author, source_reviewer) or source_reviewer == prepared:
+            raise OwnershipError('بازبین مستقل مدرک منشأ و قرارداد مشترک یکی است')
+        _require_independent_joint_reviewer(source_reviewer, data)
+
     allocations = {(a['pile_id'], a['operation'], a['physical_id']): a
                    for a in ownership_document['allocations']}
     piles = {p['id']: p for p in data['piles']}
@@ -297,6 +328,18 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
     for a in ownership_document['allocations']:
         if a['operation']=='rebar_starters':
             required_bars.update((a['pile_id'], _canonical(piece)) for piece in a['bar_piece_ids'])
+    if source_audit is not None:
+        if {(_canonical(pid), bar) for pid, bar in required_bars} != source_audit['source_bar_keys']:
+            raise OwnershipError('شناسه فردی میلگرد انتظار شمع با مدرک منشأ مستقل برابر نیست')
+        for allocation in ownership_document['allocations']:
+            if allocation['operation'] != 'rebar_starters':
+                continue
+            series_key = (_canonical(allocation['pile_id']), _canonical(allocation['physical_id']))
+            expected = source_audit['series_bars'].get(series_key)
+            if expected is None or {_canonical(x) for x in allocation['bar_piece_ids']} != set(expected):
+                raise OwnershipError('هویت سری یا قطعات مالکیت با منشأ شمع یکسان نیست')
+            if _hash(allocation['evidence_sha256'], 'SHA سند مالکیت میلگرد') != source_sha:
+                raise OwnershipError('سند مالکیت میلگرد به فایل منشأ مستقل متصل نیست')
     transfer_rows = joint_document['bar_transfers']
     if not isinstance(transfer_rows, list):
         raise OwnershipError('دفتر انتقال میلگرد انتظار باید صریح باشد')
@@ -337,13 +380,22 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
                 raise OwnershipError('شناسه میلگرد انتظار در عضو سوم پروژه نیز ثبت شده است')
         _id(row['source_ref'],'مرجع میلگرد مشترک')
         _hash(row['source_sha256'],'هش مدرک میلگرد مشترک')
+        if source_audit is not None:
+            if row['source_ref'] != source_ref or row['source_sha256'] != source_sha:
+                raise OwnershipError('انتقال میلگرد به فایل منشأ شمع با SHA یکسان متصل نیست')
     if transferred!=required_bars:
         raise OwnershipError('میلگردهای انتظار مشترک فاقد قرارداد یک‌به‌یک هستند')
     blockers = ['مالکیت مشترک فقط پیش‌ممیزی شد؛ قرارداد مالی و کامل‌بودن تمام سوابق تاریخی احراز نشده است',
                 'یکپارچگی هش مدارک به معنای اصالت نقشه، امضا یا اختیار پرداخت نیست']
+    if source_audit is None:
+        blockers.append('قرارداد قدیمی فاقد احراز هویت فردی میلگرد انتظار از مدرک منشأ شمع است')
+    else:
+        blockers.append('هویت فردی با فایل منشأ تطبیق شد؛ اصالت مهندسی و ثبت مالی همچنان نیازمند تأیید مستقل است')
     if project.get('boq') or project.get('takeoffs'):
         blockers.append('سوابق مالی پروژه باید در گیت مستقل و بدون انتقال خاموش بررسی شوند')
-    return {'policy':POLICY,'status':'JOINT_CROSSWALK_PREVIEW_ONLY',
+    return {'policy':policy,'status':'JOINT_CROSSWALK_PREVIEW_ONLY',
             'commit_allowed':False,'ready_for_boq':False, 'rows':[],
             'matched_interfaces':deepcopy(audit_links),'matched_starter_pieces':len(transferred),
+            'source_identity_verified': source_audit is not None,
+            'source_identity_document_sha256':source_sha,
             'blockers':blockers}
