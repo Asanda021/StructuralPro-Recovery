@@ -158,3 +158,11 @@ def test_winding_direction_does_not_change_area_or_containment():
     assert area1==area2==3
     box=(Decimal('0'),Decimal('1'),Decimal('1'),Decimal('2'))
     assert rectangle_inside(original,box) and rectangle_inside(changed,box)
+
+
+def test_precision_of_direct_polygon_area_is_not_rounded():
+    x='1.'+'0'*55+'1'
+    shape=outline((0,0),(x,0),(x,'2'),(0,'2'),(0,0))
+    vertices, amount=checked_outline(shape,x,'2')
+    assert amount==Decimal('2.'+'0'*55+'2')
+    assert rectangle_inside(vertices,(Decimal(0),Decimal(0),Decimal(x),Decimal(2)))
