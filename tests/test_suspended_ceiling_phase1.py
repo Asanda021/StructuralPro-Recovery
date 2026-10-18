@@ -177,3 +177,15 @@ def test_same_physical_ceiling_id_on_different_host_is_rejected(tmp_path):
         app.save_aec_system_draft('P',other,expected_revision=0)
     assert app.open_project('P')==before
     app.store.close()
+
+
+def test_shared_panel_physical_id_across_distinct_ceiling_hosts_is_blocked(tmp_path):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/'db');app.create_project('کنترل قطعه مشترک', 'P')
+    app.save_aec_system_draft('P',sample(),expected_revision=0)
+    second=deepcopy(sample());second['system_id']='SC2';second['source']['source_id']='SOURCE-OTHER'
+    second['architecture_detail']['geometry'].update(physical_surface_id='OTHER-CEIL',host_id='OTHER-SLAB',space_id='OTHER-ROOM')
+    with pytest.raises(ValueError,match='فیزیکی|تکرار'):
+        app.save_aec_system_draft('P',second,expected_revision=0)
+    assert len(app.open_project('P')['reviewed_aec_systems'])==1
+    app.store.close()
