@@ -121,7 +121,6 @@ def test_cross_contract_revision_is_blocked():
         validate_amendment(old,new,[],[])
 
 
-
 def test_l_shaped_stair_with_full_height_rectangular_cut_and_real_recut():
     d=irregular();a=d['architecture_detail']
     a['openings'].append(item('CUT-OPEN',face_id='L1',x='1',y='0',width_m='.5',height_m='1'))
