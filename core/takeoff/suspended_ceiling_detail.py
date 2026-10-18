@@ -255,6 +255,10 @@ def guard(project):
     for d,g,box in ceilings:
         for other,og,ob in ceilings+others:
             if other is d or other.get('building_id')!=d.get('building_id') or other.get('floor_id')!=d.get('floor_id'):continue
+            if (other in (item[0] for item in ceilings) and
+                    canonical(g['physical_surface_id'])==canonical(og.get('physical_surface_id')) and
+                    (g['host_id']!=og.get('host_id') or g['face']!=og.get('face'))):
+                raise ValueError('شناسه فیزیکی سقف به دو میزبان یا وجه متفاوت تخصیص یافته است')
             if g['host_id']!=og.get('host_id') or g['face']!=og.get('face'):continue
             for name in ('space_id','physical_surface_id','count','length_m','width_m','plane'):
                 if name in og and og[name]!=g[name]:
