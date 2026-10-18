@@ -119,3 +119,43 @@ def test_cross_contract_revision_is_blocked():
     old=sample();new=irregular()
     with pytest.raises(ValueError,match='قرارداد'):
         validate_amendment(old,new,[],[])
+
+
+
+def test_l_shaped_stair_with_full_height_rectangular_cut_and_real_recut():
+    d=irregular();a=d['architecture_detail']
+    a['openings'].append(item('CUT-OPEN',face_id='L1',x='1',y='0',width_m='.5',height_m='1'))
+    a['stocks']=[s for s in a['stocks'] if s['id']!='ST-L1']
+    a['pieces']=[p for p in a['pieces'] if p['id']!='P-L1']
+    for ident,x,width in [('LEFT','0','1'),('RIGHT','1.5','.5')]:
+        a['stocks'].append(item('ST-'+ident,length_m=width,width_m='1',material_ref='سنگ تراورتن مصنوعی'))
+        a['pieces'].append(item('P-'+ident,face_id='L1',stock_id='ST-'+ident,
+                               piece_type='full',x=x,y='0',width_m=width,height_m='1',
+                               stock_x='0',stock_y='0',cut_ref='قطعه واقعی '+ident))
+    r=preview(d)
+    assert r['ready'],r['blockers']
+    assert Decimal(str(next(x for x in r['rows'] if x['item_code']=='landing')['quantity']))==Decimal('2.5')
+    assert sum(Decimal(str(row['quantity'])) for row in r['rows'] if row['role']=='work')==Decimal('2.96')
+
+
+def test_orthogonal_copy_requires_new_review_and_new_physical_claims(tmp_path):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/'db');app.create_project('نسخه کپی L', 'P')
+    d=irregular();app.save_aec_system_draft('P',d,expected_revision=0)
+    copied=app.aec_workflow().copy_roof('P','stone_floor','FND','STONE-ST1',
+        new_system_id='STONE-COPY',new_source_id='SOURCE-COPY',reason='نسخه فیزیکی مستقل')['data']
+    assert copied['architecture_detail']['contract']==ORTHOGONAL_CONTRACT
+    assert copied['architecture_detail']['geometry']['physical_stair_id']!=d['architecture_detail']['geometry']['physical_stair_id']
+    assert copied['architecture_detail']['faces'][2]['outline']==L_SHAPE
+    assert not preview(copied)['ready']
+    assert app.open_project('P')['boq']==[]
+    app.store.close()
+
+
+def test_winding_direction_does_not_change_area_or_containment():
+    original, area1=checked_outline(L_SHAPE,'2','2')
+    reverse=list(reversed(L_SHAPE[:-1]));reverse.append(reverse[0])
+    changed,area2=checked_outline(reverse,'2','2')
+    assert area1==area2==3
+    box=(Decimal('0'),Decimal('1'),Decimal('1'),Decimal('2'))
+    assert rectangle_inside(original,box) and rectangle_inside(changed,box)
