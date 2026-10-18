@@ -6,6 +6,7 @@ explicit rectangular installed pieces and openings. Geometry alone never
 certifies constructability or source authenticity.
 """
 from decimal import Decimal, InvalidOperation
+from core.commercial.exact_values import exact
 
 MAX_VERTICES = 64
 
@@ -36,6 +37,7 @@ def _crossing(a, b, c, d):
             min(v1[1], v2[1]) <= h1[1] <= max(v1[1], v2[1]))
 
 
+@exact
 def checked_outline(raw, length, width):
     """Validate closed, simple, orthogonal source polygon in a known rectangle."""
     length = number(length, 'طول وجه')
@@ -91,6 +93,7 @@ def _inside(point, vertices):
     return bool(crossings % 2)
 
 
+@exact
 def rectangle_inside(vertices, box):
     """Check full positive-area inclusion; edge contact is allowed, leaks aren't."""
     x1, y1, x2, y2 = box
