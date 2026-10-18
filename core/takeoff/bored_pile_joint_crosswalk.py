@@ -99,7 +99,7 @@ def _resolve_target(project, entry):
     return record
 
 
-def _valid_shared_piece(record, bar_id):
+def _count_shared_piece(record, bar_id):
     """Require a single explicit physical bar in the real counterpart record."""
     detail = record.get('data', {})
     rebars = detail.get('rebars')
@@ -119,7 +119,7 @@ def _valid_shared_piece(record, bar_id):
             if not isinstance(ids, list):
                 continue
             matches += sum(_canonical(v) == _canonical(bar_id) for v in ids)
-    return matches == 1
+    return matches
 
 
 def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
@@ -171,6 +171,7 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
     deductions = {}
     matched_deductions = set()
     audit_links = []
+    seen_target_physical = set()
     for entry in links:
         _object(entry, _LINK_KEYS, 'رابط عضو مشترک')
         pile_id = _id(entry['pile_id'], 'شناسه شمع')
@@ -190,6 +191,17 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
         if status not in ('documented_no_overlap', 'documented_deduction'):
             raise OwnershipError('وضعیت مکانی نامعلوم برای تطبیق مشترک کافی نیست')
         record = _resolve_target(project, entry)
+        target_physical = _canonical(entry['other_physical_id'])
+        # The same physical target cannot be relabelled as several members.
+        owner_key = (kind, entry['other_floor_id'], other)
+        for other_key, physical in seen_target_physical:
+            if physical == target_physical and other_key != owner_key:
+                raise OwnershipError('یک هویت فیزیکی خارجی به چند عضو متفاوت تخصیص یافته است')
+        seen_target_physical.add((owner_key, target_physical))
+        counterpart_geometry = record['data']['geometry']
+        if (counterpart_geometry.get('source_ref') != entry['geometry_reference'] or
+                counterpart_geometry.get('source_sha256') != entry['geometry_sha256']):
+            raise OwnershipError('مرجع و هش سند هندسی در رکورد واقعی عضو مرتبط ثبت نشده است')
         otherkey=(kind,entry['other_floor_id'],other)
         counterpart[otherkey]=record
         pile = piles[pile_id]
@@ -261,7 +273,7 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
         if target not in counterpart:
             raise OwnershipError('انتقال میلگرد به عضو نامرتبط یا فاقد Snapshot انجام شده است')
         _id(row['other_bar_physical_id'],'هویت میلگرد عضو مرتبط')
-        if not _valid_shared_piece(counterpart[target],row['other_bar_physical_id']):
+        if _count_shared_piece(counterpart[target],row['other_bar_physical_id']) != 1:
             raise OwnershipError('شناسه فیزیکی میلگرد در رکورد طرف مقابل قابل احراز نیست')
         if _canonical(row['other_bar_physical_id']) != bar_id:
             raise OwnershipError('هویت فردی مشترک میلگرد شمع و عضو گیرنده برابر نیست')
@@ -272,6 +284,14 @@ def audit_joint_contract(data, compiled, ownership_document, ownership_sha256,
         a=next(a for a in ownership_document['allocations'] if a['pile_id']==pile_id and a['operation']=='rebar_starters' and bar_id in [_canonical(v) for v in a['bar_piece_ids']])
         if a['payer_kind']!=payer:
             raise OwnershipError('مالک میلگرد انتظار بین دفتر شمع و انتقال مشترک مغایر است')
+        if payer == 'other_member' and _canonical(a['payer_id']) != _canonical(counterpart[target]['data']['geometry'].get('physical_id') or counterpart[target]['data']['geometry'].get('physical_cap_id') or counterpart[target]['data']['geometry'].get('physical_column_id')):
+            raise OwnershipError('هویت مالک پرداخت میلگرد با عضو گیرنده تطابق ندارد')
+        # A shared bar cannot also be claimed by a third concrete member.
+        for record in project.get(_REG, {}).values():
+            if record is counterpart[target]:
+                continue
+            if _count_shared_piece(record, row['other_bar_physical_id']) > 0:
+                raise OwnershipError('شناسه میلگرد انتظار در عضو سوم پروژه نیز ثبت شده است')
         _id(row['source_ref'],'مرجع میلگرد مشترک')
         _hash(row['source_sha256'],'هش مدرک میلگرد مشترک')
     if transferred!=required_bars:
