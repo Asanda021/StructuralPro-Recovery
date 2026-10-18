@@ -69,9 +69,11 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
     form.addRow('مشخصات نقشه', extra)
     controls['source_extra'] = extra
     for name, label in [('input_path','مسیر دیتایل'), ('input_sha256','SHA-256 دیتایل'),
-                        ('ownership_path','مسیر مالکیت'), ('ownership_sha256','SHA-256 مالکیت')]:
+                        ('ownership_path','مسیر مالکیت'), ('ownership_sha256','SHA-256 مالکیت'),
+                        ('joint_path','مسیر سند مشترک'), ('joint_sha256','SHA-256 سند مشترک')]:
         field(form, name, label, readonly=True)
-    for name, label in [('ownership_reference','مرجع مالکیت'),
+    for name, label in [('joint_reference','مرجع اتصال مشترک'),
+                        ('ownership_reference','مرجع مالکیت'),
                         ('reviewer','بازبین مقدماتی مستقل'),
                         ('ownership_claim','مرجع کنترل مقدماتی مالکیت')]:
         field(form, name, label)
@@ -138,11 +140,12 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         extra_fields = {k:v for k,v in source.items()
                         if k not in ('mode','source_id','approved_by','measurement_ref')}
         extra.setPlainText(json.dumps(extra_fields,ensure_ascii=False) if extra_fields else '')
-        for prefix in ('input','ownership'):
+        for prefix in ('input','ownership','joint'):
             document = dt.get(prefix + '_document', {})
             for key in ('path','sha256'):
                 controls[prefix + '_' + key].setText(document.get(key,''))
         controls['ownership_reference'].setText(dt.get('ownership_document',{}).get('reference',''))
+        controls['joint_reference'].setText(dt.get('joint_document',{}).get('reference',''))
         controls['reviewer'].setText(dt.get('preflight',{}).get('reviewer',''))
         controls['ownership_claim'].setText(dt.get('preflight',{}).get('ownership_reference_claim',''))
         members = data.get('piles', [])
@@ -224,6 +227,22 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             ensure_ascii=False,indent=2))
         message.setText('ممیزی مقدماتی ثبت شد؛ مالکیت مشترک و ثبت مالی هنوز مسدودند.')
 
+
+    def attach_joint():
+        path, _ = QFileDialog.getOpenFileName(dialog,'سند اتصال شمع، کلاهک و ستون','','JSON (*.json)')
+        if not path:
+            return
+        check_context()
+        if controls['reviewer'].text().strip() or controls['ownership_claim'].text().strip():
+            set_reviewer()
+        result = controller.attach_joint(path,reference=controls['joint_reference'].text())
+        fill()
+        report.setPlainText(json.dumps({'status':result['status'],
+            'matched_interfaces':result['matched_interfaces'],
+            'matched_starter_pieces':result['matched_starter_pieces'],
+            'blockers':result['blockers']},ensure_ascii=False,indent=2))
+        message.setText('اتصال مشترک پیش‌ممیزی شد؛ هیچ مجوز پرداخت صادر نشده است.')
+
     def save():
         check_context()
         set_reviewer()
@@ -236,7 +255,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         set_reviewer()
         result = controller.preview()
         names = ('engineering_ready','ready','commit_allowed','totals_exact',
-                 'ownership_audit','blockers')
+                 'ownership_audit','joint_audit','blockers')
         report.setPlainText(json.dumps({k:result.get(k) for k in names},ensure_ascii=False,indent=2))
         message.setText('پیش‌نمایش انجام شد؛ گیت مالی همچنان بسته است.' if result.get('engineering_ready') else 'پیش‌نمایش نامعتبر: ' + '؛ '.join(result.get('blockers', [])))
         tabs.setCurrentIndex(2)
@@ -258,7 +277,8 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
 
     for entries in (
         (('new','گروه جدید',create),('load','بازگشایی از SQLite',load),
-         ('input','خواندن دیتایل',attach_input),('owner','خواندن مالکیت',attach_owner)),
+         ('input','خواندن دیتایل',attach_input),('owner','خواندن مالکیت',attach_owner),
+         ('joint','خواندن اتصال مشترک',attach_joint)),
         (('save','ذخیره نسخه‌دار',save),('preview','پیش‌نمایش',preview),
          ('history_refresh','بازخوانی تاریخچه',refresh_history)),
     ):
