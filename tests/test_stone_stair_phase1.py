@@ -183,3 +183,56 @@ def test_amendment_stair_identity_is_immutable_after_commit(tmp_path):
         validate_amendment(d,bad,[],[])
     assert app.open_project('P')['boq']==prior
     app.store.close()
+
+
+def test_explicit_no_riser_requires_reason_and_no_riser_payment():
+    d=sample();a=d['architecture_detail']
+    a['steps'][0].update(riser_status='not_applicable',riser_face_id='none',riser_reason='پیشانی در این دیتایل سنگ نمی‌شود')
+    a['faces']=[p for p in a['faces'] if p['id']!='R1']
+    a['stocks']=[p for p in a['stocks'] if p['id']!='ST-R1']
+    a['pieces']=[p for p in a['pieces'] if p['face_id']!='R1']
+    out=preview(d);assert out['ready'],out['blockers']
+    work={r['item_code']:Decimal(str(r['quantity'])) for r in out['rows'] if r['role']=='work'}
+    assert work=={'tread':Decimal('.3'),'landing':Decimal('2')}
+
+
+def test_full_depth_tread_opening_deducted_with_explicit_recut_stocks():
+    d=sample();a=d['architecture_detail']
+    a['openings']=[item('O1',face_id='T1',x='.4',y='0',width_m='.2',height_m='.3')]
+    a['stocks']=[s for s in a['stocks'] if s['id']!='ST-T1']
+    a['pieces']=[p for p in a['pieces'] if p['face_id']!='T1']
+    for name,x in (('LEFT','0'),('RIGHT','.6')):
+        a['stocks'].append(item('ST-'+name,length_m='.4',width_m='.3',material_ref='سنگ تراورتن مصنوعی'))
+        a['pieces'].append(item('P-'+name,face_id='T1',stock_id='ST-'+name,piece_type='full',
+                              x=x,y='0',width_m='.4',height_m='.3',stock_x='0',stock_y='0',cut_ref='قطعه واقعی '+name))
+    out=preview(d);assert out['ready'],out['blockers']
+    assert Decimal(str(next(r for r in out['rows'] if r['item_code']=='tread')['quantity']))==Decimal('.24')
+    assert Decimal(str(next(r for r in out['rows'] if r['item_code']=='bedding')['quantity']))==Decimal('.0048')
+
+
+def test_independent_reviewer_same_as_face_approver_cannot_commit(tmp_path):
+    from core.platform.application import StructuralProApp
+    app=StructuralProApp(tmp_path/'db');app.create_project('بازبینی مستقل','P')
+    d=sample();app.save_aec_system_draft('P',d,expected_revision=0)
+    # Generic workflow stores a review statement; specialist must still block
+    # commitment if the reviewer authored any participating face detail.
+    app.review_roof_system('P','stone_floor','FND','STONE-ST1',expected_revision=1,
+                           reviewer='مهندس مستقل T1',note='بازبینی غیرمستقل')
+    with pytest.raises(ValueError,match='بازبین'):
+        app.commit_aec_system('P','stone_floor','FND','STONE-ST1',expected_revision=2)
+    assert app.open_project('P')['boq']==[]
+    app.store.close()
+
+
+def test_stone_cover_same_physical_host_is_not_double_billed(tmp_path):
+    from core.platform.application import StructuralProApp
+    from test_cover_specialist_work import sample as ordinary_cover
+    app=StructuralProApp(tmp_path/'db');app.create_project('ادعای پوشش تکراری','P')
+    older=ordinary_cover('stone_floor');older['floor_id']='FND'
+    older['architecture_detail']['geometry']['host_id']='STRUCT-STAIR1'
+    app.save_aec_system_draft('P',older,expected_revision=0)
+    before=deepcopy(app.open_project('P'))
+    with pytest.raises(ValueError,match='مالکیت|پله'):
+        app.save_aec_system_draft('P',sample(),expected_revision=0)
+    assert app.open_project('P')==before
+    app.store.close()
