@@ -248,6 +248,9 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         message.setText('اتصال مشترک پیش‌ممیزی شد؛ هیچ مجوز پرداخت صادر نشده است.')
 
     def audit_spatial():
+        # A cancelled or rejected attempt must not leave a previous favourable
+        # preview visible as though it belonged to the current evidence.
+        report.clear()
         check_context()
         data = controller.data
         if data is None or (controls['reviewer'].text() != data['pile_detail']['preflight'].get('reviewer','')
