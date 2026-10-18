@@ -96,6 +96,26 @@ def _resolve_target(project, entry):
     physical = [_canonical(v) for v in physical_candidates if v is not None]
     if not physical or len(set(physical)) != 1 or physical[0] != _canonical(entry['other_physical_id']):
         raise OwnershipError('هویت فیزیکی واقعی کلاهک/ستون در دفتر پروژه احراز نشده است')
+    # Checking only the matched record is insufficient: a cap/column may also
+    # be registered under another member/floor/kind with the SAME physical ID.
+    # Do not treat that second record as a separate payable concrete member.
+    # This is a read-only conflict gate; unrelated legacy records without a
+    # physical identity are not silently assigned one.
+    for other_record in register.values():
+        if other_record is record:
+            continue
+        other_data = other_record['data']
+        if other_data.get('kind') not in _EXTERNAL_KINDS:
+            continue
+        other_geometry = other_data.get('geometry')
+        candidates = [other_data.get('physical_id')]
+        if isinstance(other_geometry, dict):
+            candidates.extend((other_geometry.get('physical_id'),
+                               other_geometry.get('physical_cap_id'),
+                               other_geometry.get('physical_column_id')))
+        if any(candidate is not None and _canonical(candidate) == physical[0]
+               for candidate in candidates):
+            raise OwnershipError('هویت فیزیکی کلاهک/ستون زیر چند رکورد عضو یا طبقه تکرار شده است')
     return record
 
 
