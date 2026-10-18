@@ -122,6 +122,7 @@ def audit_spatial_overlap(data, compiled, ownership_document, ownership_sha256,
     seen = set()
     intervals = {}
     verified = []
+    unbound = []
     for item in links:
         _object(item, _LINK, 'رابط سه‌بعدی')
         key=(item['pile_id'], item['other_kind'],item['other_floor_id'],item['other_member_id'])
@@ -147,6 +148,13 @@ def audit_spatial_overlap(data, compiled, ownership_document, ownership_sha256,
         if _digest(record) != item['other_record_sha256']:
             raise OwnershipError('رکورد مرتبط پس از تهیه مدرک سه‌بعدی تغییر کرده است')
         _require_independent_joint_reviewer(reviewer, record)
+        from core.takeoff.bored_pile_counterpart_footprint import verify_record_bound
+        bounded = verify_record_bound(
+            record, project_id=data['project_id'], link=link, spatial_item=item,
+            coordinate_ref=data['datum']['coordinate_ref'],
+            vertical_datum_ref=data['datum']['vertical_datum_ref'])
+        if not bounded:
+            unbound.append(key)
         result = cylinder_box_overlap(
             pile, center_x_m=item['pile_center_x_m'],
             center_y_m=item['pile_center_y_m'],box_x_min_m=item['other_x_min_m'],
@@ -176,7 +184,10 @@ def audit_spatial_overlap(data, compiled, ownership_document, ownership_sha256,
         raise OwnershipError('برای تمام رابط‌های واقعی مدرک سه‌بعدی ارائه نشده است')
     return {'policy': POLICY,'status':'SPATIAL_PREVIEW_ONLY','ready_for_boq':False,
             'commit_allowed':False,'rows':[],'matched_interfaces':deepcopy(verified),
-            'blockers':[
+            'counterpart_geometry_record_bound':not unbound,
+            'unbound_counterpart_count':len(unbound),
+            'blockers':([
                 'بررسی هندسی مستقل فقط برای هندسه ساده و مستند؛ اصالت هندسه و نقشه تأیید نشده است',
                 'ممیزی حجم، مالکیت مالی یا تعارض همه رکوردهای تاریخی را آزاد نمی‌کند',
-            ]}
+            ] + (['مرز افقی عضو مقابل در رکورد نسخه‌دار و سند مستقل احراز نشده است']
+                 if unbound else []))}
