@@ -9,6 +9,9 @@ from app.reviewed_structural_manual_editor import open_manual_structural_editor
 from app.bored_pile_draft_controller import PileDraftController
 from core.platform.application import StructuralProApp
 from core.takeoff.bored_pile_spatial_overlap import POLICY
+from core.takeoff.bored_pile_joint_crosswalk import _digest
+from core.takeoff.bored_pile_counterpart_footprint import bind_draft
+from test_bored_pile_counterpart_footprint import make_source
 from test_bored_pile_joint_real_application import _saved_joint_case
 from test_bored_pile_real_application_controller import _document
 
@@ -16,6 +19,17 @@ from test_bored_pile_real_application_controller import _document
 def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path, monkeypatch):
     qt = QApplication.instance() or QApplication([])
     app, controller, data, compiled, owner, joint, _ = _saved_joint_case(tmp_path)
+    cap = next(r for r in app.open_project('P')['reviewed_structural_members'].values()
+               if r['data']['kind'] == 'pile_cap')
+    footprint = tmp_path / 'cap-footprint.json'
+    make_source(footprint, cap['data'],
+                coordinate_ref=data['datum']['coordinate_ref'],
+                datum=data['datum']['vertical_datum_ref'])
+    bound = bind_draft(cap['data'], 'P', str(footprint), reference='مرز افقی مستقل کلاهک')
+    cap = app.save_structural_member_draft(
+        'P', bound, expected_revision=cap['revision'], reason='ثبت مرز افقی مستقل')
+    joint['interfaces'][0]['other_revision'] = cap['revision']
+    joint['interfaces'][0]['other_record_sha256'] = _digest(cap)
     controller.attach_joint(_document(tmp_path / 'joint.json', joint), reference='Synthetic joint')
     controller.save()
     link = joint['interfaces'][0]
@@ -71,6 +85,8 @@ def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path
                 click('spatial')
                 result = json.loads(c['report'].toPlainText())
                 assert result['status'] == 'SPATIAL_PREVIEW_ONLY'
+                assert result['counterpart_geometry_record_bound'] is True
+                assert result['unbound_counterpart_count'] == 0
                 assert result['matched_interfaces'][0]['overlap_volume_m3'] == '0'
                 assert result['ready_for_boq'] is False and result['commit_allowed'] is False
                 assert c['report'].isReadOnly()
@@ -116,6 +132,8 @@ def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path
         again.load('FND', 'PG1')
         assert again.revision == controller.revision
         assert 'spatial_document' not in again.data['pile_detail']
+        assert reopened.get_structural_member('P', 'pile_cap', 'FND', 'CAP1')['revision'] == cap['revision']
+        assert reopened.open_project('P')['structural_member_history']
         assert reopened.open_project('P')['boq'] == []
         assert reopened.open_project('P')['takeoffs'] == []
     finally:
