@@ -207,6 +207,11 @@ def preview(data,engine,require_review=False):
             rv=data.get('roof_review',{});require_text(rv.get('reviewer'),'بازبین مستقل')
             require_text(rv.get('note'),'یادداشت بازبین')
             if rv.get('digest')!=review_digest(data):raise ValueError('بازبینی نسخه جاری معتبر نیست')
+            reviewer=canonical(rv['reviewer'])
+            approvers=[source.get('approved_by'),g['approved_by']]
+            approvers.extend(p.get('approved_by') for name in TABLES for p in a[name])
+            if any(reviewer==canonical(a) for a in approvers if a):
+                raise ValueError('بازبین سنگ پله نمی‌تواند تأییدکننده دیتایل خودش باشد')
     except (ValueError,KeyError,TypeError,AttributeError,OverflowError,ArithmeticError) as exc:
         errors.append(str(exc));rows.clear()
     return dict(kind='stone_floor',floor_id=data.get('floor_id'),system_id=data.get('system_id'),
