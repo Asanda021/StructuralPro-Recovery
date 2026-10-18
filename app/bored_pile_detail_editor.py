@@ -263,6 +263,8 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         result = controller.audit_spatial(path)
         report.setPlainText(json.dumps({
             'status':result['status'],
+            'counterpart_geometry_record_bound':result.get('counterpart_geometry_record_bound',False),
+            'unbound_counterpart_count':result.get('unbound_counterpart_count'),
             'matched_interfaces':result['matched_interfaces'],
             'commit_allowed':result['commit_allowed'],
             'ready_for_boq':result['ready_for_boq'],
