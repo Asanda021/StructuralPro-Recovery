@@ -14,7 +14,7 @@ PENDING='ثبت مالی شمع مسدود است؛ مالکیت بتن، کلا
 
 def new_detail(floor,group):
  from core.takeoff.reviewed_structural import empty_member
- d=empty_member('bored_pile',floor,group);d.update(measurement_policy=POLICY,pile_detail={'input':{},'input_document':{'path':'','sha256':'','reference':''},'ownership_document':{'path':'','sha256':'','reference':''},'preflight':{'reviewer':'','ownership_reference_claim':''}});return d
+ d=empty_member('bored_pile',floor,group);d.update(measurement_policy=POLICY,pile_detail={'input':{},'input_document':{'path':'','sha256':'','reference':''},'ownership_document':{'path':'','sha256':'','reference':''},'joint_document':{'path':'','sha256':'','reference':''},'preflight':{'reviewer':'','ownership_reference_claim':''}});return d
 
 def validated(data,pid=None):
  from core.takeoff.reviewed_structural import _validate_source,KINDS
@@ -30,7 +30,7 @@ def validated(data,pid=None):
  return compile_piles(e)
 
 def preview(data,engine=None,*,project_id=None,project=None):
- out={'ready':False,'engineering_ready':False,'commit_allowed':False,'preview_only':True,'rows':[],'takeoff_candidates':[],'blockers':[],'ownership_audit':None}
+ out={'ready':False,'engineering_ready':False,'commit_allowed':False,'preview_only':True,'rows':[],'takeoff_candidates':[],'blockers':[],'ownership_audit':None,'joint_audit':None}
  try:
   result=validated(data,project_id);dt=data['pile_detail'];e=dt['input'];image=deepcopy(project or {'id':e['project_id'],'takeoffs':[]})
   from core.takeoff.reviewed_structural import REGISTER,_key
@@ -56,6 +56,20 @@ def preview(data,engine=None,*,project_id=None,project=None):
    out['ownership_audit']=assessment
    out['ownership_document_sha256']=owner_doc['sha256']
    out['blockers'].extend(assessment['blockers'])
+   # The joint contract is optional, read-only and always finance-blocked.
+   # Audit against the actual ProjectStore image, not the filtered bridge copy.
+   joint_doc=dt.get('joint_document')
+   if isinstance(joint_doc,dict) and joint_doc.get('path'):
+    try:
+     from core.takeoff.bored_pile_joint_crosswalk import audit_joint_contract
+     require_text(joint_doc.get('reference'),'مرجع اتصال شمع، کلاهک و ستون')
+     joint_evidence=read_evidence(joint_doc['path'],joint_doc['sha256'])
+     joint_result=audit_joint_contract(e,result,evidence,owner_doc['sha256'],joint_evidence,project or {})
+     out['joint_audit']=joint_result
+     out['joint_document_sha256']=joint_doc['sha256']
+     out['blockers'].extend(joint_result['blockers'])
+    except (ValueError,KeyError,TypeError,OSError,AttributeError) as exc:
+     out['blockers'].append('تطبیق مشترک شمع/کلاهک/ستون معتبر نیست: '+str(exc))
   except (ValueError,KeyError,TypeError,OSError,AttributeError) as exc:
    out['blockers'].append('سند مالکیت شمع نامعتبر یا غیرقابل تطبیق است: '+str(exc))
  out['blockers'].append(PENDING)
