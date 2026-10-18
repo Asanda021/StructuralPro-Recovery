@@ -148,12 +148,13 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     ded_scope=QComboBox();ded_scope.addItem('دامنه کسورات را انتخاب کنید',None);ded_scope.addItem('هر عضو','per_member');ded_scope.addItem('کل گروه','total_group');main.addWidget(ded_scope)
     ded_ref=QLineEdit();ded_ref.setPlaceholderText('مرجع کسورات یا نبود تقاطع؛ بدون حدس');main.addWidget(ded_ref)
     advanced=QPushButton('ویرایش ردیفی دیتایل عضو انتخابی');section_button=QPushButton('نواحی مقطع ستون');ded_button=QPushButton('کسورات مستند عضو');review_column=QPushButton('بازبینی نسخه جاری عضو')
+    pile_specialist=QPushButton('فرم تخصصی شمع بتنی درجا — پیش‌نویس');pile_specialist.setObjectName('open_bored_pile_specialist')
     creator=QLineEdit();reviewer=QLineEdit();note=QLineEdit();amend_id=QLineEdit()
     for w,label in [(creator,'سازنده اصلاحیه عضو'),(reviewer,'بازبین مستقل اصلاحیه'),(note,'یادداشت بازبینی'),(amend_id,'شناسه اصلاحیه')]:w.setPlaceholderText(label);main.addWidget(w)
     evidence_path=QLineEdit();evidence_ref=QLineEdit();evidence_path.setPlaceholderText('مسیر فایل مدرک جدید اصلاحیه پی و شناژ');evidence_ref.setPlaceholderText('مرجع مدرک جدید');main.addWidget(evidence_path);main.addWidget(evidence_ref)
     amend_buttons={k:QPushButton(label) for k,label in [('create','درخواست اصلاح عضو قطعی'),('review','بازبینی مستقل اصلاحیه عضو'),('apply','اعمال اتمیک اصلاحیه عضو')]}
     reports={k:QPushButton('گزارش عضو '+label) for k,label in [('xlsx','Excel'),('pdf','PDF')]}
-    for b in [advanced,section_button,ded_button,review_column,*amend_buttons.values(),*reports.values()]:main.addWidget(b)
+    for b in [pile_specialist,advanced,section_button,ded_button,review_column,*amend_buttons.values(),*reports.values()]:main.addWidget(b)
     new_member=QLineEdit();new_source=QLineEdit()
     new_member.setPlaceholderText('شناسه مستقل عضو کپی');new_source.setPlaceholderText('منبع مستقل عضو کپی')
     copy_member=QPushButton('کپی عضو با هویت جدید و ابطال تأییدها')
@@ -498,10 +499,25 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
             message.setText('پیش‌نویس حذف و سابقه آن حفظ شد')
         except Exception as exc:error(exc)
     copy_member.clicked.connect(copy_current_member);delete_member.clicked.connect(delete_current_member)
+    def launch_bored_pile():
+        try:
+            pid,fl,k,mid=context()
+            if k!='bored_pile':raise ValueError('فرم تخصصی فقط برای شمع بتنی درجا است')
+            if state.get('dirty'):raise ValueError('ابتدا تغییرات ذخیره‌نشده فرم عمومی را تعیین تکلیف کنید')
+            from app.bored_pile_detail_editor import open_bored_pile_editor
+            open_bored_pile_editor(service,parent=dialog,project_id=pid,floor_id=fl,group_id=mid)
+            # Reacquire from SQLite on next generic action; never overwrite a
+            # specialist record from an older cached general-purpose draft.
+            state.update(data=None,project_id=None,revision=0,current=None,dirty=False)
+            message.setText('فرم تخصصی بسته شد؛ برای مشاهده نسخه جدید، عضو را مجدداً بارگذاری کنید.')
+        except (ValueError,KeyError,TypeError,OSError,RuntimeError,AttributeError) as exc:error(exc)
+    pile_specialist.clicked.connect(launch_bored_pile)
+    kinds.currentIndexChanged.connect(lambda _=None:pile_specialist.setEnabled(kinds.currentData()=='bored_pile'))
+    pile_specialist.setEnabled(kinds.currentData()=='bored_pile')
     advanced.clicked.connect(lambda:edit_column());section_button.clicked.connect(lambda:edit_column('sections'));ded_button.clicked.connect(lambda:edit_column('intersections'));review_column.clicked.connect(review_current_column)
     for action,button in amend_buttons.items():button.clicked.connect(lambda _=False,a=action:amend_column(a))
     for fmt,button in reports.items():button.clicked.connect(lambda _=False,f=fmt:export_column(f))
-    dialog.column_controls={'geometry_ref':geometry_ref,'source_id':source_id,'group_approver':group_approver,'group_ref':group_ref,'group_reason':group_reason,'scope_ref':scope_ref,'apply':apply,'add':add,'remove':remove,'scroll':scroll,'new_member':new_member,'new_source':new_source,'copy_member':copy_member,'delete_member':delete_member,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'evidence_path':evidence_path,'evidence_ref':evidence_ref,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
+    dialog.column_controls={'pile_specialist':pile_specialist,'geometry_ref':geometry_ref,'source_id':source_id,'group_approver':group_approver,'group_ref':group_ref,'group_reason':group_reason,'scope_ref':scope_ref,'apply':apply,'add':add,'remove':remove,'scroll':scroll,'new_member':new_member,'new_source':new_source,'copy_member':copy_member,'delete_member':delete_member,'project':project,'floor':floor,'kind':kinds,'id':ident,'load':load,'save':save,'preview':preview,'commit':commit,'numeric':numeric,'specialist':specialist,'building':building,'axis':axis,'plan':plan,'detail_ref':drawing_detail,'repeat_scope':repeat_scope,'scope':column_scope,'ded_scope':ded_scope,'ded_ref':ded_ref,'advanced':advanced,'sections':section_button,'deductions':ded_button,'review':review_column,'group':detail,'status':status,'shape':shape,'numeric_geometry':numeric,'geometry_reviewer':geometry_reviewer,'reason':reason,'creator':creator,'reviewer':reviewer,'note':note,'amend_id':amend_id,'evidence_path':evidence_path,'evidence_ref':evidence_ref,'amend':amend_buttons,'reports':reports,'state':state,'message':message}
     add.clicked.connect(lambda: detail_table.insertRow(detail_table.rowCount()))
     def remove_selected():
         selected=sorted({x.row() for x in detail_table.selectedIndexes()},reverse=True)
