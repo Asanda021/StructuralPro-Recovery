@@ -51,18 +51,20 @@ def _items(value, label):
     return value
 
 
-def _identity(row, fields, ids, physical):
-    strict(row, COMMON + fields, 'جزء مستند رنگ');checked(row)
+def _identity(row, fields, ids, physical, *, require_approval=True):
+    strict(row, COMMON + fields, 'جزء مستند رنگ')
+    if require_approval:checked(row)
     ident = canonical(row['id']);physical_id = canonical(row['physical_key'])
     if '|' in row['id'] or ident in ids or physical_id in physical:
         raise ValueError('جزء فیزیکی یا شناسه ردیف تکراری است')
     ids.add(ident);physical.add(physical_id)
 
 
-def _areas(data):
+def _areas(data, *, require_approval=True):
     detail = data['architecture_detail']
     strict(detail, ('contract', 'geometry', 'openings', 'zones', 'stages'), 'قرارداد رنگ')
-    geom = detail['geometry'];strict(geom, GEOMETRY, 'هندسه رنگ');checked(geom)
+    geom = detail['geometry'];strict(geom, GEOMETRY, 'هندسه رنگ')
+    if require_approval:checked(geom)
     for key in ('physical_surface_id', 'host_id', 'space_id', 'repeat_ref'):
         require_text(geom[key], 'هویت فیزیکی و دامنه سطح')
     face = geom['face']
@@ -74,7 +76,7 @@ def _areas(data):
     count = number(geom['count'], 'تعداد مستقل', integer=True)
     ids, physical = set(), set();openings = {}
     for opening in _items(detail['openings'], 'بازشوها'):
-        _identity(opening, ('x','y','width_m','height_m'), ids, physical)
+        _identity(opening, ('x','y','width_m','height_m'), ids, physical, require_approval=require_approval)
         box = rectangle(opening, length, height)
         if any(intersection(box, b) > 0 for b in openings.values()):
             raise ValueError('بازشوها متداخل‌اند')
@@ -82,7 +84,7 @@ def _areas(data):
     zones = {}
     all_boxes = []
     for zone in _items(detail['zones'], 'نواحی رنگ'):
-        _identity(zone, ZONE, ids, physical)
+        _identity(zone, ZONE, ids, physical, require_approval=require_approval)
         require_text(zone['scope_ref'], 'مدرک دامنه اجرای رنگ')
         box = rectangle(zone, length, height)
         if any(intersection(box, b) > 0 for b in all_boxes):
@@ -202,6 +204,9 @@ def remap_copy(data,replacements):
         for p in a[table]:
             p['physical_key']='P-'+uuid4().hex
             if table == 'zones':p['opening_ids']=[replacements.get(i,i) for i in p['opening_ids']]
+    for stage in a['stages'].values():
+        for coat in stage['passes']:
+            coat['zone_id']=replacements.get(coat['zone_id'],coat['zone_id'])
 
 
 @exact
@@ -221,7 +226,7 @@ def guard(project):
             continue
         if is_paint(d):
             effective=beam_current(project,key)['data']
-            geom,zones,count,_,_=_areas(effective)
+            geom,zones,count,_,_=_areas(effective,require_approval=False)
             for zone,b,net,ded in zones.values():
                 paint.append((effective,geom,b))
         elif is_cover(d):
