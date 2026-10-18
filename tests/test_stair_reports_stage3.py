@@ -45,7 +45,11 @@ def test_unknown_ownership_is_not_zero_or_payable(tmp_path):
  rows,metadata=build(a,'P','L1','ST1');assert any('مسدود' in r['description'] for r in rows)
  assert not any(r['description'].startswith('جمع دارای مالکیت') for r in rows)
  assert any(r['description'].startswith('جمع مهندسی') for r in rows)
- assert not any(r.get('quantity')=='0' for r in rows);a.store.close()
+ unknown=[r for r in rows if r['description'].startswith('مدرک مالکیت؛ مسدود')]
+ assert len(unknown)==1 and 'مقدار نامعلوم؛ صفر تلقی نشده است' in unknown[0]['quantity']
+ assert unknown[0]['quantity']!='0'
+ # A documented zero void area is valid geometry, distinct from unknown ownership.
+ assert any('مساحت بازشو' in r['description'] and r['quantity']=='0' for r in rows);a.store.close()
 
 def test_tampered_source_cannot_export(tmp_path):
  from core.reports.stair_detail_report import build
@@ -81,3 +85,18 @@ def test_word_persian_logical_alignment(tmp_path):
  for p in d.element.iter(qn('w:pPr')):
   bidi=p.find(qn('w:bidi'));jc=p.find(qn('w:jc'))
   if bidi is not None and bidi.get(qn('w:val'))=='1':assert jc is not None and jc.get(qn('w:val'))=='start'
+
+def test_long_calculation_values_and_hashes_have_standalone_cells(tmp_path):
+ from core.reports.stair_detail_report import build
+ a=StructuralProApp(tmp_path/'db');a.create_project('مصنوعی','P');d=sample(tmp_path);commit(a,d)
+ rows,_=build(a,'P','L1','ST1');values=[r.get('quantity') for r in rows]
+ calc=a.preview_aec_system('P','stair','L1','ST1')['component_calculations'][0]
+ assert calc['sloped_length_m'] in values and calc['slope_angle_deg'] in values
+ assert d['stair_detail']['input_document']['sha256'] in values
+ assert d['stair_detail']['ownership_document']['path'] in values;a.store.close()
+
+def test_excel_summary_does_not_use_narrow_ordinal_column(tmp_path):
+ from core.reports.exporters import export_xlsx
+ from openpyxl import load_workbook
+ p=tmp_path/'summary.xlsx';export_xlsx([{'item_no':1,'description':'مصنوعی','quantity':'1.25'}],p,summary={'amount_by_group':{'جمع مهندسی؛ غیرقابل پرداخت مستقل':'1.25'}},columns=[('item_no','ردیف'),('description','شرح'),('quantity','مقدار')])
+ w=load_workbook(p);s=w['ریز متره'];assert 'A4:B4' in {str(r) for r in s.merged_cells.ranges};assert s['C4'].value==1.25

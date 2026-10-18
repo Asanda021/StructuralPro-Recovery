@@ -36,18 +36,29 @@ def build(service,pid,floor,sid):
     if k=='group':
      from core.takeoff.stair_detail import BAR_LABELS
      v=BAR_LABELS.get(v,v)
-    values.append(LABELS[k]+': '+str(v))
+    if isinstance(v,str) and len(v)>20 and all(ch in '0123456789.-+Ee' for ch in v):
+     add(TITLES[group]+'؛ '+str(p.get('id',p.get('key','')))+'؛ '+LABELS[k],quantity=v)
+    else:values.append(LABELS[k]+': '+str(v))
    add(TITLES[group]+'؛ دیتایل غیرقابل پرداخت مستقل',source=p.get('id',p.get('physical_id',p.get('key'))),notes='؛ '.join(values))
  for c in result['component_calculations']:
-  add('محاسبات هندسی؛ غیرقابل پرداخت مستقل',source=c['component'],notes='؛ '.join({'plan_area_m2':'مساحت پلان (مترمربع)','void_area_m2':'مساحت بازشو (مترمربع)','volume_gross_m3':'حجم ناخالص (مترمکعب)','volume_deduction_m3':'کسور حجم (مترمکعب)','volume_net_m3':'حجم خالص (مترمکعب)','sloped_length_m':'طول شیبدار (متر)','slope_angle_deg':'زاویه (درجه)','slope_direction':'جهت شیب'}[k]+': '+str(dict(CHOICES['direction']).get(v,v)) for k,v in c.items() if k!='component' and v is not None))
+  names={'plan_area_m2':'مساحت پلان (مترمربع)','void_area_m2':'مساحت بازشو (مترمربع)','volume_gross_m3':'حجم ناخالص (مترمکعب)','volume_deduction_m3':'کسور حجم (مترمکعب)','volume_net_m3':'حجم خالص (مترمکعب)','sloped_length_m':'طول شیبدار (متر)','slope_angle_deg':'زاویه (درجه)','slope_direction':'جهت شیب'}
+  for key,label in names.items():
+   value=c[key]
+   if value is not None:
+    value=dict(CHOICES['direction']).get(value,value)
+    add('محاسبات هندسی؛ '+c['component']+'؛ '+label+'؛ غیرقابل پرداخت مستقل',quantity=value)
  for name,label in [('input_document','مدرک دیتایل'),('ownership_document','مدرک مالکیت')]:
   doc=dt.get(name)
-  if doc:add(label,source=doc['reference'],notes='مسیر: '+doc['path']+'؛ SHA-256: '+doc['sha256'])
+  if doc:
+   add(label+'؛ مرجع',notes=doc['reference'])
+   add(label+'؛ مسیر اصلی',quantity=doc['path'])
+   add(label+'؛ SHA-256',quantity=doc['sha256'])
   else:add(label+'؛ مسدود/نیازمند مدرک',notes='مقدار نامعلوم؛ صفر تلقی نشده است')
  amendments=project.get('beam_amendments',{})
  for a in amendments.values():
   if a.get('beam_key')!=_id('stair',floor,sid):continue
-  add('اصلاحیه '+{'draft':'درخواست‌شده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']],source=a['id'],notes='علت: '+a['reason']+'؛ مرجع: '+a['evidence']['evidence_reference']+'؛ SHA-256: '+a['evidence']['evidence_sha256']+'؛ بازبین: '+a.get('review',{}).get('reviewer','نیازمند بازبینی'))
+  add('اصلاحیه '+{'draft':'درخواست‌شده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']],source=a['id'],notes='علت: '+a['reason']+'؛ مرجع: '+a['evidence']['evidence_reference']+'؛ بازبین: '+a.get('review',{}).get('reviewer','نیازمند بازبینی'))
+  add('مدرک اصلاحیه؛ SHA-256',quantity=a['evidence']['evidence_sha256'])
   from core.takeoff.stair_detail import preview
   old={r['source_id']:r for r in preview(a['previous']['data'],None)['rows']};new={r['source_id']:r for r in a['rows']}
   for source,delta in a['delta'].items():
@@ -80,4 +91,5 @@ def export(service,pid,floor,sid,path,*,format):
  if format not in functions:raise ValueError('قالب گزارش نامعتبر است')
  rows,metadata=build(service,pid,floor,sid)
  options={'landscape':True} if format=='docx' else {}
- return functions[format](rows,path,**options,title='ریزمتره تخصصی پله بتنی و پاگرد',metadata=metadata,columns=[('item_no','ردیف'),('description','شرح'),('quantity','مقدار دقیق یا دیتایل مستند')])
+ summary={'amount_by_group':{r['description']:r['quantity'] for r in rows if r['description'].startswith(('جمع مهندسی','جمع دارای مالکیت'))}}
+ return functions[format](rows,path,**options,summary=summary,title='ریزمتره تخصصی پله بتنی و پاگرد',metadata=metadata,columns=[('item_no','ردیف'),('description','شرح'),('quantity','مقدار دقیق یا دیتایل مستند')])

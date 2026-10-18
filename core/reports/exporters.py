@@ -227,8 +227,12 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     detail.cell(3, 1).alignment = Alignment(horizontal="right", readingOrder=2)
     summary_items = _summary_items(summary)
     for i, (label, value) in enumerate(summary_items, 4):
+        # Ordinal/code columns can be very narrow. Give summary prose the
+        # combined label span and leave the last column for exact quantities.
+        value_col=max(2,len(cols))
+        if value_col>2:detail.merge_cells(start_row=i,start_column=1,end_row=i,end_column=value_col-1)
         write_excel_cell(detail.cell(i,1),label)
-        write_excel_cell(detail.cell(i,2),value,numeric=True)
+        write_excel_cell(detail.cell(i,value_col),value,numeric=True)
     header_row = max(6, 4 + len(summary_items))
     detail.merge_cells(start_row=header_row,start_column=1,end_row=header_row,end_column=max(1,len(cols)))
     detail.cell(header_row, 1, "ریز متره و برآورد")
