@@ -14,7 +14,7 @@ PENDING='ثبت مالی شمع مسدود است؛ مالکیت بتن، کلا
 
 def new_detail(floor,group):
  from core.takeoff.reviewed_structural import empty_member
- d=empty_member('bored_pile',floor,group);d.update(measurement_policy=POLICY,pile_detail={'input':{},'input_document':{'path':'','sha256':'','reference':''},'preflight':{'reviewer':'','ownership_reference_claim':''}});return d
+ d=empty_member('bored_pile',floor,group);d.update(measurement_policy=POLICY,pile_detail={'input':{},'input_document':{'path':'','sha256':'','reference':''},'ownership_document':{'path':'','sha256':'','reference':''},'preflight':{'reviewer':'','ownership_reference_claim':''}});return d
 
 def validated(data,pid=None):
  from core.takeoff.reviewed_structural import _validate_source,KINDS
@@ -30,15 +30,36 @@ def validated(data,pid=None):
  return compile_piles(e)
 
 def preview(data,engine=None,*,project_id=None,project=None):
- out={'ready':False,'engineering_ready':False,'commit_allowed':False,'preview_only':True,'rows':[],'takeoff_candidates':[],'blockers':[]}
+ out={'ready':False,'engineering_ready':False,'commit_allowed':False,'preview_only':True,'rows':[],'takeoff_candidates':[],'blockers':[],'ownership_audit':None}
  try:
   result=validated(data,project_id);dt=data['pile_detail'];e=dt['input'];image=deepcopy(project or {'id':e['project_id'],'takeoffs':[]})
   from core.takeoff.reviewed_structural import REGISTER,_key
   image.get(REGISTER,{}).pop(_key('bored_pile',data['floor_id'],data['member_id']),None)
   r=compile_preview(e,image,independent_reviewer=require_text(dt['preflight'].get('reviewer'),'بازبین پیش‌ارزیابی'),ownership_reference=require_text(dt['preflight'].get('ownership_reference_claim'),'ادعای مرجع مالکیت'))
   out.update(engineering_ready=True,engineering_rows=deepcopy(result['rows']),physical_claims=deepcopy(result['physical_claims']),totals_exact=deepcopy(r['totals']),input_sha256=r['input_sha256'],takeoff_candidates=deepcopy(r['takeoff_candidates']))
- except (ValueError,KeyError,TypeError,OSError,ArithmeticError,AttributeError) as exc:out['blockers'].append('دیتایل، مدرک یا هویت شمع نامعتبر است: '+str(exc))
- out['blockers'].append(PENDING);return out
+ except (ValueError,KeyError,TypeError,OSError,AttributeError,ArithmeticError) as exc:
+  out['blockers'].append('دیتایل، مدرک یا هویت شمع نامعتبر است: '+str(exc))
+  out['blockers'].append(PENDING)
+  return out
+ # Ownership is an optional, independent read-only audit. An absent or
+ # invalid document never cancels an otherwise valid engineering preview.
+ # It also never authorizes BOQ or removes the project-level financial gate.
+ owner_doc=dt.get('ownership_document')
+ if not isinstance(owner_doc,dict) or not owner_doc.get('path'):
+  out['blockers'].append('سند مستقل مالکیت شمع ارائه نشده است')
+ else:
+  try:
+   from core.takeoff.bored_pile_ownership_preflight import read_evidence,audit
+   require_text(owner_doc.get('reference'),'مرجع سند مالکیت شمع')
+   evidence=read_evidence(owner_doc['path'],owner_doc['sha256'])
+   assessment=audit(e,result,evidence)
+   out['ownership_audit']=assessment
+   out['ownership_document_sha256']=owner_doc['sha256']
+   out['blockers'].extend(assessment['blockers'])
+  except (ValueError,KeyError,TypeError,OSError,AttributeError) as exc:
+   out['blockers'].append('سند مالکیت شمع نامعتبر یا غیرقابل تطبیق است: '+str(exc))
+ out['blockers'].append(PENDING)
+ return out
 
 def guard(previous,updated):
  from core.takeoff.reviewed_structural import REGISTER,_key
