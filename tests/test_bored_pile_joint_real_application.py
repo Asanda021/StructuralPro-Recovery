@@ -162,3 +162,25 @@ def test_changed_signed_owner_document_is_invalidated_after_reopen(tmp_path):
         assert app.open_project("P")["boq"] == []
     finally:
         app.store.close()
+
+
+def test_sqlite_snapshot_with_an_aliased_cap_cannot_pass_joint_audit(tmp_path):
+    """Old/foreign duplicate records are blockers, never a second payable cap."""
+    case = _saved_joint_case(tmp_path)
+    app, controller, data, compiled, owner, joint, project = case
+    snapshot = deepcopy(project)
+    try:
+        target = next(record for record in snapshot['reviewed_structural_members'].values()
+                      if record['data']['kind'] == 'pile_cap')
+        alias = deepcopy(target)
+        alias['data']['member_id'] = 'CAP-HISTORICAL-ALIAS'
+        alias['data']['floor_id'] = 'OTHER-FLOOR'
+        snapshot['reviewed_structural_members']['HISTORIC-CAP'] = alias
+        with pytest.raises(OwnershipError, match='هویت فیزیکی.*تکرار'):
+            _audit(case, snapshot=snapshot)
+        persisted = app.open_project('P')
+        assert persisted['boq'] == [] and persisted['takeoffs'] == []
+        assert 'HISTORIC-CAP' not in persisted['reviewed_structural_members']
+        assert app.store.db.execute('pragma integrity_check').fetchone()[0] == 'ok'
+    finally:
+        app.store.close()
