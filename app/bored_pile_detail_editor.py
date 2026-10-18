@@ -247,6 +247,27 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             'blockers':result['blockers']},ensure_ascii=False,indent=2))
         message.setText('اتصال مشترک پیش‌ممیزی شد؛ هیچ مجوز پرداخت صادر نشده است.')
 
+    def audit_spatial():
+        check_context()
+        data = controller.data
+        if data is None or (controls['reviewer'].text() != data['pile_detail']['preflight'].get('reviewer','')
+                            or controls['ownership_claim'].text() != data['pile_detail']['preflight'].get('ownership_reference_claim','')):
+            raise ValueError('بازبین نمایش‌داده‌شده با نسخه ذخیره‌شده برابر نیست')
+        path, _ = QFileDialog.getOpenFileName(
+            dialog, 'سند مستقل سه‌بعدی شمع و عضو مرتبط', '', 'JSON (*.json)')
+        if not path:
+            return
+        result = controller.audit_spatial(path)
+        report.setPlainText(json.dumps({
+            'status':result['status'],
+            'matched_interfaces':result['matched_interfaces'],
+            'commit_allowed':result['commit_allowed'],
+            'ready_for_boq':result['ready_for_boq'],
+            'blockers':result['blockers'],
+        }, ensure_ascii=False, indent=2))
+        message.setText('ممیزی سه‌بعدی فقط‌خواندنی انجام شد؛ نتیجه ذخیره نشده و ثبت مالی مسدود است.')
+        tabs.setCurrentIndex(2)
+
     def amend_input():
         check_context()
         current = controller.data['pile_detail']['preflight']
@@ -301,7 +322,8 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
     for entries in (
         (('new','گروه جدید',create),('load','بازگشایی از SQLite',load),
          ('input','خواندن دیتایل',attach_input),('owner','خواندن مالکیت',attach_owner),
-         ('joint','خواندن اتصال مشترک',attach_joint)),
+         ('joint','خواندن اتصال مشترک',attach_joint),
+          ('spatial','پیش‌ممیزی سه‌بعدی',audit_spatial)),
         (('save','ذخیره نسخه‌دار',save),('amend','اصلاحیه مستند پیش‌نویس',amend_input),('preview','پیش‌نمایش',preview),
          ('history_refresh','بازخوانی تاریخچه',refresh_history)),
     ):
