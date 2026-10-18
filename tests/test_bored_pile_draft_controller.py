@@ -180,3 +180,18 @@ def test_float_json_duplicate_and_nonfinite_are_all_rejected(tmp_path):
     for item in ('{"n":1.1}','{"n":NaN}','{"a":2,"a":3}'):
         path=tmp_path/'bad.json';path.write_text(item)
         with pytest.raises(ValueError):_checked_document(path)
+
+
+def test_joint_document_is_invalidated_on_input_and_ownership_replacement(tmp_path):
+    c, service, data = _setup(tmp_path)
+    good = _json(tmp_path/'owner.json', _owner(data))
+    c.attach_ownership(good, reference='valid preliminary owner')
+    c.data['pile_detail']['joint_document'] = {'path':'old.json', 'sha256':'a'*64,'reference':'stale'}
+    c.attach_ownership(good, reference='new owner version')
+    assert c.data['pile_detail']['joint_document'] == {'path':'','sha256':'','reference':''}
+    c.data['pile_detail']['joint_document'] = {'path':'old.json','sha256':'a'*64,'reference':'stale'}
+    c.attach_input(tmp_path/'e.json', source={'mode':'manual','source_id':'S1','approved_by':'Author','measurement_ref':'synthetic-doc'})
+    assert c.data['pile_detail']['joint_document'] == {'path':'','sha256':'','reference':''}
+    assert c.data['pile_detail']['ownership_document'] == {'path':'','sha256':'','reference':''}
+    assert not service.open_project('P')['boq']
+    service.close()
