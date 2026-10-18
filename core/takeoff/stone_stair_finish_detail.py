@@ -14,10 +14,12 @@ from core.takeoff.reviewed_components import require_text
 from core.takeoff.architecture_detail import POLICY, COMMON, intersection, area
 
 CONTRACT = 'stone_stair_rectangular_v1'
+ORTHOGONAL_CONTRACT = 'stone_stair_orthogonal_v2'
 GEOMETRY = ('physical_stair_id','host_id','unit','count','repeat_ref','source_ref','approved_by')
 STEP = ('tread_face_id','riser_face_id','riser_status','riser_reason')
 FACE = ('step_id','face_kind','length_m','width_m','material_ref','payment_ref',
         'layout_status','layout_ref')
+ORTHOGONAL_FACES = FACE + ('outline',)
 OPENING = ('face_id','x','y','width_m','height_m')
 STOCK = ('length_m','width_m','material_ref')
 PIECE = ('face_id','stock_id','piece_type','x','y','width_m','height_m',
@@ -36,7 +38,7 @@ LABELS = {'tread':'سنگ کف‌پله', 'riser':'سنگ پیشانی پله','
 
 
 def is_stair_stone(data):
-    return isinstance(data,dict) and data.get('kind')=='stone_floor' and isinstance(data.get('architecture_detail'),dict) and data['architecture_detail'].get('contract')==CONTRACT
+    return isinstance(data,dict) and data.get('kind')=='stone_floor' and isinstance(data.get('architecture_detail'),dict) and data['architecture_detail'].get('contract') in (CONTRACT, ORTHOGONAL_CONTRACT)
 
 
 def n(value, label, zero=False, integer=False):
@@ -84,6 +86,9 @@ def preview(data,engine,require_review=False):
         if any(v!={'status':'unreviewed'} for v in data['components'].values()):
             raise ValueError('محاسبه عمومی و تخصصی سنگ پله قابل جمع نیستند')
         a=data['architecture_detail'];strict(a,('contract','geometry')+tuple(TABLES),'دیتایل سنگ پله')
+        orthogonal = a['contract'] == ORTHOGONAL_CONTRACT
+        if orthogonal:
+            from core.takeoff.orthogonal_footprint import checked_outline, rectangle_inside
         g=a['geometry'];strict(g,GEOMETRY,'هندسه میزبان پله');checked(g)
         for key in ('physical_stair_id','host_id','repeat_ref'):require_text(g[key],'شناسه فیزیکی و تکرار')
         if g['unit']!='m':raise ValueError('همه ابعاد سنگ پله باید متر باشند')
@@ -94,7 +99,8 @@ def preview(data,engine,require_review=False):
             value=a[name]
             if not isinstance(value,list) or len(value)>512:
                 raise ValueError(name+': جدول صریح و محدود لازم است')
-            for item in value:identity(item,fields,ids,physical)
+            for item in value:
+                identity(item,ORTHOGONAL_FACES if orthogonal and name=='faces' else fields,ids,physical)
         if not a['steps'] or not a['faces']:
             raise ValueError('کف‌پله و دیتایل نصب سنگ باید صریح باشند')
         steps={p['id']:p for p in a['steps']}
@@ -114,7 +120,7 @@ def preview(data,engine,require_review=False):
         for p in a['steps']:
             related.add(p['tread_face_id'])
             if p['riser_status']=='covered':related.add(p['riser_face_id'])
-        net={};holes={};units={};bounds={}
+        net={};holes={};units={};bounds={};outlines={}
         for fid,face in faces.items():
             face_kind=face['face_kind'];sid=face['step_id']
             if face_kind=='landing':
@@ -126,12 +132,19 @@ def preview(data,engine,require_review=False):
                 raise ValueError('سنگ پله فقط با جانمایی واقعی قطعات معتبر است')
             L=n(face['length_m'],'طول وجه سنگی');W=n(face['width_m'],'عرض وجه سنگی')
             bounds[fid]=(L,W);holes[fid]=[]
+            if orthogonal:
+                outline,gross = checked_outline(face['outline'],L,W)
+                outlines[fid]=outline
+            else:
+                gross=L*W
             for h in a['openings']:
                 if h['face_id']!=fid:continue
                 b=block(h,L,W)
+                if orthogonal and not rectangle_inside(outlines[fid],b):
+                    raise ValueError('بازشو باید کاملاً داخل چندضلعی واقعی وجه باشد')
                 if any(intersection(b,old)>0 for old in holes[fid]):raise ValueError('بازشوهای یک وجه هم‌پوشانی دارند')
                 holes[fid].append(b)
-            q=L*W-sum((area(h) for h in holes[fid]),Decimal(0))
+            q=gross-sum((area(h) for h in holes[fid]),Decimal(0))
             if q<=0:raise ValueError('مساحت خالص وجه سنگی باید مثبت باشد')
             net[fid]=q;units[fid]=face_kind
         if related != {fid for fid,f in faces.items() if f['face_kind'] in ('tread','riser')}:
@@ -149,6 +162,8 @@ def preview(data,engine,require_review=False):
                 fid=p['face_id']
                 if fid not in faces:raise ValueError('قطعه یا بند روی وجه ناموجود است')
                 L,W=bounds[fid];b=block(p,L,W)
+                if orthogonal and not rectangle_inside(outlines[fid],b):
+                    raise ValueError('سنگ یا بند باید کاملاً در چندضلعی واقعی وجه باشد')
                 if any(intersection(b,h)>0 for h in holes[fid]) or any(intersection(b,v)>0 for v in face_boxes[fid]):
                     raise ValueError('قطعه سنگ یا بند با بازشو یا قطعه دیگر هم‌پوشانی دارد')
                 face_boxes[fid].append(b)
@@ -170,7 +185,9 @@ def preview(data,engine,require_review=False):
                 raise ValueError('سنگ‌ها و بندها سطح خالص هر وجه را دقیقاً نمی‌پوشانند')
             emit(rows,data,face['face_kind'],net[fid],'m2',fid,face['source_ref'],
                  'work',dict(face_id=fid,physical_stair_id=g['physical_stair_id'],
-                             host_id=g['host_id'],net_area_m2=net[fid]),
+                             host_id=g['host_id'],net_area_m2=net[fid],
+                             geometry_contract=a['contract'],
+                             outline=deepcopy(face['outline']) if orthogonal else None),
                  'سطح واقعی وجه − بازشوها؛ خرید و قطعات اطلاعاتی‌اند',count)
             pieces=[p for p in a['pieces'] if p['face_id']==fid]
             emit(rows,data,'installed_pieces',Decimal(len(pieces)),'عدد',fid+'-pieces',face['source_ref'],
