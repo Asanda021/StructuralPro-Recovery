@@ -72,8 +72,13 @@ def attach(d,root):
     d.formula_bulk_name=QLineEdit();d.formula_bulk_name.setPlaceholderText('نام پارامتر موجود');d.formula_bulk_value=QLineEdit();d.formula_bulk_value.setPlaceholderText('مقدار صریح جدید');d.formula_copy_floor=QLineEdit();d.formula_copy_floor.setPlaceholderText('طبقه مقصد متفاوت')
     d.formula_bulk_unit=QComboBox();d.formula_bulk_unit.addItem('واحد فعلی حفظ شود',None)
     for key,label in UNITS.items():d.formula_bulk_unit.addItem(label,key)
-    d.formula_bulk_button=QPushButton('ویرایش گروهی پارامتر');d.formula_floor_copy_button=QPushButton('کپی گروهی به طبقه');d.formula_xlsx_button=QPushButton('گزارش کامل Excel');d.formula_pdf_button=QPushButton('گزارش کامل PDF')
-    for i,b in enumerate([d.formula_bulk_name,d.formula_bulk_value,d.formula_bulk_unit,d.formula_bulk_button,d.formula_copy_floor,d.formula_floor_copy_button,d.formula_xlsx_button,d.formula_pdf_button]):buttons.addWidget(b,2+i//3,i%3)
+    d.formula_bulk_button=QPushButton('ویرایش گروهی پارامتر');d.formula_floor_copy_button=QPushButton('کپی گروهی به طبقه')
+    d.formula_xlsx_button=QPushButton('گزارش کامل Excel');d.formula_pdf_button=QPushButton('گزارش کامل PDF')
+    d.formula_docx_button=QPushButton('گزارش کامل Word');d.formula_csv_button=QPushButton('گزارش کامل CSV')
+    for i,b in enumerate([d.formula_bulk_name,d.formula_bulk_value,d.formula_bulk_unit,d.formula_bulk_button,
+                           d.formula_copy_floor,d.formula_floor_copy_button,d.formula_xlsx_button,
+                           d.formula_pdf_button,d.formula_docx_button,d.formula_csv_button]):
+        buttons.addWidget(b,2+i//3,i%3)
     d.formula_group=QComboBox()
     for label,col in [('ترتیب شناسه',0),('گروه طبقه',1),('گروه عضو',12),('گروه کاری',2),('گروه واحد',5)]:d.formula_group.addItem(label,col)
     layout.addWidget(d.formula_group)
@@ -188,7 +193,10 @@ def attach(d,root):
     def export(fmt):
         path,_=QFileDialog.getSaveFileName(d,'گزارش مستند متره','',fmt.upper()+' (*.'+fmt+')')
         if path:d.service.export_manual_formula_report(d.project_id.text().strip(),path,format=fmt);d.status.setText('گزارش مستند ذخیره شد: '+path)
-    d.formula_bulk_button.clicked.connect(guarded(bulk));d.formula_floor_copy_button.clicked.connect(guarded(copy_floor));d.formula_xlsx_button.clicked.connect(guarded(lambda:export('xlsx')));d.formula_pdf_button.clicked.connect(guarded(lambda:export('pdf')))
+    d.formula_bulk_button.clicked.connect(guarded(bulk));d.formula_floor_copy_button.clicked.connect(guarded(copy_floor))
+    for button, fmt in ((d.formula_xlsx_button, 'xlsx'), (d.formula_pdf_button, 'pdf'),
+                        (d.formula_docx_button, 'docx'), (d.formula_csv_button, 'csv')):
+        button.clicked.connect(guarded(lambda fmt=fmt: export(fmt)))
     for b,fn in [(d.formula_new_button,new),(d.formula_save_button,save),(d.formula_load_button,load),(d.formula_review_button,review),(d.formula_commit_button,commit),(d.formula_history_button,history)]:b.clicked.connect(guarded(fn))
     d.formula_creator=QLineEdit();d.formula_amend_id=QLineEdit();d.deduction_source=QLineEdit();d.deduction_variable=QLineEdit();d.deduction_quantity=QLineEdit();d.deduction_basis=QLineEdit();d.deduction_unit=QComboBox()
     d.deduction_unit.addItem('واحد کسر را انتخاب کنید',None)

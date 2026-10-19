@@ -118,10 +118,19 @@ class ManualTakeoffDialog(QDialog):
                        self.redo_button, self.beam_detail_button, self.save_button, self.load_saved_button,
                        self.revise_saved_button, self.close_button)):
             actions.addWidget(button,index//4,index%4)
-        self.export_xlsx_button=QPushButton('خروجی Excel ریزمتره');self.export_pdf_button=QPushButton('خروجی PDF ریزمتره')
-        actions.addWidget(self.export_xlsx_button,4,0);actions.addWidget(self.export_pdf_button,4,1)
-        self.export_xlsx_button.clicked.connect(lambda:self.export_visible('xlsx'))
-        self.export_pdf_button.clicked.connect(lambda:self.export_visible('pdf'))
+        self.export_xlsx_button = QPushButton('خروجی Excel ریزمتره')
+        self.export_pdf_button = QPushButton('خروجی PDF ریزمتره')
+        self.export_docx_button = QPushButton('خروجی Word ریزمتره')
+        self.export_csv_button = QPushButton('خروجی CSV ریزمتره')
+        for col, button in enumerate((
+            self.export_xlsx_button, self.export_pdf_button,
+            self.export_docx_button, self.export_csv_button,
+        )):
+            actions.addWidget(button, 4, col)
+        self.export_xlsx_button.clicked.connect(lambda: self.export_visible('xlsx'))
+        self.export_pdf_button.clicked.connect(lambda: self.export_visible('pdf'))
+        self.export_docx_button.clicked.connect(lambda: self.export_visible('docx'))
+        self.export_csv_button.clicked.connect(lambda: self.export_visible('csv'))
         root.addLayout(actions)
         self.search_field=QLineEdit();self.search_field.setPlaceholderText("جست‌وجو و فیلتر طبقه، نوع، واحد یا وضعیت")
         self.unit_totals=QLabel();self.search_field.textChanged.connect(self.filter_rows)
