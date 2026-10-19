@@ -540,6 +540,12 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
         }
         target["quantity"] = net
         target["formula"] = target["formula"] + " − کسر حجم مستند " + source["formula"]
+    # A partial measurement must not look like a valid takeoff. The shared
+    # workflow still reports every blocker, but exposes no unapproved quantities.
+    # This only applies to the generic reviewed path; specialist calculation
+    # engines retain their own fail-closed contracts.
+    if blockers:
+        rows.clear()
     return {"kind": kind, "floor_id": floor, "system_id": identity, "source_id": sid,
             "ready": not blockers, "blockers": blockers, "rows": rows,
             "preview_only": True}
