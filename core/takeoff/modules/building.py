@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 import math
+from decimal import Decimal, InvalidOperation
 
 @dataclass(frozen=True)
 class QuantityResult:
@@ -18,16 +19,32 @@ class QuantityResult:
     formula: str
     warnings: tuple[str, ...] = ()
 
+    def __post_init__(self):
+        if not math.isfinite(self.quantity) or self.quantity < 0:
+            raise ValueError("derived quantity must be finite and nonnegative")
+
 def _n(v: Any, name: str, *, minimum: float = 0.0) -> float:
     if isinstance(v, bool): raise ValueError(f"{name} must be numeric")
     try: x=float(v)
     except (TypeError, ValueError, OverflowError): raise ValueError(f"{name} must be numeric")
     if not math.isfinite(x): raise ValueError(f"{name} must be finite")
+    if x == 0.0:
+        try:
+            if Decimal(str(v)) != 0:
+                raise ValueError(f"{name} underflow: nonzero input rounded to zero")
+        except InvalidOperation as exc:
+            raise ValueError(f"{name} must be numeric") from exc
     if name in {"length", "width", "depth", "height", "thickness", "perimeter", "sloped_length", "waist_thickness", "unit_weight", "count", "layers"}:
         minimum = max(minimum, 1e-12)
     if x < minimum: raise ValueError(f"{name} must be >= {minimum}")
-    if name in {"count", "void_count", "joist_count", "layers"} and not x.is_integer():
-        raise ValueError(f"{name} must be an integer")
+    if name in {"count", "void_count", "joist_count", "layers",
+                "rib_count_x", "rib_count_y", "intersection_count"}:
+        try:
+            integer_exact = x.is_integer() and Decimal(str(v)) == Decimal(int(x))
+        except (InvalidOperation, ValueError, OverflowError):
+            integer_exact = False
+        if not integer_exact:
+            raise ValueError(f"{name} must be an exactly representable integer")
     return x
 
 def _rect_area(length,width): return _n(length,"length")*_n(width,"width")
