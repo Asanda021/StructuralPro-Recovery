@@ -15,7 +15,20 @@ from app.shear_wall_detail_editor import ExactCellDelegate
 def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', group_id=''):
     """Open a fully wired *draft* workflow. No BOQ/review/commit button exists."""
     controller = PileDraftController(service, project_id)
-    dialog = QDialog(parent)
+    class GuardedDialog(QDialog):
+        can_close = staticmethod(lambda: True)
+
+        def reject(self):
+            if self.can_close():
+                super().reject()
+
+        def closeEvent(self, event):
+            if self.can_close():
+                event.accept()
+            else:
+                event.ignore()
+
+    dialog = GuardedDialog(parent)
     dialog.setObjectName('BoredPileDraftEditor')
     dialog.setWindowTitle('متره تخصصی شمع بتنی درجا — پیش‌نویس مستند')
     dialog.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -163,6 +176,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
                     bar_rows.append(({'longitudinal':'میلگرد طولی','spiral_ties':'مارپیچ یا خاموت','crossties':'سنجاقی','starters':'میلگرد انتظار'}.get(kind,kind),series.get('id',''),series.get('physical_id',''),
                                      series.get('count',''),series.get('cut_length_m','')))
         show_rows(rebars, bar_rows)
+        close_state['baseline'] = editable_state()
         message.setText('نسخه پیش‌نویس: ' + str(controller.revision) + '؛ ثبت مالی مسدود است.')
 
     def create():
@@ -247,7 +261,7 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             'blockers':result['blockers']},ensure_ascii=False,indent=2))
         message.setText('اتصال مشترک پیش‌ممیزی شد؛ هیچ مجوز پرداخت صادر نشده است.')
 
-    def audit_spatial():
+    def audit_spatial(with_center=False):
         # A cancelled or rejected attempt must not leave a previous favourable
         # preview visible as though it belonged to the current evidence.
         report.clear()
@@ -260,8 +274,14 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             dialog, 'سند مستقل سه‌بعدی شمع و عضو مرتبط', '', 'JSON (*.json)')
         if not path:
             return
-        result = controller.audit_spatial(path)
-        report.setPlainText(json.dumps({
+        center_path = None
+        if with_center:
+            center_path, _ = QFileDialog.getOpenFileName(
+                dialog, 'سند مستقل مختصات افقی تمام شمع‌ها', '', 'JSON (*.json)')
+            if not center_path:
+                return
+        result = controller.audit_spatial(path, center_path=center_path)
+        report.setPlainText(json.dumps({**({'pile_center_audit':result['pile_center_audit']} if 'pile_center_audit' in result else {}),
             'status':result['status'],
             'counterpart_geometry_record_bound':result.get('counterpart_geometry_record_bound',False),
             'unbound_counterpart_count':result.get('unbound_counterpart_count'),
@@ -328,7 +348,8 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
         (('new','گروه جدید',create),('load','بازگشایی از SQLite',load),
          ('input','خواندن دیتایل',attach_input),('owner','خواندن مالکیت',attach_owner),
          ('joint','خواندن اتصال مشترک',attach_joint),
-          ('spatial','پیش‌ممیزی سه‌بعدی',audit_spatial)),
+          ('spatial','پیش‌ممیزی سه‌بعدی',audit_spatial),
+          ('spatial_center','ممیزی سه‌بعدی با سند مختصات افقی',lambda: audit_spatial(True))),
         (('save','ذخیره نسخه‌دار',save),('amend','اصلاحیه مستند پیش‌نویس',amend_input),('preview','پیش‌نمایش',preview),
          ('history_refresh','بازخوانی تاریخچه',refresh_history)),
     ):
@@ -341,6 +362,29 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
     root.addWidget(close)
     controls['close'] = close
     dialog.pile_controls = controls
+    editable_keys = ('floor', 'group', 'source_id', 'approved_by', 'measurement_ref',
+                     'ownership_reference', 'joint_reference', 'reviewer',
+                     'ownership_claim', 'amendment_reason')
+
+    def editable_state():
+        return (tuple(controls[k].text() for k in editable_keys),
+                mode.currentData(), extra.toPlainText())
+
+    close_state = {'baseline': editable_state()}
+
+    def can_close():
+        if not controller.dirty and editable_state() == close_state['baseline']:
+            return True
+        box = QMessageBox(dialog)
+        box.setWindowTitle('تغییرات ذخیره‌نشده')
+        box.setText('تغییرات ذخیره نشده‌اند. بدون ذخیره از فرم خارج شوید؟')
+        box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        box.setDefaultButton(QMessageBox.No)
+        box.button(QMessageBox.Yes).setText('خروج بدون ذخیره')
+        box.button(QMessageBox.No).setText('بازگشت به فرم')
+        return box.exec() == QMessageBox.Yes
+
+    dialog.can_close = can_close
     if group_id.strip() and floor_id.strip():
         try:
             load()

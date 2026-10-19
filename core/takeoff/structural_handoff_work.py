@@ -31,6 +31,8 @@ def _no_float(value):
         for v in value:_no_float(v)
 
 def preview(service,project_id,request,*,source_path,source_sha256):
+    if isinstance(request, dict) and 'policy' in request:
+        return _preview_contract(service, project_id, request, source_path=source_path, source_sha256=source_sha256)
     fields={'schema','inputs','source_ids','rebar_ownership','reviewer','review_reference'}
     if not isinstance(request,dict) or set(request)!=fields or request['schema']!=SCHEMA:
         raise ValueError('قرارداد ورودی پیش‌ارزیابی نامعتبر است')
@@ -75,3 +77,42 @@ def preview(service,project_id,request,*,source_path,source_sha256):
             'combined':combined,'rebar_crosswalk_requests':bars,
             'concrete_formwork_requests':concrete,'rows':rows,
             'blockers':deepcopy(combined['blockers'])}
+
+
+# Explicit allowlist: only existing immutable preview contracts are exposed.
+# Payloads never choose arbitrary modules, functions, database writes or BOQ APIs.
+_CONTRACT_MODULES = (
+    'column_joint_preflight', 'column_joint_beam_panel',
+    'column_joint_bar_crosswalk', 'column_joint_rebar_completion',
+    'column_joint_footing_tie', 'column_joint_starter_development',
+    'column_joint_interface_surface', 'phase1_shared_materials_audit',
+    'phase1_multi_member_overlap', 'phase1_five_domain_claims',
+)
+
+def _preview_contract(service, project_id, request, *, source_path, source_sha256):
+    from importlib import import_module
+    from core.takeoff.bored_pile_ownership_preflight import read_evidence
+    modules = [import_module('core.takeoff.' + name) for name in _CONTRACT_MODULES]
+    module = next((m for m in modules if m.POLICY == request.get('policy')), None)
+    if module is None:
+        raise ValueError('قرارداد ممیزی در این فرم پشتیبانی نمی‌شود')
+    document = read_evidence(source_path, source_sha256)
+    if document != request:
+        raise ValueError('محتوای فرم با سند مستقل برابر نیست')
+    project, token = read(service, project_id)
+    if module.__name__.endswith(('phase1_shared_materials_audit', 'phase1_five_domain_claims')):
+        result = module.audit(project, document)
+    else:
+        result = module.preview(document, project)
+    if (result.get('ready_for_boq') is not False or
+            result.get('commit_allowed') is not False or result.get('rows') != []):
+        raise ValueError('قرارداد پیش‌ممیزی نباید مجوز مالی صادر کند')
+    if service.store.current_digest(project_id) != token:
+        raise RuntimeError('نسخه پروژه هنگام ممیزی تغییر کرد؛ دوباره اجرا کنید')
+    if read_evidence(source_path, source_sha256) != request:
+        raise RuntimeError('مدرک هنگام ممیزی تغییر کرد؛ دوباره اجرا کنید')
+    return {'schema': SCHEMA, 'status': 'BLOCKED_FOR_COMMIT',
+            'ready_for_boq': False, 'commit_allowed': False, 'rows': [],
+            'project_id': project_id, 'snapshot_digest': token,
+            'source_sha256': source_sha256, 'audit': deepcopy(result),
+            'blockers': deepcopy(result.get('blockers', []))}

@@ -164,7 +164,7 @@ class PileDraftController:
         self.data = candidate
         return deepcopy(report)
 
-    def audit_spatial(self, path):
+    def audit_spatial(self, path, *, center_path=None):
         """Audit a physical 3-D document against the current saved SQLite snapshot.
 
         A verified audit is ephemeral, not a stored signature or a BOQ approval.
@@ -192,13 +192,23 @@ class PileDraftController:
         joint_data = read_evidence(joint['path'], joint['sha256'])
         # This document is not added to the draft data or signed historical record.
         _spatial_data, reference = _checked_document(path)
-        project = self.service.open_project(self.project_id)
+        from core.takeoff.manual_formula_register import read
+        project, token = read(self.service, self.project_id)
         if not project:
             raise ValueError('Snapshot واقعی پروژه پیدا نشد')
         report = audit_spatial_overlap(
             dt['input'], compiled, owner_data, owner['sha256'], joint_data,
             project, evidence_path=reference['path'],
             evidence_sha256=reference['sha256'])
+        if center_path is not None:
+            from core.takeoff.phase1_pile_center_evidence import audit as audit_center
+            _, center_file = _checked_document(center_path)
+            report['pile_center_audit'] = audit_center(
+                dt['input'], compiled, _spatial_data,
+                center_path=center_file['path'], center_sha256=center_file['sha256'])
+        if self.service.store.current_digest(self.project_id) != token:
+            raise RuntimeError('نسخه پروژه هنگام ممیزی تغییر کرد؛ دوباره بازگشایی کنید')
+        read_evidence(reference['path'], reference['sha256'])
         if (report.get('commit_allowed') or report.get('ready_for_boq')
                 or report.get('rows') or report.get('status') != 'SPATIAL_PREVIEW_ONLY'):
             raise ValueError('ممیزی هندسی اجازه ثبت مالی یا خروجی غیرمجاز صادر کرده است')

@@ -68,6 +68,11 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
             except Exception as exc:
                 errors.append(repr(exc))
             finally:
+                def discard_unsaved_reason():
+                    box = qt.activeModalWidget()
+                    if isinstance(box, QMessageBox):
+                        QTest.mouseClick(box.button(QMessageBox.Yes), Qt.LeftButton)
+                QTimer.singleShot(10, discard_unsaved_reason)
                 pile_dialog.reject()
         try:
             controls['kind'].setCurrentIndex(controls['kind'].findData('bored_pile'))

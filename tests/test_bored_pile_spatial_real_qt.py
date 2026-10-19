@@ -1,5 +1,6 @@
 """Offscreen Qt acceptance through the real spatial engine and SQLite."""
 import json
+import pytest
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
@@ -16,7 +17,8 @@ from test_bored_pile_joint_real_application import _saved_joint_case
 from test_bored_pile_real_application_controller import _document
 
 
-def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path, monkeypatch):
+@pytest.mark.parametrize("with_center", [False, True])
+def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path, monkeypatch, with_center):
     qt = QApplication.instance() or QApplication([])
     app, controller, data, compiled, owner, joint, _ = _saved_joint_case(tmp_path)
     cap = next(r for r in app.open_project('P')['reviewed_structural_members'].values()
@@ -57,8 +59,17 @@ def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path
         }],
     }
     path = _document(tmp_path / 'spatial.json', proof)
+    from core.takeoff.phase1_pile_center_evidence import POLICY as CENTER_POLICY
+    center = dict(policy=CENTER_POLICY, project_id='P', floor_id=data['floor_id'],
+                  group_id=data['group_id'], input_sha256=compiled['source_sha256'],
+                  coordinate_ref=data['datum']['coordinate_ref'],
+                  vertical_datum_ref=data['datum']['vertical_datum_ref'],
+                  source_reference='جانمایی مصنوعی مستقل', prepared_by='Author', reviewer='Reviewer',
+                  centers=[dict(pile_id=p['id'],pile_physical_id=p['physical_id'],
+                                x_m='0',y_m='0',source_ref='مستند مصنوعی') for p in data['piles']])
+    center_path = _document(tmp_path / 'centers.json', center)
     chosen = [path]
-    monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *_: (chosen[0], ''))
+    monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *args: (center_path if 'مختصات افقی' in args[1] else chosen[0], ''))
     before = app.open_project('P')
     failures = []
 
@@ -82,8 +93,10 @@ def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path
                 assert c['controller'].revision == controller.revision
                 assert c['piles'].item(0, 3).text().startswith('-')
                 assert c['spatial'].text() == 'پیش‌ممیزی سه‌بعدی'
-                click('spatial')
+                click('spatial_center' if with_center else 'spatial')
                 result = json.loads(c['report'].toPlainText())
+                if with_center:
+                    assert result['pile_center_audit']['checked_pile_count'] == len(data['piles'])
                 assert result['status'] == 'SPATIAL_PREVIEW_ONLY'
                 assert result['counterpart_geometry_record_bound'] is True
                 assert result['unbound_counterpart_count'] == 0
