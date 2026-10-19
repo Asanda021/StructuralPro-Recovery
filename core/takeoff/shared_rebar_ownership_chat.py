@@ -10,6 +10,7 @@ from collections import defaultdict
 from decimal import Context, Decimal, InvalidOperation, localcontext
 import hashlib
 import json
+import unicodedata
 
 POLICY = "shared_rebar_ownership_chat_v1"
 KINDS = frozenset({"beam", "column", "shear_wall", "stair", "bored_pile", "pile_cap", "foundation", "tie_beam", "slab"})
@@ -259,8 +260,32 @@ def reconcile(data: dict, project: dict | None = None, *, source_document: bytes
                 raise RebarOwnershipError("هویت فیزیکی میلگرد BOQ نامعتبر است")
             if len(set(identities)) > 1:
                 raise RebarOwnershipError("دو هویت فیزیکی ناسازگار در یک ردیف BOQ ثبت شده است")
-            if identities and identities[0] in group:
-                blockers.append("میلگرد "+identities[0]+" در BOQ قبلی نیز آمده؛ احتمال پرداخت تکراری باید بررسی شود")
+            # Older BOQ adapters sometimes retain multiple documented physical
+            # bar IDs in a grouped row. This is a read-only collision scan,
+            # never a request to split the BOQ or infer a bar allocation.
+            alias = lambda value: unicodedata.normalize("NFKC", value).replace("ي", "ی").replace("ك", "ک").casefold()
+            arrays = []
+            for holder in (row, params):
+                if "physical_bar_ids" not in holder:
+                    continue
+                values = holder["physical_bar_ids"]
+                if (not isinstance(values, list) or not values
+                        or any(not isinstance(v, str) or not v or v != v.strip() for v in values)):
+                    raise RebarOwnershipError("فهرست هویت فیزیکی میلگرد BOQ نامعتبر است")
+                if len(values) != len(set(values)) or len(values) != len({alias(v) for v in values}):
+                    raise RebarOwnershipError("هویت میلگرد در یک ردیف BOQ دوباره ادعا شده است")
+                arrays.append(set(values))
+            if len(arrays) == 2 and arrays[0] != arrays[1]:
+                raise RebarOwnershipError("فهرست‌های هویت میلگرد BOQ با هم مغایرند")
+            if identities and arrays and identities[0] not in arrays[0]:
+                raise RebarOwnershipError("شناسه تکی و فهرست میلگردهای BOQ با هم مغایرند")
+            identities = set(identities) | (arrays[0] if arrays else set())
+            # A Unicode/case alias is a possible collision even if the raw
+            # case-sensitive engineering IDs differ. Warn; never merge them.
+            known_aliases = {alias(v) for v in group}
+            for physical in sorted(identities):
+                if alias(physical) in known_aliases:
+                    blockers.append("میلگرد "+physical+" در BOQ قبلی یا با هویت نوشتاری مشابه آمده؛ احتمال پرداخت تکراری بررسی شود")
             description = str(row.get("description") or row.get("title") or "")
             code = str(row.get("item_code") or row.get("code") or "")
             if not identities and ("میلگرد" in description or "آرماتور" in description
