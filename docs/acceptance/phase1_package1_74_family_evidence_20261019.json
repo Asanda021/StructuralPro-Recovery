@@ -235,6 +235,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -461,6 +467,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -679,6 +691,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -1232,6 +1250,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -1437,6 +1461,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -1722,6 +1752,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -1991,6 +2027,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -2256,6 +2298,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -2561,6 +2609,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -2765,6 +2819,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -3085,6 +3145,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -3401,6 +3467,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -3585,7 +3657,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent steel-stair contract, geometry and section/member schedule",
+        "Documented stringers, landings, treads, plates, bolts/welds and finish scope",
+        "Physical piece IDs and explicit kg/m or geometry/density sources",
+        "Signed participant/payer mapping at beam/slab supports; independent expected quantities",
+        "Positive/negative specialist engine + Qt + SQLite/CAS + BOQ tests"
+      ]
     },
     {
       "code": "solid_slab",
@@ -3857,6 +3942,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -4093,6 +4184,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -4329,6 +4426,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -4569,6 +4672,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -4807,6 +4916,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -5041,6 +5156,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -5281,6 +5402,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -5529,6 +5656,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -5760,7 +5893,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for joists, topping",
+        "Documented applicable/excluded scope for joists, blocks_or_foam, topping, bracing, reinforcement, edge_beams, formwork",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+      ]
     },
     {
       "code": "composite_roof",
@@ -5970,7 +6116,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for steel_members, concrete",
+        "Documented applicable/excluded scope for steel_members, concrete, shear_connectors, mesh, formwork, edge_zones",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+      ]
     },
     {
       "code": "sandwich_roof",
@@ -6181,7 +6340,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for panels",
+        "Documented applicable/excluded scope for panels, supports, fasteners, flashings, seals",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+      ]
     },
     {
       "code": "timber_roof",
@@ -6387,7 +6559,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for joists",
+        "Documented applicable/excluded scope for joists, sheathing, connectors, insulation, waterproofing, finish",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+      ]
     },
     {
       "code": "precast_roof",
@@ -6597,7 +6782,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for precast_units",
+        "Documented applicable/excluded scope for precast_units, connections, bearing, joints, topping, reinforcement",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+      ]
     },
     {
       "code": "steel_frame",
@@ -6843,6 +7041,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -7061,6 +7265,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -7279,6 +7489,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -7565,6 +7781,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -7791,6 +8013,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -8003,7 +8231,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for frames, boards",
+        "Documented applicable/excluded scope for frames, boards, insulation, joint_compound, tape, fixings, doors",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "plaster_finish",
@@ -8233,6 +8473,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -8482,7 +8728,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for render_coat",
+        "Documented applicable/excluded scope for scratch_coat, render_coat, finish, reinforcement_mesh, corner_beads",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "ceramic_finish",
@@ -8736,6 +8994,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -8971,6 +9235,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -9238,6 +9508,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -9481,6 +9757,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -9720,6 +10002,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -10010,6 +10298,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -10260,6 +10554,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -10487,6 +10787,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -10698,7 +11004,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for frame",
+        "Documented applicable/excluded scope for frame, glazing, hardware, installation",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "upvc_aluminium_windows",
@@ -10910,7 +11228,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for profiles, glazing",
+        "Documented applicable/excluded scope for profiles, reinforcement, glazing, hardware, seals, anchors, installation",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "glass_curtain_wall",
@@ -11118,7 +11448,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for mullions, glazing",
+        "Documented applicable/excluded scope for mullions, transoms, glazing, anchors, gaskets, sealant",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "stone_cladding",
@@ -11372,6 +11714,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -11580,7 +11928,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for panels",
+        "Documented applicable/excluded scope for panels, rails, brackets, anchors, insulation, waterproofing, seals",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "handrails_metalwork",
@@ -11777,7 +12137,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for profiles",
+        "Documented applicable/excluded scope for profiles, plates, anchors, welds, coating",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "plumbing",
@@ -12013,7 +12385,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for pipes",
+        "Documented applicable/excluded scope for pipes, fittings, valves, insulation, supports, equipment",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "sanitary_drainage",
@@ -12212,7 +12597,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for pipes",
+        "Documented applicable/excluded scope for pipes, fittings, cleanouts, traps, manholes, supports, testing",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "hvac",
@@ -12419,7 +12817,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for equipment",
+        "Documented applicable/excluded scope for ducts, pipes, fittings, insulation, supports, equipment",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "mechanical_ventilation",
@@ -12616,7 +13027,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for ducts",
+        "Documented applicable/excluded scope for ducts, fans, diffusers, dampers, insulation, hangers, controls",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "plantroom",
@@ -12815,7 +13239,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for equipment",
+        "Documented applicable/excluded scope for equipment, pumps, tanks, pipes, fittings, valves, instrumentation, supports, controls",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "natural_gas",
@@ -13012,7 +13449,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for pipes",
+        "Documented applicable/excluded scope for pipes, fittings, valves, meters, supports, coating, testing",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "fire_protection",
@@ -13221,7 +13671,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for pipes",
+        "Documented applicable/excluded scope for pipes, fittings, sprinklers, valves, supports, equipment",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+      ]
     },
     {
       "code": "electrical_power",
@@ -13439,7 +13902,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for cables",
+        "Documented applicable/excluded scope for cables, conduits, trays, boards, sockets, earthing",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "lighting",
@@ -13681,7 +14157,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for fixtures",
+        "Documented applicable/excluded scope for cables, conduits, fixtures, switches, supports",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "low_voltage",
@@ -13894,7 +14383,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for devices",
+        "Documented applicable/excluded scope for cables, conduits, devices, termination, racks",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "fire_alarm",
@@ -14107,7 +14609,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for detectors, panels",
+        "Documented applicable/excluded scope for detectors, sounders, call_points, cables, conduits, panels, interfaces",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "data_network",
@@ -14316,7 +14831,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for cables",
+        "Documented applicable/excluded scope for cables, conduits, trays, sockets, patch_panels, racks, terminations, tests",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "security_systems",
@@ -14513,7 +15041,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for controllers",
+        "Documented applicable/excluded scope for cameras, readers, controllers, cables, conduits, recorders, locks, power_supplies",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "emergency_power",
@@ -14710,7 +15251,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for panels",
+        "Documented applicable/excluded scope for generators, ups, batteries, panels, cables, grounding, transfer_switches",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "elevator",
@@ -14907,7 +15461,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for car, machine",
+        "Documented applicable/excluded scope for rails, brackets, car, doors, machine, controller, cables, shaft_works, testing",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+      ]
     },
     {
       "code": "external_earthwork",
@@ -15109,7 +15676,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for excavation",
+        "Documented applicable/excluded scope for survey, excavation, haulage, disposal, shoring, dewatering, backfill, compaction",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "blinding_concrete",
@@ -15306,7 +15886,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for blinding_concrete",
+        "Documented applicable/excluded scope for base_preparation, blinding_concrete, edge_formwork",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "retaining_structures",
@@ -15503,7 +16096,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for soldier_piles",
+        "Documented applicable/excluded scope for soldier_piles, lagging, anchors, shotcrete, struts, monitoring",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "external_works",
@@ -15708,7 +16314,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for paving",
+        "Documented applicable/excluded scope for subbase, grading, paving, kerbs, channels, walls, landscaping, irrigation",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "site_drains",
@@ -15907,7 +16526,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for pipes",
+        "Documented applicable/excluded scope for pipes, trenches, bedding, manholes, filter_media, outlets",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "demolition",
@@ -16137,7 +16769,20 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for selective_demolition",
+        "Documented applicable/excluded scope for selective_demolition, structure_demolition, waste_sorting, haulage, temporary_support, dust_control",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+        "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+      ]
     },
     {
       "code": "concrete_repair",
@@ -16340,7 +16985,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for repair_mortar",
+        "Documented applicable/excluded scope for substrate_prep, corrosion_treatment, repair_mortar, injection, reinforcement, finishes",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "seismic_retrofit",
@@ -16543,7 +17200,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for anchorage",
+        "Documented applicable/excluded scope for concrete_jackets, steel_jackets, frp, added_bracing, anchorage, foundations, tests",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "historic_restoration",
@@ -16744,7 +17413,19 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
-      }
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "independent_specialist_next_evidence": [
+        "Independent source-backed measurement/formula, units and expected values for documentation, stabilization",
+        "Documented applicable/excluded scope for survey, documentation, stabilization, compatible_mortar, masonry_repair, protective_coating",
+        "Physical item/region/path IDs; cross-family overlap and payer ownership",
+        "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+      ]
     },
     {
       "code": "pile_cap",
@@ -17041,6 +17722,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     },
     {
@@ -17358,6 +18045,12 @@
           "csv"
         ],
         "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
+      },
+      "civil_legacy_work_recheck": {
+        "execution_ref": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json",
+        "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+        "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+        "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
       }
     }
   ],
@@ -18212,5 +18905,19 @@
       "Windows/Microsoft Office",
       "unproven old Exit135 root cause"
     ]
+  },
+  "civil_legacy_work": {
+    "initial_head": "35159272ff9e5fd209d0e8890c8caafd89ea70b3",
+    "chat_head": "2ab7b5fab79a9471070ccb6c3c9f18627480f1e3",
+    "tested_local_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
+    "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
+    "acceptance": {
+      "bounded_specialized": 32,
+      "limited_other": 42,
+      "insufficient_independent_specialist_evidence": 37,
+      "fully_accepted_engineering": 0,
+      "windows": 0
+    },
+    "evidence": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json"
   }
 }
