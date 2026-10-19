@@ -238,6 +238,34 @@ def reconcile(data: dict, project: dict | None = None, *, source_document: bytes
                     blockers.append(f"ردیف میلگرد قبلی {i} فاقد هویت فیزیکی قابل مقایسه است")
                 elif physical in group:
                     blockers.append(f"میلگرد {physical} در برداشت قبلی وجود دارد؛ وضعیت مالی باید مستقل بررسی شود")
+        # A BOQ row may survive even if an older/imported takeoff is absent.
+        # A shared physical bar found here is a possible double payment,
+        # never a reason to update accounting or clear ownership.
+        boq = project.get("boq", [])
+        if not isinstance(boq, list):
+            raise RebarOwnershipError("دفتر BOQ برای تطبیق میلگرد معتبر نیست")
+        if boq:
+            blockers.append("دفتر BOQ دارای "+str(len(boq))+" ردیف است؛ تطبیق مستقل مالکیت مالی لازم است")
+        for i, row in enumerate(boq):
+            if not isinstance(row, dict):
+                raise RebarOwnershipError("ردیف BOQ برای کنترل مالکیت نامعتبر است")
+            raw_params = row.get("params")
+            params = {} if raw_params is None else raw_params
+            if not isinstance(params, dict):
+                raise RebarOwnershipError("پارامترهای BOQ برای کنترل میلگرد نامعتبر است")
+            identities = [x for x in (row.get("physical_bar_id"), params.get("physical_bar_id"))
+                          if x is not None]
+            if any(not isinstance(x, str) or not x or x != x.strip() for x in identities):
+                raise RebarOwnershipError("هویت فیزیکی میلگرد BOQ نامعتبر است")
+            if len(set(identities)) > 1:
+                raise RebarOwnershipError("دو هویت فیزیکی ناسازگار در یک ردیف BOQ ثبت شده است")
+            if identities and identities[0] in group:
+                blockers.append("میلگرد "+identities[0]+" در BOQ قبلی نیز آمده؛ احتمال پرداخت تکراری باید بررسی شود")
+            description = str(row.get("description") or row.get("title") or "")
+            code = str(row.get("item_code") or row.get("code") or "")
+            if not identities and ("میلگرد" in description or "آرماتور" in description
+                                   or "rebar" in code.casefold()):
+                blockers.append("ردیف میلگرد BOQ شماره "+str(i)+" فاقد هویت فیزیکی قابل تطبیق است")
     return {"policy":POLICY,"status":"preview_only_not_integrated","commit_allowed":False,
             "project_id":data["project_id"],"source_fingerprint_sha256":_fingerprint(data),
             "physical_bar_count":len(paid),"physical_bar_paid_once":paid,
