@@ -11,6 +11,12 @@ class MechanicalResult:
     unit: str
     formula: str
 
+def _checked(item: str, quantity: float, unit: str, formula: str) -> MechanicalResult:
+    """Reject arithmetic overflow before returning any physical quantity."""
+    if not math.isfinite(quantity):
+        raise ValueError("derived quantity must be finite")
+    return MechanicalResult(item, quantity, unit, formula)
+
 def _n(v,name): 
     if isinstance(v, bool): raise ValueError(f"{name} must be numeric")
     try: x=float(v)
@@ -24,15 +30,15 @@ def _n(v,name):
 def calculate_mechanical_item(item: str, **p: Any) -> MechanicalResult:
     k=item.casefold().replace(" ","_")
     if k in {"pipe","pipe_length","لوله"}:
-        q=_n(p["length"],"length")*_n(p.get("count",1),"count"); return MechanicalResult("لوله",q,"m","L×تعداد")
+        q=_n(p["length"],"length")*_n(p.get("count",1),"count"); return _checked("لوله",q,"m","L×تعداد")
     if k in {"duct","duct_length","کانال"}:
-        q=_n(p["length"],"length")*_n(p.get("count",1),"count"); return MechanicalResult("کانال",q,"m","L×تعداد")
+        q=_n(p["length"],"length")*_n(p.get("count",1),"count"); return _checked("کانال",q,"m","L×تعداد")
     if k in {"duct_area","کانال_سطح"}:
-        q=2*(_n(p["width"],"width")+_n(p["height"],"height"))*_n(p["length"],"length"); return MechanicalResult("سطح کانال",q,"m2","2×(W+H)×L")
+        q=2*(_n(p["width"],"width")+_n(p["height"],"height"))*_n(p["length"],"length"); return _checked("سطح کانال",q,"m2","2×(W+H)×L")
     if k in {"insulation","pipe_insulation","عایق_لوله"}:
-        q=3.141592653589793*_n(p["diameter"],"diameter")*_n(p["length"],"length"); return MechanicalResult("عایق لوله",q,"m2","π×D×L")
+        q=3.141592653589793*_n(p["diameter"],"diameter")*_n(p["length"],"length"); return _checked("عایق لوله",q,"m2","π×D×L")
     if k in {"equipment","equipment_count","تجهیز"}:
-        q=_n(p.get("count",1),"count"); return MechanicalResult("تجهیزات",q,"عدد","تعداد")
+        q=_n(p.get("count",1),"count"); return _checked("تجهیزات",q,"عدد","تعداد")
     if k in {"valve","fixture","شیر","اتصال"}:
-        q=_n(p.get("count",1),"count"); return MechanicalResult(item,q,"عدد","تعداد")
+        q=_n(p.get("count",1),"count"); return _checked(item,q,"عدد","تعداد")
     raise KeyError(f"unsupported mechanical item: {item}")
