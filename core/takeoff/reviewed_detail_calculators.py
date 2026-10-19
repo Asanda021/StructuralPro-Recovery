@@ -9,7 +9,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from core.takeoff.reviewed_components import positive, require_text
+from core.takeoff.reviewed_components import positive, require_text, _exact_float_sum
 
 _SCHEMAS = {
     "concrete_regions": "m3",
@@ -48,6 +48,8 @@ def _count(row: dict) -> int:
 
 def _ratio(gross: float, deduction: float, label: str) -> float:
     value = gross - deduction
+    if deduction > 0 and value == gross:
+        raise ValueError(f"{label}: کسر غیرصفر در دقت محاسبات قبلی حذف می‌شود")
     return positive(value, label)
 
 
@@ -125,7 +127,7 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
                     "source_ref": require_text(void["source_ref"], "مرجع حفره"),
                     "approved_by": require_text(void["approved_by"], "تأییدکننده حفره"),
                 })
-            volume_voids = math.fsum(v["volume_m3"] for v in checked_voids)
+            volume_voids = _exact_float_sum(v["volume_m3"] for v in checked_voids)
             measured = _ratio(gross, volume_voids, "حجم خالص بتن سقف")
             evidence = {"gross_m3": gross, "voids": checked_voids, "void_volume_m3": volume_voids}
         if measured is None or not math.isfinite(measured) or measured <= 0:
@@ -134,7 +136,7 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
         normalized.append({"id": label, "source_ref": entry["source_ref"],
                            "approved_by": entry["approved_by"], "input": entry,
                            "quantity": measured, **evidence})
-    total = math.fsum(totals)
+    total = _exact_float_sum(totals)
     positive(total, "جمع واقعی جزء")
     return {"quantity": total, "unit": _SCHEMAS[kind],
             "formula": {
