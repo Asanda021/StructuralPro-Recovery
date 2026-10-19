@@ -284,6 +284,16 @@ _ENGINE_MATERIAL_COMPONENTS = {
         "reinforcement", "top_rebar", "bottom_rebar", "mesh", "rebars",
         "reinforcement_mesh"},
     ("advanced", "steel_roof_deck_weight"): {"sheet_steel"},
+    # Physical identity matters even when the numeric quantity and unit match.
+    # No cross-component substitution of MEP formula routes is authorized.
+    ("mechanical", "pipe"): {"pipes"},
+    ("mechanical", "duct_area"): {"ducts"},
+    ("mechanical", "equipment"): {"equipment"},
+    ("electrical", "cable"): {"cables"},
+    ("electrical", "conduit"): {"conduits"},
+    ("electrical", "panel"): {"boards", "panels"},
+    ("electrical", "light"): {"fixtures"},
+    ("electrical", "cable_tray"): {"trays"},
 }
 
 
