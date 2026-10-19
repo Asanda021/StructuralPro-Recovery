@@ -36,7 +36,7 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -79,6 +79,8 @@ class ProjectStore:
                     # quantity, approved pricebook or payable-unit change.
                     clean_project.pop("estimate", None)
                     payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.takeoff.structural_handoff_work import guard as handoff_guard
+            handoff_guard(json.loads(row["payload"]) if row else {},clean_project,structural_handoff_command)
             from core.takeoff.manual_formula_amendments import guard as manual_guard
             manual_guard(json.loads(row['payload']) if row else {},clean_project,manual_formula_command)
             from core.commercial.statement_amendment import guard_change

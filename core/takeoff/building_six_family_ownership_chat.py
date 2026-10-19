@@ -49,7 +49,7 @@ def _strict(value, keys, label):
 
 
 def _alias(value):
-    return unicodedata.normalize('NFKC', value).replace('ي', 'ی').replace('ك', 'ک').casefold()
+    return unicodedata.normalize('NFKC', value).replace('ي', 'ی').replace('ك', 'ک').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')).casefold()
 
 
 def _name(value, label):

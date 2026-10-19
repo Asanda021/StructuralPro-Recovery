@@ -243,11 +243,31 @@ class StructuralProApp:
                       "essential": list(spec.essential)}
                 for key, spec in SPECS.items()}
 
-    def preview_structural_handoff(self, project_id, request, *, source_path, source_sha256):
+    def preview_structural_handoff(self, project_id, request, *, source_path, source_sha256, evidence_files=None):
         """Read-only specialist audit against the current existing SQLite project."""
         from core.takeoff.structural_handoff_work import preview
         return preview(self, project_id, request, source_path=source_path,
-                       source_sha256=source_sha256)
+                       source_sha256=source_sha256, evidence_files=evidence_files)
+
+    def structural_handoff_basis(self, project_id):
+        from core.takeoff.structural_handoff_work import project_basis
+        return project_basis(self, project_id)
+
+    def save_structural_handoff_draft(self, project_id, audit_id, request, **kwargs):
+        from core.takeoff.structural_handoff_work import save_draft
+        return save_draft(self, project_id, audit_id, request, **kwargs)
+
+    def get_structural_handoff_audit(self, project_id, audit_id):
+        from core.takeoff.structural_handoff_work import get_audit
+        return get_audit(self, project_id, audit_id)
+
+    def run_structural_handoff_audit(self, project_id, audit_id, *, expected_revision):
+        from core.takeoff.structural_handoff_work import run_audit
+        return run_audit(self, project_id, audit_id, expected_revision=expected_revision)
+
+    def commit_structural_handoff_audit(self, project_id, audit_id, **kwargs):
+        from core.takeoff.structural_handoff_work import commit_audit
+        return commit_audit(self, project_id, audit_id, **kwargs)
 
     def new_aec_system(self, kind: str, floor_id: str, system_id: str) -> dict[str, Any]:
         from core.takeoff.reviewed_aec import empty_system
