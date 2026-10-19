@@ -1,7 +1,7 @@
 {
-  "schema": "phase1_package3_evidence_reassessment_v2",
+  "schema": "phase1_work_integrity_evidence_v3",
   "baseline_head": "f5df864bf71ae40d653d3f366e9de80b021e3a6a",
-  "scope": "ممیزی اجرایی Linux/offscreen؛ verified فقط دامنه مستند همان سلول/آزمون است. وضعیت Windows در reassessment مرجع است؛ مقدار legacy برای سازگاری آزمون قدیمی حفظ شده است.",
+  "scope": "بازسنجی Work/Linux روی HEAD و درخت ثبت‌شده؛ تاریخچه شاهد قبلی محفوظ است. verified تنها دامنه fixture و مسیر آزموده را ثابت می‌کند؛ پذیرش واقعی مهندسی/Windows نیست.",
   "summary": {
     "families": 74,
     "inherited_family_specific_evidence": 33,
@@ -14,13 +14,14 @@
     "renamed": 0,
     "merged": 0,
     "missing_from_bank": 0,
-    "verified_bounded_execution": 30,
-    "limited": 44,
+    "verified_bounded_execution": 32,
+    "limited": 42,
     "no_base_implementation_demonstrated": 0,
     "no_dedicated_route_demonstrated": 41,
     "without_any_test": 0,
     "without_family_specific_test": 37,
-    "windows_verified": 0
+    "windows_verified": 0,
+    "without_independent_specialist_evidence": 37
   },
   "rows": [
     {
@@ -39,7 +40,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -142,14 +143,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_13e4f29ae048"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -212,9 +216,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -233,7 +253,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -336,14 +356,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_13e4f29ae048"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -419,9 +442,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -440,7 +479,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -543,14 +582,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_13e4f29ae048"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -618,9 +660,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -639,7 +697,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -741,14 +799,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_f76f0843049a"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -1152,9 +1213,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -1342,6 +1419,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -1360,7 +1455,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -1462,14 +1557,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_797aa14f261b"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -1605,9 +1703,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -1626,7 +1740,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -1728,14 +1842,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_797aa14f261b"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -1855,9 +1972,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -1876,7 +2009,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -1978,14 +2111,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_797aa14f261b"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -2101,9 +2237,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -2122,7 +2274,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -2224,14 +2376,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_797aa14f261b"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -2387,9 +2542,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -2576,6 +2747,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -2878,6 +3067,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -3176,6 +3383,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -3189,7 +3414,7 @@
       "real_form": "limited",
       "sqlite": "limited",
       "revision_cas": "limited",
-      "boq": "limited",
+      "boq": "blocked",
       "report": "limited",
       "qt": "not_tested",
       "windows": "pending_real_windows",
@@ -3204,7 +3429,7 @@
         "dimensions": {
           "contract": {
             "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "scope": "قرارداد مستقل پله فولادی در SPECS وجود ندارد؛ فقط فرمول دستی مستند و آزمون رد مسیر نامعتبر. با stair بتنی برابر نیست.",
             "source_refs": [
               "core/takeoff/manual_formula_register.py"
             ],
@@ -3267,8 +3492,8 @@
             "test_refs": []
           },
           "boq": {
-            "status": "limited",
-            "scope": "ثبت فقط با شرایط قرارداد و بازبینی؛ مسیر تاریخی مجاز خاموش مسدود نشده",
+            "status": "blocked",
+            "scope": "مسیر اختصاصی پله فولادی تعریف نشده؛ مقدار یا ثبت مالی آن از پله بتنی تولید نمی‌شود",
             "source_refs": [
               "core/takeoff/manual_formula_register.py",
               "core/takeoff/commit_guards.py"
@@ -3336,8 +3561,30 @@
           ]
         },
         "limits": [
-          "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
+          "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است",
+          "پله فولادی: فقدان قرارداد تخصصی مستقل همچنان مانع پذیرش است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_steel_site_limited_gates.py::test_stair_metal_catalog_entry_is_unmapped_not_concrete_stair_contract",
+          "tests/test_chat_package4_steel_site_limited_gates.py::test_stair_metal_not_silently_routed_to_generic_aec_preview"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -3592,6 +3839,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -3810,6 +4075,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -4028,6 +4311,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -4250,6 +4551,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -4470,6 +4789,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -4686,6 +5023,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -4908,6 +5263,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -5138,6 +5511,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -5346,6 +5737,29 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_roof_failclosed.py::test_incomplete_specialty_cannot_expose_partial_measured_rows[kromit_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_missing_required_component_is_not_auto_assumed[kromit_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_sqlite_incomplete_roof_remains_draft_after_reopen[kromit_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_stale_sqlite_revision_cannot_overwrite_record[kromit_roof-joists-\\u0639\\u062f\\u062f]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -5533,6 +5947,29 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_roof_failclosed.py::test_incomplete_specialty_cannot_expose_partial_measured_rows[composite_roof-steel_members-kg]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_missing_required_component_is_not_auto_assumed[composite_roof-steel_members-kg]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_sqlite_incomplete_roof_remains_draft_after_reopen[composite_roof-steel_members-kg]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_stale_sqlite_revision_cannot_overwrite_record[composite_roof-steel_members-kg]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -5721,6 +6158,29 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_roof_failclosed.py::test_incomplete_specialty_cannot_expose_partial_measured_rows[sandwich_roof-panels-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_missing_required_component_is_not_auto_assumed[sandwich_roof-panels-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_sqlite_incomplete_roof_remains_draft_after_reopen[sandwich_roof-panels-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_stale_sqlite_revision_cannot_overwrite_record[sandwich_roof-panels-\\u0639\\u062f\\u062f]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -5904,6 +6364,29 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_roof_failclosed.py::test_incomplete_specialty_cannot_expose_partial_measured_rows[timber_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_missing_required_component_is_not_auto_assumed[timber_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_sqlite_incomplete_roof_remains_draft_after_reopen[timber_roof-joists-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_stale_sqlite_revision_cannot_overwrite_record[timber_roof-joists-\\u0639\\u062f\\u062f]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -6091,6 +6574,29 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_roof_failclosed.py::test_incomplete_specialty_cannot_expose_partial_measured_rows[precast_roof-precast_units-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_missing_required_component_is_not_auto_assumed[precast_roof-precast_units-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_sqlite_incomplete_roof_remains_draft_after_reopen[precast_roof-precast_units-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_roof_failclosed.py::test_stale_sqlite_revision_cannot_overwrite_record[precast_roof-precast_units-\\u0639\\u062f\\u062f]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -6319,6 +6825,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -6519,6 +7043,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -6719,6 +7261,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -6987,6 +7547,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -7195,6 +7773,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -7378,6 +7974,35 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_real_generic_route_per_required_architecture_component[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_missing_required_group_hides_every_partial_row[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_required_group_cannot_be_marked_not_applicable[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_missing_component_approval_is_not_auto_approved[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_duplicate_measured_line_fails_closed[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_zero_is_not_interpreted_as_missing_or_as_measured_quantity[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_wrong_discipline_does_not_convert_architecture_into_electrical[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_physical_unit_mismatch_rejected[gypsum_partition-boards-m2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_incomplete_sqlite_draft_cannot_write_boq[gypsum_partition-rows0]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_generic_sqlite_roundtrip_cas_without_financial_commit[gypsum_partition-rows0]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -7590,6 +8215,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -7810,6 +8453,35 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_real_generic_route_per_required_architecture_component[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_missing_required_group_hides_every_partial_row[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_required_group_cannot_be_marked_not_applicable[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_missing_component_approval_is_not_auto_approved[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_duplicate_measured_line_fails_closed[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_zero_is_not_interpreted_as_missing_or_as_measured_quantity[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_wrong_discipline_does_not_convert_architecture_into_electrical[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_physical_unit_mismatch_rejected[cement_render-render_coat-kg]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_incomplete_sqlite_draft_cannot_write_boq[cement_render-rows1]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_generic_sqlite_roundtrip_cas_without_financial_commit[cement_render-rows1]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -8046,6 +8718,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -8058,55 +8748,57 @@
       "inherited_tests": [
         "tests/test_paint_finish_phase1.py"
       ],
-      "contract": "limited",
-      "controller": "limited",
-      "real_form": "blocked",
-      "sqlite": "limited",
-      "revision_cas": "limited",
-      "boq": "limited",
+      "contract": "verified",
+      "controller": "verified",
+      "real_form": "verified",
+      "sqlite": "verified",
+      "revision_cas": "verified",
+      "boq": "verified",
       "report": "limited",
-      "qt": "limited",
+      "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
         "@set_afdde2275b62"
       ],
       "fully_accepted": false,
       "reassessment": {
-        "overall": "limited",
+        "overall": "verified",
         "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
         "has_family_specific_test": true,
         "has_any_test": true,
         "dedicated_route_demonstrated": true,
         "dimensions": {
           "contract": {
-            "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/paint_finish_detail.py"
             ],
             "test_refs": [
-              "@set_afdde2275b62"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "controller": {
-            "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/platform/application.py",
               "core/takeoff/paint_finish_detail.py"
             ],
             "test_refs": [
-              "@set_afdde2275b62"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "real_form": {
-            "status": "blocked",
-            "scope": "P1-UI-01: فرم موجود فیلدهای قرارداد تخصصی جدید را عرضه نمی‌کند؛ موتور و ذخیره‌سازی تخصصی موجودند",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "app/architecture_detail_editor.py",
               "core/takeoff/paint_finish_detail.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "@work_lifecycle_paint_finish"
+            ]
           },
           "decimal": {
             "status": "verified",
@@ -8121,47 +8813,47 @@
             ]
           },
           "sqlite": {
-            "status": "limited",
-            "scope": "ذخیره و بازگشایی تخصصی یا زیرساخت مشترک؛ آزمون ۸۵ خانواده فقط ثبت پیش‌نویس را ثابت می‌کند",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/projects/store.py",
               "core/takeoff/paint_finish_detail.py"
             ],
             "test_refs": [
-              "@set_23039fd7bdfc"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "revision_cas": {
-            "status": "limited",
-            "scope": "نسخه و CAS زیرساخت مشترک؛ نتیجه هر خانواده محدود به آزمون‌های ارجاع‌شده است",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/projects/store.py",
               "core/takeoff/paint_finish_detail.py"
             ],
             "test_refs": [
-              "@set_8655b700f855"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "duplicate_control": {
-            "status": "limited",
-            "scope": "کنترل منبع/هویت در قرارداد مربوط؛ پوشش هندسی همه حالات احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/commit_guards.py",
               "core/takeoff/paint_finish_detail.py"
             ],
             "test_refs": [
-              "@set_8655b700f855"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "boq": {
-            "status": "limited",
-            "scope": "ثبت فقط با شرایط قرارداد و بازبینی؛ مسیر تاریخی مجاز خاموش مسدود نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/paint_finish_detail.py",
               "core/takeoff/commit_guards.py"
             ],
             "test_refs": [
-              "@set_afdde2275b62"
+              "@work_lifecycle_paint_finish"
             ]
           },
           "report": {
@@ -8176,12 +8868,14 @@
             ]
           },
           "qt": {
-            "status": "limited",
-            "scope": "بازشدن فرم واقعی و اثبات شکاف فیلدها؛ گردش کامل تخصصی اثبات نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "app/architecture_detail_editor.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "@work_lifecycle_paint_finish"
+            ]
           },
           "commit_test_evidence": {
             "status": "verified",
@@ -8258,9 +8952,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-UI-01: شکاف فیلدهای فرم تخصصی با مشاهده Qt تأیید شد"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -8510,6 +9220,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -8735,6 +9463,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -8956,6 +9702,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -9228,6 +9992,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -9460,6 +10242,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -9472,55 +10272,57 @@
       "inherited_tests": [
         "tests/test_suspended_ceiling_phase1.py"
       ],
-      "contract": "limited",
-      "controller": "limited",
-      "real_form": "blocked",
-      "sqlite": "limited",
-      "revision_cas": "limited",
-      "boq": "limited",
+      "contract": "verified",
+      "controller": "verified",
+      "real_form": "verified",
+      "sqlite": "verified",
+      "revision_cas": "verified",
+      "boq": "verified",
       "report": "limited",
-      "qt": "limited",
+      "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
         "@set_0dd2285f01c2"
       ],
       "fully_accepted": false,
       "reassessment": {
-        "overall": "limited",
+        "overall": "verified",
         "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
         "has_family_specific_test": true,
         "has_any_test": true,
         "dedicated_route_demonstrated": true,
         "dimensions": {
           "contract": {
-            "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/suspended_ceiling_detail.py"
             ],
             "test_refs": [
-              "@set_0dd2285f01c2"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "controller": {
-            "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/platform/application.py",
               "core/takeoff/suspended_ceiling_detail.py"
             ],
             "test_refs": [
-              "@set_0dd2285f01c2"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "real_form": {
-            "status": "blocked",
-            "scope": "P1-UI-01: فرم موجود فیلدهای قرارداد تخصصی جدید را عرضه نمی‌کند؛ موتور و ذخیره‌سازی تخصصی موجودند",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "app/architecture_detail_editor.py",
               "core/takeoff/suspended_ceiling_detail.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "@work_lifecycle_suspended_ceiling"
+            ]
           },
           "decimal": {
             "status": "verified",
@@ -9535,47 +10337,47 @@
             ]
           },
           "sqlite": {
-            "status": "limited",
-            "scope": "ذخیره و بازگشایی تخصصی یا زیرساخت مشترک؛ آزمون ۸۵ خانواده فقط ثبت پیش‌نویس را ثابت می‌کند",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/projects/store.py",
               "core/takeoff/suspended_ceiling_detail.py"
             ],
             "test_refs": [
-              "@set_629643c698fc"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "revision_cas": {
-            "status": "limited",
-            "scope": "نسخه و CAS زیرساخت مشترک؛ نتیجه هر خانواده محدود به آزمون‌های ارجاع‌شده است",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/projects/store.py",
               "core/takeoff/suspended_ceiling_detail.py"
             ],
             "test_refs": [
-              "@set_591bef268093"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "duplicate_control": {
-            "status": "limited",
-            "scope": "کنترل منبع/هویت در قرارداد مربوط؛ پوشش هندسی همه حالات احراز نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/commit_guards.py",
               "core/takeoff/suspended_ceiling_detail.py"
             ],
             "test_refs": [
-              "@set_591bef268093"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "boq": {
-            "status": "limited",
-            "scope": "ثبت فقط با شرایط قرارداد و بازبینی؛ مسیر تاریخی مجاز خاموش مسدود نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "core/takeoff/suspended_ceiling_detail.py",
               "core/takeoff/commit_guards.py"
             ],
             "test_refs": [
-              "@set_0dd2285f01c2"
+              "@work_lifecycle_suspended_ceiling"
             ]
           },
           "report": {
@@ -9590,12 +10392,14 @@
             ]
           },
           "qt": {
-            "status": "limited",
-            "scope": "بازشدن فرم واقعی و اثبات شکاف فیلدها؛ گردش کامل تخصصی اثبات نشده",
+            "status": "verified",
+            "scope": "محدود به fixture صریح: بارگذاری/ذخیره با QTest، CAS اتصال دوم، بازبینی، ثبت BOQ، رد تکرار و بازگشایی واقعی SQLite",
             "source_refs": [
               "app/architecture_detail_editor.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "@work_lifecycle_suspended_ceiling"
+            ]
           },
           "commit_test_evidence": {
             "status": "verified",
@@ -9664,9 +10468,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-UI-01: شکاف فیلدهای فرم تخصصی با مشاهده Qt تأیید شد"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -9850,6 +10670,34 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_real_generic_route_per_required_architecture_component[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_missing_required_group_hides_every_partial_row[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_required_group_cannot_be_marked_not_applicable[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_missing_component_approval_is_not_auto_approved[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_duplicate_measured_line_fails_closed[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_zero_is_not_interpreted_as_missing_or_as_measured_quantity[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_wrong_discipline_does_not_convert_architecture_into_electrical[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_incomplete_sqlite_draft_cannot_write_boq[door_window-rows2]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_generic_sqlite_roundtrip_cas_without_financial_commit[door_window-rows2]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -10033,6 +10881,35 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_real_generic_route_per_required_architecture_component[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_missing_required_group_hides_every_partial_row[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_required_group_cannot_be_marked_not_applicable[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_missing_component_approval_is_not_auto_approved[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_duplicate_measured_line_fails_closed[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_zero_is_not_interpreted_as_missing_or_as_measured_quantity[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_wrong_discipline_does_not_convert_architecture_into_electrical[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_physical_unit_mismatch_rejected[upvc_aluminium_windows-glazing-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_incomplete_sqlite_draft_cannot_write_boq[upvc_aluminium_windows-rows3]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_generic_sqlite_roundtrip_cas_without_financial_commit[upvc_aluminium_windows-rows3]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -10212,6 +11089,35 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_real_generic_route_per_required_architecture_component[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_one_missing_required_group_hides_every_partial_row[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_required_group_cannot_be_marked_not_applicable[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_missing_component_approval_is_not_auto_approved[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_duplicate_measured_line_fails_closed[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_zero_is_not_interpreted_as_missing_or_as_measured_quantity[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_wrong_discipline_does_not_convert_architecture_into_electrical[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_physical_unit_mismatch_rejected[glass_curtain_wall-glazing-kg]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_incomplete_sqlite_draft_cannot_write_boq[glass_curtain_wall-rows4]",
+          "tests/test_chat_package4_five_architecture_generic_gates.py::test_generic_sqlite_roundtrip_cas_without_financial_commit[glass_curtain_wall-rows4]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -10448,6 +11354,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -10636,6 +11560,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_seven_final_family_gates.py::test_physical_component_unit_is_not_interchangeable[facade_cladding-panels-kg]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -10815,6 +11759,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11031,6 +11993,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py::test_physically_incompatible_pipe_or_equipment_unit_is_rejected[plumbing-kg]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11210,6 +12192,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py::test_physically_incompatible_pipe_or_equipment_unit_is_rejected[sanitary_drainage-\\u0639\\u062f\\u062f]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11397,6 +12399,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py::test_physically_incompatible_pipe_or_equipment_unit_is_rejected[hvac-m]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11576,6 +12598,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11755,6 +12795,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py::test_physically_incompatible_pipe_or_equipment_unit_is_rejected[plantroom-m3]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -11934,6 +12994,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -12125,6 +13203,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -12313,6 +13409,36 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_manual_electrical_essential_components_retain_exact_user_scope[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_technical_spec_hides_all_rows[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_family_cannot_record_mechanical_line[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_required_electrical_group_never_shows_partial_quantities[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_required_electrical_group_cannot_be_excluded_as_optional[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_approver_never_becomes_approved_by_default[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_duplicate_line_in_a_component_is_not_double_counted[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_zero_electrical_quantity_is_not_accepted_as_real_measurement[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_physical_unit_mismatch_rejected[electrical_power-cables-\\u0639\\u062f\\u062f]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_sqlite_reopen_keeps_electrical_draft_and_cas_without_boq[electrical_power-essentials0]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_incomplete_electrical_draft_fails_financial_commit_without_mutation[electrical_power-essentials0]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -12525,6 +13651,36 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_manual_electrical_essential_components_retain_exact_user_scope[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_technical_spec_hides_all_rows[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_family_cannot_record_mechanical_line[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_required_electrical_group_never_shows_partial_quantities[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_required_electrical_group_cannot_be_excluded_as_optional[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_approver_never_becomes_approved_by_default[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_duplicate_line_in_a_component_is_not_double_counted[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_zero_electrical_quantity_is_not_accepted_as_real_measurement[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_physical_unit_mismatch_rejected[lighting-fixtures-m]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_sqlite_reopen_keeps_electrical_draft_and_cas_without_boq[lighting-essentials1]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_incomplete_electrical_draft_fails_financial_commit_without_mutation[lighting-essentials1]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -12708,6 +13864,36 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_manual_electrical_essential_components_retain_exact_user_scope[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_technical_spec_hides_all_rows[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_family_cannot_record_mechanical_line[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_required_electrical_group_never_shows_partial_quantities[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_required_electrical_group_cannot_be_excluded_as_optional[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_approver_never_becomes_approved_by_default[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_duplicate_line_in_a_component_is_not_double_counted[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_zero_electrical_quantity_is_not_accepted_as_real_measurement[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_physical_unit_mismatch_rejected[low_voltage-devices-kg]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_sqlite_reopen_keeps_electrical_draft_and_cas_without_boq[low_voltage-essentials2]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_incomplete_electrical_draft_fails_financial_commit_without_mutation[low_voltage-essentials2]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -12891,6 +14077,36 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_manual_electrical_essential_components_retain_exact_user_scope[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_technical_spec_hides_all_rows[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_family_cannot_record_mechanical_line[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_required_electrical_group_never_shows_partial_quantities[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_required_electrical_group_cannot_be_excluded_as_optional[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_approver_never_becomes_approved_by_default[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_duplicate_line_in_a_component_is_not_double_counted[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_zero_electrical_quantity_is_not_accepted_as_real_measurement[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_physical_unit_mismatch_rejected[fire_alarm-detectors-m]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_sqlite_reopen_keeps_electrical_draft_and_cas_without_boq[fire_alarm-essentials3]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_incomplete_electrical_draft_fails_financial_commit_without_mutation[fire_alarm-essentials3]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13070,6 +14286,36 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_manual_electrical_essential_components_retain_exact_user_scope[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_technical_spec_hides_all_rows[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_family_cannot_record_mechanical_line[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_required_electrical_group_never_shows_partial_quantities[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_required_electrical_group_cannot_be_excluded_as_optional[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_missing_electrical_approver_never_becomes_approved_by_default[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_duplicate_line_in_a_component_is_not_double_counted[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_zero_electrical_quantity_is_not_accepted_as_real_measurement[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_electrical_physical_unit_mismatch_rejected[data_network-cables-kg]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_sqlite_reopen_keeps_electrical_draft_and_cas_without_boq[data_network-essentials4]",
+          "tests/test_chat_package4_five_electrical_generic_gates.py::test_incomplete_electrical_draft_fails_financial_commit_without_mutation[data_network-essentials4]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13249,6 +14495,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13428,6 +14692,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13607,6 +14889,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13791,6 +15091,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -13970,6 +15288,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -14149,6 +15485,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -14336,6 +15690,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -14515,6 +15887,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_seven_final_family_gates.py::test_physical_component_unit_is_not_interchangeable[site_drains-pipes-m3]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -14727,6 +16119,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -14910,6 +16320,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_seven_final_family_gates.py::test_physical_component_unit_is_not_interchangeable[concrete_repair-repair_mortar-kg]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -15093,6 +16523,26 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [
+          "tests/test_chat_package4_seven_final_family_gates.py::test_physical_component_unit_is_not_interchangeable[seismic_retrofit-anchorage-m]"
+        ],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -15276,6 +16726,24 @@
         "limits": [
           "P1-TEST-01: آزمون مستقل تخصصی کافی احراز نشده؛ آزمون عمومی/پارامتری یا ثبت فرمول دستی موجود است"
         ]
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -15294,7 +16762,7 @@
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "verified",
-      "report": "limited",
+      "report": "verified",
       "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [
@@ -15396,14 +16864,17 @@
             ]
           },
           "report": {
-            "status": "limited",
-            "scope": "چهار صادرکننده مشترک موجودند؛ گزارش تخصصی تیر/ستون/پی فقط PDF/XLSX دارد؛ وجود صادرکننده مشترک پذیرش چهار قالب تخصصی هر خانواده نیست",
+            "status": "verified",
+            "scope": "چهار آداپتور موجودند؛ DOCX/CSV با سرویس واقعی، ثبت معتبر SQLite و بازخوانی تمام مقادیر preview آزموده شد؛ PDF/XLSX در رگرسیون موجود",
             "source_refs": [
               "core/reports/exporters.py",
               "core/reports/aec_office_package.py"
             ],
             "test_refs": [
               "@set_797aa14f261b"
+            ],
+            "script_refs": [
+              "live-specialist-exports"
             ]
           },
           "qt": {
@@ -15551,9 +17022,25 @@
             "build_boq / shared commit_guards"
           ]
         },
-        "limits": [
-          "P1-REPORT-01: آداپتور تخصصی فقط PDF/XLSX؛ DOCX/CSV فقط مشترک/عمومی"
-        ]
+        "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": true,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     },
     {
@@ -15853,6 +17340,24 @@
           ]
         },
         "limits": []
+      },
+      "latest_work_verification": {
+        "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+        "final_full_run": "full-final",
+        "existing_family_tests_reexecuted": true,
+        "package4_guard_nodeids": [],
+        "guard_tests_are_not_engineering_acceptance": true,
+        "independent_specialist_evidence_still_insufficient": false,
+        "positive_specialist_path": false,
+        "final_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "manual_formula_report_formats": [
+          "pdf",
+          "xlsx",
+          "docx",
+          "csv"
+        ],
+        "manual_formula_report_scope": "general explicit documented formula, not a specialist engineering engine"
       }
     }
   ],
@@ -16016,7 +17521,7 @@
     "blocked": "قفل عمدی یا مانع اثبات‌شده؛ دلیل در scope",
     "not_tested": "این رفتار یا محیط آزموده نشده"
   },
-  "execution_ledger": "docs/acceptance/phase1_package3_74_family_executions_20261019.json",
+  "execution_ledger": "docs/acceptance/phase1_work_integrity_execution_20261019.json",
   "evidence_test_sets": {
     "set_af9fbff69f87": [
       "@file:tests/test_beam_closure.py"
@@ -16632,7 +18137,80 @@
       "@file:tests/test_bored_pile_draft_amendment_real_application.py",
       "@file:tests/test_shared_report_persian.py",
       "tests/test_manual_formula_reports.py::test_reports_exact_text_live_safe_and_injection"
+    ],
+    "work_lifecycle_paint_finish": [
+      "tests/test_phase1_paint_ceiling_real_lifecycle.py::test_real_saved_form_cas_review_commit_duplicate_and_reopen[paint_finish-test_paint_finish_phase1-expected0]"
+    ],
+    "work_lifecycle_suspended_ceiling": [
+      "tests/test_phase1_paint_ceiling_real_lifecycle.py::test_real_saved_form_cas_review_commit_duplicate_and_reopen[suspended_ceiling-test_suspended_ceiling_phase1-expected1]"
     ]
   },
-  "test_reference_resolution": "@set_* resolves in evidence_test_sets. @file:PATH resolves to all exact node IDs from PATH in execution_ledger. Each node has outcome, tested head/tree and exit. Literal source/test hits are candidates, not acceptance."
+  "test_reference_resolution": "@set_* resolves in evidence_test_sets. @file:PATH resolves to all exact node IDs from PATH in execution_ledger. Each node has outcome, tested head/tree and exit. Literal source/test hits are candidates, not acceptance.",
+  "prior_execution_ledger": "docs/acceptance/phase1_package3_74_family_executions_20261019.json",
+  "latest_work": {
+    "initial_head": "2c1364035658c92291fc9b2c1cdcb78150a76d7a",
+    "tested_local_checkpoint": "76d5120cb0bd5328b374a8384f16c2c78498a829",
+    "tested_tree": "479158a8b65054c451347783556b4db019ebc0b2",
+    "families": 74,
+    "catalog": 85,
+    "other_phases": 11,
+    "insufficient_independent_specialist_evidence": [
+      "stair_metal",
+      "kromit_roof",
+      "composite_roof",
+      "sandwich_roof",
+      "timber_roof",
+      "precast_roof",
+      "gypsum_partition",
+      "cement_render",
+      "door_window",
+      "upvc_aluminium_windows",
+      "glass_curtain_wall",
+      "facade_cladding",
+      "handrails_metalwork",
+      "plumbing",
+      "sanitary_drainage",
+      "hvac",
+      "mechanical_ventilation",
+      "plantroom",
+      "natural_gas",
+      "fire_protection",
+      "electrical_power",
+      "lighting",
+      "low_voltage",
+      "fire_alarm",
+      "data_network",
+      "security_systems",
+      "emergency_power",
+      "elevator",
+      "external_earthwork",
+      "blinding_concrete",
+      "retaining_structures",
+      "external_works",
+      "site_drains",
+      "demolition",
+      "concrete_repair",
+      "seismic_retrofit",
+      "historic_restoration"
+    ],
+    "full_engineering_acceptance_count": 0,
+    "windows_count": 0,
+    "full_run_nodeids_recorded_in": "docs/acceptance/phase1_work_integrity_execution_20261019.json",
+    "generic_guard_415_pass": true,
+    "mep_boundary_26_pass": true,
+    "resolved": [
+      "manual_formula_docx_csv_dispatch",
+      "paint_ceiling_real_qt_lifecycle_evidence",
+      "specialist_docx_csv_actual_application_readback"
+    ],
+    "remaining": [
+      "37 specialist engineering evidence gaps",
+      "stair_metal specialist contract",
+      "legacy float precision acceptance",
+      "manual Excel print readability",
+      "manual DOCX/CSV UI buttons not added",
+      "Windows/Microsoft Office",
+      "unproven old Exit135 root cause"
+    ]
+  }
 }

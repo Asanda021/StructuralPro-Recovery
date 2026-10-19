@@ -5,7 +5,7 @@ from collections import defaultdict
 from pathlib import Path
 from core.takeoff.manual_formula_register import load,catalog
 from core.commercial.exact_values import number,exact
-from core.reports.exporters import export_pdf,write_excel_cell,style_workbook
+from core.reports.exporters import export_pdf,export_docx,export_csv,write_excel_cell,style_workbook
 
 UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن','عدد':'عدد','cm':'سانتی‌متر','mm':'میلی‌متر','cm2':'سانتی‌متر مربع','mm2':'میلی‌متر مربع','cm3':'سانتی‌متر مکعب','mm3':'میلی‌متر مکعب','1':'بدون بُعد / ضریب','s':'ثانیه','min':'دقیقه','h':'ساعت','m/s':'متر بر ثانیه','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب'}
 STATES={'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','committed':'قطعی'}
@@ -62,14 +62,15 @@ def export(service,pid,path,*,format):
     from core.takeoff.manual_formula_deductions import summary as deduction_summary
     datasets['قبل و بعد کسر']=(['شناسه','پیش از کسر','خالص','کسر مؤثر','واحد'],[[key,str(v['gross']),str(v['net']),str(v['deducted']),UNITS[v['unit']]] for key in keys if reg[key]['data']['deductions'] for v in [deduction_summary(service,pid,key)]])
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
-    if format=='pdf':
+    if format in ('pdf','docx','csv'):
         # Narrow key/value rows retain all fields without squeezing 12 columns.
         rows=[]
         for title,(cols,records) in datasets.items():
             for record in records:
                 for label,value in zip(cols,record):rows.append({'section':title,'row':str(record[0]),'field':label,'value':str(value)})
         if not rows:raise ValueError('داده قابل گزارش موجود نیست')
-        return export_pdf(rows,path,title='متره دستی مستند — '+project['name'],columns=[('section','گزارش'),('row','ردیف'),('field','عنوان'),('value','مقدار')])
+        exporter={'pdf':export_pdf,'docx':export_docx,'csv':export_csv}[format]
+        return exporter(rows,path,title='متره دستی مستند — '+project['name'],columns=[('section','گزارش'),('row','ردیف'),('field','عنوان'),('value','مقدار')])
     if format!='xlsx':raise ValueError('قالب گزارش معتبر نیست')
     from openpyxl import Workbook
     from openpyxl.styles import Alignment,Font
