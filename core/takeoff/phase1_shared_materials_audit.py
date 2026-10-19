@@ -1,6 +1,7 @@
 """P1 #2: immutable cross-family material-alias preflight (not a payment ledger).
 
 Identical material physical IDs may appear under multiple member/quantity families.
+Read-only lookup covers beam, reviewed structural and reviewed AEC registers.
 Without source geometry, complete historical register and validated allocation,
 that collision is a blocker; no payable deductions or 'all clear' are produced.
 """
@@ -14,7 +15,7 @@ CLASSES=('concrete','formwork','rebar')
 _DOC=('policy','project_id','prepared_by','reviewer','claims')
 _CLAIM=('material_kind','physical_material_id','member_kind','floor_id','member_id',
         'source_ref','detail_ref','member_record_sha256','member_revision')
-_REGISTERS=('reviewed_structural_members','beam_detail_register')
+_REGISTERS=('reviewed_structural_members','beam_detail_register','reviewed_aec_systems')
 
 
 def audit(project,document):
@@ -52,9 +53,14 @@ def audit(project,document):
                 if not isinstance(record,dict) or not isinstance(record.get('data'),dict):
                     raise OwnershipError('رکورد عضو موجود ساختار معتبر ندارد')
                 data=record['data']
+                # Roofs, facades and other AEC systems use system_id, not
+                # structural member_id. A claim must bind to exactly one saved
+                # record, even when two registries contain similar labels.
                 actual=('beam' if book=='beam_detail_register' else data.get('kind'),
                         data.get('floor_id'),
-                        data.get('beam_id') if book=='beam_detail_register' else data.get('member_id'))
+                        data.get('beam_id') if book=='beam_detail_register'
+                        else data.get('system_id') if book=='reviewed_aec_systems'
+                        else data.get('member_id'))
                 if actual==key:matches.append(record)
         if len(matches)!=1:raise OwnershipError('عضو مالک منحصربه‌فرد در Snapshot پیدا نشد')
         record=matches[0]
