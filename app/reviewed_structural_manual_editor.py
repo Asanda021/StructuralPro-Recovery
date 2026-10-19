@@ -153,7 +153,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     for w,label in [(creator,'سازنده اصلاحیه عضو'),(reviewer,'بازبین مستقل اصلاحیه'),(note,'یادداشت بازبینی'),(amend_id,'شناسه اصلاحیه')]:w.setPlaceholderText(label);main.addWidget(w)
     evidence_path=QLineEdit();evidence_ref=QLineEdit();evidence_path.setPlaceholderText('مسیر فایل مدرک جدید اصلاحیه پی و شناژ');evidence_ref.setPlaceholderText('مرجع مدرک جدید');main.addWidget(evidence_path);main.addWidget(evidence_ref)
     amend_buttons={k:QPushButton(label) for k,label in [('create','درخواست اصلاح عضو قطعی'),('review','بازبینی مستقل اصلاحیه عضو'),('apply','اعمال اتمیک اصلاحیه عضو')]}
-    reports={k:QPushButton('گزارش عضو '+label) for k,label in [('xlsx','Excel'),('pdf','PDF')]}
+    reports={k:QPushButton('گزارش عضو '+label) for k,label in [('xlsx','Excel'),('pdf','PDF'),('docx','Word'),('csv','CSV')]}
     for b in [pile_specialist,advanced,section_button,ded_button,review_column,*amend_buttons.values(),*reports.values()]:main.addWidget(b)
     new_member=QLineEdit();new_source=QLineEdit()
     new_member.setPlaceholderText('شناسه مستقل عضو کپی');new_source.setPlaceholderText('منبع مستقل عضو کپی')

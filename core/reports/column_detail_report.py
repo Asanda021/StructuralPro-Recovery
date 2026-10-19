@@ -1,5 +1,5 @@
 """Column detail adapter through existing Persian PDF/Excel exporters."""
-from core.reports.exporters import export_pdf,export_xlsx
+from core.reports.exporters import export_pdf,export_xlsx,export_docx,export_csv
 from core.reports.beam_legacy_mapping_report import LABELS,STATUS
 
 LABELS={**LABELS,'building_id':'ساختمان','axis':'محور','gross_m3':'بتن ناخالص','net_m3':'بتن خالص','series':'سری میلگرد','surfaces':'سطوح قالب','geometry':'هندسه','intersections':'کسورات','width':'عرض','depth':'عمق','height':'ارتفاع','count':'تعداد','gross_area_m2':'قالب ناخالص','unit_weight_kg_m':'وزن واحد مستند','cut_length_m':'طول برش','nominal_diameter_mm':'قطر میلی‌متر','diameter':'قطر ستون، متر','curved_wall':'قالب جانبی منحنی','axis_diameter_m':'قطر محور مارپیچ، متر','pitch_m':'گام مارپیچ، متر','turns':'تعداد دور مستند','cover_m':'پوشش واقعی، متر','start_m':'آغاز ناحیه، متر','end_m':'پایان ناحیه، متر','end_parts_m':'اجزای انتهایی مستند','end_condition':'قرارداد انتهایی','end_condition_ref':'مرجع جزئیات انتهایی','helix_length_policy':'سیاست دقت محاسبه طول مارپیچ','pi_policy':'سیاست عددی پی','count_scope':'دامنه تعداد','shape_kind':'شکل خاموت','coverage':'پوشش سطح','area_method':'روش محاسبه سطح','cut_length_ref':'مرجع طول برش','source_ref':'مرجع دیتایل'}
@@ -48,6 +48,8 @@ def export(service,pid,floor,member,path,*,format,kind="column"):
  walk('هویت و منشأ','نوع عضو',title);walk('هویت و منشأ','شناسه عضو',member);walk('هویت و منشأ','طبقه',floor)
  kwargs={'title':'ریزمتره مستند '+title+' '+member,'columns':[('component','جزء عضو'),('field','عنوان'),('value','مقدار و مرجع')]}
  if format=='pdf':return export_pdf(rows,path,**kwargs,fill_width=kind!='column')
+ if format=='docx':return export_docx(rows,path,**kwargs)
+ if format=='csv':return export_csv(rows,path,**kwargs)
  if format!='xlsx':raise ValueError('قالب گزارش نامعتبر')
  from pathlib import Path
  from tempfile import TemporaryDirectory

@@ -170,7 +170,9 @@ class BeamDetailPanel(QWidget):
             b=QPushButton('گزارش نگاشت تاریخی '+label);root.addWidget(b);self.legacy_report_buttons[fmt]=b;b.clicked.connect(lambda _=False,f=fmt:self.export_legacy_mapping(f))
         self.legacy_refresh_button.clicked.connect(self.refresh_legacy_rows);self.legacy_rows.currentIndexChanged.connect(self.show_legacy_original);self.legacy_mapping_button.clicked.connect(self.create_legacy_mapping)
         self.xlsx_button=QPushButton('ریزمتره تیر Excel');self.pdf_button=QPushButton('ریزمتره تیر PDF');buttons.addWidget(self.xlsx_button);buttons.addWidget(self.pdf_button)
+        self.docx_button=QPushButton('ریزمتره تیر Word');self.csv_button=QPushButton('ریزمتره تیر CSV');buttons.addWidget(self.docx_button);buttons.addWidget(self.csv_button)
         self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
+        self.docx_button.clicked.connect(lambda:self.export('docx'));self.csv_button.clicked.connect(lambda:self.export('csv'))
         self.setLayoutDirection(Qt.RightToLeft)
         self.reset_form()
 
