@@ -36,7 +36,7 @@ def _id(value, label):
 
 def _canonical(value):
     text = unicodedata.normalize("NFKC", _id(value, "هویت"))
-    return " ".join(text.replace("ي", "ی").replace("ك", "ک").casefold().split())
+    return " ".join(text.replace("ي", "ی").replace("ك", "ک").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")).casefold().split())
 
 
 def _hash(value, label):

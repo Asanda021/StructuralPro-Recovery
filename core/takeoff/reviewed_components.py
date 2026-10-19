@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 from decimal import Decimal, InvalidOperation, Inexact, Rounded, localcontext
 from typing import Any
+from core.takeoff.bored_pile_ownership_preflight import _canonical
 
 PARTS = frozenset({"straight", "bend", "hook", "anchorage", "lap", "other"})
 
@@ -21,6 +22,12 @@ def positive(value: Any, name: str, *, allow_zero: bool = False, integer: bool =
         raise ValueError(f"{name}: مقدار عددی معتبر لازم است") from exc
     if not math.isfinite(result) or result < 0 or (result == 0 and not allow_zero):
         raise ValueError(f"{name}: مقدار مثبت و متناهی لازم است")
+    if not isinstance(value, float):
+        try:
+            if Decimal(str(value)) != Decimal(str(result)):
+                raise ValueError(f"{name}: دقت ورودی دقیق در تبدیل به float قابل حفظ نیست")
+        except InvalidOperation as exc:
+            raise ValueError(f"{name}: مقدار عددی معتبر لازم است") from exc
     if result == 0.0:
         try:
             if Decimal(str(value)) != 0:
@@ -52,6 +59,18 @@ def _exact_float_sum(values):
         ctx.traps[Inexact] = True
         ctx.traps[Rounded] = True
         total = sum((Decimal(str(value)) for value in values), Decimal(0))
+    return legacy_float(total)
+
+def _exact_float_product(values):
+    """Multiply normalized decimal factors; fail before a lossy legacy bridge."""
+    from core.commercial.statement_amendment import legacy_float
+    with localcontext() as ctx:
+        ctx.prec = 1024
+        ctx.traps[Inexact] = True
+        ctx.traps[Rounded] = True
+        total = Decimal(1)
+        for value in values:
+            total *= Decimal(str(value))
     return legacy_float(total)
 
 def cut_length(segment: dict[str, Any]) -> tuple[float, dict[str, Any]]:
@@ -133,9 +152,9 @@ def net_concrete(gross_m3: float, intersections: list[dict]) -> tuple[float, lis
         if not isinstance(item, dict):
             raise ValueError("کسر حجم باید ساختار معتبر داشته باشد")
         ident = require_text(item.get("id"), "شناسه کسر مشترک")
-        if ident in ids:
+        if _canonical(ident) in ids:
             raise ValueError("هم‌پوشانی بتن با شناسه تکراری ثبت شده است")
-        ids.add(ident)
+        ids.add(_canonical(ident))
         volume = positive(item.get("volume_m3"), "حجم کسر مستند")
         ref = require_text(item.get("source_ref"), "مرجع کسر")
         approved = require_text(item.get("approved_by"), "تأییدکننده کسر")
@@ -165,9 +184,9 @@ def net_formwork(formwork: dict) -> tuple[float, list[dict]]:
         if not isinstance(item, dict):
             raise ValueError("ساختار سطح قالب‌بندی نامعتبر است")
         face_id = require_text(item.get("id"), "شناسه سطح قالب")
-        if face_id in seen:
+        if _canonical(face_id) in seen:
             raise ValueError("سطح قالب‌بندی تکراری است")
-        seen.add(face_id)
+        seen.add(_canonical(face_id))
         area = positive(item.get("net_area_m2"), "مساحت واقعی سطح قالب")
         ref = require_text(item.get("source_ref"), "مرجع سطح قالب")
         checked.append({"id": face_id, "net_area_m2": area, "source_ref": ref})

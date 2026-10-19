@@ -14,12 +14,12 @@
     "renamed": 0,
     "merged": 0,
     "missing_from_bank": 0,
-    "verified_bounded_execution": 32,
-    "limited": 42,
+    "verified_bounded_execution": 33,
+    "limited": 41,
     "no_base_implementation_demonstrated": 0,
-    "no_dedicated_route_demonstrated": 41,
+    "no_dedicated_route_demonstrated": 40,
     "without_any_test": 0,
-    "without_family_specific_test": 37,
+    "without_family_specific_test": 36,
     "windows_verified": 0,
     "without_independent_specialist_evidence": 37
   },
@@ -3481,11 +3481,11 @@
       "prior_evidence_level": "no_family_specific_verified_evidence",
       "inherited_documents": [],
       "inherited_tests": [],
-      "contract": "limited",
-      "controller": "limited",
+      "contract": "verified",
+      "controller": "verified",
       "real_form": "limited",
-      "sqlite": "limited",
-      "revision_cas": "limited",
+      "sqlite": "verified",
+      "revision_cas": "verified",
       "boq": "blocked",
       "report": "limited",
       "qt": "not_tested",
@@ -3493,28 +3493,35 @@
       "commit_test_evidence": [],
       "fully_accepted": false,
       "reassessment": {
-        "overall": "limited",
-        "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
-        "has_family_specific_test": false,
+        "overall": "verified",
+        "scope": "پیش‌ارزیابی مستقل غیرمالی ۱۱ گروه پله فولادی و تطبیق تکیه‌گاه؛ بدون تأیید ظرفیت یا هندسه تماس",
+        "has_family_specific_test": true,
         "has_any_test": true,
-        "dedicated_route_demonstrated": false,
+        "dedicated_route_demonstrated": true,
         "dimensions": {
           "contract": {
-            "status": "limited",
-            "scope": "قرارداد مستقل پله فولادی در SPECS وجود ندارد؛ فقط فرمول دستی مستند و آزمون رد مسیر نامعتبر. با stair بتنی برابر نیست.",
+            "status": "verified",
+            "scope": "پیش‌ارزیابی مستقل غیرمالی ۱۱ گروه پله فولادی و تطبیق تکیه‌گاه؛ بدون تأیید ظرفیت یا هندسه تماس",
             "source_refs": [
-              "core/takeoff/manual_formula_register.py"
+              "core/takeoff/steel_stair_preflight.py",
+              "core/takeoff/steel_stair_support_crosswalk_chat.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "tests/test_phase1_package2_specialist_evidence.py",
+              "tests/test_phase1_package2_service.py"
+            ]
           },
           "controller": {
-            "status": "limited",
-            "scope": "مسیر عمومی/پیش‌نویس یا زیرمجموعه محدود؛ آزمون مستقل انتهابه‌انتهای تخصصی احراز نشده",
+            "status": "verified",
+            "scope": "پیش‌ارزیابی مستقل غیرمالی ۱۱ گروه پله فولادی و تطبیق تکیه‌گاه؛ بدون تأیید ظرفیت یا هندسه تماس",
             "source_refs": [
               "core/platform/application.py",
-              "core/takeoff/manual_formula_register.py"
+              "core/takeoff/structural_handoff_work.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "tests/test_phase1_package2_specialist_evidence.py",
+              "tests/test_phase1_package2_service.py"
+            ]
           },
           "real_form": {
             "status": "limited",
@@ -3535,24 +3542,28 @@
             "test_refs": []
           },
           "sqlite": {
-            "status": "limited",
-            "scope": "ذخیره و بازگشایی تخصصی یا زیرساخت مشترک؛ آزمون ۸۵ خانواده فقط ثبت پیش‌نویس را ثابت می‌کند",
+            "status": "verified",
+            "scope": "پیش‌ارزیابی مستقل غیرمالی ۱۱ گروه پله فولادی و تطبیق تکیه‌گاه؛ بدون تأیید ظرفیت یا هندسه تماس",
             "source_refs": [
               "core/projects/store.py",
-              "core/takeoff/manual_formula_register.py"
+              "core/takeoff/structural_handoff_work.py"
             ],
             "test_refs": [
-              "@set_229e788a82be"
+              "tests/test_phase1_package2_specialist_evidence.py",
+              "tests/test_phase1_package2_service.py"
             ]
           },
           "revision_cas": {
-            "status": "limited",
-            "scope": "نسخه و CAS زیرساخت مشترک؛ نتیجه هر خانواده محدود به آزمون‌های ارجاع‌شده است",
+            "status": "verified",
+            "scope": "پیش‌ارزیابی مستقل غیرمالی ۱۱ گروه پله فولادی و تطبیق تکیه‌گاه؛ بدون تأیید ظرفیت یا هندسه تماس",
             "source_refs": [
               "core/projects/store.py",
-              "core/takeoff/manual_formula_register.py"
+              "core/takeoff/structural_handoff_work.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "tests/test_phase1_package2_specialist_evidence.py",
+              "tests/test_phase1_package2_service.py"
+            ]
           },
           "duplicate_control": {
             "status": "limited",
@@ -3622,14 +3633,15 @@
         "candidate_search_is_not_acceptance": true,
         "route": {
           "controller": "core/platform/application.py",
-          "contract": "core/takeoff/manual_formula_register.py",
-          "form": "app/manual_formula_controls.py",
-          "registry": "manual_formula_register_or_readonly_handoff",
+          "contract": "core/takeoff/steel_stair_preflight.py",
+          "support_contract": "core/takeoff/steel_stair_support_crosswalk_chat.py",
+          "form": "app/manual_formula_controls.py (general manual only; no dedicated steel stair UI)",
+          "registry": "existing structural_handoff_audits JSON",
           "call_chain": [
-            "manual_formula_controls.bind/build",
-            "StructuralProApp.save_manual_formula/load_manual_formulas",
-            "manual_formula_register",
-            "ProjectStore / review before BOQ"
+            "StructuralProApp.save_structural_handoff_draft",
+            "structural_handoff_work._evaluate (STEEL_SUPPORT_POLICY)",
+            "steel_stair_preflight.preview + steel_stair_support_crosswalk_chat.audit",
+            "ProjectStore.save(expected_digest)"
           ]
         },
         "limits": [
@@ -3680,6 +3692,14 @@
         "ready": false,
         "commit_allowed": false,
         "payable_rows": []
+      },
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#stair_metal",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
       }
     },
     {
@@ -5916,7 +5936,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#kromit_roof",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "composite_roof",
@@ -6139,7 +6167,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#composite_roof",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "sandwich_roof",
@@ -6363,7 +6399,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#sandwich_roof",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "timber_roof",
@@ -6582,7 +6626,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#timber_roof",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "precast_roof",
@@ -6805,7 +6857,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#precast_roof",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "steel_frame",
@@ -8253,7 +8313,15 @@
         "Documented applicable/excluded scope for frames, boards, insulation, joint_compound, tape, fixings, doors",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#gypsum_partition",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "plaster_finish",
@@ -8750,7 +8818,15 @@
         "Documented applicable/excluded scope for scratch_coat, render_coat, finish, reinforcement_mesh, corner_beads",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#cement_render",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "ceramic_finish",
@@ -11026,7 +11102,15 @@
         "Documented applicable/excluded scope for frame, glazing, hardware, installation",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#door_window",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "upvc_aluminium_windows",
@@ -11250,7 +11334,15 @@
         "Documented applicable/excluded scope for profiles, reinforcement, glazing, hardware, seals, anchors, installation",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#upvc_aluminium_windows",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "glass_curtain_wall",
@@ -11470,7 +11562,15 @@
         "Documented applicable/excluded scope for mullions, transoms, glazing, anchors, gaskets, sealant",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#glass_curtain_wall",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "stone_cladding",
@@ -11950,7 +12050,15 @@
         "Documented applicable/excluded scope for panels, rails, brackets, anchors, insulation, waterproofing, seals",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#facade_cladding",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "handrails_metalwork",
@@ -12159,7 +12267,15 @@
         "Documented applicable/excluded scope for profiles, plates, anchors, welds, coating",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#handrails_metalwork",
+        "new_specialist_component_evidence": true,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "plumbing",
@@ -12408,7 +12524,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#plumbing",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "sanitary_drainage",
@@ -12620,7 +12744,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#sanitary_drainage",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "hvac",
@@ -12840,7 +12972,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#hvac",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "mechanical_ventilation",
@@ -13050,7 +13190,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#mechanical_ventilation",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "plantroom",
@@ -13262,7 +13410,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#plantroom",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "natural_gas",
@@ -13472,7 +13628,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#natural_gas",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "fire_protection",
@@ -13694,7 +13858,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#fire_protection",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "electrical_power",
@@ -13925,7 +14097,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#electrical_power",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "lighting",
@@ -14180,7 +14360,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#lighting",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "low_voltage",
@@ -14406,7 +14594,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#low_voltage",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "fire_alarm",
@@ -14632,7 +14828,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#fire_alarm",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "data_network",
@@ -14854,7 +15058,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#data_network",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "security_systems",
@@ -15064,7 +15276,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#security_systems",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "emergency_power",
@@ -15274,7 +15494,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#emergency_power",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "elevator",
@@ -15484,7 +15712,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#elevator",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "external_earthwork",
@@ -15699,7 +15935,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#external_earthwork",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "blinding_concrete",
@@ -15909,7 +16153,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#blinding_concrete",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "retaining_structures",
@@ -16119,7 +16371,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#retaining_structures",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "external_works",
@@ -16337,7 +16597,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#external_works",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "site_drains",
@@ -16549,7 +16817,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#site_drains",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "demolition",
@@ -16792,7 +17068,15 @@
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
         "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#demolition",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "concrete_repair",
@@ -17007,7 +17291,15 @@
         "Documented applicable/excluded scope for substrate_prep, corrosion_treatment, repair_mortar, injection, reinforcement, finishes",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#concrete_repair",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "seismic_retrofit",
@@ -17222,7 +17514,15 @@
         "Documented applicable/excluded scope for concrete_jackets, steel_jackets, frp, added_bracing, anchorage, foundations, tests",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#seismic_retrofit",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "historic_restoration",
@@ -17435,7 +17735,15 @@
         "Documented applicable/excluded scope for survey, documentation, stabilization, compatible_mortar, masonry_repair, protective_coating",
         "Physical item/region/path IDs; cross-family overlap and payer ownership",
         "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
-      ]
+      ],
+      "final_package2": {
+        "inventory_ref": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json#historic_restoration",
+        "new_specialist_component_evidence": false,
+        "independent_specialist_evidence_still_insufficient": true,
+        "engineering_acceptance": false,
+        "financial_permission": false,
+        "windows": "not_tested"
+      }
     },
     {
       "code": "pile_cap",
@@ -18940,5 +19248,26 @@
     "independent_specialist_deficits": 37,
     "full_engineering_acceptance": 0,
     "windows_acceptance": 0
+  },
+  "final_package2": {
+    "baseline_head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+    "inventory": "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json",
+    "new_bounded_family_route": [
+      "stair_metal"
+    ],
+    "new_component_evidence_families": [
+      "composite_roof",
+      "handrails_metalwork",
+      "kromit_roof",
+      "precast_roof",
+      "sandwich_roof",
+      "stair_metal",
+      "timber_roof"
+    ],
+    "remaining_independent_specialist_evidence_deficits": 37,
+    "metrics_overlap_do_not_add": true,
+    "full_engineering_acceptance": 0,
+    "financial_permission": false,
+    "test_execution_ledger": "docs/acceptance/phase1_final_package2_execution_20261020.json"
   }
 }

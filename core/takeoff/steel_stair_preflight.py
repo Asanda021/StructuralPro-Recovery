@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation, localcontext
 import re
+from core.takeoff.bored_pile_ownership_preflight import _canonical
 
 POLICY = "stair_metal_ownership_preflight_v1"
 GROUP_UNITS = {
@@ -133,9 +134,9 @@ def _preview_exact(document):
             for entry in entries:
                 _strict_keys(entry, ("id", "source_ref", "approved_by", "spec_ref", "scope_ref", "mode", "details"), "physical part")
                 physical_id = _text(entry["id"], "physical id")
-                if physical_id in seen:
+                if _canonical(physical_id) in seen:
                     raise ValueError("duplicate physical id across steel-stair groups")
-                seen.add(physical_id)
+                seen.add(_canonical(physical_id))
                 for field in ("source_ref", "approved_by", "spec_ref", "scope_ref"):
                     _text(entry[field], field)
                 qty = _quantity(entry, unit)
@@ -157,9 +158,9 @@ def _preview_exact(document):
         for claim in claims["claims"]:
             _strict_keys(claim, ("physical_id", "building_id", "owner_system", "payer_system", "scope_ref", "source_ref", "approved_by"), "ownership claim")
             physical_id = _text(claim["physical_id"], "owned physical id")
-            if physical_id in claim_ids:
+            if _canonical(physical_id) in claim_ids:
                 raise ValueError("duplicate proposed payer/physical id")
-            claim_ids.add(physical_id)
+            claim_ids.add(_canonical(physical_id))
             for field in ("building_id", "owner_system", "payer_system", "scope_ref", "source_ref", "approved_by"):
                 _text(claim[field], field)
             if claim["building_id"] != document["building_id"]:
@@ -168,7 +169,7 @@ def _preview_exact(document):
                 raise ValueError("steel stair member is not owned by documented stair system")
             if claim["payer_system"] != document["system_id"]:
                 raise ValueError("claimed payer is not the owning steel stair; external payer requires joint review")
-            row = next((e for e in calculated if e["physical_id"] == physical_id), None)
+            row = next((e for e in calculated if _canonical(e["physical_id"]) == _canonical(physical_id)), None)
             if row is None or row["scope_ref"] != claim["scope_ref"] or row["source_ref"] != claim["source_ref"]:
                 raise ValueError("payer claim does not match measured physical scope")
         if claim_ids != seen:

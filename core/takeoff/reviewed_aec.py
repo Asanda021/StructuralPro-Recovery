@@ -362,7 +362,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                 "steel_profile_schedule": {"columns", "beams", "bracing", "steel",
                     "steel_members", "profiles"},
                 "steel_plate_schedule": {"plates", "edge_plates", "steel_members", "steel"},
-                "timber_volume_schedule": {"members", "timber"},
+                "timber_volume_schedule": {"members", "timber", "joists"},
                 "piece_schedule": {"joists", "foam", "blocks", "bricks", "studs",
                     "precast_panels", "precast_units", "panels", "bolts",
                     "fasteners", "connectors", "shear_connectors"},
@@ -429,7 +429,14 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
             raise ValueError("شیوه متره فقط محاسبه مستند یا مقدار بازبینی‌شده است")
         if not math.isfinite(amount) or amount <= 0:
             raise ValueError("مقدار جزئی باید مثبت و متناهی باشد")
+        if unit == "عدد":
+            positive(amount, "تعداد قطعات واقعی", integer=True)
         expected_unit = _UNIT_BY_COMPONENT.get(name)
+        # A documented volume schedule measures timber volume; legacy measured
+        # joist piece counts keep their existing unit and stored contract.
+        if (system_kind == "timber_roof" and name == "joists" and
+                mode == "detail" and detail_kind == "timber_volume_schedule"):
+            expected_unit = "m3"
         if expected_unit is not None and unit != expected_unit:
             raise ValueError(f"واحد فیزیکی {name} باید {expected_unit} باشد؛ مقدار ناسازگار قابل ثبت نیست")
         rows.append({"line_id": line, "source_ref": evidence, "description": description,
@@ -535,7 +542,12 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
         if target["unit"] != "m3" or source["unit"] != "m3":
             blockers.append("کسر حجم سقف باید بر حسب مترمکعب و هم‌واحد با بتن باشد")
             continue
-        net = target["quantity"] - source["quantity"]
+        try:
+            from core.takeoff.reviewed_components import _exact_float_sum
+            net = _exact_float_sum((target["quantity"], -source["quantity"]))
+        except (ValueError, ArithmeticError) as exc:
+            blockers.append(f"دقت کسورات مستند قابل حفظ نیست: {exc}")
+            continue
         if net <= 0 or not math.isfinite(net):
             blockers.append("حجم خالص سقف پس از کسورات نامعتبر است")
             continue
@@ -554,6 +566,12 @@ def preview_system(data: dict, engine: TakeoffEngine) -> dict:
     # workflow still reports every blocker, but exposes no unapproved quantities.
     # This only applies to the generic reviewed path; specialist calculation
     # engines retain their own fail-closed contracts.
+    wood = components.get("joists")
+    if (kind == "timber_roof" and isinstance(wood, dict) and
+            isinstance(wood.get("items"), list) and any(
+            isinstance(item, dict) and item.get("mode") == "detail" and item.get("detail_type") == "timber_volume_schedule"
+            for item in wood["items"])):
+        blockers.append("حجم چوب فقط پیش‌ارزیابی است؛ هندسه اتصال، مالکیت و پذیرش مستقل سقف چوبی کامل نیست")
     if blockers:
         rows.clear()
     return {"kind": kind, "floor_id": floor, "system_id": identity, "source_id": sid,

@@ -7,6 +7,7 @@ There is no SQLite/BOQ mutation or commit path in this module.
 from __future__ import annotations
 
 from hashlib import sha256
+from core.takeoff.bored_pile_ownership_preflight import _canonical
 
 from core.takeoff.column_joint_preflight import _record
 from core.takeoff.steel_stair_preflight import preview as preview_stair
@@ -64,9 +65,11 @@ def _project_physical(project):
             ids = [data.get('physical_id')] + [geometry.get(k) for k in (
                 'physical_id', 'physical_column_id', 'physical_cap_id')]
             identities = {_id(x, 'شناسه فیزیکی رکورد') for x in ids if x is not None}
+            identities = {_canonical(x) for x in identities}
             if len(identities) > 1:
                 raise ValueError('هویت فیزیکی یک عضو در فیلدهای مختلف ناسازگار است')
             for physical_id in identities:
+                physical_id = _canonical(physical_id)
                 if physical_id in seen:
                     raise ValueError('یک هویت فیزیکی سازه در دو رکورد مستقل ثبت شده است')
                 seen[physical_id] = (register_name, key)
@@ -87,8 +90,26 @@ def _existing_part_ids(project):
         for field in ('physical_component_id', 'physical_piece_id', 'physical_id',
                       'physical_key', 'physical_bar_id'):
             if field in params and params[field] is not None:
-                ids.add(_id(params[field], 'هویت قطعه قبلی'))
+                ids.add(_canonical(_id(params[field], 'هویت قطعه قبلی')))
     return ids
+
+
+def _member_part_ids(project):
+    """Only explicitly physical keys; a local schedule 'id' is not a global ID."""
+    found=set()
+    keys={'physical_id','physical_component_id','physical_piece_id','physical_key','physical_bar_id','physical_plate_id'}
+    def visit(value):
+        if isinstance(value,dict):
+            for key,item in value.items():
+                if key in keys and item is not None:found.add(_canonical(_id(item,'قطعه عضو سازه‌ای')))
+                else:visit(item)
+        elif isinstance(value,list):
+            for item in value:visit(item)
+    for name in ('reviewed_structural_members','beam_detail_register','reviewed_aec_systems'):
+        register=project.get(name,{})
+        if not isinstance(register,dict):raise ValueError('دفتر اعضای مرتبط نامعتبر است')
+        visit(register)
+    return found
 
 
 def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
@@ -111,7 +132,7 @@ def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
                 raise ValueError(f'{name}: هویت یا نسخه دیتایل پله متفاوت است')
         _id(document['prepared_by'], 'تهیه‌کننده')
         _id(document['reviewer'], 'بازبین')
-        if document['prepared_by'] == document['reviewer']:
+        if _canonical(document['prepared_by']) == _canonical(document['reviewer']):
             raise ValueError('بازبین مستقل از تهیه‌کننده نیست')
         _bytes_sha(drawing_bytes, document['source_sha256'], 'فایل واقعی نقشه پله')
         stair = preview_stair(stair_document)
@@ -119,12 +140,21 @@ def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
                 or stair.get('commit_allowed') is not False or stair.get('payable_rows') != []):
             raise ValueError('پیش‌ارزیابی مستقل پله معتبر یا غیرمالی نیست')
         candidates = stair['candidates']
-        stair_ids = {_id(x['physical_id'], 'شناسه قطعه پله'): x for x in candidates}
-        required_ids = {x['physical_id'] for x in candidates if x['component'] in LOAD_BEARING}
+        stair_ids = {_canonical(_id(x['physical_id'], 'شناسه قطعه پله')): x for x in candidates}
+        required_ids = {_canonical(x['physical_id']) for x in candidates if x['component'] in LOAD_BEARING}
         if not required_ids:
             raise ValueError('جزء سازه‌ای لازم برای لینک تکیه‌گاه شناسایی نشد')
+        source_key=_canonical(stair_document['source']['source_id'])
+        for register in ('reviewed_structural_members','beam_detail_register','reviewed_aec_systems'):
+            for rec in project.get(register,{}).values():
+                source=rec.get('data',{}).get('source',{}).get('source_id')
+                if source and _canonical(source)==source_key:
+                    raise ValueError('منبع پله قبلاً در عضو دیگری مصرف شده است')
+        for row in project.get('takeoffs',[]):
+            if row.get('source_id') and _canonical(row['source_id'])==source_key:
+                raise ValueError('منبع پله قبلاً در ریزمتره ثبت شده است')
         project_members = _project_physical(project)
-        if any(p in project_members or p in _existing_part_ids(project) for p in stair_ids):
+        if any(p in project_members or p in (_existing_part_ids(project) | _member_part_ids(project)) for p in stair_ids):
             raise ValueError('هویت قطعه پله قبلاً در دفتر سازه یا متره مصرف شده است')
         links = document['links']
         if not isinstance(links, list) or not 0 < len(links) <= 32:
@@ -139,24 +169,24 @@ def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
             _strict(link, LINK_FIELDS, 'رابط تکیه‌گاه')
             _strict(link['record'], RECORD_FIELDS, 'لینک رکورد واقعی سازه')
             identifier = _id(link['interface_id'], 'شناسه رابط')
-            if identifier in interface_seen:
+            if _canonical(identifier) in interface_seen:
                 raise ValueError('رابط تکیه‌گاه با شناسه تکراری')
-            interface_seen.add(identifier)
+            interface_seen.add(_canonical(identifier))
             record = link['record']
             if (record['role'] == 'column') != (record['kind'] == 'column'):
                 raise ValueError('نقش ستون با نوع عضو متناظر نیست')
             physical_support = _id(record['physical_id'], 'عضو تکیه‌گاه')
-            if physical_support in support_seen or physical_support in stair_ids:
+            if _canonical(physical_support) in support_seen or _canonical(physical_support) in stair_ids:
                 raise ValueError('هویت تکیه‌گاه مشترک یا تکراری است')
-            support_seen.add(physical_support)
+            support_seen.add(_canonical(physical_support))
             original = _record(project, record)  # Existing real snapshot/CAS/digest verifier.
-            if physical_support not in project_members:
+            if _canonical(physical_support) not in project_members:
                 raise ValueError('عضو تکیه‌گاه در دفتر نسخه‌دار سازه شناسایی نشد')
             _id(link['interface_ref'], 'مرجع دیتایل اتصال')
             _id(link['approved_by'], 'بازبین دیتایل اتصال')
-            if link['approved_by'] == document['prepared_by']:
+            if _canonical(link['approved_by']) == _canonical(document['prepared_by']):
                 raise ValueError('بررسی اتصال توسط تهیه‌کننده مستقل نیست')
-            if original['data'].get('source', {}).get('approved_by') == document['reviewer']:
+            if _canonical(original['data'].get('source', {}).get('approved_by') or 'UNSPECIFIED') == _canonical(document['reviewer']):
                 raise ValueError('بازبین رابط با تأییدکننده رکورد عضو یکی است')
             document_hash = link['interface_sha256']
             _bytes_sha(interface_bytes.get(document_hash), document_hash, 'مدرک واقعی رابط')
@@ -166,7 +196,7 @@ def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
             on_link = set()
             for contact in contacts:
                 _strict(contact, CONTACT_FIELDS, 'شناسه و دامنه قطعه متصل')
-                pid = _id(contact['physical_id'], 'شناسه قطعه متصل')
+                pid = _canonical(_id(contact['physical_id'], 'شناسه قطعه متصل'))
                 scope = _id(contact['scope_ref'], 'دامنه فیزیکی اتصال')
                 if pid not in stair_ids or stair_ids[pid]['scope_ref'] != scope:
                     raise ValueError('قطعه پله یا دامنه آن با دیتایل واقعی منطبق نیست')
@@ -176,7 +206,7 @@ def audit(document, stair_document, project, *, drawing_bytes, interface_bytes):
                 contact_seen.add(pid)
             verified.append({'interface_id': identifier, 'support_member_id': record['member_id'],
                              'support_physical_id': physical_support,
-                             'stair_physical_ids': sorted(on_link),
+                             'stair_physical_ids': sorted(stair_ids[x]['physical_id'] for x in on_link),
                              'record_revision': record['record_revision'],
                              'record_sha256': record['record_sha256'],
                              'interface_sha256': document_hash})

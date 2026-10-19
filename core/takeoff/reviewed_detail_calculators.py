@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import math
 from typing import Any
+from core.takeoff.bored_pile_ownership_preflight import _canonical
 
-from core.takeoff.reviewed_components import positive, require_text, _exact_float_sum
+from core.takeoff.reviewed_components import positive, require_text, _exact_float_sum, _exact_float_product
 
 _SCHEMAS = {
     "concrete_regions": "m3",
@@ -31,9 +32,9 @@ def _series(row: dict, name: str) -> list[dict]:
         if not isinstance(entry, dict):
             raise ValueError(f"{name}: ردیف جزئیات نامعتبر است")
         eid = require_text(entry.get("id"), "شناسه فیزیکی جزء")
-        if eid in seen:
+        if _canonical(eid) in seen:
             raise ValueError("جزء فیزیکی با شناسه تکراری در جدول آمده است")
-        seen.add(eid)
+        seen.add(_canonical(eid))
         ref = require_text(entry.get("source_ref"), "مرجع دیتایل جزء")
         reviewer = require_text(entry.get("approved_by"), "تأییدکننده دیتایل جزء")
         result.append({**entry, "id": eid, "source_ref": ref, "approved_by": reviewer})
@@ -47,7 +48,7 @@ def _count(row: dict) -> int:
     return int(positive(row.get("count"), "تعداد واقعی", integer=True))
 
 def _ratio(gross: float, deduction: float, label: str) -> float:
-    value = gross - deduction
+    value = _exact_float_sum((gross, -deduction))
     if deduction > 0 and value == gross:
         raise ValueError(f"{label}: کسر غیرصفر در دقت محاسبات قبلی حذف می‌شود")
     return positive(value, label)
@@ -71,12 +72,12 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
             if set(entry) != {"id", "source_ref", "approved_by", "count",
                               "length_m", "width_m", "thickness_m"}:
                 raise ValueError("ابعاد/تعداد بتن مستطیلی ناقص یا دارای فیلد نامعتبرند")
-            measured = n * _length(entry, "length_m") * _length(entry, "width_m") * _length(entry, "thickness_m")
+            measured = _exact_float_product((n, _length(entry, "length_m"), _length(entry, "width_m"), _length(entry, "thickness_m")))
         elif kind == "net_surface":
             if set(entry) != {"id", "source_ref", "approved_by", "count",
                               "length_m", "width_m", "openings_m2"}:
                 raise ValueError("مساحت و کسورات بازشو باید صریح باشند")
-            gross = n * _length(entry, "length_m") * _length(entry, "width_m")
+            gross = _exact_float_product((n, _length(entry, "length_m"), _length(entry, "width_m")))
             deduction = positive(entry["openings_m2"], "مساحت بازشو", allow_zero=True)
             measured = _ratio(gross, deduction, "مساحت خالص")
             evidence = {"gross_m2": gross, "openings_m2": deduction}
@@ -86,20 +87,19 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
                 raise ValueError("وزن مقطع فولادی نیازمند طول، تعداد و وزن واحد مستند است")
             unit_weight = _length(entry, "unit_weight_kg_m")
             require_text(entry["unit_weight_source"], "مرجع وزن واحد مقطع")
-            measured = n * _length(entry, "length_m") * unit_weight
+            measured = _exact_float_product((n, _length(entry, "length_m"), unit_weight))
         elif kind == "steel_plate_schedule":
             if set(entry) != {"id", "source_ref", "approved_by", "count",
                               "length_m", "width_m", "thickness_m",
                               "density_kg_m3", "density_source"}:
                 raise ValueError("پلیت فولادی نیازمند ابعاد، چگالی واقعی مستند و تعداد است")
             require_text(entry["density_source"], "مرجع چگالی فولاد")
-            measured = (n * _length(entry, "length_m") * _length(entry, "width_m")
-                        * _length(entry, "thickness_m") * _length(entry, "density_kg_m3"))
+            measured = _exact_float_product((n, _length(entry, "length_m"), _length(entry, "width_m"), _length(entry, "thickness_m"), _length(entry, "density_kg_m3")))
         elif kind == "timber_volume_schedule":
             if set(entry) != {"id", "source_ref", "approved_by", "count",
                               "length_m", "width_m", "depth_m"}:
                 raise ValueError("مقطع چوب نیازمند ابعاد واقعی و تعداد است")
-            measured = n * _length(entry, "length_m") * _length(entry, "width_m") * _length(entry, "depth_m")
+            measured = _exact_float_product((n, _length(entry, "length_m"), _length(entry, "width_m"), _length(entry, "depth_m")))
         elif kind == "piece_schedule":
             if set(entry) != {"id", "source_ref", "approved_by", "count", "spec_ref"}:
                 raise ValueError("قطعات باید شناسه و مشخصات فنی تأییدشده داشته باشند")
@@ -109,8 +109,7 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
             if set(entry) != {"id", "source_ref", "approved_by",
                               "length_m", "width_m", "thickness_m", "voids"}:
                 raise ValueError("ناحیه بتن سقف باید ابعاد و فهرست حفره معتبر داشته باشد")
-            gross = (_length(entry, "length_m") * _length(entry, "width_m")
-                     * _length(entry, "thickness_m"))
+            gross = _exact_float_product((_length(entry, "length_m"), _length(entry, "width_m"), _length(entry, "thickness_m")))
             voids = entry["voids"]
             if not isinstance(voids, list):
                 raise ValueError("مجموع حفره‌های سقف باید به‌صورت فهرست باشد")
@@ -119,9 +118,9 @@ def calculate_reviewed_detail(kind: str, details: dict[str, Any]) -> dict[str, A
                 if not isinstance(void, dict) or set(void) != {"id", "volume_m3", "source_ref", "approved_by"}:
                     raise ValueError("حفره فاقد حجم یا مرجع مستند است")
                 vid = require_text(void["id"], "شناسه حفره")
-                if vid in consumed_voids:
+                if _canonical(vid) in consumed_voids:
                     raise ValueError("حفره سقف دوبار در چند ناحیه کسر شده است")
-                consumed_voids.add(vid)
+                consumed_voids.add(_canonical(vid))
                 checked_voids.append({
                     "id": vid, "volume_m3": positive(void["volume_m3"], "حجم واقعی حفره"),
                     "source_ref": require_text(void["source_ref"], "مرجع حفره"),

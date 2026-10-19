@@ -11,6 +11,8 @@ from core.takeoff.manual_formula_register import read
 
 SCHEMA='structural_handoff_audit_work_v1'
 KINDS=('shear_wall','stair','bored_pile')
+STEEL_SUPPORT_POLICY='steel_stair_support_service_work_v1'
+SIX_GEOMETRY_POLICY='six_family_geometry_service_work_v1'
 
 def parse_request(content):
     def pairs(items):
@@ -32,10 +34,10 @@ def _no_float(value):
 
 def preview(service,project_id,request,*,source_path,source_sha256,evidence_files=None):
     from core.takeoff.building_six_family_ownership_chat import POLICY, audit
-    if isinstance(request,dict) and request.get("policy")==POLICY:
+    if isinstance(request,dict) and request.get("policy") in (POLICY,STEEL_SUPPORT_POLICY,SIX_GEOMETRY_POLICY):
         project,token=read(service,project_id)
         data,documents=_files(request,source_path,source_sha256,evidence_files)
-        result=audit(request,basis(project),documents=documents)
+        result=_evaluate(request,basis(project),documents)
         if service.store.current_digest(project_id)!=token or _files(request,source_path,source_sha256,evidence_files)[0]!=data:
             raise RuntimeError("پروژه یا مدرک هنگام ممیزی تغییر کرد")
         return {"schema":SCHEMA,"status":"BLOCKED_FOR_COMMIT","ready_for_boq":False,
@@ -164,17 +166,13 @@ def _files(request, source_path, source_sha256, evidence_files):
     import base64
     from core.takeoff.bored_pile_ownership_preflight import read_evidence
     from core.takeoff.building_six_family_ownership_chat import POLICY
-    if not isinstance(request, dict) or request.get('policy') != POLICY:
-        raise ValueError('قرارداد مالکیت شش خانواده لازم است')
+    if not isinstance(request, dict) or request.get('policy') not in (POLICY,STEEL_SUPPORT_POLICY,SIX_GEOMETRY_POLICY):
+        raise ValueError('قرارداد پیش‌ارزیابی در سرویس نسخه‌دار پشتیبانی نمی‌شود')
     if read_evidence(source_path, source_sha256) != request:
         raise ValueError('محتوای درخواست با مدرک مستقل برابر نیست')
     if not isinstance(evidence_files, dict):
         raise ValueError('فایل‌های مدارک مستقل لازم است')
-    try:
-        required = {x['evidence_sha256'] for x in request['claims']}
-        required.update(x['geometry_evidence_sha256'] for x in request['interfaces'])
-    except (KeyError, TypeError) as exc:
-        raise ValueError('فهرست مدارک مالکیت ناقص است') from exc
+    required=_required_evidence(request)
     if set(evidence_files) != required:
         raise ValueError('مدارک لازم و فایل‌های ارائه‌شده برابر نیستند')
     raw = Path(source_path).read_bytes()
@@ -253,9 +251,8 @@ def guard(previous, updated, command):
         raise ValueError('منشأ Snapshot ممیزی ناسازگار است')
     if candidate['result'] is not None:
         import base64
-        from core.takeoff.building_six_family_ownership_chat import audit
         documents={k:base64.b64decode(v,validate=True) for k,v in data['evidence_bytes'].items()}
-        if candidate['result']!=audit(request,basis(previous),documents=documents):
+        if candidate['result']!=_evaluate(request,basis(previous),documents):
             raise ValueError('نتیجه ذخیره‌شده با اجرای قرارداد اصلی برابر نیست')
 
 
@@ -307,7 +304,7 @@ def run_audit(service,pid,ident,*,expected_revision):
         raise RuntimeError('Snapshot پروژه کهنه است؛ مدرک و نسخه را بازبینی کنید')
     data,documents=_files(request,d['source_path'],d['source_sha256'],d['evidence_files'])
     if data!=d:raise ValueError('مدارک پیش‌نویس تغییر کرده است')
-    result=audit(request,basis(project),documents=documents)
+    result=_evaluate(request,basis(project),documents)
     if result.get('ready') is not False or result.get('commit_allowed') is not False or result.get('payable_rows')!=[]:
         raise ValueError('قفل مالی ممیزی نقض شده است')
     if _files(request,d['source_path'],d['source_sha256'],d['evidence_files'])[0]!=data:
@@ -317,3 +314,82 @@ def run_audit(service,pid,ident,*,expected_revision):
 
 def commit_audit(*args,**kwargs):
     raise ValueError('ثبت مالی مالکیت شش خانواده تا تکمیل شواهد مستقل هندسه و تأیید مالک مسدود است')
+
+
+def _required_evidence(request):
+    """Explicit envelopes join existing engines, never select arbitrary code."""
+    from core.takeoff.building_six_family_ownership_chat import POLICY
+    try:
+        policy=request['policy']
+        common={'policy','project_id','project_sha256'}
+        if policy==STEEL_SUPPORT_POLICY:
+            if set(request)!=common|{'stair_document','support_document'}:
+                raise ValueError('قرارداد اتصال پله ناقص یا ناشناخته است')
+            stair=request['stair_document'];support=request['support_document']
+            return {stair['source']['sha256']}|{x['interface_sha256'] for x in support['links']}
+        if policy==SIX_GEOMETRY_POLICY:
+            if set(request)!=common|{'ownership_document','geometry_documents','geometry_source_hashes'}:
+                raise ValueError('قرارداد مدارک هندسه شش خانواده ناقص است')
+            geometry=request['geometry_documents'];hashes=request['geometry_source_hashes']
+            if not isinstance(geometry,list) or not 1<=len(geometry)<=32 or not isinstance(hashes,list) or len(hashes)!=len(set(hashes)):
+                raise ValueError('مدارک منشوری صریح، محدود و یکتا لازم است')
+            return _required_evidence(request['ownership_document'])|set(hashes)
+        if policy!=POLICY:raise ValueError('قرارداد مالکیت ناشناخته است')
+        return {x['evidence_sha256'] for x in request['claims']}|{x['geometry_evidence_sha256'] for x in request['interfaces']}
+    except (KeyError,TypeError) as exc:
+        raise ValueError('فهرست مدارک مستقل ناقص است') from exc
+
+
+def _evaluate(request,project,documents):
+    from core.takeoff.building_six_family_ownership_chat import POLICY,audit
+    if request.get('policy')==POLICY:return audit(request,project,documents=documents)
+    result={'policy':request['policy'],'document_consistent':False,'ready':False,
+            'commit_allowed':False,'payable_rows':[],'blockers':[]}
+    try:
+        _required_evidence(request)
+        if request['project_id']!=project.get('id') or request['project_sha256']!=_hash(project):
+            raise ValueError('Snapshot یا شناسه پروژه با سند یکسان نیست')
+        if request['policy']==STEEL_SUPPORT_POLICY:
+            from core.takeoff.steel_stair_preflight import preview as stair_preview,GROUP_UNITS
+            from core.takeoff.steel_stair_support_crosswalk_chat import audit as support_audit
+            stair=request['stair_document'];support=request['support_document']
+            quantities=stair_preview(stair)
+            links=support_audit(support,stair,project,drawing_bytes=documents.get(stair['source']['sha256']),interface_bytes=documents)
+            result.update(stair=quantities,support=links,
+                document_consistent=bool(quantities['engineering_ready'] and links['support_evidence_checked']),
+                unverified_operations=list(GROUP_UNITS),
+                blockers=quantities['blockers']+links['blockers'])
+        elif request['policy']==SIX_GEOMETRY_POLICY:
+            from core.takeoff.phase1_multi_member_overlap import preview as geometry_preview
+            from core.takeoff.column_joint_beam_panel import POINTER_KEY
+            from core.takeoff.column_joint_preflight import _record
+            owner=request['ownership_document']
+            if owner['project_id']!=request['project_id'] or owner['project_sha256']!=request['project_sha256']:
+                raise ValueError('سند هندسه و مالکیت متعلق به یک Snapshot نیستند')
+            checked=audit(owner,project,documents=documents)
+            if not checked['document_consistent']:raise ValueError('؛ '.join(checked['blockers']))
+            keys={(x['kind'],x['floor_id'],x['member_id'],x['physical_member_id'],x['record_revision'],x['record_sha256']) for x in owner['links']}
+            required=set();reports=[];clusters=set()
+            for document in request['geometry_documents']:
+                cluster=tuple(sorted((x['kind'],x['floor_id'],x['member_id']) for x in document['links']))
+                if cluster in clusters:raise ValueError('خوشه هندسی تکراری، مدرک مستقل دوم نیست')
+                clusters.add(cluster)
+                for link in document['links']:
+                    if tuple(link[k] for k in ('kind','floor_id','member_id','physical_id','record_revision','record_sha256')) not in keys:
+                        raise ValueError('هندسه به عضو دیگری خارج از سند شش خانواده متصل است')
+                    record=_record(project,link);pointer=record['data']['geometry'][POINTER_KEY]
+                    required.add(pointer['sha256'])
+                    raw=Path(pointer['path']).read_bytes()
+                    if documents.get(pointer['sha256'])!=raw:
+                        raise ValueError('بایت هندسه با مدرک پشتیبان Snapshot برابر نیست')
+                reports.append(geometry_preview(document,project))
+            if required!=set(request['geometry_source_hashes']):
+                raise ValueError('تمام مدارک منشوری نسخه‌دار باید صریحاً ضمیمه شوند')
+            result.update(document_consistent=True,ownership=checked,geometry_reports=reports,
+                material_deduction_m3=None,unverified_interfaces=checked['unresolved_interfaces'],
+                blockers=checked['blockers']+['تقاطع پاکت منشوری، حجم خالص بتن یا کسورات قالب نیست؛ مجوز مالی صادر نمی‌شود'])
+        else:raise ValueError('مسیر ممیزی ناشناخته است')
+    except (ValueError,KeyError,TypeError,OSError,ArithmeticError) as exc:
+        result={'policy':request['policy'],'document_consistent':False,'ready':False,
+                'commit_allowed':False,'payable_rows':[],'blockers':[str(exc)]}
+    return result

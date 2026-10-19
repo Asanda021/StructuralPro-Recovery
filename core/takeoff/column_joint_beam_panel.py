@@ -42,7 +42,7 @@ def _box(data, label):
 
 
 def _volume(box):
-    with localcontext(Context(prec=256, Emax=999999, Emin=-999999)):
+    with localcontext(Context(prec=1024, Emax=999999, Emin=-999999)):
         return (box[3] - box[0]) * (box[4] - box[1]) * (box[5] - box[2])
 
 

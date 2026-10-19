@@ -27,7 +27,7 @@ _KINDS = frozenset(('column','beam','tie_beam','pile_cap','isolated_footing',
 
 
 def _volume(box):
-    with localcontext(Context(prec=256, Emax=999999, Emin=-999999)):
+    with localcontext(Context(prec=1024, Emax=999999, Emin=-999999)):
         value = Decimal(1)
         for i in range(3):
             side = box[i+3] - box[i]
@@ -131,7 +131,7 @@ def preview(document, project):
         raise OwnershipError('هم‌پوشانی سه‌طرفه جداگانه با هندسه مطابقت ندارد')
     # Inclusion-exclusion prevents double counting *geometric envelope* volume,
     # not concrete. Do not interpret this as a material/net/BOQ quantity.
-    with localcontext(Context(prec=256, Emax=999999, Emin=-999999)):
+    with localcontext(Context(prec=1024, Emax=999999, Emin=-999999)):
         union_envelopes = sum((_volume(b) for b in roles.values()), Decimal(0)) - sum(claimed.values(), Decimal(0)) + triple
     return {'policy': POLICY, 'status': 'ENVELOPE_COLLISION_PREVIEW_ONLY',
             'envelope_scope': 'bounding_envelopes_only',

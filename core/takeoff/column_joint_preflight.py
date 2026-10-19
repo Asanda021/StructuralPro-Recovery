@@ -62,7 +62,8 @@ def _record(project, link):
     if len(matching)!=1:
         raise OwnershipError('عضو نسخه‌دار ستون یا عضو مقابل یکتا و موجود نیست')
     record=matching[0]
-    if (type(record.get('revision')) is not int or record['revision']<1 or
+    if (type(link['record_revision']) is not int or link['record_revision']<1 or
+            type(record.get('revision')) is not int or record['revision']<1 or
             record['revision']!=link['record_revision'] or
             record.get('status') not in ('draft','committed')):
         raise OwnershipError('نسخه یا وضعیت رکورد عضو با مدرک اتصال متفاوت است')
