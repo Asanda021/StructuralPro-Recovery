@@ -24,7 +24,7 @@ FA_LABELS = {
 }
 FA_UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن',
  'mm':'میلی‌متر','cm':'سانتی‌متر','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب','IRR':'ریال'}
-NUMBER_KEYS={'quantity','unit_price','total','amount','مقدار','مبلغ','بهای واحد','count','revision','مقدار دقیق','جمع دقیق','جمع','پیش از کسر','خالص','کسر مؤثر','مقدار پیشنهادی','نسخه مبنا'}
+NUMBER_KEYS={'item_no','quantity','unit_price','total','amount','مقدار','مبلغ','بهای واحد','count','revision','مقدار دقیق','جمع دقیق','جمع','پیش از کسر','خالص','کسر مؤثر','مقدار پیشنهادی','نسخه مبنا'}
 
 def report_date(on=None):
     """Jalali date from the actual host date; no guessed project dates."""

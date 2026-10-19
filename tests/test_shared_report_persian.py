@@ -119,3 +119,13 @@ def test_excel_mixed_paths_read_ltr(tmp_path,path):
  p=export_xlsx([{'source_id':path}],tmp_path/'path.xlsx')
  w=load_workbook(p);c=next(c for row in w.active for c in row if c.value==path)
  assert c.alignment.readingOrder==1 and c.value==path
+
+
+def test_excel_boq_ordinal_is_numeric_and_codes_keep_leading_zero(tmp_path):
+ rows=[dict(ROWS[0],item_no=1),dict(ROWS[1],item_no=2)]
+ p=export_xlsx(rows,tmp_path/'boq.xlsx',columns=[('item_no','ردیف'),('code','کد'),('description','شرح'),('quantity','مقدار')])
+ s=load_workbook(p)['ریز متره'];h=header(s)
+ assert s.cell(h+1,1).data_type=='n' and s.cell(h+1,1).value==1
+ assert s.cell(h+2,1).data_type=='n' and s.cell(h+2,1).value==2
+ assert s.cell(h+1,2).data_type=='s' and s.cell(h+1,2).value=='0010'
+ assert s.cell(h+2,4).value=='12345678901234567890.123456789'
