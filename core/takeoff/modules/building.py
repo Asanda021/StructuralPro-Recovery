@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 import math
+from decimal import Decimal
 
 @dataclass(frozen=True)
 class QuantityResult:
@@ -18,11 +19,21 @@ class QuantityResult:
     formula: str
     warnings: tuple[str, ...] = ()
 
+    def __post_init__(self):
+        finite = self.quantity.is_finite() if isinstance(self.quantity, Decimal) else math.isfinite(self.quantity)
+        if not finite or self.quantity < 0:
+            raise ValueError("نتیجه متره باید متناهی و نامنفی باشد (finite and nonnegative)")
+
 def _n(v: Any, name: str, *, minimum: float = 0.0) -> float:
     if isinstance(v, bool): raise ValueError(f"{name} must be numeric")
     try: x=float(v)
     except (TypeError, ValueError, OverflowError): raise ValueError(f"{name} must be numeric")
     if not math.isfinite(x): raise ValueError(f"{name} must be finite")
+    if x == 0.0 and Decimal(str(v)) != 0:
+        raise ValueError(f"{name} underflow: nonzero input rounded to zero")
+    if name in {"count", "void_count", "joist_count", "layers", "rib_count_x", "rib_count_y", "intersection_count"}:
+        if not x.is_integer() or Decimal(str(v)) != Decimal(int(x)):
+            raise ValueError(f"{name} must be an exactly representable integer")
     if name in {"length", "width", "depth", "height", "thickness", "perimeter", "sloped_length", "waist_thickness", "unit_weight", "count", "layers"}:
         minimum = max(minimum, 1e-12)
     if x < minimum: raise ValueError(f"{name} must be >= {minimum}")
@@ -37,6 +48,17 @@ def _wall_area(length,height,openings=0):
     if deduction > gross:
         raise ValueError("openings cannot exceed gross wall area")
     return gross-deduction
+
+
+def _mul(*factors):
+    result = 1.0
+    for factor in factors:
+        result *= factor
+    if not math.isfinite(result):
+        raise ValueError("نتیجه متره باید متناهی باشد (finite)")
+    if result == 0.0 and all(factor > 0.0 for factor in factors):
+        raise ValueError("derived quantity underflow: nonzero product rounded to zero")
+    return result
 
 def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     k=item.strip().casefold().replace(" ","_")
@@ -183,7 +205,7 @@ def calculate_building_item(item: str, **p: Any) -> QuantityResult:
     if k in {"plaster","plaster_area","گچ","گچ_کاری","paint","paint_area","رنگ"}:
         q=_wall_area(p["length"],p["height"],p.get("openings",0))*_n(p.get("count",1),"count"); return QuantityResult("نازک‌کاری",item,q,"m2","سطح خالص×تعداد")
     if k in {"tile","ceramic","tile_area","کاشی","سرامیک"}:
-        q=_wall_area(p["length"],p["height"],p.get("openings",0))*_n(p.get("waste",1.0),"waste",minimum=0); return QuantityResult("نازک‌کاری",item,q,"m2","سطح خالص×ضریب پرت")
+        q=_mul(_wall_area(p["length"],p["height"],p.get("openings",0)), _n(p.get("waste",1.0),"waste",minimum=0)); return QuantityResult("نازک‌کاری",item,q,"m2","سطح خالص×ضریب پرت")
     if k in {"roof_insulation","waterproofing","عایق"}:
         q=_rect_area(p["length"],p["width"])*_n(p.get("layers",1),"layers"); return QuantityResult("عایق‌کاری",item,q,"m2","L×W×لایه")
     if k in {"door","window","opening","درب","پنجره"}:
