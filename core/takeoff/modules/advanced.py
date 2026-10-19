@@ -18,6 +18,8 @@ def _n(v: Any, name: str, minimum: float = 0.0) -> float:
     if x < minimum: raise ValueError(f"{name} must be >= {minimum}")
     if name in {"count", "joist_count"} and not x.is_integer():
         raise ValueError(f"{name} must be an integer")
+    if not isinstance(v, float) and Decimal(str(v)) != Decimal(str(x)):
+        raise ValueError(f"{name}: دقت ورودی مستند در تبدیل به float قابل حفظ نیست")
     return x
 
 @dataclass(frozen=True)

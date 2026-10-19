@@ -36,6 +36,8 @@ def _n(v,name):
     if x<0: raise ValueError(f"{name} must be >= 0")
     if name == "count" and not x.is_integer():
         raise ValueError("تعداد قطعات باید عدد صحیح باشد")
+    if not isinstance(v, float) and Decimal(str(v)) != Decimal(str(x)):
+        raise ValueError(f"{name}: دقت ورودی مستند در تبدیل به float قابل حفظ نیست")
     return x
 
 def calculate_electrical_item(item: str, **p: Any) -> ElectricalResult:

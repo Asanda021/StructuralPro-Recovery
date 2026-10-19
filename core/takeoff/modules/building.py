@@ -39,6 +39,8 @@ def _n(v: Any, name: str, *, minimum: float = 0.0) -> float:
     if x < minimum: raise ValueError(f"{name} must be >= {minimum}")
     if name in {"count", "void_count", "joist_count", "layers"} and not x.is_integer():
         raise ValueError(f"{name} must be an integer")
+    if not isinstance(v, float) and Decimal(str(v)) != Decimal(str(x)):
+        raise ValueError(f"{name}: دقت ورودی مستند در تبدیل به float قابل حفظ نیست")
     return x
 
 def _rect_area(length,width): return _n(length,"length")*_n(width,"width")

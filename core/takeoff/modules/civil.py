@@ -46,6 +46,8 @@ def _n(v,name):
         if not is_exact_count:
             raise ValueError("count must be an exactly representable integer")
     if x<0: raise ValueError(f"{name} must be >= 0")
+    if not isinstance(v, float) and Decimal(str(v)) != Decimal(str(x)):
+        raise ValueError(f"{name}: دقت ورودی مستند در تبدیل به float قابل حفظ نیست")
     return x
 
 def calculate_civil_item(item: str, **p: Any) -> CivilResult:
