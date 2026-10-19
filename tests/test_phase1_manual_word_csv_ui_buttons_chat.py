@@ -93,7 +93,6 @@ def test_visible_manual_preview_export_button_does_not_commit_boq(
 ):
     svc = StructuralProApp(tmp_path / "db")
     svc.create_project("آزمون پیش‌نمایش ریزمتره", "P")
-    baseline = deepcopy(svc.open_project("P"))
     out = tmp_path / ("preview." + fmt)
     errors = []
     monkeypatch.setattr(
@@ -116,6 +115,9 @@ def test_visible_manual_preview_export_button_does_not_commit_boq(
         QTest.mouseClick(dlg.add_button, Qt.LeftButton)
         qt.processEvents()
         assert dlg.workbench and len(dlg.workbench.records) == 1, errors
+        # The preview itself appends an audit event; reporting must not change
+        # the already-previewed state, revisions, takeoffs or BOQ.
+        baseline = deepcopy(svc.open_project("P"))
         button = getattr(dlg, button_name)
         assert button.isEnabled() and button.isVisible()
         QTest.mouseClick(button, Qt.LeftButton)
