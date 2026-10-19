@@ -2,6 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import math
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 @dataclass(frozen=True)
@@ -22,6 +23,16 @@ def _n(v,name):
     try: x=float(v)
     except (TypeError,ValueError,OverflowError): raise ValueError(f"{name} must be numeric")
     if not math.isfinite(x): raise ValueError(f"{name} must be finite")
+    # A positive/negative nonzero explicit input must not silently become zero
+    # when its magnitude is below binary64 resolution. Literal zero remains
+    # subject to the pre-existing zero policy.
+    if x == 0.0:
+        try:
+            lost_nonzero = Decimal(str(v)) != 0
+        except InvalidOperation:
+            lost_nonzero = False
+        if lost_nonzero:
+            raise ValueError(f"{name} underflow: nonzero input rounded to zero")
     if x<0: raise ValueError(f"{name} must be >= 0")
     if name == "count" and not x.is_integer():
         raise ValueError("تعداد قطعات باید عدد صحیح باشد")
