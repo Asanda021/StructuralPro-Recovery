@@ -3670,7 +3670,17 @@
         "Physical piece IDs and explicit kg/m or geometry/density sources",
         "Signed participant/payer mapping at beam/slab supports; independent expected quantities",
         "Positive/negative specialist engine + Qt + SQLite/CAS + BOQ tests"
-      ]
+      ],
+      "latest_support_crosswalk": {
+        "status": "limited",
+        "policy": "steel_stair_support_crosswalk_chat_v1",
+        "source": "core/takeoff/steel_stair_support_crosswalk_chat.py",
+        "tests": "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "scope": "Pure snapshot/file-byte preflight + actual raw SQLite/CAS tests; no generic AEC route, UI or BOQ authorization",
+        "ready": false,
+        "commit_allowed": false,
+        "payable_rows": []
+      }
     },
     {
       "code": "solid_slab",
@@ -18919,5 +18929,16 @@
       "windows": 0
     },
     "evidence": "docs/acceptance/phase1_civil_legacy_work_execution_20261019.json"
+  },
+  "chat_closure_work": {
+    "tested_head": "e19a40fe22363958ae02afefaf32fb4bea76ed64",
+    "tested_tree": "55a2bd9c8da94b6b4dc54a02f3c5341ab4eaa6de",
+    "regression_pass": 1345,
+    "regression_exit": 0,
+    "evidence": "docs/acceptance/phase1_chat_closure_work_execution_20261019.json",
+    "acceptance_counts_unchanged": true,
+    "independent_specialist_deficits": 37,
+    "full_engineering_acceptance": 0,
+    "windows_acceptance": 0
   }
 }
