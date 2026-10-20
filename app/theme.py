@@ -14,9 +14,9 @@ QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
 #NavigationPanel { background: #10233f; border-left: 1px solid #d6deea; }
 #NavGroupLabel { color: #8fa9c7; font-size: 8.5pt; font-weight: 700; padding: 10px 14px 2px; }
 #NavigationPanel QToolTip { background: #0d1b2f; color: #ffffff; }
-#BrandTitle { color: white; font-size: 20pt; font-weight: 800; padding: 2px 4px; }
+#BrandTitle { color: white; background: transparent; font-size: 20pt; font-weight: 800; padding: 2px 4px; }
 #EditionBadge { color: #dbe7f7; background: #1b385f; border: 1px solid #315a82; border-radius: 14px; padding: 5px 12px; font-weight: 700; }
-#ShellStatus { color: #dbe7f7; padding: 4px 8px; }
+#ShellStatus { color: #dbe7f7; background: transparent; padding: 4px 8px; }
 #MainNavigationTabs { background: rgba(16,35,63,178); min-height: 48px; border: 1px solid rgba(214,226,240,85); border-radius: 12px; padding: 3px; }
 #MainNavigationTabs::pane { border: 0; }
 #MainNavigationTabs::tab { color: #e6eff9; background: rgba(255,255,255,18); border: 1px solid rgba(255,255,255,24); border-radius: 8px; padding: 10px 14px; min-height: 24px; font-weight: 600; }

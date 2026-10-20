@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter
+    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter, QScrollArea
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -327,7 +327,14 @@ class GraphicalTakeoffDialog(QDialog):
             )
             split = QSplitter(Qt.Orientation.Horizontal)
             split.addWidget(self.canvas)
-            split.addWidget(self.beam_detail_panel)
+            # The full beam workflow contains actions beyond its inner fields.
+            # Scroll the complete panel so those actions cannot enlarge the
+            # drawing dialog beyond the available desktop.
+            beam_scroll = QScrollArea()
+            beam_scroll.setWidgetResizable(True)
+            beam_scroll.setMinimumWidth(380)
+            beam_scroll.setWidget(self.beam_detail_panel)
+            split.addWidget(beam_scroll)
             split.setStretchFactor(0, 4)
             split.setStretchFactor(1, 2)
             root.addWidget(split, 5)

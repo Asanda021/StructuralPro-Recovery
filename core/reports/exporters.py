@@ -347,6 +347,9 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
             for i,value in enumerate(record):
                 technical=not _PERSIAN_TEXT.search(_cell(value)) or headers[i] in ('منبع','منبع متره','کد','کد آیتم','کد قیمت')
                 cells[i].width=Pt(widths[i]);write(cells[i].paragraphs[0],value,technical)
+        # Keep each engineering record and its identity on the same page.
+        for row in t.rows:
+            row._tr.get_or_add_trPr().append(OxmlElement('w:cantSplit'))
         # A paragraph between tables avoids inherited table nesting/spacing.
         borders=OxmlElement('w:tblBorders')
         for side in ('top','left','bottom','right','insideH','insideV'):
