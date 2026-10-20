@@ -91,6 +91,45 @@ class StructuralProApp:
         """Expose persisted takeoff-to-member audit to existing UI clients."""
         return self.live_takeoff_tracker(project_id).persisted_identity_snapshot()
 
+    def _explicit_project_structure(self, project_id: str):
+        """Load canonical project, its CAS digest, and only stored floor/member IDs."""
+        from core.projects.project_model import ProjectModel, _identity
+        pid = str(project_id or "").strip()
+        if not _identity(pid):
+            raise ValueError("شناسه پروژه معتبر نیست")
+        digest = self.store.current_digest(pid)
+        self.store._cache.pop(pid, None)
+        project = self.store.get(pid)
+        if not isinstance(project, dict) or _identity(project.get("id")) != _identity(pid):
+            raise ValueError("شناسه پروژه ذخیره‌شده معتبر نیست")
+        floors = project.get("floors", [])
+        members = project.get("members", [])
+        if not isinstance(floors, list) or not isinstance(members, list):
+            raise ValueError("طبقات یا اعضای پروژه ساختار معتبری ندارند")
+        model = ProjectModel(project_id=str(project["id"]), name=project.get("name", ""),
+                             floors=deepcopy(floors), members=deepcopy(members))
+        problems = model.validate()
+        if problems:
+            raise ValueError("ساختار طبقات و اعضای موجود نامعتبر است: " + "؛ ".join(problems))
+        return project, digest, model
+
+    def add_project_floor(self, project_id: str, name: str, *, level=None) -> dict[str, Any]:
+        """Append an explicitly named floor through existing SQLite/CAS, not a new ledger."""
+        project, digest, model = self._explicit_project_structure(project_id)
+        result = model.add_floor(name, level=level)
+        project["floors"] = model.floors
+        self.store.save(project_id, project, expected_digest=digest)
+        return deepcopy(result)
+
+    def add_project_member(self, project_id: str, member_id: str, floor_id: str,
+                           kind: str, *, source_id=None) -> dict[str, Any]:
+        """Append a user-declared member with strict parent and Unicode identity."""
+        project, digest, model = self._explicit_project_structure(project_id)
+        result = model.add_member(member_id, floor_id, kind, source_id=source_id)
+        project["members"] = model.members
+        self.store.save(project_id, project, expected_digest=digest)
+        return deepcopy(result)
+
     def import_project_pricebook(self, project_id: str, path: str | Path, *, year: int,
                                  approved_by: str) -> dict[str, Any]:
         """Bind a real user import and explicit reviewer to this project's pricing gate."""
