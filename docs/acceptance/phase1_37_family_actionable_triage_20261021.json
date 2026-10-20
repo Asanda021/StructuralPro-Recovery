@@ -751,7 +751,22 @@
       "full_family_engineering_accepted": false,
       "record_status": "blocked_engineering_dependency",
       "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
-      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance.",
+      "bounded_independent_component_oracle": {
+        "scope": "synthetic rectangular blinding concrete only; explicit length/width/thickness/count, excluding base preparation and edge formwork",
+        "test_file": "tests/test_phase1_blinding_concrete_independent_oracle_chat.py",
+        "cases_written": 15,
+        "test_execution_on_repo_checkout": "not_run",
+        "local_oracle_calculations": {
+          "passed": 3,
+          "failed": 0,
+          "scope": "isolated exact Decimal reference products only; no import of product engine or SQLite"
+        },
+        "engine_acceptance": "not_claimed",
+        "independent_professional_review": "missing",
+        "full_family_engineering_accepted": false,
+        "stage": "bounded_test_added_pending_real_pytest_and_approved_source"
+      }
     },
     {
       "code": "retaining_structures",
