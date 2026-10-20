@@ -269,3 +269,58 @@ def test_registry_source_cannot_be_matched_by_casefold_or_unicode_alias(tmp_path
     assert audit["blocked"] == 1  # missing actual committed source
     assert audit["records"][0]["reason"] == "missing_committed_takeoff"
     app.store.close()
+
+
+@pytest.mark.parametrize("floor_count", [1, 5, 20, 50, 100])
+def test_real_sqlite_roundtrip_dynamic_floor_member_counts(tmp_path, floor_count):
+    """True SQLite writes, close and fresh store reopen; not a JSON-only roundtrip."""
+    directory = tmp_path / f"count-{floor_count}"
+    pid = f"FLOOR-SQL-{floor_count}"
+    app = StructuralProApp(directory)
+    app.create_project("پروژه طبقات متغیر", pid)
+    for number in range(1, floor_count + 1):
+        floor = app.add_project_floor(pid, f"طبقه {number}")
+        assert floor["id"] == str(number)
+        member = app.add_project_member(pid, f"C{number}", str(number), "ستون",
+                                        source_id=f"TEST-DRAWING-{number}")
+        assert member["floor_id"] == str(number)
+    before = app.open_project(pid)
+    assert len(before["floors"]) == len(before["members"]) == floor_count
+    assert before["takeoffs"] == before["boq"] == []
+    digest = app.store.current_digest(pid)
+    app.store.close()
+
+    reopened = StructuralProApp(directory)
+    restored = reopened.open_project(pid)
+    assert restored["floors"] == before["floors"]
+    assert restored["members"] == before["members"]
+    assert restored["takeoffs"] == restored["boq"] == []
+    assert reopened.store.current_digest(pid) == digest
+    tracker = reopened.live_takeoff_tracker(pid)
+    assert tracker.select_member("۱", "c1")["member_id"] == "C1"
+    assert tracker.select_member(str(floor_count), f"c{floor_count}")["floor_id"] == str(floor_count)
+    assert tracker.persisted_identity_snapshot()["coverage"]["total"] == 0
+    reopened.store.close()
+
+
+def test_two_sqlite_connections_reject_stale_floor_write_with_cas(tmp_path):
+    """A competing writer must not overwrite the latest explicit structure."""
+    from core.projects.store import ProjectStore
+
+    path = tmp_path / "conflicting.db"
+    first = ProjectStore(path)
+    second = ProjectStore(path)
+    first.save("P", {"id": "P", "name": "پروژه", "floors": [], "members": [],
+                     "takeoffs": [], "boq": []})
+    before = first.get("P")
+    stale = second.get("P")
+    previous_digest = first.current_digest("P")
+    before["floors"] = [{"id": "1", "name": "اول"}]
+    first.save("P", before, expected_digest=previous_digest)
+    stale["floors"] = [{"id": "2", "name": "دوم"}]
+    with pytest.raises(RuntimeError, match="changed"):
+        second.save("P", stale, expected_digest=previous_digest)
+    assert len(first.get("P")["floors"]) == 1
+    assert first.get("P")["floors"][0]["id"] == "1"
+    first.close()
+    second.close()
