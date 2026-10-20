@@ -150,6 +150,11 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
     records: list[dict[str, Any]] = []
     registry_sources: dict[str, list[dict[str, Any]]] = {}
 
+    def source_key(value: Any) -> str:
+        # Match the canonical BOQ commit guard: source IDs are case-sensitive.
+        # Floor/member aliases may be Unicode-normalized, source provenance not.
+        return value.strip() if isinstance(value, str) and value.strip() else ""
+
     def add(registry: str, record_key: str, floor: Any, member: Any,
             *, source_id: Any = None, revision: Any = None, persisted_status: Any = None):
         f, m = _identity(floor), _identity(member)
@@ -166,7 +171,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                 "status": status, "reason": reason,
                 "floor_id": floors.get(f) if status == "linked" else None,
                 "member_id": members[m]["id"] if status == "linked" else None,
-                "source_id": source_id.strip() if isinstance(source_id, str) and _identity(source_id) else None,
+                "source_id": source_key(source_id) or None,
                 "revision": revision if type(revision) in (str, int) else None,
                 "persisted_status": str(persisted_status) if persisted_status is not None else None}
         records.append(item)
@@ -193,7 +198,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                        revision=record.get("revision"), persisted_status=record.get("status"))
             if record.get("status") != "committed":
                 continue
-            if not isinstance(sid, str) or not _identity(sid):
+            if not source_key(sid):
                 item["status"], item["reason"] = "blocked", "missing_registry_source_id"
             if type(record.get("revision")) is not int or record["revision"] < 1:
                 item["status"], item["reason"] = "blocked", "invalid_committed_revision"
@@ -207,10 +212,10 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             if not committed_ids:
                 item["status"], item["reason"] = "blocked", "missing_committed_sources"
             for source in committed_ids:
-                if not isinstance(source, str) or not _identity(source):
+                if not source_key(source):
                     item["status"], item["reason"] = "blocked", "invalid_committed_sources"
                     continue
-                registry_sources.setdefault(_identity(source), []).append(item)
+                registry_sources.setdefault(source_key(source), []).append(item)
 
     takeoffs = saved.get("takeoffs", [])
     if takeoffs is None:
@@ -224,11 +229,11 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             add("takeoffs", key, None, None)
             continue
         source = row.get("source_id")
-        source_key = _identity(source) if isinstance(source, str) else ""
+        key_source = source_key(source)
         params = row.get("params", {})
         if not isinstance(params, dict):
             params = {}
-        parents = registry_sources.get(source_key, []) if source_key else []
+        parents = registry_sources.get(key_source, []) if key_source else []
         if len(parents) == 1:
             parent = parents[0]
             floor, member = parent["floor_id"], parent["member_id"]
@@ -244,7 +249,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             floor = member = None
         item = add("takeoffs", key, floor, member, source_id=source,
                    revision=row.get("revision"), persisted_status="stored")
-        if not source_key:
+        if not key_source:
             item["status"], item["reason"] = "blocked", "missing_source_id"
         elif not parents and params.get("member_code") and (
                 _identity(row.get("member_code")) != _identity(params["member_code"])):
@@ -260,13 +265,13 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                 item["status"], item["reason"] = "blocked", "registry_takeoff_identity_mismatch"
             elif params.get("member_code") and _identity(params["member_code"]) != _identity(parent["member_id"]):
                 item["status"], item["reason"] = "blocked", "explicit_member_conflict"
-        if source_key:
-            if source_key in seen:
+        if key_source:
+            if key_source in seen:
                 item["status"], item["reason"] = "blocked", "duplicate_takeoff_source"
-                seen[source_key]["status"] = "blocked"
-                seen[source_key]["reason"] = "duplicate_takeoff_source"
+                seen[key_source]["status"] = "blocked"
+                seen[key_source]["reason"] = "duplicate_takeoff_source"
             else:
-                seen[source_key] = item
+                seen[key_source] = item
 
     for source_key, parents in registry_sources.items():
         if len(parents) > 1:
@@ -282,7 +287,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
     for item in records:
         if item["registry"] != "takeoffs" or not item["source_id"]:
             continue
-        parents = registry_sources.get(_identity(item["source_id"]), [])
+        parents = registry_sources.get(source_key(item["source_id"]), [])
         if parents and (len(parents) != 1 or parents[0]["status"] != "linked"):
             item["status"], item["reason"] = "blocked", "invalid_parent_record"
 
