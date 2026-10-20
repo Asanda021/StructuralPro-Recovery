@@ -3,6 +3,7 @@
 These cases assert *navigation identity* only, never engineering correctness or
 approval/BOQ proof. Tests use synthetic explicit identifiers, not real projects.
 """
+import json
 import pytest
 
 from core.platform.application import StructuralProApp
@@ -155,11 +156,33 @@ def test_existing_project_without_new_structure_does_not_infer_floors(tmp_path):
     app.store.close()
 
 
+@pytest.mark.parametrize("registry", [[], ["invalid"], None, "invalid", 1])
+def test_invalid_registry_is_rejected_atomically_on_save(tmp_path, registry):
+    app = StructuralProApp(tmp_path)
+    p = _project(app, members=("C1",))
+    digest = app.store.current_digest("P-IDENTITY")
+    revisions = app.store.revisions("P-IDENTITY")
+    p["reviewed_aec_systems"] = registry
+    with pytest.raises(ValueError, match="ساختار دفتر"):
+        _save(app, p)
+    assert app.store.current_digest("P-IDENTITY") == digest
+    assert app.store.revisions("P-IDENTITY") == revisions
+    assert app.open_project("P-IDENTITY")["boq"] == []
+    app.store.close()
+
+
 def test_invalid_registry_and_corrupt_project_are_rejected_without_write(tmp_path):
     app = StructuralProApp(tmp_path)
     p = _project(app, members=("C1",))
+    p.pop("_meta", None)
     p["reviewed_aec_systems"] = ["invalid"]
-    _save(app, p)
+    # Model an already-corrupt/legacy file, not a successful guarded save.
+    # Reopen the real store so a cached valid payload cannot hide corruption.
+    app.store.db.execute("UPDATE projects SET payload=? WHERE id=?",
+                         (json.dumps(p, ensure_ascii=False), "P-IDENTITY"))
+    app.store.db.commit()
+    app.store.close()
+    app = StructuralProApp(tmp_path)
     digest = app.store.current_digest("P-IDENTITY")
     with pytest.raises(ValueError, match="ساختار دفتر"):
         app.takeoff_identity_snapshot("P-IDENTITY")
@@ -235,6 +258,39 @@ def test_new_structure_never_rewrites_legacy_measurements(tmp_path):
     assert current["boq"] == []
     assert app.takeoff_identity_snapshot("LEG")["blocked"] == 1
     app.store.close()
+
+
+def test_structure_and_live_events_preserve_nonempty_boq_across_reopen(tmp_path):
+    """Use a real committed quantity, not just an empty BOQ sentinel."""
+    app = StructuralProApp(tmp_path)
+    app.create_project("داده مصنوعی حفظ BOQ", "P")
+    app.add_project_floor("P", "اول", level="1")
+    app.add_project_member("P", "C1", "1", "ستون")
+    app.add_takeoff("P", "building", "column", source_id="SYNTHETIC:C1",
+                    system="1", member_code="C1", manual_location_id="C1",
+                    count=1, width=0.4, depth=0.4, height=3)
+    before = app.open_project("P")
+    assert before["boq"] and before["takeoffs"]
+    digest = app.store.current_digest("P")
+    tracker = app.live_takeoff_tracker("P")
+    tracker.select_persisted_record("takeoffs", "0")
+    args = dict(floor_id="1", member_id="C1", task_id="CONCRETE")
+    tracker.emit("takeoff_started", **args)
+    tracker.emit("quantity_calculated", **args, source_id="SYNTHETIC:C1", revision="R1")
+    tracker.emit("review_approved", **args, source_id="SYNTHETIC:C1", revision="R1")
+    with pytest.raises(ValueError):
+        tracker.emit("boq_transfer_confirmed", **args)
+    assert app.store.current_digest("P") == digest
+    app.add_project_floor("P", "دوم", level="2")
+    app.add_project_member("P", "C2", "2", "ستون")
+    for field in ("boq", "takeoffs"):
+        assert app.open_project("P")[field] == before[field]
+    app.store.close()
+    reopened = StructuralProApp(tmp_path)
+    for field in ("boq", "takeoffs"):
+        assert reopened.open_project("P")[field] == before[field]
+    assert reopened.store.db.execute("PRAGMA integrity_check").fetchone()[0] == "ok"
+    reopened.store.close()
 
 
 @pytest.mark.parametrize("first,second", [
