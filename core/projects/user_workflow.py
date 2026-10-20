@@ -273,14 +273,14 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             else:
                 seen[key_source] = item
 
-    for source_key, parents in registry_sources.items():
+    for registry_sid, parents in registry_sources.items():
         if len(parents) > 1:
             for parent in parents:
                 parent["status"], parent["reason"] = "blocked", "ambiguous_committed_source"
         for parent in parents:
-            if source_key not in seen:
+            if registry_sid not in seen:
                 parent["status"], parent["reason"] = "blocked", "missing_committed_takeoff"
-            elif seen[source_key]["status"] == "blocked":
+            elif seen[registry_sid]["status"] == "blocked":
                 parent["status"], parent["reason"] = "blocked", "invalid_committed_takeoff"
 
     # A stale or conflicting registry must never yield a selectable child link.
