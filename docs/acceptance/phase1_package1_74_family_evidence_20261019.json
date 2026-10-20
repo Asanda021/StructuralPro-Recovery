@@ -241,6 +241,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -473,6 +488,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -697,6 +727,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -1256,6 +1301,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -1467,6 +1527,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "limited",
+        "boq": "blocked",
+        "ui": "limited",
+        "report": "not_tested",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -1758,6 +1833,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -2033,6 +2123,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -2304,6 +2409,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -2615,6 +2735,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -2825,6 +2960,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "limited",
+        "boq": "blocked",
+        "ui": "limited",
+        "report": "not_tested",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -3151,6 +3301,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -3473,6 +3638,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -3700,6 +3880,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "verified",
+        "boq": "blocked",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -3978,6 +4173,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -4220,6 +4430,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -4462,6 +4687,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -4708,6 +4948,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -4952,6 +5207,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -5192,6 +5462,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -5438,6 +5723,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -5692,6 +5992,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -5944,6 +6259,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -6175,6 +6505,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -6407,6 +6752,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -6634,6 +6994,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -6865,6 +7240,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -7117,6 +7507,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -7341,6 +7746,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -7565,6 +7985,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -7857,6 +8292,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -8089,6 +8539,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -8321,6 +8786,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -8557,6 +9037,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -8826,6 +9321,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -9086,6 +9596,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -9327,6 +9852,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -9600,6 +10140,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -9849,6 +10404,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -10094,6 +10664,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -10390,6 +10975,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -10646,6 +11246,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -10879,6 +11494,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -11110,6 +11740,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -11342,6 +11987,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -11570,6 +12230,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -11830,6 +12505,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -12058,6 +12748,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -12275,6 +12980,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -12532,6 +13252,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -12752,6 +13487,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -12980,6 +13730,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -13198,6 +13963,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -13418,6 +14198,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -13636,6 +14431,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -13866,6 +14676,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -14105,6 +14930,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -14368,6 +15208,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -14602,6 +15457,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -14836,6 +15706,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -15066,6 +15951,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -15284,6 +16184,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -15502,6 +16417,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -15720,6 +16650,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -15943,6 +16888,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -16161,6 +17121,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -16379,6 +17354,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -16605,6 +17595,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -16825,6 +17830,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -17076,6 +18096,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -17299,6 +18334,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -17522,6 +18572,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -17743,6 +18808,21 @@
         "engineering_acceptance": false,
         "financial_permission": false,
         "windows": "not_tested"
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "not_tested",
+        "negative_specialist_test": "not_tested",
+        "formula_units": "limited",
+        "independent_documents": "blocked",
+        "sqlite_cas": "limited",
+        "boq": "limited",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -18046,6 +19126,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "verified",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "limited",
+        "independent_documents": "limited",
+        "sqlite_cas": "verified",
+        "boq": "verified",
+        "ui": "verified",
+        "report": "verified",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     },
     {
@@ -18369,6 +19464,21 @@
         "tested_code_checkpoint": "00b3f27e4fa35d108d1af0cf28046863a47d1660",
         "tested_tree": "f4ec24560be922ad601f0c9b610cda5122cb3384",
         "scope": "Full Linux regression only; retains prior bounded acceptance. No new engineering/Windows acceptance."
+      },
+      "final_package3": {
+        "evidence": "phase1_final_package3_execution_20261020.json",
+        "engine": "limited",
+        "positive_specialist_test": "limited",
+        "negative_specialist_test": "limited",
+        "formula_units": "verified",
+        "independent_documents": "limited",
+        "sqlite_cas": "limited",
+        "boq": "blocked",
+        "ui": "limited",
+        "report": "limited",
+        "windows": "not_tested",
+        "acceptance": "limited",
+        "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
       }
     }
   ],
@@ -19269,5 +20379,24 @@
     "full_engineering_acceptance": 0,
     "financial_permission": false,
     "test_execution_ledger": "docs/acceptance/phase1_final_package2_execution_20261020.json"
+  },
+  "final_package3": {
+    "baseline_head": "485d8c67949d011555945d06192a924b40b042c5",
+    "tested_code_head": "49c4562b8b789b95b9ffba1e23589ef57726959d",
+    "execution_ledger": "docs/acceptance/phase1_final_package3_execution_20261020.json",
+    "family_identifiers_unchanged": true,
+    "new_independent_engineering_acceptances": 0,
+    "new_complete_specialist_family_evidence": 0,
+    "summary_unchanged": true,
+    "independent_specialist_shortfall": 37,
+    "full_engineering_acceptance": 0,
+    "windows_acceptance": 0,
+    "ui_open": [
+      "day/night theme not implemented",
+      "floating QDockWidget not implemented",
+      "animation not demonstrated",
+      "Linux emoji glyph availability not Windows verified"
+    ],
+    "financial_policy": "No new authorization; nonfinancial contracts remain ready=False, commit_allowed=False, payable_rows=[]"
   }
 }
