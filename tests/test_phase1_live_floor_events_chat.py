@@ -170,3 +170,63 @@ def test_existing_stage_workflow_preserved():
     p = {"id": "P1", "name": "ساختمان", "takeoffs": [], "boq": []}
     assert evaluate_workflow(p)["current_stage"] == "takeoff"
     assert stage_status(p, "boq") == "blocked"
+
+
+def test_live_tracker_from_canonical_sqlite_store(tmp_path):
+    """Real store payload uses 'id', not ProjectModel's 'project_id'."""
+    from core.projects.store import ProjectStore
+
+    database = tmp_path / "projects.db"
+    store = ProjectStore(database)
+    project = {"id": "P-SQL", "name": "پروژه آزمون",
+               "floors": [{"id": "۱", "name": "اول"}],
+               "members": [{"id": "C1", "floor_id": "1", "kind": "ستون"}],
+               "takeoffs": [], "boq": []}
+    store.save("P-SQL", project)
+    digest = store.current_digest("P-SQL")
+    tracker = LiveTakeoffTracker.from_store(store, "P-SQL")
+    assert tracker.select_member("1", "c1")["member_id"] == "C1"
+    assert tracker.project.project_id == "P-SQL"
+    assert store.current_digest("P-SQL") == digest
+    assert store.get("P-SQL")["takeoffs"] == []
+    store.close()
+
+    reopened = ProjectStore(database)
+    restored = LiveTakeoffTracker.from_store(reopened, "P-SQL")
+    assert restored.snapshot()["sequence"] == 0  # UI events are not a persisted ledger
+    assert restored.select_floor("۱")["floor_id"] == "۱"
+    assert reopened.current_digest("P-SQL") == digest
+    reopened.close()
+
+
+def test_live_tracker_from_legacy_sqlite_never_invents_members(tmp_path):
+    from core.projects.store import ProjectStore
+
+    store = ProjectStore(tmp_path / "legacy.db")
+    store.save("LEGACY", {"id": "LEGACY", "name": "قدیمی", "takeoffs": [], "boq": []})
+    digest = store.current_digest("LEGACY")
+    tracker = LiveTakeoffTracker.from_store(store, "LEGACY")
+    assert tracker.project.floors == []
+    assert tracker.project.members == []
+    with pytest.raises(ValueError, match="ناشناخته"):
+        tracker.select_floor("1")
+    assert store.current_digest("LEGACY") == digest
+    store.close()
+
+
+def test_live_tracker_from_sqlite_rejects_corrupt_identity_without_modification(tmp_path):
+    from core.projects.store import ProjectStore
+
+    store = ProjectStore(tmp_path / "corrupt.db")
+    invalid = {"id": "P1", "name": "پروژه",
+               "floors": [{"id": "1", "name": "اول"}, {"id": "۱", "name": "تکراری"}],
+               "members": [], "takeoffs": [], "boq": []}
+    store.save("P1", invalid)
+    digest = store.current_digest("P1")
+    with pytest.raises(ValueError, match="ساختار"):
+        LiveTakeoffTracker.from_store(store, "P1")
+    assert store.current_digest("P1") == digest
+    store.save("P2", {"id": "WRONG", "name": "نامعتبر", "takeoffs": [], "boq": []})
+    with pytest.raises(ValueError, match="هویت پروژه"):
+        LiveTakeoffTracker.from_store(store, "P2")
+    store.close()
