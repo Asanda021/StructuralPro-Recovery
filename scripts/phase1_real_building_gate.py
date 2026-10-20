@@ -42,7 +42,7 @@ def _check_file(item, root, key, errors):
         errors.append(f"{key}: missing file path")
         return
     relative = Path(name)
-    if relative.is_absolute() or ".." in relative.parts or relative.parts[0] == ".git":
+    if relative.is_absolute() or ".." in relative.parts or not relative.parts or relative.parts[0] == ".git":
         errors.append(f"{key}: unsafe evidence path")
         return
     resolved_root = root.resolve()
@@ -93,7 +93,8 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
         ref = item.get("id")
         if not isinstance(ref, str) or not ref.strip() or ref in drawing_ids:
             errors.append(f"{key}: missing or duplicate drawing ID")
-        drawing_ids.add(ref)
+        if isinstance(ref, str):
+            drawing_ids.add(ref)
     if not {"structure", "architecture"}.issubset(disciplines):
         errors.append("structural and architectural drawings required")
     oracles = manifest.get("independent_oracles")
@@ -110,7 +111,7 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
         source_id = item.get("drawing_id")
         if _structural_id(floor_id) not in {_structural_id(fid) for fid in floor_ids} or not _structural_id(physical_id):
             errors.append(f"{key}: invalid explicit member/floor")
-        if source_id not in drawing_ids:
+        if not isinstance(source_id, str) or source_id not in drawing_ids:
             errors.append(f"{key}: drawing source missing")
         pair = (_structural_id(floor_id), _structural_id(physical_id))
         if pair in physical_ids:
