@@ -90,6 +90,9 @@ def main()->int:
     header_row=QHBoxLayout(); header_row.setSpacing(14)
     title=QLabel("StructuralPro"); title.setObjectName("BrandTitle"); header_row.addWidget(title)
     edition_label=QLabel(f"نسخه {edition_title}"); edition_label.setObjectName("EditionBadge"); header_row.addWidget(edition_label)
+    from app.desktop_preferences import DesktopPreferences
+    desktop_preferences=DesktopPreferences(app,Path.home()/'.structuralpro/ui.ini')
+    desktop_preferences.add_controls(header_row)
     header_row.addStretch()
     persian_locale=QLocale(QLocale.Language.Persian, QLocale.Country.Iran)
     persian_calendar=QCalendar(QCalendar.System.Jalali)
@@ -959,6 +962,11 @@ def main()->int:
         except Exception as e: cbout.setPlainText("خطا: "+str(e))
     cbcalc.clicked.connect(calc_progress); tools.addTab(cb,"صورت‌وضعیت")
 
+    # Dashboard action IDs predate the discipline pages. Resolve those stable
+    # actions to the real page indices rather than opening an unrelated family.
+    dashboard_targets={1:idx_projects,3:idx_quick,4:idx_prices,5:idx_boq,
+                       6:idx_statement,7:idx_reports,8:idx_docs,11:idx_ai}
+    dashboard_page.on_open_page=lambda action: pages.setCurrentIndex(dashboard_targets[action])
     # Primary navigation remains horizontal, with every tab targeting a real page.
     navigation_tabs=QTabBar()
     navigation_tabs.setObjectName("MainNavigationTabs")

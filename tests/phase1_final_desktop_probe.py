@@ -21,6 +21,25 @@ def exercise(app):
  assert background.lightness()<100,'Header brand foreground must not sit on inherited near-white background'
  for width,height in [(1180,760),(1560,960)]:
   w.resize(width,height);app.processEvents();assert w.grab().save(str(output/f'main-{width}.png'))
+ if len(sys.argv)>2 and sys.argv[2]=='closure':
+  for label,target in [('پروژه جدید','پروژه‌ها'),('متره','متره سریع'),('BOQ','برآورد و صورت'),('فهرست','فهرست‌بها'),('صورت','صورت‌وضعیت'),('گزارش','گزارشات'),('اسناد','اسناد پروژه'),('هوش','هوش مصنوعی')]:
+   pages.setCurrentIndex(0);app.processEvents()
+   button=next(b for b in pages.currentWidget().findChildren(QPushButton) if b.objectName()=='DashboardAction' and label in b.text())
+   QTest.mouseClick(button,Qt.LeftButton);app.processEvents()
+   expected=next(tabs.tabData(i) for i in range(tabs.count()) if target in tabs.tabText(i))
+   assert pages.currentIndex()==expected,('dashboard route',label,pages.currentIndex(),expected)
+  pages.setCurrentIndex(0);app.processEvents()
+  theme=w.findChild(QPushButton,'ThemeToggle');motion=w.findChild(QPushButton,'MotionToggle')
+  assert theme and motion,'Real theme and motion controls must exist'
+  before=app.styleSheet();QTest.mouseClick(theme,Qt.LeftButton);app.processEvents()
+  assert app.styleSheet()!=before and app.property('structuralproTheme')=='dark'
+  assert w.grab().save(str(output/'main-dark.png'))
+  QTest.mouseClick(motion,Qt.LeftButton);assert app.property('structuralproAnimationsEnabled') is False
+  from app.desktop_preferences import DesktopPreferences
+  prefs=DesktopPreferences(app,output/'.structuralpro/ui.ini')
+  assert prefs.theme=='dark' and prefs.animations is False
+  QTest.mouseClick(theme,Qt.LeftButton);assert app.property('structuralproTheme')=='light'
+  assert w.grab().save(str(output/'main-light.png'))
  date=w.findChild(QPushButton,'SystemPersianDate');loc=QLocale(QLocale.Persian,QLocale.Iran)
  assert date and str(QCalendar(QCalendar.Jalali).partsFromDate(QDate.currentDate()).year) .translate(str.maketrans('0123456789','۰۱۲۳۴۵۶۷۸۹')) in date.text()
  index=next(i for i in range(tabs.count()) if 'متره سریع' in tabs.tabText(i))

@@ -4,14 +4,14 @@ from __future__ import annotations
 from pathlib import Path
 import json
 
-from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve
 from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QTextOption, QPainterPath
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter, QScrollArea
+    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -40,6 +40,9 @@ class TakeoffCanvas(QGraphicsView):
         self._region_overlay = None
         self._selected_region_rect = None
         self.on_tool_status = None
+        self._measurement_overlay = None
+        self._highlighted_item_id = None
+        self._highlight_animation = None
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -230,6 +233,43 @@ class TakeoffCanvas(QGraphicsView):
                 QBrush(Qt.GlobalColor.lightGray)
             )
 
+    def clear_measurement_highlight(self):
+        if self._highlight_animation is not None:
+            self._highlight_animation.stop()
+            self._highlight_animation.deleteLater()
+            self._highlight_animation = None
+        if self._measurement_overlay is not None:
+            self.scene.removeItem(self._measurement_overlay)
+        self._measurement_overlay = None
+        self._highlighted_item_id = None
+
+    def highlight_measurement(self, item):
+        self.clear_measurement_highlight()
+        self._highlighted_item_id = item.id
+        if not item.geometry:
+            self._announce_tool('این ردیف مختصات صریح ندارد؛ محل عضو حدس زده نمی‌شود.')
+            return
+        path = QPainterPath()
+        points = [QPointF(x, y) for x, y in item.geometry]
+        path.moveTo(points[0])
+        for point in points[1:]: path.lineTo(point)
+        if item.kind == 'area':
+            path.closeSubpath()
+            for hole in item.holes:
+                poly = QPolygonF([QPointF(x,y) for x,y in hole])
+                path.addPolygon(poly)
+            path.setFillRule(Qt.FillRule.OddEvenFill)
+        overlay = self.scene.addPath(path, QPen(QColor('#db6500'), 3), QBrush(QColor(255,190,0,65)) if item.kind == 'area' else QBrush(Qt.BrushStyle.NoBrush))
+        overlay.setAcceptedMouseButtons(Qt.MouseButton.NoButton); overlay.setZValue(1100)
+        self._measurement_overlay = overlay
+        self.ensureVisible(overlay, 30, 30)
+        if QApplication.instance().property('structuralproAnimationsEnabled') is not False:
+            animation = QVariantAnimation(self)
+            animation.setDuration(300); animation.setStartValue(0.35); animation.setEndValue(1.0)
+            animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
+            animation.valueChanged.connect(lambda value: overlay.setOpacity(float(value)))
+            self._highlight_animation = animation; animation.start()
+
     def _notify(self):
         if self.on_change:
             self.on_change()
@@ -238,6 +278,7 @@ class TakeoffCanvas(QGraphicsView):
 class GraphicalTakeoffDialog(QDialog):
     def __init__(self, parent=None, pdf_path="", *, app_service=None, project_id=""):
         super().__init__(parent)
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowTitle("متره گرافیکی — نقشه‌محور")
         self.resize(1450, 920)
         self.session = DrawingTakeoffSession(pdf_path)
@@ -325,19 +366,29 @@ class GraphicalTakeoffDialog(QDialog):
                 self.app_service, lambda: self.project_id_input.text(),
                 self.beam_drawing_context, self
             )
-            split = QSplitter(Qt.Orientation.Horizontal)
-            split.addWidget(self.canvas)
-            # The full beam workflow contains actions beyond its inner fields.
-            # Scroll the complete panel so those actions cannot enlarge the
-            # drawing dialog beyond the available desktop.
-            beam_scroll = QScrollArea()
-            beam_scroll.setWidgetResizable(True)
-            beam_scroll.setMinimumWidth(380)
-            beam_scroll.setWidget(self.beam_detail_panel)
-            split.addWidget(beam_scroll)
-            split.setStretchFactor(0, 4)
-            split.setStretchFactor(1, 2)
-            root.addWidget(split, 5)
+            self.drawing_workspace = QMainWindow(self)
+            self.drawing_workspace.setWindowFlags(Qt.WindowType.Widget)
+            self.drawing_workspace.setCentralWidget(self.canvas)
+            self.beam_dock = QDockWidget('دیتایل تیر؛ زمینه انتخاب‌شده از نقشه', self.drawing_workspace)
+            self.beam_dock.setObjectName('BeamDetailDock')
+            self.beam_dock.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable | QDockWidget.DockWidgetFeature.DockWidgetFloatable | QDockWidget.DockWidgetFeature.DockWidgetClosable)
+            beam_scroll = QScrollArea(); beam_scroll.setWidgetResizable(True)
+            beam_scroll.setMinimumWidth(380); beam_scroll.setWidget(self.beam_detail_panel)
+            self.beam_dock.setWidget(beam_scroll)
+            self.drawing_workspace.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.beam_dock)
+            self.panel_toggle = QPushButton('پنل دیتایل تیر'); self.panel_toggle.setCheckable(True)
+            self.panel_float = QPushButton('شناور / اتصال پنل تیر')
+            actions.addWidget(self.panel_toggle, 4, 0, 1, 2)
+            actions.addWidget(self.panel_float, 4, 2, 1, 2)
+            self.panel_toggle.toggled.connect(self.beam_dock.setVisible)
+            def sync_panel(visible):
+                self.panel_toggle.blockSignals(True); self.panel_toggle.setChecked(visible); self.panel_toggle.blockSignals(False)
+            self.beam_dock.visibilityChanged.connect(sync_panel)
+            def float_panel():
+                self.beam_dock.show(); self.beam_dock.setFloating(not self.beam_dock.isFloating())
+            self.panel_float.clicked.connect(float_panel)
+            self.beam_dock.hide()
+            root.addWidget(self.drawing_workspace, 5)
         else:
             root.addWidget(self.canvas, 5)
 
@@ -348,6 +399,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.table = QTableWidget(0, 8)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setAlternatingRowColors(True)
+        self.table.itemSelectionChanged.connect(self.highlight_selected_measurement)
         self.table.setHorizontalHeaderLabels([
             "شناسه", "صفحه", "نوع", "شرح", "مقدار", "واحد", "کد BOQ", "منبع"
         ])
@@ -568,6 +620,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.page_no.setValue(self.page)
             self.page_no.blockSignals(False)
 
+            self.canvas.clear_measurement_highlight()
             self.canvas.scene.clear()
             self.canvas._region_overlay = None
             self.canvas._selected_region_rect = None
@@ -850,6 +903,7 @@ class GraphicalTakeoffDialog(QDialog):
     def redraw_current_page(self):
         if not self.viewer.path:
             return
+        self.canvas.clear_measurement_highlight()
         self.canvas.scene.clear()
         self.canvas._region_overlay = None
         self.canvas._selected_region_rect = None
@@ -909,18 +963,33 @@ class GraphicalTakeoffDialog(QDialog):
         except OSError as exc:
             QMessageBox.critical(self, "خطای ذخیره خروجی", str(exc))
 
+    def highlight_selected_measurement(self):
+        row = self.table.currentRow()
+        cell = self.table.item(row, 0) if row >= 0 else None
+        if cell is None:
+            self.canvas.clear_measurement_highlight()
+            return
+        item = next((x for x in self.session.items if x.id == cell.text()), None)
+        if item is None: return
+        if item.page != self.page: self.load_page(item.page)
+        self.canvas.highlight_measurement(item)
+        if self.beam_detail_panel is not None: self.beam_dock.show()
+
     def refresh(self):
+        self.table.blockSignals(True)
+        self.canvas.clear_measurement_highlight()
         self.table.setRowCount(0)
         for i, item in enumerate(self.session.items):
             self.table.insertRow(i)
             values = [
-                item.id, item.page, item.kind, item.label or item.takeoff_code,
-                round(item.quantity, 4), item.unit, item.takeoff_code or "—",
+                item.id, item.page, {"length":"طول","area":"مساحت","count":"شمارش"}.get(item.kind,item.kind), item.label or item.takeoff_code,
+                str(item.quantity), item.unit, item.takeoff_code or "—",
                 item.source_ref,
             ]
             for j, value in enumerate(values):
                 self.table.setItem(i, j, QTableWidgetItem(str(value)))
 
+        self.table.blockSignals(False)
         valid = self.session.validate()
         state = "🟢 معتبر" if valid["valid"] else "🟠 نیازمند بررسی"
         self.status.setText(
