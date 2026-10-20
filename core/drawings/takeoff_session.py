@@ -90,6 +90,9 @@ class DrawingTakeoffSession:
         meters = float(reference_meters)
         if page < 1 or not math.isfinite(px) or not math.isfinite(meters) or px <= 0 or meters <= 0:
             raise ValueError("calibration values must be positive and finite")
+        factor=meters/px
+        if not math.isfinite(factor) or factor<=0:
+            raise ValueError("نسبت کالیبراسیون خارج از دامنه عددی معتبر است")
         previous = self.calibrations.get(page)
         if previous and not math.isclose(previous.meters_per_pixel, meters / px, rel_tol=1e-12) and any(
             item.page == page and item.kind in {"length", "area"} for item in self.items
@@ -209,6 +212,8 @@ class DrawingTakeoffSession:
         factor = self._factor_for(page)
         px = polyline_length(pts)
         quantity = self._ensure_finite(px * factor)
+        if quantity==0 and any(a!=b for a,b in zip(pts,pts[1:])):
+            raise ValueError("طول غیرصفر خارج از دقت عددی است؛ مقدار صفر ثبت نمی‌شود")
         self._ensure_source_unique(source)
         confidence = self._ensure_confidence(confidence)
         self._record()
@@ -241,6 +246,8 @@ class DrawingTakeoffSession:
         if net_px < -1e-9:
             raise ValueError("مجموع بازشوها از مساحت اصلی بیشتر است")
         quantity = self._ensure_finite(max(0.0, net_px) * factor * factor)
+        if net_px>0 and quantity==0:
+            raise ValueError("مساحت غیرصفر خارج از دقت عددی است؛ مقدار صفر ثبت نمی‌شود")
         self._ensure_source_unique(source)
         confidence = self._ensure_confidence(confidence)
         self._record()

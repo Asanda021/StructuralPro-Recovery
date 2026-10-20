@@ -325,7 +325,12 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")
         self.select_region = QPushButton("انتخاب ناحیه")
         self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")
-        self.region_to_takeoff = QPushButton("ثبت ناحیه در متره")
+        self.region_to_takeoff = QPushButton("ثبت سطح عمومی در متره")
+        self.opening_button = QPushButton("کسر بازشو از سطح انتخابی")
+        self.edit_button = QPushButton("ویرایش شرح متره")
+        self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
+        self.region_to_roof.setEnabled(self.app_service is not None)
+        self.region_to_roof.setToolTip("انتخاب صریح نوع سقف؛ دیتایل مصالح از مساحت حدس زده نمی‌شود")
         self.source_label = QLabel("منبع: —")
         self.project_id_input = QLineEdit(self.persisted_project_id)
         self.project_id_input.setPlaceholderText("شناسه پروژه برای ذخیره دائمی")
@@ -348,7 +353,7 @@ class GraphicalTakeoffDialog(QDialog):
         for index, x in enumerate([
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.zoom_window,
-            self.select_region, self.cancel_selection, self.region_to_takeoff, self.undo, self.redo,
+            self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
@@ -428,6 +433,9 @@ class GraphicalTakeoffDialog(QDialog):
         )
         self.cancel_selection.clicked.connect(lambda: self.canvas.cancel_interaction())
         self.region_to_takeoff.clicked.connect(self.register_selected_region)
+        self.region_to_roof.clicked.connect(self.open_region_roof)
+        self.opening_button.clicked.connect(self.apply_opening)
+        self.edit_button.clicked.connect(self.edit_measurement)
         self.finish.clicked.connect(self.canvas.finish)
         self.export_boq.clicked.connect(self.export_takeoff_for_boq)
         self.undo.clicked.connect(self.undo_session)
@@ -630,12 +638,13 @@ class GraphicalTakeoffDialog(QDialog):
             calibration = self.session.calibration
             self.scale_label.setText(
                 "نمای مدل؛ متره از تصویر غیرفعال است" if model_view else
-                (f"مقیاس: {calibration.meters_per_pixel:.6f} متر بر واحد نمایش"
+                (f"مقیاس: {calibration.meters_per_pixel} متر بر واحد نمایش"
                  if calibration else "مقیاس: هنوز کالیبره نشده")
             )
             self.canvas.read_only_model = model_view
             for control in (self.mode, self.calibrate, self.region_to_takeoff, self.finish):
                 control.setEnabled(not model_view)
+            self.region_to_roof.setEnabled(self.viewer.kind=="pdf" and self.app_service is not None)
             self.commit_boq_button.setEnabled(not model_view and self.app_service is not None)
             self.export_boq.setEnabled(not model_view)
             self.canvas.set_mode("pan" if model_view else {
@@ -771,6 +780,66 @@ class GraphicalTakeoffDialog(QDialog):
                 Qt.AspectRatioMode.KeepAspectRatio
             )
 
+    def edit_measurement(self):
+        row=self.table.currentRow()
+        if row<0:return
+        ident=self.table.item(row,0).text();item=self.session.find(ident)
+        text,ok=QInputDialog.getText(self,"شرح متره","شرح اصلاح‌شده؛ مقدار فقط از هندسه محاسبه می‌شود:",text=item.label)
+        if ok:
+            self.session.edit(ident,label=text.strip());self.refresh()
+
+    def apply_opening(self):
+        from core.drawings.roof_region import add_rectangular_opening
+        try:
+            row=self.table.currentRow();rect=self.canvas._selected_region_rect
+            if row<0 or rect is None:raise ValueError("ابتدا سطح مالک را در جدول و مستطیل بازشو را در نقشه انتخاب کنید")
+            ident=self.table.item(row,0).text()
+            if self.session.find(ident).page!=self.page:raise ValueError("بازشو باید در همان صفحه سطح مالک باشد")
+            reference,ok=QInputDialog.getText(self,"مدرک بازشو","مرجع صریح ابعاد بازشو (اجباری):")
+            if not ok:return
+            add_rectangular_opening(self.session,ident,rectangle_to_points(rect.left(),rect.top(),rect.right(),rect.bottom()),reference)
+            self.redraw_current_page();self.refresh()
+            self.status.setText("بازشو از همان سطح کسر شد؛ عضو جدید یا ردیف پرداخت دوم ساخته نشد")
+        except Exception as exc:QMessageBox.warning(self,"کسر بازشو",str(exc))
+
+    def open_region_roof(self):
+        """Bind a selected PDF rectangle to the existing three-roof editor."""
+        from core.drawings.roof_region import KINDS, bind_source
+        from core.takeoff.reviewed_aec import SPECS
+        from app.roof_detail_editor import open_roof_editor
+        try:
+            rect=self.canvas._selected_region_rect
+            if self.viewer.kind!='pdf' or rect is None:
+                raise ValueError("ابتدا یک ناحیه مستطیلی در PDF انتخاب کنید")
+            if self.app_service is None or not self.project_id_input.text().strip():
+                raise ValueError("پروژه واقعی برای ثبت سقف لازم است")
+            self.session._factor_for(self.page)
+            labels=[SPECS[k].title for k in KINDS]
+            label,ok=QInputDialog.getItem(self,"انتخاب عملیات سقف","نوع سقف را طبق نقشه تأیید کنید:",labels,0,False)
+            if not ok:return
+            kind=KINDS[labels.index(label)]
+            points=rectangle_to_points(rect.left(),rect.top(),rect.right(),rect.bottom())
+            item=next((x for x in self.session.for_page(self.page)
+                       if x.kind=='area' and tuple(x.geometry)==tuple(points)),None)
+            if item is None:
+                item=self.session.add_area([Point(x,y) for x,y in points],page=self.page,
+                     label="ناحیه سقف؛ نوع مصالح نیازمند دیتایل",source="roof-region:"+str((self.page,points)))
+                self.refresh()
+            pid=self.project_id_input.text().strip()
+            if self.persisted_session_id:
+                record=self.app_service.load_drawing_takeoff_session(pid,self.persisted_session_id)
+                if record['revision']!=self.persisted_session_revision:
+                    raise RuntimeError("نسخه نشست تغییر کرده است؛ پیش از اتصال سقف بازگشایی کنید")
+                if json.dumps(record['session'],sort_keys=True)!=json.dumps(self.session.to_dict(),sort_keys=True):
+                    if not self.save_session_to_project():return
+            elif not self.save_session_to_project():return
+            record=self.app_service.load_drawing_takeoff_session(pid,self.persisted_session_id)
+            source=bind_source(record,item.id)
+            open_roof_editor(self.app_service,parent=self,project_id=pid,kind=kind,drawing_source=source)
+            self.status.setText("فرم تخصصی بسته شد؛ انتقال فقط از بازبینی و ثبت مجاز همان فرم انجام می‌شود")
+        except Exception as exc:
+            QMessageBox.warning(self,"سقف از ناحیه",str(exc))
+
     def register_selected_region(self):
         """Convert the highlighted rectangle into a traceable area takeoff item."""
         if self.viewer.kind == "ifc":
@@ -801,8 +870,8 @@ class GraphicalTakeoffDialog(QDialog):
             confirmation = (
                 f"پیش‌نمایش متره ناحیه\n\n"
                 f"صفحه: {self.page}\nشرح: {label.strip()}\n"
-                f"مقدار محاسبه‌شده: {preview_area:.4f} مترمربع\n"
-                f"کالیبراسیون: {calibration.meters_per_pixel:.8f} متر/پیکسل\n"
+                f"مقدار محاسبه‌شده: {preview_area} مترمربع\n"
+                f"کالیبراسیون: {calibration.meters_per_pixel} متر/پیکسل\n"
                 f"کد BOQ: {code.strip() or '—'}\n\n"
                 "این مقدار فقط از مستطیل انتخاب‌شده و کالیبراسیون ثبت‌شده محاسبه شده است. "
                 "قبل از تأیید، محدوده و مقیاس نقشه را بررسی کنید. آیا در متره ثبت شود؟"
@@ -824,7 +893,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas._set_region_highlight(selected_rect)
             self.refresh()
             self.status.setText(
-                f"🟢 ناحیه به متره ثبت شد | {item.id} | {item.quantity:.4f} m² | صفحه {item.page} | کد BOQ: {item.takeoff_code or '—'}"
+                f"🟢 ناحیه به متره ثبت شد | {item.id} | {item.quantity} m² | صفحه {item.page} | کد BOQ: {item.takeoff_code or '—'}"
             )
         except Exception as exc:
             QMessageBox.warning(self, "ثبت ناحیه", str(exc))
@@ -843,22 +912,15 @@ class GraphicalTakeoffDialog(QDialog):
         if self.viewer.kind == "ifc":
             self._ifc_status()
             return
-        px, ok = QInputDialog.getDouble(
-            self, "کالیبراسیون مقیاس",
-            "فاصله روی نقشه (پیکسل):", 1000.0, 0.001, 100000000.0, 3
-        )
-        if not ok:
-            return
-        meters, ok = QInputDialog.getDouble(
-            self, "کالیبراسیون مقیاس",
-            "فاصله واقعی (متر):", 10.0, 0.001, 100000000.0, 3
-        )
-        if not ok:
-            return
+        px, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله اندازه‌گیری‌شده روی صفحه (پیکسل؛ مقدار صریح):")
+        if not ok:return
+        meters, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله معلوم طبق مدرک (متر؛ مقدار صریح):")
+        if not ok:return
         try:
             cal = self.session.calibrate(self.page, px, meters)
+            px,meters=float(px),float(meters)
             self.scale_label.setText(
-                f"مقیاس: {cal.meters_per_pixel:.6f} m/px"
+                f"مقیاس: {cal.meters_per_pixel} m/px"
             )
             self.status.setText(
                 f"کالیبراسیون ثبت شد | {px:g} px = {meters:g} m"

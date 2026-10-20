@@ -73,6 +73,8 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
 
 
 def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+    from core.drawings.roof_region import reject_reserved_regions
+    reject_reserved_regions(project,record,rows)
     known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
     if any(row["measurement_identity"] in known for row in rows):
         raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")

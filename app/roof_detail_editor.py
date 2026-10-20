@@ -3,7 +3,7 @@ from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QTableWidgetItem,QMessageBox,QFileDialog,QScrollArea)
+from PySide6.QtWidgets import (QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QTableWidgetItem,QMessageBox,QFileDialog,QScrollArea,QHeaderView)
 from core.takeoff.roof_detail import KINDS,WAFFLE_KINDS,HOLLOW_KIND,VOID_KINDS,BARS,LABELS,POLICY,review_digest
 from core.takeoff.reviewed_aec import SPECS,preview_system,_id
 
@@ -49,7 +49,7 @@ def read_table(table,cols):
  return rows
 
 
-def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab'):
+def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None):
  dialog=QDialog(parent);dialog.setObjectName('RoofDetailEditor');dialog.setWindowTitle('متره تخصصی '+SPECS[kind].title+' — ناحیه‌بندی و دیتایل مستند');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1280,850)
  outer=QVBoxLayout(dialog);tabs=QTabWidget();outer.addWidget(tabs);controls={};state={'record':None,'identity':None}
  def page(title):
@@ -95,7 +95,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   table(layout,key,cols)
  review_page=page('بازبینی، اصلاحیه و گزارش');rf=QFormLayout();review_page.addLayout(rf)
  for key,title in [('reviewer','بازبین مستقل'),('note','یادداشت بازبینی'),('creator','سازنده اصلاحیه'),('reason','علت اصلاح، کپی یا حذف'),('evidence_path','فایل مدرک جدید اصلاحیه'),('evidence_ref','مرجع مدرک جدید'),('amend_id','شناسه اصلاحیه'),('new_id','شناسه مستقل کپی'),('new_source','منبع مستقل کپی')]:line(rf,key,title)
- summary=QTableWidget(0,4);summary.setHorizontalHeaderLabels(['شرح','مقدار','واحد','منبع']);review_page.addWidget(summary);controls['summary']=summary
+ summary=QTableWidget(0,4);summary.setHorizontalHeaderLabels(['شرح','مقدار','واحد','فرمول و منبع']);summary.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch);review_page.addWidget(summary);controls['summary']=summary
  message=QLabel('سقف جدید بدون داده فرضی ایجاد می‌شود؛ بررسی‌نشده به معنی صفر نیست.');message.setWordWrap(True);outer.addWidget(message);controls['message']=message
  buttons={};bar=QHBoxLayout();outer.addLayout(bar)
  for action,label in [('new','عضو جدید'),('load','بازگشایی'),('save','ذخیره SQLite'),('preview','پیش‌نمایش'),('review','بازبینی نسخه جاری'),('commit','ثبت قطعی BOQ'),('copy','کپی مستقل'),('delete','حذف پیش‌نویس')]:
@@ -103,6 +103,10 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  second=QHBoxLayout();review_page.addLayout(second)
  for action,label in [('create_amendment','درخواست اصلاحیه'),('review_amendment','بازبینی مستقل اصلاحیه'),('apply_amendment','اعمال اصلاحیه'),('pdf','پی‌دی‌اف'),('xlsx','اکسل'),('docx','ورد'),('csv','داده متنی')]:
   b=QPushButton(label);second.addWidget(b);buttons[action]=b
+ if drawing_source:
+  kindbox.setEnabled(False);controls['source'].setEnabled(False)
+  import_button=QPushButton('ورود جدول دیتایل مستند (JSON)');second.addWidget(import_button);buttons['import_detail']=import_button
+  document_label=QLabel('منبع PDF متصل است؛ فایل جدول دیتایل و بازبینی مستقل لازم است.');document_label.setWordWrap(True);outer.addWidget(document_label)
  controls.update(buttons);dialog.roof_controls=controls
  bars_data={k:{'status':'unreviewed'} for k in BARS};editing=[None]
  def context():
@@ -185,7 +189,8 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   summary.setRowCount(0)
   for v in r['rows']:
    i=summary.rowCount();summary.insertRow(i)
-   for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']]):summary.setItem(i,j,QTableWidgetItem(str(x)))
+   for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']+' | '+v.get('formula','')]):summary.setItem(i,j,QTableWidgetItem(str(x)))
+  summary.resizeRowsToContents()
   message.setText('محاسبه معتبر؛ ثبت نیازمند بازبینی نسخه جاری است' if r['ready'] else 'نیازمند اطلاعات یا دیتایل: '+'؛ '.join(r['blockers']))
  def load():
   ctx=context();e=service.get_aec_system(*ctx)
@@ -195,7 +200,13 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  def new():
   pid,k,fl,mid=context()
   if service.get_aec_system(pid,k,fl,mid):raise ValueError('شناسه موجود است؛ بازگشایی کنید')
-  d=service.new_aec_system(k,fl,mid);d['measurement_policy']=POLICY;paint({'status':'draft','revision':0,'data':d})
+  d=service.new_aec_system(k,fl,mid);d['measurement_policy']=POLICY
+  if drawing_source:
+   from core.drawings.roof_region import dimensions
+   length,width=dimensions(drawing_source)
+   d['source']=deepcopy(drawing_source)
+   d['roof_detail']={'geometry':{'length':str(length),'width':str(width),'count':'1','unit':'m','shape':'rectangular','repeat_scope':'identical_roofs'}}
+  paint({'status':'draft','revision':0,'data':d})
  def save():
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))
  def unchanged():
@@ -235,11 +246,22 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   records=read_table(controls['bars'],steel_columns());child=QDialog(dialog);child.setObjectName('RoofCutParts');child.setWindowTitle('اجزای طول برش مستند');child.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(child);cols=[('id','شناسه جزء'),('length_m','طول مستند (متر)'),('source_ref','مرجع مستقیم، خم، قلاب یا وصله')];t=table(layout,'cut_parts',cols);fill_table(t,cols,records[row].get('cut_parts',[]));actions=QHBoxLayout();layout.addLayout(actions);ok=QPushButton('اعمال اجزای برش');cancel=QPushButton('انصراف');actions.addWidget(ok);actions.addWidget(cancel);ok.clicked.connect(child.accept);cancel.clicked.connect(child.reject);child.cut_controls={'grid':t,'add':controls['cut_parts_add'],'remove':controls['cut_parts_remove'],'save':ok,'cancel':cancel}
   if child.exec()==QDialog.Accepted:records[row]['cut_parts']=read_table(t,cols);fill_table(controls['bars'],steel_columns(),records)
   for k in ('cut_parts','cut_parts_add','cut_parts_remove'):controls.pop(k,None)
+ def import_detail():
+  import json
+  from core.drawings.roof_region import detail_payload
+  d=capture();path=QFileDialog.getOpenFileName(dialog,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی','','JSON (*.json)')[0]
+  if not path:return
+  file=Path(path);payload=json.loads(file.read_text(encoding='utf-8-sig'))
+  if not isinstance(payload,dict) or set(payload)!=set(detail_payload(d)):raise ValueError('ساختار جدول دیتایل معتبر نیست')
+  if any(payload[k]!=d[k] for k in ('kind','floor_id','system_id')):raise ValueError('هویت جدول دیتایل با سقف جاری یکسان نیست')
+  d.update(deepcopy(payload));d['source'].update(detail_path=str(file),detail_sha256=sha256(file.read_bytes()).hexdigest())
+  paint({**state['record'],'data':d});document_label.setText('مدرک ورودی: '+str(file)+' | SHA-256: '+d['source']['detail_sha256'])
  def run(fn):
   try:fn()
   except Exception as exc:QMessageBox.warning(dialog,'کنترل دیتایل سقف',str(exc))
  for key,fn in [('new',new),('load',load),('save',save),('preview',lambda:show_preview(preview_system(capture(),service.takeoff))),('review',review),('commit',commit),('copy',copy),('delete',delete),('create_amendment',create_amendment),('review_amendment',review_amendment),('apply_amendment',apply_amendment)]:buttons[key].clicked.connect(lambda _=False,f=fn:run(f))
  for fmt in ('pdf','xlsx','docx','csv'):buttons[fmt].clicked.connect(lambda _=False,f=fmt:run(lambda:report(f)))
+ if drawing_source:buttons['import_detail'].clicked.connect(lambda:run(import_detail))
  cut.clicked.connect(lambda:run(cut_parts));store_bar.clicked.connect(lambda:run(capture_bar))
  def switch_group():capture_bar();show_bar()
  group.currentIndexChanged.connect(lambda:run(switch_group))

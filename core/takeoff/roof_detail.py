@@ -35,6 +35,9 @@ def strict(part,allowed,label):
 
 
 def validate_roof_source(source,identity):
+ if source.get('mode')=='drawing' and source.get('roof_binding'):
+  from core.drawings.roof_region import validate_source
+  validate_source(source);return source['source_id']
  if source.get('mode')=='drawing':raise ValueError('برداشت نقشه‌ای تخصصی سقف تا اتصال مقیاس معتبر و قرارداد ناحیه‌بندی نقشه مسدود است؛ متره دستی مستند قابل استفاده است')
  return _validate_source(source,identity)
 
@@ -282,6 +285,9 @@ def preview(data,engine,require_review=False):
  try:
   if kind not in KINDS or data.get('measurement_policy')!=POLICY:raise ValueError('قرارداد سقف معتبر نیست')
   validate_roof_source(source,sid)
+  if source.get('roof_binding'):
+   from core.drawings.roof_region import validate_detail
+   validate_detail(data)
   for key in ('plan_ref','detail_ref'):require_text(source.get(key),'پلان و دیتایل منبع')
   require_text(data.get('building_id'),'شناسه ساختمان')
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')

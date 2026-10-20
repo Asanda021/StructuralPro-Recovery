@@ -255,7 +255,15 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
         beam_migration_identity(old['data'],d);beam_migration_evidence(migration)
     else:
         for field in (('floor_id','system_id','building_id','axis','source') if roof_kind else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')):
-            if d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت یا منبع اصلی تیر نیازمند گردش مستقل است')
+            if field=='source' and roof_kind and old['data'].get('source',{}).get('roof_binding'):
+                # The PDF/measurement identity is immutable; a new detail artifact
+                # is allowed only through the existing evidenced amendment route.
+                import json
+                before={k:v for k,v in old['data']['source'].items() if k not in ('detail_path','detail_sha256')}
+                after={k:v for k,v in d.get('source',{}).items() if k not in ('detail_path','detail_sha256')}
+                if json.dumps(before,sort_keys=True)!=json.dumps(after,sort_keys=True):raise ValueError('منشأ ناحیه PDF در اصلاحیه تغییر نمی‌کند')
+                if d['source'].get('detail_sha256')!=(evidence or {}).get('evidence_sha256') or d['source'].get('detail_path')!=(evidence or {}).get('evidence_path'):raise ValueError('مدرک دیتایل جدید باید همان مدرک معتبر اصلاحیه باشد')
+            elif d.get(field)!=old['data'].get(field):raise ValueError('تغییر هویت یا منبع اصلی تیر نیازمند گردش مستقل است')
     if d.get('measurement_policy')=='stair_specialist_reviewed_v1':
         from core.takeoff.stair_detail import validate_amendment
         validate_amendment(old['data'],d)
@@ -321,6 +329,8 @@ def beam_checked_delta(project,a):
     return calc()
 
 def beam_guard(previous,updated,command):
+    from core.drawings.roof_region import guard_project_change, same_source_identity
+    guard_project_change(previous,updated)
     from core.takeoff.roof_detail import physical_identity_guard
     physical_identity_guard(updated)
     from core.takeoff.steel_detail import physical_identity_guard as steel_guard
@@ -379,7 +389,7 @@ def beam_guard(previous,updated,command):
             structural=base['data'].get('measurement_policy') in STRUCTURAL_POLICIES
             expected_kind='roof_amendment' if roof else 'foundation_amendment' if base['data'].get('measurement_policy')=='foundation_tie_specialist_v1' else 'column_amendment' if structural else None
             if a.get('kind')!=expected_kind or ((structural or roof) and (a['proposal'].get('kind')!=base['data'].get('kind') or a['proposal'].get('measurement_policy')!=base['data'].get('measurement_policy'))) or (not structural and not roof and a['proposal'].get('kind') not in (None,'beam')):raise ValueError('نوع عضو یا گردش اصلاحیه نامعتبر است')
-            if a['previous']!=base or a['original_digest']!=digest(beam_original(previous,a['beam_key'])) or (not a.get('migration') and any(a['proposal'].get(k)!=base['data'].get(k) for k in (('floor_id','system_id','building_id','axis','source') if roof else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')))) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
+            if a['previous']!=base or a['original_digest']!=digest(beam_original(previous,a['beam_key'])) or (not a.get('migration') and any((not same_source_identity(a['proposal'].get(k),base['data'].get(k)) if k=='source' and base['data'].get('source',{}).get('roof_binding') else a['proposal'].get(k)!=base['data'].get(k)) for k in (('floor_id','system_id','building_id','axis','source') if roof else ('floor_id','member_id','building_id','axis','source') if structural else ('floor_id','beam_id','source')))) or a['delta']!=beam_checked_delta(previous,a):raise ValueError('مبنا، هویت یا دلتا معتبر نیست')
             if a.get('migration'):
                 beam_migration_identity(base['data'],a['proposal']);beam_migration_evidence(a['migration'])
                 if a['migration'].get('from_policy')!=base['data'].get('measurement_policy') or a['migration'].get('to_policy')!='beam_specialist_v1' or a['migration'].get('version')!=1:raise ValueError('قرارداد مهاجرت معتبر نیست')
