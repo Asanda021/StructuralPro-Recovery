@@ -177,7 +177,9 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
         ("reviewed_aec_systems", "floor_id", "system_id"),
         ("manual_formula_register", "floor", "member"),
     ):
-        register = saved.get(registry) or {}
+        register = saved.get(registry, {})
+        if register is None:
+            register = {}
         if not isinstance(register, dict):
             raise ValueError(f"ساختار دفتر متره {registry} نامعتبر است")
         for key, record in register.items():
@@ -198,13 +200,17 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             if not isinstance(committed_ids, list):
                 item["status"], item["reason"] = "blocked", "invalid_committed_sources"
                 continue
+            if not committed_ids:
+                item["status"], item["reason"] = "blocked", "missing_committed_sources"
             for source in committed_ids:
                 if not _identity(source):
                     item["status"], item["reason"] = "blocked", "invalid_committed_sources"
                     continue
                 registry_sources.setdefault(_identity(source), []).append(item)
 
-    takeoffs = saved.get("takeoffs") or []
+    takeoffs = saved.get("takeoffs", [])
+    if takeoffs is None:
+        takeoffs = []
     if not isinstance(takeoffs, list):
         raise ValueError("فهرست متره ذخیره‌شده معتبر نیست")
     seen: dict[str, dict[str, Any]] = {}
@@ -335,7 +341,46 @@ class LiveTakeoffTracker:
         from copy import deepcopy
         model = ProjectModel(project_id=str(stored_id), name=saved.get("name", ""),
                              floors=deepcopy(floors), members=deepcopy(members))
-        return cls(model, boq_receipt_verifier=boq_receipt_verifier)
+        tracker = cls(model, boq_receipt_verifier=boq_receipt_verifier)
+        tracker._persisted_identity = reconcile_persisted_takeoff_identities(saved, model)
+        tracker._origin_store = store
+        meta = saved.get("_meta")
+        tracker._origin_version = meta.get("version") if isinstance(meta, dict) else None
+        return tracker
+
+    def persisted_identity_snapshot(self) -> dict[str, Any]:
+        """Read-only identities; linked never means calculated, reviewed or payable."""
+        from copy import deepcopy
+        return deepcopy(getattr(self, "_persisted_identity", {
+            "project_id": self.project.project_id,
+            "records": [], "linked": 0, "blocked": 0,
+            "coverage": {"total": 0, "linked": 0, "blocked": 0},
+        }))
+
+    def select_persisted_record(self, registry: str, record_key: str):
+        """Select an explicit stored member only while its SQLite version is current."""
+        audit = self.persisted_identity_snapshot()
+        matches = [row for row in audit["records"]
+                   if row["registry"] == registry and row["record_key"] == str(record_key)]
+        if len(matches) != 1 or matches[0]["status"] != "linked":
+            raise ValueError("هویت عضو ذخیره‌شده قابل انتخاب نیست؛ ابتدا تطبیق را اصلاح کنید")
+        store = getattr(self, "_origin_store", None)
+        version = getattr(self, "_origin_version", None)
+        if store is None or type(version) is not int:
+            raise ValueError("نسخه SQLite برای انتخاب ایمن مشخص نیست")
+        current = store.get(self.project.project_id)
+        if (not isinstance(current, dict)
+                or not isinstance(current.get("_meta"), dict)
+                or current["_meta"].get("version") != version):
+            raise RuntimeError("پروژه از زمان بارگذاری تغییر کرده است؛ داده‌ها را دوباره باز کنید")
+        row = matches[0]
+        floor = self._floor(row["floor_id"])
+        member = self._member(floor["id"], row["member_id"])
+        self.selected_floor_id, self.selected_member_id = floor["id"], member["id"]
+        return self._publish({"type": "member_selected", "floor_id": floor["id"],
+                              "member_id": member["id"], "registry": registry,
+                              "record_key": str(record_key),
+                              "source_id": row["source_id"], "revision": row["revision"]})
 
     def subscribe(self, callback: Callable[[dict[str, Any]], None]):
         if not callable(callback):
