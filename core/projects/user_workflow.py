@@ -134,6 +134,148 @@ def stage_status(project: dict[str, Any], stage: str) -> str:
             return item["status"]
     raise KeyError(stage)
 
+
+def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: ProjectModel) -> dict[str, Any]:
+    """Audit existing SQLite takeoff identities; never guess, calculate, or write.
+
+    A linked record is only an identity link, NOT a verified quantity/review/BOQ
+    receipt. Original registry keys and spelling remain unchanged.
+    """
+    from copy import deepcopy
+
+    if not isinstance(saved, Mapping) or model.validate():
+        raise ValueError("مدل یا داده پروژه برای تطبیق معتبر نیست")
+    floors = {_identity(row["id"]): row["id"] for row in model.floors}
+    members = {_identity(row["id"]): row for row in model.members}
+    records: list[dict[str, Any]] = []
+    registry_sources: dict[str, list[dict[str, Any]]] = {}
+
+    def add(registry: str, record_key: str, floor: Any, member: Any,
+            *, source_id: Any = None, revision: Any = None, persisted_status: Any = None):
+        f, m = _identity(floor), _identity(member)
+        status, reason = "linked", None
+        if not f or not m:
+            status, reason = "blocked", "missing_explicit_floor_or_member"
+        elif f not in floors:
+            status, reason = "blocked", "unknown_floor"
+        elif m not in members:
+            status, reason = "blocked", "unknown_member"
+        elif _identity(members[m]["floor_id"]) != f:
+            status, reason = "blocked", "member_floor_mismatch"
+        item = {"registry": registry, "record_key": str(record_key),
+                "status": status, "reason": reason,
+                "floor_id": floors.get(f) if status == "linked" else None,
+                "member_id": members[m]["id"] if status == "linked" else None,
+                "source_id": str(source_id).strip() if _identity(source_id) else None,
+                "revision": revision if type(revision) in (str, int) else None,
+                "persisted_status": str(persisted_status) if persisted_status is not None else None}
+        records.append(item)
+        return item
+
+    for registry, floor_field, member_field in (
+        ("reviewed_structural_members", "floor_id", "member_id"),
+        ("reviewed_aec_systems", "floor_id", "system_id"),
+        ("manual_formula_register", "floor", "member"),
+    ):
+        register = saved.get(registry) or {}
+        if not isinstance(register, dict):
+            raise ValueError(f"ساختار دفتر متره {registry} نامعتبر است")
+        for key, record in register.items():
+            if not isinstance(record, dict) or not isinstance(record.get("data"), dict):
+                add(registry, str(key), None, None)
+                continue
+            data = record["data"]
+            sid = (data.get("source") or {}).get("source_id") if isinstance(data.get("source"), dict) else data.get("source_id")
+            item = add(registry, str(key), data.get(floor_field),
+                       data.get(member_field), source_id=sid,
+                       revision=record.get("revision"), persisted_status=record.get("status"))
+            if record.get("status") != "committed":
+                continue
+            if registry == "manual_formula_register":
+                committed_ids = [data.get("source_id")]
+            else:
+                committed_ids = record.get("committed_source_ids", record.get("source_ids", []))
+            if not isinstance(committed_ids, list):
+                item["status"], item["reason"] = "blocked", "invalid_committed_sources"
+                continue
+            for source in committed_ids:
+                if not _identity(source):
+                    item["status"], item["reason"] = "blocked", "invalid_committed_sources"
+                    continue
+                registry_sources.setdefault(_identity(source), []).append(item)
+
+    takeoffs = saved.get("takeoffs") or []
+    if not isinstance(takeoffs, list):
+        raise ValueError("فهرست متره ذخیره‌شده معتبر نیست")
+    seen: dict[str, dict[str, Any]] = {}
+    for index, row in enumerate(takeoffs):
+        key = str(index)
+        if not isinstance(row, dict):
+            add("takeoffs", key, None, None)
+            continue
+        source = row.get("source_id")
+        source_key = _identity(source)
+        params = row.get("params", {})
+        if not isinstance(params, dict):
+            params = {}
+        parents = registry_sources.get(source_key, []) if source_key else []
+        if len(parents) == 1:
+            parent = parents[0]
+            floor, member = parent["floor_id"], parent["member_id"]
+            if parent["status"] != "linked":
+                floor = member = None
+        elif not parents:
+            # Generic manual rows default member_code to the item type: that
+            # default is NOT a proven member identity. Only explicitly saved
+            # per-row member_code or manual_location_id can establish a link.
+            member = params.get("member_code") or params.get("manual_location_id")
+            floor = row.get("system")
+        else:
+            floor = member = None
+        item = add("takeoffs", key, floor, member, source_id=source,
+                   revision=row.get("revision"), persisted_status="stored")
+        if not source_key:
+            item["status"], item["reason"] = "blocked", "missing_source_id"
+        elif len(parents) > 1:
+            item["status"], item["reason"] = "blocked", "ambiguous_source_registry"
+        elif len(parents) == 1:
+            parent = parents[0]
+            if parent["status"] != "linked":
+                item["status"], item["reason"] = "blocked", "invalid_parent_record"
+            elif (_identity(row.get("system")) != _identity(parent["floor_id"])
+                  or _identity(row.get("member_code")) != _identity(parent["member_id"])):
+                item["status"], item["reason"] = "blocked", "registry_takeoff_identity_mismatch"
+            elif params.get("member_code") and _identity(params["member_code"]) != _identity(parent["member_id"]):
+                item["status"], item["reason"] = "blocked", "explicit_member_conflict"
+        if source_key:
+            if source_key in seen:
+                item["status"], item["reason"] = "blocked", "duplicate_takeoff_source"
+                seen[source_key]["status"] = "blocked"
+                seen[source_key]["reason"] = "duplicate_takeoff_source"
+            else:
+                seen[source_key] = item
+
+    for source_key, parents in registry_sources.items():
+        if len(parents) > 1:
+            for parent in parents:
+                parent["status"], parent["reason"] = "blocked", "ambiguous_committed_source"
+        for parent in parents:
+            if source_key not in seen:
+                parent["status"], parent["reason"] = "blocked", "missing_committed_takeoff"
+
+    # A stale or conflicting registry must never yield a selectable child link.
+    for item in records:
+        if item["registry"] != "takeoffs" or not item["source_id"]:
+            continue
+        parents = registry_sources.get(_identity(item["source_id"]), [])
+        if parents and (len(parents) != 1 or parents[0]["status"] != "linked"):
+            item["status"], item["reason"] = "blocked", "invalid_parent_record"
+
+    linked = sum(x["status"] == "linked" for x in records)
+    return deepcopy({"project_id": model.project_id, "records": records,
+                     "linked": linked, "blocked": len(records)-linked,
+                     "coverage": {"total": len(records), "linked": linked, "blocked": len(records)-linked}})
+
 class LiveTakeoffTracker:
     """Nonfinancial, in-memory event reducer for the existing project model.
 
