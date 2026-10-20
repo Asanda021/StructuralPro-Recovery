@@ -77,6 +77,20 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+    def live_takeoff_tracker(self, project_id: str, *, boq_receipt_verifier=None):
+        """Load audited live member identities from this application's canonical SQLite.
+
+        This returns a read-only identity/navigation tracker; it never calls
+        the quantity engine, reconstructs approvals, or commits a BOQ.
+        """
+        from core.projects.user_workflow import LiveTakeoffTracker
+        return LiveTakeoffTracker.from_store(
+            self.store, project_id, boq_receipt_verifier=boq_receipt_verifier)
+
+    def takeoff_identity_snapshot(self, project_id: str) -> dict[str, Any]:
+        """Expose persisted takeoff-to-member audit to existing UI clients."""
+        return self.live_takeoff_tracker(project_id).persisted_identity_snapshot()
+
     def import_project_pricebook(self, project_id: str, path: str | Path, *, year: int,
                                  approved_by: str) -> dict[str, Any]:
         """Bind a real user import and explicit reviewer to this project's pricing gate."""
