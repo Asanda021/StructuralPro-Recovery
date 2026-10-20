@@ -166,7 +166,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                 "status": status, "reason": reason,
                 "floor_id": floors.get(f) if status == "linked" else None,
                 "member_id": members[m]["id"] if status == "linked" else None,
-                "source_id": str(source_id).strip() if _identity(source_id) else None,
+                "source_id": source_id.strip() if isinstance(source_id, str) and _identity(source_id) else None,
                 "revision": revision if type(revision) in (str, int) else None,
                 "persisted_status": str(persisted_status) if persisted_status is not None else None}
         records.append(item)
@@ -193,6 +193,10 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                        revision=record.get("revision"), persisted_status=record.get("status"))
             if record.get("status") != "committed":
                 continue
+            if not isinstance(sid, str) or not _identity(sid):
+                item["status"], item["reason"] = "blocked", "missing_registry_source_id"
+            if type(record.get("revision")) is not int or record["revision"] < 1:
+                item["status"], item["reason"] = "blocked", "invalid_committed_revision"
             if registry == "manual_formula_register":
                 committed_ids = [data.get("source_id")]
             else:
@@ -203,7 +207,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             if not committed_ids:
                 item["status"], item["reason"] = "blocked", "missing_committed_sources"
             for source in committed_ids:
-                if not _identity(source):
+                if not isinstance(source, str) or not _identity(source):
                     item["status"], item["reason"] = "blocked", "invalid_committed_sources"
                     continue
                 registry_sources.setdefault(_identity(source), []).append(item)
@@ -220,7 +224,7 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
             add("takeoffs", key, None, None)
             continue
         source = row.get("source_id")
-        source_key = _identity(source)
+        source_key = _identity(source) if isinstance(source, str) else ""
         params = row.get("params", {})
         if not isinstance(params, dict):
             params = {}
