@@ -230,3 +230,57 @@ def test_live_tracker_from_sqlite_rejects_corrupt_identity_without_modification(
     with pytest.raises(ValueError, match="هویت پروژه"):
         LiveTakeoffTracker.from_store(store, "P2")
     store.close()
+
+
+@pytest.mark.parametrize("wrong_source", ["SOURCE:1", "source:١", "ｓｏｕｒｃｅ:1"])
+def test_live_review_rejects_unicode_or_case_alias_of_measurement_source(wrong_source):
+    """Measurement provenance is exact, unlike the project floor/member keys."""
+    # A review can only match the exact source of the just-calculated result.
+    fresh = LiveTakeoffTracker(sample())
+    args = dict(floor_id="1", member_id="C1", task_id="CONCRETE")
+    fresh.emit("takeoff_started", **args)
+    fresh.emit("quantity_calculated", **args, source_id="source:1", revision="R1")
+    previous = fresh.snapshot()
+    with pytest.raises(ValueError, match="مدرک"):
+        fresh.emit("review_approved", **args, source_id=wrong_source, revision="R1")
+    assert fresh.snapshot() == previous
+
+
+@pytest.mark.parametrize("wrong_revision", ["r1", "R١", "Ｒ１"])
+def test_live_review_rejects_unicode_or_case_alias_of_revision(wrong_revision):
+    fresh = LiveTakeoffTracker(sample())
+    args = dict(floor_id="1", member_id="C1", task_id="CONCRETE")
+    fresh.emit("takeoff_started", **args)
+    fresh.emit("quantity_calculated", **args, source_id="source:1", revision="R1")
+    before = fresh.snapshot()
+    with pytest.raises(ValueError, match="مدرک"):
+        fresh.emit("review_approved", **args, source_id="source:1", revision=wrong_revision)
+    assert fresh.snapshot() == before
+
+
+@pytest.mark.parametrize("field,invalid", [
+    ("source_id", "SOURCE:1"),
+    ("source_id", "source:١"),
+    ("source_id", "ｓｏｕｒｃｅ:1"),
+    ("revision", "r1"),
+    ("revision", "R١"),
+])
+def test_verified_boq_receipt_never_accepts_provenance_alias(field, invalid):
+    _, tracker, args = reviewed_tracker(
+        verifier=lambda receipt: receipt.get("boq_row_id") == "B001")
+    valid = dict(project_id="P1", floor_id="1", member_id="C1",
+                 task_id="CONCRETE", source_id="source:1", revision="R1",
+                 boq_row_id="B001")
+    before = tracker.snapshot()
+    with pytest.raises(ValueError, match="مطابقت"):
+        tracker.confirm_boq_transfer(**args, receipt=dict(valid, **{field: invalid}))
+    assert tracker.snapshot() == before
+
+
+def test_verified_boq_receipt_still_allows_floor_member_and_task_alias():
+    _, tracker, args = reviewed_tracker(
+        verifier=lambda receipt: receipt.get("boq_row_id") == "B001")
+    receipt = dict(project_id="p1", floor_id="۱", member_id="c1",
+                   task_id="concrete", source_id="source:1", revision="R1",
+                   boq_row_id="B001")
+    assert tracker.confirm_boq_transfer(**args, receipt=receipt)["status"] == "boq_transferred"
