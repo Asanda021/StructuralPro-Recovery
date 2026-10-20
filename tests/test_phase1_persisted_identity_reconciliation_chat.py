@@ -180,3 +180,58 @@ def test_identity_audit_cannot_emit_boq_transfer_or_fake_engine_events(tmp_path)
         tracker.emit("boq_transfer_confirmed", floor_id="1", member_id="C1", task_id="column")
     assert app.open_project("P-IDENTITY")["boq"] == []
     app.store.close()
+
+
+def test_canonical_app_can_persist_explicit_floor_and_member_and_reopen(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("برج", "TOWER")
+    for n in range(1, 6):
+        assert app.add_project_floor("TOWER", f"طبقه {n}", level=n)["id"] == str(n)
+        app.add_project_member("TOWER", f"C{n}", str(n), "ستون", source_id=f"plan:{n}")
+    before = app.open_project("TOWER")
+    assert len(before["floors"]) == len(before["members"]) == 5
+    assert before["takeoffs"] == before["boq"] == []
+    app.store.close()
+    reopened = StructuralProApp(tmp_path)
+    after = reopened.open_project("TOWER")
+    assert after["floors"] == before["floors"]
+    assert after["members"] == before["members"]
+    tracker = reopened.live_takeoff_tracker("TOWER")
+    assert tracker.select_member("۵", "c5")["member_id"] == "C5"
+    assert tracker.persisted_identity_snapshot()["coverage"]["total"] == 0
+    reopened.store.close()
+
+
+def test_structure_mutation_rejects_unicode_duplicates_and_missing_parent(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("آزمایش", "P")
+    app.add_project_floor("P", "اول", level="۱")
+    digest = app.store.current_digest("P")
+    with pytest.raises(ValueError, match="تکراری"):
+        app.add_project_floor("P", "دوباره", level=1)
+    with pytest.raises(ValueError, match="طبقه عضو"):
+        app.add_project_member("P", "C1", "UNKNOWN", "ستون")
+    assert app.store.current_digest("P") == digest
+    assert app.add_project_member("P", "Kي١", "1", "تیر")["id"] == "Kي١"
+    digest2 = app.store.current_digest("P")
+    with pytest.raises(ValueError, match="تکراری"):
+        app.add_project_member("P", "Kی1", "۱", "تیر")
+    assert app.store.current_digest("P") == digest2
+    app.store.close()
+
+
+def test_new_structure_never_rewrites_legacy_measurements(tmp_path):
+    app = StructuralProApp(tmp_path)
+    app.create_project("قبلی", "LEG")
+    old = app.open_project("LEG")
+    old["takeoffs"] = [_row("source-A", "column", params={})]
+    _digest = app.store.current_digest("LEG")
+    app.store.save("LEG", old, expected_digest=_digest)
+    original = app.open_project("LEG")["takeoffs"]
+    app.add_project_floor("LEG", "همکف", level="G")
+    app.add_project_member("LEG", "C1", "G", "ستون")
+    current = app.open_project("LEG")
+    assert current["takeoffs"] == original
+    assert current["boq"] == []
+    assert app.takeoff_identity_snapshot("LEG")["blocked"] == 1
+    app.store.close()
