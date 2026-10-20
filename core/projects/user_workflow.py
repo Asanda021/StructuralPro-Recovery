@@ -163,6 +163,38 @@ class LiveTakeoffTracker:
         self.selected_floor_id: str | None = None
         self.selected_member_id: str | None = None
 
+    @classmethod
+    def from_store(cls, store: Any, project_id: str, *,
+                   boq_receipt_verifier: Callable[[Mapping[str, str]], bool] | None = None):
+        """Read explicit structure from the existing SQLite-backed project store.
+
+        This is a read-only UI adapter: neither missing floors/members nor
+        calculation/review/BOQ events are reconstructed or fabricated. The
+        returned tracker starts with an empty, in-memory event history.
+        """
+        if not _identity(project_id):
+            raise ValueError("شناسه پروژه برای بارگذاری الزامی است")
+        if not callable(getattr(store, "get", None)):
+            raise TypeError("منبع پروژه باید سرویس ذخیره‌سازی معتبر باشد")
+        saved = store.get(str(project_id))
+        if saved is None:
+            raise KeyError(project_id)
+        if not isinstance(saved, dict):
+            raise ValueError("ساختار پروژه ذخیره‌شده معتبر نیست")
+        stored_id = saved.get("id")
+        if (not _identity(stored_id)
+                or _identity(stored_id) != _identity(project_id)
+                or (saved.get("project_id") is not None
+                    and _identity(saved["project_id"]) != _identity(stored_id))):
+            raise ValueError("هویت پروژه در SQLite با درخواست مطابقت ندارد")
+        floors, members = saved.get("floors", []), saved.get("members", [])
+        if not isinstance(floors, list) or not isinstance(members, list):
+            raise ValueError("فهرست طبقات یا اعضای ذخیره‌شده معتبر نیست")
+        from copy import deepcopy
+        model = ProjectModel(project_id=str(stored_id), name=saved.get("name", ""),
+                             floors=deepcopy(floors), members=deepcopy(members))
+        return cls(model, boq_receipt_verifier=boq_receipt_verifier)
+
     def subscribe(self, callback: Callable[[dict[str, Any]], None]):
         if not callable(callback):
             raise TypeError("تابع شنونده معتبر نیست")
