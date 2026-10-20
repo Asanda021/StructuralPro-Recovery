@@ -102,3 +102,12 @@ def test_persian_member_aliases_do_not_allow_double_payment(tmp_path):
     result = audit_real_building(bundle, tmp_path)
     assert not result["candidate_ready_for_external_review"]
     assert result["engineering_accepted"] is False
+
+
+def test_invalid_drawing_ids_and_unhashable_oracle_sources_are_rejected(tmp_path):
+    data = fake_bundle(tmp_path)
+    data["drawings"][0]["id"] = ["bad-unhashable-id"]
+    assert not audit_real_building(data, tmp_path)["candidate_ready_for_external_review"]
+    data = fake_bundle(tmp_path)
+    data["independent_oracles"][0]["drawing_id"] = ["bad-unhashable-id"]
+    assert not audit_real_building(data, tmp_path)["candidate_ready_for_external_review"]
