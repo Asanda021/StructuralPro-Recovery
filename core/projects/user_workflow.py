@@ -296,6 +296,17 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                      "linked": linked, "blocked": len(records)-linked,
                      "coverage": {"total": len(records), "linked": linked, "blocked": len(records)-linked}})
 
+
+def _exact_measurement_token(value: Any) -> str:
+    """Source and revision are provenance tokens, not floor/member aliases.
+
+    Identifiers in the canonical takeoff/BOQ commit guard are case-sensitive.
+    Preserve only the same surrounding-whitespace treatment; never NFKC,
+    casefold, or convert Arabic/Persian digits for measurements.
+    """
+    return value.strip() if isinstance(value, str) else ""
+
+
 class LiveTakeoffTracker:
     """Nonfinancial, in-memory event reducer for the existing project model.
 
@@ -450,12 +461,12 @@ class LiveTakeoffTracker:
         allowed, after_status = self._TASK_TRANSITIONS[event_type]
         if before["status"] not in allowed:
             raise ValueError("ترتیب رویدادهای متره معتبر نیست")
-        if event_type == "quantity_calculated" and (not _identity(source_id) or not _identity(revision)):
+        if event_type == "quantity_calculated" and (not _exact_measurement_token(source_id) or not _exact_measurement_token(revision)):
             raise ValueError("نتیجه محاسبه به مدرک و نسخه صریح نیاز دارد")
         if event_type == "review_approved" and (
-            not _identity(source_id) or not _identity(revision)
-            or _identity(source_id) != _identity(before["source_id"])
-            or _identity(revision) != _identity(before["revision"])
+            not _exact_measurement_token(source_id) or not _exact_measurement_token(revision)
+            or _exact_measurement_token(source_id) != _exact_measurement_token(before["source_id"])
+            or _exact_measurement_token(revision) != _exact_measurement_token(before["revision"])
         ):
             raise ValueError("تأیید باید متعلق به مدرک و نسخه همان محاسبه باشد")
         row = before.copy()
@@ -485,9 +496,13 @@ class LiveTakeoffTracker:
         required = {"project_id": self.project.project_id, "floor_id": floor["id"],
                     "member_id": member["id"], "task_id": str(task_id).strip(),
                     "source_id": previous["source_id"], "revision": previous["revision"]}
-        if not isinstance(receipt, Mapping) or not all(
-            _identity(receipt.get(field)) == _identity(value) for field, value in required.items()
-        ) or not _identity(receipt.get("boq_row_id")):
+        if (not isinstance(receipt, Mapping)
+                or not all(
+                    (_exact_measurement_token(receipt.get(field)) == _exact_measurement_token(value)
+                     if field in ("source_id", "revision")
+                     else _identity(receipt.get(field)) == _identity(value))
+                    for field, value in required.items())
+                or not _exact_measurement_token(receipt.get("boq_row_id"))):
             raise ValueError("رسید BOQ با هویت متره مطابقت ندارد")
         if self._verifier is None or not self._verifier(receipt):
             raise ValueError("ثبت BOQ در سرویس اصلی احراز نشده است")
