@@ -256,6 +256,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -503,6 +511,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -742,6 +758,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -1316,6 +1340,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -1542,6 +1574,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -1848,6 +1888,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -2138,6 +2186,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -2424,6 +2480,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -2750,6 +2814,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -2975,6 +3047,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -3316,6 +3396,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -3653,6 +3741,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -3663,12 +3759,12 @@
       "inherited_tests": [],
       "contract": "verified",
       "controller": "verified",
-      "real_form": "limited",
+      "real_form": "verified",
       "sqlite": "verified",
       "revision_cas": "verified",
       "boq": "blocked",
       "report": "limited",
-      "qt": "not_tested",
+      "qt": "verified",
       "windows": "pending_real_windows",
       "commit_test_evidence": [],
       "fully_accepted": false,
@@ -3704,12 +3800,15 @@
             ]
           },
           "real_form": {
-            "status": "limited",
-            "scope": "فرم واقعی؛ دامنه تأیید فقط همان عملیات آزموده‌شده است",
+            "status": "verified",
+            "scope": "Real Qt document-based nonfinancial steel stair support form; save/run/reopen/CAS and financial locks tested, not structural design acceptance",
             "source_refs": [
-              "app/manual_formula_controls.py"
+              "app/structural_handoff_audit_editor.py",
+              "app/reviewed_aec_manual_editor.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "tests/test_phase1_closure_ui.py"
+            ]
           },
           "decimal": {
             "status": "limited",
@@ -3775,12 +3874,15 @@
             ]
           },
           "qt": {
-            "status": "not_tested",
-            "scope": "QTest واقعی فقط برای nodeهای دارای تعامل واقعی؛ آزمون ایستا/عمومی شاهد Qt مستقل خانواده نیست",
+            "status": "verified",
+            "scope": "Real Qt document-based nonfinancial steel stair support form; save/run/reopen/CAS and financial locks tested, not structural design acceptance",
             "source_refs": [
-              "app/manual_formula_controls.py"
+              "app/structural_handoff_audit_editor.py",
+              "app/reviewed_aec_manual_editor.py"
             ],
-            "test_refs": []
+            "test_refs": [
+              "tests/test_phase1_closure_ui.py"
+            ]
           },
           "commit_test_evidence": {
             "status": "verified",
@@ -3895,6 +3997,15 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance.",
+        "steel_stair_ui": "verified bounded document contract only; all11 group engine and source/support guards unchanged"
       }
     },
     {
@@ -4188,6 +4299,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -4445,6 +4564,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -4702,6 +4829,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -4963,6 +5098,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -5222,6 +5365,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -5477,6 +5628,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -5738,6 +5897,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -6007,6 +6174,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -6274,6 +6449,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -6520,6 +6703,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -6767,6 +6958,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -7009,6 +7208,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -7255,6 +7462,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -7522,6 +7737,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -7761,6 +7984,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -8000,6 +8231,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -8307,6 +8546,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -8554,6 +8801,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -8801,6 +9056,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -9052,6 +9315,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -9336,6 +9607,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -9611,6 +9890,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -9867,6 +10154,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -10155,6 +10450,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -10419,6 +10722,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -10679,6 +10990,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -10990,6 +11309,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -11261,6 +11588,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -11509,6 +11844,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -11755,6 +12098,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -12002,6 +12353,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -12245,6 +12604,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -12520,6 +12887,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -12763,6 +13138,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -12995,6 +13378,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -13267,6 +13658,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -13502,6 +13901,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -13745,6 +14152,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -13978,6 +14393,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -14213,6 +14636,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -14446,6 +14877,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -14691,6 +15130,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -14945,6 +15392,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -15223,6 +15678,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -15472,6 +15935,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -15721,6 +16192,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -15966,6 +16445,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -16199,6 +16686,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -16432,6 +16927,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -16665,6 +17168,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -16903,6 +17414,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -17136,6 +17655,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -17369,6 +17896,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -17610,6 +18145,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -17845,6 +18388,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -18111,6 +18662,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -18349,6 +18908,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -18587,6 +19154,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -18823,6 +19398,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -19141,6 +19724,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     },
     {
@@ -19479,6 +20070,14 @@
         "windows": "not_tested",
         "acceptance": "limited",
         "scope": "شواهد تفصیلی قبلی محفوظ؛ دامنه جدید فقط آزمون‌های دفتر اجرای بسته سوم است. مدارک مصنوعی پذیرش مهندسی نیستند؛ Windows اجرا نشده."
+      },
+      "final_closure": {
+        "code_tree": "9c85f48441691c39d8785148889330341422935c",
+        "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+        "family_engineering_acceptance": "not_accepted",
+        "windows": "not_tested",
+        "independent_evidence": "refer to original per-family dependencies; no fabricated evidence",
+        "scope": "Full regression verifies the existing bounded routes. Generic PASS is not specialist whole-family acceptance."
       }
     }
   ],
@@ -20398,5 +20997,34 @@
       "Linux emoji glyph availability not Windows verified"
     ],
     "financial_policy": "No new authorization; nonfinancial contracts remain ready=False, commit_allowed=False, payable_rows=[]"
+  },
+  "final_closure": {
+    "baseline_head": "325df5eabaa9db2f7ea057dd8c4b1f7d64d8dac3",
+    "code_head": "b2e6c2d0383e5100098ba20bc1cc865899583bea",
+    "code_tree": "9c85f48441691c39d8785148889330341422935c",
+    "ledger": "docs/acceptance/phase1_closure_execution_20261020.json",
+    "inventory": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+    "full_suite": {
+      "pass": 6916,
+      "fail": 0,
+      "error": 0,
+      "skip": 5,
+      "exit": 0
+    },
+    "independent_specialist_shortfall": 37,
+    "new_complete_specialist_acceptances": 0,
+    "full_engineering_acceptance": 0,
+    "windows_acceptance": 0,
+    "implemented_ui": [
+      "persistent light/dark theme",
+      "motion preference",
+      "movable and floating beam dock",
+      "collapsible contextual panel",
+      "row-linked geometry highlight with controlled pulse",
+      "dedicated nonfinancial steel stair menu using existing SQLite service"
+    ],
+    "historical_ui_gaps_in_final_package3_superseded_by_this_record": true,
+    "engineering_dependencies_unchanged": true,
+    "financial_policy": "No new authority; all new audit results remain ready=False, commit_allowed=False, payable_rows=[]"
   }
 }

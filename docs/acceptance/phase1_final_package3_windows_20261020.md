@@ -10,7 +10,7 @@ git status --short
 git rev-parse HEAD
 python -m pip check
 powershell -NoProfile -File scripts/run_windows_acceptance.ps1 -OutputDir qa/windows-final
-python -m pytest -q tests/test_phase1_final_desktop_work.py tests/test_phase1_final_report_pagination_work.py tests/test_phase1_manual_word_csv_ui_buttons_chat.py tests/test_shared_report_persian.py tests/test_phase1_manual_report_formats.py tests/test_phase1_work_six_family_service.py tests/test_phase1_package2_service.py --junitxml=qa/windows-final/regression.xml
+python -m pytest -q tests/test_phase1_closure_ui.py tests/test_phase1_final_desktop_work.py tests/test_phase1_final_report_pagination_work.py tests/test_phase1_manual_word_csv_ui_buttons_chat.py tests/test_shared_report_persian.py tests/test_phase1_manual_report_formats.py tests/test_phase1_work_six_family_service.py tests/test_phase1_package2_service.py --junitxml=qa/windows-final/regression.xml
 python -m app.main
 ```
 
@@ -24,5 +24,5 @@ python -m app.main
 | چاپ/PDF | نمایشگر PDF واقعی، پیش‌نمایش چاپ و خروجی چاپی نمونه | QA | متن متصل، صفحه‌بندی و اعداد صحیح؛ بدون برش |
 | Exit 135 تاریخی | ورودی، ترتیب کار، stderr، faulthandler/core dump یا dump Windows در صورت وقوع | نگهدارنده Qt | بازتولید و علت ریشه‌ای + آزمون قرمز/سبز؛ عدم وقوع به‌تنهایی رفع نیست |
 
-تم روز/شب، Dock شناور و انیمیشن در نسخه فعلی احراز نشده‌اند. بررسی Windows جای پیاده‌سازی قابلیت مفقود را نمی‌گیرد. این نقص‌های رابط ذیل ردیف ۹ باقی می‌مانند.
+در تحویل نهایی ۲۰ اکتبر، تم روز/شب پایدار، پنل شناور/جمع‌شونده و پالس قابل خاموش‌کردن هایلایت روی کد اصلی با Qt offscreen آزموده شدند؛ تأیید native Acrylic، فونت/نماد، Dock، DPI و حرکت روی Windows هنوز لازم است. بعضی probeهای خودکار عمداً offscreen هستند؛ PASS آن‌ها حتی روی Windows جای بازبینی دسکتاپ واقعی را نمی‌گیرد.
 هیچ آزمون Windows، Office یا چاپ فیزیکی در این تحویل اجرا نشده است. مالی جدید، قیمت فرضی و مجوز انتشار فعال نمی‌شود.
