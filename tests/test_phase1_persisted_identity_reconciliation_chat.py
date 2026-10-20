@@ -235,3 +235,37 @@ def test_new_structure_never_rewrites_legacy_measurements(tmp_path):
     assert current["boq"] == []
     assert app.takeoff_identity_snapshot("LEG")["blocked"] == 1
     app.store.close()
+
+
+@pytest.mark.parametrize("first,second", [
+    ("SRC-1", "src-1"),
+    ("source:١", "source:1"),
+    ("source:Kي", "source:Kی"),
+])
+def test_provenance_is_case_and_unicode_sensitive_like_existing_commit_guard(tmp_path, first, second):
+    app = StructuralProApp(tmp_path)
+    p = _project(app, members=("C1",))
+    p["takeoffs"] = [_row(first, "C1", params={"member_code": "C1"}),
+                     _row(second, "C1", params={"member_code": "C1"})]
+    _save(app, p)
+    audit = app.takeoff_identity_snapshot("P-IDENTITY")
+    assert audit["coverage"] == {"total": 2, "linked": 2, "blocked": 0}
+    assert [x["source_id"] for x in audit["records"]] == [first, second]
+    app.store.close()
+
+
+def test_registry_source_cannot_be_matched_by_casefold_or_unicode_alias(tmp_path):
+    app = StructuralProApp(tmp_path)
+    p = _project(app, members=("C1",))
+    p["reviewed_structural_members"] = {
+        "column:1:C1": {"status": "committed", "revision": 2,
+            "data": {"floor_id": "1", "member_id": "C1",
+                     "source": {"source_id": "real-evidence"}},
+            "committed_source_ids": ["S1"]}}
+    p["takeoffs"] = [_row("s1", "C1", params={"member_code": "C1"})]
+    _save(app, p)
+    audit = app.takeoff_identity_snapshot("P-IDENTITY")
+    assert audit["linked"] == 1  # explicit unclaimed manual identity only
+    assert audit["blocked"] == 1  # missing actual committed source
+    assert audit["records"][0]["reason"] == "missing_committed_takeoff"
+    app.store.close()
