@@ -242,6 +242,9 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
                    revision=row.get("revision"), persisted_status="stored")
         if not source_key:
             item["status"], item["reason"] = "blocked", "missing_source_id"
+        elif not parents and params.get("member_code") and (
+                _identity(row.get("member_code")) != _identity(params["member_code"])):
+            item["status"], item["reason"] = "blocked", "explicit_member_conflict"
         elif len(parents) > 1:
             item["status"], item["reason"] = "blocked", "ambiguous_source_registry"
         elif len(parents) == 1:
@@ -268,6 +271,8 @@ def reconcile_persisted_takeoff_identities(saved: Mapping[str, Any], model: Proj
         for parent in parents:
             if source_key not in seen:
                 parent["status"], parent["reason"] = "blocked", "missing_committed_takeoff"
+            elif seen[source_key]["status"] == "blocked":
+                parent["status"], parent["reason"] = "blocked", "invalid_committed_takeoff"
 
     # A stale or conflicting registry must never yield a selectable child link.
     for item in records:
