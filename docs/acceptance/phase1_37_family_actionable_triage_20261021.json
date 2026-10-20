@@ -222,7 +222,24 @@
       "full_family_engineering_accepted": false,
       "record_status": "blocked_engineering_dependency",
       "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
-      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance.",
+      "bounded_independent_component_oracle": {
+        "scope": "synthetic net wall surface for render_coat: count × length × height minus total documented openings; other system components are not reviewed",
+        "test_file": "tests/test_phase1_cement_render_net_surface_chat.py",
+        "real_service_route": "core/takeoff/reviewed_aec.py::preview_system -> reviewed_detail_calculators::net_surface; existing ProjectStore draft/preview CAS",
+        "cases_written": 15,
+        "test_execution_on_repo_checkout": "not_run",
+        "local_oracle_calculations": {
+          "passed": 3,
+          "failed": 0,
+          "scope": "standalone Decimal reference calculations in Chat; product import/SQLite not exercised"
+        },
+        "production_change": "Allow net_surface detail on render_coat only",
+        "engine_acceptance": "not_claimed",
+        "independent_professional_review": "missing",
+        "full_family_engineering_accepted": false,
+        "stage": "bounded_test_added_pending_full_repo_pytest_and_approved_source"
+      }
     },
     {
       "code": "door_window",
