@@ -325,7 +325,8 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")
         self.select_region = QPushButton("انتخاب ناحیه")
         self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")
-        self.region_to_takeoff = QPushButton("ثبت سطح عمومی در متره")
+        self.region_to_takeoff = QPushButton("ثبت ناحیه در متره")
+        self.region_to_takeoff.setToolTip("فقط متره سطح عمومی؛ برای اجزای سقف از دکمه سقف تخصصی استفاده کنید")
         self.opening_button = QPushButton("کسر بازشو از سطح انتخابی")
         self.edit_button = QPushButton("ویرایش شرح متره")
         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
@@ -651,12 +652,7 @@ class GraphicalTakeoffDialog(QDialog):
                 "طول": "length", "مساحت": "area", "شمارش": "count", "یادداشت": "note"
             }[self.mode.currentText()])
             if self.viewer.kind == "pdf":
-                data = self.engine.render(self.page, 150)
-                pix = QPixmap()
-                if not pix.loadFromData(QByteArray(data), "PNG"):
-                    raise RuntimeError("رندر PDF ناموفق بود.")
-                self.canvas.scene.addPixmap(pix)
-                self.canvas.setSceneRect(0, 0, pix.width(), pix.height())
+                self._render_pdf_background()
                 for item in self.session.for_page(self.page):
                     self.canvas._draw_measurement(item)
             elif model_view:
@@ -669,6 +665,24 @@ class GraphicalTakeoffDialog(QDialog):
             self.reset_zoom()
         except Exception as exc:
             QMessageBox.critical(self, "خطای نمایش PDF", str(exc))
+
+    def _render_pdf_background(self):
+        """Lower bitmap resolution for large sheets; retain the 150-DPI scene grid.
+
+        This is a display transform, never an engineering scale/calibration.
+        Existing sessions and measured coordinates keep their original meaning.
+        """
+        import math
+        page=self.engine.pages()[self.page-1]
+        dpi=next((d for d in (150,100,72,36)
+                  if math.ceil(page.width_pt*d/72)*math.ceil(page.height_pt*d/72)<=40_000_000),None)
+        if dpi is None:raise ValueError("ابعاد صفحه حتی در وضوح پایین از بودجه حافظه نمایش بیشتر است")
+        data=self.engine.render(self.page,dpi);pix=QPixmap()
+        if not pix.loadFromData(QByteArray(data),"PNG"):raise RuntimeError("رندر PDF ناموفق بود")
+        image=self.canvas.scene.addPixmap(pix);image.setScale(150/dpi)
+        self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*150/72),math.ceil(page.height_pt*150/72))
+        self.display_dpi=dpi
+        self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
 
     def _render_cad(self):
         doc = self.cad_document
@@ -970,11 +984,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.canvas._region_overlay = None
         self.canvas._selected_region_rect = None
         if self.viewer.kind == "pdf":
-            data = self.engine.render(self.page, 150)
-            pix = QPixmap()
-            pix.loadFromData(QByteArray(data), "PNG")
-            self.canvas.scene.addPixmap(pix)
-            self.canvas.setSceneRect(0, 0, pix.width(), pix.height())
+            self._render_pdf_background()
             for item in self.session.for_page(self.page):
                 self.canvas._draw_measurement(item)
         elif self.viewer.kind == "ifc":

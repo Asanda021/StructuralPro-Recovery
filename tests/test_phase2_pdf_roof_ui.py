@@ -114,3 +114,19 @@ def test_fresh_multi_page_pdf_calibration_and_mouse_region(qt,tmp_path):
         dlg.grab().save(str(tmp_path/'fresh-pdf-native-calibration.png'))
         assert dlg.session.items==[] # navigation and selection do not commit anything
     finally:dlg.close();app.store.close()
+
+
+def test_oversized_pdf_renders_lower_resolution_in_same_scene_coordinates(qt,tmp_path,monkeypatch):
+    import fitz
+    path=tmp_path/'large-sheet.pdf'
+    with fitz.open() as pdf:
+        p=pdf.new_page(width=4000,height=3000);p.draw_rect(fitz.Rect(100,100,1000,1000));pdf.save(path)
+    messages=[];monkeypatch.setattr(QMessageBox,'critical',lambda p,t,m,*a:messages.append(str(m)))
+    d=GraphicalTakeoffDialog(pdf_path=str(path));d.show();qt.processEvents()
+    try:
+        assert not messages,messages
+        assert d.display_dpi<150
+        assert abs(d.canvas.sceneRect().width()-4000*150/72)<3
+        assert d.session.calibrations=={} # display resampling never guesses engineering scale
+        d.grab().save(str(tmp_path/'large-sheet.png'))
+    finally:d.close()
