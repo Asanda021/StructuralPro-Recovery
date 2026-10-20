@@ -9,6 +9,16 @@ import hashlib
 import json
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+import unicodedata
+
+_ID_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def _structural_id(value):
+    if not isinstance(value, str):
+        return ""
+    return (unicodedata.normalize("NFKC", value).translate(_ID_DIGITS)
+            .replace("ي", "ی").replace("ك", "ک").strip().casefold())
 
 
 def _positive_decimal(value):
@@ -64,7 +74,7 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
     floor_ids = [f.get("id") for f in floors if isinstance(f, dict)]
     if (len(floor_ids) != len(floors) or
             any(not isinstance(fid, str) or not fid.strip() for fid in floor_ids) or
-            len(set(floor_ids)) != len(floor_ids)):
+            len({_structural_id(fid) for fid in floor_ids}) != len(floor_ids)):
         errors.append("invalid/duplicated floor identities")
     drawings = manifest.get("drawings")
     if not isinstance(drawings, list):
@@ -98,15 +108,15 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
             continue
         floor_id, physical_id = item.get("floor_id"), item.get("physical_id")
         source_id = item.get("drawing_id")
-        if floor_id not in floor_ids or not isinstance(physical_id, str) or not physical_id.strip():
+        if _structural_id(floor_id) not in {_structural_id(fid) for fid in floor_ids} or not _structural_id(physical_id):
             errors.append(f"{key}: invalid explicit member/floor")
         if source_id not in drawing_ids:
             errors.append(f"{key}: drawing source missing")
-        pair = (floor_id, physical_id)
+        pair = (_structural_id(floor_id), _structural_id(physical_id))
         if pair in physical_ids:
             errors.append(f"{key}: duplicate physical ownership")
         physical_ids.add(pair)
-        covered_floors.add(floor_id)
+        covered_floors.add(_structural_id(floor_id))
         if not isinstance(item.get("unit"), str) or not item["unit"].strip():
             errors.append(f"{key}: quantity unit missing")
         try:
