@@ -86,3 +86,19 @@ def test_real_building_gate_fails_closed_on_missing_or_corrupted_proof(tmp_path,
     result = audit_real_building(bundle, tmp_path)
     assert result["candidate_ready_for_external_review"] is False
     assert result["engineering_accepted"] is False
+
+
+def test_persian_digit_aliases_do_not_create_a_new_floor(tmp_path):
+    bundle = fake_bundle(tmp_path)
+    bundle["floors"][1]["id"] = "۱"  # already represented by ASCII '1'
+    result = audit_real_building(bundle, tmp_path)
+    assert not result["candidate_ready_for_external_review"]
+    assert result["engineering_accepted"] is False
+
+
+def test_persian_member_aliases_do_not_allow_double_payment(tmp_path):
+    bundle = fake_bundle(tmp_path)
+    bundle["independent_oracles"][1].update(floor_id="۱", physical_id="p1")
+    result = audit_real_building(bundle, tmp_path)
+    assert not result["candidate_ready_for_external_review"]
+    assert result["engineering_accepted"] is False
