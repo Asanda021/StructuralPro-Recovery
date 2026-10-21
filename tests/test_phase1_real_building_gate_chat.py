@@ -118,3 +118,12 @@ def test_invalid_drawing_ids_and_unhashable_oracle_sources_are_rejected(tmp_path
     data = fake_bundle(tmp_path)
     data["independent_oracles"][0]["drawing_id"] = ["bad-unhashable-id"]
     assert not audit_real_building(data, tmp_path)["candidate_ready_for_external_review"]
+
+
+@pytest.mark.parametrize("discipline", [[], {}])
+def test_malformed_drawing_discipline_is_a_blocker_not_an_exception(tmp_path, discipline):
+    bundle = fake_bundle(tmp_path)
+    bundle["drawings"][0]["discipline"] = discipline
+    result = audit_real_building(bundle, tmp_path)
+    assert not result["candidate_ready_for_external_review"]
+    assert not result["engineering_accepted"]

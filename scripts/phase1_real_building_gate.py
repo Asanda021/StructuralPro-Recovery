@@ -86,8 +86,11 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
         _check_file(item, root, key, errors)
         if not isinstance(item, dict):
             continue
-        if item.get("discipline") in {"structure", "architecture"}:
-            disciplines.add(item["discipline"])
+        discipline = item.get("discipline")
+        if not isinstance(discipline, str):
+            errors.append(f"{key}: invalid drawing discipline")
+        elif discipline in {"structure", "architecture"}:
+            disciplines.add(discipline)
         if not isinstance(item.get("revision"), str) or not item["revision"].strip():
             errors.append(f"{key}: revision missing")
         ref = item.get("id")
