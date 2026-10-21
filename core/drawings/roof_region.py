@@ -196,8 +196,11 @@ def add_rectangular_opening(session,item_id,points,reference):
 
 def guard_project_change(previous,updated):
     """Reuse the existing ProjectStore invariant hook, including direct writes."""
-    old_records=(previous or {}).get('reviewed_aec_systems') or {}
-    new_records=updated.get('reviewed_aec_systems') or {};seen=set()
+    old_records=(previous or {}).get('reviewed_aec_systems',{})
+    new_records=updated.get('reviewed_aec_systems',{})
+    if not isinstance(old_records,dict) or not isinstance(new_records,dict):
+        raise ValueError('ساختار دفتر سیستم‌های بازبینی‌شده نامعتبر است')
+    seen=set()
     for key,record in new_records.items():
         old=old_records.get(key,{});data=record.get('data',{})
         old_source=old.get('data',{}).get('source',{});source=data.get('source',{})
