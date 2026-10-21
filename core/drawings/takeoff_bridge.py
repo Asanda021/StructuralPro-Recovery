@@ -79,6 +79,10 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
                     # Scale and display counters cannot turn the same physical
                     # source/geometry/operation into an independent measurement.
                     "measurement_context": str(items[row["takeoff_id"]].get("source", "")) if row["kind"] == "count" and not row["geometry"] else ""}
+        if cad:
+            from core.drawings.dwg_takeoff import cad_entity_geometry
+            _,model_points,_=cad_entity_geometry(viewer.cad_document,cad['handle'],row['kind'])
+            identity.update(geometry=canonical(model_points,row['kind']=='area'),operation='cad:'+row['kind'],measurement_context=cad['handle'])
         fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if fingerprint in seen:
             raise ValueError("متره تکراری با هندسه و منشأ یکسان در انتخاب فعلی وجود دارد")
@@ -104,13 +108,14 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
             from core.projects.project_model import _identity
             from core.takeoff.manual_formula_amendments import financial_block
             financial_block(project)
-            claim=tuple(_identity(cad[k]) for k in ("floor_id","member_id"))+(row["item_code"],)
+            claim=tuple(_identity(cad[k]) for k in ("floor_id","member_id"))+(row["kind"],row["unit"])
             if claim in cad_claims:raise ValueError("دو مطالبه هم‌زمان برای همان عضو و عملیات CAD ممنوع است")
             cad_claims.add(claim)
             if not any(_identity(m['id'])==_identity(cad['member_id']) and _identity(m['floor_id'])==_identity(cad['floor_id']) for m in project.get('members',[])):raise ValueError('عضو و طبقه CAD در پروژه ثبت نشده است')
             for old in existing:
                 other=(old.get('params') or {}).get('cad_evidence')
-                if other and old.get('member_code')==row['item_code'] and all(_identity(cad[k])==_identity(other[k]) for k in ('floor_id','member_id')):raise ValueError('مالک مقدار CAD قبلاً ثبت شده؛ اصلاحیه رسمی لازم است')
+                if not other and old.get('domain')=='drawing' and (old.get('params') or {}).get('source_sha256')==row.get('source_sha256'):raise ValueError('سابقه قدیمی CAD فاقد اتصال Entity است؛ تطبیق مستقل پیش از ثبت جدید لازم است')
+                if other and old.get('item')==row['kind'] and all(_identity(cad[k])==_identity(other[k]) for k in ('floor_id','member_id')):raise ValueError('مالک مقدار CAD قبلاً ثبت شده؛ اصلاحیه رسمی لازم است')
         if row['kind']=='area':
             meta=row.get('geometry_evidence')
             if meta and not meta.get('quantity_owner','').strip():raise ValueError('مالک مقدار و مرجع آن برای ثبت برداشت چندضلعی الزامی است')

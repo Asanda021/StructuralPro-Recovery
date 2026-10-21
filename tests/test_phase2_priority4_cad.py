@@ -177,7 +177,7 @@ def test_native_entity_to_review_sqlite_boq_buttons(tmp_path):
   w.grab().save(str(tmp_path/'cad-entity-review-boq.png'))
  finally:w.close();app.store.close()
 
-@pytest.mark.parametrize('fault',['review','geometry','handle','owner','unit','calibration','missing_member','financial','duplicate'])
+@pytest.mark.parametrize('fault',['review','geometry','handle','owner','unit','calibration','missing_member','financial','duplicate','duplicate_code','duplicate_floor'])
 def test_cad_binding_failures_preserve_sqlite_and_boq(tmp_path,fault):
  from core.platform.application import StructuralProApp
  from core.drawings.takeoff_session import DrawingTakeoffSession
@@ -186,12 +186,14 @@ def test_cad_binding_failures_preserve_sqlite_and_boq(tmp_path,fault):
  d,p=drawing(tmp_path);entity=d.modelspace().add_line((0,0),(3,4));d.saveas(p);doc=read(d,p)
  app=StructuralProApp(tmp_path/'db');app.create_project('آزمون منفی CAD','P');app.add_project_floor('P','طبقه',level='L1');app.add_project_member('P','M1','L1','عضو')
  s=DrawingTakeoffSession(str(p));i=s.add_cad_entity(doc,entity.dxf.handle,'length',takeoff_code='cad-item',floor_id='L1',member_id='M1',quantity_owner='claim',created_by='author',reference='explicit synthetic oracle');s.review_cad_entity(i.id,reviewer='other',note='5 m')
- if fault=='duplicate':
+ if fault in {'duplicate','duplicate_code','duplicate_floor'}:
   r=app.save_drawing_takeoff_session('P',s);app.commit_drawing_takeoff_to_boq('P',r['session_id'],[i.id],expected_session_revision=1)
   history=deepcopy(app.open_project('P'));bad=deepcopy(history);bad['takeoffs'][0]['quantities'][0]['amount']=6
   with pytest.raises(ValueError):app.store.save('P',bad)
   assert app.open_project('P')==history
-  s=DrawingTakeoffSession(str(p));i=s.add_cad_entity(doc,entity.dxf.handle,'length',takeoff_code='cad-item',floor_id='L1',member_id='M1',quantity_owner='renamed claim',created_by='author',reference='same part with shifted display',scene_origin=(100,100));s.review_cad_entity(i.id,reviewer='other',note='5 m')
+
+  if fault=='duplicate_floor':app.add_project_floor('P','another floor',level='L2');app.add_project_member('P','M2','L2','another member')
+  s=DrawingTakeoffSession(str(p));i=s.add_cad_entity(doc,entity.dxf.handle,'length',takeoff_code='renamed-code' if fault=='duplicate_code' else 'cad-item',floor_id='L2' if fault=='duplicate_floor' else 'L1',member_id='M2' if fault=='duplicate_floor' else 'M1',quantity_owner='renamed claim',created_by='author',reference='same part with shifted display',scene_origin=(100,100));s.review_cad_entity(i.id,reviewer='other',note='5 m')
  else:
   item=s.find(i.id);meta=deepcopy(item.cad_evidence)
   if fault=='review':meta['review']['reviewer']='author'

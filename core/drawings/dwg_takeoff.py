@@ -199,7 +199,9 @@ class DWGTakeoffEngine:
                     data["rotation"]=float(e.get_rotation() if typ=="MTEXT" else e.dxf.rotation)
                     style=doc.styles.get(e.dxf.style) if e.dxf.style in doc.styles else None
                     data["font_name"]=str(style.dxf.font) if style else "unknown"
-                    if typ=="MTEXT":data.update(text_width=float(e.dxf.width),attachment_point=int(e.dxf.attachment_point))
+                    if typ=="MTEXT":
+                        data["attachment_point"]=int(e.dxf.get("attachment_point",1) or 1)
+                        if e.dxf.get("width") is not None:data["text_width"]=float(e.dxf.width)
                     data["font_notice"]="نمایش با فونت سیستم جایگزین؛ تطبیق SHX و چیدمان اصلی تأیید نشده"
                     out.text_labels.append(data["text"])
                 elif typ == "INSERT":
