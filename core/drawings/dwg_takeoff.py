@@ -230,7 +230,7 @@ class DWGTakeoffEngine:
                     data["display_points"] = display
                     data["closed"] = bool(path.is_closed)
                 if _nonplanar(e):
-                    data["unsupported_measurement"]="هندسه دارای Z یا صفحه غیر XY؛ متره دوبعدی مسدود است"
+                    data.setdefault("unsupported_measurement","هندسه دارای Z یا صفحه غیر XY؛ متره دوبعدی مسدود است")
                     data.pop("length",None);data.pop("area",None)
                 if typ not in {"LINE","POLYLINE","LWPOLYLINE","CIRCLE","ARC","TEXT","MTEXT","INSERT"}:data["unsupported_measurement"]="نوع جزء برای متره مستقیم پشتیبانی نشده: "+typ
                 if not all(math.isfinite(float(data[k])) and float(data[k])>=0 for k in ("length","area","radius","height") if k in data):raise ValueError("مقدار هندسی CAD نامعتبر است")
@@ -238,7 +238,7 @@ class DWGTakeoffEngine:
                 layer_record=doc.layers.get(layer) if layer in doc.layers else None
                 if layer_record is None:
                     out.warnings.append("لایه در جدول منبع تعریف نشده: "+layer)
-                    data["unsupported_measurement"]="لایه فاقد تعریف معتبر؛ فقط نمایش"
+                data["layer_defined"]=layer_record is not None
                 data["layer_visible"]=source_visible
                 out.entities.append(DWGEntity(typ, layer, entity_handle, data))
         except Exception as exc:
@@ -388,7 +388,7 @@ def cad_entity_geometry(document,handle,metric,origin=(0,0)):
     found=[e for e in document.entities if e.handle==handle]
     if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
     e=found[0];d=e.data
-    if d.get('unsupported_measurement') or d.get('layer_visible') is False:raise ValueError('جزء پنهان یا فاقد قرارداد متره مستقیم است')
+    if d.get('unsupported_measurement') or d.get('layer_visible') is False or d.get('layer_defined') is False:raise ValueError('جزء پنهان یا فاقد قرارداد متره مستقیم است')
     if e.entity_type=='LINE':points=[d['start'],d['end']]
     elif e.entity_type in {'POLYLINE','LWPOLYLINE'} and not any(d.get('bulges',[])):points=d['points']
     else:raise ValueError('ثبت مستقیم فعلاً فقط خط و چندخطی مستقیم XY را می‌پذیرد؛ منحنی نیازمند قرارداد مستقل است')
