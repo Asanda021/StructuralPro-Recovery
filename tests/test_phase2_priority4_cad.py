@@ -275,3 +275,17 @@ def test_cad_mtext_top_left_anchor_and_width_are_source_based(tmp_path):
   assert rect.left()==pytest.approx(1-ox,abs=1e-9) and rect.top()==pytest.approx(oy-1,abs=1e-9)
   assert rect.width()==pytest.approx(3,rel=1e-9)
  finally:w.close()
+
+def test_native_cad_hairline_mouse_pick_has_device_tolerance(tmp_path):
+ from PySide6.QtWidgets import QApplication
+ from PySide6.QtCore import Qt
+ from PySide6.QtTest import QTest
+ from app.graphical_takeoff import GraphicalTakeoffDialog
+ global _qt
+ _qt=QApplication.instance() or QApplication([]);d,p=drawing(tmp_path);e=d.modelspace().add_line((0,0),(3,4));d.modelspace().add_circle((10,10),2);d.modelspace().add_text('ستون',dxfattribs={'insert':(1,1),'height':.5});d.saveas(p)
+ w=GraphicalTakeoffDialog(pdf_path=str(p));w.resize(1400,1000);w.show();_qt.processEvents()
+ try:
+  QTest.mouseClick(w.cad_select,Qt.LeftButton);item=w._cad_handle_items[e.dxf.handle]
+  for scale in (1.03,.91,1.17):
+   w.canvas.scale_view(scale);w.canvas.scene.clearSelection();QTest.mouseClick(w.canvas.viewport(),Qt.LeftButton,pos=w.canvas.mapFromScene(item.line().pointAt(.9)));assert item.isSelected()
+ finally:w.close()

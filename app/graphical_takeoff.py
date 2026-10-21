@@ -108,7 +108,12 @@ class TakeoffCanvas(QGraphicsView):
 
     def mousePressEvent(self, event):
         if self.mode=='cad_select':
-            super().mousePressEvent(event);return
+            point=event.position().toPoint();hits=[i for i in self.items(QRect(point.x()-4,point.y()-4,9,9)) if i.data(0) and i.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable]
+            if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:self.scene.clearSelection()
+            if hits:
+                hits[0].setSelected(not hits[0].isSelected() if event.modifiers() & Qt.KeyboardModifier.ControlModifier else True)
+                self._announce_tool('جزء CAD انتخاب شد: '+str(hits[0].data(0)))
+            event.accept();return
         if event.button() == Qt.MouseButton.RightButton and self.mode in {"zoom_window", "region_select"}:
             self.cancel_interaction()
             return
