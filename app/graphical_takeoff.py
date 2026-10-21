@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 
-from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve, QProcess, QTimer
 from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QTextOption, QPainterPath, QFontMetricsF, QTransform
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
@@ -312,6 +312,8 @@ class GraphicalTakeoffDialog(QDialog):
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowTitle("متره گرافیکی — نقشه‌محور")
         self.resize(1450, 920)
+        self.cad_loading=False
+        self._cad_job=None
         self.session = DrawingTakeoffSession(pdf_path)
         self.pdf_path = pdf_path
         self.app_service = app_service
@@ -409,11 +411,12 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_handle=QLineEdit();self.cad_handle.setPlaceholderText('Handle یا مسیر بلوک')
         self.cad_find=QPushButton('یافتن جزء CAD');self.cad_select=QPushButton('انتخاب اجزای CAD')
         self.cad_metric=QComboBox();self.cad_metric.addItem('طول مستقیم','length');self.cad_metric.addItem('سطح بسته مستقیم','area')
+        self.cad_cancel=QPushButton('لغو بارگذاری CAD');self.cad_cancel.clicked.connect(self.cancel_cad_loading)
         self.cad_measure=QPushButton('متره جزء CAD');self.cad_review=QPushButton('بازبینی متره CAD')
         self.cad_measure.setToolTip('فقط خط و چندضلعی مستقیم معتبر؛ منحنی و دیتایل مصالح مستقل‌اند')
         self._cad_items={};self._cad_handle_items={}
         cad_row=QHBoxLayout()
-        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review):cad_row.addWidget(control)
+        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review,self.cad_cancel):cad_row.addWidget(control)
         self.cad_controls=QWidget();self.cad_controls.setLayout(cad_row);self.cad_controls.hide();toolbar_rows.addWidget(self.cad_controls)
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
@@ -517,9 +520,72 @@ class GraphicalTakeoffDialog(QDialog):
 
         if pdf_path:
             try:
-                self.open_drawing(pdf_path)
+                self.open_cad_async(pdf_path) if Path(pdf_path).suffix.lower() in {'.dxf','.dwg'} and Path(pdf_path).stat().st_size>512_000 else self.open_drawing(pdf_path)
             except Exception as exc:
                 QMessageBox.warning(self, "نقشه", "فایل برای نمایش گرافیکی باز نشد: " + str(exc))
+
+    def _cad_busy(self, busy):
+        self.cad_loading=busy
+        if busy:
+            self._cad_enabled={c:c.isEnabled() for c in self.findChildren(QWidget) if isinstance(c,(QPushButton,QComboBox,QLineEdit))}
+            for c in self._cad_enabled:c.setEnabled(c in (self.open_pdf,self.cad_cancel))
+            self.canvas.setEnabled(False);self.cad_controls.show()
+        else:
+            for c,v in getattr(self,'_cad_enabled',{}).items():c.setEnabled(v)
+            self.canvas.setEnabled(True)
+
+    def cancel_cad_loading(self):
+        job=self._cad_job
+        if not job:return
+        self._cad_job=None;p=job['process'];p.blockSignals(True)
+        if p.state()!=QProcess.ProcessState.NotRunning:p.kill();p.waitForFinished(1000)
+        if job.get('old'):
+            self.cad_document,self.canvas.scene,self._cad_items,self._cad_handle_items,self._cad_scene_origin=job['old'];job['scene'].deleteLater()
+        self.cad_layers.clear()
+        for label,value in job['layers']:self.cad_layers.addItem(label,value)
+        self.cad_layers.setCurrentIndex(job['layer_index'])
+        job['temp'].cleanup();p.deleteLater();self._cad_busy(False);self.cad_controls.setVisible(self.viewer.kind=='cad');self.status.setText('بارگذاری CAD لغو شد؛ نقشه و متره قبلی محفوظ است')
+
+    def open_cad_async(self,path):
+        import tempfile,sys
+        self.cancel_cad_loading()
+        if self.session.items and str(path)!=self.session.drawing_source:
+            if QMessageBox.question(self,'تغییر نقشه','نشست دارای متره است؛ پیش از تغییر، ذخیره را بررسی کنید. ادامه؟',QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
+        p=QProcess(self);temp=tempfile.TemporaryDirectory(prefix='structuralpro-cad-')
+        job={'process':p,'temp':temp,'result':str(Path(temp.name)/'result'),'old':None,'layers':[(self.cad_layers.itemText(i),self.cad_layers.itemData(i)) for i in range(self.cad_layers.count())],'layer_index':self.cad_layers.currentIndex()}
+        self._cad_job=job;self._cad_busy(True);self.status.setText('در حال تحلیل CAD در پردازش مستقل؛ لغو فعال است')
+        def failed(message):
+            if self._cad_job is not job:return
+            self.cancel_cad_loading();self.status.setText('خطای بارگذاری CAD؛ نقشه قبلی محفوظ است: '+message)
+        def parsed(code,status):
+            if self._cad_job is not job:return
+            if code!=0:failed(bytes(p.readAllStandardError()).decode('utf-8','replace')[-1500:]);return
+            try:
+                import pickle
+                # Private file written by our own child; never a user-imported pickle.
+                with open(job['result'],'rb') as f:doc=pickle.load(f)
+                job['old']=(self.cad_document,self.canvas.scene,self._cad_items,self._cad_handle_items,self._cad_scene_origin)
+                scene=QGraphicsScene(self);scene.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.NoIndex);job['scene']=scene
+                self.cad_document=doc;self.canvas.scene=scene;job['steps']=self._render_cad_steps();QTimer.singleShot(0,batch)
+            except Exception as exc:failed(str(exc))
+        def batch():
+            if self._cad_job is not job:return
+            try:
+                n=next(job['steps']);self.status.setText(f'ساخت نمایش CAD: {n} از {len(self.cad_document.entities)} جزء؛ متره مسدود است');QTimer.singleShot(0,batch)
+            except StopIteration:
+                if self.engine is not None:self.engine.close()
+                self.engine=None;self.pdf_path=str(path)
+                if self.session.drawing_source!=str(path):self.session=DrawingTakeoffSession(str(path));self.canvas.session=self.session;self.persisted_session_id=None;self.persisted_session_revision=None
+                self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
+                self.page=1;self.canvas.read_only_model=False;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
+                self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
+            except Exception as exc:failed(str(exc))
+        p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
+
+    def closeEvent(self,event):
+        self.cancel_cad_loading()
+        if self.engine is not None:self.engine.close()
+        super().closeEvent(event)
 
     def beam_drawing_context(self):
         """Context link only: a selected rectangle does not imply a parsed beam detail."""
@@ -536,6 +602,7 @@ class GraphicalTakeoffDialog(QDialog):
         }
 
     def save_session_to_project(self):
+        if self.cad_loading:self.status.setText('بارگذاری CAD هنوز کامل نشده است؛ متره و BOQ مسدودند');return False
         if self.app_service is None:
             QMessageBox.warning(self, "ذخیره نشست", "سرویس پروژه در این پنجره در دسترس نیست.")
             return False
@@ -603,6 +670,7 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.critical(self, "بارگذاری نشست", "بازیابی انجام نشد؛ نشست ذخیره‌شده تغییر نکرد.\n" + str(exc))
 
     def commit_selected_to_boq(self):
+        if self.cad_loading:self.status.setText('بارگذاری CAD هنوز کامل نشده است؛ متره و BOQ مسدودند');return False
         if self.viewer.kind == "ifc":
             self._ifc_status()
             return
@@ -650,7 +718,7 @@ class GraphicalTakeoffDialog(QDialog):
         if not path:
             return
         try:
-            self.open_drawing(path)
+            self.open_cad_async(path) if Path(path).suffix.lower() in {'.dwg','.dxf'} else self.open_drawing(path)
         except Exception as exc:
             QMessageBox.critical(self, "خطای نقشه", str(exc))
 
@@ -658,6 +726,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.select_drawing()
 
     def open_drawing(self, path):
+        self.cancel_cad_loading()
         candidate = str(path)
         changed_source = bool(self.session.drawing_source and self.session.drawing_source != candidate)
         if changed_source and self.session.items:
@@ -757,6 +826,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
 
     def measure_cad_selection(self):
+        if self.cad_loading:self.status.setText('بارگذاری CAD هنوز کامل نشده است؛ متره و BOQ مسدودند');return False
         selected=self.canvas.scene.selectedItems()
         if len(selected)!=1:
             self.status.setText('یک جزء CAD را انتخاب کنید؛ هر عضو و مالکیت مستقل ثبت می‌شود');return
@@ -772,6 +842,7 @@ class GraphicalTakeoffDialog(QDialog):
         except Exception as exc:QMessageBox.warning(self,'متره CAD مسدود شد',str(exc))
 
     def review_cad_selection(self):
+        if self.cad_loading:self.status.setText('بارگذاری CAD هنوز کامل نشده است؛ متره و BOQ مسدودند');return False
         row=self.table.currentRow()
         if row<0:self.status.setText('ابتدا یک ردیف متره CAD انتخاب کنید');return
         reviewer,ok=QInputDialog.getText(self,'بازبینی CAD','نام بازبین مستقل')
@@ -797,6 +868,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.status.setText('جزء CAD: '+key+' | '+str(item.data(1)))
 
     def _render_cad(self):
+        for _ in self._render_cad_steps():pass
+
+    def _render_cad_steps(self):
         doc = self.cad_document
         if doc is None:
             raise RuntimeError("سند CAD برای نمایش آماده نیست.")
@@ -804,7 +878,7 @@ class GraphicalTakeoffDialog(QDialog):
         from collections import Counter
         for layer,count in sorted(Counter(e.layer for e in doc.entities).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
         coords=[]
-        for entity in doc.entities:
+        for entity in ([] if hasattr(doc,'_render_bounds') else doc.entities):
             data=entity.data
             coords.extend((float(x),float(y)) for x,y in data.get("display_points", data.get("points",[])))
             if entity.entity_type == "CIRCLE" and data.get("center") and data.get("radius"):
@@ -813,12 +887,11 @@ class GraphicalTakeoffDialog(QDialog):
             for key in ("start","end","center","insert"):
                 if key in data and data[key] is not None:
                     coords.append((float(data[key][0]),float(data[key][1])))
-        if not coords:
+        if not coords and not hasattr(doc,'_render_bounds'):
             self.canvas.scene.addText("CAD فاقد هندسه قابل نمایش است.")
             self.canvas.setSceneRect(0,0,1000,700)
             return
-        min_x=min(x for x,_ in coords); max_x=max(x for x,_ in coords)
-        min_y=min(y for _,y in coords); max_y=max(y for _,y in coords)
+        min_x,max_x,min_y,max_y=doc._render_bounds if hasattr(doc,'_render_bounds') else (min(x for x,_ in coords),max(x for x,_ in coords),min(y for _,y in coords),max(y for _,y in coords))
         margin=max(max_x-min_x,max_y-min_y,1.0)*0.05
         min_x-=margin; max_x+=margin; min_y-=margin; max_y+=margin
         # Evidence matching must use the same model -> scene transform as rendering.
@@ -826,7 +899,8 @@ class GraphicalTakeoffDialog(QDialog):
         def sx(x): return x-min_x
         def sy(y): return max_y-y
         pen=QPen(Qt.GlobalColor.darkBlue,0)
-        for entity in doc.entities:
+        for entity_index,entity in enumerate(doc.entities):
+            if entity_index%128==0:yield entity_index
             item=None
             d=entity.data
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):

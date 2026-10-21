@@ -45,7 +45,7 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
             viewer=DrawingViewerModel(path)
             if viewer.kind=="cad":
                 from core.drawings.dwg_takeoff import cad_unit_factor
-                if cad_unit_factor(viewer.cad_document.units) is None and any(r["kind"] in {"length","area"} for r in rows):raise ValueError("واحد منبع CAD نامشخص است؛ کالیبراسیون نمایشی جای مدرک واحد را نمی‌گیرد")
+                if cad_unit_factor(viewer.cad_document.units) is None and any(r["kind"] in {"length","area"} and not (r.get("cad_evidence") or {}).get("unit_evidence") for r in rows):raise ValueError("واحد منبع CAD نامشخص است؛ کالیبراسیون نمایشی جای مدرک واحد را نمی‌گیرد")
                 if any(not r.get("cad_evidence") for r in rows):raise ValueError("برداشت CAD پیش از ثبت مالی نیازمند اتصال Entity و بازبینی مستقل است")
         except Exception as exc:
             raise ValueError("منبع CAD/BIM با واردکننده اصلی معتبر شناخته نشد") from exc
@@ -81,7 +81,9 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
                     "measurement_context": str(items[row["takeoff_id"]].get("source", "")) if row["kind"] == "count" and not row["geometry"] else ""}
         if cad:
             from core.drawings.dwg_takeoff import cad_entity_geometry
-            _,model_points,_=cad_entity_geometry(viewer.cad_document,cad['handle'],row['kind'])
+            from core.drawings.dwg_takeoff import apply_documented_units
+            document=apply_documented_units(viewer.cad_document,cad['unit_evidence']) if cad.get('unit_evidence') else viewer.cad_document
+            _,model_points,_=cad_entity_geometry(document,cad['handle'],row['kind'])
             identity.update(geometry=canonical(model_points,row['kind']=='area'),operation='cad:'+row['kind'],measurement_context=cad['handle'])
         fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if fingerprint in seen:

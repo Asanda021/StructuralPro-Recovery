@@ -84,7 +84,7 @@ def _poly_metrics(points, closed=False, bulges=None):
     return length, area
 
 
-def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=None,budget=None,parent_visible=True):
+def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=None,budget=None,parent_visible=True,allow_arrays=False):
     """Expand real INSERT transforms with bounded depth and auditable handle paths."""
     budget=budget if budget is not None else [0]
     for index,e in enumerate(entities):
@@ -100,7 +100,19 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
         visible=parent_visible and not bool(e.dxf.get('invisible',0)) and (layer_record is None or not(layer_record.is_off() or layer_record.is_frozen()))
         yield e,'/'.join(identity),layer,visible
         if e.dxftype()=='INSERT':
-            if e.mcount>1:raise ValueError('آرایه MINSERT خارج از قرارداد فعلی است؛ حذف خاموش نمونه‌ها مجاز نیست')
+            if str(e.dxf.name) in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
+            if e.mcount>1:
+                if not allow_arrays:raise ValueError('آرایه MINSERT نیازمند قرارداد توسعه صریح است')
+                rows=e.dxf.row_count;cols=e.dxf.column_count
+                if rows*cols>250000 or any(not math.isfinite(float(e.dxf.get(k,0))) or float(e.dxf.get(k,0))<=0 for k,c in [('row_spacing',rows),('column_spacing',cols)] if c>1):raise ValueError('تعداد یا فاصله آرایه MINSERT نامعتبر است')
+                instances=list(e.multi_insert())
+                if len(instances)!=rows*cols:raise ValueError('نمونه‌های منطبق آرایه مجاز نیستند')
+                for i,instance in enumerate(instances):
+                    cell=identity[:-1]+(handle+'@'+str(i//cols)+','+str(i%cols),)
+                    skipped=[];virtual=list(instance.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
+                    if skipped:raise ValueError('تبدیل کامل آرایه ممکن نیست')
+                    yield from _expanded_entities(virtual,document,warnings,cell,names+(str(e.dxf.name),),layer,budget,visible,allow_arrays)
+                continue
             name=e.dxf.name
             if name in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
             block=document.blocks.get(name)
@@ -110,7 +122,7 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
             skipped=[]
             virtual=list(e.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
             if skipped:raise ValueError('تبدیل کامل اجزای بلوک ممکن نیست: '+'؛ '.join(skipped))
-            yield from _expanded_entities(virtual,document,warnings,identity,names+(name,),layer,budget,visible)
+            yield from _expanded_entities(virtual,document,warnings,identity,names+(name,),layer,budget,visible,allow_arrays)
 
 
 def _nonplanar(e):
@@ -125,6 +137,11 @@ def _nonplanar(e):
 
 
 class DWGTakeoffEngine:
+    def __init__(self, *, allow_arrays=False):self.allow_arrays=allow_arrays
+
+    @classmethod
+    def with_array_support(cls):return cls(allow_arrays=True)
+
     def _read_dxf(self, p: Path) -> DWGDocument:
         try:
             import ezdxf
@@ -134,6 +151,7 @@ class DWGTakeoffEngine:
             ) from exc
 
         source_bytes=p.read_bytes();fingerprint=hashlib.sha256(source_bytes).hexdigest()
+        if source_bytes.startswith(b'AutoCAD Binary DXF'):raise RuntimeError('Binary DXF خارج از قرارداد تأییدشده است؛ تبدیل معتبر به DXF متنی لازم است')
         if not source_bytes.startswith(b'AutoCAD Binary DXF'):
             stream=io.BytesIO(source_bytes);handles=set()
             while True:
@@ -165,7 +183,7 @@ class DWGTakeoffEngine:
 
         try:
             entities = doc.modelspace()
-            for e,entity_handle,layer,source_visible in _expanded_entities(entities,doc,out.warnings):
+            for e,entity_handle,layer,source_visible in _expanded_entities(entities,doc,out.warnings,allow_arrays=self.allow_arrays):
                 typ = e.dxftype()
                 layers.add(layer)
                 data = {}
@@ -412,6 +430,7 @@ def cad_review_digest(item):
 
 def verify_cad_item(item,document,*,require_review=True):
     meta=item.cad_evidence
+    if isinstance(meta,dict) and meta.get('unit_evidence'):document=apply_documented_units(document,meta['unit_evidence'])
     if not isinstance(meta,dict) or meta.get('policy')!='cad_entity_review_v1':raise ValueError('قرارداد منشأ CAD معتبر نیست')
     if meta.get('source_sha256')!=document.source_sha256 or meta.get('unit_basis')!=document.units or meta.get('unit_factor_to_m')!=str(cad_unit_factor(document.units)) or meta.get('dxf_version')!=document.dxf_version:raise ValueError('منبع یا واحد CAD تغییر کرده است')
     if any(meta.get('conversion',{}).get(k)!=document.conversion.get(k) for k in ('provider','decoder_version')):raise ValueError('Decoder مبنای بازبینی تغییر کرده است')
@@ -425,3 +444,37 @@ def verify_cad_item(item,document,*,require_review=True):
         review=meta.get('review') or {}
         if not str(review.get('note','')).strip() or not str(review.get('reviewer','')).strip() or _identity(review['reviewer']).casefold()==_identity(meta['created_by']).casefold() or review.get('digest')!=cad_review_digest(item):raise ValueError('بازبینی مستقل و جاری CAD لازم است')
     return e
+
+
+def apply_documented_units(document,evidence):
+    """Immutable independently reviewed reference; never rewrites source or past items."""
+    from copy import deepcopy
+    from decimal import Decimal
+    import json
+    from core.projects.project_model import _identity
+    path=Path(str(evidence.get('path','')))
+    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
+    proof=json.loads(path.read_text(encoding='utf-8-sig'))
+    if proof.get('policy')!='cad_unit_reference_v1' or proof.get('source_sha256')!=document.source_sha256:raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
+    if any(not str(proof.get(k,'')).strip() for k in ('author','reviewer','reference')) or _identity(proof['author']).casefold()==_identity(proof['reviewer']).casefold():raise ValueError('ثبت‌کننده و بازبین مستقل واحد الزامی‌اند')
+    unit=proof.get('unit');factor=cad_unit_factor(unit)
+    if factor is None:raise ValueError('واحد پیشنهادی پشتیبانی نمی‌شود')
+    if cad_unit_factor(document.units) is not None and document.units!=unit:raise ValueError('تعارض واحد فایل و مدرک؛ ثبت قطعی مسدود است')
+    found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
+    if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
+    raw=Decimal(str(proof.get('cad_length')));real=Decimal(str(proof.get('real_length_m')))
+    if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0 or raw*Decimal(str(factor))!=real:raise ValueError('کالیبراسیون مدرک یا ضریب تبدیل نامعتبر است')
+    if not math.isclose(found[0].data['length']/(cad_unit_factor(document.units) or 1),float(raw),rel_tol=1e-12,abs_tol=0):raise ValueError('مرجع با هندسه منبع مطابق نیست')
+    result=deepcopy(document)
+    if cad_unit_factor(document.units) is None:
+        for e in result.entities:
+            d=e.data
+            for k in ('length','radius','height','text_width'):
+                if k in d:d[k]*=factor
+            if 'area' in d:d['area']*=factor*factor
+            for k in ('start','end','center','insert'):
+                if k in d:d[k]=tuple(v*factor for v in d[k])
+            for k in ('points','display_points'):
+                if k in d:d[k]=[tuple(v*factor for v in p) for p in d[k]]
+    result.__dict__.pop('_render_bounds',None);result.units=unit;result.unit_name=unit;result.unit_evidence=deepcopy(evidence)
+    return result
