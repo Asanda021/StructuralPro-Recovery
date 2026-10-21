@@ -28,7 +28,7 @@ def fake_bundle(root):
         "drawings": drawings,
         "independent_oracles": [
             {"floor_id": str(i), "physical_id": f"P{i}", "drawing_id": "structure",
-             "source_revision": "R1", "unit": "m3",
+             "source_revision": "R1", "unit": "m3", "software_unit": "m3",
              "independent_quantity": "1.25", "software_quantity": "1.25"}
             for i in range(1, 6)],
         "external_review_documents": [
@@ -55,6 +55,7 @@ def test_structurally_complete_mock_remains_professionally_unapproved(tmp_path):
     "drawing_missing", "one_floor_absent", "review_missing",
     "source_bytes_missing", "unsafe_parent_path", "discipline_missing",
     "some_floor_oracles_missing", "negative_reference_quantity",
+    "invalid_reference_unit", "mismatched_software_unit", "missing_software_unit",
 ])
 def test_real_building_gate_fails_closed_on_missing_or_corrupted_proof(tmp_path, case):
     bundle = deepcopy(fake_bundle(tmp_path))
@@ -83,6 +84,12 @@ def test_real_building_gate_fails_closed_on_missing_or_corrupted_proof(tmp_path,
         bundle["independent_oracles"] = bundle["independent_oracles"][:3]
     elif case == "negative_reference_quantity":
         bundle["independent_oracles"][0]["independent_quantity"] = "-1"
+    elif case == "invalid_reference_unit":
+        bundle["independent_oracles"][0]["unit"] = "not_a_real_unit"
+    elif case == "mismatched_software_unit":
+        bundle["independent_oracles"][0]["software_unit"] = "kg"
+    elif case == "missing_software_unit":
+        del bundle["independent_oracles"][0]["software_unit"]
     result = audit_real_building(bundle, tmp_path)
     assert result["candidate_ready_for_external_review"] is False
     assert result["engineering_accepted"] is False
