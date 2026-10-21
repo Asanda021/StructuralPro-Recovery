@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "real_dwg_decode": true,
+  "writer": "ACadSharp DwgWriter 3.8.0",
+  "decoder": "ACadSharp DwgReader 3.8.0",
+  "license": "MIT",
+  "runtime_sdk": "8.0.426",
+  "source_dwg_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+  "source_dwg_header": "AC1032",
+  "reference_dxf_sha256": "30f96f8fa0f21884cfb7518622cc0a0c07b7068574f6934aa66993cfe07463ba",
+  "converted_dxf_sha256": "37768002412df5d619b6dd9cc3dd11e3a369795a7f9dfc297bddaac853bad3f6",
+  "reference_entities_expanded": 6,
+  "decoded_entities_expanded": 6,
+  "units": "m",
+  "length_oracle": [
+    1,
+    5
+  ],
+  "polygon_area_oracle": 12,
+  "circle_area_oracle": "4*pi",
+  "exit_code": 0,
+  "engineering_approval": false
+}

@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "entity_count": 100000,
+  "layers": 20,
+  "bytes": 12654172,
+  "sha256": "3c2abf296329a5e9aaf1dabb0661c19858d2c6284d7fe072f8f97b7785c778f7",
+  "open_parse_render_seconds": 6.912695668000197,
+  "ui_blocking_load_seconds": 6.912695668000197,
+  "toggle_layer_seconds": 0.11006991600061156,
+  "twenty_zoom_operations_seconds": 0.09188670300045487,
+  "indexed_handle_find_seconds": 0.006540631000461872,
+  "process_peak_rss_kib": 549120,
+  "oracle_total_length_m": 500000,
+  "all_entities_retained": true,
+  "oracle_match": true,
+  "limitation": "Synchronous initial import/render; no background loading or unlimited-capacity claim."
+}

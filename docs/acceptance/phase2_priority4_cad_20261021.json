@@ -1,0 +1,230 @@
+{
+  "date": "2026-10-21",
+  "status": "PARTIAL",
+  "initial_head": "8e3d1b701efafa32b235113de7aceeab49e9238c",
+  "protected_pr18": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "tested_local_commit": "1fcc673f0dd16a91dc0ed347a50dde722bad92f8",
+  "tested_remote_code_commit": "04b02f44e44ee2c988c5e6641a442f05da7f0e60",
+  "tested_tree": "8eddf0bffda4f9e65467a1e6e732ae78994559bc",
+  "final_head_note": "The evidence-only descendant commit containing this report is the delivery HEAD; executable/test subtrees must equal tested_tree. No circular self-SHA is embedded.",
+  "code_commits": [
+    {
+      "local": "dbae9716af3a1700f88563b3e44f9f21fbe9cbe9",
+      "remote": "64b142a87aa4761debdba460ab8c2b3b1fa1d679",
+      "message": "fix: preserve CAD units, block identity and planar safety with native layer controls [skip ci]"
+    },
+    {
+      "local": "ee2d524cc3b3690701fb32f44827c6441e352f4b",
+      "remote": "1ea6acbb327ecb04abfa32f86bc43c9a7c4b4b8b",
+      "message": "feat: bind reviewed CAD entities to existing SQLite BOQ and correction guards [skip ci]"
+    },
+    {
+      "local": "9f743dbcf5bff10fa29348610a076964d4103eb6",
+      "remote": "be20c6d05d4a4e85d7da9d49b73eda1e76c8cf9e",
+      "message": "fix: retain nonfinancial CAD previews and original mesh blockers [skip ci]"
+    },
+    {
+      "local": "4ef2dd2a630f69b33ec9414bca165d51b67a3095",
+      "remote": "96ec84c3840358e2364865525d2aa15227c591da",
+      "message": "fix: reject hexadecimal handle aliases before DXF identity repair [skip ci]"
+    },
+    {
+      "local": "a2921ec7b7721b7cb0406391267982afd398873c",
+      "remote": "fe4ca7fa846c1c55e4a2c887570db042456b05d4",
+      "message": "fix: anchor Persian CAD text and rotation to source coordinates [skip ci]"
+    },
+    {
+      "local": "db77948d09d36e194346d684e408f4d908ff0fa0",
+      "remote": "d5224d47f0f1645fb4b1328c9bb786f1d5c86b11",
+      "message": "fix: select CAD hairlines with display-only device tolerance [skip ci]"
+    },
+    {
+      "local": "8534e8233a5e47b923b2b508927ac483f9d6a0ac",
+      "remote": "d466382ed51488212157eab3bb0bcd953590fb40",
+      "message": "fix: retain explicit CAD selection through mouse release [skip ci]"
+    },
+    {
+      "local": "1fcc673f0dd16a91dc0ed347a50dde722bad92f8",
+      "remote": "04b02f44e44ee2c988c5e6641a442f05da7f0e60",
+      "message": "fix: bind CAD identity independently of codes and keep optional MTEXT width [skip ci]"
+    }
+  ],
+  "changed_code_files": [
+    "app/graphical_takeoff.py",
+    "core/cad/external_dwg_provider_v1.py",
+    "core/drawings/dwg_converter.py",
+    "core/drawings/dwg_takeoff.py",
+    "core/drawings/takeoff_bridge.py",
+    "core/drawings/takeoff_session.py",
+    "core/platform/application.py",
+    "core/takeoff/manual_formula_amendments.py",
+    "scripts/phase2_priority4_cad_probe.py",
+    "tests/test_phase2_priority4_cad.py",
+    "tools/acadsharp-dwg-bridge/Program.cs"
+  ],
+  "tests": {
+    "full": {
+      "passed": 7469,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 5,
+      "exit_code": 0,
+      "seconds": 333.99,
+      "skip_reason": "PowerShell runtime unavailable: tests/test_windows_build_native_failures.py:12"
+    },
+    "targeted_final": {
+      "passed": 97,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0
+    },
+    "baseline": {
+      "passed": 67,
+      "exit_code": 0
+    },
+    "overlap_warning": "Counts overlap; do not add. Full includes 47 new CAD cases.",
+    "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q -ra --junitxml=/tmp/p4-evidence/phase2_priority4_final.xml",
+    "other_checks": [
+      "python -m compileall -q core app tests: exit 0",
+      "python -m pip check: exit 0",
+      "git diff --check: exit 0"
+    ],
+    "failed_runs": "Retained in diagnostic ZIP; intermediate comprehensive runs had 3 failures then 1 MTEXT failure; interrupted runs exit 130 are not acceptance."
+  },
+  "benchmarks": [
+    {
+      "synthetic": true,
+      "entity_count": 10000,
+      "layers": 20,
+      "bytes": 1254618,
+      "sha256": "0f2172345eee38818fdd2418ef3e3895b2939cdce48abb8575051b30b33dade1",
+      "open_parse_render_seconds": 0.6200345999995989,
+      "ui_blocking_load_seconds": 0.6200345999995989,
+      "toggle_layer_seconds": 0.017636845000197354,
+      "twenty_zoom_operations_seconds": 0.013981510999656166,
+      "indexed_handle_find_seconds": 0.0023932300000524265,
+      "process_peak_rss_kib": 148712,
+      "oracle_total_length_m": 50000,
+      "all_entities_retained": true,
+      "oracle_match": true,
+      "limitation": "Synchronous initial import/render; no background loading or unlimited-capacity claim."
+    },
+    {
+      "synthetic": true,
+      "entity_count": 50000,
+      "layers": 20,
+      "bytes": 6305738,
+      "sha256": "9b235efc4de5e0fedd48b0acf24f3eb8672b0d0b123e9cb2dc0480ebbb7e6a56",
+      "open_parse_render_seconds": 3.677328626000417,
+      "ui_blocking_load_seconds": 3.677328626000417,
+      "toggle_layer_seconds": 0.08929073400031484,
+      "twenty_zoom_operations_seconds": 0.07002209999973275,
+      "indexed_handle_find_seconds": 0.005859864999365527,
+      "process_peak_rss_kib": 325408,
+      "oracle_total_length_m": 250000,
+      "all_entities_retained": true,
+      "oracle_match": true,
+      "limitation": "Synchronous initial import/render; no background loading or unlimited-capacity claim."
+    },
+    {
+      "synthetic": true,
+      "entity_count": 100000,
+      "layers": 20,
+      "bytes": 12654172,
+      "sha256": "3c2abf296329a5e9aaf1dabb0661c19858d2c6284d7fe072f8f97b7785c778f7",
+      "open_parse_render_seconds": 6.912695668000197,
+      "ui_blocking_load_seconds": 6.912695668000197,
+      "toggle_layer_seconds": 0.11006991600061156,
+      "twenty_zoom_operations_seconds": 0.09188670300045487,
+      "indexed_handle_find_seconds": 0.006540631000461872,
+      "process_peak_rss_kib": 549120,
+      "oracle_total_length_m": 500000,
+      "all_entities_retained": true,
+      "oracle_match": true,
+      "limitation": "Synchronous initial import/render; no background loading or unlimited-capacity claim."
+    }
+  ],
+  "dwg": {
+    "synthetic": true,
+    "real_dwg_decode": true,
+    "writer": "ACadSharp DwgWriter 3.8.0",
+    "decoder": "ACadSharp DwgReader 3.8.0",
+    "license": "MIT",
+    "runtime_sdk": "8.0.426",
+    "source_dwg_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+    "source_dwg_header": "AC1032",
+    "reference_dxf_sha256": "30f96f8fa0f21884cfb7518622cc0a0c07b7068574f6934aa66993cfe07463ba",
+    "converted_dxf_sha256": "37768002412df5d619b6dd9cc3dd11e3a369795a7f9dfc297bddaac853bad3f6",
+    "reference_entities_expanded": 6,
+    "decoded_entities_expanded": 6,
+    "units": "m",
+    "length_oracle": [
+      1,
+      5
+    ],
+    "polygon_area_oracle": 12,
+    "circle_area_oracle": "4*pi",
+    "exit_code": 0,
+    "engineering_approval": false
+  },
+  "dwg_sqlite_boq": {
+    "synthetic": true,
+    "actual_dwg_decoder": "ACadSharp 3.8.0.0",
+    "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+    "handle": "30",
+    "units": "m",
+    "oracle_m": "5",
+    "boq_m": "5",
+    "price_code": null,
+    "reopen_equal": true,
+    "sqlite_integrity": "ok",
+    "rejected_without_db_change": [
+      "unreviewed",
+      "duplicate entity across sessions",
+      "stale CAS",
+      "changed source bytes"
+    ],
+    "conversion": {
+      "provider": "ACadSharp bridge",
+      "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+      "output_sha256": "c91cf73e85dee022437ffce65c4f7686bc53cb0e6a038f803906e81069af0649",
+      "decoder_version": "3.8.0.0",
+      "exit_code": 0
+    },
+    "financial_history_unchanged": true,
+    "exit_code": 0
+  },
+  "limits": [
+    "بارگذاری و رندر اولیه همگام و مسدودکننده رابط است؛ پذیرش پاسخ‌گویی هنگام ورود فایل حجیم کامل نیست.",
+    "MINSERT، XREF حل‌نشده، HATCH، DIMENSION، SPLINE، Proxy و اندازه‌گیری مالی منحنی‌ها کامل نیستند؛ مسیر پشتیبانی‌نشده رد یا با هشدار مشخص می‌شود.",
+    "واحد نامعلوم یا INSUNITS=0 برای BOQ مسدود است؛ فرم تعیین واحد با مدرک مستقل افزوده نشده است.",
+    "فرزندان Block با Transform و مسیر Handle پشتیبانی می‌شوند؛ انتخاب/پرداخت تجمعی خود Block کامل نیست.",
+    "فونت جایگزین با هشدار؛ تطابق کامل SHX اصلی، alignment پیچیده و Windows تأیید نشده‌اند.",
+    "تنها DWG مصنوعی واقعی AC1032 با ACadSharp 3.8.0.0 آزموده شد؛ همه نسخه‌ها، فایل رمزدار، مشتری و نقشه مصوب پذیرفته نشده‌اند.",
+    "کنترل پیش از تعمیر Handle روی DXF متنی است؛ پشتیبانی جامع Binary DXF احراز نشده است."
+  ],
+  "backup": "Separate final ZIP and independent round-trip receipt; pending at report commit, no unsupported upload-success claim.",
+  "assets": {
+    "compileall.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cad-entity-review-boq.png": "05f6aaa90187a8f75ade1029eeafdb8044919505b5a88a89a2d8f822125dd92b",
+    "dwg-decode-receipt.json": "496c1b5d74db47c7cc4c3de644fd8769614d268faac4d6af661a1bf258ad3f01",
+    "diagnostic-logs-and-probes.zip": "a911bfc8c7709120fd76fdc78ef881e49cef0d74ada29b464c881fecf675c901",
+    "cad-rtl.png": "68ec94f90c450a5b05aba3c0e7c656c594292038d0ddcaf55febdbdf72760055",
+    "benchmark-50000.json": "33437c3eb65f34752cad413af45a6fcd848c9c01bde30cef808a51a5f3ea4a16",
+    "targeted-final-stable.xml": "41c224f4ef9abc0fa0faadb650b7650192f4c2de4491c054f202301963d68339",
+    "full-final.log": "4d4aa656aa808c59c168f40a1fd413e4b1e2e4512ef05468ad7bffe56346169d",
+    "persian-mtext-zoom.png": "4c593faf59b6c9cabd03701884b890d0cbc4bee9d8ba73e8fe1b16dd51d71cfd",
+    "benchmark-100000.json": "b46cffd2991f92a78ff940318ab5e3bf6cb750b5bd6f4806f0c1d02064a483d2",
+    "benchmark-10000.json": "d8ff656f45f417ddde636373878dc839bee46719bb3e4ffc525c83b9f6c0892e",
+    "synthetic-reference.dxf": "30f96f8fa0f21884cfb7518622cc0a0c07b7068574f6934aa66993cfe07463ba",
+    "dwg-boq-receipt.json": "dd28b1411d8de57b9c710f2877836e633fd0851d874385651fc7874722fd7e56",
+    "phase2_priority4_final.xml.gz": "961e3ebde3a3bc7f323a7383bdc1eb549f178f2deebc79f730b6f48fb56989a5",
+    "targeted-final-stable.log": "9c67a47d546e67f9252cde5e091a5b556f8c3bb705ab962a8bafffff37862e18",
+    "pip-check.log": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09",
+    "synthetic-ac1032.dwg": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+    "final-real-dwg-qt.png": "6e2fd8ea02e8251b0df8967f93f70e54b7fefae781d5e5327f1e31ff404b16c3",
+    "mixed-receipt.json": "8dee919b047a1fffd50b790a7a770254d39aa97a824c9c90171c709dc0fe6668",
+    "baseline.log": "b33e6e076224f192021191d657e1cda90d044eeedd20332ac8300f5df0f03d3d"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "synthetic": true,
+  "actual_dwg_decoder": "ACadSharp 3.8.0.0",
+  "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+  "handle": "30",
+  "units": "m",
+  "oracle_m": "5",
+  "boq_m": "5",
+  "price_code": null,
+  "reopen_equal": true,
+  "sqlite_integrity": "ok",
+  "rejected_without_db_change": [
+    "unreviewed",
+    "duplicate entity across sessions",
+    "stale CAS",
+    "changed source bytes"
+  ],
+  "conversion": {
+    "provider": "ACadSharp bridge",
+    "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+    "output_sha256": "c91cf73e85dee022437ffce65c4f7686bc53cb0e6a038f803906e81069af0649",
+    "decoder_version": "3.8.0.0",
+    "exit_code": 0
+  },
+  "financial_history_unchanged": true,
+  "exit_code": 0
+}
