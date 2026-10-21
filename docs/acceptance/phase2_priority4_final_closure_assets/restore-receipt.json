@@ -1,0 +1,58 @@
+{
+  "primary_archive": "/StructuralPro/Backups/StructuralPro_P4_Closure_f0bf3eec_20261021.zip",
+  "sha256": "98b76f200167f6077827547674933263c7cb951b82f6e0a6e19bc701a00ff169",
+  "manifest_files_verified": 261,
+  "git_fsck_exit": 0,
+  "code_head": "f0bf3eec998d391ddaf62c81f827f73c9d7913dc",
+  "tested_tree": "7912f377e3d7129f5b247f49a492161b6e91c0f5",
+  "sqlite_integrity_and_foreign_keys": "PASS",
+  "databases": [
+    "stress/db/projects.db",
+    "derived-green/db/projects.db",
+    "ui-final-150/db/projects.db",
+    "ui-final-100/db/projects.db",
+    "real-dwg-final/db/projects.db"
+  ],
+  "stored_snapshot_equal": true,
+  "dwg_and_exact_converted_bytes_sha_verified": true,
+  "signed_stored_paths_rewritten": false,
+  "tests": "PASS",
+  "targeted": {
+    "passed": 145,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "restored_real_dwg": {
+    "synthetic": true,
+    "binary_dwg_header": "AC1032",
+    "decoder": {
+      "provider": "ACadSharp bridge",
+      "source_sha256": "70527bc488ba0a942aaa08b4203e0911305c2c7110f95a75b70df1de80de6660",
+      "output_sha256": "da389e0a308b4c2cf70637567e85461cf76a9789c03bc41bf3a48219e9758666",
+      "decoder_version": "3.8.0.0",
+      "exit_code": 0
+    },
+    "source_sha256": "70527bc488ba0a942aaa08b4203e0911305c2c7110f95a75b70df1de80de6660",
+    "original_array_lines": 6,
+    "original_oracle_m": 30,
+    "revised_array_lines": 8,
+    "revised_oracle_m": 40,
+    "effective_boq_m": 40,
+    "delta_m": 10,
+    "original_takeoffs_unchanged": true,
+    "reopen_equal": true,
+    "integrity": "ok",
+    "duplicate_amendment_rejected": true,
+    "stale_CAS_rejected": true,
+    "exit_code": 0
+  },
+  "dependencies": "Existing host Python packages and .NET8 runtime reused; managed converter/writer restored from Dropbox archive. No mocked decoder.",
+  "evidence_sha256": {
+    "restored-targeted.log": "1a6276a5787fb4a728f28247106be0f1137d82aacb8e4d79e3858bc208c62df6",
+    "restored-targeted.xml": "6de1b1d3dc99f7d70a431368a86c227cba0bc31c23bfa9ba924bb2ab28c8098a",
+    "restored-dwg.log": "c3991567368cb329b4fd14238580566a821848cf1aea4b5ccebe2cf06300dd72",
+    "restore-verify.log": "aa563129374dd1458ef56a3fe11102e565e84a40abbcbfffe1ee2dbf016a0ad0"
+  }
+}

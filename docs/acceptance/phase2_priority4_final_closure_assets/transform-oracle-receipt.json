@@ -1,0 +1,70 @@
+{
+  "synthetic": true,
+  "cases": [
+    {
+      "scale": [
+        2,
+        0.5
+      ],
+      "angle_degrees": 30,
+      "array": [
+        2,
+        3
+      ],
+      "oracle_total_m": 37.94733192202055,
+      "actual_total_m": 37.947331922020545,
+      "absolute_error_m": 7.105427357601002e-15,
+      "coordinate_abs_tolerance_m": 1e-10,
+      "metric_rel_tolerance": 1e-12
+    },
+    {
+      "scale": [
+        -1,
+        1
+      ],
+      "angle_degrees": 90,
+      "array": [
+        2,
+        3
+      ],
+      "oracle_total_m": 30.0,
+      "actual_total_m": 30.0,
+      "absolute_error_m": 0.0,
+      "coordinate_abs_tolerance_m": 1e-10,
+      "metric_rel_tolerance": 1e-12
+    },
+    {
+      "scale": [
+        1,
+        -2
+      ],
+      "angle_degrees": 45,
+      "array": [
+        2,
+        3
+      ],
+      "oracle_total_m": 51.26402247190518,
+      "actual_total_m": 51.264022471905186,
+      "absolute_error_m": 7.105427357601002e-15,
+      "coordinate_abs_tolerance_m": 1e-10,
+      "metric_rel_tolerance": 1e-12
+    },
+    {
+      "scale": [
+        2,
+        2
+      ],
+      "angle_degrees": 0,
+      "array": [
+        2,
+        3
+      ],
+      "oracle_total_m": 60.0,
+      "actual_total_m": 60.0,
+      "absolute_error_m": 0.0,
+      "coordinate_abs_tolerance_m": 1e-10,
+      "metric_rel_tolerance": 1e-12
+    }
+  ],
+  "exit_code": 0
+}

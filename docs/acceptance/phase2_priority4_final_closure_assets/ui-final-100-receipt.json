@@ -1,0 +1,18 @@
+{
+  "synthetic": true,
+  "decoder": {
+    "provider": "ACadSharp bridge",
+    "source_sha256": "e601d44cf8c24728c67b9f20a9ad8ef3950b330f4636033b9410292399f1ba59",
+    "output_sha256": "90d56342eb2d9db235b29336cc38e824bdc91c0aef32b63b0d29043d81a08c70",
+    "decoder_version": "3.8.0.0",
+    "exit_code": 0
+  },
+  "device_pixel_ratio": 1.0,
+  "qt_scale_factor": "1",
+  "array_lines": 6,
+  "highlighted_graphics": 12,
+  "oracle_m": 30,
+  "boq_m": 30,
+  "real_mouse_and_native_dialogs": true,
+  "exit_code": 0
+}

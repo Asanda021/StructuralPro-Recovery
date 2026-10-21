@@ -1,0 +1,17 @@
+{
+  "synthetic": true,
+  "cycles": 5,
+  "entities_per_load": 2000,
+  "mid_parse_error_preserves_previous": true,
+  "no_stranded_QProcess": true,
+  "sqlite_and_boq_unchanged": true,
+  "rss_after_each_close_bytes": [
+    116842496,
+    122433536,
+    122454016,
+    122503168,
+    122515456
+  ],
+  "memory_note": "Observed current RSS, including Qt/allocator cache; five cycles do not prove absence of every long-run leak.",
+  "exit_code": 0
+}
