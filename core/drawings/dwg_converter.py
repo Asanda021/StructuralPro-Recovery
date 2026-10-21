@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
-import os, shutil, subprocess, tempfile
+import os, shutil, subprocess, tempfile, hashlib
 
 _DWG_VERSIONS = {
     "AC1009": "R12",
@@ -24,6 +24,10 @@ class ConverterResult:
     source: Path
     output: Path
     converter: str
+    source_sha256: str = ""
+    output_sha256: str = ""
+    dwg_version: str = ""
+    exit_code: int = 0
 
 
 class DWGConversionError(RuntimeError):
@@ -39,13 +43,20 @@ class CorruptDWGError(DWGConversionError):
 
 
 class OfflineDWGConverter:
-    def __init__(self, executable: str | None = None):
+    def __init__(self, executable: str | None = None, timeout_seconds: int = 120):
+        if isinstance(timeout_seconds,bool) or not isinstance(timeout_seconds,int) or not 1<=timeout_seconds<=600:raise ValueError("مهلت تبدیل باید صحیح بین ۱ و ۶۰۰ ثانیه باشد")
+        self.timeout_seconds=timeout_seconds
         self.executable = (
             executable
             or os.getenv("STRUCTURALPRO_DWG_CONVERTER")
             or shutil.which("dwg2dxf")
             or shutil.which("ODAFileConverter")
         )
+
+    def _run(self, command, **kwargs):
+        try:return subprocess.run(command,timeout=self.timeout_seconds,**kwargs)
+        except subprocess.TimeoutExpired as exc:raise DWGConversionError("مهلت تبدیل DWG پایان یافت؛ هیچ خروجی برای متره تأیید نشد") from exc
+        except OSError as exc:raise DWGConversionError("اجرای مبدل DWG ممکن نیست") from exc
 
     @property
     def available(self) -> bool:
@@ -83,6 +94,7 @@ class OfflineDWGConverter:
         if src.stat().st_size < 6:
             raise CorruptDWGError("فایل DWG خالی یا ناقص است.")
 
+        source_digest=hashlib.sha256(src.read_bytes()).hexdigest()
         header = self.inspect_header(src)
         if not self.executable:
             raise DWGConversionError(
@@ -103,7 +115,7 @@ class OfflineDWGConverter:
             # a successful conversion after the converter exits without writing.
             target = odir / (src.stem + ".dxf")
             target.unlink(missing_ok=True)
-            proc = subprocess.run(
+            proc = self._run(
                 [self.executable, str(src.parent), str(odir), "ACAD2018", "DXF", "0", "1", src.name],
                 capture_output=True,
                 text=True,
@@ -121,7 +133,7 @@ class OfflineDWGConverter:
                     target = matches[0]
         else:
             target.unlink(missing_ok=True)
-            proc = subprocess.run(
+            proc = self._run(
                 [self.executable, str(src), str(target)],
                 capture_output=True,
                 text=True,
@@ -151,4 +163,7 @@ class OfflineDWGConverter:
                 "مبدل فایل DXF قابل‌خواندن تولید نکرد؛ خروجی نامعتبر است و برای متره پذیرفته نشد."
             ) from exc
 
-        return ConverterResult(src, target, str(self.executable))
+        if hashlib.sha256(src.read_bytes()).hexdigest()!=source_digest:
+            target.unlink(missing_ok=True)
+            raise DWGConversionError("فایل DWG هنگام تبدیل تغییر کرده است")
+        return ConverterResult(src,target,str(self.executable),source_digest,hashlib.sha256(target.read_bytes()).hexdigest(),header["version"],proc.returncode)

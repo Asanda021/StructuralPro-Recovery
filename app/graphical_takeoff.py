@@ -9,7 +9,7 @@ from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QText
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
-    QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
+    QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
     QDoubleSpinBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication
 )
@@ -107,6 +107,8 @@ class TakeoffCanvas(QGraphicsView):
         self.scale(factor, factor)
 
     def mousePressEvent(self, event):
+        if self.mode=='cad_select':
+            super().mousePressEvent(event);return
         if event.button() == Qt.MouseButton.RightButton and self.mode in {"zoom_window", "region_select"}:
             self.cancel_interaction()
             return
@@ -397,6 +399,15 @@ class GraphicalTakeoffDialog(QDialog):
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
             actions.addWidget(x, index // 6, index % 6)
+        self.cad_layers=QComboBox();self.cad_layer_toggle=QPushButton('نمایش/پنهان لایه')
+        self.cad_handle=QLineEdit();self.cad_handle.setPlaceholderText('Handle یا مسیر بلوک')
+        self.cad_find=QPushButton('یافتن جزء CAD');self.cad_select=QPushButton('انتخاب اجزای CAD')
+        self._cad_items={};self._cad_handle_items={}
+        cad_row=QHBoxLayout()
+        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select):cad_row.addWidget(control)
+        self.cad_controls=QWidget();self.cad_controls.setLayout(cad_row);self.cad_controls.hide();toolbar_rows.addWidget(self.cad_controls)
+        self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
+        self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
 
@@ -668,6 +679,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.load_page(1)
 
     def load_page(self, page):
+        self.cad_controls.setVisible(self.viewer.kind=="cad")
         if not self.viewer.path or page < 1 or page > max(1, self.viewer.page_count):
             return
         try:
@@ -734,10 +746,26 @@ class GraphicalTakeoffDialog(QDialog):
         self.display_dpi=dpi
         self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
 
+    def toggle_cad_layer(self):
+        layer=self.cad_layers.currentData();items=self._cad_items.get(layer,[])
+        visible=not any(item.isVisible() for item in items)
+        for item in items:item.setVisible(visible)
+        self.status.setText(('لایه نمایش داده شد: ' if visible else 'لایه پنهان شد: ')+str(layer)+'؛ وضعیت نمایش مجوز متره نیست')
+
+    def find_cad_handle(self):
+        key=self.cad_handle.text().strip();item=self._cad_handle_items.get(key)
+        self.canvas.scene.clearSelection()
+        if item is None:self.status.setText('جزء قابل نمایش با این شناسه یافت نشد');return
+        item.setVisible(True);item.setSelected(True);self.canvas.centerOn(item)
+        self.status.setText('جزء CAD: '+key+' | '+str(item.data(1)))
+
     def _render_cad(self):
         doc = self.cad_document
         if doc is None:
             raise RuntimeError("سند CAD برای نمایش آماده نیست.")
+        self.cad_controls.show();self._cad_items={};self._cad_handle_items={};self.cad_layers.clear()
+        from collections import Counter
+        for layer,count in sorted(Counter(e.layer for e in doc.entities).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
         coords=[]
         for entity in doc.entities:
             data=entity.data
@@ -762,10 +790,11 @@ class GraphicalTakeoffDialog(QDialog):
         def sy(y): return max_y-y
         pen=QPen(Qt.GlobalColor.darkBlue,0)
         for entity in doc.entities:
+            item=None
             d=entity.data
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):
                 a,b=d["start"],d["end"]
-                self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
+                item=self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
             elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC"} and len(d.get("display_points", d.get("points",[])))>=2:
                 pts=[QPointF(sx(x),sy(y)) for x,y in d.get("display_points", d.get("points",[]))]
                 path = QPainterPath(pts[0])
@@ -773,10 +802,10 @@ class GraphicalTakeoffDialog(QDialog):
                     path.lineTo(point)
                 if d.get("closed", False):
                     path.closeSubpath()
-                self.canvas.scene.addPath(path, pen)
+                item=self.canvas.scene.addPath(path, pen)
             elif entity.entity_type=="CIRCLE" and d.get("center") and d.get("radius"):
                 x,y=d["center"]; r=float(d["radius"])
-                self.canvas.scene.addEllipse(sx(x-r),sy(y+r),2*r,2*r,pen)
+                item=self.canvas.scene.addEllipse(sx(x-r),sy(y+r),2*r,2*r,pen)
             elif entity.entity_type in {"TEXT","MTEXT"} and d.get("text"):
                 text = normalize_cad_text(d["text"])
                 if not text:
@@ -797,8 +826,14 @@ class GraphicalTakeoffDialog(QDialog):
                 # CAD insertion points usually refer to the text baseline;
                 # Qt graphics text items are positioned from their top edge.
                 item.setPos(sx(pos[0]), sy(pos[1]) - height)
+                item.setRotation(-float(d.get("rotation",0)))
+            if item is not None:
+                item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable,True)
+                item.setData(0,entity.handle);item.setData(1,entity.entity_type+' | '+entity.layer+' | '+doc.units)
+                item.setToolTip(str(entity.handle)+' | '+entity.entity_type+' | '+entity.layer+'‏ | '+doc.units+'\n'+str(d.get('unsupported_measurement') or ('طول: '+str(d.get('length','—'))+'؛ سطح: '+str(d.get('area','—')))))
+                item.setVisible(d.get('layer_visible',True));self._cad_items.setdefault(entity.layer,[]).append(item);self._cad_handle_items[entity.handle]=item
         self.canvas.setSceneRect(0,0,max_x-min_x,max_y-min_y)
-        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units}")
+        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {sum(bool(e.data.get('unsupported_measurement')) for e in doc.entities)} | هشدار: {len(doc.warnings)}")
 
     def _ifc_status(self):
         doc = self.viewer.ifc_document

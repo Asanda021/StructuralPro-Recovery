@@ -42,7 +42,10 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     else:
         from core.drawings.viewer_model import DrawingViewerModel
         try:
-            DrawingViewerModel(path)
+            viewer=DrawingViewerModel(path)
+            if viewer.kind=="cad":
+                from core.drawings.dwg_takeoff import cad_unit_factor
+                if cad_unit_factor(viewer.cad_document.units) is None and any(r["kind"] in {"length","area"} for r in rows):raise ValueError("واحد منبع CAD نامشخص است؛ کالیبراسیون نمایشی جای مدرک واحد را نمی‌گیرد")
         except Exception as exc:
             raise ValueError("منبع CAD/BIM با واردکننده اصلی معتبر شناخته نشد") from exc
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:

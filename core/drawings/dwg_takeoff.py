@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 import math
+import hashlib
+import io
 
 
 @dataclass(frozen=True)
@@ -24,10 +26,16 @@ class DWGDocument:
     units: str = "unknown"
     source: str = ""
     format: str = "DXF"
+    source_sha256: str = ""
+    dxf_version: str = ""
+    warnings: list[str] = field(default_factory=list)
+    conversion: dict[str, Any] = field(default_factory=dict)
 
 
 def _xy(v):
-    return (float(v[0]), float(v[1]))
+    result=(float(v[0]),float(v[1]))
+    if not all(math.isfinite(x) for x in result):raise ValueError("مختصات CAD باید متناهی باشند")
+    return result
 
 
 _UNIT_FACTORS = {"in": 0.0254, "ft": 0.3048, "mi": 1609.344, "mm": 0.001, "cm": 0.01, "m": 1.0, "km": 1000.0}
@@ -48,6 +56,9 @@ def _poly_metrics(points, closed=False, bulges=None):
     area = 0.0
     if len(pts) > 2 and closed:
         area = abs(sum(pts[i][0] * pts[(i + 1) % len(pts)][1] - pts[(i + 1) % len(pts)][0] * pts[i][1] for i in range(len(pts))) / 2)
+    if closed and len(pts)>2 and not any(bulges or []):
+        from core.drawings.planar_geometry import ring,signed,decimal_text
+        area=float(decimal_text(abs(signed(ring(pts)))))
     if bulges is not None:
         signed_area = sum(pts[i][0] * pts[(i + 1) % len(pts)][1]
                           - pts[(i + 1) % len(pts)][0] * pts[i][1]
@@ -67,10 +78,47 @@ def _poly_metrics(points, closed=False, bulges=None):
             radius = chord / (2 * abs(math.sin(sweep / 2)))
             length += radius * abs(sweep) - chord
             signed_area += radius * radius * (sweep - math.sin(sweep)) / 2
-        area = abs(signed_area) if closed else 0.0
+        if any(bulges):area = abs(signed_area) if closed else 0.0
     if not math.isfinite(length) or not math.isfinite(area):
         raise ValueError("CAD geometry result must be finite")
     return length, area
+
+
+def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=None,budget=None):
+    """Expand real INSERT transforms with bounded depth and auditable handle paths."""
+    budget=budget if budget is not None else [0]
+    for index,e in enumerate(entities):
+        original=e.origin_of_copy if e.is_virtual else e
+        handle=str(getattr(original.dxf,'handle','') or '')
+        if not handle:raise ValueError('هویت Handle جزء CAD موجود نیست')
+        identity=path+(handle,)
+        layer=str(e.dxf.layer)
+        if layer=='0' and inherited:layer=inherited
+        budget[0]+=1
+        if budget[0]>250000:raise ValueError('تعداد اجزای بازشده از حد ۲۵۰۰۰۰ بیشتر است؛ پردازش متوقف شد')
+        yield e,'/'.join(identity),layer
+        if e.dxftype()=='INSERT':
+            name=e.dxf.name
+            if name in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
+            block=document.blocks.get(name)
+            if block is None:raise ValueError('مرجع بلوک CAD یافت نشد')
+            if block.block.is_xref or block.block.is_xref_overlay:
+                warnings.append('XREF حل‌نشده: '+name);continue
+            skipped=[]
+            virtual=list(e.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
+            if skipped:raise ValueError('تبدیل کامل اجزای بلوک ممکن نیست: '+'؛ '.join(skipped))
+            yield from _expanded_entities(virtual,document,warnings,identity,names+(name,),layer,budget)
+
+
+def _nonplanar(e):
+    d=e.dxf;typ=e.dxftype()
+    values=[]
+    if typ=='LINE':values=[d.start.z,d.end.z]
+    elif typ in ('CIRCLE','ARC'):values=[d.center.z]
+    elif typ=='LWPOLYLINE':values=[d.elevation]
+    elif typ=='POLYLINE':values=[v.dxf.location.z for v in e.vertices]+[d.elevation.z]
+    extrusion=d.get('extrusion',(0,0,1))
+    return any(not math.isfinite(float(v)) or float(v)!=0 for v in values) or tuple(extrusion)!=(0,0,1)
 
 
 class DWGTakeoffEngine:
@@ -82,6 +130,16 @@ class DWGTakeoffEngine:
                 "کتابخانه ezdxf برای تحلیل DXF نصب نیست؛ نصب وابستگی‌های StructuralPro را بررسی کنید."
             ) from exc
 
+        source_bytes=p.read_bytes();fingerprint=hashlib.sha256(source_bytes).hexdigest()
+        if not source_bytes.startswith(b'AutoCAD Binary DXF'):
+            stream=io.BytesIO(source_bytes);handles=set()
+            while True:
+                code=stream.readline()
+                if not code:break
+                value=stream.readline().strip()
+                if code.strip() in (b'5',b'105'):
+                    if value in handles:raise RuntimeError('Handle تکراری در بایت منبع DXF؛ اصلاح خاموش هویت مجاز نیست')
+                    handles.add(value)
         try:
             doc = ezdxf.readfile(str(p))
         except Exception as exc:
@@ -89,7 +147,7 @@ class DWGTakeoffEngine:
                 f"خواندن فایل CAD شکست خورد؛ فایل ممکن است خراب یا با نسخه/ساختار غیرقابل‌خواندن باشد: {exc}"
             ) from exc
 
-        out = DWGDocument(source=str(p), format="DXF")
+        out = DWGDocument(source=str(p), format="DXF",source_sha256=fingerprint,dxf_version=doc.dxfversion)
         layers = set()
         units_map = {0: "unitless", 1: "in", 2: "ft", 3: "mi", 4: "mm", 5: "cm", 6: "m", 7: "km"}
         raw_units = int(doc.header.get("$INSUNITS", 0) or 0)
@@ -102,9 +160,8 @@ class DWGTakeoffEngine:
 
         try:
             entities = doc.modelspace()
-            for e in entities:
+            for e,entity_handle,layer in _expanded_entities(entities,doc,out.warnings):
                 typ = e.dxftype()
-                layer = str(getattr(e.dxf, "layer", "0"))
                 layers.add(layer)
                 data = {}
 
@@ -134,11 +191,15 @@ class DWGTakeoffEngine:
                     data["text"] = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
                     data["insert"] = _xy(e.dxf.insert)
                     data["height"] = float(getattr(e.dxf, "height", getattr(e.dxf, "char_height", 1)))
+                    data["rotation"]=float(e.get_rotation() if typ=="MTEXT" else e.dxf.rotation)
+                    style=doc.styles.get(e.dxf.style) if e.dxf.style in doc.styles else None
+                    data["font_name"]=str(style.dxf.font) if style else "unknown"
+                    data["font_notice"]="نمایش با فونت سیستم جایگزین؛ تطبیق SHX و چیدمان اصلی تأیید نشده"
                     out.text_labels.append(data["text"])
                 elif typ == "INSERT":
                     name = str(e.dxf.name)
                     out.block_counts[name] = out.block_counts.get(name, 0) + 1
-                    data.update(block=name, insert=_xy(e.dxf.insert))
+                    data.update(block=name, insert=_xy(e.dxf.insert),rotation=float(e.dxf.rotation),scale=tuple(float(e.dxf.get(k,1)) for k in ("xscale","yscale","zscale")),unsupported_measurement="بلوک مالک محاسبه جدا از اجزای بازشده نیست")
                 elif typ == "HATCH":
                     data["pattern"] = str(getattr(e.dxf, "pattern_name", ""))
                 else:
@@ -165,7 +226,18 @@ class DWGTakeoffEngine:
                             raise ValueError("هندسه CAD برای نمایش بسیار پیچیده است")
                     data["display_points"] = display
                     data["closed"] = bool(path.is_closed)
-                out.entities.append(DWGEntity(typ, layer, getattr(e.dxf, "handle", None), data))
+                if _nonplanar(e):
+                    data["unsupported_measurement"]="هندسه دارای Z یا صفحه غیر XY؛ متره دوبعدی مسدود است"
+                    data.pop("length",None);data.pop("area",None)
+                if typ not in {"LINE","POLYLINE","LWPOLYLINE","CIRCLE","ARC","TEXT","MTEXT","INSERT"}:data["unsupported_measurement"]="نوع جزء برای متره مستقیم پشتیبانی نشده: "+typ
+                if not all(math.isfinite(float(data[k])) and float(data[k])>=0 for k in ("length","area","radius","height") if k in data):raise ValueError("مقدار هندسی CAD نامعتبر است")
+                data["handle_path"]=entity_handle;data["original_layer"]=str(e.dxf.layer)
+                layer_record=doc.layers.get(layer) if layer in doc.layers else None
+                if layer_record is None:
+                    out.warnings.append("لایه در جدول منبع تعریف نشده: "+layer)
+                    data["unsupported_measurement"]="لایه فاقد تعریف معتبر؛ فقط نمایش"
+                data["layer_visible"]=(layer_record is None or not(layer_record.is_off() or layer_record.is_frozen())) and not bool(e.dxf.get("invisible",0))
+                out.entities.append(DWGEntity(typ, layer, entity_handle, data))
         except Exception as exc:
             raise RuntimeError(f"تحلیل عناصر CAD شکست خورد: {exc}") from exc
 
@@ -189,6 +261,7 @@ class DWGTakeoffEngine:
                 normalized.append(DWGEntity(entity.entity_type, entity.layer, entity.handle, data))
             out.entities = normalized
 
+        if hashlib.sha256(p.read_bytes()).hexdigest()!=fingerprint:raise RuntimeError("فایل CAD هنگام خواندن تغییر کرده است")
         out.layers = sorted(layers)
         return out
 
@@ -203,6 +276,7 @@ class DWGTakeoffEngine:
         if p.suffix.lower() != ".dwg":
             raise ValueError("فرمت فایل باید DWG یا DXF باشد.")
 
+        original_sha=hashlib.sha256(p.read_bytes()).hexdigest()
         # Prefer the bundled/authorized ACadSharp bridge used by the Windows
         # product. Use a separately installed offline converter only when that
         # bridge is genuinely unavailable; conversion failures from an available
@@ -215,6 +289,9 @@ class DWGTakeoffEngine:
                 doc = self._read_dxf(converted)
             finally:
                 converted.unlink(missing_ok=True)
+            doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":"not reported by bridge","exit_code":0}
+            if hashlib.sha256(p.read_bytes()).hexdigest()!=original_sha:raise RuntimeError("فایل DWG هنگام تبدیل تغییر کرده است")
+            doc.source_sha256=original_sha
             doc.source = str(p)
             doc.format = "DWG→DXF (ACadSharp)"
             return doc
@@ -230,6 +307,8 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code}
+        doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"
         return doc
@@ -247,6 +326,7 @@ class DWGTakeoffEngine:
             "xrefs": doc.xrefs,
             "units": doc.units,
             "source": doc.source,
+            "source_sha256":doc.source_sha256,"dxf_version":doc.dxf_version,"warnings":doc.warnings,"conversion":doc.conversion,
             "format": doc.format,
             "unsupported_geometry_count": sum(bool(e.data.get("unsupported_measurement")) for e in doc.entities),
         }
@@ -266,6 +346,9 @@ class DWGTakeoffEngine:
                     f"واحد نقشه CAD برای لایه {layer} نامشخص است؛ پیش از برداشت طول/مساحت، واحد یا کالیبراسیون معتبر تعیین شود."
                 )
             values = []
+            parent_paths={e.handle.rsplit("/",1)[0] for e in ents if e.handle and "/" in e.handle}
+            if metric=="count" and any(e.entity_type=="INSERT" and e.handle in parent_paths for e in ents):raise ValueError("شمارش هم‌زمان بلوک و اجزای آن نیازمند قرارداد مستقل است")
+            if any(e.data.get("layer_visible") is False for e in ents):raise ValueError("لایه یا جزء پنهان برای متره نیازمند بازبینی مستقل است")
             for entity in ents:
                 if metric != "count" and entity.data.get("unsupported_measurement"):
                     raise ValueError(entity.data["unsupported_measurement"])
