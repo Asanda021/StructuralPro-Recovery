@@ -118,8 +118,17 @@ def audit_real_building(manifest: dict, root: Path) -> dict:
             errors.append(f"{key}: duplicate physical ownership")
         physical_ids.add(pair)
         covered_floors.add(_structural_id(floor_id))
-        if not isinstance(item.get("unit"), str) or not item["unit"].strip():
-            errors.append(f"{key}: quantity unit missing")
+        # An equal numeric value in mismatched or unknown units is not evidence
+        # of an equal measured quantity. Both oracles must declare physical units.
+        approved_units = {"m", "m2", "m3", "kg", "عدد"}
+        unit = item.get("unit")
+        software_unit = item.get("software_unit")
+        if not isinstance(unit, str) or unit not in approved_units:
+            errors.append(f"{key}: unsupported or missing reference unit")
+        if not isinstance(software_unit, str) or software_unit not in approved_units:
+            errors.append(f"{key}: unsupported or missing software unit")
+        elif software_unit != unit:
+            errors.append(f"{key}: unit mismatch between independent and software quantity")
         try:
             if _positive_decimal(item.get("independent_quantity")) != _positive_decimal(item.get("software_quantity")):
                 errors.append(f"{key}: quantity differs from independent oracle")
