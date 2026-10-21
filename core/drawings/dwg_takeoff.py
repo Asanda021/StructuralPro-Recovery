@@ -141,8 +141,10 @@ class DWGTakeoffEngine:
                 if not code:break
                 value=stream.readline().strip()
                 if code.strip() in (b'5',b'105'):
-                    if value in handles:raise RuntimeError('Handle تکراری در بایت منبع DXF؛ اصلاح خاموش هویت مجاز نیست')
-                    handles.add(value)
+                    try:handle_value=int(value,16)
+                    except ValueError as exc:raise RuntimeError("Handle نامعتبر در DXF") from exc
+                    if handle_value in handles:raise RuntimeError('Handle تکراری در بایت منبع DXF؛ اصلاح خاموش هویت مجاز نیست')
+                    handles.add(handle_value)
         try:
             doc = ezdxf.readfile(str(p))
         except Exception as exc:

@@ -113,9 +113,10 @@ def test_existing_manual_cad_measurement_sqlite_cas_boq_and_source_change(tmp_pa
  with pytest.raises(ValueError):app.commit_drawing_takeoff_to_boq('P',rr['session_id'],[j.id],expected_session_revision=1)
  assert app.open_project('P')==before and app.store.db.execute('pragma integrity_check').fetchone()[0]=='ok';app.store.close()
 
-def test_duplicate_raw_handle_is_not_silently_repaired(tmp_path):
+@pytest.mark.parametrize('alias',['same','lowercase','leading_zero'])
+def test_duplicate_raw_handle_is_not_silently_repaired(tmp_path,alias):
  d,p=drawing(tmp_path);a=d.modelspace().add_line((0,0),(1,0));b=d.modelspace().add_line((0,2),(1,2));d.saveas(p)
- text=p.read_text();needle='  5\n'+b.dxf.handle+'\n';assert needle in text;p.write_text(text.replace(needle,'  5\n'+a.dxf.handle+'\n',1))
+ text=p.read_text();needle='  5\n'+b.dxf.handle+'\n';assert needle in text;replacement=a.dxf.handle if alias=='same' else a.dxf.handle.lower() if alias=='lowercase' else '00'+a.dxf.handle;p.write_text(text.replace(needle,'  5\n'+replacement+'\n',1))
  with pytest.raises(RuntimeError):DWGTakeoffEngine().import_file(p)
 
 def test_2d_polyline_elevation_and_text_rotation_are_explicit(tmp_path):
