@@ -112,6 +112,35 @@ def validate_detail(data):
     return b
 
 
+def overlapping_pdf_roof_regions(first, second):
+    """Positive AREA overlap of two PDF-bound, axis-aligned roof footprints.
+
+    Borders touching is permitted. Same PDF bytes AND page are required; no
+    automatic cross-page/floor aggregation or unreviewed polygon inference.
+    A malformed stored rectangle is rejected, not silently treated as empty.
+    """
+    if not isinstance(first, dict) or not isinstance(second, dict):
+        raise ValueError('منشأ ناحیه سقف ساختار معتبر ندارد')
+    if first.get('sha256') != second.get('sha256') or first.get('page') != second.get('page'):
+        return False
+
+    def limits(source):
+        rect = source.get('selected_region')
+        if not isinstance(rect, (list, tuple)) or len(rect) != 4:
+            raise ValueError('کادر ناحیه سقف در منشأ ذخیره‌شده نامعتبر است')
+        try:
+            x, y, width, height = (Decimal(str(value)) for value in rect)
+        except (TypeError, ValueError, ArithmeticError) as exc:
+            raise ValueError('مختصات ناحیه سقف عددی نیست') from exc
+        if not all(v.is_finite() for v in (x, y, width, height)) or width <= 0 or height <= 0:
+            raise ValueError('کادر ناحیه سقف باید مساحت مثبت و متناهی داشته باشد')
+        return x, y, x + width, y + height
+
+    ax0, ay0, ax1, ay1 = limits(first)
+    bx0, by0, bx1, by1 = limits(second)
+    return min(ax1, bx1) > max(ax0, bx0) and min(ay1, by1) > max(ay0, by0)
+
+
 def project_gate(project,data,*,exclude=None):
     source=data.get('source',{})
     if not source.get('roof_binding'):return
@@ -121,8 +150,11 @@ def project_gate(project,data,*,exclude=None):
     session=b['session'];item=next(x for x in session['items'] if x['id']==b['item_id'])
     for key,record in (project.get('reviewed_aec_systems') or {}).items():
         if key==exclude:continue
-        other=record.get('data',{}).get('source',{}).get('roof_binding',{})
+        other_source=record.get('data',{}).get('source',{})
+        other=other_source.get('roof_binding',{})
         if other.get('identity')==b['identity']:raise ValueError('همین محدوده سقف قبلاً به عضو دیگری تخصیص یافته است')
+        if other and overlapping_pdf_roof_regions(source,other_source):
+            raise ValueError('دو ناحیه سقف در یک صفحه PDF هم‌پوشانی مساحتی دارند؛ متره مضاعف ممنوع است')
     for row in project.get('takeoffs',[]):
         params=row.get('params') or {}
         if params.get('source_sha256')==session['source_sha256'] and params.get('page')==item['page'] and params.get('geometry'):
