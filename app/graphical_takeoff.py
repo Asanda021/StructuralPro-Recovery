@@ -165,6 +165,7 @@ class TakeoffCanvas(QGraphicsView):
         return super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        if self.mode=="cad_select":event.accept();return
         if event.button() == Qt.MouseButton.LeftButton and self._selection_origin is not None:
             viewport_rect = QRect(self._selection_origin, event.position().toPoint()).normalized()
             self._selection_origin = None
