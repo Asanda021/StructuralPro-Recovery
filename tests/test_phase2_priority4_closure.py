@@ -281,3 +281,12 @@ def test_native_capability_report_has_persian_blocking_reason(tmp_path):
    finally:modal.accept()
   QTimer.singleShot(20,inspect);QTest.mouseClick(w.cad_report,Qt.LeftButton);assert not errors
  finally:w.close()
+
+def test_page_change_cannot_replace_a_staged_cad_scene(tmp_path):
+ from app.graphical_takeoff import GraphicalTakeoffDialog
+ qt();old=fixture(tmp_path);large=fixture(tmp_path,10000);w=GraphicalTakeoffDialog(pdf_path=str(old));w.show()
+ try:
+  w.open_cad_async(str(large));wait(lambda:not w.cad_loading or bool(w._cad_job.get('old')))
+  assert w.cad_loading;before=len(w._cad_handle_items);w.load_page(1);assert len(w._cad_handle_items)==before
+  wait(lambda:not w.cad_loading);assert len(w._cad_handle_items)==10000 and len(w.canvas.scene.items())==10000
+ finally:w.close()

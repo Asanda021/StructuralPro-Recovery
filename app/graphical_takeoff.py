@@ -530,7 +530,7 @@ class GraphicalTakeoffDialog(QDialog):
     def _cad_busy(self, busy):
         self.cad_loading=busy
         if busy:
-            self._cad_enabled={c:c.isEnabled() for c in self.findChildren(QWidget) if isinstance(c,(QPushButton,QComboBox,QLineEdit))}
+            self._cad_enabled={c:c.isEnabled() for c in self.findChildren(QWidget) if isinstance(c,(QPushButton,QComboBox,QLineEdit,QSpinBox,QDoubleSpinBox,QTableWidget))}
             for c in self._cad_enabled:c.setEnabled(c in (self.open_pdf,self.cad_cancel))
             self.canvas.setEnabled(False);self.cad_controls.show()
         else:
@@ -663,6 +663,7 @@ class GraphicalTakeoffDialog(QDialog):
             return False
 
     def load_session_from_project(self):
+        if self.cad_loading:return
         if self.app_service is None:
             QMessageBox.warning(self, "بارگذاری نشست", "سرویس پروژه در این پنجره در دسترس نیست.")
             return
@@ -796,6 +797,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.load_page(1)
 
     def load_page(self, page):
+        if self.cad_loading:return
         self.cad_controls.setVisible(self.viewer.kind=="cad")
         if not self.viewer.path or page < 1 or page > max(1, self.viewer.page_count):
             return
@@ -1369,11 +1371,13 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.warning(self, "یادداشت", str(exc))
 
     def undo_session(self):
+        if self.cad_loading:return
         if self.session.undo():
             self.redraw_current_page()
             self.refresh()
 
     def redo_session(self):
+        if self.cad_loading:return
         if self.session.redo():
             self.redraw_current_page()
             self.refresh()
@@ -1408,6 +1412,7 @@ class GraphicalTakeoffDialog(QDialog):
             self._render_cad()
 
     def export_takeoff_for_boq(self):
+        if self.cad_loading:return
         """Export a reviewable, source-linked JSON handoff; never auto-approve BOQ rows."""
         if self.viewer.kind == "ifc":
             self._ifc_status()
@@ -1451,6 +1456,7 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.critical(self, "خطای ذخیره خروجی", str(exc))
 
     def highlight_selected_measurement(self):
+        if self.cad_loading:return
         row = self.table.currentRow()
         cell = self.table.item(row, 0) if row >= 0 else None
         if cell is None:
