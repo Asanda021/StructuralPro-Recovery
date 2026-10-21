@@ -360,7 +360,7 @@ def beam_guard(previous,updated,command):
     if isinstance(command,dict) and command.get('action','').startswith('mapping_'):return
     for snapshot in previous.get('beam_detail_history',[]):
         if snapshot.get('migration_id') and snapshot not in updated.get('beam_detail_history',[]):raise ValueError('حذف یا تغییر اصل تاریخچه مهاجرت ممنوع است')
-    protected={r['source_id'] for r in previous.get('takeoffs',[]) if r.get('domain')=='drawing' and (r.get('params') or {}).get('geometry_evidence')}
+    protected={r['source_id'] for r in previous.get('takeoffs',[]) if r.get('domain')=='drawing' and ((r.get('params') or {}).get('geometry_evidence') or (r.get('params') or {}).get('cad_evidence'))}
     for key,r in previous.get('beam_detail_register',{}).items():
         if r.get('status')!='committed':continue
         if updated.get('beam_detail_register',{}).get(key)!=r:raise ValueError('اصل تیر قطعی قابل بازنویسی نیست')
@@ -659,6 +659,9 @@ def drawing_rows(data,version):
     row=deepcopy(original);row['revision']=version
     for name in ('drawing_source','source_sha256','measurement_identity','calibration','holes','geometry_evidence','page','geometry','confidence','formula'):
         row['params'][name]=deepcopy(measured[name])
+    if original['params'].get('cad_evidence') and not measured.get('cad_evidence'):raise ValueError('حذف اتصال Entity از اصلاحیه CAD مجاز نیست')
+    if measured.get('cad_evidence'):
+        row['params']['cad_evidence']=deepcopy(measured['cad_evidence']);row['provenance']['cad_evidence']=deepcopy(measured['cad_evidence'])
     row['params']['amendment_id']=data['amendment_id']
     row['provenance'].update({k:deepcopy(row['params'][k]) for k in ('drawing_source','source_sha256','measurement_identity','calibration','holes','geometry_evidence','page','amendment_id')})
     row['quantities'][0].update(amount=measured['quantity'],formula=measured['formula'],source_ref=measured['source'],page=measured['page'])
@@ -710,7 +713,7 @@ def drawing_create(service,pid,key,payload,*,expected_revision,expected_session_
 
 
 def drawing_guard(previous,updated,command):
-    protected={r['source_id'] for r in previous.get('takeoffs',[]) if r.get('domain')=='drawing' and (r.get('params') or {}).get('geometry_evidence')}
+    protected={r['source_id'] for r in previous.get('takeoffs',[]) if r.get('domain')=='drawing' and ((r.get('params') or {}).get('geometry_evidence') or (r.get('params') or {}).get('cad_evidence'))}
     for key in protected:
         if [r for r in previous['takeoffs'] if r['source_id']==key]!=[r for r in updated.get('takeoffs',[]) if r.get('source_id')==key]:raise ValueError('اصل برداشت قطعی چندضلعی قابل بازنویسی نیست')
     if not isinstance(command,dict):return False

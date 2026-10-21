@@ -84,7 +84,7 @@ def _poly_metrics(points, closed=False, bulges=None):
     return length, area
 
 
-def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=None,budget=None):
+def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=None,budget=None,parent_visible=True):
     """Expand real INSERT transforms with bounded depth and auditable handle paths."""
     budget=budget if budget is not None else [0]
     for index,e in enumerate(entities):
@@ -96,8 +96,11 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
         if layer=='0' and inherited:layer=inherited
         budget[0]+=1
         if budget[0]>250000:raise ValueError('تعداد اجزای بازشده از حد ۲۵۰۰۰۰ بیشتر است؛ پردازش متوقف شد')
-        yield e,'/'.join(identity),layer
+        layer_record=document.layers.get(layer) if layer in document.layers else None
+        visible=parent_visible and not bool(e.dxf.get('invisible',0)) and (layer_record is None or not(layer_record.is_off() or layer_record.is_frozen()))
+        yield e,'/'.join(identity),layer,visible
         if e.dxftype()=='INSERT':
+            if e.mcount>1:raise ValueError('آرایه MINSERT خارج از قرارداد فعلی است؛ حذف خاموش نمونه‌ها مجاز نیست')
             name=e.dxf.name
             if name in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
             block=document.blocks.get(name)
@@ -107,7 +110,7 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
             skipped=[]
             virtual=list(e.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
             if skipped:raise ValueError('تبدیل کامل اجزای بلوک ممکن نیست: '+'؛ '.join(skipped))
-            yield from _expanded_entities(virtual,document,warnings,identity,names+(name,),layer,budget)
+            yield from _expanded_entities(virtual,document,warnings,identity,names+(name,),layer,budget,visible)
 
 
 def _nonplanar(e):
@@ -160,7 +163,7 @@ class DWGTakeoffEngine:
 
         try:
             entities = doc.modelspace()
-            for e,entity_handle,layer in _expanded_entities(entities,doc,out.warnings):
+            for e,entity_handle,layer,source_visible in _expanded_entities(entities,doc,out.warnings):
                 typ = e.dxftype()
                 layers.add(layer)
                 data = {}
@@ -236,7 +239,7 @@ class DWGTakeoffEngine:
                 if layer_record is None:
                     out.warnings.append("لایه در جدول منبع تعریف نشده: "+layer)
                     data["unsupported_measurement"]="لایه فاقد تعریف معتبر؛ فقط نمایش"
-                data["layer_visible"]=(layer_record is None or not(layer_record.is_off() or layer_record.is_frozen())) and not bool(e.dxf.get("invisible",0))
+                data["layer_visible"]=source_visible
                 out.entities.append(DWGEntity(typ, layer, entity_handle, data))
         except Exception as exc:
             raise RuntimeError(f"تحلیل عناصر CAD شکست خورد: {exc}") from exc
@@ -289,7 +292,7 @@ class DWGTakeoffEngine:
                 doc = self._read_dxf(converted)
             finally:
                 converted.unlink(missing_ok=True)
-            doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":"not reported by bridge","exit_code":0}
+            doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":getattr(provider,"version","unverified"),"exit_code":0}
             if hashlib.sha256(p.read_bytes()).hexdigest()!=original_sha:raise RuntimeError("فایل DWG هنگام تبدیل تغییر کرده است")
             doc.source_sha256=original_sha
             doc.source = str(p)
@@ -377,3 +380,43 @@ class DWGTakeoffEngine:
 
 def infer_takeoff_from_layers(doc: DWGDocument, rules: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     return DWGTakeoffEngine().layer_takeoff(doc, rules)
+
+
+def cad_entity_geometry(document,handle,metric,origin=(0,0)):
+    """Bounded direct-entity contract: straight XY linework only; no material inference."""
+    if cad_unit_factor(document.units) is None:raise ValueError('واحد CAD نامشخص است')
+    found=[e for e in document.entities if e.handle==handle]
+    if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
+    e=found[0];d=e.data
+    if d.get('unsupported_measurement') or d.get('layer_visible') is False:raise ValueError('جزء پنهان یا فاقد قرارداد متره مستقیم است')
+    if e.entity_type=='LINE':points=[d['start'],d['end']]
+    elif e.entity_type in {'POLYLINE','LWPOLYLINE'} and not any(d.get('bulges',[])):points=d['points']
+    else:raise ValueError('ثبت مستقیم فعلاً فقط خط و چندخطی مستقیم XY را می‌پذیرد؛ منحنی نیازمند قرارداد مستقل است')
+    if metric not in {'length','area'} or (metric=='area' and not d.get('closed')):raise ValueError('سطح نیازمند حلقه بسته معتبر است')
+    if metric=='length' and d.get('closed'):points=points+[points[0]]
+    ox,oy=(float(v) for v in origin)
+    if not all(math.isfinite(v) for v in (ox,oy)):raise ValueError('مبدأ نمایش نامعتبر است')
+    return e,[(float(x)-ox,oy-float(y)) for x,y in points],float(d[metric])
+
+
+def cad_review_digest(item):
+    import json
+    value=item.to_dict();value['cad_evidence']=dict(value['cad_evidence']);value['cad_evidence'].pop('review',None)
+    return hashlib.sha256(json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+
+
+def verify_cad_item(item,document,*,require_review=True):
+    meta=item.cad_evidence
+    if not isinstance(meta,dict) or meta.get('policy')!='cad_entity_review_v1':raise ValueError('قرارداد منشأ CAD معتبر نیست')
+    if meta.get('source_sha256')!=document.source_sha256 or meta.get('unit_basis')!=document.units or meta.get('unit_factor_to_m')!=str(cad_unit_factor(document.units)) or meta.get('dxf_version')!=document.dxf_version:raise ValueError('منبع یا واحد CAD تغییر کرده است')
+    if any(meta.get('conversion',{}).get(k)!=document.conversion.get(k) for k in ('provider','decoder_version')):raise ValueError('Decoder مبنای بازبینی تغییر کرده است')
+    e,points,amount=cad_entity_geometry(document,meta.get('handle'),item.kind,meta.get('scene_origin',()))
+    if e.layer!=meta.get('layer') or tuple(map(tuple,points))!=item.geometry or item.holes or not math.isclose(amount,item.quantity,rel_tol=1e-12,abs_tol=0):raise ValueError('مقدار یا هندسه متره با جزء اصلی CAD مطابق نیست')
+    if any(not str(meta.get(k,'')).strip() for k in ('floor_id','member_id','quantity_owner','created_by','reference')):raise ValueError('طبقه، عضو، مالک، سازنده و مدرک CAD الزامی است')
+    if item.kind=="area" and any((item.geometry_evidence or {}).get(k)!=meta.get(k) for k in ("floor_id","member_id","quantity_owner")):raise ValueError("مالکیت هندسه و جزء CAD یکسان نیست")
+    if require_review:
+        if document.format.startswith("DWG") and document.conversion.get("decoder_version") in {None,"unverified"}:raise ValueError("نسخه Decoder معتبر DWG برای ثبت قطعی گزارش نشده است")
+        from core.projects.project_model import _identity
+        review=meta.get('review') or {}
+        if not str(review.get('note','')).strip() or not str(review.get('reviewer','')).strip() or _identity(review['reviewer']).casefold()==_identity(meta['created_by']).casefold() or review.get('digest')!=cad_review_digest(item):raise ValueError('بازبینی مستقل و جاری CAD لازم است')
+    return e

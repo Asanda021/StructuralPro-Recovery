@@ -35,10 +35,12 @@ class TakeoffItem:
     holes: tuple[tuple[tuple[float, float], ...], ...] = ()
 
     geometry_evidence: dict | None = None
+    cad_evidence: dict | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         if self.geometry_evidence is None:data.pop("geometry_evidence",None)
+        if self.cad_evidence is None:data.pop("cad_evidence",None)
         return data
 
 
@@ -155,7 +157,7 @@ class DrawingTakeoffSession:
                 geometry=tuple(tuple(p) for p in x.get("geometry", ())),
                 formula=str(x.get("formula", "")), confidence=float(x.get("confidence", 1.0)),
                 holes=tuple(tuple(tuple(p) for p in hole) for hole in x.get("holes", ())),
-                geometry_evidence=deepcopy(x.get("geometry_evidence")),
+                geometry_evidence=deepcopy(x.get("geometry_evidence")),cad_evidence=deepcopy(x.get("cad_evidence")),
             )
             for x in state.get("items", [])
         ]
@@ -205,6 +207,33 @@ class DrawingTakeoffSession:
             return
         if any(x.source == source and x.id != ignore_id for x in self.items):
             raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source}")
+
+    def add_cad_entity(self,document,handle,metric,*,takeoff_code,floor_id,member_id,quantity_owner,created_by,reference,scene_origin=(0,0)):
+        from core.drawings.dwg_takeoff import cad_entity_geometry
+        from dataclasses import replace
+        if document.source_sha256!=self.source_sha256:raise ValueError('فایل CAD با نشست یکسان نیست')
+        e,points,amount=cad_entity_geometry(document,handle,metric,scene_origin)
+        meta={'policy':'cad_entity_review_v1','source_sha256':document.source_sha256,'handle':handle,'layer':e.layer,'unit_basis':document.units,'scene_origin':list(scene_origin),'floor_id':floor_id,'member_id':member_id,'quantity_owner':quantity_owner,'created_by':created_by,'reference':reference}
+        from core.drawings.dwg_takeoff import cad_unit_factor
+        meta.update(source_format=document.format,dxf_version=document.dxf_version,conversion=deepcopy(document.conversion),unit_factor_to_m=str(cad_unit_factor(document.units)),insert_chain=[{'handle':v.handle,'block':v.data.get('block'),'rotation_degrees':v.data.get('rotation'),'scale':v.data.get('scale'),'insert_m':v.data.get('insert')} for v in document.entities if v.entity_type=='INSERT' and handle.startswith(v.handle+'/')])
+        if any(not str(meta[k]).strip() for k in ('floor_id','member_id','quantity_owner','created_by','reference')):raise ValueError('هویت و مدرک CAD ناقص است')
+        if self.items and self.calibrations.get(1) and self.calibrations[1].meters_per_pixel!=1:raise ValueError('مقیاس قبلی با مختصات استاندارد CAD مطابق نیست؛ نشست مستقل لازم است')
+        self.calibrate(1,1,1)
+        kw={'page':1,'takeoff_code':takeoff_code,'source':'cad-entity:'+handle}
+        if metric=='area':item=self.add_polygon([Point(*p) for p in points],floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner,**kw)
+        else:item=self.add_length([Point(*p) for p in points],**kw)
+        if not math.isclose(item.quantity,amount,rel_tol=1e-12,abs_tol=0):
+            self.undo();raise ValueError('افت دقت در تبدیل مختصات CAD؛ ثبت مسدود است')
+        item=replace(item,cad_evidence=meta);self.items[-1]=item;return item
+
+    def review_cad_entity(self,item_id,*,reviewer,note):
+        from core.drawings.dwg_takeoff import DWGTakeoffEngine,verify_cad_item,cad_review_digest
+        from core.projects.project_model import _identity
+        from dataclasses import replace
+        item=self.find(item_id);verify_cad_item(item,DWGTakeoffEngine().import_file(self.drawing_source),require_review=False)
+        if not reviewer.strip() or not note.strip() or _identity(reviewer).casefold()==_identity(item.cad_evidence['created_by']).casefold():raise ValueError('بازبین مستقل و یادداشت لازم است')
+        meta=deepcopy(item.cad_evidence);meta['review']={'reviewer':reviewer,'note':note,'digest':cad_review_digest(item)}
+        self._record();updated=replace(item,cad_evidence=meta);self.items[self.items.index(item)]=updated;self._commit();return updated
 
     def add_length(
         self, points: Iterable[Point], *, page: int | None = None, label: str = "",
@@ -542,7 +571,7 @@ class DrawingTakeoffSession:
                 geometry=tuple(tuple(p) for p in x.get("geometry", ())),
                 formula=str(x.get("formula", "")), confidence=float(x.get("confidence", 1.0)),
                 holes=tuple(tuple(tuple(p) for p in hole) for hole in x.get("holes", ())),
-                geometry_evidence=deepcopy(x.get("geometry_evidence")),
+                geometry_evidence=deepcopy(x.get("geometry_evidence")),cad_evidence=deepcopy(x.get("cad_evidence")),
             )
             for x in data.get("items", [])
         ]

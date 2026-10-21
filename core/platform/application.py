@@ -743,6 +743,7 @@ class StructuralProApp:
                            "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
                            "calibration": row["calibration"], "holes": row.get("holes", []),
                            "geometry_evidence": row.get("geometry_evidence"),
+                           **({"cad_evidence":row["cad_evidence"]} if row.get("cad_evidence") else {}),
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
@@ -751,6 +752,7 @@ class StructuralProApp:
                            "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
                            "calibration": row["calibration"], "holes": row.get("holes", []),
                            "geometry_evidence": row.get("geometry_evidence"),
+                           **({"cad_evidence":row["cad_evidence"]} if row.get("cad_evidence") else {}),
                                "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{

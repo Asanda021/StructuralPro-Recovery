@@ -402,12 +402,16 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layers=QComboBox();self.cad_layer_toggle=QPushButton('نمایش/پنهان لایه')
         self.cad_handle=QLineEdit();self.cad_handle.setPlaceholderText('Handle یا مسیر بلوک')
         self.cad_find=QPushButton('یافتن جزء CAD');self.cad_select=QPushButton('انتخاب اجزای CAD')
+        self.cad_metric=QComboBox();self.cad_metric.addItem('طول مستقیم','length');self.cad_metric.addItem('سطح بسته مستقیم','area')
+        self.cad_measure=QPushButton('متره جزء CAD');self.cad_review=QPushButton('بازبینی متره CAD')
+        self.cad_measure.setToolTip('فقط خط و چندضلعی مستقیم معتبر؛ منحنی و دیتایل مصالح مستقل‌اند')
         self._cad_items={};self._cad_handle_items={}
         cad_row=QHBoxLayout()
-        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select):cad_row.addWidget(control)
+        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review):cad_row.addWidget(control)
         self.cad_controls=QWidget();self.cad_controls.setLayout(cad_row);self.cad_controls.hide();toolbar_rows.addWidget(self.cad_controls)
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
+        self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
 
@@ -745,6 +749,33 @@ class GraphicalTakeoffDialog(QDialog):
         self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*150/72),math.ceil(page.height_pt*150/72))
         self.display_dpi=dpi
         self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
+
+    def measure_cad_selection(self):
+        selected=self.canvas.scene.selectedItems()
+        if len(selected)!=1:
+            self.status.setText('یک جزء CAD را انتخاب کنید؛ هر عضو و مالکیت مستقل ثبت می‌شود');return
+        values=[]
+        for prompt in ('کد عملیات متره','سازنده برداشت','مرجع مستقل هندسه و مالکیت'):
+            value,ok=QInputDialog.getText(self,'متره جزء CAD',prompt)
+            if not ok or not value.strip():return
+            values.append(value.strip())
+        try:
+            item=self.session.add_cad_entity(self.cad_document,str(selected[0].data(0)),self.cad_metric.currentData(),takeoff_code=values[0],created_by=values[1],reference=values[2],floor_id=self.polygon_floor.text().strip(),member_id=self.polygon_member.text().strip(),quantity_owner=self.polygon_owner.text().strip(),scene_origin=self._cad_scene_origin)
+            self.refresh();self.table.selectRow(len(self.session.items)-1)
+            self.status.setText('پیش‌نویس CAD ثبت شد؛ بازبینی مستقل پیش از BOQ لازم است | '+item.id)
+        except Exception as exc:QMessageBox.warning(self,'متره CAD مسدود شد',str(exc))
+
+    def review_cad_selection(self):
+        row=self.table.currentRow()
+        if row<0:self.status.setText('ابتدا یک ردیف متره CAD انتخاب کنید');return
+        reviewer,ok=QInputDialog.getText(self,'بازبینی CAD','نام بازبین مستقل')
+        if not ok:return
+        note,ok=QInputDialog.getText(self,'بازبینی CAD','یادداشت کنترل مقدار، واحد و مالکیت')
+        if not ok:return
+        try:
+            self.session.review_cad_entity(self.table.item(row,0).text(),reviewer=reviewer,note=note)
+            self.status.setText('بازبینی مستقل CAD ثبت شد؛ ذخیره و کنترل نسخه برای انتقال الزامی است')
+        except Exception as exc:QMessageBox.warning(self,'بازبینی CAD مسدود شد',str(exc))
 
     def toggle_cad_layer(self):
         layer=self.cad_layers.currentData();items=self._cad_items.get(layer,[])

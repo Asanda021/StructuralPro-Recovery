@@ -46,6 +46,7 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
             if viewer.kind=="cad":
                 from core.drawings.dwg_takeoff import cad_unit_factor
                 if cad_unit_factor(viewer.cad_document.units) is None and any(r["kind"] in {"length","area"} for r in rows):raise ValueError("واحد منبع CAD نامشخص است؛ کالیبراسیون نمایشی جای مدرک واحد را نمی‌گیرد")
+                if any(not r.get("cad_evidence") for r in rows):raise ValueError("برداشت CAD پیش از ثبت مالی نیازمند اتصال Entity و بازبینی مستقل است")
         except Exception as exc:
             raise ValueError("منبع CAD/BIM با واردکننده اصلی معتبر شناخته نشد") from exc
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
@@ -62,6 +63,12 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
         return min(variants)
     seen = set()
     for row in rows:
+        cad=items[row["takeoff_id"]].get("cad_evidence")
+        if cad:
+            from core.drawings.dwg_takeoff import verify_cad_item
+            if path.suffix.lower() not in {".dxf",".dwg"}:raise ValueError("قرارداد CAD فقط برای فایل CAD مجاز است")
+            restored=DrawingTakeoffSession.from_dict(payload);verify_cad_item(restored.find(row["takeoff_id"]),viewer.cad_document)
+            if payload.get("calibrations",{}).get("1",{}).get("meters_per_pixel")!=1:raise ValueError("مقیاس نشست CAD تغییر کرده است")
         calibration = (payload.get("calibrations", {}) or {}).get(str(row["page"]))
         if calibration is None and row["kind"] in {"length", "area"}:
             raise ValueError("کالیبراسیون صریح صفحه احراز نشده است")
@@ -86,12 +93,24 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
     from core.drawings.planar_geometry import measurement_overlap
     from core.takeoff.manual_formula_amendments import effective_takeoffs
     existing=[r for r in effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] not in exclude_source_ids]
-    candidates=[]
+    candidates=[];cad_claims=set()
     for old in existing:
         p=old.get('params') or {}
         if old.get('domain')=='drawing' and old.get('item')=='area':
             candidates.append({**p,'kind':'area'})
     for row in rows:
+        cad=row.get('cad_evidence')
+        if cad:
+            from core.projects.project_model import _identity
+            from core.takeoff.manual_formula_amendments import financial_block
+            financial_block(project)
+            claim=tuple(_identity(cad[k]) for k in ("floor_id","member_id"))+(row["item_code"],)
+            if claim in cad_claims:raise ValueError("دو مطالبه هم‌زمان برای همان عضو و عملیات CAD ممنوع است")
+            cad_claims.add(claim)
+            if not any(_identity(m['id'])==_identity(cad['member_id']) and _identity(m['floor_id'])==_identity(cad['floor_id']) for m in project.get('members',[])):raise ValueError('عضو و طبقه CAD در پروژه ثبت نشده است')
+            for old in existing:
+                other=(old.get('params') or {}).get('cad_evidence')
+                if other and old.get('member_code')==row['item_code'] and all(_identity(cad[k])==_identity(other[k]) for k in ('floor_id','member_id')):raise ValueError('مالک مقدار CAD قبلاً ثبت شده؛ اصلاحیه رسمی لازم است')
         if row['kind']=='area':
             meta=row.get('geometry_evidence')
             if meta and not meta.get('quantity_owner','').strip():raise ValueError('مالک مقدار و مرجع آن برای ثبت برداشت چندضلعی الزامی است')
@@ -225,9 +244,10 @@ def session_to_boq_rows(
             "description": item.label.strip() or item.takeoff_code.strip() or item.kind,
             "quantity": item.geometry_evidence["net_m2"] if item.geometry_evidence else float(item.quantity),
             "geometry_evidence": item.geometry_evidence,
+            "cad_evidence":item.cad_evidence,
             "unit": item.unit,
             "item_code": item.takeoff_code.strip() or f"DRAW-{item.kind.upper()}",
-            "price_code": item.takeoff_code.strip() or None,
+            "price_code": None if item.cad_evidence else (item.takeoff_code.strip() or None),
             "unit_price": None,
             "formula": item.formula,
             "geometry": [list(point) for point in item.geometry],

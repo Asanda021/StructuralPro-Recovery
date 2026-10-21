@@ -1,5 +1,11 @@
 using ACadSharp.IO;
 
+if (args.Length == 1 && args[0] == "--version")
+{
+    Console.WriteLine($"ACadSharp {typeof(DwgReader).Assembly.GetName().Version}");
+    return 0;
+}
+
 if (args.Length != 2)
 {
     Console.Error.WriteLine("Usage: StructuralPro.DwgBridge <input.dwg> <output.dxf>");
