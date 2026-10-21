@@ -141,8 +141,9 @@ def region(outer,holes=()):
     return outer,hs,gross,deduct
 
 
-def regions_overlap(a,ah,b,bh):
-    a,ah,_,_=region(a,ah);b,bh,_,_=region(b,bh)
+def regions_overlap(a,ah,b,bh,*,topology_a='exact_simple_polygon_v1',topology_b='exact_simple_polygon_v1'):
+    a,ah,_,_=region_v2(a,ah)[:4] if topology_a==TOPOLOGY_V2 else region(a,ah)
+    b,bh,_,_=region_v2(b,bh)[:4] if topology_b==TOPOLOGY_V2 else region(b,bh)
     if (len(ah)+1)*(len(bh)+1)>256:raise ValueError('تقاطع از بودجه معتبر بازشو بیشتر است؛ بازبینی لازم است')
     if sum((len(x)-2)*(len(y)-2) for x in [a]+ah for y in [b]+bh)>20000:raise ValueError('تقاطع از بودجه ۲۰۰۰۰ جفت مثلث بیشتر است؛ تقسیم‌بندی مستند لازم است')
     area=intersection(a,b)-sum((intersection(h,b) for h in ah),F(0))-sum((intersection(a,h) for h in bh),F(0))+sum((intersection(x,y) for x in ah for y in bh),F(0))
@@ -156,12 +157,133 @@ def decimal_text(value):
         except Exception as e:raise ValueError('مقدار دقیق خارج از قرارداد Decimal است') from e
 
 
-def evidence(outer,holes,factor,refs=(),**identity):
-    _,_,gross,deduct=region(outer,holes);scale=factor if isinstance(factor,F) else coordinate(factor)
+def evidence(outer,holes,factor,refs=(),*,topology='exact_simple_polygon_v1',**identity):
+    if topology not in ('exact_simple_polygon_v1',TOPOLOGY_V2):raise ValueError('نسخه قرارداد توپولوژی معتبر نیست')
+    if topology==TOPOLOGY_V2:
+        _,_,gross,deduct,components=region_v2(outer,holes)
+    else:_,_,gross,deduct=region(outer,holes)
+    scale=factor if isinstance(factor,F) else coordinate(factor)
     if scale<=0:raise ValueError('مقیاس معتبر نیست')
     if any(not isinstance(v,str) for v in identity.values()):raise ValueError('هویت طبقه، عضو و مالک باید متن صریح باشد')
     if len(refs)!=len(holes) or any(not isinstance(r,str) or not r.strip() for r in refs):raise ValueError('مرجع مستقل هر بازشو الزامی است')
     net=(gross-deduct)*scale*scale;text=decimal_text(net)
     display=float(text)
     if not isfinite(display) or display<=0:raise ValueError('مساحت غیرصفر خارج از دامنه نمایش معتبر است')
-    return {'policy':'exact_simple_polygon_v1','gross_m2':decimal_text(gross*scale*scale),'deducted_m2':decimal_text(deduct*scale*scale),'net_m2':text,'opening_refs':list(refs),'coordinate_unit':'reference_pixel','meters_per_pixel':str(factor),**identity}
+    result={'policy':topology,'gross_m2':decimal_text(gross*scale*scale),'deducted_m2':decimal_text(deduct*scale*scale),'net_m2':text,'opening_refs':list(refs),'coordinate_unit':'reference_pixel','meters_per_pixel':str(factor),**identity}
+    if topology==TOPOLOGY_V2:result['components']=component_evidence(components,scale)
+    return result
+
+# Explicit opt-in: historical v1 remains strict and byte compatible.
+TOPOLOGY_V2 = 'exact_planar_region_v2'
+
+
+def _raw_ring(points):
+    """Validate Decimal input OR an already-exact internal ring."""
+    return ring([(decimal_text(x),decimal_text(y)) for x,y in points])
+
+
+def _boundary_components(outer, holes):
+    """Trace the exact regularized difference, keeping material to the left.
+
+    Inputs have disjoint opening interiors, wholly covered by the owner. All
+    intersections are consequently boundary contacts at explicit vertices.
+    Splitting before classification removes coincident edges without epsilon.
+    """
+    from functools import cmp_to_key
+    vertices=set(p for r in [outer]+holes for p in r)
+    boundary=set()
+    for i,r in enumerate([outer]+holes):
+        for a,b in edges(r):
+            points=sorted((p for p in vertices if on(a,b,p)),key=lambda p:(p[0]-a[0])*(b[0]-a[0])+(p[1]-a[1])*(b[1]-a[1]))
+            for p,q in zip(points,points[1:]):
+                mid=((p[0]+q[0])/2,(p[1]+q[1])/2)
+                if i==0:
+                    keep=all(location(h,mid)<0 for h in holes)
+                    if keep:boundary.add((p,q))
+                elif location(outer,mid)==1 and all(j==i-1 or location(h,mid)<0 for j,h in enumerate(holes)):
+                    boundary.add((q,p))
+    if not boundary:raise ValueError('ناحیه خالص مثبت باقی نمانده است')
+    outgoing={}
+    for a,b in boundary:outgoing.setdefault(a,[]).append(b)
+    def angle_cmp(a,b):
+        ha=0 if a[1]>0 or (a[1]==0 and a[0]>=0) else 1
+        hb=0 if b[1]>0 or (b[1]==0 and b[0]>=0) else 1
+        if ha!=hb:return ha-hb
+        c=a[0]*b[1]-a[1]*b[0]
+        return -1 if c>0 else 1 if c<0 else 0
+    successor={}
+    for a,b in boundary:
+        reverse=(a[0]-b[0],a[1]-b[1])
+        candidates=[((q[0]-b[0],q[1]-b[1]),q) for q in outgoing.get(b,[])]
+        if not candidates:raise ValueError('مرز ناحیه حاصل بسته نیست')
+        ordered=sorted(candidates+[(reverse,None)],key=cmp_to_key(lambda x,y:angle_cmp(x[0],y[0])))
+        marker=next(i for i,x in enumerate(ordered) if x[1] is None)
+        q=ordered[(marker-1)%len(ordered)][1]
+        if q is None:raise ValueError('مرز فروریخته ناحیه حاصل')
+        successor[(a,b)]=(b,q)
+    if len(set(successor.values()))!=len(boundary):raise ValueError('اتصال مرزها قابل اتکا نیست')
+    remaining=set(boundary);loops=[]
+    while remaining:
+        start=min(remaining);edge=start;walk=[]
+        while edge in remaining:
+            remaining.remove(edge);walk.append(edge[0]);edge=successor[edge]
+        if edge!=start:raise ValueError('حلقه مرزی ناتمام است')
+        stack=[];positions={}
+        for point in walk+[walk[0]]:
+            if point in positions:
+                index=positions[point];loop=stack[index:]
+                if len(loop)<3 or signed(loop)==0:raise ValueError('جزء مرزی بدون مساحت')
+                normalized=_raw_ring(loop)
+                loops.append(normalized if signed(loop)>0 else normalized[::-1])
+                for old in stack[index+1:]:positions.pop(old,None)
+                stack=stack[:index+1]
+            else:positions[point]=len(stack);stack.append(point)
+    outers=[r for r in loops if signed(r)>0];voids=[r for r in loops if signed(r)<0]
+    components=[{'outer':r,'holes':[]} for r in outers]
+    for h in voids:
+        triangle=triangles(tuple(reversed(h)))[0]
+        sample=tuple(sum(p[i] for p in triangle)/3 for i in (0,1))
+        owners=[c for c in components if signed(c['outer'])>abs(signed(h)) and location(c['outer'],sample)==1]
+        if not owners:raise ValueError('مالک حلقه داخلی ناحیه حاصل معلوم نیست')
+        min(owners,key=lambda c:signed(c['outer']))['holes'].append(h)
+    return components
+
+
+def region_v2(outer,holes=()):
+    outer=ring(outer)
+    if len(holes)>MAX_HOLES or len(outer)+sum(len(h) for h in holes)>512:
+        raise ValueError('هندسه از بودجه معتبر رأس یا بازشو بیشتر است')
+    hs=[]
+    for points in holes:
+        h=ring(points)
+        if intersection(outer,h)!=abs(signed(h)):raise ValueError('بازشو از مالک خارج است')
+        if any(intersection(h,old)>0 for old in hs):raise ValueError('بازشوی تکراری یا هم‌پوشان مجاز نیست')
+        hs.append(h)
+    gross=abs(signed(outer));deduct=sum((abs(signed(h)) for h in hs),F(0))
+    if gross<=deduct:raise ValueError('مساحت خالص مثبت نیست')
+    components=_boundary_components(outer,hs)
+    if sum((signed(c['outer'])+sum((signed(h) for h in c['holes']),F(0)) for c in components),F(0))!=gross-deduct:
+        raise ValueError('مساحت اجزای حاصل با خالص هندسی یکسان نیست')
+    return outer,hs,gross,deduct,components
+
+
+def component_evidence(components,scale):
+    from hashlib import sha256
+    import json
+    records=[]
+    def canonical_raw(r):return canonical_ring([(decimal_text(x),decimal_text(y)) for x,y in r])
+    def wire_ring(r):return [[decimal_text(F(x)),decimal_text(F(y))] for x,y in r]
+    for c in components:
+        outer=canonical_raw(c['outer']);holes=sorted(canonical_raw(h) for h in c['holes'])
+        # Identity is geometric, not a fabricated physical member or approval.
+        identity=sha256(json.dumps([outer,holes],separators=(',',':')).encode()).hexdigest()
+        net=signed(c['outer'])+sum((signed(h) for h in c['holes']),F(0))
+        if net<=0:raise ValueError('جزء مستقل بدون مساحت معتبر است')
+        records.append({'id':'GC-'+identity,'outer':wire_ring(outer),'holes':[wire_ring(h) for h in holes],'net_m2':decimal_text(net*scale*scale)})
+    return sorted(records,key=lambda c:c['id'])
+
+
+def measurement_overlap(a,b):
+    return regions_overlap(a['geometry'],a.get('holes',()),b['geometry'],b.get('holes',()),
+        topology_a=(a.get('geometry_evidence') or {}).get('policy','exact_simple_polygon_v1'),
+        topology_b=(b.get('geometry_evidence') or {}).get('policy','exact_simple_polygon_v1'))

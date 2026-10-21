@@ -165,8 +165,8 @@ def project_gate(project,data,*,exclude=None):
         params=row.get('params') or {}
         if params.get('source_sha256')==session['source_sha256'] and params.get('page')==item['page'] and params.get('geometry'):
             if params.get('geometry_evidence'):
-                from core.drawings.planar_geometry import regions_overlap
-                if regions_overlap(item['geometry'],item.get('holes',()),params['geometry'],params.get('holes',())):
+                from core.drawings.planar_geometry import measurement_overlap
+                if measurement_overlap(item,params):
                     raise ValueError('هم‌پوشانی ناحیه سقف و برداشت عمومی؛ مالکیت باید مستقل بازبینی شود')
                 continue
             if _identity(session,{'page':params['page'],'geometry':params['geometry']})==b['identity']:
@@ -179,12 +179,12 @@ def reject_reserved_regions(project,record,rows):
     for row in rows:
         if row.get('kind')!='area':continue
         if row.get('geometry_evidence'):
-            from core.drawings.planar_geometry import regions_overlap
+            from core.drawings.planar_geometry import measurement_overlap
             for reserved in (project.get('reviewed_aec_systems') or {}).values():
                 source=reserved.get('data',{}).get('source',{});binding=source.get('roof_binding')
                 if not binding or source.get('sha256')!=record['session'].get('source_sha256') or source.get('page')!=row['page']:continue
                 owner=next(x for x in binding['session']['items'] if x['id']==binding['item_id'])
-                if regions_overlap(row['geometry'],row.get('holes',()),owner['geometry'],owner.get('holes',())):
+                if measurement_overlap(row,owner):
                     raise ValueError('هم‌پوشانی برداشت عمومی و سقف تخصصی؛ پرداخت دوم ممنوع است')
         try:ident=_identity(record['session'],row)
         except ValueError:continue

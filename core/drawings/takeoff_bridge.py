@@ -80,7 +80,7 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
 def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
     from core.drawings.roof_region import reject_reserved_regions
     reject_reserved_regions(project,record,rows)
-    from core.drawings.planar_geometry import regions_overlap
+    from core.drawings.planar_geometry import measurement_overlap
     candidates=[]
     for old in project.get('takeoffs',[]):
         p=old.get('params') or {}
@@ -104,7 +104,7 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
                     if all(_identity(meta[k])==_identity(old_meta.get(k,'')) for k in ('floor_id','member_id')):
                         raise ValueError('عضو فیزیکی قبلاً متره شده است؛ نسخه جدید نقشه نیازمند اصلاحیه رسمی است')
                 if (row.get('geometry_evidence') or old.get('geometry_evidence')) and row.get('source_sha256')==old.get('source_sha256') and row.get('page')==old.get('page'):
-                    if regions_overlap(row['geometry'],row.get('holes',()),old['geometry'],old.get('holes',())):
+                    if measurement_overlap(row,old):
                         raise ValueError('هم‌پوشانی برداشت با مالکیت نامعلوم؛ بازبینی مستقل پیش از پرداخت لازم است')
             candidates.append(row)
     known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
@@ -162,7 +162,7 @@ def validate_session_payload(payload: dict[str, Any]) -> dict[str, Any]:
                     meta=item.geometry_evidence
                     if not isinstance(meta,dict):raise ValueError("قرارداد هندسه نامعتبر است")
                     verified=session._polygon_evidence(item.geometry,item.holes,item.page,meta.get("opening_refs",[]),
-                        **{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+                        topology=meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
                     if meta!=verified or item.quantity!=float(verified["net_m2"]):
                         raise ValueError("مقدار دقیق یا مدارک هندسه با رأس‌ها و مقیاس مطابقت ندارد")
                     continue

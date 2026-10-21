@@ -247,7 +247,7 @@ class DrawingTakeoffSession:
         if geometry_evidence is not None:
             if not isinstance(geometry_evidence,dict):raise ValueError('قرارداد هندسه نامعتبر است')
             verified=self._polygon_evidence([(p.x,p.y) for p in pts], [[(p.x,p.y) for p in h] for h in hole_points],page,geometry_evidence.get('opening_refs',[]),
-                **{k:geometry_evidence.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+                topology=geometry_evidence.get('policy','exact_simple_polygon_v1'),**{k:geometry_evidence.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
             if verified!=geometry_evidence:raise ValueError('شواهد هندسی با ورودی معتبر تطبیق ندارند')
         if any(len(hole) < 3 for hole in hole_points):
             raise ValueError("هندسه هر بازشو حداقل به سه نقطه نیاز دارد")
@@ -278,7 +278,7 @@ class DrawingTakeoffSession:
         self._commit()
         return item
 
-    def _polygon_evidence(self, points, holes, page, refs, **identity):
+    def _polygon_evidence(self, points, holes, page, refs, *, topology='exact_simple_polygon_v1', **identity):
         page=self._page_number(page)
         from core.drawings.planar_geometry import evidence
         from fractions import Fraction
@@ -286,7 +286,7 @@ class DrawingTakeoffSession:
         self._factor_for(page)
         factor=Fraction(str(cal.reference_meters))/Fraction(str(cal.reference_pixels))
         if float(factor)!=cal.meters_per_pixel:raise ValueError('کالیبراسیون با دو مرجع صریح مطابقت ندارد')
-        result=evidence(points,holes,factor,refs,**identity)
+        result=evidence(points,holes,factor,refs,topology=topology,**identity)
         from decimal import Decimal
         if any(Decimal(str(float(v)))!=Decimal(str(v)) for loop in [points]+list(holes) for p in loop for v in p):
             raise ValueError('مختصات در مرز نمایش Qt دقت خود را از دست می‌دهند؛ ثبت مسدود است')
@@ -300,29 +300,29 @@ class DrawingTakeoffSession:
                     raise ValueError('رأس چندضلعی خارج از دامنه صفحه نقشه است')
         return result
 
-    def add_polygon(self, points, *, holes=(), opening_refs=(), floor_id='', member_id='', quantity_owner='', **kwargs):
+    def add_polygon(self, points, *, holes=(), opening_refs=(), floor_id='', member_id='', quantity_owner='', topology='exact_simple_polygon_v1', **kwargs):
         pts=tuple(points);hs=tuple(tuple(h) for h in holes)
         page=kwargs.get('page',self.current_page)
         evidence=self._polygon_evidence([(p.x,p.y) for p in pts], [[(p.x,p.y) for p in h] for h in hs],page,opening_refs,
-                    floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner)
+                    topology=topology,floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner)
         return self.add_area(pts,holes=hs,geometry_evidence=evidence,**kwargs)
 
-    def edit_polygon(self, item_id, points, *, holes=None, opening_refs=None):
+    def edit_polygon(self, item_id, points, *, holes=None, opening_refs=None, topology=None):
         old=self.find(item_id)
         if old.kind!='area':raise ValueError('هندسه سطح لازم است')
         hs=old.holes if holes is None else tuple(tuple(tuple(p) for p in h) for h in holes)
         meta=old.geometry_evidence or {}
         refs=meta.get('opening_refs',[]) if opening_refs is None else opening_refs
         points=tuple(tuple(p) for p in points)
-        ev=self._polygon_evidence(points,hs,old.page,refs,**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+        ev=self._polygon_evidence(points,hs,old.page,refs,topology=topology or meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
         return self.edit(item_id,geometry=points,holes=hs,quantity=float(ev['net_m2']),geometry_evidence=ev,
                          formula='مساحت دقیق حلقه مالک منهای بازشوهای مستند × مقیاس همان صفحه²')
 
-    def add_polygon_opening(self, item_id, points, reference):
+    def add_polygon_opening(self, item_id, points, reference, *, topology=None):
         old=self.find(item_id);meta=old.geometry_evidence or {}
         if old.holes and not meta:raise ValueError('بازشوهای تاریخی فاقد مرجع مستقل‌اند؛ بازبینی صریح لازم است')
         return self.edit_polygon(item_id,old.geometry,holes=old.holes+(tuple(tuple(p) for p in points),),
-                                 opening_refs=list(meta.get('opening_refs',[]))+[reference])
+                                 opening_refs=list(meta.get('opening_refs',[]))+[reference],topology=topology)
 
     def add_count(
         self, count: int = 1, *, page: int | None = None, label: str = "",
@@ -373,7 +373,7 @@ class DrawingTakeoffSession:
         if data.get('geometry_evidence') is not None:
             meta=data['geometry_evidence']
             verified=self._polygon_evidence(data['geometry'],data.get('holes',()),data['page'],meta.get('opening_refs',[]),
-                **{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+                topology=meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
             if meta!=verified or data['quantity']!=float(verified['net_m2']):raise ValueError('ویرایش مقدار بدون هندسه و مدرک همسان ممنوع است')
         self._record()
         self.items[index] = TakeoffItem(**data)
