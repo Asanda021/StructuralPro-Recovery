@@ -1,0 +1,277 @@
+{
+  "date": "2026-10-21",
+  "initial_pr20_head": "5802384f6f9940bdc365933dc25d5de02b711f77",
+  "pr18_unchanged_head": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "tested_local_code_head": "ef910781e9f4525e65c580dc04d022123b8849d6",
+  "published_code_head": "85b1a9980652443d27c75c5776dfa67ee1829cd5",
+  "tested_tree": "313be2a8e78b5dbe49e8335a3fd162fd47da5c64",
+  "tested_component_trees": {
+    "core": "0bb839dc62616e228cad223dc52187f8bfe3760f",
+    "app": "23df42cd9dc5f92997b5060b663c9cb605b4bcd8",
+    "tests": "a4195d1d49ef48baf7b4147922b0ccfa2a5edc5b",
+    "scripts": "b726c07f63bfd007eccb5c806e0fc0357298c35f"
+  },
+  "documentation_head": "Resolve this evidence-only commit with git log -- docs/acceptance/phase2_priority3_closure_20261021.json; tested component trees unchanged",
+  "local_to_remote_commits": [
+    {
+      "local": "5f17f026ad8637cc254daa7814185ea255c645c6",
+      "published": "28c18d4852158617ed630f15bda21f4049c8c1c4",
+      "tree": "768bed7b4646e8ae17b3d5c5f559c88211ec4ea0"
+    },
+    {
+      "local": "e5bab64f1ef3e1f8e3ff62b5fd4c0579398547ad",
+      "published": "1771dc7e2a58db1b5f3903918c0461dec8822cf9",
+      "tree": "024724c82038572b27fa02a59e3fbb0bf743f4f4"
+    },
+    {
+      "local": "ef910781e9f4525e65c580dc04d022123b8849d6",
+      "published": "85b1a9980652443d27c75c5776dfa67ee1829cd5",
+      "tree": "313be2a8e78b5dbe49e8335a3fd162fd47da5c64"
+    }
+  ],
+  "publication_method": "Git Data blobs/trees/linear commits; exact tree SHA verified; expected-head fast-forward update, no merge or history rewrite",
+  "product_test_files_changed": [
+    "app/graphical_takeoff.py",
+    "app/roof_detail_editor.py",
+    "core/drawings/planar_geometry.py",
+    "core/drawings/roof_region.py",
+    "core/drawings/takeoff_bridge.py",
+    "core/drawings/takeoff_session.py",
+    "core/platform/application.py",
+    "core/reports/roof_detail_report.py",
+    "core/takeoff/manual_formula_amendments.py",
+    "core/takeoff/roof_detail.py",
+    "scripts/phase2_priority3_closure_probe.py",
+    "tests/fixtures/phase2_priority3_closure_inputs.json",
+    "tests/test_phase2_planar_roof.py",
+    "tests/test_phase2_polygon_amendments.py",
+    "tests/test_phase2_priority3_close_ui.py",
+    "tests/test_phase2_priority3_integrated.py",
+    "tests/test_phase2_topology_v2.py",
+    "tests/test_phase2_topology_v2_sqlite.py"
+  ],
+  "baseline": {
+    "passed": 119,
+    "exit_code": 0,
+    "seconds": 5.86,
+    "overlaps_final": true
+  },
+  "targeted": {
+    "tests": 172,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 172,
+    "junit_seconds": 17.027,
+    "exit_code": 0
+  },
+  "full": {
+    "tests": 7427,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "passed": 7422,
+    "junit_seconds": 352.52,
+    "exit_code": 0
+  },
+  "pytest_seconds": 352.64,
+  "new_tests_in_final": 56,
+  "new_real_qt_tests": 7,
+  "counts_overlap_do_not_add": true,
+  "compileall_exit_code": 0,
+  "pip_check_exit_code": 0,
+  "diff_check_exit_code": 0,
+  "skips": [
+    {
+      "file": "tests/test_windows_build_native_failures.py",
+      "line": 12,
+      "count": 5,
+      "reason": "PowerShell runtime unavailable",
+      "acceptance_effect": "native Windows gate remains unverified"
+    }
+  ],
+  "warnings": [
+    {
+      "count": 2,
+      "reason": "existing record_property / xunit2 compatibility warnings"
+    }
+  ],
+  "commands": {
+    "baseline": "QT_QPA_PLATFORM=offscreen python -m pytest -q <eight existing P2/P3 files, see baseline.log>",
+    "targeted": "QT_QPA_PLATFORM=offscreen python -m pytest -q tests/test_phase2_topology_v2.py tests/test_phase2_topology_v2_sqlite.py tests/test_phase2_planar_roof.py tests/test_phase2_polygon_amendments.py tests/test_phase2_priority3_close_ui.py tests/test_phase2_priority3_integrated.py tests/test_phase2_advanced_geometry.py tests/test_phase2_advanced_geometry_sqlite.py tests/test_phase2_advanced_geometry_ui.py tests/test_phase2_pdf_roof.py tests/test_phase2_pdf_roof_openings.py tests/test_phase2_pdf_roof_ui.py --basetemp=/tmp/p3-close/qt-final-green --junitxml=/tmp/p3-close/targeted.xml",
+    "full": "QT_QPA_PLATFORM=offscreen python -m pytest -q -ra --junitxml=/tmp/p3-close/phase2_priority3_final.xml",
+    "compileall": "python -m compileall -q core app tests",
+    "pip_check": "python -m pip check",
+    "scenario": "QT_QPA_PLATFORM=offscreen python scripts/phase2_priority3_closure_probe.py <empty artifact directory>",
+    "diff_check": "git diff --check"
+  },
+  "status": {
+    "boundary_multipart": "COMPLETE within exact v2 limits",
+    "three_planar_roofs_boq": "COMPLETE with explicit source frame, partition and component schedules",
+    "drawing_polygon_correction": "COMPLETE using existing effective-quantity correction journal and unchanged financial locks",
+    "full_linux_regression": "PASS",
+    "windows_office": "NOT_TESTED",
+    "real_plan_design_approval": "NOT_CLAIMED",
+    "priced_contract_payment_amendment": "BLOCKED by unchanged existing financial_block; no new payment authorization implemented"
+  },
+  "precision": {
+    "coordinate_digits": 32,
+    "adjusted_exponent": [
+      -100,
+      12
+    ],
+    "decimal_output_digits": 256,
+    "vertices_per_ring": 128,
+    "holes": 32,
+    "total_vertices": 512,
+    "predicate": "Fraction(Decimal literal), no tolerance acceptance",
+    "unsupported_input": "fail closed"
+  },
+  "integrated": {
+    "synthetic": true,
+    "engineering_approval": false,
+    "initial_geometry_m2": "80",
+    "revised_geometry_m2": "90",
+    "initial_components": 2,
+    "revised_components": 2,
+    "initial_quantities": {
+      "concrete": "16",
+      "formwork": "80",
+      "rebar": "106.560"
+    },
+    "effective_quantities": {
+      "concrete": "18",
+      "formwork": "90",
+      "rebar": "106.560"
+    },
+    "original_takeoffs_unchanged": true,
+    "original_roof_register_unchanged": true,
+    "sqlite_integrity": "ok",
+    "reopened_snapshot_equal": true,
+    "negative_checks": [
+      "duplicate amendment",
+      "stale SQLite/session revision",
+      "generic second payment for same physical roof on old page"
+    ],
+    "amendment_id": "BA-0d1a2c600e094edc8d15014449c9ed5a",
+    "effective_revision": 3,
+    "source_sha256": "c338765895d7191893742ba4bd0e604c6cb4932b699169806f70507853b8cab4",
+    "report_readback": {
+      "csv_rows_verified": 5,
+      "xlsx_rows_verified": 5,
+      "docx_rows_verified": 5,
+      "pdf_rows_verified": 5,
+      "pdf_pages": 4,
+      "xlsx_rtl": true,
+      "docx_table_rtl": true,
+      "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+      "windows_office_acceptance": false
+    },
+    "reports": [
+      "effective-roof.pdf",
+      "effective-roof.xlsx",
+      "effective-roof.docx",
+      "effective-roof.csv"
+    ]
+  },
+  "three_roof_report_readback": {
+    "solid_slab": {
+      "csv_rows_verified": 4,
+      "xlsx_rows_verified": 4,
+      "docx_rows_verified": 4,
+      "pdf_rows_verified": 4,
+      "pdf_pages": 4,
+      "xlsx_rtl": true,
+      "docx_table_rtl": true,
+      "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+      "windows_office_acceptance": false
+    },
+    "joist_block": {
+      "csv_rows_verified": 11,
+      "xlsx_rows_verified": 11,
+      "docx_rows_verified": 11,
+      "pdf_rows_verified": 11,
+      "pdf_pages": 5,
+      "xlsx_rtl": true,
+      "docx_table_rtl": true,
+      "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+      "windows_office_acceptance": false
+    },
+    "joist_foam": {
+      "csv_rows_verified": 11,
+      "xlsx_rows_verified": 11,
+      "docx_rows_verified": 11,
+      "pdf_rows_verified": 11,
+      "pdf_pages": 5,
+      "xlsx_rtl": true,
+      "docx_table_rtl": true,
+      "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+      "windows_office_acceptance": false
+    }
+  },
+  "performance": {
+    "outer_vertices": 83,
+    "openings": 20,
+    "opening_vertices": 80,
+    "seconds": 1.3036174779999783,
+    "process_peak_rss_kib": 12288,
+    "net_m2": "588",
+    "limits": {
+      "ring_vertices": 128,
+      "holes": 32,
+      "total_vertices": 512
+    },
+    "method": "one measured exact rational topology build, not a throughput guarantee",
+    "independent_regions": {
+      "count": 20,
+      "pair_checks": 190,
+      "seconds": 0.23912931799986836,
+      "oracle": "20 disjoint 2x2 squares at 3m intervals"
+    },
+    "large_pdf": {
+      "synthetic": true,
+      "sha256": "40c07bc6765544770f0f6f1bec5d35a42acc89afd15c411cd47deb35532759dd",
+      "bytes": 6106385,
+      "pages": 24,
+      "open_seconds": 0.1145340640005088,
+      "render_dpi": 120,
+      "renders": [
+        {
+          "page": 1,
+          "seconds": 0.4232889499999146,
+          "png_bytes": 50576
+        },
+        {
+          "page": 24,
+          "seconds": 0.3678641280002921,
+          "png_bytes": 50576
+        },
+        {
+          "page": 1,
+          "seconds": 0.36675359699984256,
+          "png_bytes": 50576
+        }
+      ],
+      "process_peak_rss_kib": 75612
+    }
+  },
+  "evidence_directory": "docs/acceptance/phase2_priority3_closure_20261021",
+  "evidence_sha256": {
+    "component-highlight.png": "299ef05b9d4c2b0d7a899a007b2283cb6cde37f96315a2be55dc90da774559f0",
+    "diagnostic-logs.zip": "7d1d19edf676447bc907826ca84438e9235b47d74a29bbbcb0acb83fd638c3be",
+    "integrated-receipt.json": "186e95a80e92d81780d6e62611fc95e49d8cee9725690e83eac1fcac93f996fb",
+    "multipart-reopened.png": "4b1978c019735ccbd9f782eb262c5e653c91af8a4a3b4693feb44e5367dcadd5",
+    "performance.json": "d5e6ef7e8829fb92bc958de4af6be11ca37d3799af21a3a2a4e23b59a5aaccd5",
+    "phase2_priority3_final.xml.gz": "157a19fc3fc4ce205510384fd05aa983afaead8d0d2cbeef505fe957f228b11e",
+    "report-page3.png": "91e727b393fd2f01cd80dc27117a62523572f004a4164fc70444c3e1515da08e",
+    "roof-amendment.png": "56fb229666f051287f25eaff2c419ec95a126ffb681bff4d0588e2159cd7af4a",
+    "targeted.xml.gz": "e9028fcf3b088e40bd4b5472c71b375307e41668e789b292c2fa8bb639bbccb5",
+    "three-roof-forms.png": "fd40c89cb97b5b53fcb5098c783a77ee04a65a4cb08276663a0a0aae70e108c8",
+    "three-roof-report-readback.json": "0b47ab84a9a6f4bc81775cb32ebdac033fb43884604061219b27327007535075"
+  },
+  "independent_backup": "Post-publication Dropbox archive + external restore receipt; report only after download/hash/fsck/SQLite and tests complete",
+  "financial_policy_unchanged": true,
+  "schema_changed": false,
+  "phase_count": 8,
+  "next_priority_started": false
+}

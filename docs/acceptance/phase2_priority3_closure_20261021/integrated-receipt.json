@@ -1,0 +1,47 @@
+{
+  "synthetic": true,
+  "engineering_approval": false,
+  "initial_geometry_m2": "80",
+  "revised_geometry_m2": "90",
+  "initial_components": 2,
+  "revised_components": 2,
+  "initial_quantities": {
+    "concrete": "16",
+    "formwork": "80",
+    "rebar": "106.560"
+  },
+  "effective_quantities": {
+    "concrete": "18",
+    "formwork": "90",
+    "rebar": "106.560"
+  },
+  "original_takeoffs_unchanged": true,
+  "original_roof_register_unchanged": true,
+  "sqlite_integrity": "ok",
+  "reopened_snapshot_equal": true,
+  "negative_checks": [
+    "duplicate amendment",
+    "stale SQLite/session revision",
+    "generic second payment for same physical roof on old page"
+  ],
+  "amendment_id": "BA-0d1a2c600e094edc8d15014449c9ed5a",
+  "effective_revision": 3,
+  "source_sha256": "c338765895d7191893742ba4bd0e604c6cb4932b699169806f70507853b8cab4",
+  "report_readback": {
+    "csv_rows_verified": 5,
+    "xlsx_rows_verified": 5,
+    "docx_rows_verified": 5,
+    "pdf_rows_verified": 5,
+    "pdf_pages": 4,
+    "xlsx_rtl": true,
+    "docx_table_rtl": true,
+    "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+    "windows_office_acceptance": false
+  },
+  "reports": [
+    "effective-roof.pdf",
+    "effective-roof.xlsx",
+    "effective-roof.docx",
+    "effective-roof.csv"
+  ]
+}
