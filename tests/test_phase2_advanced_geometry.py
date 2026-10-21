@@ -132,3 +132,16 @@ def test_polygon_page_is_explicit_positive_integer(page):
  s=DrawingTakeoffSession();s.calibrate(1,1,1);before=s.to_dict()
  with pytest.raises(ValueError):s.add_polygon([Point(*p) for p in RECT],page=page)
  assert s.to_dict()==before
+import pytest
+from core.drawings.planar_geometry import region
+OUTER=[(0,0),(10,0),(10,10),(0,10)]
+@pytest.mark.parametrize('holes',[
+ [[(2,2),(8,2),(8,4),(2,4)],[(2,6),(8,6),(8,8),(2,8)],[(2,4),(4,4),(4,6),(2,6)],[(6,4),(8,4),(8,6),(6,6)]],
+ [[(2,2),(8,2),(8,3),(3,3),(3,7),(8,7),(8,8),(2,8)],[(7,3),(8,3),(8,7),(7,7)]],
+])
+def test_contact_holes_cannot_create_disconnected_island(holes):
+ with pytest.raises(ValueError):region(OUTER,holes)
+
+def test_contact_chain_preserves_supported_adjacent_holes():
+ _,_,g,d=region(OUTER,[[(2,2),(4,2),(4,4),(2,4)],[(4,2),(6,2),(6,4),(4,4)],[(6,2),(8,2),(8,4),(6,4)]])
+ assert g-d==88

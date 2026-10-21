@@ -96,15 +96,45 @@ def intersection(a,b):
     return sum((clipped_area(x,y) for x in triangles(a) for y in triangles(b)),F(0))
 
 
+def contact_components(a,b):
+    """Number of disconnected boundary contacts between disjoint interiors."""
+    if any(max(p[i] for p in a)<min(p[i] for p in b) or max(p[i] for p in b)<min(p[i] for p in a) for i in (0,1)):return 0
+    pieces=[]
+    for u,v in edges(a):
+        for x,y in edges(b):
+            if not segments(u,v,x,y):continue
+            points=sorted(set(p for p in (u,v,x,y) if on(u,v,p) and on(x,y,p)))
+            if not points:raise ValueError('تقاطع مرزی بازشو معتبر نیست')
+            pieces.append((points[0],points[-1]))
+    parents=list(range(len(pieces)))
+    def find(i):
+        while parents[i]!=i:i=parents[i]
+        return i
+    for i,(u,v) in enumerate(pieces):
+        for j,(x,y) in enumerate(pieces[:i]):
+            if segments(u,v,x,y):parents[find(i)]=find(j)
+    return len({find(i) for i in range(len(pieces))})
+
+
 def region(outer,holes=()):
     outer=ring(outer)
     if len(holes)>MAX_HOLES or len(outer)+sum(len(h) for h in holes)>512:raise ValueError('هندسه از بودجه معتبر رأس یا بازشو بیشتر است')
-    hs=[]
+    hs=[];parents=[]
+    def find(i):
+        while parents[i]!=i:i=parents[i]
+        return i
     for h in holes:
         h=ring(h)
         if any(location(outer,p)!=1 for p in h) or any(segments(a,b,c,d) for a,b in edges(outer) for c,d in edges(h)):
             raise ValueError('بازشو باید کاملاً داخل مالک باشد؛ تماس با مرز خارجی پشتیبانی نمی‌شود')
-        if any(intersection(h,old)>0 for old in hs):raise ValueError('بازشوی تکراری یا هم‌پوشان مجاز نیست')
+        index=len(hs);parents.append(index)
+        for j,old in enumerate(hs):
+            if intersection(h,old)>0:raise ValueError('بازشوی تکراری یا هم‌پوشان مجاز نیست')
+            contacts=contact_components(h,old)
+            if contacts>1:raise ValueError('تماس جداگانه بازشوها می‌تواند جزیره بسازد؛ هندسه چندقسمتی پشتیبانی نمی‌شود')
+            if contacts:
+                if find(index)==find(j):raise ValueError('حلقه تماس بازشوها خارج از توپولوژی ساده پشتیبانی‌شده است')
+                parents[find(index)]=find(j)
         hs.append(h)
     gross=abs(signed(outer));deduct=sum((abs(signed(h)) for h in hs),F(0))
     if gross<=deduct:raise ValueError('مساحت خالص مثبت نیست')
