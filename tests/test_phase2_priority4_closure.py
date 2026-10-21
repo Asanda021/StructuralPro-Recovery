@@ -166,6 +166,7 @@ def test_array_and_block_fail_closed(tmp_path,fault):
   with pytest.raises(RuntimeError):DWGTakeoffEngine.with_array_support().import_file(p)
  else:
   doc=DWGTakeoffEngine.with_array_support().import_file(p)
+  if fault=='xref':assert 'XREF' in doc.entities[0].data['unsupported_measurement']
   with pytest.raises(ValueError):cad_entity_geometry(doc,root.dxf.handle,'length')
 
 def test_same_batch_parent_child_are_not_second_payment(tmp_path):
@@ -290,3 +291,9 @@ def test_page_change_cannot_replace_a_staged_cad_scene(tmp_path):
   assert w.cad_loading;before=len(w._cad_handle_items);w.load_page(1);assert len(w._cad_handle_items)==before
   wait(lambda:not w.cad_loading);assert len(w._cad_handle_items)==10000 and len(w.canvas.scene.items())==10000
  finally:w.close()
+
+def test_cad_conversion_source_lineage_contains_both_byte_identities():
+ from core.drawings import takeoff_bridge
+ assert hasattr(takeoff_bridge,'cad_source_keys')
+ # Pure identity-contract data; not a converter or an approval receipt.
+ assert takeoff_bridge.cad_source_keys({'source_sha256':'a','conversion':{'output_sha256':'b','source_sha256':'a'}})=={'a','b'}

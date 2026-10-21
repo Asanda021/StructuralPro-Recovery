@@ -93,12 +93,19 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     return rows
 
 
+def cad_source_keys(meta):
+    """The original and converted bytes are aliases, not new physical ownership."""
+    conversion=meta.get('conversion') or {}
+    return {v for v in (meta.get('source_sha256'),conversion.get('source_sha256'),conversion.get('output_sha256')) if v}
+
+
 def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]], *, exclude_source_ids=()) -> None:
     from core.drawings.roof_region import reject_reserved_regions
     reject_reserved_regions(project,record,rows)
     from core.drawings.planar_geometry import measurement_overlap
     from core.takeoff.manual_formula_amendments import effective_takeoffs
     existing=[r for r in effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] not in exclude_source_ids]
+    cad_history=existing+[r for r in project.get('takeoffs',[]) if r.get('source_id') not in exclude_source_ids]+[r for a in project.get('beam_amendments',{}).values() if a.get('status')=='applied' for r in a.get('rows',[]) if r.get('source_id') not in exclude_source_ids]
     candidates=[];cad_claims=set();cad_batch_claims=[]
     for old in existing:
         p=old.get('params') or {}
@@ -114,16 +121,16 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
             if claim in cad_claims:raise ValueError("دو مطالبه هم‌زمان برای همان عضو و عملیات CAD ممنوع است")
             cad_claims.add(claim)
             for previous in cad_batch_claims:
-                if previous.get('source_sha256')==cad.get('source_sha256'):
+                if cad_source_keys(previous)&cad_source_keys(cad):
                     a=previous.get('entity_claims') or [{'handle':previous.get('handle')}]
                     b=cad.get('entity_claims') or [{'handle':cad.get('handle')}]
                     if {x['handle'] for x in a}&{x['handle'] for x in b} or {x.get('geometry_sha256') for x in a if x.get('geometry_sha256')}&{x.get('geometry_sha256') for x in b if x.get('geometry_sha256')}:raise ValueError('پرداخت هم‌زمان والد و فرزند CAD یا هندسه مشترک ممنوع است')
             cad_batch_claims.append(cad)
             if not any(_identity(m['id'])==_identity(cad['member_id']) and _identity(m['floor_id'])==_identity(cad['floor_id']) for m in project.get('members',[])):raise ValueError('عضو و طبقه CAD در پروژه ثبت نشده است')
-            for old in existing:
+            for old in cad_history:
                 other=(old.get('params') or {}).get('cad_evidence')
                 if not other and old.get('domain')=='drawing' and (old.get('params') or {}).get('source_sha256')==row.get('source_sha256'):raise ValueError('سابقه قدیمی CAD فاقد اتصال Entity است؛ تطبیق مستقل پیش از ثبت جدید لازم است')
-                if other and old.get('item')==row['kind'] and (other.get('source_sha256')==cad.get('source_sha256') or other.get('source_path')==cad.get('source_path') and cad.get('source_path')):
+                if other and old.get('item')==row['kind'] and (cad_source_keys(other)&cad_source_keys(cad) or other.get('source_path')==cad.get('source_path') and cad.get('source_path')):
                     oldclaims=other.get('entity_claims') or [{'handle':other.get('handle')}]
                     newclaims=cad.get('entity_claims') or [{'handle':cad.get('handle')}]
                     if {x['handle'] for x in oldclaims}&{x['handle'] for x in newclaims} or {x.get('geometry_sha256') for x in oldclaims if x.get('geometry_sha256')}&{x.get('geometry_sha256') for x in newclaims if x.get('geometry_sha256')}:raise ValueError('والد/فرزند یا هندسه CAD قبلاً پرداخت شده است')

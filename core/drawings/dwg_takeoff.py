@@ -231,6 +231,7 @@ class DWGTakeoffEngine:
                     data['unresolved_xref']=bool(doc.blocks.get(name).block.is_xref or doc.blocks.get(name).block.is_xref_overlay)
                     data['block_unit']=units_map.get(int(doc.blocks.get(name).block_record.dxf.get('units',0)), 'unknown')
                     data.update(block=name, insert=_xy(e.dxf.insert),rotation=float(e.dxf.rotation),scale=tuple(float(e.dxf.get(k,1)) for k in ("xscale","yscale","zscale")),unsupported_measurement="بلوک مالک محاسبه جدا از اجزای بازشده نیست")
+                    if data['unresolved_xref']:data['unsupported_measurement']='XREF حل‌نشده: '+name+'؛ نمایش و متره وابسته به مرجع خارجی موجود نیست'
                 elif typ == "DIMENSION":
                     data.update(text=str(e.dxf.get('text','<>')),insert=_xy(e.dxf.get('defpoint',(0,0))),height=1,rotation=0,font_notice='متن اندازه‌گذاری مرجع مستقل متره نیست')
                 elif typ == "HATCH":
