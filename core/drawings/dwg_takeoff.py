@@ -101,6 +101,9 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
         yield e,'/'.join(identity),layer,visible
         if e.dxftype()=='INSERT':
             if str(e.dxf.name) in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
+            referenced=document.blocks.get(e.dxf.name)
+            if referenced is None:raise ValueError('مرجع بلوک CAD یافت نشد')
+            if referenced.block.is_xref or referenced.block.is_xref_overlay:warnings.append('XREF حل‌نشده: '+str(e.dxf.name));continue
             if e.mcount>1:
                 if not allow_arrays:raise ValueError('آرایه MINSERT نیازمند قرارداد توسعه صریح است')
                 rows=e.dxf.row_count;cols=e.dxf.column_count
@@ -209,7 +212,7 @@ class DWGTakeoffEngine:
                 elif typ == "ARC":
                     r = float(e.dxf.radius)
                     sweep = (float(e.dxf.end_angle) - float(e.dxf.start_angle)) % 360
-                    data.update(radius=r, length=2 * math.pi * r * sweep / 360)
+                    data.update(radius=r, length=2 * math.pi * r * sweep / 360, start_angle=float(e.dxf.start_angle), sweep_angle=sweep)
                 elif typ in {"TEXT", "MTEXT"}:
                     data["text"] = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
                     data["insert"] = _xy(e.dxf.insert)
@@ -225,7 +228,11 @@ class DWGTakeoffEngine:
                 elif typ == "INSERT":
                     name = str(e.dxf.name)
                     out.block_counts[name] = out.block_counts.get(name, 0) + 1
+                    data['unresolved_xref']=bool(doc.blocks.get(name).block.is_xref or doc.blocks.get(name).block.is_xref_overlay)
+                    data['block_unit']=units_map.get(int(doc.blocks.get(name).block_record.dxf.get('units',0)), 'unknown')
                     data.update(block=name, insert=_xy(e.dxf.insert),rotation=float(e.dxf.rotation),scale=tuple(float(e.dxf.get(k,1)) for k in ("xscale","yscale","zscale")),unsupported_measurement="بلوک مالک محاسبه جدا از اجزای بازشده نیست")
+                elif typ == "DIMENSION":
+                    data.update(text=str(e.dxf.get('text','<>')),insert=_xy(e.dxf.get('defpoint',(0,0))),height=1,rotation=0,font_notice='متن اندازه‌گذاری مرجع مستقل متره نیست')
                 elif typ == "HATCH":
                     data["pattern"] = str(getattr(e.dxf, "pattern_name", ""))
                 else:
@@ -263,6 +270,7 @@ class DWGTakeoffEngine:
                     out.warnings.append("لایه در جدول منبع تعریف نشده: "+layer)
                 data["layer_defined"]=layer_record is not None
                 data["layer_visible"]=source_visible
+                if data.get('unsupported_measurement') and typ!='INSERT':out.warnings.append(data['unsupported_measurement'])
                 out.entities.append(DWGEntity(typ, layer, entity_handle, data))
         except Exception as exc:
             raise RuntimeError(f"تحلیل عناصر CAD شکست خورد: {exc}") from exc
@@ -405,21 +413,56 @@ def infer_takeoff_from_layers(doc: DWGDocument, rules: dict[str, dict[str, Any]]
     return DWGTakeoffEngine().layer_takeoff(doc, rules)
 
 
+def cad_entity_children(document,handle):
+    found=[e for e in document.entities if e.handle==handle]
+    if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
+    if found[0].entity_type!='INSERT':return found
+    if any(e.entity_type=='INSERT' and e.data.get('unresolved_xref') for e in document.entities if e.handle==handle or e.handle.startswith(handle+'/') or e.handle.startswith(handle+'@')):raise ValueError('XREF حل‌نشده داخل بلوک؛ تجمیع مسدود است')
+    leaves=[e for e in document.entities if (e.handle.startswith(handle+'/') or e.handle.startswith(handle+'@')) and e.entity_type not in {'INSERT','TEXT','MTEXT'}]
+    if not leaves:raise ValueError('بلوک فاقد هندسه قابل متره است؛ XREF حل‌نشده مجاز نیست')
+    return leaves
+
+
 def cad_entity_geometry(document,handle,metric,origin=(0,0)):
-    """Bounded direct-entity contract: straight XY linework only; no material inference."""
+    """Source paths, analytic circles/arcs and disjoint sums, never display chords."""
     if cad_unit_factor(document.units) is None:raise ValueError('واحد CAD نامشخص است')
     found=[e for e in document.entities if e.handle==handle]
     if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
     e=found[0];d=e.data
-    if d.get('unsupported_measurement') or d.get('layer_visible') is False or d.get('layer_defined') is False:raise ValueError('جزء پنهان یا فاقد قرارداد متره مستقیم است')
-    if e.entity_type=='LINE':points=[d['start'],d['end']]
+    for parent in document.entities:
+        if parent.entity_type=='INSERT' and (handle==parent.handle or handle.startswith(parent.handle+'/') or handle.startswith(parent.handle+'@')) and parent.data.get('block_unit') not in {None,'unitless',document.units}:raise ValueError('واحد Block با سند ناسازگار است')
+    if d.get('layer_visible') is False or d.get('layer_defined') is False:raise ValueError('جزء یا لایه پنهان و نامعتبر است')
+    if e.entity_type=='INSERT':
+        from decimal import Decimal
+        parts=[cad_entity_geometry(document,c.handle,metric,origin) for c in cad_entity_children(document,handle)]
+        return e,[p for _,points,_ in parts for p in points],float(sum((Decimal(str(q)) for _,_,q in parts),Decimal(0)))
+    if d.get('unsupported_measurement'):raise ValueError(d['unsupported_measurement'])
+    if metric not in {'length','area'} or d.get(metric,0)<=0:raise ValueError('متریک مثبت معتبر لازم است')
+    curved=e.entity_type in {'CIRCLE','ARC'}
+    if curved:
+        if e.entity_type=='ARC' and metric=='area':raise ValueError('کمان باز سطح قابل پرداخت ندارد')
+        x,y=d['center'];r=d['radius'];points=[(x,y),(x+r,y),(x,y+r)]
+    elif e.entity_type=='LINE':points=[d['start'],d['end']]
     elif e.entity_type in {'POLYLINE','LWPOLYLINE'} and not any(d.get('bulges',[])):points=d['points']
-    else:raise ValueError('ثبت مستقیم فعلاً فقط خط و چندخطی مستقیم XY را می‌پذیرد؛ منحنی نیازمند قرارداد مستقل است')
-    if metric not in {'length','area'} or (metric=='area' and not d.get('closed')):raise ValueError('سطح نیازمند حلقه بسته معتبر است')
+    else:raise ValueError('نوع جزء یا منحنی bulge قرارداد مالی تأییدشده ندارد')
+    if metric=='area' and not(curved or d.get('closed')):raise ValueError('سطح نیازمند حلقه بسته معتبر است')
     if metric=='length' and d.get('closed'):points=points+[points[0]]
     ox,oy=(float(v) for v in origin)
     if not all(math.isfinite(v) for v in (ox,oy)):raise ValueError('مبدأ نمایش نامعتبر است')
-    return e,[(float(x)-ox,oy-float(y)) for x,y in points],float(d[metric])
+    result=[(float(x)-ox,oy-float(y)) for x,y in points]
+    if curved and (result[0]==result[1] or result[0]==result[2]):raise ValueError('شعاع در تبدیل مختصات دقت کافی ندارد')
+    return e,result,float(d[metric])
+
+
+def cad_entity_claims(document,handle,metric):
+    import json
+    result=[]
+    for e in cad_entity_children(document,handle):
+        d=e.data
+        if d.get('unsupported_measurement') or d.get('layer_visible') is False:raise ValueError('جزء بلوک فاقد قرارداد مجاز است')
+        geometry={k:d[k] for k in ('start','end','points','closed','bulges','center','radius','start_angle','sweep_angle') if k in d}
+        result.append({'handle':e.handle,'geometry_sha256':hashlib.sha256(json.dumps({'type':e.entity_type,'geometry':geometry,'metric':metric},sort_keys=True,separators=(',',':')).encode()).hexdigest()})
+    return sorted(result,key=lambda x:x['handle'])
 
 
 def cad_review_digest(item):
@@ -435,9 +478,10 @@ def verify_cad_item(item,document,*,require_review=True):
     if meta.get('source_sha256')!=document.source_sha256 or meta.get('unit_basis')!=document.units or meta.get('unit_factor_to_m')!=str(cad_unit_factor(document.units)) or meta.get('dxf_version')!=document.dxf_version:raise ValueError('منبع یا واحد CAD تغییر کرده است')
     if any(meta.get('conversion',{}).get(k)!=document.conversion.get(k) for k in ('provider','decoder_version')):raise ValueError('Decoder مبنای بازبینی تغییر کرده است')
     e,points,amount=cad_entity_geometry(document,meta.get('handle'),item.kind,meta.get('scene_origin',()))
+    if meta.get('entity_claims') is not None and meta['entity_claims']!=cad_entity_claims(document,meta['handle'],item.kind):raise ValueError('هویت اجزای CAD تغییر کرده است')
     if e.layer!=meta.get('layer') or tuple(map(tuple,points))!=item.geometry or item.holes or not math.isclose(amount,item.quantity,rel_tol=1e-12,abs_tol=0):raise ValueError('مقدار یا هندسه متره با جزء اصلی CAD مطابق نیست')
     if any(not str(meta.get(k,'')).strip() for k in ('floor_id','member_id','quantity_owner','created_by','reference')):raise ValueError('طبقه، عضو، مالک، سازنده و مدرک CAD الزامی است')
-    if item.kind=="area" and any((item.geometry_evidence or {}).get(k)!=meta.get(k) for k in ("floor_id","member_id","quantity_owner")):raise ValueError("مالکیت هندسه و جزء CAD یکسان نیست")
+    if item.kind=="area" and meta.get("metric_contract")!="cad_analytic_v1" and any((item.geometry_evidence or {}).get(k)!=meta.get(k) for k in ("floor_id","member_id","quantity_owner")):raise ValueError("مالکیت هندسه و جزء CAD یکسان نیست")
     if require_review:
         if document.format.startswith("DWG") and document.conversion.get("decoder_version") in {None,"unverified"}:raise ValueError("نسخه Decoder معتبر DWG برای ثبت قطعی گزارش نشده است")
         from core.projects.project_model import _identity

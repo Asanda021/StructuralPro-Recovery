@@ -641,7 +641,7 @@ DRAWING_POLICY='drawing_polygon_correction_v1'
 
 def drawing_original(project,key):
     rows=[r for r in project.get('takeoffs',[]) if r.get('source_id')==key]
-    if len(rows)!=1 or rows[0].get('domain')!='drawing' or not (rows[0].get('params') or {}).get('geometry_evidence'):
+    if len(rows)!=1 or rows[0].get('domain')!='drawing' or not ((rows[0].get('params') or {}).get('geometry_evidence') or (rows[0].get('params') or {}).get('cad_evidence')):
         raise ValueError('اصل برداشت چندضلعی قطعی و یکتا یافت نشد')
     return {'data':{'measurement_policy':DRAWING_POLICY,'root_source_id':key,'original_takeoff':deepcopy(rows[0])},
             'revision':rows[0]['revision'],'status':'committed','committed_source_ids':[key]}
@@ -654,7 +654,7 @@ def drawing_rows(data,version):
     values=session_to_boq_rows(payload,session_id=sid,selected_item_ids=[original['drawing_takeoff_id']])
     verified_measurement_identities(record,values);measured=values[0];q=original['quantities'][0]
     if measured['item_code']!=q['code'] or measured['unit']!=q['unit']:raise ValueError('کد و واحد اصل برداشت در اصلاحیه تغییر نمی‌کند')
-    before=original['params']['geometry_evidence'];after=measured.get('geometry_evidence') or {}
+    before=original['params'].get('geometry_evidence') or original['params'].get('cad_evidence') or {};after=measured.get('geometry_evidence') or measured.get('cad_evidence') or {}
     if any(before.get(k)!=after.get(k) for k in ('floor_id','member_id','quantity_owner')):raise ValueError('هویت عضو، طبقه و مالک مقدار در اصلاحیه تغییر نمی‌کند')
     row=deepcopy(original);row['revision']=version
     for name in ('drawing_source','source_sha256','measurement_identity','calibration','holes','geometry_evidence','page','geometry','confidence','formula'):

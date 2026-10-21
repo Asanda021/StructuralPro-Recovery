@@ -251,6 +251,7 @@ class TakeoffCanvas(QGraphicsView):
             QMessageBox.warning(self, "ثبت متره", str(exc))
 
     def _draw_measurement(self, item):
+        if (item.cad_evidence or {}).get('metric_contract')=='cad_analytic_v1':return
         if item.kind == "length" and len(item.geometry) >= 2:
             pts = [QPointF(x, y) for x, y in item.geometry]
             for i in range(len(pts) - 1):
@@ -410,13 +411,15 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layers=QComboBox();self.cad_layer_toggle=QPushButton('نمایش/پنهان لایه')
         self.cad_handle=QLineEdit();self.cad_handle.setPlaceholderText('Handle یا مسیر بلوک')
         self.cad_find=QPushButton('یافتن جزء CAD');self.cad_select=QPushButton('انتخاب اجزای CAD')
-        self.cad_metric=QComboBox();self.cad_metric.addItem('طول مستقیم','length');self.cad_metric.addItem('سطح بسته مستقیم','area')
+        self.cad_metric=QComboBox();self.cad_metric.addItem('طول / محیط معتبر','length');self.cad_metric.addItem('سطح بسته معتبر','area')
+        self.cad_report=QPushButton('وضعیت اجزای CAD');self.cad_report.clicked.connect(self.show_cad_capabilities)
+        self.cad_unit_button=QPushButton('واحد مستند CAD');self.cad_unit_button.clicked.connect(self.open_cad_unit_dialog)
         self.cad_cancel=QPushButton('لغو بارگذاری CAD');self.cad_cancel.clicked.connect(self.cancel_cad_loading)
         self.cad_measure=QPushButton('متره جزء CAD');self.cad_review=QPushButton('بازبینی متره CAD')
-        self.cad_measure.setToolTip('فقط خط و چندضلعی مستقیم معتبر؛ منحنی و دیتایل مصالح مستقل‌اند')
+        self.cad_measure.setToolTip('خط، چندضلعی مستقیم، دایره و کمان تحلیلی یا جمع اجزای بلوک؛ بدون حدس مصالح')
         self._cad_items={};self._cad_handle_items={}
         cad_row=QHBoxLayout()
-        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review,self.cad_cancel):cad_row.addWidget(control)
+        for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review,self.cad_cancel,self.cad_unit_button,self.cad_report):cad_row.addWidget(control)
         self.cad_controls=QWidget();self.cad_controls.setLayout(cad_row);self.cad_controls.hide();toolbar_rows.addWidget(self.cad_controls)
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
@@ -587,6 +590,38 @@ class GraphicalTakeoffDialog(QDialog):
         if self.engine is not None:self.engine.close()
         super().closeEvent(event)
 
+    def show_cad_capabilities(self):
+        if self.cad_loading or not self.cad_document:return
+        dialog=QDialog(self);dialog.setWindowTitle('قرارداد اجزای CAD و هشدار فونت');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(900,500)
+        layout=QVBoxLayout(dialog);layout.addWidget(QLabel('نوع پشتیبانی‌نشده، واحد نامعلوم یا مدرک ناقص مجوز BOQ ندارد؛ فونت جایگزین ممکن است چیدمان را تغییر دهد'))
+        shown=self.cad_document.entities[:200]
+        layout.addWidget(QLabel(f'این گزارش نخستین {len(shown)} جزء از {len(self.cad_document.entities)} را نشان می‌دهد؛ همه اجزا در مدل و جست‌وجوی Handle محفوظ‌اند'))
+        table=QTableWidget(len(shown),3);table.setHorizontalHeaderLabels(['نوع جزء','Handle و لایه','وضعیت و علت'])
+        for row,e in enumerate(shown):
+            reason=e.data.get('unsupported_measurement') or e.data.get('font_notice') or 'هندسه قابل بررسی؛ ثبت فقط پس از مدرک و بازبینی مستقل'
+            for col,value in enumerate((e.entity_type,str(e.handle)+' | '+e.layer,reason)):table.setItem(row,col,QTableWidgetItem(value))
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch);layout.addWidget(table);dialog.exec()
+
+    def open_cad_unit_dialog(self):
+        if self.cad_loading or not self.cad_document:return
+        dialog=QDialog(self);dialog.setWindowTitle('واحد مستند CAD — مدرک و بازبینی مستقل');dialog.setLayoutDirection(Qt.RightToLeft)
+        form=QFormLayout(dialog);form.addRow(QLabel('واحد فایل: '+self.cad_document.units+'؛ انتخاب دلخواه واحد مجوز مالی نیست'))
+        path=QLineEdit();path.setObjectName('cad_unit_document');browse=QPushButton('انتخاب مدرک JSON مستقل واحد');summary=QLabel();summary.setWordWrap(True);apply=QPushButton('بررسی مدرک و تأیید صریح واحد');apply.setObjectName('cad_unit_apply')
+        form.addRow('مسیر مدرک',path);form.addRow(browse);form.addRow(summary);form.addRow(apply)
+        browse.clicked.connect(lambda:path.setText(QFileDialog.getOpenFileName(dialog,'مدرک مستقل واحد','','JSON (*.json)')[0]))
+        def accept():
+            try:
+                if self.session.items:raise ValueError('متره قبلی نباید بازتفسیر شود؛ نشست یا اصلاحیه مستقل لازم است')
+                import hashlib
+                from core.drawings.dwg_takeoff import apply_documented_units
+                p=Path(path.text());e={'path':str(p),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()};doc=apply_documented_units(self.cad_document,e);proof=json.loads(p.read_text(encoding='utf-8-sig'))
+                labels={'unit':'واحد پیشنهادی','reference_handle':'شناسه هندسه مرجع','cad_length':'طول مرجع در CAD','real_length_m':'طول معلوم واقعی (متر)','author':'ثبت‌کننده','reviewer':'بازبین مستقل','reference':'نوع و مرجع مدرک','source_sha256':'SHA-256 منبع'}
+                summary.setText('\n'.join(label+': '+str(proof.get(k,'')) for k,label in labels.items())+'\nSHA-256 مدرک: '+e['sha256'])
+                if QMessageBox.question(dialog,'تأیید واحد',summary.text()+'\nواحد مستند اعمال شود؟',QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
+                self.cad_document=self.session.set_cad_units(self.cad_document,e);self.viewer.cad_document=self.cad_document;self.load_page(1);dialog.accept()
+            except Exception as exc:summary.setText('واحد اعمال نشد: '+str(exc))
+        apply.clicked.connect(accept);dialog.exec()
+
     def beam_drawing_context(self):
         """Context link only: a selected rectangle does not imply a parsed beam detail."""
         rect = self.canvas._selected_region_rect
@@ -649,6 +684,9 @@ class GraphicalTakeoffDialog(QDialog):
                 raise FileNotFoundError("فایل نقشه اصلی در این مسیر در دسترس نیست؛ نشست ذخیره‌شده تغییر نکرد.")
             new_viewer = DrawingViewerModel()
             new_viewer.open(source)
+            if restored.cad_unit_evidence:
+                from core.drawings.dwg_takeoff import apply_documented_units
+                new_viewer.cad_document=apply_documented_units(new_viewer.cad_document,restored.cad_unit_evidence)
             new_engine = PDFDrawingEngine(source) if new_viewer.kind == "pdf" else None
             self.viewer = new_viewer
             self.engine = new_engine
@@ -828,7 +866,11 @@ class GraphicalTakeoffDialog(QDialog):
     def measure_cad_selection(self):
         if self.cad_loading:self.status.setText('بارگذاری CAD هنوز کامل نشده است؛ متره و BOQ مسدودند');return False
         selected=self.canvas.scene.selectedItems()
-        if len(selected)!=1:
+        root_handle=getattr(self,'_selected_cad_root',None)
+        if root_handle:
+            expected={h for h in self._cad_handle_items if h.startswith(root_handle+'/') or h.startswith(root_handle+'@')}
+            if {str(i.data(0)) for i in selected}!=expected:root_handle=None
+        if len(selected)!=1 and not root_handle:
             self.status.setText('یک جزء CAD را انتخاب کنید؛ هر عضو و مالکیت مستقل ثبت می‌شود');return
         values=[]
         for prompt in ('کد عملیات متره','سازنده برداشت','مرجع مستقل هندسه و مالکیت'):
@@ -836,7 +878,7 @@ class GraphicalTakeoffDialog(QDialog):
             if not ok or not value.strip():return
             values.append(value.strip())
         try:
-            item=self.session.add_cad_entity(self.cad_document,str(selected[0].data(0)),self.cad_metric.currentData(),takeoff_code=values[0],created_by=values[1],reference=values[2],floor_id=self.polygon_floor.text().strip(),member_id=self.polygon_member.text().strip(),quantity_owner=self.polygon_owner.text().strip(),scene_origin=self._cad_scene_origin)
+            item=self.session.add_cad_entity(self.cad_document,root_handle or str(selected[0].data(0)),self.cad_metric.currentData(),takeoff_code=values[0],created_by=values[1],reference=values[2],floor_id=self.polygon_floor.text().strip(),member_id=self.polygon_member.text().strip(),quantity_owner=self.polygon_owner.text().strip(),scene_origin=self._cad_scene_origin)
             self.refresh();self.table.selectRow(len(self.session.items)-1)
             self.status.setText('پیش‌نویس CAD ثبت شد؛ بازبینی مستقل پیش از BOQ لازم است | '+item.id)
         except Exception as exc:QMessageBox.warning(self,'متره CAD مسدود شد',str(exc))
@@ -863,7 +905,12 @@ class GraphicalTakeoffDialog(QDialog):
     def find_cad_handle(self):
         key=self.cad_handle.text().strip();item=self._cad_handle_items.get(key)
         self.canvas.scene.clearSelection()
-        if item is None:self.status.setText('جزء قابل نمایش با این شناسه یافت نشد');return
+        self._selected_cad_root=None
+        if item is None:
+            children=[item for handle,item in self._cad_handle_items.items() if handle.startswith(key+'/') or handle.startswith(key+'@')]
+            if not children:self.status.setText('جزء قابل نمایش یافت نشد؛ XREF حل‌نشده یا نوع پشتیبانی‌نشده مجوز متره ندارد');return
+            for child in children:child.setVisible(True);child.setSelected(True)
+            self._selected_cad_root=key;self.canvas.centerOn(children[0]);self.status.setText('بلوک انتخاب شد: '+key+'؛ اجزا برای جمع کنترل‌شده بازبینی شوند');return
         item.setVisible(True);item.setSelected(True);self.canvas.centerOn(item)
         self.status.setText('جزء CAD: '+key+' | '+str(item.data(1)))
 
@@ -917,7 +964,7 @@ class GraphicalTakeoffDialog(QDialog):
             elif entity.entity_type=="CIRCLE" and d.get("center") and d.get("radius"):
                 x,y=d["center"]; r=float(d["radius"])
                 item=self.canvas.scene.addEllipse(sx(x-r),sy(y+r),2*r,2*r,pen)
-            elif entity.entity_type in {"TEXT","MTEXT"} and d.get("text"):
+            elif entity.entity_type in {"TEXT","MTEXT","DIMENSION"} and d.get("text"):
                 text = normalize_cad_text(d["text"])
                 if not text:
                     continue
@@ -1412,7 +1459,9 @@ class GraphicalTakeoffDialog(QDialog):
         item = next((x for x in self.session.items if x.id == cell.text()), None)
         if item is None: return
         if item.page != self.page: self.load_page(item.page)
-        self.canvas.highlight_measurement(item)
+        if item.cad_evidence:
+            self.cad_handle.setText(item.cad_evidence['handle']);self.find_cad_handle()
+        else:self.canvas.highlight_measurement(item)
         self.geometry_components.blockSignals(True);self.geometry_components.clear();self.geometry_components.addItem('تمام اجزای سطح',None)
         for component in (item.geometry_evidence or {}).get('components',[]):self.geometry_components.addItem(component['id'][:15]+' | '+component['net_m2']+' مترمربع',component)
         self.geometry_components.setEnabled(self.geometry_components.count()>1);self.geometry_components.blockSignals(False)

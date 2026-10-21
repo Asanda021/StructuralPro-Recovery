@@ -67,6 +67,7 @@ class DrawingTakeoffSession:
         self.calibrations: dict[int, Calibration] = {}
         self.items: list[TakeoffItem] = []
         self.markups = MarkupStore()
+        self.cad_unit_evidence=None
         self.current_page = 1
         self._counter = 0
         self._undo: list[dict[str, Any]] = []
@@ -135,11 +136,13 @@ class DrawingTakeoffSession:
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
+            **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
             "current_page": self.current_page,
             "counter": self._counter,
         }
 
     def _restore(self, state: dict[str, Any]) -> None:
+        self.cad_unit_evidence=deepcopy(state.get("cad_unit_evidence"))
         raw = state.get("calibration")
         self.calibration = Calibration(**raw) if raw else None
         saved_calibrations = state.get("calibrations")
@@ -208,6 +211,13 @@ class DrawingTakeoffSession:
         if any(x.source == source and x.id != ignore_id for x in self.items):
             raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source}")
 
+    def set_cad_units(self,document,evidence):
+        from core.drawings.dwg_takeoff import apply_documented_units
+        if self.items:raise ValueError('متره قبلی نباید بازتفسیر شود؛ نشست یا اصلاحیه مستقل لازم است')
+        if document.source_sha256!=self.source_sha256:raise ValueError('منبع واحد با نشست مطابق نیست')
+        resolved=apply_documented_units(document,evidence)
+        self._record();self.cad_unit_evidence=deepcopy(evidence);self._commit();return resolved
+
     def add_cad_entity(self,document,handle,metric,*,takeoff_code,floor_id,member_id,quantity_owner,created_by,reference,scene_origin=(0,0)):
         from core.drawings.dwg_takeoff import cad_entity_geometry
         from dataclasses import replace
@@ -216,12 +226,20 @@ class DrawingTakeoffSession:
         meta={'policy':'cad_entity_review_v1','source_sha256':document.source_sha256,'handle':handle,'layer':e.layer,'unit_basis':document.units,'scene_origin':list(scene_origin),'floor_id':floor_id,'member_id':member_id,'quantity_owner':quantity_owner,'created_by':created_by,'reference':reference}
         from core.drawings.dwg_takeoff import cad_unit_factor
         if getattr(document,'unit_evidence',None):meta['unit_evidence']=deepcopy(document.unit_evidence)
+        from core.drawings.dwg_takeoff import cad_entity_claims
+        meta.update(entity_claims=cad_entity_claims(document,handle,metric),source_path=str(Path(document.source).resolve()))
+        analytic=e.entity_type in {'INSERT','CIRCLE','ARC'}
+        if analytic:meta['metric_contract']='cad_analytic_v1'
         meta.update(source_format=document.format,dxf_version=document.dxf_version,conversion=deepcopy(document.conversion),unit_factor_to_m=str(cad_unit_factor(document.units)),insert_chain=[{'handle':v.handle,'block':v.data.get('block'),'rotation_degrees':v.data.get('rotation'),'scale':v.data.get('scale'),'insert_m':v.data.get('insert')} for v in document.entities if v.entity_type=='INSERT' and handle.startswith(v.handle+'/')])
         if any(not str(meta[k]).strip() for k in ('floor_id','member_id','quantity_owner','created_by','reference')):raise ValueError('هویت و مدرک CAD ناقص است')
         if self.items and self.calibrations.get(1) and self.calibrations[1].meters_per_pixel!=1:raise ValueError('مقیاس قبلی با مختصات استاندارد CAD مطابق نیست؛ نشست مستقل لازم است')
         self.calibrate(1,1,1)
         kw={'page':1,'takeoff_code':takeoff_code,'source':'cad-entity:'+handle}
-        if metric=='area':item=self.add_polygon([Point(*p) for p in points],floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner,**kw)
+        if analytic:
+            self._ensure_source_unique(kw['source']);self._record();ident=self._next_id()
+            item=TakeoffItem(ident,metric,amount,'m' if metric=='length' else 'm2',1,'',takeoff_code,kw['source'],self._source_ref(1,ident),tuple(points),'CAD analytic source metric; circle/arc IEEE754 and disjoint child sum; rel tolerance 1e-12',cad_evidence=meta)
+            self.items.append(item);self._commit()
+        elif metric=='area':item=self.add_polygon([Point(*p) for p in points],floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner,**kw)
         else:item=self.add_length([Point(*p) for p in points],**kw)
         if not math.isclose(item.quantity,amount,rel_tol=1e-12,abs_tol=0):
             self.undo();raise ValueError('افت دقت در تبدیل مختصات CAD؛ ثبت مسدود است')
@@ -528,6 +546,7 @@ class DrawingTakeoffSession:
             "source_sha256": self.source_sha256,
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
+            **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
             "current_page": self.current_page,
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
@@ -539,6 +558,7 @@ class DrawingTakeoffSession:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DrawingTakeoffSession":
         session = cls()
+        session.cad_unit_evidence=deepcopy(data.get("cad_unit_evidence"))
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
         session.source_sha256 = str(data.get("source_sha256", ""))
