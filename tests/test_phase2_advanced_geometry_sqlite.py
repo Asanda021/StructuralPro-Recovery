@@ -133,3 +133,13 @@ def test_axis_polygon_reuses_existing_specialist_and_mismatched_member_is_reject
  assert not preview_system(changed,app.takeoff)['ready']
  assert app.open_project('P')==before
  app.store.close()
+
+
+def test_unregistered_polygon_owner_does_not_authorize_boq(tmp_path):
+ app,_,_,_=fixture(tmp_path)
+ s=DrawingTakeoffSession(str(tmp_path/'plan.pdf'));s.calibrate(1,100,1)
+ i=s.add_polygon([Point(100,100),Point(200,100),Point(200,200),Point(100,200)],source='explicit synthetic unlinked region',quantity_owner='typed owner claim only')
+ r=app.save_drawing_takeoff_session('P',s);before=deepcopy(app.open_project('P'))
+ with pytest.raises(ValueError):app.commit_drawing_takeoff_to_boq('P',r['session_id'],[i.id],expected_session_revision=1)
+ assert app.open_project('P')==before
+ app.store.close()

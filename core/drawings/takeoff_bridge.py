@@ -90,6 +90,8 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
         if row['kind']=='area':
             meta=row.get('geometry_evidence')
             if meta and not meta.get('quantity_owner','').strip():raise ValueError('مالک مقدار و مرجع آن برای ثبت برداشت چندضلعی الزامی است')
+            if meta and (not meta.get('floor_id','').strip() or not meta.get('member_id','').strip() or not project.get('floors') or not project.get('members')):
+                raise ValueError('شناسه طبقه و عضو ثبت‌شده پروژه برای انتقال چندضلعی به BOQ الزامی است')
             if meta and project.get('floors'):
                 from core.projects.project_model import _identity
                 floor=_identity(meta.get('floor_id',''));member=_identity(meta.get('member_id',''))
