@@ -96,7 +96,9 @@ class ProjectStore:
         except Exception:
             self.db.rollback()
             raise
-        cached=deepcopy(clean_project)
+        # Cache the same JSON representation committed to SQLite. Coordinates
+        # may arrive as tuples; a cache hit must equal a reopened snapshot.
+        cached=json.loads(payload)
         cached["_meta"]={"id":pid,"version":version,"updated_at":now}
         self._cache[pid] = (version,cached)
         return {"id":pid,"version":version,"updated_at":now}
