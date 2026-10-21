@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_pdf_two_clicked_points_calibrate_from_documented_distance ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-13/test_pdf_two_clicked_points_ca0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4187f4df40>
+
+    def test_pdf_two_clicked_points_calibrate_from_documented_distance(tmp_path, monkeypatch):
+        from PySide6.QtCore import QPointF
+        from PySide6.QtWidgets import QInputDialog
+        global _qt
+        _qt = QApplication.instance() or QApplication([])
+        app, _, _, _ = fixture(tmp_path)
+        dialog = GraphicalTakeoffDialog(pdf_path=str(tmp_path/'plan.pdf'), app_service=app, project_id='P')
+        dialog.resize(1400,1000)
+        dialog.show()
+        _qt.processEvents()
+        calls = []
+        def answer(*args, **kwargs):
+            calls.append(args[2])
+            return ('4', True) if len(calls) == 1 else ('', False)
+        monkeypatch.setattr(QInputDialog, 'getText', answer)
+        try:
+            assert not dialog.session.calibrations
+            dialog.canvas.resetTransform()
+            for point in (QPointF(100,100), QPointF(500,100)):
+                QTest.mouseClick(dialog.canvas.viewport(), Qt.LeftButton,
+                                 pos=dialog.canvas.mapFromScene(point))
+            assert len(dialog.canvas.points) == 2
+            QTest.mouseClick(dialog.calibrate, Qt.LeftButton)
+>           assert len(calls) == 1 and 'متر' in calls[0]
+E           AssertionError: assert (2 == 1)
+E            +  where 2 = len(['فاصله اندازه\u200cگیری\u200cشده روی صفحه (پیکسل؛ مقدار صریح):', 'فاصله معلوم طبق مدرک (متر؛ مقدار صریح):'])
+
+tests/test_phase2_pdf_navigation.py:77: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_phase2_pdf_navigation.py::test_pdf_two_clicked_points_calibrate_from_documented_distance
+1 failed in 0.46s

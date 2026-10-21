@@ -1,0 +1,1017 @@
+{
+  "scope": "Phase 2 priorities 1 and 2 only; bounded rectangular PDF roofs, explicit synthetic schedules",
+  "initial_heads": {
+    "pr18": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+    "pr20": "a6229a7bfdd397b5bbe80c1fbddbfaf3e4cbfb9c"
+  },
+  "tested_code_head": "ef261f80e041b3dfb2f0102b67898a766bd0983c",
+  "tested_tree": "24b92d7d1f9b3164e3cde16976d12aee21879c65",
+  "delivery_head": "the documentation-only commit containing this ledger; see Git history",
+  "priorities": {
+    "1": "COMPLETE",
+    "2": "COMPLETE"
+  },
+  "synchronization": {
+    "method": "chronological cherry-pick of 52 commits, no merge/rebase/force push",
+    "textual_conflicts": 0,
+    "source_commits": [
+      "2f4526005a0aef4df7fc353109e6bc8922598d4f",
+      "636c4f80b30221f4d02df8ca583a4721624cf463",
+      "3cf621c8d34d1ddd971875335dde7a3187b0a0f5",
+      "fa3564a56217c2f9f0a8c467de6850fd4ae7239e",
+      "98589fbc67149ae8e9b13af429eb137c59b59165",
+      "f0518408d025798c10add97bc334701704a4f526",
+      "7f4fec2e9e7c0bdcfa190eb7948f7c0a7d90fe78",
+      "8e367755ede5c560c4804b10e253d10b11c93086",
+      "af7d6c2a47f95090f2ab3aa179be37d077c5d852",
+      "bc9832827d33f54f8a31a6da333a6a4e518ef667",
+      "784888f1867bf96409df3ecf44f613149d9744b6",
+      "f678cb3246a2300e4efc9a7adec30a580863ffdb",
+      "eebca9188387ad212eef4b06525ff2e24b8d721c",
+      "79fd0c21481ad4914426afe097ffe6a49b3a8fd1",
+      "31f392cce84e74049f60520577b011e5510273d1",
+      "580ddfe9344dcaf0c6eb86a4d1ae611ae29aa685",
+      "42a6e1a3014e3f06745224c03731541a94eabf81",
+      "e791b3a1dfe9414a9e8b42be826525fcc68266ea",
+      "d56760af9cfe060c8f7895a93038723df9c86413",
+      "b05dd7bc14f26724fdc0f46ab2611c44a1f1299e",
+      "128575a82fbac1fb6aa29f186ac97aab1b85e43b",
+      "66b63b2c59dafa05756cdf9c664c1ea5e4000e0c",
+      "bb79b67fe95f455d5b7d7d5b1f5c0b7b6e233cc6",
+      "106f83612144b9c989441c014e761706ed5735da",
+      "5c742c9db5cb7e4910554334d578e5c1e08e7042",
+      "62307927365187c958fc55e263cdd50bfa2f306c",
+      "eec3c50079f03952470eedc08fb8ba84b73cadea",
+      "0fc36ac0935f2ab704cf99dda871347ccf7b1643",
+      "0db1a2c48ba8f9a8ee5baaa1a2738ed5555c1c5d",
+      "1037cdf77a4166d302ee963493b3283cef623c37",
+      "f17e04f7ae9057d62474fe3c8260c85ba58a0dff",
+      "70b2dea34d43b10b6c195d95f10210508fbca4f6",
+      "edad4f232a6c5a834028e92409e1b6937f2e0d21",
+      "d299749ff70d4b38752d904a0fff58ec55838ca6",
+      "ec08c4acc96507bda29bce88c082dc68b319ab1d",
+      "5d9cc3e31e63796ddeabeebc7066d83d763ce7ae",
+      "3f4dabaa42fe9d07a06f9f11df51f2a0596fc3a2",
+      "a8959f3c749bda5f765e8de2ddc1d86eabd0143a",
+      "1c243b2e8381c45fcc9a19f1705a847650958b48",
+      "df9b5cbd43a07c667eb894bef5ecb36f1be93f68",
+      "f8679b4410d35c83866f652065f7c713bd223da8",
+      "ad9077afcfe42f71cfe14fcfeeaa277fa3bd9c36",
+      "0cfaba8f370d18464a69dbf532ebca0fbdcbbf47",
+      "bc951597810ee10419daac9d3dd199277473ee87",
+      "c782a1091400bc1e49c6ca26d101813beb2639c3",
+      "fe019fc636fba0ed17f1eacb112371a824bcafb6",
+      "26bf7ffff29e62fbc24981dfff5abd046d530a1a",
+      "778107aae5b30d77bfbf4985dbb3cdc1bad4bf49",
+      "77d04c606c08da748682667467b43486f21065fd",
+      "2d5db614d5d23d0a0bad32e52618ba205047ec4f",
+      "b822ee816a46301dc97a7a8f8c9147d46acfde80",
+      "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29"
+    ],
+    "phase1_files": 53,
+    "byte_identical": 51,
+    "reviewed_adapters": [
+      "core/takeoff/reviewed_aec.py",
+      "core/takeoff/roof_detail.py"
+    ],
+    "ancestry_note": "Cherry-pick preserves PR20 ancestry, not PR18 commit SHAs. Graph still has 52 source commits not ancestral; patch equivalence and final two-dot content comparison are recorded. No duplicate product logic or data."
+  },
+  "executions": [
+    {
+      "name": "initial requested three files",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q tests/test_phase2_pdf_roof.py tests/test_phase2_pdf_roof_openings.py tests/test_phase2_pdf_roof_ui.py",
+      "passed": 56,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 1,
+      "seconds": 3.38
+    },
+    {
+      "name": "synchronized three files",
+      "passed": 56,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 1,
+      "seconds": 3.1
+    },
+    {
+      "name": "final targeted five files",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q tests/test_phase2_pdf_roof.py tests/test_phase2_pdf_roof_openings.py tests/test_phase2_pdf_roof_ui.py tests/test_phase2_project_snapshot_cache.py tests/test_phase2_pdf_navigation.py",
+      "passed": 60,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0,
+      "seconds": 3.4
+    },
+    {
+      "name": "14 new overlap cases",
+      "command": "QT_QPA_PLATFORM=offscreen python -m pytest -q tests/test_phase2_pdf_roof.py -k 'partial_overlap_geometry_contract or overlap_rejects_invalid_stored_rectangle or overlap_gate_is_atomic'",
+      "passed": 14,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "deselected": 34,
+      "exit": 0,
+      "seconds": 0.32
+    },
+    {
+      "name": "integrated identity and PDF regression before final two-point addition",
+      "passed": 89,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0,
+      "seconds": 5.8
+    },
+    {
+      "name": "related phase1, manual, ownership, roof, drawing, CAS regression",
+      "passed": 332,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0,
+      "seconds": 84.74,
+      "files": [
+        "tests/test_phase1_live_floor_events_chat.py",
+        "tests/test_phase1_36_family_sqlite_cloud.py",
+        "tests/test_phase1_37_family_triage_gate_chat.py",
+        "tests/test_phase1_aec_revision_type_cloud.py",
+        "tests/test_phase1_cross_line_physical_identity_cloud.py",
+        "tests/test_manual_formula_fivefloor_closure.py",
+        "tests/test_manual_formula_persistence.py",
+        "tests/test_recovery_concurrent_takeoff.py",
+        "tests/test_takeoff_revision_safe_edit.py",
+        "tests/test_roof_specialist_work.py",
+        "tests/test_drawing_takeoff.py",
+        "tests/test_drawing_phase_3_5_regression.py"
+      ]
+    },
+    {
+      "name": "full intermediate",
+      "passed": 7302,
+      "failed": 3,
+      "errors": 0,
+      "skipped": 5,
+      "exit": 1,
+      "seconds": 306.43
+    },
+    {
+      "name": "superseded full attempt",
+      "exit": 130,
+      "result": "interrupted to include two-point calibration; not acceptance"
+    },
+    {
+      "name": "final full",
+      "command": "QT_QPA_PLATFORM=offscreen PYTHONFAULTHANDLER=1 python -m pytest -q -ra --junitxml=full.junit.xml -o faulthandler_timeout=180",
+      "passed": 7307,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 5,
+      "exit": 0,
+      "seconds": 297.303
+    },
+    {
+      "name": "independent Dropbox returned bundle restoration",
+      "passed": 90,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit": 0,
+      "seconds": 5.21
+    },
+    {
+      "name": "independent generated-report readbacks",
+      "checks": 12,
+      "failed": 0,
+      "exit": 0
+    },
+    {
+      "name": "compileall core app tests",
+      "exit": 0
+    },
+    {
+      "name": "pip check",
+      "exit": 0
+    },
+    {
+      "name": "git diff --check",
+      "exit": 0
+    }
+  ],
+  "skips": [
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+      "reason": "PowerShell runtime unavailable"
+    }
+  ],
+  "counts_overlap": true,
+  "fixes": [
+    {
+      "commit": "f18d6f65ac4637ceb5f0b132b49648860cb86cd0",
+      "issue": "Cached tuples differed from reopened JSON lists; no SQLite data loss",
+      "files": [
+        "core/projects/store.py",
+        "tests/test_phase2_project_snapshot_cache.py"
+      ],
+      "local_commit": "eefe12cc78d4a5ebe9e517201e368e56659e24b6"
+    },
+    {
+      "commit": "f058dba50d8785b16f0407ed07569693bfc7e7d5",
+      "issue": "Missing operational PDF Pan route and mouse events recording points",
+      "files": [
+        "app/graphical_takeoff.py",
+        "tests/test_phase2_pdf_navigation.py"
+      ],
+      "local_commit": "97c1007cebffa5a52bdb9e19da9bf73ed74dfa3c"
+    },
+    {
+      "commit": "8491f5aba2966c8654cc5dd6dd047ca878805269",
+      "issue": "PDF guard raised AttributeError before canonical malformed-registry rejection",
+      "files": [
+        "core/drawings/roof_region.py"
+      ],
+      "local_commit": "d124c7dfa1833033a99716365dee197f8b9d6ded"
+    },
+    {
+      "commit": "0dcea6e63b30c0262ef6c5692ed88df321c25534",
+      "issue": "No calibration from two explicitly clicked reference points; retained explicit typed-pixel fallback",
+      "files": [
+        "app/graphical_takeoff.py",
+        "tests/test_phase2_pdf_navigation.py"
+      ],
+      "local_commit": "ef261f80e041b3dfb2f0102b67898a766bd0983c"
+    }
+  ],
+  "outputs_and_benchmark": {
+    "fixture": "synthetic explicit phase-one rectangular roof schedules",
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "roofs": {
+      "solid_slab": {
+        "session_id": "a943c46b699a4041ac57547f3037489c",
+        "measurement_id": "TO-00001",
+        "boq_count": 4,
+        "source": {
+          "mode": "drawing",
+          "source_id": "pdf-roof:d248080232663cafbe8b7cc690a64482a91b9cccc6b2542bf65dcb8f54023529",
+          "drawing_path": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf",
+          "sha256": "0801a607e70776bec25ee10e4ac85003c793018a5be93bbda56c8589a4c6b6d9",
+          "page": 1,
+          "selected_region": [
+            100.0,
+            100.0,
+            400.0,
+            400.0
+          ],
+          "roof_binding": {
+            "policy": "pdf_roof_region_v1",
+            "session_id": "a943c46b699a4041ac57547f3037489c",
+            "revision": 1,
+            "item_id": "TO-00001",
+            "identity": "d248080232663cafbe8b7cc690a64482a91b9cccc6b2542bf65dcb8f54023529",
+            "session": {
+              "calibration": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              },
+              "calibrations": {
+                "1": {
+                  "meters_per_pixel": 0.01,
+                  "page": 1,
+                  "reference_meters": 4.0,
+                  "reference_pixels": 400.0,
+                  "source": "manual-reference"
+                }
+              },
+              "current_page": 1,
+              "drawing_source": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf",
+              "items": [
+                {
+                  "confidence": 1.0,
+                  "formula": "160000 px² × 0.01²",
+                  "geometry": [
+                    [
+                      100,
+                      100
+                    ],
+                    [
+                      500,
+                      100
+                    ],
+                    [
+                      500,
+                      500
+                    ],
+                    [
+                      100,
+                      500
+                    ]
+                  ],
+                  "holes": [],
+                  "id": "TO-00001",
+                  "kind": "area",
+                  "label": "",
+                  "page": 1,
+                  "quantity": 16.0,
+                  "source": "explicit-roof",
+                  "source_ref": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf#page=1&takeoff=TO-00001",
+                  "takeoff_code": "",
+                  "unit": "m2"
+                }
+              ],
+              "markups": [],
+              "source_sha256": "0801a607e70776bec25ee10e4ac85003c793018a5be93bbda56c8589a4c6b6d9"
+            }
+          },
+          "plan_ref": "پلان مصنوعی",
+          "detail_ref": "جدول صریح مصنوعی",
+          "detail_path": "/tmp/phase2-final-evidence/probe/solid_slab/schedule.json",
+          "detail_sha256": "0622f11920f6dc956ae96f838fa4ada55f0fb31fcf6824f08cba538f44586974"
+        },
+        "totals": {
+          "concrete": "3.2",
+          "rebar": "71.04",
+          "formwork": "16"
+        },
+        "outputs": {
+          "pdf": {
+            "bytes": 37078,
+            "sha256": "741e2f57a36e870fb7386a29a5761a2b5d2a9e719993a5e1cde5e04e4cb856f4"
+          },
+          "xlsx": {
+            "bytes": 9628,
+            "sha256": "d49faa7fc54b2c59dbce8a4fb4c4d45f9e6d2a69c732c902ffe169876beb65aa"
+          },
+          "docx": {
+            "bytes": 40418,
+            "sha256": "026b36678956d8f092d279c31494aaaabc767bdfbf65104144802d139b7d559e"
+          },
+          "csv": {
+            "bytes": 4717,
+            "sha256": "c5c862ea676e3665dc7466853c03eb5f4e9824eeb1331d1580a8bf140cbe3e65"
+          }
+        },
+        "sqlite_integrity": "ok"
+      },
+      "joist_block": {
+        "session_id": "2b75047866c34e4eb91418bcc3281d58",
+        "measurement_id": "TO-00001",
+        "boq_count": 7,
+        "source": {
+          "mode": "drawing",
+          "source_id": "pdf-roof:bb4e5ca93f783c3bfdd166a311ca93dc059d96de5171a08070f46190205e47f9",
+          "drawing_path": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf",
+          "sha256": "1d64e6c2c08b59769576749d365c4f214b77a670ff5edb2ffbc4a6c9b7961648",
+          "page": 1,
+          "selected_region": [
+            100.0,
+            100.0,
+            400.0,
+            400.0
+          ],
+          "roof_binding": {
+            "policy": "pdf_roof_region_v1",
+            "session_id": "2b75047866c34e4eb91418bcc3281d58",
+            "revision": 1,
+            "item_id": "TO-00001",
+            "identity": "bb4e5ca93f783c3bfdd166a311ca93dc059d96de5171a08070f46190205e47f9",
+            "session": {
+              "calibration": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              },
+              "calibrations": {
+                "1": {
+                  "meters_per_pixel": 0.01,
+                  "page": 1,
+                  "reference_meters": 4.0,
+                  "reference_pixels": 400.0,
+                  "source": "manual-reference"
+                }
+              },
+              "current_page": 1,
+              "drawing_source": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf",
+              "items": [
+                {
+                  "confidence": 1.0,
+                  "formula": "160000 px² × 0.01²",
+                  "geometry": [
+                    [
+                      100,
+                      100
+                    ],
+                    [
+                      500,
+                      100
+                    ],
+                    [
+                      500,
+                      500
+                    ],
+                    [
+                      100,
+                      500
+                    ]
+                  ],
+                  "holes": [],
+                  "id": "TO-00001",
+                  "kind": "area",
+                  "label": "",
+                  "page": 1,
+                  "quantity": 16.0,
+                  "source": "explicit-roof",
+                  "source_ref": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf#page=1&takeoff=TO-00001",
+                  "takeoff_code": "",
+                  "unit": "m2"
+                }
+              ],
+              "markups": [],
+              "source_sha256": "1d64e6c2c08b59769576749d365c4f214b77a670ff5edb2ffbc4a6c9b7961648"
+            }
+          },
+          "plan_ref": "پلان مصنوعی",
+          "detail_ref": "جدول صریح مصنوعی",
+          "detail_path": "/tmp/phase2-final-evidence/probe/joist_block/schedule.json",
+          "detail_sha256": "a6008a0d1a21ac6100a77643f1aae6fe5d1ff519a1928a9990d6c083ae679ea6"
+        },
+        "totals": {
+          "concrete": "1.04",
+          "precast_concrete": "0.08",
+          "joists": "2",
+          "blocks": "4",
+          "rebar": "71.04",
+          "formwork": "16"
+        },
+        "outputs": {
+          "pdf": {
+            "bytes": 40557,
+            "sha256": "bd036e7a5fa8e0d05d85e371699640b39da7c73789391de4dff1b4a1cd0a78cb"
+          },
+          "xlsx": {
+            "bytes": 10607,
+            "sha256": "5753283872d2e4dba88162629d3f04843948cab39377ca5b6b0a7584f76209db"
+          },
+          "docx": {
+            "bytes": 41644,
+            "sha256": "c86c36ecb2c4557b8955971a511e66de17ea63a87a2d19a1978c5b9589c8ef9d"
+          },
+          "csv": {
+            "bytes": 8202,
+            "sha256": "f662e30c73e5d459c7c0ac2d7355bc01b5a888a51d39e2ba38abeaf8d37fa8a8"
+          }
+        },
+        "sqlite_integrity": "ok"
+      },
+      "joist_foam": {
+        "session_id": "53bba49adbc749c8bbf1bbb1af192aa8",
+        "measurement_id": "TO-00001",
+        "boq_count": 7,
+        "source": {
+          "mode": "drawing",
+          "source_id": "pdf-roof:f73ddb15f366cf3da635ba1aecc3394e465c337444995ee80610d7c61c1779a7",
+          "drawing_path": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf",
+          "sha256": "49ad25535c2cd75ff80de213f3360ce60c1908c917215ee8d0f2ae9ba71e7d44",
+          "page": 1,
+          "selected_region": [
+            100.0,
+            100.0,
+            400.0,
+            400.0
+          ],
+          "roof_binding": {
+            "policy": "pdf_roof_region_v1",
+            "session_id": "53bba49adbc749c8bbf1bbb1af192aa8",
+            "revision": 1,
+            "item_id": "TO-00001",
+            "identity": "f73ddb15f366cf3da635ba1aecc3394e465c337444995ee80610d7c61c1779a7",
+            "session": {
+              "calibration": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              },
+              "calibrations": {
+                "1": {
+                  "meters_per_pixel": 0.01,
+                  "page": 1,
+                  "reference_meters": 4.0,
+                  "reference_pixels": 400.0,
+                  "source": "manual-reference"
+                }
+              },
+              "current_page": 1,
+              "drawing_source": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf",
+              "items": [
+                {
+                  "confidence": 1.0,
+                  "formula": "160000 px² × 0.01²",
+                  "geometry": [
+                    [
+                      100,
+                      100
+                    ],
+                    [
+                      500,
+                      100
+                    ],
+                    [
+                      500,
+                      500
+                    ],
+                    [
+                      100,
+                      500
+                    ]
+                  ],
+                  "holes": [],
+                  "id": "TO-00001",
+                  "kind": "area",
+                  "label": "",
+                  "page": 1,
+                  "quantity": 16.0,
+                  "source": "explicit-roof",
+                  "source_ref": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf#page=1&takeoff=TO-00001",
+                  "takeoff_code": "",
+                  "unit": "m2"
+                }
+              ],
+              "markups": [],
+              "source_sha256": "49ad25535c2cd75ff80de213f3360ce60c1908c917215ee8d0f2ae9ba71e7d44"
+            }
+          },
+          "plan_ref": "پلان مصنوعی",
+          "detail_ref": "جدول صریح مصنوعی",
+          "detail_path": "/tmp/phase2-final-evidence/probe/joist_foam/schedule.json",
+          "detail_sha256": "e3bd6ec3d64614f307a51659b1c6cc2cfb3ded7c68af2f9adfe7f1142751858c"
+        },
+        "totals": {
+          "concrete": "1.04",
+          "precast_concrete": "0.08",
+          "joists": "2",
+          "foam": "4",
+          "rebar": "71.04",
+          "formwork": "16"
+        },
+        "outputs": {
+          "pdf": {
+            "bytes": 40563,
+            "sha256": "29bee14cdb0667dc255b2a4fdb386e092ac47defc20f439b7eea151912eddf40"
+          },
+          "xlsx": {
+            "bytes": 10610,
+            "sha256": "aac0b1c08e9dfb634ca43b9df06c4d021788ffd8f1864bd3a62532a1f36e9a65"
+          },
+          "docx": {
+            "bytes": 41649,
+            "sha256": "913434f88468c9747c01d2259af52bec1cc66fcc26daffd53c8f37ed9fbe0e53"
+          },
+          "csv": {
+            "bytes": 8199,
+            "sha256": "c9b40ad7dd27c3db16e96dd74f65a8b23e48e62738fd19d8393ff62e442a3a87"
+          }
+        },
+        "sqlite_integrity": "ok"
+      }
+    },
+    "benchmark": {
+      "source_bytes": 1851592,
+      "pages": 24,
+      "vector_segments_per_page": 12000,
+      "open_seconds": 0.0009949860000233457,
+      "render_dpi": 150,
+      "renders": [
+        {
+          "page": 1,
+          "seconds": 0.3487387549999994,
+          "png_bytes": 77196
+        },
+        {
+          "page": 12,
+          "seconds": 0.3572831110000152,
+          "png_bytes": 77456
+        },
+        {
+          "page": 24,
+          "seconds": 0.33029418600000326,
+          "png_bytes": 77532
+        }
+      ],
+      "process_peak_rss_before_kib": 144680,
+      "process_peak_rss_after_kib": 172724,
+      "note": "high-water process RSS; not a claim of maximum supported PDF size"
+    }
+  },
+  "artifacts": [
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/baseline.log",
+      "bytes": 3245,
+      "sha256": "277e9ccfd9ac748cd07e725d625fc67fd23deac33df6fa6d4efa77c47e4b685c"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/bundle-verify.log",
+      "bytes": 211,
+      "sha256": "00a0029ec1b2b467a8d06c67a680ddcdba9fb2078604e718328abcd6b4b1e66c"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/cache-red.log",
+      "bytes": 1509,
+      "sha256": "38787219075234528e6759378ce11a47e7c55570b9f4b2dc80f4dcf8debc3140"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/compile.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/diff-check.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/full-intermediate.log",
+      "bytes": 15898,
+      "sha256": "d600b744d21817146e7bbae998280a92ca006d22f8dd06868007ed82053fb060"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/full-superseded-interrupted.log",
+      "bytes": 3206,
+      "sha256": "e2cb1cbcf3d8d920715f595d799e70f26f10f5fac5c696b6d80b8486a3c6d5b4"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/full.junit.xml.gz",
+      "bytes": 107996,
+      "sha256": "c40d6a82b32dd213cca6d4021db727f219381fdf6208e1082034ff033ba65035"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/full.log",
+      "bytes": 8919,
+      "sha256": "4f1406dbca1fcfdd13302302fa48bc020e51f0a2e300b20ef44f4e4f72475fdc"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/installed-requirements.txt",
+      "bytes": 622,
+      "sha256": "6f24215610785e2d756ffb427c97fbc85d862f3bba418b4520e24673b1160435"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/integrated-targeted.log",
+      "bytes": 179,
+      "sha256": "f0f044062d6a6a8bf8875093d29c9f197e15b4fbdcf027218c8e666651519a33"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/navigation-final.log",
+      "bytes": 98,
+      "sha256": "82051bac1b9b988dff3b082b900c41405be68476ab2c285808f48508de509fab"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/overlap-green.log",
+      "bytes": 114,
+      "sha256": "a1a1bd942c06bff2f32f191af59404f489f23187cd6d7a013fcf2adb38276b17"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/overlap-red.log",
+      "bytes": 214519,
+      "sha256": "e828b3c6c9045e0e62b5c63c4d70736b62ff4f24c56f252ad60035c763343623"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/pan-red.log",
+      "bytes": 1537,
+      "sha256": "5f9406f5b8de4c969f11374d2e23a280b1642e7bd6bc95974c57c64106e15075"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/phase1-preservation.json",
+      "bytes": 14315,
+      "sha256": "b1c9813cabd07d9befc9ca70d664640463f82d1723da06d26940ec7f5739fd8d"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/pip-check.log",
+      "bytes": 30,
+      "sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/plan.md",
+      "bytes": 746,
+      "sha256": "69880ba04a1a1480fb02a2754bef52f538042882cca9c7182ad9dec444d996ee"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/probe-receipt.json",
+      "bytes": 11878,
+      "sha256": "3c1a73ca15c62c0001fad78c6fc6118826e23d282151a53ac0d7222fdd92d4e7"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/probe.log",
+      "bytes": 1111,
+      "sha256": "c7346dfe7f1919fead49f8d1a54a72354de6619b6c71ae41bc54f1063d91be64"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/range-diff.log",
+      "bytes": 5737,
+      "sha256": "9e508b5401e6c069602ef2018f094e9aa7481e6f2a6a4ad3997f3233e362cd16"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/related.log",
+      "bytes": 431,
+      "sha256": "4b62e420f53b41a9617b1feb8d3f09c68645b6e1078f0cdc2a400787e3f791e1"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/report-readback.log",
+      "bytes": 1332,
+      "sha256": "c1abd788dc597f1fa53658de6abff16c44edec2c4e4e46abbda08f347c46cdd8"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/report_readback.py",
+      "bytes": 2334,
+      "sha256": "32f605ffa2e6bc3725764d3990f2b51bb6e127a4410711ca7a6e2f259884db95"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/restore-git.log",
+      "bytes": 636,
+      "sha256": "dfba4e00b343ba213555196d28e0c06b937b0e2be0c74c8c3b64e00592e88c86"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/restore-tests.log",
+      "bytes": 179,
+      "sha256": "de1527864535c88b8e6413534534542a3ab73f88ea8936884186b11e378f07ac"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/fresh-pdf-native-calibration.png",
+      "bytes": 60880,
+      "sha256": "00dc7b11ca6f56d1de13df804ddcd19bc0a566db06cf198e47b1d3cc1a82dac6"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_block-form.png",
+      "bytes": 154455,
+      "sha256": "572889569ef07a2142096ccd4d85187f71c3e01201ad10a6971c8779726313b3"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_block-pdf.png",
+      "bytes": 65851,
+      "sha256": "541a25efa884429b4af722c370c080bb4a32599e7800f63a9f6bb4c8b69209d4"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_block-report-page2.png",
+      "bytes": 49244,
+      "sha256": "64ff028f611a8d1e1f64bc8fa7f2ad7474b5d7571ef236aeb768f3c961531f81"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_block-report-page4.png",
+      "bytes": 46788,
+      "sha256": "4af4304eb454a3d6d260d2e20e142222d940f6f2381776ccc3d7d2907aa63547"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_block-report.png",
+      "bytes": 26481,
+      "sha256": "66aa9073a99d7a071e0dbb0f7578e779e47b39e590b48acdae7bed85f588b2a6"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_foam-form.png",
+      "bytes": 154345,
+      "sha256": "36f9138c14a547b76f054cfb916b485d39348c0c1508890e14a80b016145bd18"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_foam-pdf.png",
+      "bytes": 65851,
+      "sha256": "541a25efa884429b4af722c370c080bb4a32599e7800f63a9f6bb4c8b69209d4"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/joist_foam-report.png",
+      "bytes": 26536,
+      "sha256": "9919b3a8794f5f3ae29f3dfe399fc9cf5904b6f0aa6efe541b48a80b40fcfc52"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/large-sheet.png",
+      "bytes": 55681,
+      "sha256": "f92d80bf27600452b376161d95a68b69c0c468dc321e9eb9fd0cc091de56301c"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/solid_slab-form.png",
+      "bytes": 103661,
+      "sha256": "1fc74c9bcff87b76adb31c687efaa918a9582a27e3d4de3ede9789da6f33d2af"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/solid_slab-pdf.png",
+      "bytes": 65851,
+      "sha256": "541a25efa884429b4af722c370c080bb4a32599e7800f63a9f6bb4c8b69209d4"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/screenshots/solid_slab-report.png",
+      "bytes": 25292,
+      "sha256": "b600f23e5bf4981dcce027fd10d95aa8adf78a97d5594a364e339741efb1caa1"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/shared-adapters.diff",
+      "bytes": 3434,
+      "sha256": "4198d21cd8546e4af6d3146e2e9b3822629c916040d63ed609be589529d09e8b"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/sync-commits.txt",
+      "bytes": 2132,
+      "sha256": "3773e9f2a85d13e2621d20d5b4a72c11f4280e5edb475784daf58d2468cce5e9"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/synchronized.log",
+      "bytes": 3245,
+      "sha256": "73c14c3bea61241d7c0332aa8ffa504d986b3d743988d701e1a695e61e22ec2d"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/targeted-final.log",
+      "bytes": 99,
+      "sha256": "2906de502daf27680f87cdd113327f6ed5a1b64cac1cc0f82de9e86142c767c7"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/tested-head.txt",
+      "bytes": 82,
+      "sha256": "af981fd5ac98e3ed34df11403cc52f337bc1108695d7e9b75a916042a9733f0a"
+    },
+    {
+      "path": "docs/acceptance/phase2_priorities1_2_work_20261021/two-point-red.log",
+      "bytes": 2254,
+      "sha256": "b863b76e0c2fa74c0b93ca31d3c7a59ea557687f1ee71192c35464179b9fab38"
+    }
+  ],
+  "commits": [
+    "11227ea0dc5071481c68eedd339098ca8bff4011 docs: establish fixed eight-phase roadmap and live 2D/3D glass UI scope [skip ci]",
+    "6bf19f4f58630664b84920f4b0796e278e1ceeaa feat: validate floor and member identity within existing project model [skip ci]",
+    "b35837b8cc73583c96f59e5960c8607a5dbbff03 feat: add nonfinancial live takeoff event contract to existing user workflow [skip ci]",
+    "88ac91758ff146cc82554c91c21e1f8d82d437c6 test: cover multi-floor identity and fail-closed live takeoff event reducer [skip ci]",
+    "68e66b5c5b1fd6cfa0a7e24879672399092d1b38 docs: document phase-one live identity event scope and honest test limits [skip ci]",
+    "87993ef9bc78058b7bec37b098a920220f0cbbf9 Add read-only live tracker loading from canonical SQLite project store",
+    "deaa58912c6c9ed837a0337e1215bdf808fb30e5 Cover read-only live tracker SQLite load, legacy and identity failure gates",
+    "49dea6b1a9075273ef56f782f6bd8fd92967fa6f Document phase-one read-only SQLite live tracking bridge and remaining gates",
+    "eab9c9d352989053b61a731703a6fed5d16203da Audit real persisted takeoff and reviewed registry identities without inference",
+    "aa276e87c50337794b89af9bb25024983cabe5b4 Bind audited persisted records to version-checked live selection in existing tracker",
+    "d5249de51f0ad3fb7c1d114ed9a069ad1b94790b Expose persisted takeoff identity audit through canonical application service",
+    "e414076455d367710fa48375b24e44e6dd982427 Fail closed on inconsistent committed sources and explicit member conflicts",
+    "0b6ca177624132493247e470e84a91562c635127 Add persisted SQLite takeoff identity and stale-read regression tests",
+    "9e2fbb259057f9f97f4ad816a5a28ba8bc2e3571 Harden persisted source provenance and committed revision verification",
+    "2b1205951428da4ebdb5b4906b93fc6c76625907 Persist explicitly declared floors and members via canonical SQLite CAS guards",
+    "b7d2a7a1ed4bd376deae86ebd07f0e4d93be2d4c Test explicit project floor/member SQLite writes, Unicode CAS and legacy preservation",
+    "6e63b17100f1db4cddd679ed58ea17601a64d2ee Record phase-one persisted member identity integration and honest test gates",
+    "3c3c803e87fe179a6acba2eac020766f0ac4f621 Honor case-sensitive source IDs in phase-one persisted identity reconciliation",
+    "b491e9dc1ed41b9850872477d41993120d164803 Avoid source validator shadowing in committed registry audit",
+    "104d4be8bfb411234efeaa19d7f417194429dbda Regress case-sensitive provenance versus floor/member Unicode aliases",
+    "5f3a384b90fd5077cf3e96fd7d1b76ef2e903a58 Record case-sensitive provenance fix and 12 isolated executed checks without false CI green",
+    "152820e622d9aba0f0b2018b1351b05a33f8f45a Record blocked phase-one execution gates and current engineering evidence limits [skip ci]",
+    "76b97cfa83713a99768c4b8ffd4ee1be1cdfdf2a Fix live event review and BOQ receipt provenance to match exact source and revision tokens",
+    "2a5bbef00fbbdefe4b613c5c7355b8194c0515b4 Add red-green provenance regression tests for live review and BOQ receipt UI",
+    "18dd835f07ce50a9ea3010c4e35b6ebd6c480485 Cover 1/5/20/50/100-floor roundtrip through real SQLite and stale CAS conflict",
+    "bfbd04b43fc32b6e44435f5fe36d488705c4a0fe Document reproduced live provenance bug, fix, and unexecuted SQLite depth regressions",
+    "4f5a0375245b35d7abbbca637eaeb9f8670ff71e fix: reject malformed AEC registries and verify phase-one persistence",
+    "d8af87dc07dc3173a3f09e08036fe0a1b3ee6e5b docs: preserve actual phase-one Cloud test evidence",
+    "8c7635982987564aed41bd9c8d7b44c5dc90aa23 Audit all 37 phase-one engineering blockers and separate software checks from external evidence",
+    "b1b659e335860b467564f18c452a67286ff7e65f Add fail-closed validator for 37-family engineering evidence triage",
+    "35c3bba86c1e175ce57277c3ead78fc5beacce52 Test integrity gate against false 37-family engineering acceptances",
+    "74754a97b87f33f0a54d6d110ab42cd01265ed2b Record completed 37-family audit with explicit external blockers and unrun acceptance tests",
+    "39bda60f5344e92625e5bd54d09b78b36c56261c Add independent Decimal volume oracle and fail-closed SQLite regression for blinding concrete",
+    "c1771b8f0fe82341eb1e796fd3f776664a38bdaa Record bounded blinding concrete oracle without upgrading 37-family engineering acceptance",
+    "ef18a47357426f1058cb9b497a516799ab483cdb Document independent blinding-concrete synthetic oracle with precise non-acceptance boundary",
+    "4a3d1b29e8c307dc1c27a20091c6731186642ee8 Allow source-reviewed net surface detailing for cement render coating component",
+    "1ddd2199aeb99faba6f1f04342e6f2681aa4d16d Test source-reviewed cement render net area with Decimal references and SQLite fail-closed invariants",
+    "30cb58105a8ababff84b5364ee48683422ee87fa Track bounded cement render area oracle without falsely accepting whole engineering family",
+    "3031acba1dd977bda927945d78dccda49e702154 Record two bounded phase-one component oracles and unrun full-suite gates",
+    "b5db758f34ee990217ee37b872e1262771039863 Add fail-closed evidence integrity preflight for real five-floor acceptance",
+    "5c0496ea46b030dc327ae573b139be0737c36194 Add 14 real-building evidence gate tests rejecting synthetic claims and missing provenance",
+    "d60c06d74422b9a32fe722f379e3ea736fff4d60 Normalize Persian and Arabic floor/member aliases in real-building source gate",
+    "cd3bdeb7e184981c22c0562ec0cebb92a43f86f2 Record empty real-five-floor intake without fabricating approved drawings",
+    "ef1c80b2ac0827edacbc00226bdbcb36af654617 Test Persian/Arabic digit and case-folded member identity in real-building gate",
+    "599a96b410f8fa80341b6b8d38bc92cffda97568 Fail closed on malformed drawing IDs and source references in intake manifest",
+    "d32b78d1245bc95c2364e68ba0a53ec54d6b618b Regression check malformed unhashable evidence references fail closed",
+    "5e181fee6bfee04d6d9347a182aee3d69cc10445 Document three phase-one action outcomes with honest unresolved engineering gates",
+    "0e1421bfab7f6a37a185267967e7f974e7cc281f Fail closed on incompatible or absent physical units in five-floor independent oracles",
+    "ca48b5f5a8beeb6a3e99105bcb8979b1d0502bb4 Test reference/software unit mismatch and unknown measurement units in real-building gate",
+    "ab538d47d55d6fc7a657ddc35200b5ffc6642aa6 Record 20 executed exact-blob gate tests and fail-closed real-building intake evidence",
+    "bbe44354719ae484fe40a145b036c6dfb780c27b fix: enforce physical identity and integer AEC revisions in phase one",
+    "c5c4424bea37e497139838d27f2f5f7f9c3f500b docs: record final non-Windows phase-one regression and engineering blockers",
+    "eefe12cc78d4a5ebe9e517201e368e56659e24b6 fix: keep cached PDF project snapshots identical to SQLite [skip ci]",
+    "97c1007cebffa5a52bdb9e19da9bf73ed74dfa3c fix: expose native PDF pan without recording measurement points [skip ci]",
+    "d124c7dfa1833033a99716365dee197f8b9d6ded fix: preserve phase-one fail-closed registry validation in PDF guard [skip ci]",
+    "ef261f80e041b3dfb2f0102b67898a766bd0983c fix: calibrate PDF from two explicitly selected reference points [skip ci]"
+  ],
+  "changed_files": [
+    "app/graphical_takeoff.py",
+    "core/drawings/roof_region.py",
+    "core/platform/application.py",
+    "core/projects/project_model.py",
+    "core/projects/store.py",
+    "core/projects/user_workflow.py",
+    "core/takeoff/reviewed_aec.py",
+    "core/takeoff/roof_detail.py",
+    "docs/acceptance/phase1_37_family_actionable_triage_20261021.json",
+    "docs/acceptance/phase1_37_family_audit_chat_closure_20261021.md",
+    "docs/acceptance/phase1_blinding_concrete_independent_oracle_20261021.md",
+    "docs/acceptance/phase1_chat_followup_provenance_sqlite_20261021.md",
+    "docs/acceptance/phase1_chat_verified_unit_gate_20261021.json",
+    "docs/acceptance/phase1_cloud_execution_20261021.json",
+    "docs/acceptance/phase1_cloud_execution_20261021.md",
+    "docs/acceptance/phase1_cloud_full_20261021.log",
+    "docs/acceptance/phase1_live_floor_event_chat_20261020.md",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/compile.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/discipline-red.log.gz",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/families.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/five-floor.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/full.junit.xml.gz",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/full.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/installed-requirements.txt",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/physical-identity-red.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/pip-check.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/real-building-discovery.json",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/real-building-gate.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/related.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/report-readback.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/revision-type-red.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/runtime.json",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/targeted-initial.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/targeted.log",
+    "docs/acceptance/phase1_nonwindows_cloud_20261021/triage.log",
+    "docs/acceptance/phase1_nonwindows_final_cloud_20261021.json",
+    "docs/acceptance/phase1_nonwindows_final_cloud_20261021.md",
+    "docs/acceptance/phase1_persisted_identity_action1_20261020.md",
+    "docs/acceptance/phase1_real_five_storey_evidence_intake_20261021.json",
+    "docs/acceptance/phase1_sqlite_live_readonly_bridge_20261020.md",
+    "docs/acceptance/phase1_three_actions_execution_reality_20261021.md",
+    "docs/acceptance/phase1_two_bounded_oracles_chat_20261021.md",
+    "docs/acceptance/phase1_work_two_gates_20261021.md",
+    "docs/plans/STRUCTURALPRO_8_PHASE_MASTER_20261020.md",
+    "scripts/phase1_real_building_gate.py",
+    "scripts/validate_phase1_37_family_triage.py",
+    "tests/test_phase1_36_family_sqlite_cloud.py",
+    "tests/test_phase1_37_family_triage_gate_chat.py",
+    "tests/test_phase1_aec_revision_type_cloud.py",
+    "tests/test_phase1_blinding_concrete_independent_oracle_chat.py",
+    "tests/test_phase1_cement_render_net_surface_chat.py",
+    "tests/test_phase1_cloud_independent_component_oracles.py",
+    "tests/test_phase1_cross_line_physical_identity_cloud.py",
+    "tests/test_phase1_live_floor_events_chat.py",
+    "tests/test_phase1_persisted_identity_reconciliation_chat.py",
+    "tests/test_phase1_real_building_gate_chat.py",
+    "tests/test_phase2_pdf_navigation.py",
+    "tests/test_phase2_project_snapshot_cache.py"
+  ],
+  "backup": {
+    "code_bundle_path": "/StructuralPro/Backups/StructuralPro_Phase2_P1P2_ef261f80.bundle",
+    "sha256": "26f673a53885b291568112d78a1a981661e641de489a85edf164088b1cfbf822",
+    "roundtrip": "downloaded, hash equal, fresh Git clone/fsck and 90 tests PASS",
+    "final_evidence_archive": "uploaded after documentation commit; final response and external receipt record archive SHA-256, avoiding self-referential hashes"
+  },
+  "limits": [
+    "Linux/offscreen is not Windows/Office acceptance",
+    "Synthetic plan and reviewer fixtures are not approved engineering documents",
+    "Only three supported rectangular roof contracts; no general arbitrary-polygon ownership acceptance",
+    "Phase-one 37-family and real-building external evidence blockers remain as documented, with locks preserved",
+    "No priority-three work, merge, workflow dispatch, release, EXE, prices or phase-one branch changes"
+  ],
+  "publication_mapping": [
+    {
+      "local": "c5c4424bea37e497139838d27f2f5f7f9c3f500b",
+      "remote": "916c11670ae4eeab929d824b0eb7cb2d75d71322",
+      "tree": "c29fb7bd3a1ebef59ee8f9011acb6826bcc2a9d4"
+    },
+    {
+      "local": "eefe12cc78d4a5ebe9e517201e368e56659e24b6",
+      "remote": "f18d6f65ac4637ceb5f0b132b49648860cb86cd0",
+      "tree": "cc35a138910ebb61f67194139bc03a8ee2595b50"
+    },
+    {
+      "local": "97c1007cebffa5a52bdb9e19da9bf73ed74dfa3c",
+      "remote": "f058dba50d8785b16f0407ed07569693bfc7e7d5",
+      "tree": "de2ecae3ae7b93094ce60466a70f0105b7fdeff1"
+    },
+    {
+      "local": "d124c7dfa1833033a99716365dee197f8b9d6ded",
+      "remote": "8491f5aba2966c8654cc5dd6dd047ca878805269",
+      "tree": "353898f8201a7395521ba00063695310b020d9dd"
+    },
+    {
+      "local": "ef261f80e041b3dfb2f0102b67898a766bd0983c",
+      "remote": "0dcea6e63b30c0262ef6c5692ed88df321c25534",
+      "tree": "24b92d7d1f9b3164e3cde16976d12aee21879c65"
+    }
+  ],
+  "published_code_head": "0dcea6e63b30c0262ef6c5692ed88df321c25534",
+  "publication_method": "Direct HTTPS push lacked credentials. Official GitHub Git Data API creates one baseline integration commit and four fixes with exact tested trees, then a documentation-only commit. Existing remote history retained; fast-forward CAS ref update only."
+}
