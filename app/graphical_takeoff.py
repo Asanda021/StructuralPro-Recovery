@@ -29,6 +29,8 @@ class TakeoffCanvas(QGraphicsView):
         self.session = session
         self.on_change = on_change
         self.on_note = on_note
+        self.on_polygon_finish = None
+        self._polygon_preview = None
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
         self.points: list[Point] = []
@@ -87,6 +89,9 @@ class TakeoffCanvas(QGraphicsView):
         self._selection_origin = None
         self._rubber_band.hide()
         self.points = []
+        if self._polygon_preview is not None:
+            if self._polygon_preview.scene() is self.scene:self.scene.removeItem(self._polygon_preview)
+            self._polygon_preview=None
         self.clear_region_selection()
         if reset_tool and self.mode in {"zoom_window", "region_select"}:
             self.mode = self._previous_mode
@@ -143,6 +148,8 @@ class TakeoffCanvas(QGraphicsView):
             )
 
     def mouseMoveEvent(self, event):
+        if self.mode in {'polygon','polygon_opening','rotated'} and self.points:
+            self.preview_polygon(self.mapToScene(event.position().toPoint()))
         if self._selection_origin is not None:
             self._rubber_band.setGeometry(
                 QRect(self._selection_origin, event.position().toPoint()).normalized()
@@ -198,8 +205,23 @@ class TakeoffCanvas(QGraphicsView):
         except Exception as exc:
             QMessageBox.warning(self, "متره", str(exc))
 
+    def preview_polygon(self, cursor=None):
+        if self._polygon_preview is not None and self._polygon_preview.scene() is self.scene:
+            self.scene.removeItem(self._polygon_preview)
+        self._polygon_preview=None
+        if not self.points:return
+        path=QPainterPath(QPointF(self.points[0].x,self.points[0].y))
+        for p in self.points[1:]:path.lineTo(p.x,p.y)
+        if cursor is not None:path.lineTo(cursor)
+        path.closeSubpath()
+        self._polygon_preview=self.scene.addPath(path,QPen(QColor('#087f8c'),2),QBrush(QColor(10,180,180,45)))
+        self._polygon_preview.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+
     def finish(self):
         if self.read_only_model:
+            return
+        if self.mode in {'polygon','polygon_opening','rotated'} and self.on_polygon_finish:
+            self.on_polygon_finish()
             return
         try:
             if self.mode == "length" and len(self.points) >= 2:
@@ -229,11 +251,10 @@ class TakeoffCanvas(QGraphicsView):
                     QPen(Qt.GlobalColor.blue, 3)
                 )
         elif item.kind == "area" and len(item.geometry) >= 3:
-            poly = QPolygonF([QPointF(x, y) for x, y in item.geometry])
-            self.scene.addPolygon(
-                poly, QPen(Qt.GlobalColor.darkBlue, 2),
-                QBrush(Qt.GlobalColor.lightGray)
-            )
+            path=QPainterPath();path.addPolygon(QPolygonF([QPointF(float(x),float(y)) for x,y in item.geometry]))
+            for hole in item.holes:path.addPolygon(QPolygonF([QPointF(float(x),float(y)) for x,y in hole]))
+            path.setFillRule(Qt.FillRule.OddEvenFill)
+            self.scene.addPath(path,QPen(Qt.GlobalColor.darkBlue,2),QBrush(Qt.GlobalColor.lightGray))
 
     def clear_measurement_highlight(self):
         if self._highlight_animation is not None:
@@ -305,7 +326,7 @@ class GraphicalTakeoffDialog(QDialog):
 
         header.addWidget(QLabel("ابزار:"))
         self.mode = QComboBox()
-        self.mode.addItems(["طول", "مساحت", "شمارش", "یادداشت"])
+        self.mode.addItems(["طول", "مساحت", "شمارش", "یادداشت", "چندضلعی دقیق", "ناحیه چرخیده", "بازشوی چندضلعی"])
         header.addWidget(self.mode)
 
         self.scale_label = QLabel("مقیاس: هنوز کالیبره نشده")
@@ -332,9 +353,18 @@ class GraphicalTakeoffDialog(QDialog):
         self.region_to_takeoff.setToolTip("فقط متره سطح عمومی؛ برای اجزای سقف از دکمه سقف تخصصی استفاده کنید")
         self.opening_button = QPushButton("کسر بازشو از سطح انتخابی")
         self.edit_button = QPushButton("ویرایش شرح متره")
+        self.back_vertex = QPushButton('حذف رأس آخر')
+        self.cancel_polygon = QPushButton('لغو چندضلعی')
+        self.edit_vertices = QPushButton('ویرایش رأس‌های سطح')
+        self.back_vertex.setToolTip('فقط رأس‌های انتخاب در حال ترسیم را اصلاح می‌کند')
+        self.edit_vertices.setToolTip('مختصات مرجع صفحه به صورت JSON؛ تغییر مقدار فقط از هندسه معتبر')
         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
         self.region_to_roof.setEnabled(self.app_service is not None)
         self.region_to_roof.setToolTip("انتخاب صریح نوع سقف؛ دیتایل مصالح از مساحت حدس زده نمی‌شود")
+        self.polygon_floor = QLineEdit();self.polygon_floor.setPlaceholderText('شناسه طبقه صریح')
+        self.polygon_member = QLineEdit();self.polygon_member.setPlaceholderText('شناسه عضو صریح')
+        self.polygon_owner = QLineEdit();self.polygon_owner.setPlaceholderText('مالک مقدار و مرجع؛ برای BOQ الزامی')
+        for field in (self.polygon_floor,self.polygon_member,self.polygon_owner):header.addWidget(field)
         self.source_label = QLabel("منبع: —")
         self.project_id_input = QLineEdit(self.persisted_project_id)
         self.project_id_input.setPlaceholderText("شناسه پروژه برای ذخیره دائمی")
@@ -358,7 +388,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
-            self.delete, self.finish, self.project_id_input, self.save_session_button,
+            self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
             actions.addWidget(x, index // 6, index % 6)
@@ -420,6 +450,10 @@ class GraphicalTakeoffDialog(QDialog):
         root.addWidget(self.status)
         self.canvas.on_tool_status = self.status.setText
 
+        self.canvas.on_polygon_finish = self.finish_polygon
+        self.back_vertex.clicked.connect(self.remove_pending_vertex)
+        self.cancel_polygon.clicked.connect(self.cancel_pending_polygon)
+        self.edit_vertices.clicked.connect(self.edit_polygon_vertices)
         self.mode.currentTextChanged.connect(self.apply_tool)
         self.calibrate.clicked.connect(self.calibrate_scale)
         self.open_pdf.clicked.connect(self.select_drawing)
@@ -636,6 +670,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.page_no.blockSignals(False)
 
             self.canvas.clear_measurement_highlight()
+            self.canvas._polygon_preview = None
             self.canvas.scene.clear()
             self.canvas._region_overlay = None
             self.canvas._selected_region_rect = None
@@ -655,7 +690,8 @@ class GraphicalTakeoffDialog(QDialog):
             self.commit_boq_button.setEnabled(not model_view and self.app_service is not None)
             self.export_boq.setEnabled(not model_view)
             self.canvas.set_mode("pan" if model_view else {
-                "طول": "length", "مساحت": "area", "شمارش": "count", "یادداشت": "note"
+                "طول": "length", "مساحت": "area", "شمارش": "count", "یادداشت": "note",
+            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening"
             }[self.mode.currentText()])
             if self.viewer.kind == "pdf":
                 self._render_pdf_background()
@@ -829,6 +865,16 @@ class GraphicalTakeoffDialog(QDialog):
         from app.roof_detail_editor import open_roof_editor
         try:
             rect=self.canvas._selected_region_rect
+            selected_item=None
+            selected_row=self.table.currentRow()
+            if selected_row>=0:
+                candidate=self.session.find(self.table.item(selected_row,0).text())
+                if candidate.geometry_evidence:
+                    from core.drawings.roof_region import _rectangle
+                    try:xs,ys=_rectangle(candidate.geometry)
+                    except ValueError as exc:raise ValueError('سطح چندضلعی یا چرخیده فقط برداشت عمومی است؛ قرارداد محلی دیتایل سقف و تقسیم‌بندی مصوب موجود نیست. Bounding Box جای سطح واقعی نیست.') from exc
+                    selected_item=candidate
+                    rect=QRectF(float(xs[0]),float(ys[0]),float(xs[1]-xs[0]),float(ys[1]-ys[0]))
             if self.viewer.kind!='pdf' or rect is None:
                 raise ValueError("ابتدا یک ناحیه مستطیلی در PDF انتخاب کنید")
             if self.app_service is None or not self.project_id_input.text().strip():
@@ -839,7 +885,7 @@ class GraphicalTakeoffDialog(QDialog):
             if not ok:return
             kind=KINDS[labels.index(label)]
             points=rectangle_to_points(rect.left(),rect.top(),rect.right(),rect.bottom())
-            item=next((x for x in self.session.for_page(self.page)
+            item=selected_item or next((x for x in self.session.for_page(self.page)
                        if x.kind=='area' and tuple(x.geometry)==tuple(points)),None)
             if item is None:
                 item=self.session.add_area([Point(x,y) for x,y in points],page=self.page,
@@ -918,10 +964,61 @@ class GraphicalTakeoffDialog(QDialog):
         except Exception as exc:
             QMessageBox.warning(self, "ثبت ناحیه", str(exc))
 
+    def cancel_pending_polygon(self):
+        self.canvas.points=[]
+        self.redraw_current_page()
+        self.status.setText('انتخاب چندضلعی لغو شد؛ متره ثبت‌شده تغییر نکرد')
+
+    def remove_pending_vertex(self):
+        if self.canvas.points:self.canvas.points.pop()
+        self.redraw_current_page()
+        self.canvas.preview_polygon()
+
+    def finish_polygon(self):
+        from core.drawings.planar_geometry import ring,cross
+        try:
+            points=[(p.x,p.y) for p in self.canvas.points]
+            if self.canvas.mode=='polygon_opening':
+                row=self.table.currentRow()
+                if row<0:raise ValueError('سطح مالک را در جدول انتخاب کنید')
+                ident=self.table.item(row,0).text();item=self.session.find(ident)
+                if item.page!=self.page:raise ValueError('صفحه بازشو و مالک باید یکسان باشد')
+                reference,ok=QInputDialog.getText(self,'مدرک مستقل بازشو','مرجع صریح هندسه بازشو:')
+                if not ok:return
+                # Validate before explicit confirmation, without mutating the session.
+                refs=list((item.geometry_evidence or {}).get('opening_refs',[]))+[reference]
+                checked=self.session._polygon_evidence(item.geometry,item.holes+(tuple(points),),self.page,refs)
+            else:
+                r=ring(points)
+                if self.canvas.mode=='rotated':
+                    if len(r)!=4 or any(r[0][i]+r[2][i]!=r[1][i]+r[3][i] for i in (0,1)) or sum((r[1][i]-r[0][i])*(r[2][i]-r[1][i]) for i in (0,1))!=0:
+                        raise ValueError('چهار رأس باید مستطیل چرخیده دقیق تشکیل دهند')
+                checked=self.session._polygon_evidence(points,(),self.page,[])
+            if QMessageBox.question(self,'بازبینی سطح هندسی',
+                    f"ناخالص: {checked['gross_m2']} مترمربع\nکسورات: {checked['deducted_m2']}\nخالص: {checked['net_m2']}\nاین مقدار فقط سطح هندسی است؛ مصالح حدس زده نمی‌شوند. ثبت شود؟",
+                    QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
+            if self.canvas.mode=='polygon_opening':self.session.add_polygon_opening(ident,points,reference)
+            else:self.session.add_polygon([Point(*p) for p in points],page=self.page,label='سطح چندضلعی مستند',source=f'polygon:{self.page}:{self.session._counter+1}',floor_id=self.polygon_floor.text().strip(),member_id=self.polygon_member.text().strip(),quantity_owner=self.polygon_owner.text().strip())
+            self.canvas.points=[];self.redraw_current_page();self.refresh()
+            self.status.setText(f"ناخالص: {checked['gross_m2']} | کسورات: {checked['deducted_m2']} | خالص: {checked['net_m2']} مترمربع | صفحه {self.page}")
+        except Exception as exc:QMessageBox.warning(self,'هندسه چندضلعی',str(exc))
+
+    def edit_polygon_vertices(self):
+        try:
+            row=self.table.currentRow()
+            if row<0:raise ValueError('یک سطح را انتخاب کنید')
+            ident=self.table.item(row,0).text();item=self.session.find(ident)
+            text,ok=QInputDialog.getMultiLineText(self,'ویرایش رأس‌ها','مختصات مرجع صفحه؛ آرایه زوج‌های x و y:',json.dumps(item.geometry))
+            if not ok:return
+            self.session.edit_polygon(ident,json.loads(text))
+            self.redraw_current_page();self.refresh()
+        except Exception as exc:QMessageBox.warning(self,'ویرایش هندسه',str(exc))
+
     def apply_tool(self):
         mapping = {
             "طول": "length", "مساحت": "area",
-            "شمارش": "count", "یادداشت": "note"
+            "شمارش": "count", "یادداشت": "note",
+            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening"
         }
         self.canvas.set_mode(mapping[self.mode.currentText()])
         self.status.setText(
@@ -993,6 +1090,7 @@ class GraphicalTakeoffDialog(QDialog):
         if not self.viewer.path:
             return
         self.canvas.clear_measurement_highlight()
+        self.canvas._polygon_preview = None
         self.canvas.scene.clear()
         self.canvas._region_overlay = None
         self.canvas._selected_region_rect = None
@@ -1068,7 +1166,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.table.insertRow(i)
             values = [
                 item.id, item.page, {"length":"طول","area":"مساحت","count":"شمارش"}.get(item.kind,item.kind), item.label or item.takeoff_code,
-                str(item.quantity), item.unit, item.takeoff_code or "—",
+                item.geometry_evidence["net_m2"] if item.geometry_evidence else str(item.quantity), item.unit, item.takeoff_code or "—",
                 item.source_ref,
             ]
             for j, value in enumerate(values):
