@@ -932,9 +932,16 @@ class GraphicalTakeoffDialog(QDialog):
         if self.viewer.kind == "ifc":
             self._ifc_status()
             return
-        px, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله اندازه‌گیری‌شده روی صفحه (پیکسل؛ مقدار صریح):")
-        if not ok:return
-        meters, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله معلوم طبق مدرک (متر؛ مقدار صریح):")
+        if self.canvas.mode == 'length' and len(self.canvas.points) == 2:
+            from math import hypot
+            first, second = self.canvas.points
+            px = hypot(second.x-first.x, second.y-first.y)
+            prompt = f"فاصله معلوم بین دو نقطه انتخابی ({px:g} پیکسل مرجع) طبق مدرک (متر):"
+        else:
+            px, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله اندازه‌گیری‌شده روی صفحه (پیکسل؛ مقدار صریح):")
+            if not ok:return
+            prompt = "فاصله معلوم طبق مدرک (متر؛ مقدار صریح):"
+        meters, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس",prompt)
         if not ok:return
         try:
             cal = self.session.calibrate(self.page, px, meters)

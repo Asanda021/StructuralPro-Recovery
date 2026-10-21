@@ -49,3 +49,37 @@ def test_pdf_pan_drag_fit_and_highlight_preserve_measurements(tmp_path):
     finally:
         dialog.close()
         app.store.close()
+
+
+def test_pdf_two_clicked_points_calibrate_from_documented_distance(tmp_path, monkeypatch):
+    from PySide6.QtCore import QPointF
+    from PySide6.QtWidgets import QInputDialog
+    global _qt
+    _qt = QApplication.instance() or QApplication([])
+    app, _, _, _ = fixture(tmp_path)
+    dialog = GraphicalTakeoffDialog(pdf_path=str(tmp_path/'plan.pdf'), app_service=app, project_id='P')
+    dialog.resize(1400,1000)
+    dialog.show()
+    _qt.processEvents()
+    calls = []
+    def answer(*args, **kwargs):
+        calls.append(args[2])
+        return ('4', True) if len(calls) == 1 else ('', False)
+    monkeypatch.setattr(QInputDialog, 'getText', answer)
+    try:
+        assert not dialog.session.calibrations
+        dialog.canvas.resetTransform()
+        for point in (QPointF(100,100), QPointF(500,100)):
+            QTest.mouseClick(dialog.canvas.viewport(), Qt.LeftButton,
+                             pos=dialog.canvas.mapFromScene(point))
+        assert len(dialog.canvas.points) == 2
+        QTest.mouseClick(dialog.calibrate, Qt.LeftButton)
+        assert len(calls) == 1 and 'متر' in calls[0]
+        assert dialog.session.calibration.reference_pixels == 400
+        assert dialog.session.calibration.reference_meters == 4
+        assert dialog.session.calibration.meters_per_pixel == .01
+        assert not dialog.session.items
+        assert not app.open_project('P')['boq']
+    finally:
+        dialog.close()
+        app.store.close()
