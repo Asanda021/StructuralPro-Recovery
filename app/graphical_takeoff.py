@@ -547,6 +547,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layers.clear()
         for label,value in job['layers']:self.cad_layers.addItem(label,value)
         self.cad_layers.setCurrentIndex(job['layer_index'])
+        if job.get('stream'):job['stream'].close()
         job['temp'].cleanup();p.deleteLater();self._cad_busy(False);self.cad_controls.setVisible(self.viewer.kind=='cad');self.status.setText('بارگذاری CAD لغو شد؛ نقشه و متره قبلی محفوظ است')
 
     def open_cad_async(self,path):
@@ -565,8 +566,20 @@ class GraphicalTakeoffDialog(QDialog):
             if code!=0:failed(bytes(p.readAllStandardError()).decode('utf-8','replace')[-1500:]);return
             try:
                 import pickle
-                # Private file written by our own child; never a user-imported pickle.
-                with open(job['result'],'rb') as f:doc=pickle.load(f)
+                # Parent-created private result, produced only by our parser.
+                job['stream']=open(job['result'],'rb');job['document']=pickle.load(job['stream'])
+                QTimer.singleShot(0,receive)
+            except Exception as exc:failed(str(exc))
+        def receive():
+            if self._cad_job is not job:return
+            try:
+                import pickle
+                doc=job['document']
+                if len(doc.entities)<doc._entity_count:
+                    chunk=pickle.load(job['stream'])
+                    if not isinstance(chunk,list) or not chunk or len(doc.entities)+len(chunk)>doc._entity_count:raise ValueError('بسته مدل CAD نامعتبر است')
+                    doc.entities.extend(chunk);self.status.setText(f'دریافت مدل CAD: {len(doc.entities)} از {doc._entity_count} جزء؛ متره مسدود است');QTimer.singleShot(0,receive);return
+                job['stream'].close();job['stream']=None
                 job['old']=(self.cad_document,self.canvas.scene,self._cad_items,self._cad_handle_items,self._cad_scene_origin)
                 scene=QGraphicsScene(self);scene.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.NoIndex);job['scene']=scene
                 self.cad_document=doc;self.canvas.scene=scene;job['steps']=self._render_cad_steps();QTimer.singleShot(0,batch)
