@@ -107,6 +107,8 @@ class TakeoffCanvas(QGraphicsView):
             return
         if event.button() != Qt.MouseButton.LeftButton:
             return super().mousePressEvent(event)
+        if self.mode == "pan":
+            return super().mousePressEvent(event)
         if self.mode in {"zoom_window", "region_select"}:
             self._selection_origin = event.position().toPoint()
             self._rubber_band.setGeometry(QRect(self._selection_origin, self._selection_origin))
@@ -322,6 +324,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_out = QPushButton("−")
         self.zoom_in = QPushButton("+")
         self.fit = QPushButton("نمایش کامل")
+        self.pan = QPushButton("جابجایی نقشه")
         self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")
         self.select_region = QPushButton("انتخاب ناحیه")
         self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")
@@ -353,7 +356,7 @@ class GraphicalTakeoffDialog(QDialog):
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
             self.open_pdf, self.prev, self.next, self.page_no,
-            self.zoom_out, self.zoom_in, self.fit, self.zoom_window,
+            self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
@@ -426,6 +429,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_in.clicked.connect(lambda: self.canvas.scale_view(1.25))
         self.zoom_out.clicked.connect(lambda: self.canvas.scale_view(0.8))
         self.fit.clicked.connect(self.reset_zoom)
+        self.pan.clicked.connect(
+            lambda: self._activate_view_tool("pan", "برای جابجایی نقشه، ماوس را نگه دارید و بکشید؛ متره تغییر نمی‌کند.")
+        )
         self.zoom_window.clicked.connect(
             lambda: self._activate_view_tool("zoom_window", "مستطیل ناحیه بزرگ‌نمایی را با ماوس بکش؛ Esc یا کلیک راست لغو می‌کند.")
         )
