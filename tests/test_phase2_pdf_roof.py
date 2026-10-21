@@ -228,3 +228,81 @@ def test_pdf_rectangle_must_be_inside_rendered_page(tmp_path):
     r=app.save_drawing_takeoff_session('P',s,session_id=rec['session_id'],expected_revision=1)
     with pytest.raises(ValueError):bind_source(app.load_drawing_takeoff_session('P',r['session_id']),s.items[-1].id)
     app.store.close()
+
+
+# Phase 2 / section 2 regression: a different region ID does NOT legitimize a
+# partly overlapping physical roof on the same PDF page.
+@pytest.mark.parametrize('other_box,other_page,should_overlap',[
+    ((300,300,700,700),1,True),
+    ((100,100,500,500),1,True),
+    ((500,100,800,500),1,False),  # shared border has zero double-counted area
+    ((501,100,800,500),1,False),
+    ((300,300,700,700),2,False),  # separate page; don't invent floor identity
+])
+def test_pdf_roof_partial_overlap_geometry_contract(other_box,other_page,should_overlap):
+    from core.drawings.roof_region import overlapping_pdf_roof_regions
+    first = dict(sha256='synthetic-hash',page=1,selected_region=[100,100,400,400])
+    x0,y0,x1,y1=other_box
+    other = dict(sha256='synthetic-hash',page=other_page,
+                 selected_region=[x0,y0,x1-x0,y1-y0])
+    assert overlapping_pdf_roof_regions(first,other) is should_overlap
+    assert overlapping_pdf_roof_regions(other,first) is should_overlap
+
+
+@pytest.mark.parametrize('broken',([
+    [0,0,0,10], [0,0,10,-1], [0,0,float('nan'),10],
+    [0,0,float('inf'),10], [0,0,10], ['invalid',0,10,10],
+]))
+def test_pdf_roof_overlap_rejects_invalid_stored_rectangle(broken):
+    from core.drawings.roof_region import overlapping_pdf_roof_regions
+    first=dict(sha256='synthetic-hash',page=1,selected_region=[0,0,20,20])
+    second=dict(sha256='synthetic-hash',page=1,selected_region=broken)
+    with pytest.raises(ValueError):
+        overlapping_pdf_roof_regions(first,second)
+
+
+def _additional_region_source(app,tmp_path,vertices,*,page=1):
+    from core.drawings.roof_region import bind_source
+    new=DrawingTakeoffSession(str(tmp_path/'plan.pdf'))
+    new.set_page(page)
+    new.calibrate(page,400,4)
+    area=new.add_area([Point(x,y) for x,y in vertices],source='explicit-independent-region')
+    saved=app.save_drawing_takeoff_session('P',new)
+    return bind_source(app.load_drawing_takeoff_session('P',saved['session_id']),area.id)
+
+
+@pytest.mark.parametrize('vertices,page,rejected',[
+    ([(300,300),(700,300),(700,700),(300,700)],1,True),
+    ([(500,100),(800,100),(800,500),(500,500)],1,False),
+    ([(100,100),(500,100),(500,500),(100,500)],2,False),
+])
+def test_pdf_roof_overlap_gate_is_atomic_with_real_sqlite(tmp_path,vertices,page,rejected):
+    from core.drawings.roof_region import detail_payload
+    app,first,item,original,doc=bound(tmp_path,'joist_block')
+    try:
+        app.save_aec_system_draft('P',doc,expected_revision=0)
+        candidate=deepcopy(doc)
+        candidate['system_id']='SECOND-ROOF'
+        candidate['source']=_additional_region_source(app,tmp_path,vertices,page=page)
+        candidate['source'].update(plan_ref='independent synthetic plan',
+                                   detail_ref='independent synthetic schedule')
+        x0,y0=vertices[0];x1,y1=vertices[2]
+        candidate['roof_detail']['geometry']['length']=str((x1-x0)/100)
+        candidate['roof_detail']['geometry']['width']=str((y1-y0)/100)
+        schedule=tmp_path/'schedule_second.json'
+        schedule.write_text(json.dumps(detail_payload(candidate),ensure_ascii=False),encoding='utf8')
+        candidate['source'].update(detail_path=str(schedule),
+                                   detail_sha256=sha256(schedule.read_bytes()).hexdigest())
+        old=deepcopy(app.open_project('P'))
+        digest=app.store.current_digest('P')
+        if rejected:
+            with pytest.raises(ValueError,match='هم.پوشانی'):
+                app.save_aec_system_draft('P',candidate,expected_revision=0)
+            assert app.store.current_digest('P')==digest
+            assert app.open_project('P')==old
+        else:
+            saved=app.save_aec_system_draft('P',candidate,expected_revision=0)
+            assert saved['status']=='draft'
+            assert app.open_project('P')['boq']==old['boq']
+    finally:
+        app.store.close()
