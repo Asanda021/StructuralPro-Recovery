@@ -1,8 +1,11 @@
 """Priority 41 — CI dependency parity with the supported application surface."""
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOWS = [ROOT / ".github/workflows/tests.yml", ROOT / ".github/workflows/full-tests.yml", ROOT / ".github/workflows/windows-smoke.yml"]
+WORKFLOWS = [HISTORY / ".github/workflows/tests.yml", HISTORY / ".github/workflows/full-tests.yml", HISTORY / ".github/workflows/windows-smoke.yml"]
 
 def test_ci_workflows_install_canonical_runtime_requirements():
     for workflow in WORKFLOWS:

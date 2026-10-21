@@ -1,0 +1,5 @@
+SYNTHETIC INPUT for software QA only. No certified drawing.
+Surface: two connected rectangles.
+Zone A (0,0) size 4x2; base 0; corner thickness 0.1,0.3,0.2 m.
+Zone B (4,0) size 3x2; base 0; corner thickness 0.3,0.5,0.4 m.
+Opening A1 (1,0.5) size 1x0.5 m, full depth.

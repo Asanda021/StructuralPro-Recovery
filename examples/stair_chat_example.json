@@ -1,0 +1,1376 @@
+{
+  "schema": "stair_specialist_v1",
+  "metadata": {
+    "project_id": "P1",
+    "floor_id": "L1",
+    "stair_id": "ST01",
+    "source_ref": "نقشه و دیتایل مصنوعی جهت آزمون",
+    "approved_by": "بازبین مستقل مصنوعی",
+    "story_start_z_m": "0",
+    "story_end_z_m": "3",
+    "story_height_m": "3",
+    "story_ref": "پلان و برش ارتفاع طبقه مصنوعی"
+  },
+  "units": {
+    "length": "m",
+    "area": "m2",
+    "volume": "m3",
+    "mass": "kg",
+    "diameter": "mm"
+  },
+  "flights": [
+    {
+      "id": "F1",
+      "source_ref": "جزئیات تاییدشده/F1",
+      "direction": "x_positive",
+      "start_x_m": "0",
+      "start_y_m": "0",
+      "start_top_z_m": "0",
+      "end_top_z_m": "1.5",
+      "horizontal_run_m": "3",
+      "width_m": "1.2",
+      "tread_count": "10",
+      "riser_count": "10",
+      "tread_m": ".3",
+      "riser_m": ".15",
+      "normal_waist_thickness_m": ".15",
+      "exclusion_ref": "قرارداد جداسازی کامل حجم دال از کف‌پله"
+    },
+    {
+      "id": "F2",
+      "source_ref": "جزئیات تاییدشده/F2",
+      "direction": "x_positive",
+      "start_x_m": "4.2",
+      "start_y_m": "1.2",
+      "start_top_z_m": "1.5",
+      "end_top_z_m": "3",
+      "horizontal_run_m": "3",
+      "width_m": "1.2",
+      "tread_count": "10",
+      "riser_count": "10",
+      "tread_m": ".3",
+      "riser_m": ".15",
+      "normal_waist_thickness_m": ".15",
+      "exclusion_ref": "قرارداد جداسازی کامل حجم دال از کف‌پله"
+    }
+  ],
+  "landings": [
+    {
+      "id": "L1",
+      "source_ref": "دیتایل تاییدشده پاگرد",
+      "x_m": "3",
+      "y_m": "0",
+      "length_m": "1.2",
+      "width_m": "2.4",
+      "top_z_m": "1.5",
+      "thickness_m": ".2",
+      "exclusion_ref": "پلان مستقل بتن پاگرد، بدون ورود به بازوها"
+    }
+  ],
+  "steps": [
+    {
+      "id": "F1-S1",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "0.0",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S2",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "0.3",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S3",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "0.6",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S4",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "0.9",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S5",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "1.2",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S6",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "1.5",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S7",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "1.8",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S8",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "2.1",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S9",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "2.4",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F1-S10",
+      "flight_id": "F1",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "2.7",
+      "y_m": "0",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S1",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "4.2",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S2",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "4.5",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S3",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "4.8",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S4",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "5.1",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S5",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "5.4",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S6",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "5.7",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S7",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "6.0",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S8",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "6.3",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S9",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "6.6",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    },
+    {
+      "id": "F2-S10",
+      "flight_id": "F2",
+      "source_ref": "دیتایل مرحله‌ای واقعی/آموزشی",
+      "separation_detail_ref": "برش تاییدکننده گوه جدا از حجم شمشیری",
+      "physical_scope": "triangular_wedge_above_waist_exclusive",
+      "x_m": "6.9",
+      "y_m": "1.2",
+      "run_m": ".3",
+      "rise_m": ".15",
+      "width_m": "1.2"
+    }
+  ],
+  "voids": [
+    {
+      "id": "V1",
+      "owner_id": "L1",
+      "source_ref": "بازشوی سرتاسری تاییدشده",
+      "x_m": "3.4",
+      "y_m": ".8",
+      "length_m": ".2",
+      "width_m": ".3",
+      "penetration": "full_waist_or_landing",
+      "reveal_form_area_m2": ".2",
+      "reveal_ref": "مساحت قالب بازشو جداگانه اندازه‌گیری و تایید شده"
+    }
+  ],
+  "connections": [
+    {
+      "id": "C1",
+      "flight_id": "F1",
+      "landing_id": "L1",
+      "flight_end": "high",
+      "landing_edge": "left",
+      "source_ref": "دیتایل اتصال بالای بازوی اول",
+      "interface_kind": "shared_boundary_no_extra_volume"
+    },
+    {
+      "id": "C2",
+      "flight_id": "F2",
+      "landing_id": "L1",
+      "flight_end": "low",
+      "landing_edge": "right",
+      "source_ref": "دیتایل اتصال پایین بازوی دوم",
+      "interface_kind": "shared_boundary_no_extra_volume"
+    }
+  ],
+  "form_faces": [
+    {
+      "key": "F1-S1:tread_top",
+      "physical_id": "FORM:F1-S1:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S1:riser",
+      "physical_id": "FORM:F1-S1:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S1:side_near",
+      "physical_id": "FORM:F1-S1:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S1:side_far",
+      "physical_id": "FORM:F1-S1:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S1:waist_contact",
+      "physical_id": "FORM:F1-S1:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S2:tread_top",
+      "physical_id": "FORM:F1-S2:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S2:riser",
+      "physical_id": "FORM:F1-S2:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S2:side_near",
+      "physical_id": "FORM:F1-S2:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S2:side_far",
+      "physical_id": "FORM:F1-S2:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S2:waist_contact",
+      "physical_id": "FORM:F1-S2:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S3:tread_top",
+      "physical_id": "FORM:F1-S3:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S3:riser",
+      "physical_id": "FORM:F1-S3:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S3:side_near",
+      "physical_id": "FORM:F1-S3:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S3:side_far",
+      "physical_id": "FORM:F1-S3:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S3:waist_contact",
+      "physical_id": "FORM:F1-S3:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S4:tread_top",
+      "physical_id": "FORM:F1-S4:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S4:riser",
+      "physical_id": "FORM:F1-S4:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S4:side_near",
+      "physical_id": "FORM:F1-S4:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S4:side_far",
+      "physical_id": "FORM:F1-S4:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S4:waist_contact",
+      "physical_id": "FORM:F1-S4:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S5:tread_top",
+      "physical_id": "FORM:F1-S5:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S5:riser",
+      "physical_id": "FORM:F1-S5:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S5:side_near",
+      "physical_id": "FORM:F1-S5:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S5:side_far",
+      "physical_id": "FORM:F1-S5:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S5:waist_contact",
+      "physical_id": "FORM:F1-S5:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S6:tread_top",
+      "physical_id": "FORM:F1-S6:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S6:riser",
+      "physical_id": "FORM:F1-S6:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S6:side_near",
+      "physical_id": "FORM:F1-S6:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S6:side_far",
+      "physical_id": "FORM:F1-S6:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S6:waist_contact",
+      "physical_id": "FORM:F1-S6:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S7:tread_top",
+      "physical_id": "FORM:F1-S7:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S7:riser",
+      "physical_id": "FORM:F1-S7:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S7:side_near",
+      "physical_id": "FORM:F1-S7:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S7:side_far",
+      "physical_id": "FORM:F1-S7:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S7:waist_contact",
+      "physical_id": "FORM:F1-S7:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S8:tread_top",
+      "physical_id": "FORM:F1-S8:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S8:riser",
+      "physical_id": "FORM:F1-S8:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S8:side_near",
+      "physical_id": "FORM:F1-S8:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S8:side_far",
+      "physical_id": "FORM:F1-S8:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S8:waist_contact",
+      "physical_id": "FORM:F1-S8:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S9:tread_top",
+      "physical_id": "FORM:F1-S9:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S9:riser",
+      "physical_id": "FORM:F1-S9:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S9:side_near",
+      "physical_id": "FORM:F1-S9:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S9:side_far",
+      "physical_id": "FORM:F1-S9:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S9:waist_contact",
+      "physical_id": "FORM:F1-S9:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S10:tread_top",
+      "physical_id": "FORM:F1-S10:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S10:riser",
+      "physical_id": "FORM:F1-S10:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S10:side_near",
+      "physical_id": "FORM:F1-S10:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S10:side_far",
+      "physical_id": "FORM:F1-S10:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1-S10:waist_contact",
+      "physical_id": "FORM:F1-S10:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F1:underside",
+      "physical_id": "FORM:F1:underside",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F1:side_near",
+      "physical_id": "FORM:F1:side_near",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F1:side_far",
+      "physical_id": "FORM:F1:side_far",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F1:end_low",
+      "physical_id": "FORM:F1:end_low",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F1:end_high",
+      "physical_id": "FORM:F1:end_high",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F2-S1:tread_top",
+      "physical_id": "FORM:F2-S1:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S1:riser",
+      "physical_id": "FORM:F2-S1:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S1:side_near",
+      "physical_id": "FORM:F2-S1:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S1:side_far",
+      "physical_id": "FORM:F2-S1:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S1:waist_contact",
+      "physical_id": "FORM:F2-S1:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S2:tread_top",
+      "physical_id": "FORM:F2-S2:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S2:riser",
+      "physical_id": "FORM:F2-S2:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S2:side_near",
+      "physical_id": "FORM:F2-S2:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S2:side_far",
+      "physical_id": "FORM:F2-S2:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S2:waist_contact",
+      "physical_id": "FORM:F2-S2:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S3:tread_top",
+      "physical_id": "FORM:F2-S3:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S3:riser",
+      "physical_id": "FORM:F2-S3:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S3:side_near",
+      "physical_id": "FORM:F2-S3:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S3:side_far",
+      "physical_id": "FORM:F2-S3:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S3:waist_contact",
+      "physical_id": "FORM:F2-S3:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S4:tread_top",
+      "physical_id": "FORM:F2-S4:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S4:riser",
+      "physical_id": "FORM:F2-S4:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S4:side_near",
+      "physical_id": "FORM:F2-S4:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S4:side_far",
+      "physical_id": "FORM:F2-S4:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S4:waist_contact",
+      "physical_id": "FORM:F2-S4:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S5:tread_top",
+      "physical_id": "FORM:F2-S5:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S5:riser",
+      "physical_id": "FORM:F2-S5:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S5:side_near",
+      "physical_id": "FORM:F2-S5:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S5:side_far",
+      "physical_id": "FORM:F2-S5:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S5:waist_contact",
+      "physical_id": "FORM:F2-S5:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S6:tread_top",
+      "physical_id": "FORM:F2-S6:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S6:riser",
+      "physical_id": "FORM:F2-S6:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S6:side_near",
+      "physical_id": "FORM:F2-S6:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S6:side_far",
+      "physical_id": "FORM:F2-S6:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S6:waist_contact",
+      "physical_id": "FORM:F2-S6:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S7:tread_top",
+      "physical_id": "FORM:F2-S7:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S7:riser",
+      "physical_id": "FORM:F2-S7:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S7:side_near",
+      "physical_id": "FORM:F2-S7:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S7:side_far",
+      "physical_id": "FORM:F2-S7:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S7:waist_contact",
+      "physical_id": "FORM:F2-S7:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S8:tread_top",
+      "physical_id": "FORM:F2-S8:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S8:riser",
+      "physical_id": "FORM:F2-S8:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S8:side_near",
+      "physical_id": "FORM:F2-S8:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S8:side_far",
+      "physical_id": "FORM:F2-S8:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S8:waist_contact",
+      "physical_id": "FORM:F2-S8:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S9:tread_top",
+      "physical_id": "FORM:F2-S9:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S9:riser",
+      "physical_id": "FORM:F2-S9:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S9:side_near",
+      "physical_id": "FORM:F2-S9:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S9:side_far",
+      "physical_id": "FORM:F2-S9:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S9:waist_contact",
+      "physical_id": "FORM:F2-S9:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S10:tread_top",
+      "physical_id": "FORM:F2-S10:tread_top",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S10:riser",
+      "physical_id": "FORM:F2-S10:riser",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S10:side_near",
+      "physical_id": "FORM:F2-S10:side_near",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S10:side_far",
+      "physical_id": "FORM:F2-S10:side_far",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "no_form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2-S10:waist_contact",
+      "physical_id": "FORM:F2-S10:waist_contact",
+      "source_ref": "صورتجلسه وجوه قالب گوه",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نتیجه بازبینی محل تماس و اجرای قالب"
+    },
+    {
+      "key": "F2:underside",
+      "physical_id": "FORM:F2:underside",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F2:side_near",
+      "physical_id": "FORM:F2:side_near",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F2:side_far",
+      "physical_id": "FORM:F2:side_far",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F2:end_low",
+      "physical_id": "FORM:F2:end_low",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "F2:end_high",
+      "physical_id": "FORM:F2:end_high",
+      "source_ref": "دیتایل و سطح قالب شمشیری",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "سطح تماس یا سطح قالب صریح"
+    },
+    {
+      "key": "L1:underside",
+      "physical_id": "FORM:L1:underside",
+      "source_ref": "دیتایل قالب پاگرد",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "دیتایل اجرایی تاییدشده"
+    },
+    {
+      "key": "L1:side_left",
+      "physical_id": "FORM:L1:side_left",
+      "source_ref": "دیتایل قالب پاگرد",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "دیتایل اجرایی تاییدشده"
+    },
+    {
+      "key": "L1:side_right",
+      "physical_id": "FORM:L1:side_right",
+      "source_ref": "دیتایل قالب پاگرد",
+      "treatment": "contact",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "دیتایل اجرایی تاییدشده"
+    },
+    {
+      "key": "L1:side_near",
+      "physical_id": "FORM:L1:side_near",
+      "source_ref": "دیتایل قالب پاگرد",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "دیتایل اجرایی تاییدشده"
+    },
+    {
+      "key": "L1:side_far",
+      "physical_id": "FORM:L1:side_far",
+      "source_ref": "دیتایل قالب پاگرد",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "دیتایل اجرایی تاییدشده"
+    },
+    {
+      "key": "L1:reveal:V1",
+      "physical_id": "FORM:L1:reveal:V1",
+      "source_ref": "متره مستند سطح قالب لبه بازشو",
+      "treatment": "form",
+      "reviewed_by": "بازبین مستقل",
+      "reason": "نیاز به قالب لبه طبق دیتایل"
+    }
+  ],
+  "rebars": [
+    {
+      "id": "F1:flight_main",
+      "physical_id": "BAR:F1:flight_main",
+      "owner_id": "F1",
+      "group": "flight_main",
+      "source_ref": "جدول متره مستند",
+      "detail_ref": "دیتایل مصوب آرماتور",
+      "shape_ref": "شکل خم تاییدشده",
+      "mass_ref": "جدول وزن واحد مصوب",
+      "diameter_mm": "12",
+      "count": "6",
+      "unit_mass_kg_m": ".888",
+      "straight_m": "3",
+      "bend_m": ".2",
+      "hook_m": ".1",
+      "anchorage_m": ".4",
+      "lap_m": "0"
+    },
+    {
+      "id": "F1:flight_distribution",
+      "physical_id": "BAR:F1:flight_distribution",
+      "owner_id": "F1",
+      "group": "flight_distribution",
+      "source_ref": "جدول متره مستند",
+      "detail_ref": "دیتایل مصوب آرماتور",
+      "shape_ref": "شکل خم تاییدشده",
+      "mass_ref": "جدول وزن واحد مصوب",
+      "diameter_mm": "12",
+      "count": "6",
+      "unit_mass_kg_m": ".888",
+      "straight_m": "3",
+      "bend_m": ".2",
+      "hook_m": ".1",
+      "anchorage_m": ".4",
+      "lap_m": "0"
+    },
+    {
+      "id": "F2:flight_main",
+      "physical_id": "BAR:F2:flight_main",
+      "owner_id": "F2",
+      "group": "flight_main",
+      "source_ref": "جدول متره مستند",
+      "detail_ref": "دیتایل مصوب آرماتور",
+      "shape_ref": "شکل خم تاییدشده",
+      "mass_ref": "جدول وزن واحد مصوب",
+      "diameter_mm": "12",
+      "count": "6",
+      "unit_mass_kg_m": ".888",
+      "straight_m": "3",
+      "bend_m": ".2",
+      "hook_m": ".1",
+      "anchorage_m": ".4",
+      "lap_m": "0"
+    },
+    {
+      "id": "F2:flight_distribution",
+      "physical_id": "BAR:F2:flight_distribution",
+      "owner_id": "F2",
+      "group": "flight_distribution",
+      "source_ref": "جدول متره مستند",
+      "detail_ref": "دیتایل مصوب آرماتور",
+      "shape_ref": "شکل خم تاییدشده",
+      "mass_ref": "جدول وزن واحد مصوب",
+      "diameter_mm": "12",
+      "count": "6",
+      "unit_mass_kg_m": ".888",
+      "straight_m": "3",
+      "bend_m": ".2",
+      "hook_m": ".1",
+      "anchorage_m": ".4",
+      "lap_m": "0"
+    },
+    {
+      "id": "L1:landing",
+      "physical_id": "BAR:L1:landing",
+      "owner_id": "L1",
+      "group": "landing",
+      "source_ref": "جدول متره مستند",
+      "detail_ref": "دیتایل مصوب آرماتور",
+      "shape_ref": "شکل خم تاییدشده",
+      "mass_ref": "جدول وزن واحد مصوب",
+      "diameter_mm": "12",
+      "count": "6",
+      "unit_mass_kg_m": ".888",
+      "straight_m": "3",
+      "bend_m": ".2",
+      "hook_m": ".1",
+      "anchorage_m": ".4",
+      "lap_m": "0"
+    }
+  ],
+  "scope": {
+    "steps": "fully_documented",
+    "landings": "fully_documented",
+    "connections": "fully_documented",
+    "reinforcement": "fully_documented",
+    "formwork": "fully_documented",
+    "scope_ref": "مدارک کامل اجرای همین نمونه مصنوعی"
+  }
+}

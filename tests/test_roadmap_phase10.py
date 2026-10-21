@@ -4,7 +4,7 @@ from core.platform.application import StructuralProApp
 from core.takeoff.estimate import build_estimate
 
 
-def test_phase10_takeoff_to_boq_estimate_statement_and_report(tmp_path):
+def test_phase10_takeoff_to_boq_estimate_statement_and_report(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("پروژه آزمون فاز ۱۰", "phase10-001")
     row = app.add_takeoff(
@@ -18,6 +18,7 @@ def test_phase10_takeoff_to_boq_estimate_statement_and_report(tmp_path):
         price_code="W001",
         unit_price=1000,
         source_id="drawing:A:01",
+        count=1,
     )
     assert row["source_id"] == "drawing:A:01"
     assert row["quantities"][0]["amount"] == pytest.approx(15)
@@ -28,6 +29,7 @@ def test_phase10_takeoff_to_boq_estimate_statement_and_report(tmp_path):
     assert project["boq"][0]["quantity"] == pytest.approx(15)
     assert project["boq"][0]["source_id"] == "drawing:A:01"
 
+    approve_test_pricebook(app, "phase10-001", {"W001": {"unit": "m2", "unit_price": 1000}})
     estimate = app.recalculate_estimate("phase10-001", factors={"بالاسری": 0.10})
     assert estimate["finalizable"] is True
     assert estimate["cost"]["base"] == pytest.approx(15000)

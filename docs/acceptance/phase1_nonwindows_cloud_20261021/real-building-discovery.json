@@ -1,0 +1,20 @@
+{
+  "search_root": "/workspace/StructuralPro-Recovery",
+  "tracked_drawing_files": [],
+  "checkout_drawing_candidates": [],
+  "submitted_manifest": {
+    "schema": "phase1_real_five_storey_evidence_intake_v1",
+    "mode": "awaiting_approved_drawings",
+    "building_id": "",
+    "floors": [],
+    "drawings": [],
+    "independent_oracles": [],
+    "external_review_documents": [],
+    "status": "blocked_no_actual_approved_building_drawings",
+    "note": "This manifest contains NO fabricated drawings, member dimensions, quantities or reviewer authorizations. A complete manifest is still NOT independent engineer approval; do not alter mode without real verifiable source bytes.",
+    "software_gate": "scripts/phase1_real_building_gate.py",
+    "synthetic_reference_only": "tests/fixtures/manual_five_storey_acceptance_20261012.json",
+    "owner_policy": "No Windows/Office, Merge, Release, executable, invented source/quantity/approval."
+  },
+  "finding": "No submitted approved real-building drawings, use authorization, independent quantity schedule or professional review. Existing /workspace/phase1-evidence drawings are explicitly synthetic. /tmp pytest files are generated fixtures, not new submissions. No unrelated public drawing is substituted for an owner-approved project."
+}

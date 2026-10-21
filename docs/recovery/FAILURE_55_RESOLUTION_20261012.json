@@ -1,0 +1,332 @@
+[
+  {
+    "test": "tests.test_binary_build_security_contract::test_mobile_contract_automatic_and_android_binary_manual",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_p37_disables_all_automatic_release_and_build_triggers",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_p100_owner_main_only_with_isolated_publish_permissions",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>0]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>1]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>2]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>3]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>4]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>5]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>6]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>7]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>8]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>9]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_binary_build_security_contract::test_local_guard_presence_never_proves_actual_github_environment",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/windows-release.yml]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/edition-builds.yml]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/android-build.yml]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/p37-real-product-deployment.yml]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_owner_approved_binary_build_workflows::test_automatic_cad_smoke_runs_only_unit_tests_without_compiling_exe",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_real_product_deployment::test_p37_deployment_contract_is_complete",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_build_and_release_jobs_separate",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_unapproved_release_default_false",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_release_artifact_bound_to_same_run_and_validated_before_publish",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>0]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>1]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>2]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>3]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>4]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>5]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>6]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>7]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>8]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>9]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_release_version_is_not_interpolated_into_powershell_source",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[condition]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[environment]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[secret]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[needs]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[write_permission]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[preflight]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[publish_approval]",
+    "classification": "workflow_security",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_p61_p70_release_delivery::test_windows_release_workflow_contains_required_delivery_gates",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_10_compliance::test_release_workflow_has_deterministic_artifact_inputs",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_10_release::test_release_workflow_validates_payload_and_installer",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_10_release_integrity::test_release_workflow_has_stable_placeholder_injection",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_10_release_integrity::test_release_workflow_enforces_tag_version_consistency",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_10_release_integrity::test_release_workflow_generates_traceability_manifest",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_17_reports_excel_pdf::test_report_ci_jobs_install_canonical_pdf_dependencies",
+    "classification": "historical_dependency_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_38_pre_release_freeze::test_release_surfaces_remain_present",
+    "classification": "historical_file_surface",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_41_ci_dependency_parity::test_ci_workflows_install_canonical_runtime_requirements",
+    "classification": "historical_dependency_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_41_ci_dependency_parity::test_ci_workflows_keep_test_runner_explicit",
+    "classification": "historical_dependency_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_42_windows_runtime_smoke::test_windows_workflow_executes_application_smoke",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_43_release_artifact_integrity::test_release_workflow_validates_manifest_artifact_hashes",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_49_windows_installer_acceptance::test_windows_release_runs_installed_application_smoke",
+    "classification": "historical_release_contract",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  },
+  {
+    "test": "tests.test_priority_9_qa::test_priority9_regression_surface_files_exist",
+    "classification": "historical_file_surface",
+    "root_cause": "historical .github/workflows path absent by quarantine policy",
+    "resolution": "unchanged assertions read isolated historical fixture; current live policy separately verified"
+  }
+]

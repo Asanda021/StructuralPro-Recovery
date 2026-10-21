@@ -1,0 +1,56 @@
+{
+  "policy": "planar_connected_slope_geometry_v1",
+  "surface_id": "TEST-SLOPED-FLOOR",
+  "coordinate_frame_ref": "SYNTHETIC-XY-M",
+  "source_ref": "SYNTHETIC-PARENT-DOCUMENT",
+  "source_sha256": "62f2e6ef08ba0c4f99a7844dcbd2692457be12adee5745cdcfa3978b88e8fbf0",
+  "approved_by": "SYNTHETIC-NOT-APPROVED-REAL",
+  "material_ref": "SYNTHETIC-FILL",
+  "coordinate_unit": "m",
+  "elevation_unit": "m",
+  "zones": [
+    {
+      "region_id": "A",
+      "physical_key": "PHYS-A",
+      "source_ref": "SYNTHETIC-ZONE-A",
+      "approved_by": "SYNTHETIC-REVIEWER",
+      "datum_ref": "SYNTHETIC-DATUM",
+      "x_m": "0",
+      "y_m": "0",
+      "length_m": "4",
+      "width_m": "2",
+      "base_elevation_m": "0",
+      "thickness_00_m": ".1",
+      "thickness_10_m": ".3",
+      "thickness_01_m": ".2",
+      "openings": [
+        {
+          "id": "H1",
+          "physical_key": "PHYS-H1",
+          "source_ref": "SYNTHETIC-VOID-H1",
+          "x_m": "1",
+          "y_m": ".5",
+          "length_m": "1",
+          "width_m": ".5",
+          "penetration": "full_depth"
+        }
+      ]
+    },
+    {
+      "region_id": "B",
+      "physical_key": "PHYS-B",
+      "source_ref": "SYNTHETIC-ZONE-B",
+      "approved_by": "SYNTHETIC-REVIEWER",
+      "datum_ref": "SYNTHETIC-DATUM",
+      "x_m": "4",
+      "y_m": "0",
+      "length_m": "3",
+      "width_m": "2",
+      "base_elevation_m": "0",
+      "thickness_00_m": ".3",
+      "thickness_10_m": ".5",
+      "thickness_01_m": ".4",
+      "openings": []
+    }
+  ]
+}

@@ -19,17 +19,19 @@ from core.reports.project_report import build_report
 from core.takeoff.engine import TakeoffEngine
 
 
-def test_end_to_end_project_takeoff_boq_estimate(tmp_path):
+def test_end_to_end_project_takeoff_boq_estimate(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path / "data")
     created = app.create_project("Deep Test", "P-31")
     assert created["id"] == "P-31"
 
     row = app.add_takeoff(
         "P-31", "building", "slab_volume",
-        length=5, width=4, thickness=0.2, price_code="A-1", source_id="drawing:1"
+        length=5, width=4, thickness=0.2, count=1,
+        price_code="A-1", unit_price=100, source_id="drawing:1"
     )
     assert row["quantities"][0]["amount"] == pytest.approx(4.0)
 
+    approve_test_pricebook(app, "P-31", {"A-1": {"unit": "m3", "unit_price": 100}})
     estimate = app.recalculate_estimate("P-31")
     assert estimate["validation"]["valid"]
     assert estimate["boq"]
@@ -44,9 +46,9 @@ def test_end_to_end_project_takeoff_boq_estimate(tmp_path):
 def test_duplicate_takeoff_source_is_blocked_without_mutating_project(tmp_path):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("Duplicate Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2, source_id="S1")
+    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2, count=1, source_id="S1")
     with pytest.raises(ValueError, match="تکراری"):
-        app.add_takeoff("P-31", "building", "slab", length=3, width=3, height=0.2, source_id="S1")
+        app.add_takeoff("P-31", "building", "slab", length=3, width=3, height=0.2, count=1, source_id="S1")
     project = app.open_project("P-31")
     assert project is not None and len(project["takeoffs"]) == 1
 
@@ -62,13 +64,16 @@ def test_takeoff_batch_and_summary_are_consistent():
     assert summary["quantity_by_unit"]["m3"] == pytest.approx(2.0)
 
 
-def test_invalid_estimate_factors_fail_closed(tmp_path):
+def test_invalid_estimate_factors_fail_closed(tmp_path, approve_test_pricebook):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("Factor Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2)
-    with pytest.raises(ValueError):
+    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2,
+                    count=1, source_id="fixture:P31:factor-invalid",
+                    price_code="P31-SLAB", unit_price=100)
+    approve_test_pricebook(app, "P-31", {"P31-SLAB": {"unit": "m2", "unit_price": 100}})
+    with pytest.raises(ValueError, match="ضرایب برآورد"):
         app.recalculate_estimate("P-31", factors={"overhead": -0.1})
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="ضرایب برآورد"):
         app.recalculate_estimate("P-31", factors={"overhead": float("inf")})
 
 
@@ -90,7 +95,8 @@ def test_price_catalog_round_trip_and_custom_price():
 def test_backup_and_project_export_import_round_trip(tmp_path):
     app = StructuralProApp(tmp_path / "data")
     app.create_project("Recovery Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=3, height=0.2)
+    app.add_takeoff("P-31", "building", "slab", length=2, width=3, height=0.2,
+                    count=1, source_id="fixture:P31:backup")
 
     db_backup = tmp_path / "backup.db"
     backup = app.backup_project_database(db_backup)
@@ -205,7 +211,8 @@ def test_database_reopen_preserves_project_data(tmp_path):
     data_dir = tmp_path / "data"
     app = StructuralProApp(data_dir)
     app.create_project("Persistence Test", "P-31")
-    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2)
+    app.add_takeoff("P-31", "building", "slab", length=2, width=2, height=0.2,
+                    count=1, source_id="fixture:P31:reopen")
     app.store.close()
 
     reopened = StructuralProApp(data_dir)

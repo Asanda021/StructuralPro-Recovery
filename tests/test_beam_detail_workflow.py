@@ -27,10 +27,12 @@ def _review_all(d):
                            "reason": "طبق دیتایل وجود ندارد", "source_ref": "B1/rebar-schedule"}
     d["bars"]["longitudinal"] = {"status": "confirmed", "approved_by": "engineer",
                                   "source_ref": "B1/longitudinal", "count": 4,
-                                  "cut_length_m": 5.5, "unit_weight_kg_m": 2.47}
+                                  "cut_length_m": 5.5, "unit_weight_kg_m": 2.47,
+                                  "unit_weight_source": "catalog:synthetic:B1-longitudinal"}
     d["bars"]["stirrups"] = {"status": "confirmed", "approved_by": "engineer",
                               "source_ref": "B1/stirrups", "count": 34,
-                              "cut_length_m": 1.3, "unit_weight_kg_m": .395}
+                              "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+                              "unit_weight_source": "catalog:synthetic:B1-stirrups"}
     return d
 
 
@@ -125,10 +127,12 @@ def test_variable_stirrup_zones_and_missing_segment_block():
     d["bars"]["stirrups"]["segments"] = [
         {"name": "ابتدا", "start_m": 0, "end_m": 1.2, "spacing_m": .1,
          "first_bar_m": .05, "last_bar_m": 1.15, "count": 12,
-         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/end-zone"},
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+         "unit_weight_source": "catalog:synthetic:B1-end-zone", "source_ref": "B1/end-zone"},
         {"name": "میانه", "start_m": 1.2, "end_m": 5,
          "spacing_m": .22, "first_bar_m": 1.3, "last_bar_m": 4.82, "count": 17,
-         "cut_length_m": 1.3, "unit_weight_kg_m": .395, "source_ref": "B1/mid-zone"},
+         "cut_length_m": 1.3, "unit_weight_kg_m": .395,
+         "unit_weight_source": "catalog:synthetic:B1-mid-zone", "source_ref": "B1/mid-zone"},
     ]
     preview = preview_beam(d, TakeoffEngine())
     assert preview["ready"]
@@ -256,3 +260,43 @@ def test_cross_page_pdf_detail_can_be_draft_without_boq(tmp_path):
     assert workflow.get("P1", "L1", "B1")["data"]["source"]["detail_evidence"]["page"] == 4
     assert not workflow.preview("P1", "L1", "B1")["ready"]
     assert store.get("P1")["boq"] == []
+
+
+def test_confirmed_bar_without_unit_weight_provenance_never_reaches_boq(tmp_path):
+    """A length and nominal kg/m do not establish a traceable approved bar mass."""
+    w, store, _ = _workflow(tmp_path)
+    d = _review_all(_draft())
+    del d["bars"]["longitudinal"]["unit_weight_source"]
+    preview = preview_beam(d, TakeoffEngine())
+    assert not preview["ready"]
+    assert any("میلگرد طولی" in b and "منبع وزن واحد" in b for b in preview["blockers"])
+    saved = w.save_draft("P1", d)
+    with pytest.raises(ValueError, match="متره ناقص"):
+        w.commit("P1", "L1", "B1", expected_revision=saved["revision"])
+    assert store.get("P1")["boq"] == []
+    assert store.get("P1")["takeoffs"] == []
+    store.close()
+
+
+def test_confirmed_bar_source_survives_sqlite_atomic_commit(tmp_path):
+    w, store, db = _workflow(tmp_path)
+    saved = w.save_draft("P1", _review_all(_draft()))
+    w.commit("P1", "L1", "B1", expected_revision=saved["revision"])
+    store.close()
+    reopened = ProjectStore(db)
+    rows = reopened.get("P1")["takeoffs"]
+    for kind in ("longitudinal", "stirrups"):
+        bar = next(row for row in rows if row["source_id"].endswith(kind))
+        assert bar["params"]["segments"][0]["unit_weight_source"] == f"catalog:synthetic:B1-{kind}"
+    reopened.close()
+
+
+def test_ui_source_fields_cover_direct_bars_and_stirrup_zone_details():
+    """Source-level UI contract, distinct from a Windows GUI acceptance."""
+    from pathlib import Path
+    panel = Path("app/beam_detail_panel.py").read_text(encoding="utf-8")
+    zones = Path("app/beam_stirrup_zone_editor.py").read_text(encoding="utf-8")
+    assert '("unit_weight_source", "مرجع وزن واحد میلگرد")' in panel
+    assert 'bar["unit_weight_source"] = widgets["unit_weight_source"].text().strip()' in panel
+    assert '"unit_weight_source", "source_ref", "reason")' in panel
+    assert '("unit_weight_source", "مرجع وزن واحد خاموت")' in zones

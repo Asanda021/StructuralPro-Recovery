@@ -1,13 +1,20 @@
+import pytest
 from core.platform.application import StructuralProApp
 
 def test_application_service_offline_project_takeoff_report(tmp_path):
     a=StructuralProApp(tmp_path)
     p=a.create_project("پروژه تست","p1")
     assert p["metadata"]["offline"] is True
-    row=a.add_takeoff("p1","building","slab",length=2,width=3,member_code="S1")
+    row=a.add_takeoff("p1","building","slab",length=2,width=3,member_code="S1", count=1, source_id="fixture:test_application_service:1", price_code="S1", unit_price=100)
     assert row["quantities"][0]["amount"]==6
     assert a.open_project("p1")["takeoffs"]
+    with pytest.raises(ValueError):a.report("p1","csv",tmp_path/"unapproved.csv")
+    assert not (tmp_path/"unapproved.csv").exists()
+    prices=tmp_path/"synthetic-prices.csv"
+    prices.write_text("year,group,chapter,code,description,unit,unit_price\n1405,ابنیه,01,S1,سطح مستقل,m2,100\n")
+    a.import_project_pricebook("p1",prices,year=1405,approved_by="synthetic-reviewer")
     assert a.report("p1","csv",tmp_path/"r.csv").exists()
+    assert a.open_project("p1")["estimate"]["cost"]["base"]==600
 
 
 def test_counterparty_master_lifecycle_and_stable_ids(tmp_path):
@@ -144,12 +151,13 @@ def test_financial_control_filters_exposure_matrix_and_integrity(tmp_path):
     assert a.project_financial_integrity_audit("fc1")["healthy"] is True
 
 
-def test_statement_activity_snapshot_and_exports(tmp_path):
+def test_statement_activity_snapshot_and_exports(tmp_path, approve_test_pricebook):
     a=StructuralProApp(tmp_path); a.create_project("صورت","st1")
-    a.add_takeoff("st1","building","slab",length=2,width=3,member_code="S1")
-    a.open_project("st1")["boq"][0]["price_code"]="S1"
-    p=a.open_project("st1"); p["boq"][0]["unit_price"]=100; p["boq"][0]["quantity"]=6; a.store.save("st1",p)
-    a.save_statement_period("st1",current_quantities={"S1":2})
+    a.add_takeoff("st1","building","slab",length=2,width=3,member_code="S1", count=1, source_id="fixture:test_application_service:2",price_code="S1",unit_price=100)
+    p=a.open_project("st1"); p["boq"][0]["price_code"]="S1"; p["boq"][0]["unit_price"]=100; p["boq"][0]["quantity"]=6; a.store.save("st1",p)
+    approve_test_pricebook(a,"st1",{"S1":{"unit":"m2","unit_price":100}})
+    period=a.save_statement_period("st1",current_quantities={"S1":2})
+    assert period["gross_current"] == 200
     assert a.project_statement_summary("st1")["period_count"]==1
     assert a.project_statement_period("st1",1)["number"]==1
     assert a.project_statement_report("st1","csv",tmp_path/"statement.csv").exists()

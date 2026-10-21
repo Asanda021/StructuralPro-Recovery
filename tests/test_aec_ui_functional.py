@@ -71,9 +71,9 @@ def test_roof_calculations_use_explicit_geometry():
     from core.takeoff.modules.advanced import calculate_advanced_item
     r=calculate_building_item("solid_slab_roof",length=10,width=12,thickness=.2,count=1)
     assert r.quantity == 24
-    r=calculate_building_item("joist_block_roof",length=10,width=10,topping_thickness=.05,joist_spacing=.5,joist_width=.1,joist_depth=.2,count=1)
+    r=calculate_building_item("joist_block_roof",length=10,width=10,topping_thickness=.05,joist_count=21,joist_spacing=.5,joist_width=.1,joist_depth=.2,count=1)
     assert round(r.quantity,6)==9.2
-    r=calculate_building_item("uboot_roof",length=10,width=10,thickness=.28,void_length=.5,void_width=.25,void_height=.2,void_count=100,count=1)
+    r=calculate_building_item("uboot_roof",length=10,width=10,thickness=.28,void_volume=.025,void_spec_ref="SYNTHETIC-UBOOT-001",void_count=100,count=1)
     assert round(r.quantity,6)==25.5
     r=calculate_advanced_item("steel_roof_deck_weight",length=10,width=12,sheet_weight=10,count=1)
     assert r.quantity == 1200
@@ -101,10 +101,27 @@ def test_validated_assemblies_are_available_from_real_aec_workspace():
     assert '("block_wall","دیوار بلوکی — Assembly"' in WORKSPACE
     assert 'assembly_mode=QCheckBox("متره به‌صورت Assembly (عملیات → اجزای مستقل)")' in WORKSPACE
     assert 'if assembly_mode.isChecked() and code in ASSEMBLY_CODES:' in WORKSPACE
-    assert 'assembly_code=ar.code' in WORKSPACE
+    assert 'result_bundle=service.add_assembly_takeoff(' in WORKSPACE
+    assert 'measurement_source=input_source' in WORKSPACE
+    assert 'approved_by=reviewer.text().strip()' in WORKSPACE
 
 
-def test_assembly_ui_never_saves_partial_components():
-    assert 'if not ar.complete:' in WORKSPACE
-    assert 'join(ar.missing_inputs)' in WORKSPACE
-    assert 'return' in WORKSPACE
+def test_assembly_ui_never_saves_partial_components(tmp_path):
+    # Runtime assertion: the active atomic service refuses a partially specified
+    # assembly and leaves BOTH takeoff and BOQ unchanged. A string match for the
+    # removed, row-by-row UI path would not prove this.
+    import pytest
+    from core.platform.application import StructuralProApp
+    assert 'result_bundle=service.add_assembly_takeoff(' in WORKSPACE
+    app = StructuralProApp(tmp_path)
+    app.create_project("آزمون عملیات مرکب ناقص", "P-CHECK")
+    with pytest.raises(ValueError):
+        app.add_assembly_takeoff("P-CHECK", "joist_foam_roof_assembly",
+                                {"count": 1, "length": 6},
+                                floor_id="طبقه ۱", measurement_source="سقف آزمایش A",
+                                approved_by="بازبین آزمون")
+    project = app.open_project("P-CHECK")
+    assert project["takeoffs"] == []
+    assert project["boq"] == []
+    assert project.get("takeoff_assemblies", []) == []
+    app.store.close()

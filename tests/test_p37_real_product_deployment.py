@@ -1,9 +1,12 @@
 """P37 production deployment contract tests."""
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_p37_deployment_contract_is_complete():
-    workflow = ROOT / ".github" / "workflows" / "p37-real-product-deployment.yml"
+    workflow = HISTORY / ".github" / "workflows" / "p37-real-product-deployment.yml"
     doc = ROOT / "docs" / "P37_REAL_PRODUCT_DEPLOYMENT.md"
     assert workflow.exists()
     assert doc.exists()

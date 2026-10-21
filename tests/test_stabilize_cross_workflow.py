@@ -16,7 +16,7 @@ from core.takeoff.reviewed_aec import (
 def _column(source_id="manual:column:C1", *, joint=None):
     record = empty_member("column", "L1", "C1")
     record["source"] = {"mode": "manual", "source_id": source_id}
-    record["geometry"] = {"width": .3, "depth": .4, "height": 3, "count": 1,
+    record["geometry"] = {"shape": "rectangular", "width": .3, "depth": .4, "height": 3, "count": 1,
                           "source_ref": "C1:section", "approved_by": "checker",
                           "intersections": []}
     if joint:

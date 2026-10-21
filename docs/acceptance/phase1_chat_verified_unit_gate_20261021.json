@@ -1,0 +1,73 @@
+{
+  "schema": "phase1_chat_20261021_exact_git_blob_test_evidence_v1",
+  "code_ref_at_execution": "77d04c606c08da748682667467b43486f21065fd",
+  "branch": "fix/integrated-priorities-1-15-20261013",
+  "tested_files": [
+    {
+      "path": "scripts/phase1_real_building_gate.py",
+      "git_blob_sha": "98674276a3550c32ede6354f4c20bcb8ffc5f019",
+      "sha256": "a1993a8a95dff9f99f84e95514e7e4a56d567a39ac15c67df8a544c56ff33722"
+    },
+    {
+      "path": "tests/test_phase1_real_building_gate_chat.py",
+      "git_blob_sha": "02e4c83e8e703d0f4ba4c85230c8e226d24b9c3f",
+      "sha256": "aae5acb425210b7406b86abc9aed7e69dd38153e8217aa64d82fcfe47df4b116"
+    },
+    {
+      "path": "docs/acceptance/phase1_real_five_storey_evidence_intake_20261021.json",
+      "git_blob_sha": "a3e8b4eb3ba00c613e97579e12596f0cfce7f22c",
+      "sha256": "5fea332f064211c9827a61e138ca2c2f53ff6ef50e012fc3e41a233b49f888e1"
+    }
+  ],
+  "runtime": {
+    "python": "3.13.5",
+    "pytest": "9.0.2",
+    "working_mode": "isolated exact-git-blob Python sources in chat container; not complete StructuralPro checkout"
+  },
+  "executions": [
+    {
+      "command": "python -m pytest -q tests/test_phase1_real_building_gate_chat.py --junitxml=test_gate_results.xml",
+      "pass": 20,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "exit": 0,
+      "execution_seconds_reported_by_junit": 0.479
+    },
+    {
+      "command": "python scripts/phase1_real_building_gate.py docs/acceptance/phase1_real_five_storey_evidence_intake_20261021.json --source-root .",
+      "expected_fail_closed": true,
+      "exit": 1,
+      "candidate_ready_for_external_review": false,
+      "engineering_accepted": false,
+      "financially_approved": false,
+      "missing_evidence_count": 6
+    }
+  ],
+  "previous_issue": "unsupported quantity unit erroneously left candidate_ready_for_external_review true",
+  "fix": "require canonical reference and software units and reject mismatches; 3 new negative cases",
+  "family_review": {
+    "count": 37,
+    "matched_bank_count": 37,
+    "matched_matrix_count": 37,
+    "matched_cloud_ledger_count": 37,
+    "missing_identifiers": 0,
+    "fully_engineering_accepted": 0,
+    "mapped_to_reviewed_aec": 36,
+    "specialist_only_not_in_SPECS": [
+      "stair_metal"
+    ]
+  },
+  "phase1_closed": false,
+  "blocked_requirements": [
+    "Full product checkout regression for current HEAD",
+    "37 whole-family source-backed independent engineering approvals",
+    "Real approved five-floor drawings, independent quantities and actual authorized review"
+  ],
+  "explicit_exclusions": [
+    "Windows/Office",
+    "Merge",
+    "Release",
+    "Manual GitHub Actions"
+  ]
+}

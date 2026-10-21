@@ -1,0 +1,167 @@
+{
+  "schema_version": "shear_wall_specialist_chat_v1",
+  "kind": "shear_wall",
+  "project_id": "P",
+  "floor_id": "L1",
+  "wall_id": "SW01",
+  "physical_wall_id": "SW01-physical",
+  "source": {
+    "mode": "manual",
+    "source_id": "DW-SW-01",
+    "length_unit": "m",
+    "source_ref": "manual/evidence",
+    "approved_by": "بازبین مصنوعی"
+  },
+  "datum": {
+    "coordinate_ref": "CS1",
+    "axis_ref": "X-A",
+    "level_ref": "L1+0.00",
+    "orientation": "positive_x",
+    "approved_by": "بازبین مصنوعی"
+  },
+  "segments": [
+    {
+      "id": "P1",
+      "physical_part_id": "P1",
+      "x_m": "0",
+      "z_m": "0",
+      "y_m": "0",
+      "length_m": "5",
+      "height_m": "3",
+      "thickness_m": ".25",
+      "source_ref": "section/P1",
+      "approved_by": "بازبین مصنوعی"
+    }
+  ],
+  "openings": [
+    {
+      "id": "O1",
+      "segment_id": "P1",
+      "x_m": "1",
+      "z_m": "1",
+      "width_m": "1",
+      "height_m": "1",
+      "source_ref": "opening/O1",
+      "approved_by": "بازبین مصنوعی"
+    }
+  ],
+  "interfaces": [],
+  "formwork": {
+    "status": "confirmed",
+    "payment_scope_ref": "مصنوعی:مبنای مالی قرارداد",
+    "payment_approved_by": "بازبین مصنوعی",
+    "source_ref": "form/all",
+    "approved_by": "بازبین مصنوعی",
+    "edge_scope": {
+      "status": "reviewed_complete",
+      "source_ref": "form/scope",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "main_faces": [
+      {
+        "id": "Ffront",
+        "segment_id": "P1",
+        "side": "front",
+        "status": "formed",
+        "contact_rectangles": [],
+        "payment_ref": "مصنوعی:صورتجلسه پرداخت قالب",
+        "source_ref": "form/Ffront",
+        "approved_by": "بازبین مصنوعی"
+      },
+      {
+        "id": "Fback",
+        "segment_id": "P1",
+        "side": "back",
+        "status": "formed",
+        "contact_rectangles": [],
+        "payment_ref": "مصنوعی:صورتجلسه پرداخت قالب",
+        "source_ref": "form/Fback",
+        "approved_by": "بازبین مصنوعی"
+      }
+    ],
+    "edge_faces": []
+  },
+  "rebars": {
+    "vertical": {
+      "status": "confirmed",
+      "series": [
+        {
+          "id": "V1",
+          "physical_bar_set_id": "V1",
+          "diameter_mm": "16",
+          "count": "8",
+          "count_scope": "total_wall",
+          "unit_weight_kg_m": "2.47",
+          "unit_weight_source": "جدول نمونه مصنوعی",
+          "cut_parts": [
+            {
+              "kind": "straight",
+              "length_m": "3",
+              "source_ref": "bar/straight",
+              "approved_by": "بازبین مصنوعی"
+            },
+            {
+              "kind": "lap",
+              "length_m": ".4",
+              "source_ref": "bar/lap",
+              "approved_by": "بازبین مصنوعی"
+            }
+          ],
+          "source_ref": "bar/V1",
+          "approved_by": "بازبین مصنوعی"
+        }
+      ],
+      "source_ref": "bars/vertical",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "horizontal": {
+      "status": "confirmed",
+      "series": [
+        {
+          "id": "H1",
+          "physical_bar_set_id": "H1",
+          "diameter_mm": "12",
+          "count": "4",
+          "count_scope": "total_wall",
+          "unit_weight_kg_m": "0.888",
+          "unit_weight_source": "جدول نمونه مصنوعی H",
+          "cut_length_m": "5",
+          "source_ref": "bar/H1",
+          "approved_by": "بازبین مصنوعی"
+        }
+      ],
+      "source_ref": "bars/horizontal",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "boundary_longitudinal": {
+      "status": "not_applicable",
+      "reason": "خارج از قرارداد همین نمونه صرفاً مصنوعی",
+      "source_ref": "schedule/boundary_longitudinal",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "boundary_ties": {
+      "status": "not_applicable",
+      "reason": "خارج از قرارداد همین نمونه صرفاً مصنوعی",
+      "source_ref": "schedule/boundary_ties",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "crossties": {
+      "status": "not_applicable",
+      "reason": "خارج از قرارداد همین نمونه صرفاً مصنوعی",
+      "source_ref": "schedule/crossties",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "opening_reinforcement": {
+      "status": "not_applicable",
+      "reason": "خارج از قرارداد همین نمونه صرفاً مصنوعی",
+      "source_ref": "schedule/opening_reinforcement",
+      "approved_by": "بازبین مصنوعی"
+    },
+    "starters_connections": {
+      "status": "not_applicable",
+      "reason": "خارج از قرارداد همین نمونه صرفاً مصنوعی",
+      "source_ref": "schedule/starters_connections",
+      "approved_by": "بازبین مصنوعی"
+    }
+  }
+}

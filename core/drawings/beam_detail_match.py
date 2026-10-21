@@ -33,15 +33,38 @@ _EXPLICIT_NUMBER = r"([0-9]+(?:\.[0-9]+)?)"
 _EXPLICIT_UNIT = r"(mm|cm|m|میلی[‌ -]?متر|سانتی[‌ -]?متر|متر)"
 
 
+def _unambiguous_member_statement(text: str, member_id: str) -> str | None:
+    """Bind dimension proposals to one explicitly tagged statement only.
+
+    A CAD MTEXT block can contain several schedule rows. Presence of the
+    selected tag somewhere in that block cannot assign the other rows' values
+    to it. Multiline/shared-member statements remain manual-review evidence.
+    """
+    if not isinstance(text, str):
+        return None
+    content = normalize_label(text)
+    # DXF MTEXT retains its literal paragraph marker in the CAD adapter.
+    statements = [part.strip() for part in re.split(r"\\P|[\r\n;؛]+", content) if part.strip()]
+    if len(statements) != 1 or not _beam_pattern(member_id).search(statements[0]):
+        return None
+    tag = normalize_label(member_id)
+    # Letter+number identities in either script, including suffixed members.
+    # Unknown shared schedules stay manual; do not select one member's values.
+    tags = re.findall(r"(?<![\w-])[^\W\d_]+-?\d+(?:[\w-]*)(?![\w-])", statements[0])
+    if any(candidate != tag for candidate in tags):
+        return None
+    return statements[0]
+
+
 def parse_section_hint(text: str, beam_id: str) -> dict[str, float] | None:
     """Offer b/h only when BOTH dimensions have explicit labels and units.
 
     Never interpret bare `30x50` as width/depth; never infer beam length,
     bar counts, hooks or reinforcement from adjacent schedule text.
     """
-    if not _beam_pattern(beam_id).search(normalize_label(text)):
+    content = _unambiguous_member_statement(text, beam_id)
+    if content is None:
         return None
-    content = normalize_label(text)
     definitions = {
         "width_m": r"(?<![\w])(?:B|عرض(?:\s+تیر)?)",
         "depth_m": r"(?<![\w])(?:H|ارتفاع(?:\s+مقطع|\s+تیر)?)",

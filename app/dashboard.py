@@ -155,13 +155,13 @@ class DashboardPage(QWidget):
             receipts = self.service.project_receipt_summary(project_id)
             commitments = self.service.project_commitment_summary(project_id)
             self.financial_summary.setText(
-                f"قرارداد/برآورد: {d['contract_amount']:,.0f} | "
-                f"کارکرد تجمعی: {d['cumulative_work']:,.0f} | "
+                f"قرارداد/برآورد: {d['contract_amount']} | "
+                f"کارکرد تجمعی: {d['cumulative_work']} | "
                 f"پیشرفت: {d['progress_percent']:.1f}% | "
-                f"هزینه واقعی: {d['actual_cost']:,.0f} | "
-                f"دریافتی: {receipts['total_received']:,.0f} | "
-                f"تعهدات: {commitments['committed_total']:,.0f} | "
-                f"مطالبات تقریبی: {max(float(d['contract_amount']) - float(receipts['total_received']), 0):,.0f}"
+                f"هزینه واقعی: {d['actual_cost']} | "
+                f"دریافتی: {receipts['total_received']} | "
+                f"تعهدات: {commitments['committed_total']} | "
+                f"مطالبات برآوردی: {self.service.project_financial_position(project_id)['receivable']}"
             )
             self.notice.setText(
                 f"🟢 پروژه فعال: {project_id} | "

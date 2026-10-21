@@ -1,0 +1,12 @@
+{
+  "project_id": "P",
+  "snapshot_ref": "SYNTHETIC-MODEL-NOT-ENGINEERING-ACCEPTANCE",
+  "source_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "independent_reviewer": "Engineer B",
+  "review_ref": "SYNTHETIC-REVIEW-NOTE",
+  "claims": [
+    {"physical_bar_id":"BAR-A","physical_piece_id":"PIECE-A","member_kind":"shear_wall","member_id":"WALL-01","floor_id":"F1","source_id":"SW-01","connection_id":"CON-A","role":"payer","payer_source_id":"SW-01","participant_source_ids":["PILE-01","SW-01"],"detail_ref":"SYNTHETIC-DETAIL-A","detail_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","approved_by":"Engineer A","group":"starter","diameter_mm":"16","count":"3","unit_mass_kg_m":"1.58","unit_mass_ref":"SYNTHETIC-UNIT-WEIGHT","cut_parts":[{"piece_part_id":"S","kind":"straight","length_m":"1.125","source_ref":"SYNTHETIC-S"},{"piece_part_id":"H","kind":"hook","length_m":"0.075","source_ref":"SYNTHETIC-H"}]},
+    {"physical_bar_id":"BAR-A","physical_piece_id":"PIECE-A","member_kind":"bored_pile","member_id":"PILE-01","floor_id":"F1","source_id":"PILE-01","connection_id":"CON-A","role":"reference","payer_source_id":"SW-01","participant_source_ids":["PILE-01","SW-01"],"detail_ref":"SYNTHETIC-DETAIL-A","detail_sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","approved_by":"Engineer A","group":"starter","diameter_mm":"16","count":"3","unit_mass_kg_m":"1.58","unit_mass_ref":"SYNTHETIC-UNIT-WEIGHT","cut_parts":[{"piece_part_id":"S","kind":"straight","length_m":"1.125","source_ref":"SYNTHETIC-S"},{"piece_part_id":"H","kind":"hook","length_m":"0.075","source_ref":"SYNTHETIC-H"}]}
+  ],
+  "connections": [{"connection_id":"CON-A","type":"starter","bar_ids":["BAR-A"],"detail_ref":"SYNTHETIC-CONNECTION","detail_sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","approved_by":"Engineer A"}]
+}

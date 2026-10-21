@@ -50,6 +50,8 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
                 # An incomplete unsourced draft must not block unrelated work.
                 continue
             if _canonical_source_id(saved_source) == source_id:
+                if registry == "beam_detail_register":
+                    raise ValueError("منبع برداشت تیر تکراری است؛ شناسه برداشت در عضو دیگری از پروژه تکرار شده است")
                 raise ValueError("شناسه برداشت در عضو دیگری از پروژه تکرار شده است")
     for takeoff in project.get("takeoffs") or []:
         if not isinstance(takeoff, dict):
@@ -61,7 +63,7 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
             original_id is not None and _canonical_source_id(original_id) == source_id
         ):
             if exclude is None:
-                raise ValueError("منبع برداشت پیش‌تر وارد ریزمتره شده است")
+                raise ValueError("منبع برداشت تکراری قبلاً وارد ریزمتره شده است؛ ثبت دوباره مجاز نیست")
             # Committed records cannot be modified. This exception is for
             # idempotent checks of the current record in read-only contexts.
             raise ValueError("منبع برداشت قبلاً قطعی شده است")
@@ -105,6 +107,8 @@ def validate_commit_rows(
         raise ValueError("ساختار ریزمتره پروژه معتبر نیست")
     require_source_unused(project, source_id, exclude=expected_current_registry)
     incoming = list(rows)
+    from core.takeoff.manual_formula_amendments import mapping_guard_new_rows
+    mapping_guard_new_rows(project,incoming,source_id,expected_current_registry)
     if not incoming:
         raise ValueError("متره قابل ثبت نباید فاقد ریزقلم باشد")
     ids: set[str] = set()
@@ -149,22 +153,56 @@ def validate_commit_rows(
                 raise ValueError("مقدار ریزمتره باید مثبت و متناهی باشد")
         used = _intersection_ids(row)
         if used & (already_deducted | fresh_deductions):
-            raise ValueError("کسر حجم مشترک بیش از یک بار ثبت شده است")
+            raise ValueError("کسر حجم مشترک قبلاً ثبت شده؛ کسر تکراری مجاز نیست")
         fresh_deductions.update(used)
     return deepcopy(incoming)
+
+
+_FINISH_ASSEMBLY_CODES = frozenset({
+    "gypsum_scratch", "gypsum_finish", "cement_render", "wall_tile",
+    "wall_paint", "waterproofing_wall", "facade_finish", "floor_tile",
+    "floor_screed", "ceiling_paint", "false_ceiling",
+    "waterproofing_floor", "skirting",
+})
+
+
+def _is_payable_quantity(takeoff: dict, quantity: dict) -> bool:
+    role = str(quantity.get("role") or takeoff.get("component_role") or "").strip()
+    if role:
+        if role not in {"work", "procurement", "material"}:
+            raise ValueError("نقش جزء متره ناشناخته است")
+        return role == "work"
+    # Preserve legacy finishing takeoffs which predate explicit role metadata.
+    params = takeoff.get("params") or {}
+    assembly = str(params.get("assembly_code", ""))
+    code = str(quantity.get("code", ""))
+    if assembly in {"block_wall", "masonry_block_wall", "دیوار_بلوک"}:
+        if code not in {"wall_area", "block", "mortar", "cement", "sand"}:
+            raise ValueError("جزء دیوار بلوکی ناشناخته است")
+        return code == "wall_area"
+    return not (assembly in _FINISH_ASSEMBLY_CODES and
+                code in {assembly + "_procurement", assembly + "_material"})
 
 
 def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[list[dict], list[dict]]:
     """A single deterministic BOQ conversion for all three reviewed workflows."""
     takeoffs = deepcopy(list(new_takeoffs))
     inputs: list[dict] = []
-    for takeoff in takeoffs:
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    for takeoff in effective_takeoffs(project,takeoffs):
         if not isinstance(takeoff, dict):
             raise ValueError("ردیف متره نامعتبر است")
         sid = takeoff.get("source_id")
         if not isinstance(sid, str) or not sid.strip():
             raise ValueError("ریزمتره بدون منبع قابل ورود به BOQ نیست")
-        for quantity in takeoff.get("quantities") or ():
+        quantities = takeoff.get("quantities")
+        if not isinstance(quantities, list) or not quantities:
+            raise ValueError("ریزمتره بدون ریزکمیت قابل ورود به BOQ نیست")
+        for quantity in quantities:
+            if not isinstance(quantity, dict):
+                raise ValueError("ساختار ریزکمیت متره نامعتبر است")
+            if not _is_payable_quantity(takeoff, quantity):
+                continue
             inputs.append({
                 "source": sid, "source_id": sid, "source_type": "takeoff",
                 "description": quantity["title"], "quantity": quantity["amount"],
@@ -179,6 +217,26 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
                 "status": quantity.get("status", "active"),
             })
     boq = build_boq(inputs)
+    # JSON persistence may reorder the amendment-head map. Preserve the existing
+    # BOQ display order by physical/operation identity, never by stored amounts.
+    # Every quantity, price and total above still comes from the effective ledger.
+    def row_identity(row):
+        return (tuple(sorted(row.get('source_ids') or [row.get('source_id')])),
+                row.get('item_code'), row.get('unit'), row.get('price_code'),
+                row.get('category'), row.get('group'), row.get('status'))
+    rank = {row_identity(row): i for i, row in enumerate(project.get('boq', []))}
+    existing = {row_identity(row): row for row in project.get('boq', [])}
+    for row in boq:
+        old = existing.get(row_identity(row))
+        if old:
+            ids = old.get('source_ids') or [old.get('source_id')]
+            if len(ids) == len(set(ids)) and set(ids) == set(row['source_ids']):
+                row['source_ids'] = list(ids)
+                row['source_id'] = row['source'] = ids[0]
+    boq = [row for _, row in sorted(enumerate(boq),
+           key=lambda pair: (rank.get(row_identity(pair[1]), len(rank) + pair[0]), pair[0]))]
+    for i, row in enumerate(boq, 1):
+        row['item_no'] = i
     return takeoffs, boq
 
 

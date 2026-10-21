@@ -1,0 +1,880 @@
+{
+  "initial_head": "b2f228fc02d4e42463d2d92a615ab92ab9d66222",
+  "chat_support_commit": "212d26e913c16d34b85f2e45508fdeaca4304a09",
+  "chat_numeric_commit": "651938a8b007b6b788c8f550a82fb318130b861a",
+  "published_six_commit": "fb54a69166f01a2f874976edb3d4c108a6bb11f4",
+  "published_numeric_integration": "0805812deee4e116a3c3a4888fe726f7989d40f3",
+  "published_work_code": "af5baa0ca923010371f9d02b14b4820cc9f2f371",
+  "tested": {
+    "cmd": [
+      "../structuralpro-venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+      "tests/test_phase1_six_family_ownership_chat.py",
+      "tests/test_phase1_chat_reviewed_components_numeric.py",
+      "tests/test_phase1_work_six_revision_identity.py",
+      "tests/test_phase1_work_reviewed_sum_precision.py",
+      "tests/test_phase1_work_chat_snapshot_integration.py",
+      "tests/test_phase1_steel_stair_preflight_chat.py",
+      "tests/test_shared_rebar_ownership_chat.py",
+      "tests/test_concrete_formwork_ownership_preflight_chat.py",
+      "tests/test_structural_four_package_preflight_chat.py",
+      "tests/test_phase1_contract_ui_integration.py",
+      "tests/test_column_joint_preflight_phase1.py",
+      "tests/test_reviewed_structural_five_priorities.py",
+      "tests/test_reviewed_aec_priorities_6_9.py",
+      "tests/test_foundation_tie_stage23_chat.py",
+      "tests/test_foundation_close_three.py",
+      "tests/test_column_stage22.py",
+      "tests/test_beam_closure.py",
+      "tests/test_beam_detail_workflow.py",
+      "tests/test_steel_specialist_work.py",
+      "tests/test_steel_specialist_ui.py",
+      "tests/test_roof_specialist_work.py",
+      "tests/test_stair_work_core.py",
+      "tests/test_bored_pile_work_core.py",
+      "tests/test_shear_wall_work.py",
+      "tests/test_manual_building_safety.py",
+      "tests/test_shared_report_persian.py",
+      "tests/test_phase1_manual_report_formats.py",
+      "tests/test_chat_package4_five_roof_failclosed.py",
+      "tests/test_chat_package4_five_architecture_generic_gates.py",
+      "tests/test_chat_package4_five_mechanical_generic_gates.py",
+      "tests/test_chat_package4_five_electrical_generic_gates.py",
+      "tests/test_chat_package4_five_service_specialty_gates.py",
+      "tests/test_chat_package4_steel_site_limited_gates.py",
+      "tests/test_chat_package4_seven_final_family_gates.py",
+      "tests/test_phase1_chat_civil_numeric_failclosed.py",
+      "tests/test_phase1_work_legacy_numeric_guards.py",
+      "tests/test_chat_package4_mep_module_overflow_guard.py",
+      "tests/test_chat_package4_mep_module_underflow_guard.py",
+      "--junitxml=../chat-closure-evidence/regression.xml"
+    ],
+    "environment": {
+      "QT_QPA_PLATFORM": "offscreen",
+      "PYTHONFAULTHANDLER": "1"
+    },
+    "tested_head": "e19a40fe22363958ae02afefaf32fb4bea76ed64",
+    "tested_tree": "55a2bd9c8da94b6b4dc54a02f3c5341ab4eaa6de"
+  },
+  "final_regression": {
+    "exit_code": 0,
+    "elapsed_seconds": 54.361956727999996
+  },
+  "pytest_stdout_seconds": 53.18,
+  "runs": {
+    "numeric-green.xml": {
+      "pass": 9,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9007199254740993]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[1.25]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9999999999999999999999999]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[-1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_real_zero_is_permitted",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2.0]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[3]"
+      ]
+    },
+    "six.xml": {
+      "pass": 65,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_six_family_ownership_chat::test_all_six_member_registries_and_three_operations_explicitly_reconciled",
+        "tests.test_phase1_six_family_ownership_chat::test_no_interface_claim_never_implies_real_geometric_clearance",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[foundation]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[tie_beam]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[column]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[beam]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[slab]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[stair]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-0]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-NaN]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-1e500]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-1.25]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-True]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[unit-\\u0639\\u062f\\u062f]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[payer_source_id-SYN:unknown]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[role-unknown]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[prepared_by-engineer-b]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[evidence_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[0]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[1]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[2]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[3]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[4]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[5]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[6]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[7]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[8]",
+        "tests.test_phase1_six_family_ownership_chat::test_project_snapshot_edit_prevents_stale_claim_passing",
+        "tests.test_phase1_six_family_ownership_chat::test_reference_requires_exact_single_payer_and_identical_scope",
+        "tests.test_phase1_six_family_ownership_chat::test_reference_cannot_change_payer",
+        "tests.test_phase1_six_family_ownership_chat::test_no_payer_reference_only_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_duplicate_same_member_claim_does_not_create_second_quantity",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_physical_piece_disallows_second_payer",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_unidentified_rows_remain_explicit_blockers",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[0]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[1]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[2]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[3]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[4]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[5]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[6]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[7]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[8]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[9]",
+        "tests.test_phase1_six_family_ownership_chat::test_contradictory_physical_member_ids_in_two_registries_fail_closed",
+        "tests.test_phase1_six_family_ownership_chat::test_no_partial_totals_survive_late_invalid_claim",
+        "tests.test_phase1_six_family_ownership_chat::test_manual_six_family_document_does_not_change_sqlite_boq",
+        "tests.test_phase1_six_family_ownership_chat::test_registered_seventh_member_cannot_be_hidden_from_reconciliation",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_with_unicode_compatibility_form_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_alias_of_scope_id_does_not_hide_double_count",
+        "tests.test_phase1_six_family_ownership_chat::test_invisible_character_inside_member_identity_not_allowed",
+        "tests.test_phase1_six_family_ownership_chat::test_previously_paid_boq_physical_item_blocks_second_payment",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_boq_without_physical_identity_remains_explicit_blocker",
+        "tests.test_phase1_six_family_ownership_chat::test_physical_piece_cannot_share_member_id",
+        "tests.test_phase1_six_family_ownership_chat::test_wrong_building_id_against_explicit_project_building_id_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_long_decimal_sums_are_exact_not_binary_float_or_context_rounded"
+      ]
+    },
+    "sum-green.xml": {
+      "pass": 17,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[steel]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[steel]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9007199254740993]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[1.25]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9999999999999999999999999]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[-1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_real_zero_is_permitted",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2.0]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[3]"
+      ]
+    },
+    "sqlite.xml": {
+      "pass": 2,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_work_chat_snapshot_integration::test_pinned_raw_snapshot_reopens_cas_and_history_stay_guarded[support]",
+        "tests.test_phase1_work_chat_snapshot_integration::test_pinned_raw_snapshot_reopens_cas_and_history_stay_guarded[six]"
+      ]
+    },
+    "sum-red.xml": {
+      "pass": 1,
+      "fail": 7,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[steel]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[steel]"
+      ]
+    },
+    "support.xml": {
+      "pass": 36,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_pinned_real_snapshot_and_document_bytes_still_nonpayable",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>0]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>1]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>2]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>3]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>4]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>5]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>6]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>7]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>8]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>9]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>10]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>11]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>12]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>13]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>14]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>15]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>16]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>17]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>18]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>19]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>20]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>21]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>22]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>23]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>24]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_invalid_identity_link_revision_or_duplicate_fails_closed[<lambda>25]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_source_bytes_must_be_actual_and_sha_pinned[tampered]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_source_bytes_must_be_actual_and_sha_pinned[]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_source_bytes_must_be_actual_and_sha_pinned[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx ... [full testcase name in support.xml; sha256=29eff9dfc2af1eb140a3e72060d3beddef7c28838a3762618aacf8b08153c2f7]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_interface_bytes_must_be_present_and_verified[None]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_interface_bytes_must_be_present_and_verified[tampered]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_interface_bytes_must_be_present_and_verified[]",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_snapshot_staleness_without_revision_change_is_detected",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_missing_member_registry_is_not_a_valid_empty_building",
+        "tests.test_phase1_steel_stair_support_crosswalk_chat::test_extra_document_keys_are_not_accepted_as_false_signoff"
+      ]
+    },
+    "intermediate-regression.xml": {
+      "pass": 1344,
+      "fail": 1,
+      "error": 0,
+      "skip": 0,
+      "individual_case_evidence": "intermediate-regression.xml in verified backup"
+    },
+    "six-green.xml": {
+      "pass": 67,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_six_family_ownership_chat::test_all_six_member_registries_and_three_operations_explicitly_reconciled",
+        "tests.test_phase1_six_family_ownership_chat::test_no_interface_claim_never_implies_real_geometric_clearance",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[foundation]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[tie_beam]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[column]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[beam]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[slab]",
+        "tests.test_phase1_six_family_ownership_chat::test_missing_any_one_of_six_families_fails_closed[stair]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_two_material_payers_on_same_physical_part_are_rejected[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_different_physical_ids_same_scope_are_not_disjoint_by_declaration[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[concrete]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[rebar]",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_used_for_two_different_operations_is_rejected[formwork]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-0]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-NaN]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-1e500]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-1.25]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[quantity_exact-True]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[unit-\\u0639\\u062f\\u062f]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[payer_source_id-SYN:unknown]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[role-unknown]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[prepared_by-engineer-b]",
+        "tests.test_phase1_six_family_ownership_chat::test_invalid_material_quantity_unit_owner_or_evidence_fails_closed[evidence_sha256-0000000000000000000000000000000000000000000000000000000000000000]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[0]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[1]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[2]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[3]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[4]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[5]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[6]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[7]",
+        "tests.test_phase1_six_family_ownership_chat::test_member_record_snapshot_identity_is_pinned[8]",
+        "tests.test_phase1_six_family_ownership_chat::test_project_snapshot_edit_prevents_stale_claim_passing",
+        "tests.test_phase1_six_family_ownership_chat::test_reference_requires_exact_single_payer_and_identical_scope",
+        "tests.test_phase1_six_family_ownership_chat::test_reference_cannot_change_payer",
+        "tests.test_phase1_six_family_ownership_chat::test_no_payer_reference_only_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_duplicate_same_member_claim_does_not_create_second_quantity",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_physical_piece_disallows_second_payer",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_unidentified_rows_remain_explicit_blockers",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[0]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[1]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[2]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[3]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[4]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[5]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[6]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[7]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[8]",
+        "tests.test_phase1_six_family_ownership_chat::test_interface_mismatch_never_unblocks_geometry_or_payment[9]",
+        "tests.test_phase1_six_family_ownership_chat::test_contradictory_physical_member_ids_in_two_registries_fail_closed",
+        "tests.test_phase1_six_family_ownership_chat::test_no_partial_totals_survive_late_invalid_claim",
+        "tests.test_phase1_six_family_ownership_chat::test_manual_six_family_document_does_not_change_sqlite_boq",
+        "tests.test_phase1_six_family_ownership_chat::test_registered_seventh_member_cannot_be_hidden_from_reconciliation",
+        "tests.test_phase1_six_family_ownership_chat::test_same_physical_id_with_unicode_compatibility_form_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_alias_of_scope_id_does_not_hide_double_count",
+        "tests.test_phase1_six_family_ownership_chat::test_invisible_character_inside_member_identity_not_allowed",
+        "tests.test_phase1_six_family_ownership_chat::test_previously_paid_boq_physical_item_blocks_second_payment",
+        "tests.test_phase1_six_family_ownership_chat::test_historical_boq_without_physical_identity_remains_explicit_blocker",
+        "tests.test_phase1_six_family_ownership_chat::test_physical_piece_cannot_share_member_id",
+        "tests.test_phase1_six_family_ownership_chat::test_wrong_building_id_against_explicit_project_building_id_is_rejected",
+        "tests.test_phase1_six_family_ownership_chat::test_long_decimal_sums_are_exact_not_binary_float_or_context_rounded",
+        "tests.test_phase1_work_six_revision_identity::test_revision_token_requires_actual_integer[True]",
+        "tests.test_phase1_work_six_revision_identity::test_revision_token_requires_actual_integer[1.0]"
+      ]
+    },
+    "revision-red.xml": {
+      "pass": 0,
+      "fail": 2,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_work_six_revision_identity::test_revision_token_requires_actual_integer[True]",
+        "tests.test_phase1_work_six_revision_identity::test_revision_token_requires_actual_integer[1.0]"
+      ]
+    },
+    "numeric-red.xml": {
+      "pass": 5,
+      "fail": 4,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9007199254740993]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[1.25]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_explicit_counts_not_rounded[9999999999999999999999999]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_nonzero_cannot_be_zero[-1e-400]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_real_zero_is_permitted",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[2.0]",
+        "tests.test_phase1_chat_reviewed_components_numeric::test_existing_counts_accepted[3]"
+      ]
+    },
+    "subtraction-green.xml": {
+      "pass": 9,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "nodeids": [
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_nonzero_part_cannot_disappear_from_float_aggregate[steel]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[deduction]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[formwork]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[cut]",
+        "tests.test_phase1_work_reviewed_sum_precision::test_explicit_small_decimal_aggregate_survives[steel]",
+        "tests.test_reviewed_structural_five_priorities::test_duplicate_concrete_intersection_across_column_and_footing"
+      ]
+    },
+    "regression.xml": {
+      "pass": 1345,
+      "fail": 0,
+      "error": 0,
+      "skip": 0,
+      "individual_case_evidence": "regression.xml in verified backup"
+    }
+  },
+  "overlap": "Do not sum overlapping runs. JUnit files in backup retain individual testcase identities.",
+  "input_verification": {
+    "six_zip_sha256": "3d40f20b146d5fc2998cd33a36e6a71228205075ea8ddf40c5edad83d3efaab4",
+    "numeric_zip_sha256": "a956b43143434e116c50e942b545e258e3f1e72125198f8f2c4eaad3afbb4f98",
+    "six_manifest_entries_verified": 9,
+    "numeric_manifest_entries_verified": 3,
+    "numeric_source_bytes_match_git": true,
+    "numeric_test_functions_and_decorators_ast_match_git": true,
+    "numeric_test_differences": "ZIP has sys.path/import scaffolding; Git has module docstring and formatting changes. All tests/assertions identical.",
+    "cache_files_excluded_from_git": true
+  },
+  "resolved": [
+    "Reject bool/float revision identity in six-family links",
+    "Reject nonzero input underflow and rounded integer in positive (Chat)",
+    "Reject dropped parts in cut-length, formwork and steel aggregate using existing legacy_float bridge",
+    "Reject a concrete deduction lost entirely while preserving established float gross-volume subtraction"
+  ],
+  "initial_setup_error": "First numeric invocation exited 4 with no collected test because ZIP/Git test mismatch was being investigated before file placement. Test functions/decorators AST identical; Git version then used. Not product failure.",
+  "red_green": {
+    "numeric_before": "4 FAIL / 5 PASS; after 9 PASS",
+    "revision_before": "2 FAIL; after six/revision 67 PASS",
+    "sum_before": "7 FAIL / 1 PASS; after 17 PASS including Chat numeric",
+    "intermediate_regression": "1344 PASS / 1 FAIL; strict concrete subtraction broke a valid existing float path, corrected without modifying old test",
+    "final": "1345 PASS / 0 FAIL/ERROR/SKIP / Exit0"
+  },
+  "families": {
+    "summary_unchanged": {
+      "families": 74,
+      "inherited_family_specific_evidence": 33,
+      "no_inherited_family_specific_evidence": 41,
+      "directly_updated_family_rows": 2,
+      "fully_accepted": 0,
+      "bank_families": 85,
+      "exact_id_matches": 74,
+      "outside_phase1": 11,
+      "renamed": 0,
+      "merged": 0,
+      "missing_from_bank": 0,
+      "verified_bounded_execution": 32,
+      "limited": 42,
+      "no_base_implementation_demonstrated": 0,
+      "no_dedicated_route_demonstrated": 41,
+      "without_any_test": 0,
+      "without_family_specific_test": 37,
+      "windows_verified": 0,
+      "without_independent_specialist_evidence": 37
+    },
+    "scope": "No comprehensive 74-family reassessment; existing independent-evidence deficits remain open. Generic pass is not promotion.",
+    "deficient_families": [
+      {
+        "code": "stair_metal",
+        "title": "پله فولادی و نرده",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent steel-stair contract, geometry and section/member schedule",
+          "Documented stringers, landings, treads, plates, bolts/welds and finish scope",
+          "Physical piece IDs and explicit kg/m or geometry/density sources",
+          "Signed participant/payer mapping at beam/slab supports; independent expected quantities",
+          "Positive/negative specialist engine + Qt + SQLite/CAS + BOQ tests"
+        ]
+      },
+      {
+        "code": "kromit_roof",
+        "title": "سقف کرومیت",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for joists, topping",
+          "Documented applicable/excluded scope for joists, blocks_or_foam, topping, bracing, reinforcement, edge_beams, formwork",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+        ]
+      },
+      {
+        "code": "composite_roof",
+        "title": "سقف مرکب",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for steel_members, concrete",
+          "Documented applicable/excluded scope for steel_members, concrete, shear_connectors, mesh, formwork, edge_zones",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+        ]
+      },
+      {
+        "code": "sandwich_roof",
+        "title": "ساندویچ پانل سقف",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for panels",
+          "Documented applicable/excluded scope for panels, supports, fasteners, flashings, seals",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+        ]
+      },
+      {
+        "code": "timber_roof",
+        "title": "سقف چوبی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for joists",
+          "Documented applicable/excluded scope for joists, sheathing, connectors, insulation, waterproofing, finish",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+        ]
+      },
+      {
+        "code": "precast_roof",
+        "title": "سقف پیش ساخته",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for precast_units",
+          "Documented applicable/excluded scope for precast_units, connections, bearing, joints, topping, reinforcement",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Roof-specific layout, section/void/bearing/connection schedule and shared boundary ownership"
+        ]
+      },
+      {
+        "code": "gypsum_partition",
+        "title": "دیوار خشک",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for frames, boards",
+          "Documented applicable/excluded scope for frames, boards, insulation, joint_compound, tape, fixings, doors",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "cement_render",
+        "title": "سیمان کاری و اندود",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for render_coat",
+          "Documented applicable/excluded scope for scratch_coat, render_coat, finish, reinforcement_mesh, corner_beads",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "door_window",
+        "title": "درب و پنجره",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for frame",
+          "Documented applicable/excluded scope for frame, glazing, hardware, installation",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "upvc_aluminium_windows",
+        "title": "پنجره UPVC و آلومینیوم",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for profiles, glazing",
+          "Documented applicable/excluded scope for profiles, reinforcement, glazing, hardware, seals, anchors, installation",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "glass_curtain_wall",
+        "title": "نمای شیشه ای",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for mullions, glazing",
+          "Documented applicable/excluded scope for mullions, transoms, glazing, anchors, gaskets, sealant",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "facade_cladding",
+        "title": "نمای خشک",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for panels",
+          "Documented applicable/excluded scope for panels, rails, brackets, anchors, insulation, waterproofing, seals",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "handrails_metalwork",
+        "title": "نرده و فلزکاری",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for profiles",
+          "Documented applicable/excluded scope for profiles, plates, anchors, welds, coating",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "plumbing",
+        "title": "آبرسانی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for pipes",
+          "Documented applicable/excluded scope for pipes, fittings, valves, insulation, supports, equipment",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "sanitary_drainage",
+        "title": "فاضلاب و باران",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for pipes",
+          "Documented applicable/excluded scope for pipes, fittings, cleanouts, traps, manholes, supports, testing",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "hvac",
+        "title": "گرمایش سرمایش تهویه",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for equipment",
+          "Documented applicable/excluded scope for ducts, pipes, fittings, insulation, supports, equipment",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "mechanical_ventilation",
+        "title": "تهویه مکانیکی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for ducts",
+          "Documented applicable/excluded scope for ducts, fans, diffusers, dampers, insulation, hangers, controls",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "plantroom",
+        "title": "موتورخانه",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for equipment",
+          "Documented applicable/excluded scope for equipment, pumps, tanks, pipes, fittings, valves, instrumentation, supports, controls",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "natural_gas",
+        "title": "گاز رسانی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for pipes",
+          "Documented applicable/excluded scope for pipes, fittings, valves, meters, supports, coating, testing",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "fire_protection",
+        "title": "اطفا حریق",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for pipes",
+          "Documented applicable/excluded scope for pipes, fittings, sprinklers, valves, supports, equipment",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Measured route topology, sizes/specs and explicit fitting/equipment/support schedules; no assumed percentages"
+        ]
+      },
+      {
+        "code": "electrical_power",
+        "title": "برق قدرت",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for cables",
+          "Documented applicable/excluded scope for cables, conduits, trays, boards, sockets, earthing",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "lighting",
+        "title": "روشنایی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for fixtures",
+          "Documented applicable/excluded scope for cables, conduits, fixtures, switches, supports",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "low_voltage",
+        "title": "جریان ضعیف",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for devices",
+          "Documented applicable/excluded scope for cables, conduits, devices, termination, racks",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "fire_alarm",
+        "title": "اعلام حریق",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for detectors, panels",
+          "Documented applicable/excluded scope for detectors, sounders, call_points, cables, conduits, panels, interfaces",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "data_network",
+        "title": "شبکه دیتا",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for cables",
+          "Documented applicable/excluded scope for cables, conduits, trays, sockets, patch_panels, racks, terminations, tests",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "security_systems",
+        "title": "دوربین و کنترل دسترسی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for controllers",
+          "Documented applicable/excluded scope for cameras, readers, controllers, cables, conduits, recorders, locks, power_supplies",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "emergency_power",
+        "title": "برق اضطراری",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for panels",
+          "Documented applicable/excluded scope for generators, ups, batteries, panels, cables, grounding, transfer_switches",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "elevator",
+        "title": "آسانسور",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for car, machine",
+          "Documented applicable/excluded scope for rails, brackets, car, doors, machine, controller, cables, shaft_works, testing",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Circuit/route/device schedule and equipment technical specifications; no inferred cable length or device count"
+        ]
+      },
+      {
+        "code": "external_earthwork",
+        "title": "عملیات خاکی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for excavation",
+          "Documented applicable/excluded scope for survey, excavation, haulage, disposal, shoring, dewatering, backfill, compaction",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "blinding_concrete",
+        "title": "بتن مگر",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for blinding_concrete",
+          "Documented applicable/excluded scope for base_preparation, blinding_concrete, edge_formwork",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "retaining_structures",
+        "title": "سازه نگهبان",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for soldier_piles",
+          "Documented applicable/excluded scope for soldier_piles, lagging, anchors, shotcrete, struts, monitoring",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "external_works",
+        "title": "محوطه سازی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for paving",
+          "Documented applicable/excluded scope for subbase, grading, paving, kerbs, channels, walls, landscaping, irrigation",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "site_drains",
+        "title": "زهکشی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for pipes",
+          "Documented applicable/excluded scope for pipes, trenches, bedding, manholes, filter_media, outlets",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "demolition",
+        "title": "تخریب",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for selective_demolition",
+          "Documented applicable/excluded scope for selective_demolition, structure_demolition, waste_sorting, haulage, temporary_support, dust_control",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle",
+          "Survey/scope geometry, layers/thicknesses, deductions and measurement source; civil raw formulas are not approved AEC routes"
+        ]
+      },
+      {
+        "code": "concrete_repair",
+        "title": "ترمیم سازه",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for repair_mortar",
+          "Documented applicable/excluded scope for substrate_prep, corrosion_treatment, repair_mortar, injection, reinforcement, finishes",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "seismic_retrofit",
+        "title": "مقاوم سازی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for anchorage",
+          "Documented applicable/excluded scope for concrete_jackets, steel_jackets, frp, added_bracing, anchorage, foundations, tests",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      },
+      {
+        "code": "historic_restoration",
+        "title": "مرمت تاریخی",
+        "status": "open",
+        "remaining_evidence": [
+          "Independent source-backed measurement/formula, units and expected values for documentation, stabilization",
+          "Documented applicable/excluded scope for survey, documentation, stabilization, compatible_mortar, masonry_repair, protective_coating",
+          "Physical item/region/path IDs; cross-family overlap and payer ownership",
+          "Independent positive/negative specialty fixtures; real form + SQLite/CAS + BOQ lifecycle"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "All new ownership controls remain read-only/nonfinancial; no new persistent ledger or generic SPECS registration",
+    "Raw pinned snapshot tests use actual SQLite/CAS but synthetic records; not full specialist input/editor/engine integration",
+    "No authentic full-building geometry, contact faces, deduction approval, global bar-piece/payment crosswalk or reviewer authority proven",
+    "Historical ARCH-5/STAIR-5 archives not rerun; existing fixtures/history guards in selected regression preserved",
+    "Further float input/derived arithmetic precision outside these guards remains open",
+    "No comprehensive suite, Windows/Office or 74-family re-audit performed"
+  ]
+}

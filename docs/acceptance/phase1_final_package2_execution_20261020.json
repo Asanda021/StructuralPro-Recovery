@@ -1,0 +1,752 @@
+{
+  "schema": "phase1_final_package2_execution_v1",
+  "local_date": "2026-10-20 Asia/Tehran",
+  "initial_head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+  "published_specialist_commit": "d6fe0bd4ae5f61bc0415b90b7dabb5b950a51e3e",
+  "published_numeric_commit": "3d1177c4b0ffd6f078f8e6c6df5d622bee796e75",
+  "tested_checkpoint": "a845cab6fff63828ea6289b0d6013817ed0caab8",
+  "tested_tree": "92c4c89af04190d6aa5ce5113b150e888f5a904d",
+  "published_code_tree": "92c4c89af04190d6aa5ce5113b150e888f5a904d",
+  "primary_acceptance": {
+    "pass": 1892,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "exit_code": 0,
+    "definition": "1891 final regression + 1 disjoint Qt; all earlier runs and later recovery are overlapping and excluded"
+  },
+  "runs": {
+    "regression-development": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_six_family_ownership_chat.py",
+        "tests/test_phase1_work_six_family_service.py",
+        "tests/test_phase1_multi_member_overlap.py",
+        "tests/test_reviewed_structural_five_priorities.py",
+        "tests/test_reviewed_aec_priorities_6_9.py",
+        "tests/test_p13_p15_reviewed_engineering.py",
+        "tests/test_foundation_tie_stage23_chat.py",
+        "tests/test_beam_stage21.py",
+        "tests/test_roof_specialist_work.py",
+        "tests/test_steel_specialist_work.py",
+        "tests/test_stair_work_core.py",
+        "tests/test_phase1_chat_reviewed_components_numeric.py",
+        "tests/test_phase1_chat_reviewed_detail_aggregate_precision.py",
+        "tests/test_phase1_work_reviewed_sum_precision.py",
+        "tests/test_column_joint_preflight_phase1.py",
+        "tests/test_column_joint_beam_panel_phase1.py",
+        "tests/test_bored_pile_joint_crosswalk.py",
+        "tests/test_bored_pile_ownership_preflight.py",
+        "tests/test_shared_rebar_ownership_chat.py",
+        "tests/test_concrete_formwork_ownership_preflight_chat.py",
+        "tests/test_phase1_shared_materials_audit.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/regression-development.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 4,
+      "seconds": 0.389,
+      "counts": {
+        "tests": 0,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      }
+    },
+    "final-regression-v2": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_six_family_ownership_chat.py",
+        "tests/test_phase1_work_six_family_service.py",
+        "tests/test_phase1_multi_member_overlap.py",
+        "tests/test_reviewed_structural_five_priorities.py",
+        "tests/test_reviewed_aec_priorities_6_9.py",
+        "tests/test_p13_p15_reviewed_engineering.py",
+        "tests/test_foundation_tie_stage23_chat.py",
+        "tests/test_beam_stage21.py",
+        "tests/test_roof_specialist_work.py",
+        "tests/test_steel_specialist_work.py",
+        "tests/test_stair_work_core.py",
+        "tests/test_phase1_chat_reviewed_components_numeric.py",
+        "tests/test_phase1_chat_reviewed_detail_aggregate_precision.py",
+        "tests/test_phase1_work_reviewed_sum_precision.py",
+        "tests/test_column_joint_preflight_phase1.py",
+        "tests/test_column_joint_beam_panel_phase1.py",
+        "tests/test_bored_pile_joint_crosswalk.py",
+        "tests/test_bored_pile_ownership_preflight.py",
+        "tests/test_shared_rebar_ownership_chat.py",
+        "tests/test_concrete_formwork_ownership_preflight_chat.py",
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_chat_package4_five_architecture_generic_gates.py",
+        "tests/test_chat_package4_five_mechanical_generic_gates.py",
+        "tests/test_chat_package4_five_electrical_generic_gates.py",
+        "tests/test_chat_package4_five_service_specialty_gates.py",
+        "tests/test_chat_package4_steel_site_limited_gates.py",
+        "tests/test_chat_package4_seven_final_family_gates.py",
+        "tests/test_chat_package4_mep_module_overflow_guard.py",
+        "tests/test_chat_package4_mep_module_underflow_guard.py",
+        "tests/test_phase1_chat_civil_numeric_failclosed.py",
+        "tests/test_financial_sqlite_concurrency_guard.py",
+        "tests/test_priority_68_store_concurrency.py",
+        "tests/test_priority_67_concurrency.py",
+        "tests/test_manual_formula_persistence.py",
+        "tests/test_manual_formula_amendments.py",
+        "tests/test_manual_formula_reports.py",
+        "tests/test_phase1_manual_report_formats.py",
+        "tests/test_manual_structured_units.py",
+        "tests/test_master13_unit_aware_summary.py",
+        "tests/test_p84_code_unit_mapping.py",
+        "tests/test_structural_handoff_work.py",
+        "tests/test_void_former_roofs_20261016.py",
+        "tests/test_composite_roof_detail_guard.py",
+        "tests/test_phase1_package2_legacy_input_precision.py",
+        "tests/test_phase1_work_legacy_numeric_guards.py",
+        "tests/test_domain_modules.py",
+        "tests/test_phases_1_6_engineering_regressions.py",
+        "tests/test_column_joint_bar_crosswalk_phase1.py",
+        "tests/test_column_joint_interface_surface_phase1.py",
+        "tests/test_column_joint_footing_tie_phase1.py",
+        "tests/test_column_joint_starter_development_phase1.py",
+        "tests/test_column_joint_rebar_completion_phase1.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/final-regression-v2.xml"
+      ],
+      "head": "a845cab6fff63828ea6289b0d6013817ed0caab8",
+      "tree": "92c4c89af04190d6aa5ce5113b150e888f5a904d",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "seconds": 69.407,
+      "counts": {
+        "tests": 1891,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 1891
+      }
+    },
+    "service-green": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_work_six_family_service.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/service-green.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "f6c39ca7c720edba551a4a9aa1bf65dfebbaac88f442acab3bbb53b2d747a4f0",
+      "exit_code": 0,
+      "seconds": 2.654,
+      "counts": {
+        "tests": 30,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 30
+      }
+    },
+    "deductions-timber-green": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/deductions-timber-green.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "2de4a05390dd9605691c00a0cad00ebc6ea8be95d6677f3efda18a084b853fa1",
+      "exit_code": 0,
+      "seconds": 0.898,
+      "counts": {
+        "tests": 57,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 57
+      }
+    },
+    "related-qt": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_structural_handoff_ui_work.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/related-qt.xml"
+      ],
+      "head": "a845cab6fff63828ea6289b0d6013817ed0caab8",
+      "tree": "92c4c89af04190d6aa5ce5113b150e888f5a904d",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "seconds": 2.333,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 1
+      }
+    },
+    "legacy-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_legacy_input_precision.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/legacy-red.xml"
+      ],
+      "head": "e76a0ab62b6291e95e24b03eea92b9518385a580",
+      "tree": "0d79e485aead0779e1f7f5c61e48cf6f547b3d9a",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 1,
+      "seconds": 0.653,
+      "counts": {
+        "tests": 15,
+        "failures": 10,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 5
+      }
+    },
+    "extra-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/extra-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "f6c39ca7c720edba551a4a9aa1bf65dfebbaac88f442acab3bbb53b2d747a4f0",
+      "exit_code": 1,
+      "seconds": 1.395,
+      "counts": {
+        "tests": 37,
+        "failures": 3,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 34
+      }
+    },
+    "baseline-defects-confirmed": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "../final-package2-evidence/baseline-tests/test_phase1_package2_numeric_identity.py",
+        "../final-package2-evidence/baseline-tests/test_phase1_package2_legacy_input_precision.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/baseline-defects-confirmed.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 1,
+      "seconds": 0.594,
+      "counts": {
+        "tests": 46,
+        "failures": 34,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 12
+      }
+    },
+    "final-targeted": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/final-targeted.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "8dc52dfeb4f8247ae10145813da19bf0e552d726360f12a018c09ce147b58890",
+      "exit_code": 0,
+      "seconds": 1.458,
+      "counts": {
+        "tests": 70,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 70
+      }
+    },
+    "timber-route-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "-k",
+        "timber_roof",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/timber-route-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 1,
+      "seconds": 0.722,
+      "counts": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      }
+    },
+    "regression-development-corrected": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_six_family_ownership_chat.py",
+        "tests/test_phase1_work_six_family_service.py",
+        "tests/test_phase1_multi_member_overlap.py",
+        "tests/test_reviewed_structural_five_priorities.py",
+        "tests/test_reviewed_aec_priorities_6_9.py",
+        "tests/test_p13_p15_reviewed_engineering.py",
+        "tests/test_foundation_tie_stage23_chat.py",
+        "tests/test_beam_stage21.py",
+        "tests/test_roof_specialist_work.py",
+        "tests/test_steel_specialist_work.py",
+        "tests/test_stair_work_core.py",
+        "tests/test_phase1_chat_reviewed_components_numeric.py",
+        "tests/test_phase1_chat_reviewed_detail_aggregate_precision.py",
+        "tests/test_phase1_work_reviewed_sum_precision.py",
+        "tests/test_column_joint_preflight_phase1.py",
+        "tests/test_column_joint_beam_panel_phase1.py",
+        "tests/test_bored_pile_joint_crosswalk.py",
+        "tests/test_bored_pile_ownership_preflight.py",
+        "tests/test_shared_rebar_ownership_chat.py",
+        "tests/test_concrete_formwork_ownership_preflight_chat.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/regression-development-corrected.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 0,
+      "seconds": 21.095,
+      "counts": {
+        "tests": 957,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 957
+      }
+    },
+    "baseline": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_six_family_ownership_chat.py",
+        "tests/test_phase1_multi_member_overlap.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/baseline.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "seconds": 2.037,
+      "counts": {
+        "tests": 172,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 172
+      }
+    },
+    "extra-green": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/extra-green.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 0,
+      "seconds": 1.861,
+      "counts": {
+        "tests": 105,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 105
+      }
+    },
+    "legacy-green": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_legacy_input_precision.py",
+        "tests/test_phase1_work_legacy_numeric_guards.py",
+        "tests/test_chat_package4_mep_module_overflow_guard.py",
+        "tests/test_chat_package4_mep_module_underflow_guard.py",
+        "tests/test_phase1_chat_civil_numeric_failclosed.py",
+        "tests/test_domain_modules.py",
+        "tests/test_phases_1_6_engineering_regressions.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/legacy-green.xml"
+      ],
+      "head": "e76a0ab62b6291e95e24b03eea92b9518385a580",
+      "tree": "0d79e485aead0779e1f7f5c61e48cf6f547b3d9a",
+      "diff_sha256": "b3f97bd029dbe7d5eeba574773f555c1020be4568a8a336a002655017f6225df",
+      "exit_code": 0,
+      "seconds": 3.377,
+      "counts": {
+        "tests": 92,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 92
+      }
+    },
+    "final-regression": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_service.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "tests/test_phase1_steel_stair_preflight_chat.py",
+        "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+        "tests/test_phase1_six_family_ownership_chat.py",
+        "tests/test_phase1_work_six_family_service.py",
+        "tests/test_phase1_multi_member_overlap.py",
+        "tests/test_reviewed_structural_five_priorities.py",
+        "tests/test_reviewed_aec_priorities_6_9.py",
+        "tests/test_p13_p15_reviewed_engineering.py",
+        "tests/test_foundation_tie_stage23_chat.py",
+        "tests/test_beam_stage21.py",
+        "tests/test_roof_specialist_work.py",
+        "tests/test_steel_specialist_work.py",
+        "tests/test_stair_work_core.py",
+        "tests/test_phase1_chat_reviewed_components_numeric.py",
+        "tests/test_phase1_chat_reviewed_detail_aggregate_precision.py",
+        "tests/test_phase1_work_reviewed_sum_precision.py",
+        "tests/test_column_joint_preflight_phase1.py",
+        "tests/test_column_joint_beam_panel_phase1.py",
+        "tests/test_bored_pile_joint_crosswalk.py",
+        "tests/test_bored_pile_ownership_preflight.py",
+        "tests/test_shared_rebar_ownership_chat.py",
+        "tests/test_concrete_formwork_ownership_preflight_chat.py",
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_chat_package4_five_architecture_generic_gates.py",
+        "tests/test_chat_package4_five_mechanical_generic_gates.py",
+        "tests/test_chat_package4_five_electrical_generic_gates.py",
+        "tests/test_chat_package4_five_service_specialty_gates.py",
+        "tests/test_chat_package4_steel_site_limited_gates.py",
+        "tests/test_chat_package4_seven_final_family_gates.py",
+        "tests/test_chat_package4_mep_module_overflow_guard.py",
+        "tests/test_chat_package4_mep_module_underflow_guard.py",
+        "tests/test_phase1_chat_civil_numeric_failclosed.py",
+        "tests/test_financial_sqlite_concurrency_guard.py",
+        "tests/test_priority_68_store_concurrency.py",
+        "tests/test_priority_67_concurrency.py",
+        "tests/test_manual_formula_persistence.py",
+        "tests/test_manual_formula_amendments.py",
+        "tests/test_manual_formula_reports.py",
+        "tests/test_phase1_manual_report_formats.py",
+        "tests/test_manual_structured_units.py",
+        "tests/test_master13_unit_aware_summary.py",
+        "tests/test_p84_code_unit_mapping.py",
+        "tests/test_structural_handoff_work.py",
+        "tests/test_void_former_roofs_20261016.py",
+        "tests/test_composite_roof_detail_guard.py",
+        "tests/test_column_joint_bar_crosswalk_phase1.py",
+        "tests/test_column_joint_interface_surface_phase1.py",
+        "tests/test_column_joint_footing_tie_phase1.py",
+        "tests/test_column_joint_starter_development_phase1.py",
+        "tests/test_column_joint_rebar_completion_phase1.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/final-regression.xml"
+      ],
+      "head": "e76a0ab62b6291e95e24b03eea92b9518385a580",
+      "tree": "0d79e485aead0779e1f7f5c61e48cf6f547b3d9a",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 0,
+      "seconds": 53.826,
+      "counts": {
+        "tests": 1843,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 1843
+      }
+    },
+    "specialist-sqlite": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/specialist-sqlite.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 1,
+      "seconds": 1.495,
+      "counts": {
+        "tests": 27,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 26
+      }
+    },
+    "finance-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "-k",
+        "generic_void or financial_permission",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/finance-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "2de4a05390dd9605691c00a0cad00ebc6ea8be95d6677f3efda18a084b853fa1",
+      "exit_code": 1,
+      "seconds": 0.918,
+      "counts": {
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      }
+    },
+    "defects-green": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/defects-green.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "5e746886ea57f507d749c71295f8b1ee7dafe1b3ad606e0a02b8f30addd5cb99",
+      "exit_code": 0,
+      "seconds": 0.818,
+      "counts": {
+        "tests": 24,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 24
+      }
+    },
+    "specialist": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/specialist.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "f6c39ca7c720edba551a4a9aa1bf65dfebbaac88f442acab3bbb53b2d747a4f0",
+      "exit_code": 0,
+      "seconds": 0.95,
+      "counts": {
+        "tests": 27,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 27
+      }
+    },
+    "deductions-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "-k",
+        "consumed_twice or fractional_count",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/deductions-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "90a7eb7f7bc6c96dd70c221e9f99101a99530cc6108fea1e9adca2b24a601442",
+      "exit_code": 1,
+      "seconds": 0.755,
+      "counts": {
+        "tests": 4,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      }
+    },
+    "defects-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_numeric_identity.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/defects-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit_code": 1,
+      "seconds": 0.726,
+      "counts": {
+        "tests": 24,
+        "failures": 17,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 7
+      }
+    },
+    "service-red": {
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_phase1_package2_service.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package2-evidence/service-red.xml"
+      ],
+      "head": "057d7bbf0b9f2d48b3720c590507e2ae6aae4de7",
+      "tree": "4b1d128fd773f1ace673af7cf17b8c0d34306a63",
+      "diff_sha256": "5e746886ea57f507d749c71295f8b1ee7dafe1b3ad606e0a02b8f30addd5cb99",
+      "exit_code": 1,
+      "seconds": 2.063,
+      "counts": {
+        "tests": 8,
+        "failures": 8,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      }
+    }
+  },
+  "full_suite_decision": "No full 6632+ run. Changes are input rejection guards, exact specialist aggregation/product/deduction, bounded prism precision and read-only contract dispatch. Related 57-file regression covers affected consumers/legacy modules, 7 package4 gate files, source identity, SQLite/CAS/BOQ/reports; 70-row scenario not rerun. No architecture/schema/financial-policy activation.",
+  "new_tests": {
+    "count": 85,
+    "files": [
+      "tests/test_phase1_package2_numeric_identity.py",
+      "tests/test_phase1_package2_legacy_input_precision.py",
+      "tests/test_phase1_package2_service.py",
+      "tests/test_phase1_package2_specialist_evidence.py"
+    ]
+  },
+  "baseline_defects": {
+    "same_final_numeric_tests_on_initial_head": {
+      "pass": 12,
+      "fail": 34,
+      "error": 0,
+      "skip": 0,
+      "exit_code": 1
+    },
+    "interpretation": "34 failing parameterized scenarios, not 34 distinct defects. Missing new service APIs are feature work, not counted as baseline numerical defects."
+  },
+  "engineering": {
+    "whole_family_acceptance": 0,
+    "windows_tested": false,
+    "independent_specialist_deficits": 37,
+    "new_bounded_component_evidence_families": 7,
+    "new_dedicated_service_routes": 1,
+    "bounded_execution_families": 33,
+    "other_limited": 41,
+    "no_dedicated_route_demonstrated": 40
+  },
+  "financial_permission": false,
+  "new_geometry_scope": "source-pinned rectangular prism ENVELOPES only; material deductions remain null; no slab/stair solid geometry inferred",
+  "code_changes": [
+    "core/takeoff/bored_pile_ownership_preflight.py",
+    "core/takeoff/column_joint_beam_panel.py",
+    "core/takeoff/column_joint_preflight.py",
+    "core/takeoff/modules/advanced.py",
+    "core/takeoff/modules/building.py",
+    "core/takeoff/modules/civil.py",
+    "core/takeoff/modules/electrical.py",
+    "core/takeoff/modules/mechanical.py",
+    "core/takeoff/phase1_multi_member_overlap.py",
+    "core/takeoff/reviewed_aec.py",
+    "core/takeoff/reviewed_components.py",
+    "core/takeoff/reviewed_detail_calculators.py",
+    "core/takeoff/steel_stair_preflight.py",
+    "core/takeoff/steel_stair_support_crosswalk_chat.py",
+    "core/takeoff/structural_handoff_work.py",
+    "docs/acceptance/phase1_final_package2_37_family_inventory_20261020.json",
+    "docs/acceptance/phase1_package1_74_family_evidence_20261019.json",
+    "tests/test_phase1_package2_legacy_input_precision.py",
+    "tests/test_phase1_package2_numeric_identity.py",
+    "tests/test_phase1_package2_service.py",
+    "tests/test_phase1_package2_specialist_evidence.py"
+  ],
+  "setup_failures": [
+    {
+      "exit_code": 4,
+      "scope": "wrong test path in first regression command; corrected before tests ran"
+    },
+    {
+      "exit_code": 4,
+      "scope": "baseline test-copy command used wrong checkout path; corrected before baseline reproduction"
+    }
+  ],
+  "specialist_fixture_correction": "Initial timber component was timber, absent from actual timber_roof SPECS. Corrected test to real joists and reproduced unreachable timber calculator; production adapter fixed without changing stored component keys. No assertion removed."
+}

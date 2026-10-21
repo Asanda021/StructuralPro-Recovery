@@ -72,10 +72,10 @@ def test_application_rejects_duplicate_takeoff_source(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه منبع", "P3")
     app.add_takeoff("P3", "building", "wall", source_id="DRAW-9",
-                    length=2, width=0.2, height=3, price_code="W001", unit_price=100)
+                    length=2, width=0.2, height=3, count=1, price_code="W001", unit_price=100)
     with pytest.raises(ValueError, match="دوباره"):
         app.add_takeoff("P3", "building", "wall", source_id="DRAW-9",
-                        length=2, width=0.2, height=3, price_code="W001", unit_price=100)
+                        length=2, width=0.2, height=3, count=1, price_code="W001", unit_price=100)
 
 from core.pricing.catalog import PriceCatalog, PriceItem
 from core.takeoff.estimate import build_estimate, compare_estimates

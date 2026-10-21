@@ -1,0 +1,88 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_aec_revision_type_alias_never_writes_project[save-True] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_aec_revision_type_alias_n0')
+revision = True, operation = 'save'
+
+    @pytest.mark.parametrize("revision", [True, 1.0])
+    @pytest.mark.parametrize("operation", ["save", "commit"])
+    def test_aec_revision_type_alias_never_writes_project(tmp_path, revision, operation):
+        app = StructuralProApp(tmp_path)
+        try:
+            app.create_project("Synthetic CAS type regression", "P")
+            draft = document()
+            app.save_aec_system_draft("P", draft, expected_revision=0)
+            digest = app.store.current_digest("P")
+            before = app.open_project("P")
+>           with pytest.raises((ValueError, RuntimeError)):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE any of (ValueError, RuntimeError)
+
+tests/test_phase1_aec_revision_type_cloud.py:18: Failed
+_________ test_aec_revision_type_alias_never_writes_project[save-1.0] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_aec_revision_type_alias_n1')
+revision = 1.0, operation = 'save'
+
+    @pytest.mark.parametrize("revision", [True, 1.0])
+    @pytest.mark.parametrize("operation", ["save", "commit"])
+    def test_aec_revision_type_alias_never_writes_project(tmp_path, revision, operation):
+        app = StructuralProApp(tmp_path)
+        try:
+            app.create_project("Synthetic CAS type regression", "P")
+            draft = document()
+            app.save_aec_system_draft("P", draft, expected_revision=0)
+            digest = app.store.current_digest("P")
+            before = app.open_project("P")
+>           with pytest.raises((ValueError, RuntimeError)):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE any of (ValueError, RuntimeError)
+
+tests/test_phase1_aec_revision_type_cloud.py:18: Failed
+________ test_aec_revision_type_alias_never_writes_project[commit-True] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_aec_revision_type_alias_n2')
+revision = True, operation = 'commit'
+
+    @pytest.mark.parametrize("revision", [True, 1.0])
+    @pytest.mark.parametrize("operation", ["save", "commit"])
+    def test_aec_revision_type_alias_never_writes_project(tmp_path, revision, operation):
+        app = StructuralProApp(tmp_path)
+        try:
+            app.create_project("Synthetic CAS type regression", "P")
+            draft = document()
+            app.save_aec_system_draft("P", draft, expected_revision=0)
+            digest = app.store.current_digest("P")
+            before = app.open_project("P")
+>           with pytest.raises((ValueError, RuntimeError)):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE any of (ValueError, RuntimeError)
+
+tests/test_phase1_aec_revision_type_cloud.py:18: Failed
+________ test_aec_revision_type_alias_never_writes_project[commit-1.0] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_aec_revision_type_alias_n3')
+revision = 1.0, operation = 'commit'
+
+    @pytest.mark.parametrize("revision", [True, 1.0])
+    @pytest.mark.parametrize("operation", ["save", "commit"])
+    def test_aec_revision_type_alias_never_writes_project(tmp_path, revision, operation):
+        app = StructuralProApp(tmp_path)
+        try:
+            app.create_project("Synthetic CAS type regression", "P")
+            draft = document()
+            app.save_aec_system_draft("P", draft, expected_revision=0)
+            digest = app.store.current_digest("P")
+            before = app.open_project("P")
+>           with pytest.raises((ValueError, RuntimeError)):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE any of (ValueError, RuntimeError)
+
+tests/test_phase1_aec_revision_type_cloud.py:18: Failed
+=========================== short test summary info ============================
+FAILED tests/test_phase1_aec_revision_type_cloud.py::test_aec_revision_type_alias_never_writes_project[save-True]
+FAILED tests/test_phase1_aec_revision_type_cloud.py::test_aec_revision_type_alias_never_writes_project[save-1.0]
+FAILED tests/test_phase1_aec_revision_type_cloud.py::test_aec_revision_type_alias_never_writes_project[commit-True]
+FAILED tests/test_phase1_aec_revision_type_cloud.py::test_aec_revision_type_alias_never_writes_project[commit-1.0]
+4 failed in 0.26s

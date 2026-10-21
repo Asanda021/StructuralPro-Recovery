@@ -1,0 +1,235 @@
+{
+  "mission": "phase1_final_package1_20261019",
+  "initial_head": "d2b592593053a81b60f5d8d6cc70262ef58cd9e1",
+  "chat_commit": "f451da980e923cbedc83db930498d1d1a6919357",
+  "work_code_commit": "2b9ffa037b46a325ecdaddb69068b933fc8fd4ac",
+  "local_test_commit": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+  "tested_code_tree": "0597bc19d7dae9bb7b940e814a53a479602dad07",
+  "published_code_tree": "0597bc19d7dae9bb7b940e814a53a479602dad07",
+  "primary_nonoverlapping_totals": {
+    "passed": 876,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "core_regression": {
+    "command": [
+      "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+      "-m",
+      "pytest",
+      "-v",
+      "-o",
+      "faulthandler_timeout=30",
+      "tests/test_phase1_chat_reviewed_detail_aggregate_precision.py",
+      "tests/test_phase1_chat_reviewed_components_numeric.py",
+      "tests/test_phase1_work_reviewed_sum_precision.py",
+      "tests/test_phase1_work_six_family_service.py",
+      "tests/test_phase1_six_family_ownership_chat.py",
+      "tests/test_shared_rebar_ownership_chat.py",
+      "tests/test_concrete_formwork_ownership_preflight_chat.py",
+      "tests/test_phase1_steel_stair_preflight_chat.py",
+      "tests/test_phase1_steel_stair_support_crosswalk_chat.py",
+      "tests/test_structural_handoff_work.py",
+      "tests/test_reviewed_structural_five_priorities.py",
+      "tests/test_reviewed_aec_priorities_6_9.py",
+      "tests/test_p13_p15_reviewed_engineering.py",
+      "tests/test_foundation_tie_stage23_chat.py",
+      "tests/test_beam_stage21.py",
+      "tests/test_beam_detail_workflow.py",
+      "tests/test_beam_detail_match.py",
+      "tests/test_roof_specialist_work.py",
+      "tests/test_steel_specialist_work.py",
+      "tests/test_stair_work_core.py",
+      "tests/test_composite_roof_detail_guard.py",
+      "tests/test_void_former_roofs_20261016.py",
+      "tests/test_financial_sqlite_concurrency_guard.py",
+      "tests/test_priority_68_store_concurrency.py",
+      "tests/test_priority_67_concurrency.py",
+      "tests/test_manual_formula_persistence.py",
+      "tests/test_manual_formula_amendments.py",
+      "tests/test_manual_formula_fivefloor_closure.py",
+      "tests/test_manual_formula_reports.py",
+      "tests/test_phase1_manual_report_formats.py",
+      "tests/test_phase1_work_chat_snapshot_integration.py",
+      "--junitxml=/workspace/scratch/61dce18379e6/final-package1-evidence/core-regression.xml"
+    ],
+    "environment": {
+      "QT_QPA_PLATFORM": "offscreen"
+    },
+    "head": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+    "tree": "0597bc19d7dae9bb7b940e814a53a479602dad07",
+    "seconds": 156.514,
+    "exit_code": 0,
+    "counts": {
+      "tests": 869,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 869
+    }
+  },
+  "separate_qt_regression": [
+    {
+      "label": "handoff-qt",
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-v",
+        "-o",
+        "faulthandler_timeout=20",
+        "tests/test_structural_handoff_ui_work.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package1-evidence/handoff-qt.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 1.018,
+      "head": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 1
+      }
+    },
+    {
+      "label": "manual-report-qt",
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-v",
+        "-o",
+        "faulthandler_timeout=20",
+        "tests/test_phase1_manual_word_csv_ui_buttons_chat.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package1-evidence/manual-report-qt.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 2.929,
+      "head": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+      "counts": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 4
+      }
+    },
+    {
+      "label": "manual-cas-qt",
+      "command": [
+        "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+        "-m",
+        "pytest",
+        "-v",
+        "-o",
+        "faulthandler_timeout=20",
+        "tests/test_recovery_manual_audit_concurrency.py",
+        "--junitxml=/workspace/scratch/61dce18379e6/final-package1-evidence/manual-cas-qt.xml"
+      ],
+      "exit_code": 0,
+      "seconds": 0.919,
+      "head": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+      "counts": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 2
+      }
+    }
+  ],
+  "additional_runs_not_added_to_totals": [
+    {
+      "artifact": "numeric-red.xml",
+      "head": "d2b592593053a81b60f5d8d6cc70262ef58cd9e1",
+      "exit_code": 1,
+      "counts": {
+        "tests": 11,
+        "failures": 4,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 7
+      },
+      "junit_seconds": 0.121
+    },
+    {
+      "artifact": "numeric.xml",
+      "head": "f451da980e923cbedc83db930498d1d1a6919357",
+      "exit_code": 0,
+      "counts": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 11
+      },
+      "junit_seconds": 0.184
+    },
+    {
+      "artifact": "service-red.xml",
+      "head": "f451da980e923cbedc83db930498d1d1a6919357 plus new tests only",
+      "exit_code": 1,
+      "counts": {
+        "tests": 17,
+        "failures": 17,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      },
+      "junit_seconds": 1.458
+    },
+    {
+      "artifact": "service-extra-red.xml",
+      "head": "development checkpoint before guard hardening",
+      "exit_code": 1,
+      "counts": {
+        "tests": 2,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      },
+      "junit_seconds": 0.688
+    },
+    {
+      "artifact": "service-final.xml",
+      "head": "51ec1d2cb661dfc53f1687b160120b4e45d75786",
+      "exit_code": 0,
+      "counts": {
+        "tests": 22,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 22
+      },
+      "junit_seconds": 1.34
+    }
+  ],
+  "interrupted_attempt": {
+    "exit_code": 130,
+    "accepted": false,
+    "cause": "Manually interrupted at 98%; later traced to long-running 70-row manual Qt scenario. Complete rerun passed in 155.20 seconds; not evidence of fixed Qt deadlock."
+  },
+  "setup_error": {
+    "exit_code": 4,
+    "cause": "Initial numeric baseline command copied from wrong checkout; path corrected before reproducing four baseline failures. No code/test change."
+  },
+  "engineering_acceptance": false,
+  "windows_tested": false,
+  "financial_permission": false,
+  "snapshot_basis_exclusions": [
+    "_meta",
+    "structural_handoff_audits",
+    "structural_handoff_history"
+  ],
+  "cas_basis": "full existing ProjectStore digest including audit fields",
+  "new_schema": false,
+  "unchanged_74_family_matrix": {
+    "specialist_limited": 32,
+    "other_limited": 42,
+    "insufficient_independent_specialist_evidence": 37,
+    "fully_engineering_windows_accepted": 0,
+    "overlapping_metrics_do_not_add": true
+  }
+}

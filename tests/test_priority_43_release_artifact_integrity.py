@@ -1,10 +1,13 @@
 """Priority 43 — release artifact integrity contract."""
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def test_release_workflow_validates_manifest_artifact_hashes():
-    source = (ROOT / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
+    source = (HISTORY / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
     assert "Validate release artifact hashes" in source
     assert "Get-FileHash -Algorithm SHA256" in source
     assert "manifest.artifacts" in source

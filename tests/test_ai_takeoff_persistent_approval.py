@@ -5,6 +5,7 @@ import pytest
 from core.drawings.graphical_takeoff import Point
 from core.drawings.takeoff_session import DrawingTakeoffSession
 from core.platform.application import StructuralProApp
+from drawing_source_fixture import vector_pdf
 
 
 def _proposal(session_id, revision, session, item, *, meters_per_pixel=0.1):
@@ -33,7 +34,7 @@ def _proposal(session_id, revision, session, item, *, meters_per_pixel=0.1):
 def test_ai_takeoff_requires_human_confirmation_and_saved_drawing_evidence(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه متره هوشمند", "ai-project")
-    session = DrawingTakeoffSession("golden://project/A101.pdf")
+    session = DrawingTakeoffSession(vector_pdf(tmp_path))
     session.calibrate(1, 100, 10)
     session.add_length([Point(0, 0), Point(100, 0)], page=1, label="خط مرجع")
     saved = app.save_drawing_takeoff_session("ai-project", session)
@@ -62,7 +63,7 @@ def test_ai_takeoff_requires_human_confirmation_and_saved_drawing_evidence(tmp_p
 def test_ai_takeoff_rejects_stale_revision_wrong_scale_and_duplicate_sources(tmp_path):
     app = StructuralProApp(tmp_path)
     app.create_project("پروژه کنترل شواهد", "ai-evidence-project")
-    session = DrawingTakeoffSession("golden://project/A102.pdf")
+    session = DrawingTakeoffSession(vector_pdf(tmp_path))
     session.calibrate(1, 100, 10)
     session.add_length([Point(0, 0), Point(100, 0)], page=1, label="خط مرجع")
     saved = app.save_drawing_takeoff_session("ai-evidence-project", session)

@@ -49,6 +49,9 @@ def validate_stirrup_zones(zones: list[dict[str, Any]], beam_length_m: Any) -> l
         last = _n(z.get("last_bar_m"), f"محل آخرین خاموت {name}", allow_zero=True)
         cut = _n(z.get("cut_length_m"), f"طول برش خاموت {name}")
         unit_weight = _n(z.get("unit_weight_kg_m"), f"وزن واحد خاموت {name}")
+        weight_source = z.get("unit_weight_source")
+        if not isinstance(weight_source, str) or not weight_source.strip():
+            raise ValueError(f"منبع وزن واحد خاموت {name} الزامی است")
         ref = z.get("source_ref")
         if not isinstance(ref, str) or not ref.strip():
             raise ValueError(f"مرجع دیتایل {name} الزامی است")
@@ -65,7 +68,9 @@ def validate_stirrup_zones(zones: list[dict[str, Any]], beam_length_m: Any) -> l
         results.append({"name": name, "start_m": start, "end_m": end,
                         "spacing_m": spacing, "first_bar_m": first, "last_bar_m": last,
                         "count": count, "cut_length_m": cut,
-                        "unit_weight_kg_m": unit_weight, "source_ref": ref.strip()})
+                        "unit_weight_kg_m": unit_weight,
+                        "unit_weight_source": weight_source.strip(),
+                        "source_ref": ref.strip()})
     results.sort(key=lambda x: x["start_m"])
     tol = max(1e-8, length * 1e-9)
     if not math.isclose(results[0]["start_m"], 0, abs_tol=tol):

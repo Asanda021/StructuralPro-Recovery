@@ -34,7 +34,7 @@ class ManualTakeoffRecord:
     floor_id: str
     element_label: str
     code: str
-    params: Mapping[str, float]
+    params: Mapping[str, float | str]
     quantity: float
     unit: str
     formula: str
@@ -75,6 +75,10 @@ class ManualTakeoffWorkbench:
         """Read-only target state for UI safety checks before undo."""
         return self._undo[-1] if self._undo else self.records
 
+    @property
+    def redo_preview(self):
+        return self._redo[-1] if self._redo else self.records
+
     def _snapshot(self) -> None:
         self._undo.append(tuple(self._records))
         self._redo.clear()
@@ -95,6 +99,7 @@ class ManualTakeoffWorkbench:
             "excavation": ("length", "width", "depth"), "rebar": ("count", "length", "unit_weight"), "steel": ("count", "length", "unit_weight"),
         }.get(entry.code, ())
         missing = tuple(k for k in fields if k not in params or (params[k] < 0 if k == "openings" else params[k] <= 0))
+        missing += tuple(k for k in entry.missing if k not in fields)
         if missing:
             updated = ManualEntry(entry.code, params, missing, entry.source_text)
             return ManualTakeoffDraft(self.project_id, str(floor_id).strip(), updated, missing)
@@ -134,3 +139,61 @@ class ManualTakeoffWorkbench:
         return self.records
 
     def export_rows(self) -> tuple[dict, ...]: return tuple(record.to_dict() for record in self._records)
+
+    def _selected(self, ids):
+        ids=list(ids)
+        if not ids or len(ids)!=len(set(ids)):raise ValueError('شناسه ردیف‌ها باید صریح و یکتا باشد')
+        lookup={r.record_id:r for r in self._records}
+        if any(key not in lookup for key in ids):raise KeyError('ردیف انتخابی وجود ندارد')
+        return [lookup[key] for key in ids]
+
+    def remove_records(self, ids):
+        rows=self._selected(ids);keys={r.record_id for r in rows};self._snapshot()
+        self._records=[r for r in self._records if r.record_id not in keys]
+        return self.records
+
+    def copy_records(self, ids, *, floor_id):
+        rows=self._selected(ids)
+        if not str(floor_id).strip():raise ValueError('طبقه مقصد باید صریح باشد')
+        if any(r.floor_id==str(floor_id).strip() for r in rows):raise ValueError('کپی همان منبع در همان طبقه نیازمند هویت فیزیکی مستقل است')
+        previous=(list(self._records),list(self._undo),list(self._redo),self._next_id)
+        try:
+            copies=[self.add_text(r.source,floor_id=floor_id,element_label=r.element_label) for r in rows]
+            if any(isinstance(r,ManualTakeoffDraft) for r in copies):raise ValueError('کپی ردیف ناقص مجاز نیست')
+            self._undo=previous[1]+[tuple(previous[0])];self._redo=[]
+            return tuple(copies)
+        except Exception:
+            self._records,self._undo,self._redo,self._next_id=previous
+            raise
+
+    def update_text(self, record_id, text, *, expected_revision, floor_id=None, element_label=None):
+        from dataclasses import replace
+        old=self._selected([record_id])[0]
+        if isinstance(expected_revision,bool) or not isinstance(expected_revision,int) or expected_revision!=old.revision:raise RuntimeError('نسخه ردیف تغییر کرده است')
+        previous=(list(self._records),list(self._undo),list(self._redo),self._next_id)
+        try:
+            result=self.add_text(text,floor_id=floor_id or old.floor_id,element_label=old.element_label if element_label is None else element_label)
+            if isinstance(result,ManualTakeoffDraft):raise ValueError('داده ویرایش‌شده ناقص است؛ ردیف قبلی حفظ شد')
+            result=replace(result,record_id=old.record_id,revision=old.revision+1)
+        finally:self._records,self._undo,self._redo,self._next_id=previous
+        self._snapshot();self._records=[result if r.record_id==record_id else r for r in self._records]
+        return result
+
+    def relocate_records(self, ids, *, floor, block, location, mode):
+        from dataclasses import replace
+        from core.takeoff.manual_formula_register import text
+        rows=self._selected(ids);floor=text(floor,'طبقه');block=text(block,'بلوک');location=text(location,'محل اجرا')
+        if mode not in {'move','copy'}:raise ValueError('نوع عملیات انتقال یا کپی مشخص نیست')
+        if any((r.floor_id,r.params.get('block',''),r.params.get('location',''))==(floor,block,location) for r in rows):raise ValueError('مقصد با محل فعلی یکسان است')
+        next_id=self._next_id;result=[]
+        for r in rows:
+            params={**dict(r.params),'block':block,'location':location,'manual_location_id':block+':'+location+':'+r.element_label}
+            if mode=='move':result.append(replace(r,floor_id=floor,params=params,revision=r.revision+1))
+            else:
+                result.append(replace(r,record_id=f'MT-{next_id:06d}',floor_id=floor,params=params,revision=1));next_id+=1
+        proposed=list(self._records)
+        if mode=='move':changes={r.record_id:r for r in result};proposed=[changes.get(r.record_id,r) for r in proposed]
+        else:proposed+=result
+        located=[(r.code,r.floor_id,r.params['manual_location_id']) for r in proposed if r.params.get('manual_location_id')]
+        if len(located)!=len(set(located)):raise ValueError('برداشت عضو در محل مقصد تکراری است')
+        self._snapshot();self._records=proposed;self._next_id=next_id;return tuple(result)

@@ -14,19 +14,22 @@ _FIELDS = (
     ("first_bar_m", "اولین خاموت (متر)"), ("last_bar_m", "آخرین خاموت (متر)"),
     ("count", "تعداد واقعی"), ("cut_length_m", "طول برش (متر)"),
     ("unit_weight_kg_m", "وزن واحد (کیلوگرم/متر)"),
+    ("unit_weight_source", "مرجع وزن واحد خاموت"),
     ("source_ref", "مرجع دیتایل"),
+    ('id','شناسه مستقل خاموت'),('nominal_diameter_mm','قطر (میلی‌متر)'),('shape_kind','شکل؛ مستطیلی'),('shape_ref','مرجع شکل'),('section_width_m','عرض بیرونی خاموت (متر)'),('section_depth_m','ارتفاع بیرونی خاموت (متر)'),('section_ref','مرجع ابعاد خاموت'),('cut_length_ref','مرجع طول برش شامل خم و قلاب'),
 )
 
 
 class StirrupZoneEditor(QDialog):
     """Only verified zones leave this dialog; no count estimation or approval."""
 
-    def __init__(self, *, beam_length_m: float, zones: list[dict] | None = None, parent=None):
+    def __init__(self, *, beam_length_m: float, zones: list[dict] | None = None, specialist=False, parent=None):
         super().__init__(parent)
         self.setWindowTitle("ویرایش نواحی خاموت تیر")
         self.resize(1250, 510)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.beam_length_m = beam_length_m
+        self.specialist=specialist
         self.zones: list[dict] | None = None
         root = QVBoxLayout(self)
         guide = QLabel(
@@ -63,6 +66,7 @@ class StirrupZoneEditor(QDialog):
         self.table.insertRow(row)
         for col, (key, _) in enumerate(_FIELDS):
             value = zone.get(key, "")
+            if key=="shape_kind" and value=="rectangular":value="مستطیلی"
             self.table.setItem(row, col, QTableWidgetItem(str(value)))
         self.table.selectRow(row)
 
@@ -85,7 +89,11 @@ class StirrupZoneEditor(QDialog):
 
     def accept_validated(self):
         try:
-            self.zones = validate_stirrup_zones(self.collect_rows(), self.beam_length_m)
+            raw=self.collect_rows();self.zones=validate_stirrup_zones(raw,self.beam_length_m)
+            if self.specialist:
+                for z in raw:z['shape_kind']={'مستطیلی':'rectangular','rectangular':'rectangular'}.get(z['shape_kind'],z['shape_kind'])
+                raw.sort(key=lambda z:float(z['start_m']))
+                self.zones=raw
         except (ValueError, TypeError) as exc:
             QMessageBox.warning(self, "دیتایل خاموت ناقص یا نامعتبر", str(exc))
             return

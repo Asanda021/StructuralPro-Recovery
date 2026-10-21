@@ -1,0 +1,957 @@
+{
+  "schema": "phase1_nonwindows_37_family_blocker_triage_v1",
+  "baseline_remote_head": "0fc36ac0935f2ab704cf99dda871347ccf7b1643",
+  "scope": "Finite accepted phase-one scope; documentation and test coverage do not upgrade full-family acceptance. No Windows/Office claims.",
+  "source_docs_sha": {
+    "family_review": "f907db6e6992ef01518b7a1fc7e8601860e8bb7f",
+    "family_matrix": "8e61f9fe4fa6d3ccddee3bbaedcd4efd92a74c6e",
+    "inventory": "0f78cf09bb446f1b881c96533668923277980575",
+    "cloud_ledger": "b0785a1d9dc4983e18e375661cd1b209dff88852"
+  },
+  "summary": {
+    "total_families": 37,
+    "fully_accepted": 0,
+    "missing_independent_evidence": 37,
+    "categories": {
+      "steel_stair": 1,
+      "roof": 5,
+      "architecture": 7,
+      "mechanical": 7,
+      "electrical": 8,
+      "civil_site": 5,
+      "intervention": 4
+    },
+    "software_defect_proven_by_this_audit": 0
+  },
+  "disposition_rule": "Review and software validation can continue without Windows. Every family remains blocked until authoritative source documents and an independent oracle/reviewer plus end-to-end checks exist. A missing external document is not proof of a code defect.",
+  "families": [
+    {
+      "code": "stair_metal",
+      "title": "پله فولادی و نرده",
+      "category": "steel_stair",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/steel_stair_preflight.py + steel_stair_support_crosswalk_chat.py",
+      "software_scope_observed": "all 11 steel groups + real support service, synthetic only",
+      "existing_test_references": [
+        "tests/test_chat_package4_steel_site_limited_gates.py",
+        "tests/test_phase1_package2_specialist_evidence.py",
+        "tests/test_phase1_package2_numeric_identity.py + test_phase1_package2_service.py"
+      ],
+      "software_acceptance_gap": "existing stair quantity/support preflight; design and global geometry unaccepted",
+      "software_work_after_authoritative_inputs": "نقص مدل یکپارچه هندسه/اتصالات و مرجع مستقل ۱۱ گروه؛ آزمون preflight و SQLite بعد از دریافت دیتایل",
+      "external_required_documents": [
+        "دیتایل مصوب تمام ۱۱ گروه یا عدم کاربرد مستند",
+        "مختصات تماس، واکنش و ظرفیت طراحی هر تکیه‌گاه",
+        "طول و مشخصات جوش، پیچ، مهره و انکر و مالک پرداخت هر قطعه"
+      ],
+      "external_provider_reviewer": "طراح سازه و بازبین مستقل اتصالات فولادی",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "kromit_roof",
+      "title": "سقف کرومیت",
+      "category": "roof",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تکمیل قرارداد اندازه‌گیری کل سقف شامل قطعه، بازشو، هم‌پوشانی و وحدت پرداخت؛ آزمون مثبت و منفی مستقل پس از نقشه",
+      "external_required_documents": [
+        "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+        "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+        "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+      ],
+      "external_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "composite_roof",
+      "title": "سقف مرکب",
+      "category": "roof",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تکمیل قرارداد اندازه‌گیری کل سقف شامل قطعه، بازشو، هم‌پوشانی و وحدت پرداخت؛ آزمون مثبت و منفی مستقل پس از نقشه",
+      "external_required_documents": [
+        "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+        "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+        "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+      ],
+      "external_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "sandwich_roof",
+      "title": "ساندویچ پانل سقف",
+      "category": "roof",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تکمیل قرارداد اندازه‌گیری کل سقف شامل قطعه، بازشو، هم‌پوشانی و وحدت پرداخت؛ آزمون مثبت و منفی مستقل پس از نقشه",
+      "external_required_documents": [
+        "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+        "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+        "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+      ],
+      "external_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "timber_roof",
+      "title": "سقف چوبی",
+      "category": "roof",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تکمیل قرارداد اندازه‌گیری کل سقف شامل قطعه، بازشو، هم‌پوشانی و وحدت پرداخت؛ آزمون مثبت و منفی مستقل پس از نقشه",
+      "external_required_documents": [
+        "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+        "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+        "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+      ],
+      "external_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "precast_roof",
+      "title": "سقف پیش ساخته",
+      "category": "roof",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_roof_failclosed.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تکمیل قرارداد اندازه‌گیری کل سقف شامل قطعه، بازشو، هم‌پوشانی و وحدت پرداخت؛ آزمون مثبت و منفی مستقل پس از نقشه",
+      "external_required_documents": [
+        "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+        "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+        "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+      ],
+      "external_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "gypsum_partition",
+      "title": "دیوار خشک",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_architecture_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "cement_render",
+      "title": "سیمان کاری و اندود",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_architecture_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance.",
+      "bounded_independent_component_oracle": {
+        "scope": "synthetic net wall surface for render_coat: count × length × height minus total documented openings; other system components are not reviewed",
+        "test_file": "tests/test_phase1_cement_render_net_surface_chat.py",
+        "real_service_route": "core/takeoff/reviewed_aec.py::preview_system -> reviewed_detail_calculators::net_surface; existing ProjectStore draft/preview CAS",
+        "cases_written": 15,
+        "test_execution_on_repo_checkout": "not_run",
+        "local_oracle_calculations": {
+          "passed": 3,
+          "failed": 0,
+          "scope": "standalone Decimal reference calculations in Chat; product import/SQLite not exercised"
+        },
+        "production_change": "Allow net_surface detail on render_coat only",
+        "engine_acceptance": "not_claimed",
+        "independent_professional_review": "missing",
+        "full_family_engineering_accepted": false,
+        "stage": "bounded_test_added_pending_full_repo_pytest_and_approved_source"
+      }
+    },
+    {
+      "code": "door_window",
+      "title": "درب و پنجره",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_architecture_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "upvc_aluminium_windows",
+      "title": "پنجره UPVC و آلومینیوم",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_architecture_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "glass_curtain_wall",
+      "title": "نمای شیشه ای",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_architecture_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "facade_cladding",
+      "title": "نمای خشک",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "handrails_metalwork",
+      "title": "نرده و فلزکاری",
+      "category": "architecture",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "one documented component and incomplete SQLite draft, not whole family",
+      "existing_test_references": [
+        "tests/test_chat_package4_steel_site_limited_gates.py",
+        "tests/test_phase1_package2_specialist_evidence.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قاعده مستقل وجه/لایه/بازشو و کسورات؛ آزمون مرجع ابعاد واقعی و بازگشایی SQLite",
+      "external_required_documents": [
+        "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+        "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+        "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+      ],
+      "external_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "plumbing",
+      "title": "آبرسانی",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_mechanical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "sanitary_drainage",
+      "title": "فاضلاب و باران",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_mechanical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "hvac",
+      "title": "گرمایش سرمایش تهویه",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_mechanical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "mechanical_ventilation",
+      "title": "تهویه مکانیکی",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_mechanical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "plantroom",
+      "title": "موتورخانه",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_mechanical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "natural_gas",
+      "title": "گاز رسانی",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_service_specialty_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "fire_protection",
+      "title": "اطفا حریق",
+      "category": "mechanical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_service_specialty_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد طول/تعداد برای مسیر شبکه و اتصالات، مالکیت قطعه و مرجع اندازه‌گیری مستقل؛ آزمون BOQ بدون تخمین",
+      "external_required_documents": [
+        "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+        "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+        "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+      ],
+      "external_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "electrical_power",
+      "title": "برق قدرت",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_electrical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "lighting",
+      "title": "روشنایی",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_electrical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "low_voltage",
+      "title": "جریان ضعیف",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_electrical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "fire_alarm",
+      "title": "اعلام حریق",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_electrical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "data_network",
+      "title": "شبکه دیتا",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_electrical_generic_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "security_systems",
+      "title": "دوربین و کنترل دسترسی",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_service_specialty_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "emergency_power",
+      "title": "برق اضطراری",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_service_specialty_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "elevator",
+      "title": "آسانسور",
+      "category": "electrical",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_five_service_specialty_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین قرارداد واقعی کابل/سینی/مدار/تجهیز و واحد، بدون تخمین تعداد یا ظرفیت؛ آزمون منبع و بازبینی مستقل",
+      "external_required_documents": [
+        "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+        "جدول واقعی تجهیزات و مشخصات سازنده",
+        "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+      ],
+      "external_provider_reviewer": "طراح برق و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "external_earthwork",
+      "title": "عملیات خاکی",
+      "category": "civil_site",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_steel_site_limited_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین سطوح/احجام با تراز و مقاطع معتبر و مرجع کسورات؛ آزمون تغییر هندسه و مالک پرداخت",
+      "external_required_documents": [
+        "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+        "مرجع صریح کسورات، واحد و مالک پرداخت",
+        "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+      ],
+      "external_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "blinding_concrete",
+      "title": "بتن مگر",
+      "category": "civil_site",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_steel_site_limited_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین سطوح/احجام با تراز و مقاطع معتبر و مرجع کسورات؛ آزمون تغییر هندسه و مالک پرداخت",
+      "external_required_documents": [
+        "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+        "مرجع صریح کسورات، واحد و مالک پرداخت",
+        "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+      ],
+      "external_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance.",
+      "bounded_independent_component_oracle": {
+        "scope": "synthetic rectangular blinding concrete only; explicit length/width/thickness/count, excluding base preparation and edge formwork",
+        "test_file": "tests/test_phase1_blinding_concrete_independent_oracle_chat.py",
+        "cases_written": 15,
+        "test_execution_on_repo_checkout": "not_run",
+        "local_oracle_calculations": {
+          "passed": 3,
+          "failed": 0,
+          "scope": "isolated exact Decimal reference products only; no import of product engine or SQLite"
+        },
+        "engine_acceptance": "not_claimed",
+        "independent_professional_review": "missing",
+        "full_family_engineering_accepted": false,
+        "stage": "bounded_test_added_pending_real_pytest_and_approved_source"
+      }
+    },
+    {
+      "code": "retaining_structures",
+      "title": "سازه نگهبان",
+      "category": "civil_site",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_steel_site_limited_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین سطوح/احجام با تراز و مقاطع معتبر و مرجع کسورات؛ آزمون تغییر هندسه و مالک پرداخت",
+      "external_required_documents": [
+        "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+        "مرجع صریح کسورات، واحد و مالک پرداخت",
+        "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+      ],
+      "external_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "external_works",
+      "title": "محوطه سازی",
+      "category": "civil_site",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین سطوح/احجام با تراز و مقاطع معتبر و مرجع کسورات؛ آزمون تغییر هندسه و مالک پرداخت",
+      "external_required_documents": [
+        "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+        "مرجع صریح کسورات، واحد و مالک پرداخت",
+        "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+      ],
+      "external_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "site_drains",
+      "title": "زهکشی",
+      "category": "civil_site",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "تعیین سطوح/احجام با تراز و مقاطع معتبر و مرجع کسورات؛ آزمون تغییر هندسه و مالک پرداخت",
+      "external_required_documents": [
+        "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+        "مرجع صریح کسورات، واحد و مالک پرداخت",
+        "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+      ],
+      "external_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "demolition",
+      "title": "تخریب",
+      "category": "intervention",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "قرارداد متره وضع موجود و طرح مداخله با مرزهای واقعی؛ آزمون منفی مجوز/منشأ و جلوگیری از پرداخت تکراری",
+      "external_required_documents": [
+        "ارزیابی وضع موجود و طرح مصوب مداخله",
+        "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+        "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+      ],
+      "external_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "concrete_repair",
+      "title": "ترمیم سازه",
+      "category": "intervention",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "قرارداد متره وضع موجود و طرح مداخله با مرزهای واقعی؛ آزمون منفی مجوز/منشأ و جلوگیری از پرداخت تکراری",
+      "external_required_documents": [
+        "ارزیابی وضع موجود و طرح مصوب مداخله",
+        "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+        "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+      ],
+      "external_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "seismic_retrofit",
+      "title": "مقاوم سازی",
+      "category": "intervention",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "قرارداد متره وضع موجود و طرح مداخله با مرزهای واقعی؛ آزمون منفی مجوز/منشأ و جلوگیری از پرداخت تکراری",
+      "external_required_documents": [
+        "ارزیابی وضع موجود و طرح مصوب مداخله",
+        "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+        "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+      ],
+      "external_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    },
+    {
+      "code": "historic_restoration",
+      "title": "مرمت تاریخی",
+      "category": "intervention",
+      "source_family_review": "docs/acceptance/phase1_closure_37_family_review_20261020.json",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "software_scope_observed": "no new independent specialist test; existing generic gate remains limited",
+      "existing_test_references": [
+        "tests/test_chat_package4_seven_final_family_gates.py"
+      ],
+      "software_acceptance_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "software_work_after_authoritative_inputs": "قرارداد متره وضع موجود و طرح مداخله با مرزهای واقعی؛ آزمون منفی مجوز/منشأ و جلوگیری از پرداخت تکراری",
+      "external_required_documents": [
+        "ارزیابی وضع موجود و طرح مصوب مداخله",
+        "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+        "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+      ],
+      "external_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+      "independent_evidence_status": "missing",
+      "full_family_engineering_accepted": false,
+      "record_status": "blocked_engineering_dependency",
+      "advance_condition": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+      "notes": "Existing shared component, general route or tests do not establish independent whole-family acceptance."
+    }
+  ]
+}

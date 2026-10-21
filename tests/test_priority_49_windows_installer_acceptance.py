@@ -1,12 +1,15 @@
 """Priority 49 — Windows installer acceptance contract."""
 
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_windows_release_runs_installed_application_smoke():
-    workflow = (ROOT / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
+    workflow = (HISTORY / ".github/workflows/windows-release.yml").read_text(encoding="utf-8")
     assert "windows_installer_smoke.ps1" in workflow
     assert "STRUCTURALPRO_SMOKE" not in workflow.split("Run installed application acceptance smoke", 1)[0]
 

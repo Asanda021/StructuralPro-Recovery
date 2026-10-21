@@ -4,10 +4,8 @@ from typing import Iterable,Any
 import math
 from core.takeoff.boq import build_boq,validate_boq_structure,boq_summary
 from core.takeoff.costing import cost_breakdown
-def _num(value,name):
-    x=float(value)
-    if not math.isfinite(x) or x<0: raise ValueError(f"{name} must be finite and non-negative")
-    return x
+from core.commercial.exact_values import number,wire
+def _num(value,name):return wire(number(value,name))
 def _validate_factors(factors):
     out={}
     for name,value in (factors or {}).items():

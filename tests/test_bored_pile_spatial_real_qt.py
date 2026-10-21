@@ -1,0 +1,153 @@
+"""Offscreen Qt acceptance through the real spatial engine and SQLite."""
+import json
+import pytest
+
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+
+from app.reviewed_structural_manual_editor import open_manual_structural_editor
+from app.bored_pile_draft_controller import PileDraftController
+from core.platform.application import StructuralProApp
+from core.takeoff.bored_pile_spatial_overlap import POLICY
+from core.takeoff.bored_pile_joint_crosswalk import _digest
+from core.takeoff.bored_pile_counterpart_footprint import bind_draft
+from test_bored_pile_counterpart_footprint import make_source
+from test_bored_pile_joint_real_application import _saved_joint_case
+from test_bored_pile_real_application_controller import _document
+
+
+@pytest.mark.parametrize("with_center", [False, True])
+def test_menu_click_real_spatial_engine_is_ephemeral_and_finance_locked(tmp_path, monkeypatch, with_center):
+    qt = QApplication.instance() or QApplication([])
+    app, controller, data, compiled, owner, joint, _ = _saved_joint_case(tmp_path)
+    cap = next(r for r in app.open_project('P')['reviewed_structural_members'].values()
+               if r['data']['kind'] == 'pile_cap')
+    footprint = tmp_path / 'cap-footprint.json'
+    make_source(footprint, cap['data'],
+                coordinate_ref=data['datum']['coordinate_ref'],
+                datum=data['datum']['vertical_datum_ref'])
+    bound = bind_draft(cap['data'], 'P', str(footprint), reference='مرز افقی مستقل کلاهک')
+    cap = app.save_structural_member_draft(
+        'P', bound, expected_revision=cap['revision'], reason='ثبت مرز افقی مستقل')
+    joint['interfaces'][0]['other_revision'] = cap['revision']
+    joint['interfaces'][0]['other_record_sha256'] = _digest(cap)
+    controller.attach_joint(_document(tmp_path / 'joint.json', joint), reference='Synthetic joint')
+    controller.save()
+    link = joint['interfaces'][0]
+    pile = data['piles'][0]
+    proof = {
+        'policy': POLICY, 'project_id': 'P', 'floor_id': 'FND', 'group_id': 'PG1',
+        'input_sha256': compiled['source_sha256'],
+        'coordinate_ref': data['datum']['coordinate_ref'],
+        'vertical_datum_ref': data['datum']['vertical_datum_ref'],
+        'prepared_by': 'SpatialPreparer', 'reviewer': 'SpatialIndependentReviewer',
+        'links': [{
+            'pile_id': pile['id'], 'pile_physical_id': pile['physical_id'],
+            'other_kind': link['other_kind'], 'other_floor_id': link['other_floor_id'],
+            'other_member_id': link['other_member_id'],
+            'other_physical_id': link['other_physical_id'],
+            'other_record_sha256': link['other_record_sha256'],
+            'other_revision': link['other_revision'],
+            'pile_center_x_m': '0', 'pile_center_y_m': '0',
+            'other_x_min_m': '-1', 'other_y_min_m': '-1',
+            'other_x_max_m': '1', 'other_y_max_m': '1',
+            'other_top_m': link['other_top_m'], 'other_bottom_m': link['other_bottom_m'],
+            'geometry_reference': link['geometry_reference'],
+            'geometry_sha256': link['geometry_sha256'],
+            'deduction_id': link['deduction_id'],
+        }],
+    }
+    path = _document(tmp_path / 'spatial.json', proof)
+    from core.takeoff.phase1_pile_center_evidence import POLICY as CENTER_POLICY
+    center = dict(policy=CENTER_POLICY, project_id='P', floor_id=data['floor_id'],
+                  group_id=data['group_id'], input_sha256=compiled['source_sha256'],
+                  coordinate_ref=data['datum']['coordinate_ref'],
+                  vertical_datum_ref=data['datum']['vertical_datum_ref'],
+                  source_reference='جانمایی مصنوعی مستقل', prepared_by='Author', reviewer='Reviewer',
+                  centers=[dict(pile_id=p['id'],pile_physical_id=p['physical_id'],
+                                x_m='0',y_m='0',source_ref='مستند مصنوعی') for p in data['piles']])
+    center_path = _document(tmp_path / 'centers.json', center)
+    chosen = [path]
+    monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *args: (center_path if 'مختصات افقی' in args[1] else chosen[0], ''))
+    before = app.open_project('P')
+    failures = []
+
+    def dismiss_warning():
+        box = qt.activeModalWidget()
+        if isinstance(box, QMessageBox):
+            QTest.mouseClick(box.button(QMessageBox.Ok), Qt.LeftButton)
+
+    def parent():
+        dialog = qt.activeModalWidget()
+        controls = dialog.column_controls
+
+        def child():
+            pile_dialog = qt.activeModalWidget()
+            try:
+                c = pile_dialog.pile_controls
+                def click(key):
+                    QTest.mouseClick(c[key], Qt.LeftButton)
+                    qt.processEvents()
+                assert pile_dialog.layoutDirection() == Qt.RightToLeft
+                assert c['controller'].revision == controller.revision
+                assert c['piles'].item(0, 3).text().startswith('-')
+                assert c['spatial'].text() == 'پیش‌ممیزی سه‌بعدی'
+                click('spatial_center' if with_center else 'spatial')
+                result = json.loads(c['report'].toPlainText())
+                if with_center:
+                    assert result['pile_center_audit']['checked_pile_count'] == len(data['piles'])
+                assert result['status'] == 'SPATIAL_PREVIEW_ONLY'
+                assert result['counterpart_geometry_record_bound'] is True
+                assert result['unbound_counterpart_count'] == 0
+                assert result['matched_interfaces'][0]['overlap_volume_m3'] == '0'
+                assert result['ready_for_boq'] is False and result['commit_allowed'] is False
+                assert c['report'].isReadOnly()
+                assert 'ثبت مالی مسدود' in c['message'].text()
+                assert app.open_project('P') == before
+                # A changed source cannot reuse the prior result.
+                with open(path, 'ab') as handle:
+                    handle.write(b'\n')
+                # The picker hashes current bytes; a malformed numeric token is rejected.
+                chosen[0] = _document(tmp_path / 'invalid.json', {**proof, 'links': [
+                    {**proof['links'][0], 'pile_center_x_m': 0.5}]})
+                QTimer.singleShot(10, dismiss_warning)
+                click('spatial')
+                assert c['message'].text().startswith('خطا:')
+                assert c['report'].toPlainText() == ''
+                assert app.open_project('P') == before
+            except Exception as exc:
+                failures.append(repr(exc))
+            finally:
+                pile_dialog.reject()
+
+        try:
+            controls['kind'].setCurrentIndex(controls['kind'].findData('bored_pile'))
+            controls['id'].setText('PG1')
+            controls['scroll'].ensureWidgetVisible(controls['pile_specialist'])
+            qt.processEvents()
+            QTimer.singleShot(20, child)
+            QTest.mouseClick(controls['pile_specialist'], Qt.LeftButton)
+        except Exception as exc:
+            failures.append(repr(exc))
+        finally:
+            dialog.reject()
+
+    QTimer.singleShot(25, parent)
+    open_manual_structural_editor(app, project_id='P', floor_id='FND')
+    qt.processEvents()
+    assert failures == []
+    assert app.store.db.execute('pragma integrity_check').fetchone()[0] == 'ok'
+    app.store.close()
+    reopened = StructuralProApp(tmp_path / 'db')
+    try:
+        again = PileDraftController(reopened, 'P')
+        again.load('FND', 'PG1')
+        assert again.revision == controller.revision
+        assert 'spatial_document' not in again.data['pile_detail']
+        assert reopened.get_structural_member('P', 'pile_cap', 'FND', 'CAP1')['revision'] == cap['revision']
+        assert reopened.open_project('P')['structural_member_history']
+        assert reopened.open_project('P')['boq'] == []
+        assert reopened.open_project('P')['takeoffs'] == []
+    finally:
+        reopened.store.close()

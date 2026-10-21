@@ -12,7 +12,7 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton,
-    QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog,
+    QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog, QFileDialog,
 )
 
 from core.takeoff.beam_detail import BAR_TYPES, BAR_LABELS, empty_beam
@@ -35,6 +35,8 @@ class BeamDetailPanel(QWidget):
         self.service = service
         self.project_id_getter = project_id_getter
         self.drawing_context_getter = drawing_context_getter
+        self._detail_template=None;self._component_review=None
+        self._advanced_geometry=False
         self.revision = 0
         self._loaded_identity = None
         self._segmented_kinds = set()
@@ -68,26 +70,33 @@ class BeamDetailPanel(QWidget):
                               ("تأییدکننده", self.reviewer)):
             identity_form.addRow(label, editor)
         column.addWidget(identity)
+        self.specialist_policy=QComboBox();self.specialist_policy.addItem('قرارداد تخصصی — کنترل دقیق و دیتایل صریح',True);self.specialist_policy.addItem('نمایش قرارداد تاریخی — نیازمند بازبینی',False)
+        self.plan_ref=QLineEdit();self.detail_ref=QLineEdit();identity_form.addRow('قرارداد متره',self.specialist_policy);identity_form.addRow('مرجع پلان',self.plan_ref);identity_form.addRow('مرجع دیتایل',self.detail_ref)
+        def scope():
+            c=QComboBox();c.addItem('دامنه را صریح انتخاب کنید',None);c.addItem('برای هر تیر هم‌تیپ', 'per_member');c.addItem('جمع کل گروه تیرها','total_group');return c
+        self.deduction_scope=scope();self.formwork_scope=scope();self.bar_scopes={};self.bar_positions={}
         self.geometry = {}
         box = QGroupBox("ابعاد و بتن تیر — واحد متر")
         f = QFormLayout(box)
         for key, label in (("length", "طول"), ("width", "عرض"),
                            ("depth", "ارتفاع مقطع"), ("count", "تعداد"),
                            ("deductions_m3", "کسر هم‌پوشانی (مترمکعب)"),
-                           ("source_ref", "مرجع دیتایل ابعاد")):
+                           ("source_ref", "مرجع دیتایل ابعاد"),("cover_m","پوشش بتن (متر)"),("cover_ref","مرجع پوشش"),("deduction_scope_ref","مرجع دامنه کسورات")):
             editor = QLineEdit()
             self.geometry[key] = editor
             f.addRow(label, editor)
+        f.addRow("دامنه کسورات",self.deduction_scope)
         column.addWidget(box)
         self.formwork = {}
         box = QGroupBox("قالب‌بندی — سطح خالص تأییدشده")
         f = QFormLayout(box)
         for key, label in (("net_area_m2", "مساحت خالص (مترمربع)"),
-                           ("source_ref", "مرجع سطوح قالب")):
+                           ("source_ref", "مرجع سطوح قالب"),("area_scope_ref","مرجع دامنه قالب")):
             editor = QLineEdit()
             self.formwork[key] = editor
             f.addRow(label, editor)
         column.addWidget(box)
+        f.addRow("دامنه مساحت قالب",self.formwork_scope)
         self.bars = {}
         for kind in BAR_TYPES:
             box = QGroupBox(BAR_LABELS[kind])
@@ -99,10 +108,15 @@ class BeamDetailPanel(QWidget):
             widgets = {"status": status}
             for field, label in (("count", "تعداد"), ("nominal_diameter_mm", "قطر اسمی از دیتایل (میلی‌متر)"), ("cut_length_m", "طول برش تأییدشده (متر)"),
                                  ("unit_weight_kg_m", "وزن واحد (کیلوگرم/متر)"),
-                                 ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد")):
+                                 ("unit_weight_source", "مرجع وزن واحد میلگرد"),
+                                 ("source_ref", "مرجع دیتایل"), ("reason", "دلیل عدم کاربرد"),("id","شناسه مستقل میلگرد"),("cut_length_ref","مرجع طول محور برش و جزئیات خم/قلاب/مهار"),("count_scope_ref","مرجع دامنه تعداد")):
                 editor = QLineEdit()
                 widgets[field] = editor
                 form.addRow(label, editor)
+            self.bar_scopes[kind]=scope();form.addRow('دامنه تعداد',self.bar_scopes[kind])
+            position=QComboBox();position.addItem('موقعیت را انتخاب کنید',None)
+            for code,label in [('top','بالا'),('bottom','پایین'),('span','دهانه'),('support','تکیه‌گاه'),('side','کمرکش'),('crosstie','سنجاقی')]:position.addItem(label,code)
+            self.bar_positions[kind]=position;form.addRow('موقعیت میلگرد',position)
             self.bars[kind] = widgets
             if kind == "stirrups":
                 self.stirrup_zones_button = QPushButton("ویرایش نواحی چندبازه‌ای خاموت")
@@ -128,6 +142,38 @@ class BeamDetailPanel(QWidget):
         self.save_button.clicked.connect(self.save)
         self.preview_button.clicked.connect(self.preview)
         self.commit_button.clicked.connect(self.commit)
+        self.series_buttons={};self.detail_buttons={}
+        for kind in BAR_TYPES:
+            if kind=='stirrups':continue
+            button=QPushButton('ویرایش چندسری '+BAR_LABELS[kind]);root.addWidget(button);self.series_buttons[kind]=button;button.clicked.connect(lambda _=False,k=kind:self.edit_components('series',k))
+        for kind,label in [('sections','نواحی مقطع متغیر'),('surfaces','سطوح قالب و کسورات'),('intersections','کسورات هندسی بتن')]:
+            button=QPushButton('ویرایش '+label);root.addWidget(button);self.detail_buttons[kind]=button;button.clicked.connect(lambda _=False,k=kind:self.edit_components(k))
+        self.review_beam_button=QPushButton('بازبینی نسخه جاری تیر');self.edit_reason=QLineEdit();self.edit_reason.setPlaceholderText('علت ثبت یا اصلاح');root.addWidget(self.edit_reason);root.addWidget(self.review_beam_button);self.review_beam_button.clicked.connect(self.review_current)
+        self.beam_amend_creator=QLineEdit();self.beam_amend_reviewer=QLineEdit();self.beam_amend_note=QLineEdit();self.beam_amend_id=QLineEdit()
+        for w,label in [(self.beam_amend_creator,'سازنده اصلاحیه'),(self.beam_amend_reviewer,'بازبین مستقل اصلاحیه'),(self.beam_amend_note,'یادداشت بازبینی'),(self.beam_amend_id,'شناسه اصلاحیه')]:w.setPlaceholderText(label);root.addWidget(w)
+        self.amend_create_button=QPushButton('ثبت درخواست اصلاح تیر قطعی');self.amend_review_button=QPushButton('بازبینی مستقل اصلاحیه');self.amend_apply_button=QPushButton('اعمال اتمیک اصلاحیه');self.history_button=QPushButton('تاریخچه نسخه‌های تیر')
+        for b in (self.amend_create_button,self.amend_review_button,self.amend_apply_button,self.history_button):root.addWidget(b)
+        self.amend_create_button.clicked.connect(lambda:self.amend('create'));self.amend_review_button.clicked.connect(lambda:self.amend('review'));self.amend_apply_button.clicked.connect(lambda:self.amend('apply'));self.history_button.clicked.connect(self.show_history)
+        self.migration_evidence_path=QLineEdit();self.migration_evidence_path.setPlaceholderText('مسیر فایل مدرک واقعی تکمیل تاریخی')
+        self.migration_reference=QLineEdit();self.migration_reference.setPlaceholderText('مرجع مستقل مدرک مهاجرت')
+        self.migration_button=QPushButton('درخواست مهاجرت نسخه تاریخی؛ بازبینی مستقل لازم است')
+        self.migration_inspect_button=QPushButton('وضعیت سازگاری تیرهای تاریخی')
+        for widget in (self.migration_evidence_path,self.migration_reference,self.migration_button,self.migration_inspect_button):root.addWidget(widget)
+        self.migration_button.clicked.connect(self.migrate_history);self.migration_inspect_button.clicked.connect(self.inspect_history)
+        self.legacy_rows=QComboBox();self.legacy_original=QLabel();self.legacy_original.setWordWrap(True)
+        self.legacy_target_source=QLineEdit();self.legacy_target_source.setPlaceholderText('شناسه واقعی منبع عضو مقصد؛ شناسه ردیف قدیمی تغییر نمی‌کند')
+        self.legacy_refresh_button=QPushButton('فهرست رکوردهای تاریخی و وضعیت نگاشت')
+        self.legacy_mapping_button=QPushButton('ثبت پیشنهاد نگاشت رکورد انتخابی به تیر مقصد')
+        self.legacy_report_buttons={}
+        for widget in (self.legacy_refresh_button,self.legacy_rows,self.legacy_original,self.legacy_target_source,self.legacy_mapping_button):root.addWidget(widget)
+        for fmt,label in [('xlsx','Excel'),('pdf','PDF')]:
+            b=QPushButton('گزارش نگاشت تاریخی '+label);root.addWidget(b);self.legacy_report_buttons[fmt]=b;b.clicked.connect(lambda _=False,f=fmt:self.export_legacy_mapping(f))
+        self.legacy_refresh_button.clicked.connect(self.refresh_legacy_rows);self.legacy_rows.currentIndexChanged.connect(self.show_legacy_original);self.legacy_mapping_button.clicked.connect(self.create_legacy_mapping)
+        self.xlsx_button=QPushButton('ریزمتره تیر Excel');self.pdf_button=QPushButton('ریزمتره تیر PDF');buttons.addWidget(self.xlsx_button);buttons.addWidget(self.pdf_button)
+        self.docx_button=QPushButton('ریزمتره تیر Word');self.csv_button=QPushButton('ریزمتره تیر CSV');buttons.addWidget(self.docx_button);buttons.addWidget(self.csv_button)
+        self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
+        self.docx_button.clicked.connect(lambda:self.export('docx'));self.csv_button.clicked.connect(lambda:self.export('csv'))
+        self.setLayoutDirection(Qt.RightToLeft)
         self.reset_form()
 
     def reset_form(self):
@@ -148,19 +194,21 @@ class BeamDetailPanel(QWidget):
         raw = value.strip().translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹", "0123456789"))
         if not raw:
             return None
-        number = float(raw)
-        if integral and not number.is_integer():
+        from core.commercial.exact_values import number as parse,wire
+        number = parse(raw,'ورودی تیر',True)
+        if integral and number!=number.to_integral_value():
             raise ValueError("تعداد باید صحیح باشد")
-        return int(number) if integral else number
+        return int(number) if integral else wire(number)
 
     def _drawing_source(self):
         """Use exact drawing bytes and selected viewport rectangle, never guessed scale."""
-        context = self.drawing_context_getter()
+        context = self.drawing_context_getter() or {}
         path = Path(context.get("path", "")) if context.get("path") else None
         region = context.get("region")
         if not path or not path.is_file():
             # Manual mode remains available when the project has no drawing.
             project, floor, beam = self._identity()
+            if self._detail_template and self._loaded_identity==(project,floor,beam) and self._detail_template.get("source",{}).get("mode")=="manual":return deepcopy(self._detail_template["source"])
             return {"mode": "manual", "source_id": f"manual:{project}:{floor}:{beam}"}
         if not region:
             return {}  # Drawing exists but has not been linked to this beam.
@@ -184,7 +232,7 @@ class BeamDetailPanel(QWidget):
         """Ask the engineer to select an evidence reference; never approve quantities."""
         try:
             _, _, beam_id = self._identity()
-            context = self.drawing_context_getter()
+            context = self.drawing_context_getter() or {}
             path = Path(context.get("path") or "")
             if not path.is_file():
                 raise ValueError("ابتدا نقشه PDF، DWG یا DXF را باز کنید")
@@ -336,7 +384,7 @@ class BeamDetailPanel(QWidget):
             if length is None or length <= 0:
                 raise ValueError("ابتدا طول واقعی تیر را وارد کنید")
             from app.beam_stirrup_zone_editor import StirrupZoneEditor
-            dialog = StirrupZoneEditor(beam_length_m=length, zones=self._stirrup_segments, parent=self)
+            dialog = StirrupZoneEditor(beam_length_m=length, zones=self._stirrup_segments, specialist=self.specialist_policy.currentData(), parent=self)
             if dialog.exec() != dialog.DialogCode.Accepted:
                 return
             self._stirrup_segments = deepcopy(dialog.zones)
@@ -348,24 +396,32 @@ class BeamDetailPanel(QWidget):
 
     def _draft(self):
         project, floor, beam = self._identity()
-        draft = empty_beam(floor, beam)
+        draft = deepcopy(self._detail_template) if self._detail_template and self._loaded_identity==(project,floor,beam) else empty_beam(floor, beam)
         source = self._drawing_source()
         # Without a verified region, preserve a draft but never claim a drawing link.
+        if self.specialist_policy.currentData():
+            draft['measurement_policy']='beam_specialist_v1'
+            source.update(plan_ref=self.plan_ref.text().strip(),detail_ref=self.detail_ref.text().strip())
         draft["source"] = source
         reviewer = self.reviewer.text().strip()
-        geometry = {"approved_by": reviewer, "source_ref": self.geometry["source_ref"].text().strip()}
-        for key in ("length", "width", "depth", "count", "deductions_m3"):
+        geometry = {**deepcopy(draft.get("geometry",{})),"approved_by": reviewer, "source_ref": self.geometry["source_ref"].text().strip()}
+        for key in ("length", "width", "depth", "count", "deductions_m3", "cover_m"):
             value = self._maybe_number(self.geometry[key].text(), integral=(key == "count"))
             if value is not None:
                 geometry[key] = value
+        if self.specialist_policy.currentData():geometry.update(variable_units={'length':'m','width':'m','depth':'m','count':'عدد'},cover_ref=self.geometry['cover_ref'].text().strip())
+        geometry.update(deduction_scope=self.deduction_scope.currentData(),deduction_scope_ref=self.geometry['deduction_scope_ref'].text().strip())
+        if "intersections" in geometry:geometry.pop("deductions_m3",None)
         draft["geometry"] = geometry
-        formwork = {"approved_by": reviewer, "source_ref": self.formwork["source_ref"].text().strip()}
+        formwork = {**deepcopy(draft.get("formwork",{})),"approved_by": reviewer, "source_ref": self.formwork["source_ref"].text().strip()}
         area = self._maybe_number(self.formwork["net_area_m2"].text())
         if area is not None:
             formwork["net_area_m2"] = area
+        formwork.update(area_scope=self.formwork_scope.currentData(),area_scope_ref=self.formwork['area_scope_ref'].text().strip())
+        if "surfaces" in formwork:formwork.pop("net_area_m2",None)
         draft["formwork"] = formwork
         for kind, widgets in self.bars.items():
-            bar = {"status": widgets["status"].currentData()}
+            bar = {**deepcopy(draft["bars"].get(kind,{})),"status": widgets["status"].currentData()}
             if bar["status"] in ("confirmed", "not_applicable"):
                 bar["approved_by"] = reviewer
             if bar["status"] in ("confirmed", "not_applicable", "needs_review"):
@@ -375,14 +431,19 @@ class BeamDetailPanel(QWidget):
                     value = self._maybe_number(widgets[name].text(), integral=(name == "count"))
                     if value is not None:
                         bar[name] = value
+            if bar["status"] in ("confirmed", "needs_review"):
+                bar["unit_weight_source"] = widgets["unit_weight_source"].text().strip()
+                bar.update(count_scope=self.bar_scopes[kind].currentData(),count_scope_ref=widgets['count_scope_ref'].text().strip())
+                if self.specialist_policy.currentData():bar.update(id=widgets['id'].text().strip(),position=self.bar_positions[kind].currentData(),cut_length_ref=widgets['cut_length_ref'].text().strip())
             if bar["status"] == "not_applicable":
                 bar["reason"] = widgets["reason"].text().strip()
-            if kind == "stirrups" and self._stirrup_segments is not None:
+            if kind == "stirrups" and self._stirrup_segments:
                 if bar["status"] == "not_applicable":
                     raise ValueError("خاموت دارای ناحیه است؛ حذف کاربرد بدون اصلاح دیتایل ممنوع است")
                 validate_stirrup_zones(self._stirrup_segments, geometry.get("length"))
                 bar["segments"] = deepcopy(self._stirrup_segments)
             draft["bars"][kind] = bar
+        if self._component_review:draft["component_review"]=deepcopy(self._component_review)
         return project, draft
 
     def load(self):
@@ -397,6 +458,7 @@ class BeamDetailPanel(QWidget):
                 draft = record["data"]
                 self.revision = record["revision"]
                 self.message.setText(f"نسخه {self.revision} بازیابی شد؛ وضعیت: {record['status']}")
+            self._detail_template=deepcopy(draft);self._component_review=None
             self._loaded_identity = (project, floor, beam)
             source = draft.get("source", {})
             evidence = source.get("detail_evidence") if isinstance(source, dict) else None
@@ -410,7 +472,10 @@ class BeamDetailPanel(QWidget):
             if self._stirrup_segments:
                 self.message.setText(f"{len(self._stirrup_segments)} ناحیه خاموت بارگذاری شد؛ جزئیات در ویرایشگر نواحی قابل اصلاح هستند.")
             if self._segmented_kinds:
-                self.message.setText("بازه‌های غیرخاموت در فرم ساده قابل ویرایش نیستند؛ اطلاعات پیشین محفوظ است.")
+                self.message.setText("سری‌های میلگرد بارگذاری شد؛ با دکمهٔ ویرایش سری‌ها، دیتایل و بازبینی هر سری را کنترل کنید.")
+            self._advanced_geometry=any(k in draft.get('geometry',{}) for k in ('sections','intersections')) or 'surfaces' in draft.get('formwork',{})
+            self.specialist_policy.setCurrentIndex(0 if draft.get('measurement_policy')=='beam_specialist_v1' else 1);self.plan_ref.setText(draft.get('source',{}).get('plan_ref',''));self.detail_ref.setText(draft.get('source',{}).get('detail_ref',''))
+            self.deduction_scope.setCurrentIndex(max(0,self.deduction_scope.findData(draft.get('geometry',{}).get('deduction_scope'))));self.formwork_scope.setCurrentIndex(max(0,self.formwork_scope.findData(draft.get('formwork',{}).get('area_scope'))))
             self.floor.setText(draft["floor_id"])
             self.beam.setText(draft["beam_id"])
             self.geometry["source_ref"].setText(str(draft.get("geometry", {}).get("source_ref", "")))
@@ -424,8 +489,11 @@ class BeamDetailPanel(QWidget):
                 data = draft["bars"][name]
                 widgets = self.bars[name]
                 widgets["status"].setCurrentIndex(widgets["status"].findData(data["status"]))
-                for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m", "source_ref", "reason"):
+                for field in ("count", "nominal_diameter_mm", "cut_length_m", "unit_weight_kg_m",
+                              "unit_weight_source", "source_ref", "reason"):
                     widgets[field].setText(str(data.get(field, "")))
+                for field in ("id","cut_length_ref","count_scope_ref"):widgets[field].setText(str(data.get(field,"")))
+                self.bar_scopes[name].setCurrentIndex(max(0,self.bar_scopes[name].findData(data.get('count_scope'))));self.bar_positions[name].setCurrentIndex(max(0,self.bar_positions[name].findData(data.get('position'))))
             if record and record["status"] == "committed":
                 self.save_button.setEnabled(False)
                 self.commit_button.setEnabled(False)
@@ -440,8 +508,6 @@ class BeamDetailPanel(QWidget):
     def save(self):
         try:
             project, draft = self._draft()
-            if self._segmented_kinds:
-                raise ValueError("ویرایش بازه‌های غیرخاموت از این فرم پشتیبانی نمی‌شود؛ داده قبلی محفوظ است")
             if self._stirrup_segments is not None and self._loaded_identity is not None:
                 if self._loaded_identity != (project, draft["floor_id"], draft["beam_id"]):
                     raise ValueError("شناسه تیر تغییر کرده؛ نواحی خاموت تیر قبلی قابل انتقال نیست")
@@ -451,7 +517,7 @@ class BeamDetailPanel(QWidget):
                 if existing:
                     raise ValueError("این تیر قبلاً ثبت شده است؛ قبل از ویرایش «بارگذاری تیر» را انتخاب کنید")
                 self.revision = 0
-            result = self.service.save_beam_detail_draft(project, draft, expected_revision=self.revision)
+            result = self.service.save_beam_detail_draft(project, draft, expected_revision=self.revision,reason=self.edit_reason.text().strip() or "ثبت پیش‌نویس")
             self.revision = result["revision"]
             self._loaded_identity = identity
             self.message.setText(f"پیش‌نویس تیر در SQLite ذخیره شد؛ نسخه {self.revision}")
@@ -467,7 +533,7 @@ class BeamDetailPanel(QWidget):
         result = self.service.preview_beam_detail(project, floor, beam)
         if result["ready"]:
             self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
-                                 "؛ ".join(f"{x['description']}: {x['quantity']:.3f} {x['unit']}" for x in result["rows"]))
+                                 "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"])+"؛ "+self.quantity_summary(result))
         else:
             self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
         return bool(result["ready"])
@@ -492,3 +558,128 @@ class BeamDetailPanel(QWidget):
             self.commit_button.setEnabled(False)
         except Exception as exc:
             QMessageBox.warning(self, "ثبت نهایی", str(exc))
+
+    def export(self,format):
+        try:
+            project,floor,beam=self._identity()
+            path,_=QFileDialog.getSaveFileName(self,'ریزمتره مستند تیر','',format.upper()+' (*.'+format+')')
+            if path:self.service.export_beam_detail_report(project,floor,beam,path,format=format);self.message.setText('گزارش از نسخه ذخیره‌شده تولید شد: '+path)
+        except Exception as exc:QMessageBox.warning(self,'گزارش تیر',str(exc))
+
+    def edit_components(self,kind,group=None):
+        try:
+            from app.beam_component_editor import BeamComponentEditor
+            from PySide6.QtWidgets import QDialog
+            project,draft=self._draft()
+            if self._detail_template is None:self._detail_template=deepcopy(draft);self._loaded_identity=self._identity()
+            target=self._detail_template['bars'][group] if group else self._detail_template['formwork'] if kind=='surfaces' else self._detail_template['geometry']
+            key='segments' if group else kind
+            dialog=BeamComponentEditor(kind,target.get(key,[]),self)
+            if dialog.exec()!=QDialog.DialogCode.Accepted:return
+            target[key]=dialog.rows;target.pop('approved_by',None);self._component_review=None
+            if group:self.bars[group]['status'].setCurrentIndex(self.bars[group]['status'].findData('needs_review'))
+            self.message.setText('دیتایل تغییر کرد؛ بازبینی ردیف‌ها و نسخه جاری و ذخیره لازم است')
+        except Exception as e:QMessageBox.warning(self,'دیتایل تیر',str(e))
+    @staticmethod
+    def quantity_summary(report):
+        values=[]
+        for row in report['rows']:
+            params=row['params']
+            if row['unit']=='m3':
+                values.append('بتن ناخالص: '+str(params.get('gross_m3','نامشخص'))+'؛ بتن خالص: '+str(row['quantity'])+' متر مکعب؛ کسورات: '+str(params.get('deductions_m3','نامشخص')))
+            elif row['unit']=='m2':
+                values.append('قالب ناخالص: '+str(params.get('gross_area_m2') or 'ثبت نشده')+'؛ قالب خالص: '+str(row['quantity'])+' متر مربع')
+        return '؛ '.join(values)
+
+    def review_current(self):
+        try:
+            from core.takeoff.beam_detail import preview_beam
+            from core.takeoff.manual_formula_amendments import digest
+            _,draft=self._draft();draft.pop('component_review',None)
+            report=preview_beam(draft,self.service.takeoff)
+            if not report['ready']:raise ValueError('؛ '.join(report['blockers']))
+            actor=self.reviewer.text().strip()
+            if not actor:raise ValueError('بازبین لازم است')
+            self._component_review={'digest':digest(draft),'reviewer':actor,'base_revision':self.revision};self.message.setText('نسخه جاری صریحاً بازبینی شد؛ ذخیره نسخه لازم است. '+self.quantity_summary(report))
+        except Exception as e:QMessageBox.warning(self,'بازبینی تیر',str(e))
+
+    def amend(self,action):
+        try:
+            project,floor,beam=self._identity()
+            if action=='create':
+                _,draft=self._draft();a=self.service.create_beam_amendment(project,floor,beam,draft,expected_revision=self.revision,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text());self.beam_amend_id.setText(a['id']);self.message.setText('درخواست مستقل ثبت شد؛ دلتا: '+str(a['delta']))
+            elif action=='review':self.service.review_beam_amendment(project,self.beam_amend_id.text().strip(),expected_revision=1,reviewer=self.beam_amend_reviewer.text(),note=self.beam_amend_note.text());self.message.setText('اصلاحیه مستقل بازبینی شد؛ هنوز اعمال نشده است')
+            else:
+                aid=self.beam_amend_id.text().strip();is_mapping=self.service.open_project(project)['beam_amendments'][aid].get('kind')=='legacy_link'
+                self.service.apply_beam_amendment(project,aid,expected_revision=1)
+                if is_mapping:self.refresh_legacy_rows()
+                else:self.load()
+                self.message.setText('اعمال موفق؛ اصل داده و مدارک مالی ثابت‌اند')
+        except Exception as e:QMessageBox.warning(self,'اصلاحیه تیر',str(e))
+    def show_history(self):
+        try:
+            from core.takeoff.beam_detail import _beam_key
+            project,floor,beam=self._identity();key=_beam_key(floor,beam);p=self.service.open_project(project);history=[r for r in p.get('beam_detail_history',[]) if r['beam_key']==key];notes=['نسخه '+str(r['revision'])+'؛ '+r['reason'] for r in history]
+            notes += ['اصلاحیه '+a['id']+'؛ '+a['reason'] for a in p.get('beam_amendments',{}).values() if a['beam_key']==key];QMessageBox.information(self,'تاریخچه تیر','\n'.join(notes) or 'سابقه اصلاح موجود نیست')
+        except Exception as e:QMessageBox.warning(self,'تاریخچه',str(e))
+
+
+    def migrate_history(self):
+        try:
+            from pathlib import Path
+            from hashlib import sha256
+            project,floor,beam=self._identity();_,draft=self._draft();path=Path(self.migration_evidence_path.text().strip())
+            if not path.is_file():raise ValueError('فایل مدرک واقعی مهاجرت لازم است')
+            a=self.service.create_beam_migration(project,floor,beam,draft,expected_revision=self.revision,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text(),evidence_path=str(path.resolve()),evidence_sha256=sha256(path.read_bytes()).hexdigest(),evidence_reference=self.migration_reference.text())
+            self.beam_amend_id.setText(a['id']);self.message.setText('پیشنهاد مهاجرت ثبت شد؛ اصل ثابت است. بازبینی مستقل و سپس اعمال لازم است. دلتا: '+str(a['delta']))
+        except Exception as e:QMessageBox.warning(self,'مهاجرت تیر تاریخی',str(e))
+
+    def inspect_history(self):
+        try:
+            project,_,_=self._identity();rows=self.service.inspect_beam_history(project)
+            labels={'CURRENT_CONTRACT':'قرارداد جدید معتبر','LEGACY_REVIEW_REQUIRED':'تاریخی؛ نیازمند بازبینی مستقل','NEEDS_ENGINEER_INPUT':'نیازمند ورودی صریح مهندس','INCOMPATIBLE':'ناسازگار؛ اصلاح مستقل لازم','UNLINKED_LEGACY':'ریزقلم تاریخی فاقد دیتایل دفتر تیر'}
+            text='\n'.join(str(r.get('beam_key',r.get('source_id','دفتر تیر')))+'؛ '+labels[r['status']]+'؛ '+'؛ '.join(r.get('blockers',[])) for r in rows)
+            QMessageBox.information(self,'سازگاری تاریخی تیر',text or 'رکورد تاریخی یافت نشد')
+        except Exception as e:QMessageBox.warning(self,'سازگاری تاریخی تیر',str(e))
+
+
+    def refresh_legacy_rows(self):
+        try:
+            project=self.project_id_getter().strip();records=self.service.inspect_beam_legacy_mapping(project);p=self.service.open_project(project);self.legacy_rows.clear();added=set()
+            labels={'LINKED':'متصل معتبر','NEEDS_MAPPING':'نیازمند نگاشت','AMBIGUOUS':'ارتباط مبهم','SOURCE_DUPLICATE':'منبع تکراری','INCOMPLETE':'اطلاعات ناقص','FINANCIAL_LOCKED':'مبنای مالی قفل‌شده'}
+            for r in records:
+                sid=r['source_id'];members=[sid]
+                for group in p.get('takeoff_assemblies',[]):
+                    if sid in group.get('component_source_ids',[]):members=group['component_source_ids'];break
+                ident=tuple(members)
+                if ident in added:continue
+                added.add(ident);self.legacy_rows.addItem(str(sid)+'؛ '+labels[r['status']],{'source_ids':members,'records':[v for v in records if v['source_id'] in members]})
+            self.show_legacy_original()
+        except Exception as e:QMessageBox.warning(self,'فهرست تاریخی',str(e))
+
+    def show_legacy_original(self):
+        value=self.legacy_rows.currentData()
+        if not value:self.legacy_original.setText('رکورد تاریخی انتخاب نشده است');return
+        operations={'beam':'بتن تیر','concrete':'بتن','beam_concrete':'بتن تیر','rebar':'میلگرد','reinforcement':'میلگرد','formwork':'قالب'}
+        lines=[]
+        for r in value['records']:
+            lines.append('منبع '+str(r['source_id'])+'؛ نسخه '+str(r['revision'])+'؛ طبقه اولیه '+str(r['floor'])+'؛ عضو اولیه '+str(r['member']))
+            for q in r.get('quantities') or []:lines.append(operations.get(q.get('code'),'عملیات تاریخی')+'؛ مقدار اولیه '+('نامشخص' if q.get('amount') is None else str(q['amount']))+' '+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}.get(q.get('unit'),'واحد نامعتبر'))
+        self.legacy_original.setText('\n'.join(lines))
+
+    def create_legacy_mapping(self):
+        try:
+            project,floor,beam=self._identity();value=self.legacy_rows.currentData()
+            if not value:raise ValueError('رکورد تاریخی را انتخاب کنید')
+            path=Path(self.migration_evidence_path.text().strip())
+            if not path.is_file():raise ValueError('فایل واقعی مدرک لازم است')
+            target={'floor_id':floor,'beam_id':beam,'source_id':self.legacy_target_source.text().strip(),'plan_ref':self.plan_ref.text().strip(),'detail_ref':self.detail_ref.text().strip()}
+            a=self.service.create_beam_legacy_mapping(project,source_ids=value['source_ids'],target=target,created_by=self.beam_amend_creator.text(),reason=self.edit_reason.text(),evidence_path=str(path.resolve()),evidence_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),evidence_reference=self.migration_reference.text())
+            self.beam_amend_id.setText(a['id']);self.message.setText('پیشنهاد نگاشت ثبت شد؛ بازبینی مستقل و اعمال لازم است؛ کمیت و دیتایل جدید تولید نمی‌شود')
+        except Exception as e:QMessageBox.warning(self,'نگاشت تاریخی تیر',str(e))
+
+    def export_legacy_mapping(self,format):
+        try:
+            path,_=QFileDialog.getSaveFileName(self,'گزارش نگاشت تاریخی','legacy-mapping.'+format,'گزارش (*.'+format+')')
+            if path:self.service.export_beam_legacy_mapping_report(self.project_id_getter().strip(),path,format=format);self.message.setText('گزارش اصل، نگاشت و موارد مسدود ذخیره شد')
+        except Exception as e:QMessageBox.warning(self,'گزارش نگاشت',str(e))

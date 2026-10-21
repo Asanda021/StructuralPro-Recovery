@@ -3,17 +3,16 @@ from __future__ import annotations
 from typing import Iterable,Any
 import math
 from .units import normalize_unit
+from core.commercial.exact_values import number as exact_number,wire,exact
 BOQ_DEFAULT_STATUS="active"
 def _read(r,name,default=None): return r.get(name,default) if isinstance(r,dict) else getattr(r,name,default)
 def _text(value): return str(value or "").strip()
 def _number(value,field,*,allow_none=True):
-    if value is None and allow_none: return None
-    if isinstance(value, bool): raise ValueError(f"{field} must be numeric")
-    try: number=float(value)
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError(f"{field} must be numeric") from exc
-    if not math.isfinite(number): raise ValueError(f"{field} must be finite")
-    return number
+    if value is None and allow_none:return None
+    try:return exact_number(value,field)
+    except ValueError as e:
+        raise ValueError(f"BOQ total cannot be calculated: {e}") from e
+@exact
 def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dict[str,Any]]:
     factor=_number(factor,"factor",allow_none=False)
     if factor<0: raise ValueError("factor must be finite and non-negative")
@@ -43,7 +42,7 @@ def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dic
         allowance_quantity=_number(_read(r,"allowance_quantity",0),"allowance_quantity",allow_none=False)
         if waste_percent<0 or allowance_quantity<0: raise ValueError("waste/allowance must be finite and non-negative")
         effective_quantity=_number(q*(1+waste_percent/100)+allowance_quantity,"effective_quantity",allow_none=False)
-        total=None if price is None else _number(round(effective_quantity*price*f,10),"total",allow_none=False)
+        total=None if price is None else _number(effective_quantity*price*f,"total",allow_none=False)
         warning="zero_price" if price==0 else ""
         raw.append({"source":source,"source_id":source_id,"source_ids":source_ids,"source_type":source_type,
                     "item_code":item_code,"price_code":code,"chapter":chapter,"category":category,"group":group,
@@ -59,14 +58,15 @@ def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dic
                  r["waste_percent"], r["source_type"])
             if key not in groups: groups[key]=dict(r)
             else:
-                groups[key]["quantity"]+=r["quantity"]; groups[key]["effective_quantity"]+=r["effective_quantity"]
-                groups[key]["allowance_quantity"]+=r["allowance_quantity"]
-                if groups[key]["total"] is not None and r["total"] is not None: groups[key]["total"]+=r["total"]
+                for field in ("quantity", "effective_quantity", "allowance_quantity"):
+                    groups[key][field] = _number(groups[key][field] + r[field], field, allow_none=False)
+                if groups[key]["total"] is not None and r["total"] is not None:
+                    groups[key]["total"] = _number(groups[key]["total"] + r["total"], "total", allow_none=False)
                 elif groups[key]["total"] is None: groups[key]["total"]=r["total"]
                 for source_id in r.get("source_ids",[]):
                     if source_id not in groups[key]["source_ids"]: groups[key]["source_ids"].append(source_id)
         raw=list(groups.values())
-    return [dict(item_no=i,**r) for i,r in enumerate(raw,1)]
+    return wire([dict(item_no=i,**r) for i,r in enumerate(raw,1)])
 def validate_boq_structure(rows):
     rows=list(rows); errors=[]; warnings=[]; codes=set()
     for index,row in enumerate(rows,1):
@@ -83,17 +83,18 @@ def validate_boq_structure(rows):
             if total is not None and (not math.isfinite(float(total)) or float(total)<0): errors.append({"item_no":index,"code":"invalid_total"})
         except (TypeError,ValueError): errors.append({"item_no":index,"code":"invalid_quantity"})
     return {"valid":not errors,"errors":errors,"warnings":warnings,"line_count":len(rows)}
+@exact
 def boq_summary(rows):
     rows=list(rows)
     active=[r for r in rows if r.get("status","active")=="active"]
-    return {"line_count":len(rows),"active_line_count":len(active),
+    return wire({"line_count":len(rows),"active_line_count":len(active),
             "quantity_by_unit":_sum_by(active,"unit","quantity"),
             "amount_by_code":_sum_by(active,"price_code","total"),
             "amount_by_group":_sum_by(active,"group","total"),
-            "grand_total":sum(float(r.get("total") or 0) for r in active),
-            "warnings":[r for r in rows if r.get("warning")]}
+            "grand_total":sum(exact_number(r.get("total") or 0,"مبلغ") for r in active),
+            "warnings":[r for r in rows if r.get("warning")]})
 def _sum_by(rows,key,value):
     out={}
     for r in rows:
-        k=r.get(key) or "بدون کد"; out[k]=out.get(k,0)+float(r.get(value) or 0)
+        k=r.get(key) or "بدون کد"; out[k]=out.get(k,0)+exact_number(r.get(value) or 0,value)
     return out

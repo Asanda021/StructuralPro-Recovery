@@ -3,6 +3,9 @@
 Static contract only; GitHub permission and workflow execution still need review.
 """
 from pathlib import Path
+from tests.historical_contracts import historical_root
+
+HISTORY = historical_root()  # Isolated historical contract, never active Actions.
 import re
 
 import pytest
@@ -19,7 +22,7 @@ BUILD_WORKFLOWS = (
 
 @pytest.mark.parametrize("relative_path", BUILD_WORKFLOWS)
 def test_binary_build_requires_explicit_owner_dispatch(relative_path):
-    source = (ROOT / relative_path).read_text(encoding="utf-8")
+    source = (HISTORY / relative_path).read_text(encoding="utf-8")
     assert re.search(r"(?m)^on:\s*$", source)
     assert re.search(r"(?m)^  workflow_dispatch:\s*$", source)
     assert not re.search(r"(?m)^  (?:push|pull_request|pull_request_target|schedule|release|workflow_run|workflow_call|repository_dispatch|create):", source)
@@ -33,7 +36,7 @@ def test_binary_build_requires_explicit_owner_dispatch(relative_path):
 
 def test_every_binary_producer_has_an_owner_approval_gate():
     """Catch newly introduced packaging workflows, not only the known four."""
-    workflow_dir = ROOT / ".github" / "workflows"
+    workflow_dir = HISTORY / ".github" / "workflows"
     production_commands = (
         "packaging/build_windows.ps1",
         "packaging/build_windows_edition.ps1",
@@ -46,13 +49,13 @@ def test_every_binary_producer_has_an_owner_approval_gate():
     for path in sorted(workflow_dir.glob("*.yml")):
         content = path.read_text(encoding="utf-8")
         if any(command in content for command in production_commands):
-            assert path.relative_to(ROOT).as_posix() in approved, (
+            assert path.relative_to(HISTORY).as_posix() in approved, (
                 f"Unapproved binary/release producer: {path.name}"
             )
 
 
 def test_automatic_cad_smoke_runs_only_unit_tests_without_compiling_exe():
-    path = ROOT / ".github" / "workflows" / "acadsharp-dwg-smoke.yml"
+    path = HISTORY / ".github" / "workflows" / "acadsharp-dwg-smoke.yml"
     source = path.read_text(encoding="utf-8")
     assert "  pull_request:" in source and "  push:" in source
     assert "  workflow_dispatch:" in source

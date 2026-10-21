@@ -149,7 +149,15 @@ def test_composite_concrete_and_steel_are_separate_material_rows():
         entry("encasement", count=1, length_m=5,width_m=.35,thickness_m=.2)])
     preview=preview_system(d,TakeoffEngine())
     assert preview["ready"],preview["blockers"]
-    assert {(r["unit"],r["quantity"]) for r in preview["rows"]} == {("kg",145),("m3",.35)}
+    assert len(preview["rows"]) == 2
+    by_component = {r["component"]: r for r in preview["rows"]}
+    assert set(by_component) == {"steel", "concrete"}
+    assert by_component["steel"]["unit"] == "kg"
+    assert by_component["concrete"]["unit"] == "m3"
+    # Independent schedule references: 1 × 5 × 29 kg/m and
+    # 1 × 5 × .35 × .2 m3; binary floating-point need not be exact.
+    assert by_component["steel"]["quantity"] == pytest.approx(145, rel=1e-12, abs=1e-12)
+    assert by_component["concrete"]["quantity"] == pytest.approx(.35, rel=1e-12, abs=1e-12)
 
 
 def test_timber_members_measured_in_real_volume():
@@ -341,7 +349,7 @@ def test_bored_pile_must_use_real_diameter_and_can_have_independent_rebar_groups
 def test_pile_cap_is_distinct_from_a_regular_footing():
     from core.takeoff.reviewed_structural import preview_member
     d=_reviewed_structural("pile_cap","PC1",{
-        "length":2.4,"width":2.4,"thickness":.7})
+        "shape":"rectangular", "length":2.4,"width":2.4,"thickness":.7})
     report=preview_member(d,TakeoffEngine())
     assert report["ready"],report["blockers"]
     assert report["rows"][0]["quantity"]==pytest.approx(4.032)

@@ -66,6 +66,8 @@ def test_five_storey_golden_dataset_round_trips_through_persistent_project_and_b
             app.add_assembly_takeoff(
                 dataset["dataset_id"], case["assembly"], case["inputs"],
                 floor_id=floor, description=f"{case['id']} — {floor}",
+                approved_by="بازبین مستقل آزمون",
+                measurement_source=f"golden:{case['id']}:{floor}"
             )
 
     project = app.open_project(dataset["dataset_id"])
@@ -73,9 +75,10 @@ def test_five_storey_golden_dataset_round_trips_through_persistent_project_and_b
     assert project["takeoffs"]
     assert project["boq"]
     by_code = {}
-    for row in project["boq"]:
-        key = row.get("item_code") or row.get("price_code")
-        by_code[key] = by_code.get(key, 0.0) + float(row["quantity"])
+    for takeoff in project["takeoffs"]:
+        for quantity in takeoff["quantities"]:
+            key = quantity["code"]
+            by_code[key] = by_code.get(key, 0.0) + float(quantity["amount"])
 
     expected = {
         "excavation": 54.0,
@@ -91,4 +94,9 @@ def test_five_storey_golden_dataset_round_trips_through_persistent_project_and_b
     }
     for code, quantity in expected.items():
         assert by_code[code] == pytest.approx(quantity, abs=1e-8), code
+    # Quantities of physical materials remain auditable without being double billed.
+    assert {"block", "mortar", "cement", "sand"}.isdisjoint({r["item_code"] for r in project["boq"]})
+    payable_ids = {t["source_id"] for t in project["takeoffs"] for q in t["quantities"]
+                   if q.get("role", "work") == "work"}
+    assert {sid for r in project["boq"] for sid in r["source_ids"]} == payable_ids
     assert all(row.get("unit_price") is None and row.get("total") is None for row in project["boq"])

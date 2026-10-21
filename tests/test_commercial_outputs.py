@@ -8,9 +8,12 @@ def _seed(tmp_path):
     app.create_project("پروژه خروجی", "R1")
     app.add_takeoff(
         "R1", "building", "wall",
-        length=10, width=0.2, height=3,
+        length=10, width=0.2, height=3, count=1, source_id="synthetic-W001",
         price_code="W001", unit_price=1200,
     )
+    prices=tmp_path/'synthetic-prices.csv'
+    prices.write_text('year,group,chapter,code,description,unit,unit_price\n1404,ابنیه,01,W001,دیوار,m2,1200\n')
+    app.import_project_pricebook('R1',prices,year=1404,approved_by='explicit-synthetic-price-reviewer')
     app.recalculate_estimate("R1")
     return app
 

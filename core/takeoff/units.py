@@ -66,3 +66,33 @@ def canonical_quantity(value: float, unit: str, target_unit: str | None = None) 
     source = normalize_unit(unit)
     target = normalize_unit(target_unit) if target_unit else source
     return convert(value, source, target), target
+
+# Versioned explicit dimensional contract; count is a dimensionless multiplier.
+# Scales are decimal text, never derived from the float conversion table above.
+_EXACT_UNITS = {
+    '1': ((0,0,0),'1'), 'عدد': ((0,0,0),'1'),
+    'm': ((1,0,0),'1'), 'cm': ((1,0,0),'0.01'), 'mm': ((1,0,0),'0.001'),
+    'm2': ((2,0,0),'1'), 'cm2': ((2,0,0),'0.0001'), 'mm2': ((2,0,0),'0.000001'),
+    'm3': ((3,0,0),'1'), 'cm3': ((3,0,0),'0.000001'), 'mm3': ((3,0,0),'0.000000001'),
+    'kg': ((0,1,0),'1'), 'ton': ((0,1,0),'1000'),
+    's': ((0,0,1),'1'), 'min': ((0,0,1),'60'), 'h': ((0,0,1),'3600'),
+    'm/s': ((1,0,-1),'1'), 'kg/m': ((-1,1,0),'1'), 'kg/m3': ((-3,1,0),'1'),
+}
+for _unit in ('1','s','min','h','m/s','kg/m','kg/m3'):_ALIASES[_unit]=_unit
+_ALIASES.update({'بدون بعد':'1','ثانیه':'s','دقیقه':'min','ساعت':'h','متر بر ثانیه':'m/s','کیلوگرم بر متر':'kg/m','کیلوگرم بر متر مکعب':'kg/m3'})
+_DIMENSION.update({'1':'scalar','s':'time','min':'time','h':'time','m/s':'speed','kg/m':'linear_mass','kg/m3':'density'})
+_TO_BASE.update({'1':1.,'s':1.,'min':60.,'h':3600.,'m/s':1.,'kg/m':1.,'kg/m3':1.})
+
+def unit_contract(unit):
+    from decimal import Decimal
+    key=normalize_unit(unit)
+    dim,scale=_EXACT_UNITS[key]
+    return dim,Decimal(scale)
+
+from core.commercial.exact_values import exact as _exact
+@_exact
+def convert_exact(value,from_unit,to_unit):
+    from core.commercial.exact_values import number,wire
+    source,scale=unit_contract(from_unit);target,other=unit_contract(to_unit)
+    if source!=target:raise ValueError('واحدهای تبدیل ناسازگارند')
+    return wire(number(value,'مقدار تبدیل',True)*scale/other)

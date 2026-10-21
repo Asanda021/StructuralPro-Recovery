@@ -1,0 +1,4024 @@
+{
+  "schema": "phase1_closure_37_family_review_v1",
+  "baseline_head": "325df5eabaa9db2f7ea057dd8c4b1f7d64d8dac3",
+  "scope": "Reconciled against actual SPECS/unit gates and executed tests. No engineering evidence invented. Original detailed dependencies preserved.",
+  "families": [
+    {
+      "code": "stair_metal",
+      "title": "پله فولادی و نرده",
+      "category": "steel_stair",
+      "existing_engine": "core/takeoff/steel_stair_preflight.py + steel_stair_support_crosswalk_chat.py",
+      "input_contract": {
+        "components": [
+          "stringers",
+          "treads",
+          "landings",
+          "connection_plates",
+          "supports",
+          "anchors",
+          "bolts",
+          "welds",
+          "railings",
+          "coating",
+          "fireproofing"
+        ],
+        "essential": [
+          "stringers",
+          "treads"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "stringers": "explicit reviewed unit required",
+          "treads": "explicit reviewed unit required",
+          "landings": "explicit reviewed unit required",
+          "connection_plates": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "anchors": "explicit reviewed unit required",
+          "bolts": "explicit reviewed unit required",
+          "welds": "explicit reviewed unit required",
+          "railings": "explicit reviewed unit required",
+          "coating": "explicit reviewed unit required",
+          "fireproofing": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {
+        "source": "core/takeoff/steel_stair_preflight.py",
+        "units": {
+          "stringers": "kg",
+          "treads": "kg",
+          "landings": "kg",
+          "connection_plates": "kg",
+          "supports": "kg",
+          "anchors": "عدد",
+          "bolts": "عدد",
+          "welds": "m",
+          "railings": "kg",
+          "coating": "m2",
+          "fireproofing": "m2"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_structural_handoff_draft/run_structural_handoff_audit",
+        "registry": "existing project audit JSON",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_numeric_identity.py + test_phase1_package2_service.py",
+      "new_test_scope": "all 11 steel groups + real support service, synthetic only",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "دیتایل مصوب تمام ۱۱ گروه یا عدم کاربرد مستند",
+          "مختصات تماس، واکنش و ظرفیت طراحی هر تکیه‌گاه",
+          "طول و مشخصات جوش، پیچ، مهره و انکر و مالک پرداخت هر قطعه"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه و بازبین مستقل اتصالات فولادی",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "existing stair quantity/support preflight; design and global geometry unaccepted",
+      "form": {
+        "path": "app/structural_handoff_audit_editor.py",
+        "menu": "app/reviewed_aec_manual_editor.py::steel_stair_button",
+        "service_policy": "steel_stair_support_service_work_v1",
+        "scope": "actual Qt source-document load/save/run/reopen/CAS; nonfinancial only",
+        "tests": "tests/test_phase1_closure_ui.py"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_steel_site_limited_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "kromit_roof",
+      "title": "سقف کرومیت",
+      "category": "roof",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "joists",
+          "blocks_or_foam",
+          "topping",
+          "bracing",
+          "reinforcement",
+          "edge_beams",
+          "formwork"
+        ],
+        "essential": [
+          "joists",
+          "topping"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "joists": "عدد",
+          "blocks_or_foam": "explicit reviewed unit required",
+          "topping": "m3",
+          "bracing": "kg",
+          "reinforcement": "kg",
+          "edge_beams": "explicit reviewed unit required",
+          "formwork": "m2"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "solid_slab_roof",
+          "candidate_components": [
+            "topping"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "reinforcement"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "concrete_regions": {
+          "components": [
+            "topping"
+          ],
+          "unit": "m3"
+        },
+        "rectangle_volume": {
+          "components": [
+            "topping"
+          ],
+          "unit": "m3"
+        },
+        "net_surface": {
+          "components": [
+            "formwork"
+          ],
+          "unit": "m2"
+        },
+        "steel_profile_schedule": {
+          "components": [
+            "bracing"
+          ],
+          "unit": "kg"
+        },
+        "timber_volume_schedule": {
+          "components": [
+            "joists"
+          ],
+          "unit": "m3"
+        },
+        "piece_schedule": {
+          "components": [
+            "joists"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+          "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+          "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "joists": "عدد",
+        "blocks_or_foam": "source-specific explicit unit; no inference",
+        "topping": "m3",
+        "bracing": "kg",
+        "reinforcement": "kg",
+        "edge_beams": "source-specific explicit unit; no inference",
+        "formwork": "m2"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_roof_failclosed.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "composite_roof",
+      "title": "سقف مرکب",
+      "category": "roof",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "steel_members",
+          "concrete",
+          "shear_connectors",
+          "mesh",
+          "formwork",
+          "edge_zones"
+        ],
+        "essential": [
+          "steel_members",
+          "concrete"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "steel_members": "kg",
+          "concrete": "m3",
+          "shear_connectors": "explicit reviewed unit required",
+          "mesh": "kg",
+          "formwork": "m2",
+          "edge_zones": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "shear_wall",
+          "candidate_components": [
+            "concrete"
+          ],
+          "required_inputs": [
+            "length",
+            "thickness",
+            "height",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "building",
+          "item": "solid_slab_roof",
+          "candidate_components": [
+            "concrete"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "advanced",
+          "item": "footing_concrete",
+          "candidate_components": [
+            "concrete"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "mesh"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "concrete_regions": {
+          "components": [
+            "concrete"
+          ],
+          "unit": "m3"
+        },
+        "rectangle_volume": {
+          "components": [
+            "concrete"
+          ],
+          "unit": "m3"
+        },
+        "net_surface": {
+          "components": [
+            "formwork"
+          ],
+          "unit": "m2"
+        },
+        "steel_profile_schedule": {
+          "components": [
+            "steel_members"
+          ],
+          "unit": "kg"
+        },
+        "steel_plate_schedule": {
+          "components": [
+            "steel_members"
+          ],
+          "unit": "kg"
+        },
+        "piece_schedule": {
+          "components": [
+            "shear_connectors"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+          "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+          "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "steel_members": "kg",
+        "concrete": "m3",
+        "shear_connectors": "source-specific explicit unit; no inference",
+        "mesh": "kg",
+        "formwork": "m2",
+        "edge_zones": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_roof_failclosed.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "sandwich_roof",
+      "title": "ساندویچ پانل سقف",
+      "category": "roof",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "panels",
+          "supports",
+          "fasteners",
+          "flashings",
+          "seals"
+        ],
+        "essential": [
+          "panels"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "panels": "عدد",
+          "supports": "explicit reviewed unit required",
+          "fasteners": "explicit reviewed unit required",
+          "flashings": "explicit reviewed unit required",
+          "seals": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "panels"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "piece_schedule": {
+          "components": [
+            "fasteners",
+            "panels"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+          "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+          "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "panels": "عدد",
+        "supports": "source-specific explicit unit; no inference",
+        "fasteners": "source-specific explicit unit; no inference",
+        "flashings": "source-specific explicit unit; no inference",
+        "seals": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_roof_failclosed.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "timber_roof",
+      "title": "سقف چوبی",
+      "category": "roof",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "joists",
+          "sheathing",
+          "connectors",
+          "insulation",
+          "waterproofing",
+          "finish"
+        ],
+        "essential": [
+          "joists"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "joists": "عدد",
+          "sheathing": "explicit reviewed unit required",
+          "connectors": "explicit reviewed unit required",
+          "insulation": "explicit reviewed unit required",
+          "waterproofing": "explicit reviewed unit required",
+          "finish": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {
+        "timber_volume_schedule": {
+          "components": [
+            "joists"
+          ],
+          "unit": "m3"
+        },
+        "piece_schedule": {
+          "components": [
+            "connectors",
+            "joists"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+          "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+          "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "new_technical_fix": "Existing exact timber calculator now reachable for joists volume without changing stored component keys or legacy measured-count unit; new volume route remains nonfinancial.",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "joists": "عدد",
+        "sheathing": "source-specific explicit unit; no inference",
+        "connectors": "source-specific explicit unit; no inference",
+        "insulation": "source-specific explicit unit; no inference",
+        "waterproofing": "source-specific explicit unit; no inference",
+        "finish": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_roof_failclosed.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "precast_roof",
+      "title": "سقف پیش ساخته",
+      "category": "roof",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "precast_units",
+          "connections",
+          "bearing",
+          "joints",
+          "topping",
+          "reinforcement"
+        ],
+        "essential": [
+          "precast_units"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "precast_units": "explicit reviewed unit required",
+          "connections": "explicit reviewed unit required",
+          "bearing": "explicit reviewed unit required",
+          "joints": "explicit reviewed unit required",
+          "topping": "m3",
+          "reinforcement": "kg"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "solid_slab_roof",
+          "candidate_components": [
+            "topping"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "reinforcement"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "concrete_regions": {
+          "components": [
+            "topping"
+          ],
+          "unit": "m3"
+        },
+        "rectangle_volume": {
+          "components": [
+            "topping"
+          ],
+          "unit": "m3"
+        },
+        "piece_schedule": {
+          "components": [
+            "precast_units"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "پلان و مقاطع سقف، چیدمان و مشخصات واقعی قطعات",
+          "دیتایل بازشو، اتصال، میلگرد و مالکیت سطوح مشترک",
+          "مشخصات مقدار/واحد و قواعد اندازه‌گیری مستقل کل خانواده"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح سازه، تهیه‌کننده شاپ و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "precast_units": "source-specific explicit unit; no inference",
+        "connections": "source-specific explicit unit; no inference",
+        "bearing": "source-specific explicit unit; no inference",
+        "joints": "source-specific explicit unit; no inference",
+        "topping": "m3",
+        "reinforcement": "kg"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_roof_failclosed.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "gypsum_partition",
+      "title": "دیوار خشک",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "frames",
+          "boards",
+          "insulation",
+          "joint_compound",
+          "tape",
+          "fixings",
+          "doors"
+        ],
+        "essential": [
+          "frames",
+          "boards"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "frames": "explicit reviewed unit required",
+          "boards": "عدد",
+          "insulation": "explicit reviewed unit required",
+          "joint_compound": "explicit reviewed unit required",
+          "tape": "explicit reviewed unit required",
+          "fixings": "explicit reviewed unit required",
+          "doors": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "boards"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "frames": "source-specific explicit unit; no inference",
+        "boards": "عدد",
+        "insulation": "source-specific explicit unit; no inference",
+        "joint_compound": "source-specific explicit unit; no inference",
+        "tape": "source-specific explicit unit; no inference",
+        "fixings": "source-specific explicit unit; no inference",
+        "doors": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "cement_render",
+      "title": "سیمان کاری و اندود",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "scratch_coat",
+          "render_coat",
+          "finish",
+          "reinforcement_mesh",
+          "corner_beads"
+        ],
+        "essential": [
+          "render_coat"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "scratch_coat": "explicit reviewed unit required",
+          "render_coat": "m2",
+          "finish": "explicit reviewed unit required",
+          "reinforcement_mesh": "kg",
+          "corner_beads": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "reinforcement_mesh"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "scratch_coat": "source-specific explicit unit; no inference",
+        "render_coat": "m2",
+        "finish": "source-specific explicit unit; no inference",
+        "reinforcement_mesh": "kg",
+        "corner_beads": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "door_window",
+      "title": "درب و پنجره",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "frame",
+          "glazing",
+          "hardware",
+          "installation"
+        ],
+        "essential": [
+          "frame"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "frame": "explicit reviewed unit required",
+          "glazing": "m2",
+          "hardware": "explicit reviewed unit required",
+          "installation": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {
+        "net_surface": {
+          "components": [
+            "glazing"
+          ],
+          "unit": "m2"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "frame": "source-specific explicit unit; no inference",
+        "glazing": "m2",
+        "hardware": "source-specific explicit unit; no inference",
+        "installation": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "upvc_aluminium_windows",
+      "title": "پنجره UPVC و آلومینیوم",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "profiles",
+          "reinforcement",
+          "glazing",
+          "hardware",
+          "seals",
+          "anchors",
+          "installation"
+        ],
+        "essential": [
+          "profiles",
+          "glazing"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "profiles": "explicit reviewed unit required",
+          "reinforcement": "kg",
+          "glazing": "m2",
+          "hardware": "explicit reviewed unit required",
+          "seals": "explicit reviewed unit required",
+          "anchors": "explicit reviewed unit required",
+          "installation": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "reinforcement"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "net_surface": {
+          "components": [
+            "glazing"
+          ],
+          "unit": "m2"
+        },
+        "steel_profile_schedule": {
+          "components": [
+            "profiles"
+          ],
+          "unit": "kg"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "profiles": "source-specific explicit unit; no inference",
+        "reinforcement": "kg",
+        "glazing": "m2",
+        "hardware": "source-specific explicit unit; no inference",
+        "seals": "source-specific explicit unit; no inference",
+        "anchors": "source-specific explicit unit; no inference",
+        "installation": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "glass_curtain_wall",
+      "title": "نمای شیشه ای",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "mullions",
+          "transoms",
+          "glazing",
+          "anchors",
+          "gaskets",
+          "sealant"
+        ],
+        "essential": [
+          "mullions",
+          "glazing"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "mullions": "explicit reviewed unit required",
+          "transoms": "explicit reviewed unit required",
+          "glazing": "m2",
+          "anchors": "explicit reviewed unit required",
+          "gaskets": "explicit reviewed unit required",
+          "sealant": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {
+        "net_surface": {
+          "components": [
+            "glazing"
+          ],
+          "unit": "m2"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "mullions": "source-specific explicit unit; no inference",
+        "transoms": "source-specific explicit unit; no inference",
+        "glazing": "m2",
+        "anchors": "source-specific explicit unit; no inference",
+        "gaskets": "source-specific explicit unit; no inference",
+        "sealant": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_architecture_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "facade_cladding",
+      "title": "نمای خشک",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "panels",
+          "rails",
+          "brackets",
+          "anchors",
+          "insulation",
+          "waterproofing",
+          "seals"
+        ],
+        "essential": [
+          "panels"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "panels": "عدد",
+          "rails": "m",
+          "brackets": "explicit reviewed unit required",
+          "anchors": "explicit reviewed unit required",
+          "insulation": "explicit reviewed unit required",
+          "waterproofing": "explicit reviewed unit required",
+          "seals": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "panels"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "piece_schedule": {
+          "components": [
+            "panels"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "panels": "عدد",
+        "rails": "m",
+        "brackets": "source-specific explicit unit; no inference",
+        "anchors": "source-specific explicit unit; no inference",
+        "insulation": "source-specific explicit unit; no inference",
+        "waterproofing": "source-specific explicit unit; no inference",
+        "seals": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "handrails_metalwork",
+      "title": "نرده و فلزکاری",
+      "category": "architecture",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "profiles",
+          "plates",
+          "anchors",
+          "welds",
+          "coating"
+        ],
+        "essential": [
+          "profiles"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "profiles": "explicit reviewed unit required",
+          "plates": "kg",
+          "anchors": "explicit reviewed unit required",
+          "welds": "explicit reviewed unit required",
+          "coating": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {
+        "steel_profile_schedule": {
+          "components": [
+            "profiles"
+          ],
+          "unit": "kg"
+        },
+        "steel_plate_schedule": {
+          "components": [
+            "plates"
+          ],
+          "unit": "kg"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "new real service tests"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_negative_specialist_test": "tests/test_phase1_package2_specialist_evidence.py",
+      "new_test_scope": "one documented component and incomplete SQLite draft, not whole family",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "برداشت ابعاد واقعی، بازشو و شناسه وجه یا قطعه",
+          "مشخصات لایه/مقطع/اتصال و واحد اندازه‌گیری",
+          "جدول مستقل مقادیر با مرجع و تأیید بازبین"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح معماری/نما و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "profiles": "source-specific explicit unit; no inference",
+        "plates": "kg",
+        "anchors": "source-specific explicit unit; no inference",
+        "welds": "source-specific explicit unit; no inference",
+        "coating": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_steel_site_limited_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "plumbing",
+      "title": "آبرسانی",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "pipes",
+          "fittings",
+          "valves",
+          "insulation",
+          "supports",
+          "equipment"
+        ],
+        "essential": [
+          "pipes"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "pipes": "m",
+          "fittings": "عدد",
+          "valves": "عدد",
+          "insulation": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "equipment": "عدد"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "mechanical",
+          "item": "equipment",
+          "candidate_components": [
+            "equipment"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "pipes": "m",
+        "fittings": "عدد",
+        "valves": "عدد",
+        "insulation": "source-specific explicit unit; no inference",
+        "supports": "source-specific explicit unit; no inference",
+        "equipment": "عدد"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "sanitary_drainage",
+      "title": "فاضلاب و باران",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "pipes",
+          "fittings",
+          "cleanouts",
+          "traps",
+          "manholes",
+          "supports",
+          "testing"
+        ],
+        "essential": [
+          "pipes"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "pipes": "m",
+          "fittings": "عدد",
+          "cleanouts": "explicit reviewed unit required",
+          "traps": "explicit reviewed unit required",
+          "manholes": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "testing": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "pipes": "m",
+        "fittings": "عدد",
+        "cleanouts": "source-specific explicit unit; no inference",
+        "traps": "source-specific explicit unit; no inference",
+        "manholes": "source-specific explicit unit; no inference",
+        "supports": "source-specific explicit unit; no inference",
+        "testing": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "hvac",
+      "title": "گرمایش سرمایش تهویه",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "ducts",
+          "pipes",
+          "fittings",
+          "insulation",
+          "supports",
+          "equipment"
+        ],
+        "essential": [
+          "equipment"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "ducts": "explicit reviewed unit required",
+          "pipes": "m",
+          "fittings": "عدد",
+          "insulation": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "equipment": "عدد"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "mechanical",
+          "item": "duct_area",
+          "candidate_components": [
+            "ducts"
+          ],
+          "required_inputs": [
+            "width",
+            "height",
+            "length"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "mechanical",
+          "item": "equipment",
+          "candidate_components": [
+            "equipment"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "ducts": "source-specific explicit unit; no inference",
+        "pipes": "m",
+        "fittings": "عدد",
+        "insulation": "source-specific explicit unit; no inference",
+        "supports": "source-specific explicit unit; no inference",
+        "equipment": "عدد"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "mechanical_ventilation",
+      "title": "تهویه مکانیکی",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "ducts",
+          "fans",
+          "diffusers",
+          "dampers",
+          "insulation",
+          "hangers",
+          "controls"
+        ],
+        "essential": [
+          "ducts"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "ducts": "explicit reviewed unit required",
+          "fans": "explicit reviewed unit required",
+          "diffusers": "explicit reviewed unit required",
+          "dampers": "explicit reviewed unit required",
+          "insulation": "explicit reviewed unit required",
+          "hangers": "explicit reviewed unit required",
+          "controls": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "duct_area",
+          "candidate_components": [
+            "ducts"
+          ],
+          "required_inputs": [
+            "width",
+            "height",
+            "length"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "ducts": "source-specific explicit unit; no inference",
+        "fans": "source-specific explicit unit; no inference",
+        "diffusers": "source-specific explicit unit; no inference",
+        "dampers": "source-specific explicit unit; no inference",
+        "insulation": "source-specific explicit unit; no inference",
+        "hangers": "source-specific explicit unit; no inference",
+        "controls": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "plantroom",
+      "title": "موتورخانه",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "equipment",
+          "pumps",
+          "tanks",
+          "pipes",
+          "fittings",
+          "valves",
+          "instrumentation",
+          "supports",
+          "controls"
+        ],
+        "essential": [
+          "equipment"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "equipment": "عدد",
+          "pumps": "explicit reviewed unit required",
+          "tanks": "explicit reviewed unit required",
+          "pipes": "m",
+          "fittings": "عدد",
+          "valves": "عدد",
+          "instrumentation": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "controls": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "mechanical",
+          "item": "equipment",
+          "candidate_components": [
+            "equipment"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "equipment": "عدد",
+        "pumps": "source-specific explicit unit; no inference",
+        "tanks": "source-specific explicit unit; no inference",
+        "pipes": "m",
+        "fittings": "عدد",
+        "valves": "عدد",
+        "instrumentation": "source-specific explicit unit; no inference",
+        "supports": "source-specific explicit unit; no inference",
+        "controls": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_mechanical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "natural_gas",
+      "title": "گاز رسانی",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "pipes",
+          "fittings",
+          "valves",
+          "meters",
+          "supports",
+          "coating",
+          "testing"
+        ],
+        "essential": [
+          "pipes"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "pipes": "m",
+          "fittings": "عدد",
+          "valves": "عدد",
+          "meters": "explicit reviewed unit required",
+          "supports": "explicit reviewed unit required",
+          "coating": "explicit reviewed unit required",
+          "testing": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "pipes": "m",
+        "fittings": "عدد",
+        "valves": "عدد",
+        "meters": "source-specific explicit unit; no inference",
+        "supports": "source-specific explicit unit; no inference",
+        "coating": "source-specific explicit unit; no inference",
+        "testing": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_service_specialty_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "fire_protection",
+      "title": "اطفا حریق",
+      "category": "mechanical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "pipes",
+          "fittings",
+          "sprinklers",
+          "valves",
+          "supports",
+          "equipment"
+        ],
+        "essential": [
+          "pipes"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "pipes": "m",
+          "fittings": "عدد",
+          "sprinklers": "عدد",
+          "valves": "عدد",
+          "supports": "explicit reviewed unit required",
+          "equipment": "عدد"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "mechanical",
+          "item": "equipment",
+          "candidate_components": [
+            "equipment"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر و طول واقعی شبکه و فهرست قطعات و تجهیزات",
+          "مشخصات سازنده، واحد و دیتایل نصب/عایق/تکیه‌گاه",
+          "جدول مستقل اندازه‌گیری و حدود مالکیت بدون نسبت یا طول حدسی"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح مکانیک و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "pipes": "m",
+        "fittings": "عدد",
+        "sprinklers": "عدد",
+        "valves": "عدد",
+        "supports": "source-specific explicit unit; no inference",
+        "equipment": "عدد"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_service_specialty_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "electrical_power",
+      "title": "برق قدرت",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "cables",
+          "conduits",
+          "trays",
+          "boards",
+          "sockets",
+          "earthing"
+        ],
+        "essential": [
+          "cables"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "cables": "m",
+          "conduits": "m",
+          "trays": "m",
+          "boards": "عدد",
+          "sockets": "explicit reviewed unit required",
+          "earthing": "m"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "boards"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "cable_tray",
+          "candidate_components": [
+            "trays"
+          ],
+          "required_inputs": [
+            "length"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "cables": "m",
+        "conduits": "m",
+        "trays": "m",
+        "boards": "عدد",
+        "sockets": "source-specific explicit unit; no inference",
+        "earthing": "m"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "lighting",
+      "title": "روشنایی",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "cables",
+          "conduits",
+          "fixtures",
+          "switches",
+          "supports"
+        ],
+        "essential": [
+          "fixtures"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "cables": "m",
+          "conduits": "m",
+          "fixtures": "عدد",
+          "switches": "عدد",
+          "supports": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "light",
+          "candidate_components": [
+            "fixtures"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "cables": "m",
+        "conduits": "m",
+        "fixtures": "عدد",
+        "switches": "عدد",
+        "supports": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "low_voltage",
+      "title": "جریان ضعیف",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "cables",
+          "conduits",
+          "devices",
+          "termination",
+          "racks"
+        ],
+        "essential": [
+          "devices"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "cables": "m",
+          "conduits": "m",
+          "devices": "عدد",
+          "termination": "explicit reviewed unit required",
+          "racks": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "cables": "m",
+        "conduits": "m",
+        "devices": "عدد",
+        "termination": "source-specific explicit unit; no inference",
+        "racks": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "fire_alarm",
+      "title": "اعلام حریق",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "detectors",
+          "sounders",
+          "call_points",
+          "cables",
+          "conduits",
+          "panels",
+          "interfaces"
+        ],
+        "essential": [
+          "detectors",
+          "panels"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "detectors": "عدد",
+          "sounders": "عدد",
+          "call_points": "عدد",
+          "cables": "m",
+          "conduits": "m",
+          "panels": "عدد",
+          "interfaces": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "panels"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "piece_schedule": {
+          "components": [
+            "panels"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "detectors": "عدد",
+        "sounders": "عدد",
+        "call_points": "عدد",
+        "cables": "m",
+        "conduits": "m",
+        "panels": "عدد",
+        "interfaces": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "data_network",
+      "title": "شبکه دیتا",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "cables",
+          "conduits",
+          "trays",
+          "sockets",
+          "patch_panels",
+          "racks",
+          "terminations",
+          "tests"
+        ],
+        "essential": [
+          "cables"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "cables": "m",
+          "conduits": "m",
+          "trays": "m",
+          "sockets": "explicit reviewed unit required",
+          "patch_panels": "explicit reviewed unit required",
+          "racks": "explicit reviewed unit required",
+          "terminations": "explicit reviewed unit required",
+          "tests": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "cable_tray",
+          "candidate_components": [
+            "trays"
+          ],
+          "required_inputs": [
+            "length"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "cables": "m",
+        "conduits": "m",
+        "trays": "m",
+        "sockets": "source-specific explicit unit; no inference",
+        "patch_panels": "source-specific explicit unit; no inference",
+        "racks": "source-specific explicit unit; no inference",
+        "terminations": "source-specific explicit unit; no inference",
+        "tests": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_electrical_generic_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "security_systems",
+      "title": "دوربین و کنترل دسترسی",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "cameras",
+          "readers",
+          "controllers",
+          "cables",
+          "conduits",
+          "recorders",
+          "locks",
+          "power_supplies"
+        ],
+        "essential": [
+          "controllers"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "cameras": "عدد",
+          "readers": "عدد",
+          "controllers": "عدد",
+          "cables": "m",
+          "conduits": "m",
+          "recorders": "عدد",
+          "locks": "عدد",
+          "power_supplies": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "conduit",
+          "candidate_components": [
+            "conduits"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "cameras": "عدد",
+        "readers": "عدد",
+        "controllers": "عدد",
+        "cables": "m",
+        "conduits": "m",
+        "recorders": "عدد",
+        "locks": "عدد",
+        "power_supplies": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_service_specialty_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "emergency_power",
+      "title": "برق اضطراری",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "generators",
+          "ups",
+          "batteries",
+          "panels",
+          "cables",
+          "grounding",
+          "transfer_switches"
+        ],
+        "essential": [
+          "panels"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "generators": "عدد",
+          "ups": "عدد",
+          "batteries": "عدد",
+          "panels": "عدد",
+          "cables": "m",
+          "grounding": "explicit reviewed unit required",
+          "transfer_switches": "عدد"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        },
+        {
+          "domain": "electrical",
+          "item": "panel",
+          "candidate_components": [
+            "panels"
+          ],
+          "required_inputs": [
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {
+        "piece_schedule": {
+          "components": [
+            "panels"
+          ],
+          "unit": "عدد"
+        }
+      },
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "generators": "عدد",
+        "ups": "عدد",
+        "batteries": "عدد",
+        "panels": "عدد",
+        "cables": "m",
+        "grounding": "source-specific explicit unit; no inference",
+        "transfer_switches": "عدد"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_service_specialty_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "elevator",
+      "title": "آسانسور",
+      "category": "electrical",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "rails",
+          "brackets",
+          "car",
+          "doors",
+          "machine",
+          "controller",
+          "cables",
+          "shaft_works",
+          "testing"
+        ],
+        "essential": [
+          "car",
+          "machine"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "rails": "m",
+          "brackets": "explicit reviewed unit required",
+          "car": "عدد",
+          "doors": "explicit reviewed unit required",
+          "machine": "عدد",
+          "controller": "explicit reviewed unit required",
+          "cables": "m",
+          "shaft_works": "explicit reviewed unit required",
+          "testing": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "electrical",
+          "item": "cable",
+          "candidate_components": [
+            "cables"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "مسیر کابل/لوله/سینی و طول واقعی هر مدار",
+          "جدول واقعی تجهیزات و مشخصات سازنده",
+          "واحد، مرز مالکیت و جدول مستقل اندازه‌گیری؛ بدون حدس ظرفیت یا تعداد"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "طراح برق و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "rails": "m",
+        "brackets": "source-specific explicit unit; no inference",
+        "car": "عدد",
+        "doors": "source-specific explicit unit; no inference",
+        "machine": "عدد",
+        "controller": "source-specific explicit unit; no inference",
+        "cables": "m",
+        "shaft_works": "source-specific explicit unit; no inference",
+        "testing": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_five_service_specialty_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "external_earthwork",
+      "title": "عملیات خاکی",
+      "category": "civil_site",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "survey",
+          "excavation",
+          "haulage",
+          "disposal",
+          "shoring",
+          "dewatering",
+          "backfill",
+          "compaction"
+        ],
+        "essential": [
+          "excavation"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "survey": "explicit reviewed unit required",
+          "excavation": "m3",
+          "haulage": "explicit reviewed unit required",
+          "disposal": "explicit reviewed unit required",
+          "shoring": "explicit reviewed unit required",
+          "dewatering": "explicit reviewed unit required",
+          "backfill": "m3",
+          "compaction": "m3"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+          "مرجع صریح کسورات، واحد و مالک پرداخت",
+          "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "survey": "source-specific explicit unit; no inference",
+        "excavation": "m3",
+        "haulage": "source-specific explicit unit; no inference",
+        "disposal": "source-specific explicit unit; no inference",
+        "shoring": "source-specific explicit unit; no inference",
+        "dewatering": "source-specific explicit unit; no inference",
+        "backfill": "m3",
+        "compaction": "m3"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_steel_site_limited_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "blinding_concrete",
+      "title": "بتن مگر",
+      "category": "civil_site",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "base_preparation",
+          "blinding_concrete",
+          "edge_formwork"
+        ],
+        "essential": [
+          "blinding_concrete"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "base_preparation": "explicit reviewed unit required",
+          "blinding_concrete": "m3",
+          "edge_formwork": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "advanced",
+          "item": "footing_concrete",
+          "candidate_components": [
+            "blinding_concrete"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+          "مرجع صریح کسورات، واحد و مالک پرداخت",
+          "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "base_preparation": "source-specific explicit unit; no inference",
+        "blinding_concrete": "m3",
+        "edge_formwork": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_steel_site_limited_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "retaining_structures",
+      "title": "سازه نگهبان",
+      "category": "civil_site",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "soldier_piles",
+          "lagging",
+          "anchors",
+          "shotcrete",
+          "struts",
+          "monitoring"
+        ],
+        "essential": [
+          "soldier_piles"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "soldier_piles": "explicit reviewed unit required",
+          "lagging": "explicit reviewed unit required",
+          "anchors": "explicit reviewed unit required",
+          "shotcrete": "explicit reviewed unit required",
+          "struts": "explicit reviewed unit required",
+          "monitoring": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+          "مرجع صریح کسورات، واحد و مالک پرداخت",
+          "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "soldier_piles": "source-specific explicit unit; no inference",
+        "lagging": "source-specific explicit unit; no inference",
+        "anchors": "source-specific explicit unit; no inference",
+        "shotcrete": "source-specific explicit unit; no inference",
+        "struts": "source-specific explicit unit; no inference",
+        "monitoring": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_steel_site_limited_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "external_works",
+      "title": "محوطه سازی",
+      "category": "civil_site",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "subbase",
+          "grading",
+          "paving",
+          "kerbs",
+          "channels",
+          "walls",
+          "landscaping",
+          "irrigation"
+        ],
+        "essential": [
+          "paving"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "subbase": "explicit reviewed unit required",
+          "grading": "explicit reviewed unit required",
+          "paving": "explicit reviewed unit required",
+          "kerbs": "explicit reviewed unit required",
+          "channels": "explicit reviewed unit required",
+          "walls": "explicit reviewed unit required",
+          "landscaping": "explicit reviewed unit required",
+          "irrigation": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+          "مرجع صریح کسورات، واحد و مالک پرداخت",
+          "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "subbase": "source-specific explicit unit; no inference",
+        "grading": "source-specific explicit unit; no inference",
+        "paving": "source-specific explicit unit; no inference",
+        "kerbs": "source-specific explicit unit; no inference",
+        "channels": "source-specific explicit unit; no inference",
+        "walls": "source-specific explicit unit; no inference",
+        "landscaping": "source-specific explicit unit; no inference",
+        "irrigation": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "site_drains",
+      "title": "زهکشی",
+      "category": "civil_site",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "pipes",
+          "trenches",
+          "bedding",
+          "manholes",
+          "filter_media",
+          "outlets"
+        ],
+        "essential": [
+          "pipes"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "pipes": "m",
+          "trenches": "explicit reviewed unit required",
+          "bedding": "explicit reviewed unit required",
+          "manholes": "explicit reviewed unit required",
+          "filter_media": "explicit reviewed unit required",
+          "outlets": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "mechanical",
+          "item": "pipe",
+          "candidate_components": [
+            "pipes"
+          ],
+          "required_inputs": [
+            "length",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "نقشه برداشت، تراز و مقاطع معتبر و محدوده فیزیکی",
+          "مرجع صریح کسورات، واحد و مالک پرداخت",
+          "جدول محاسبات مستقل حجم/سطح/طول یا قطعات"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "نقشه‌بردار، طراح عمران و بازبین مستقل متره",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "pipes": "m",
+        "trenches": "source-specific explicit unit; no inference",
+        "bedding": "source-specific explicit unit; no inference",
+        "manholes": "source-specific explicit unit; no inference",
+        "filter_media": "source-specific explicit unit; no inference",
+        "outlets": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "demolition",
+      "title": "تخریب",
+      "category": "intervention",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "selective_demolition",
+          "structure_demolition",
+          "waste_sorting",
+          "haulage",
+          "temporary_support",
+          "dust_control"
+        ],
+        "essential": [
+          "selective_demolition"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "selective_demolition": "explicit reviewed unit required",
+          "structure_demolition": "explicit reviewed unit required",
+          "waste_sorting": "explicit reviewed unit required",
+          "haulage": "explicit reviewed unit required",
+          "temporary_support": "explicit reviewed unit required",
+          "dust_control": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "ارزیابی وضع موجود و طرح مصوب مداخله",
+          "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+          "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "selective_demolition": "source-specific explicit unit; no inference",
+        "structure_demolition": "source-specific explicit unit; no inference",
+        "waste_sorting": "source-specific explicit unit; no inference",
+        "haulage": "source-specific explicit unit; no inference",
+        "temporary_support": "source-specific explicit unit; no inference",
+        "dust_control": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "concrete_repair",
+      "title": "ترمیم سازه",
+      "category": "intervention",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "substrate_prep",
+          "corrosion_treatment",
+          "repair_mortar",
+          "injection",
+          "reinforcement",
+          "finishes"
+        ],
+        "essential": [
+          "repair_mortar"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "substrate_prep": "explicit reviewed unit required",
+          "corrosion_treatment": "explicit reviewed unit required",
+          "repair_mortar": "m3",
+          "injection": "explicit reviewed unit required",
+          "reinforcement": "kg",
+          "finishes": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "building",
+          "item": "rebar",
+          "candidate_components": [
+            "reinforcement"
+          ],
+          "required_inputs": [
+            "length",
+            "unit_weight",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "ارزیابی وضع موجود و طرح مصوب مداخله",
+          "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+          "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "substrate_prep": "source-specific explicit unit; no inference",
+        "corrosion_treatment": "source-specific explicit unit; no inference",
+        "repair_mortar": "m3",
+        "injection": "source-specific explicit unit; no inference",
+        "reinforcement": "kg",
+        "finishes": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "seismic_retrofit",
+      "title": "مقاوم سازی",
+      "category": "intervention",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "concrete_jackets",
+          "steel_jackets",
+          "frp",
+          "added_bracing",
+          "anchorage",
+          "foundations",
+          "tests"
+        ],
+        "essential": [
+          "anchorage"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "concrete_jackets": "explicit reviewed unit required",
+          "steel_jackets": "explicit reviewed unit required",
+          "frp": "explicit reviewed unit required",
+          "added_bracing": "explicit reviewed unit required",
+          "anchorage": "عدد",
+          "foundations": "explicit reviewed unit required",
+          "tests": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [
+        {
+          "domain": "advanced",
+          "item": "footing_concrete",
+          "candidate_components": [
+            "foundations"
+          ],
+          "required_inputs": [
+            "length",
+            "width",
+            "thickness",
+            "count"
+          ],
+          "scope": "component candidate only; system/domain gates still apply"
+        }
+      ],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "ارزیابی وضع موجود و طرح مصوب مداخله",
+          "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+          "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "concrete_jackets": "source-specific explicit unit; no inference",
+        "steel_jackets": "source-specific explicit unit; no inference",
+        "frp": "source-specific explicit unit; no inference",
+        "added_bracing": "source-specific explicit unit; no inference",
+        "anchorage": "عدد",
+        "foundations": "source-specific explicit unit; no inference",
+        "tests": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    },
+    {
+      "code": "historic_restoration",
+      "title": "مرمت تاریخی",
+      "category": "intervention",
+      "existing_engine": "core/takeoff/reviewed_aec.py -> TakeoffEngine / reviewed_detail_calculators / explicit measured input",
+      "input_contract": {
+        "components": [
+          "survey",
+          "documentation",
+          "stabilization",
+          "compatible_mortar",
+          "masonry_repair",
+          "protective_coating"
+        ],
+        "essential": [
+          "documentation",
+          "stabilization"
+        ],
+        "status_rule": "confirmed explicit detail OR documented reviewed not_applicable; essential groups cannot be omitted",
+        "unit_by_component": {
+          "survey": "explicit reviewed unit required",
+          "documentation": "explicit reviewed unit required",
+          "stabilization": "explicit reviewed unit required",
+          "compatible_mortar": "explicit reviewed unit required",
+          "masonry_repair": "explicit reviewed unit required",
+          "protective_coating": "explicit reviewed unit required"
+        }
+      },
+      "component_formula_candidates": [],
+      "detail_formula_candidates": {},
+      "formula_limits": "Availability in an allowlist is not a dedicated whole-family engine; material/system/unit gates remain authoritative. No inferred quantities.",
+      "sqlite_cas": {
+        "service": "StructuralProApp.save_aec_system_draft/get_aec_system; ProjectStore expected_digest",
+        "registry": "reviewed_aec_systems",
+        "test_scope": "existing shared/generic gates; no new specialist persistence claim"
+      },
+      "boq": {
+        "new_specialist_permission": false,
+        "scope": "nonfinancial preflight and incomplete drafts remain blocked; existing authorized manual/legacy routes are not newly enabled or disabled"
+      },
+      "new_positive_specialist_test": null,
+      "new_negative_specialist_test": null,
+      "new_test_scope": "no new independent specialist test; existing generic gate remains limited",
+      "independent_engineering_evidence": "missing",
+      "full_family_engineering_acceptance": false,
+      "windows": "not_tested",
+      "dependency": {
+        "needed_documents": [
+          "ارزیابی وضع موجود و طرح مصوب مداخله",
+          "روش اندازه‌گیری و محدوده واقعی تخریب/ترمیم/تقویت یا مرمت",
+          "جدول مستقل مقادیر، واحد و مدارک مجوز/بازبینی مربوط"
+        ],
+        "source_integrity_requirements": [
+          "actual bytes + SHA-256",
+          "member/piece/face identity and Revision",
+          "source and independent review",
+          "explicit unit and expected quantity"
+        ],
+        "responsible_provider_reviewer": "مهندس ارزیاب/طراح مداخله و بازبین مستقل؛ مرمت با متخصص میراث",
+        "blocked_operations": "specialist engineering acceptance and all newly added financial/BOQ paths; missing components cannot create quantities",
+        "after_documents": "positive independent quantity oracle + negative altered geometry/source/units/owner + real SQLite/CAS/reopen/BOQ invariant checks",
+        "status": "blocked_engineering_dependency"
+      },
+      "dedicated_whole_family_algorithm_gap": "dedicated whole-family engineering measurement specification and validated dataset not established; shared component or explicit measured paths are not whole-family acceptance",
+      "form": {
+        "path": "app/reviewed_aec_manual_editor.py",
+        "scope": "general/manual or inherited form; no new specialist UI acceptance"
+      },
+      "current_unit_gates": {
+        "survey": "source-specific explicit unit; no inference",
+        "documentation": "source-specific explicit unit; no inference",
+        "stabilization": "source-specific explicit unit; no inference",
+        "compatible_mortar": "source-specific explicit unit; no inference",
+        "masonry_repair": "source-specific explicit unit; no inference",
+        "protective_coating": "source-specific explicit unit; no inference"
+      },
+      "current_software_evidence": {
+        "source_head": "cf86f73496387129d0ec3aea0a9aa2b7d06c7b06",
+        "source_tree": "9c85f48441691c39d8785148889330341422935c",
+        "package4_test_modules": [
+          "tests/test_chat_package4_seven_final_family_gates.py"
+        ],
+        "package4_run": "package4-numeric.xml:441 PASS incl415 package4+26 numeric",
+        "scope": "Shared/manual component and negative contracts only; not a positive specialist quantity oracle for the complete family."
+      }
+    }
+  ]
+}
