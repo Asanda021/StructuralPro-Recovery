@@ -1,0 +1,12 @@
+{
+  "python": "3.12.14",
+  "pytest": "9.1.1",
+  "sqlite": "3.53.1",
+  "PySide6": "6.12.0",
+  "ifcopenshell": "0.9.0.post1",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "cwd": "/workspace/StructuralPro-Recovery",
+  "QT_QPA_PLATFORM": "offscreen",
+  "code_head": "b822ee816a46301dc97a7a8f8c9147d46acfde80",
+  "tested_tree": "7099595778bebff0f3b21ed8c41c7b29b3b11727"
+}

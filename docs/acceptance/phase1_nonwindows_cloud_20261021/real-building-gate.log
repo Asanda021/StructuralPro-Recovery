@@ -1,0 +1,18 @@
+{
+  "candidate_ready_for_external_review": false,
+  "engineering_accepted": false,
+  "financially_approved": false,
+  "issues": [
+    "not an actual approved drawing submission",
+    "building ID missing",
+    "five explicit floors required",
+    "structural and architectural drawings required",
+    "at least one independent oracle per floor required",
+    "external professional review document missing"
+  ],
+  "floor_count": 0,
+  "independent_quantity_count": 0,
+  "review_requirement": "An authorized engineer must independently check actual drawings, quantities and attestations"
+}
+
+EXIT_CODE=1

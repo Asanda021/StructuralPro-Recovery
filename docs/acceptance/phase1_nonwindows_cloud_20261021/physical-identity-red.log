@@ -1,0 +1,58 @@
+FFF.                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[wall-face-1] _
+
+alias = 'wall-face-1'
+
+    @pytest.mark.parametrize("alias", ["wall-face-1", "WALL-FACE-۱", "ＷＡＬＬ-ＦＡＣＥ-１"])
+    def test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line(alias):
+        draft = document()
+        items = draft["components"]["render_coat"]["items"]
+        second = deepcopy(items[0])
+        second["line_id"] = "SURFACE-2"
+        second["details"]["entries"][0]["id"] = alias
+        items.append(second)
+        result = preview_system(draft, TakeoffEngine())
+>       assert not result["ready"]
+E       assert not True
+
+tests/test_phase1_cross_line_physical_identity_cloud.py:20: AssertionError
+_ test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[WALL-FACE-\u06f1] _
+
+alias = 'WALL-FACE-۱'
+
+    @pytest.mark.parametrize("alias", ["wall-face-1", "WALL-FACE-۱", "ＷＡＬＬ-ＦＡＣＥ-１"])
+    def test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line(alias):
+        draft = document()
+        items = draft["components"]["render_coat"]["items"]
+        second = deepcopy(items[0])
+        second["line_id"] = "SURFACE-2"
+        second["details"]["entries"][0]["id"] = alias
+        items.append(second)
+        result = preview_system(draft, TakeoffEngine())
+>       assert not result["ready"]
+E       assert not True
+
+tests/test_phase1_cross_line_physical_identity_cloud.py:20: AssertionError
+_ test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[\uff37\uff21\uff2c\uff2c-\uff26\uff21\uff23\uff25-\uff11] _
+
+alias = 'ＷＡＬＬ-ＦＡＣＥ-１'
+
+    @pytest.mark.parametrize("alias", ["wall-face-1", "WALL-FACE-۱", "ＷＡＬＬ-ＦＡＣＥ-１"])
+    def test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line(alias):
+        draft = document()
+        items = draft["components"]["render_coat"]["items"]
+        second = deepcopy(items[0])
+        second["line_id"] = "SURFACE-2"
+        second["details"]["entries"][0]["id"] = alias
+        items.append(second)
+        result = preview_system(draft, TakeoffEngine())
+>       assert not result["ready"]
+E       assert not True
+
+tests/test_phase1_cross_line_physical_identity_cloud.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase1_cross_line_physical_identity_cloud.py::test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[wall-face-1]
+FAILED tests/test_phase1_cross_line_physical_identity_cloud.py::test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[WALL-FACE-\u06f1]
+FAILED tests/test_phase1_cross_line_physical_identity_cloud.py::test_unicode_physical_face_cannot_be_rebilled_through_another_detail_line[\uff37\uff21\uff2c\uff2c-\uff26\uff21\uff23\uff25-\uff11]
+3 failed, 1 passed in 0.20s
