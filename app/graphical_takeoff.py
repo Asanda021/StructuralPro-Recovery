@@ -5,7 +5,7 @@ from pathlib import Path
 import json
 
 from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve
-from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QTextOption, QPainterPath
+from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QTextOption, QPainterPath, QFontMetricsF, QTransform
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
@@ -844,7 +844,7 @@ class GraphicalTakeoffDialog(QDialog):
                 pos = d.get("insert", d.get("start", (0, 0)))
                 height = cad_text_height(d)
                 font = QFont("Tahoma")
-                font.setPixelSize(max(1, min(1000, round(height))))
+                font.setPixelSize(100)
                 item = self.canvas.scene.addText(text, font)
                 item.setDefaultTextColor(QColor(20, 35, 70))
                 option = item.document().defaultTextOption()
@@ -854,16 +854,23 @@ class GraphicalTakeoffDialog(QDialog):
                     else Qt.LayoutDirection.LeftToRight
                 )
                 item.document().setDefaultTextOption(option)
+                item.document().setDocumentMargin(0)
                 # CAD insertion points usually refer to the text baseline;
                 # Qt graphics text items are positioned from their top edge.
-                item.setPos(sx(pos[0]), sy(pos[1]) - height)
-                item.setRotation(-float(d.get("rotation",0)))
+                metrics=QFontMetricsF(font);scale=height/max(metrics.capHeight(),1)
+                if entity.entity_type=='MTEXT':
+                    if d.get('text_width',0)>0:item.setTextWidth(d['text_width']/scale)
+                    rect=item.boundingRect();anchor=max(1,min(9,int(d.get('attachment_point',1))))-1
+                    ax=rect.left()+rect.width()*(anchor%3)/2;ay=rect.top()+rect.height()*(anchor//3)/2
+                else:ax=0;ay=metrics.ascent()
+                item.setTransform(QTransform().rotate(-float(d.get("rotation",0))).scale(scale,scale).translate(-ax,-ay))
+                item.setPos(sx(pos[0]),sy(pos[1]))
             if item is not None:
                 item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable,True)
                 item.setData(0,entity.handle);item.setData(1,entity.entity_type+' | '+entity.layer+' | '+doc.units)
-                item.setToolTip(str(entity.handle)+' | '+entity.entity_type+' | '+entity.layer+'‏ | '+doc.units+'\n'+str(d.get('unsupported_measurement') or ('طول: '+str(d.get('length','—'))+'؛ سطح: '+str(d.get('area','—')))))
+                item.setToolTip(str(entity.handle)+' | '+entity.entity_type+' | '+entity.layer+'‏ | '+doc.units+'\n'+str(d.get('unsupported_measurement') or ('طول: '+str(d.get('length','—'))+'؛ سطح: '+str(d.get('area','—'))))+'\n'+str(d.get('font_notice',''))+' '+str(d.get('font_name','')))
                 item.setVisible(d.get('layer_visible',True));self._cad_items.setdefault(entity.layer,[]).append(item);self._cad_handle_items[entity.handle]=item
-        self.canvas.setSceneRect(0,0,max_x-min_x,max_y-min_y)
+        self.canvas.setSceneRect(QRectF(0,0,max_x-min_x,max_y-min_y).united(self.canvas.scene.itemsBoundingRect()))
         self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {sum(bool(e.data.get('unsupported_measurement')) for e in doc.entities)} | هشدار: {len(doc.warnings)}")
 
     def _ifc_status(self):

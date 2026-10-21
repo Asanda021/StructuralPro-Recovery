@@ -245,3 +245,33 @@ def test_array_insert_is_not_silently_reduced_to_one_instance(tmp_path):
 def test_hidden_insert_does_not_expose_visible_child_for_takeoff(tmp_path):
  d,p=drawing(tmp_path);d.layers.new('hidden');d.layers.get('hidden').off();d.layers.new('visible');b=d.blocks.new('B');b.add_line((0,0),(1,0),dxfattribs={'layer':'visible'});d.modelspace().add_blockref('B',(0,0),dxfattribs={'layer':'hidden'})
  child=next(e for e in read(d,p).entities if e.entity_type=='LINE');assert child.data['layer_visible'] is False
+
+@pytest.mark.parametrize('rotation',[0,30,90])
+def test_cad_text_baseline_and_cap_height_use_source_coordinates(tmp_path,rotation):
+ from PySide6.QtWidgets import QApplication
+ from PySide6.QtCore import QPointF
+ from PySide6.QtGui import QFontMetricsF
+ from app.graphical_takeoff import GraphicalTakeoffDialog
+ global _qt
+ _qt=QApplication.instance() or QApplication([])
+ d,p=drawing(tmp_path);d.modelspace().add_line((0,0),(3,4));t=d.modelspace().add_text('ستون C1 — ۱۲',dxfattribs={'insert':(1,1),'height':.5,'rotation':rotation});d.saveas(p)
+ w=GraphicalTakeoffDialog(pdf_path=str(p));w.show();_qt.processEvents()
+ try:
+  item=w._cad_handle_items[t.dxf.handle];metrics=QFontMetricsF(item.font());baseline=item.mapToScene(QPointF(0,metrics.ascent()));ox,oy=w._cad_scene_origin
+  assert baseline.x()==pytest.approx(1-ox,abs=1e-9) and baseline.y()==pytest.approx(oy-1,abs=1e-9)
+  top=item.mapToScene(QPointF(0,metrics.ascent()-metrics.capHeight()));assert math.hypot(top.x()-baseline.x(),top.y()-baseline.y())==pytest.approx(.5,rel=1e-9)
+  assert item.document().documentMargin()==0
+ finally:w.close()
+
+def test_cad_mtext_top_left_anchor_and_width_are_source_based(tmp_path):
+ from PySide6.QtWidgets import QApplication
+ from PySide6.QtCore import QPointF
+ from app.graphical_takeoff import GraphicalTakeoffDialog
+ global _qt
+ _qt=QApplication.instance() or QApplication([]);d,p=drawing(tmp_path);d.modelspace().add_line((0,0),(3,4));e=d.modelspace().add_mtext('طبقه\\Pاول',dxfattribs={'insert':(1,1),'char_height':.5,'width':3,'attachment_point':1});d.saveas(p)
+ w=GraphicalTakeoffDialog(pdf_path=str(p));w.show();_qt.processEvents()
+ try:
+  item=w._cad_handle_items[e.dxf.handle];rect=item.sceneBoundingRect();ox,oy=w._cad_scene_origin
+  assert rect.left()==pytest.approx(1-ox,abs=1e-9) and rect.top()==pytest.approx(oy-1,abs=1e-9)
+  assert rect.width()==pytest.approx(3,rel=1e-9)
+ finally:w.close()
