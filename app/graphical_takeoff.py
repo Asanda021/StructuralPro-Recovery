@@ -326,7 +326,7 @@ class GraphicalTakeoffDialog(QDialog):
 
         header.addWidget(QLabel("ابزار:"))
         self.mode = QComboBox()
-        self.mode.addItems(["طول", "مساحت", "شمارش", "یادداشت", "چندضلعی دقیق", "ناحیه چرخیده", "بازشوی چندضلعی"])
+        self.mode.addItems(["طول", "مساحت", "شمارش", "یادداشت", "چندضلعی دقیق", "ناحیه چرخیده", "بازشوی چندضلعی", "بازشوی مرزی و چندقسمتی"])
         header.addWidget(self.mode)
 
         self.scale_label = QLabel("مقیاس: هنوز کالیبره نشده")
@@ -356,6 +356,8 @@ class GraphicalTakeoffDialog(QDialog):
         self.back_vertex = QPushButton('حذف رأس آخر')
         self.cancel_polygon = QPushButton('لغو چندضلعی')
         self.edit_vertices = QPushButton('ویرایش رأس‌های سطح')
+        self.remove_opening=QPushButton('حذف بازشوی مستند')
+        self.geometry_components=QComboBox();self.geometry_components.addItem('تمام اجزای سطح',None)
         self.back_vertex.setToolTip('فقط رأس‌های انتخاب در حال ترسیم را اصلاح می‌کند')
         self.edit_vertices.setToolTip('مختصات مرجع صفحه به صورت JSON؛ تغییر مقدار فقط از هندسه معتبر')
         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
@@ -388,7 +390,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
-            self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.project_id_input, self.save_session_button,
+            self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
             actions.addWidget(x, index // 6, index % 6)
@@ -454,6 +456,8 @@ class GraphicalTakeoffDialog(QDialog):
         self.back_vertex.clicked.connect(self.remove_pending_vertex)
         self.cancel_polygon.clicked.connect(self.cancel_pending_polygon)
         self.edit_vertices.clicked.connect(self.edit_polygon_vertices)
+        self.remove_opening.clicked.connect(self.remove_selected_opening)
+        self.geometry_components.currentIndexChanged.connect(self.highlight_component)
         self.mode.currentTextChanged.connect(self.apply_tool)
         self.calibrate.clicked.connect(self.calibrate_scale)
         self.open_pdf.clicked.connect(self.select_drawing)
@@ -691,7 +695,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.export_boq.setEnabled(not model_view)
             self.canvas.set_mode("pan" if model_view else {
                 "طول": "length", "مساحت": "area", "شمارش": "count", "یادداشت": "note",
-            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening"
+            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening", "بازشوی مرزی و چندقسمتی":"polygon_opening"
             }[self.mode.currentText()])
             if self.viewer.kind == "pdf":
                 self._render_pdf_background()
@@ -987,7 +991,8 @@ class GraphicalTakeoffDialog(QDialog):
                 if not ok:return
                 # Validate before explicit confirmation, without mutating the session.
                 refs=list((item.geometry_evidence or {}).get('opening_refs',[]))+[reference]
-                checked=self.session._polygon_evidence(item.geometry,item.holes+(tuple(points),),self.page,refs)
+                policy='exact_planar_region_v2' if self.mode.currentText()=='بازشوی مرزی و چندقسمتی' else (item.geometry_evidence or {}).get('policy','exact_simple_polygon_v1')
+                checked=self.session._polygon_evidence(item.geometry,item.holes+(tuple(points),),self.page,refs,topology=policy)
             else:
                 r=ring(points)
                 if self.canvas.mode=='rotated':
@@ -997,11 +1002,38 @@ class GraphicalTakeoffDialog(QDialog):
             if QMessageBox.question(self,'بازبینی سطح هندسی',
                     f"ناخالص: {checked['gross_m2']} مترمربع\nکسورات: {checked['deducted_m2']}\nخالص: {checked['net_m2']}\nاین مقدار فقط سطح هندسی است؛ مصالح حدس زده نمی‌شوند. ثبت شود؟",
                     QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
-            if self.canvas.mode=='polygon_opening':self.session.add_polygon_opening(ident,points,reference)
+            if self.canvas.mode=='polygon_opening':self.session.add_polygon_opening(ident,points,reference,topology=policy)
             else:self.session.add_polygon([Point(*p) for p in points],page=self.page,label='سطح چندضلعی مستند',source=f'polygon:{self.page}:{self.session._counter+1}',floor_id=self.polygon_floor.text().strip(),member_id=self.polygon_member.text().strip(),quantity_owner=self.polygon_owner.text().strip())
             self.canvas.points=[];self.redraw_current_page();self.refresh()
             self.status.setText(f"ناخالص: {checked['gross_m2']} | کسورات: {checked['deducted_m2']} | خالص: {checked['net_m2']} مترمربع | صفحه {self.page}")
         except Exception as exc:QMessageBox.warning(self,'هندسه چندضلعی',str(exc))
+
+    def remove_selected_opening(self):
+        try:
+            row=self.table.currentRow()
+            if row<0:raise ValueError('ابتدا سطح مالک را انتخاب کنید')
+            item=self.session.find(self.table.item(row,0).text());meta=item.geometry_evidence or {}
+            refs=meta.get('opening_refs',[])
+            if len(refs)!=len(item.holes) or not refs:raise ValueError('بازشوی دارای مرجع مستقل یافت نشد')
+            labels=[str(i+1)+' | '+ref for i,ref in enumerate(refs)]
+            label,ok=QInputDialog.getItem(self,'حذف بازشو','بازشوی دارای مدرک اصلاحی را انتخاب کنید:',labels,0,False)
+            if not ok:return
+            index=labels.index(label)
+            self.session.edit_polygon(item.id,item.geometry,holes=[h for i,h in enumerate(item.holes) if i!=index],opening_refs=[r for i,r in enumerate(refs) if i!=index])
+            self.redraw_current_page();self.refresh()
+            self.status.setText('بازشو از پیش‌نویس حذف شد؛ برداشت قطعی فقط با اصلاحیه رسمی تغییر می‌کند')
+        except Exception as exc:QMessageBox.warning(self,'حذف بازشو',str(exc))
+
+    def highlight_component(self):
+        component=self.geometry_components.currentData()
+        if component is None:return
+        row=self.table.currentRow()
+        if row<0:return
+        from dataclasses import replace
+        item=self.session.find(self.table.item(row,0).text())
+        display=replace(item,geometry=tuple(tuple(float(v) for v in p) for p in component['outer']),holes=tuple(tuple(tuple(float(v) for v in p) for p in h) for h in component['holes']))
+        self.canvas.highlight_measurement(display)
+        self.status.setText(component['id']+' | سطح جزء: '+component['net_m2']+' مترمربع | صفحه '+str(item.page))
 
     def edit_polygon_vertices(self):
         try:
@@ -1018,7 +1050,7 @@ class GraphicalTakeoffDialog(QDialog):
         mapping = {
             "طول": "length", "مساحت": "area",
             "شمارش": "count", "یادداشت": "note",
-            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening"
+            "چندضلعی دقیق":"polygon", "ناحیه چرخیده":"rotated", "بازشوی چندضلعی":"polygon_opening", "بازشوی مرزی و چندقسمتی":"polygon_opening"
         }
         self.canvas.set_mode(mapping[self.mode.currentText()])
         self.status.setText(
@@ -1156,6 +1188,9 @@ class GraphicalTakeoffDialog(QDialog):
         if item is None: return
         if item.page != self.page: self.load_page(item.page)
         self.canvas.highlight_measurement(item)
+        self.geometry_components.blockSignals(True);self.geometry_components.clear();self.geometry_components.addItem('تمام اجزای سطح',None)
+        for component in (item.geometry_evidence or {}).get('components',[]):self.geometry_components.addItem(component['id'][:15]+' | '+component['net_m2']+' مترمربع',component)
+        self.geometry_components.setEnabled(self.geometry_components.count()>1);self.geometry_components.blockSignals(False)
         if self.beam_detail_panel is not None: self.beam_dock.show()
 
     def refresh(self):

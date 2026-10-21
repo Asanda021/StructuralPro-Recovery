@@ -41,14 +41,25 @@ def _identity(session,item):
     return sha256(json.dumps(value,separators=(',',':')).encode()).hexdigest()
 
 
-def bind_source(record,item_id):
+def bind_source(record,item_id,*,local_frame=None):
     session=deepcopy(record['session'])
     if not validate_session_payload(session)['valid']:raise ValueError('نشست نقشه نامعتبر است')
     restored=DrawingTakeoffSession.from_dict(session);item=restored.find(item_id)
     if item.kind!='area':raise ValueError('برای سقف اندازه‌گیری سطح لازم است')
     if Path(session['drawing_source']).suffix.lower()!='.pdf':raise ValueError('این قرارداد مخصوص PDF است')
     rows=session_to_boq_rows(session,session_id=record['id'],selected_item_ids=[item_id]);verified_measurement_identities(record,rows)
-    raw=item.to_dict();xs,ys=_rectangle(raw['geometry'])
+    raw=item.to_dict()
+    if local_frame is not None:
+        from core.drawings.planar_geometry import canonical_ring
+        # Validate the frame before recording it; quantity still comes from the
+        # exact original polygon, never from the display envelope.
+        globals()['local_frame'](local_frame)
+        fingerprint=sha256(json.dumps([session['source_sha256'],item.page,canonical_ring(raw['geometry']),sorted(canonical_ring(h) for h in raw.get('holes',[]))],separators=(',',':')).encode()).hexdigest()
+        xs=[float(p[0]) for p in raw['geometry']];ys=[float(p[1]) for p in raw['geometry']]
+        return {'mode':'drawing','source_id':'pdf-roof:'+fingerprint,'drawing_path':session['drawing_source'],'sha256':session['source_sha256'],'page':item.page,
+                'selected_region':[min(xs),min(ys),max(xs)-min(xs),max(ys)-min(ys)],
+                'roof_binding':{'policy':PLANAR_POLICY,'session_id':record['id'],'revision':record['revision'],'item_id':item_id,'identity':fingerprint,'session':session,'local_frame':deepcopy(local_frame)}}
+    xs,ys=_rectangle(raw['geometry'])
     import fitz
     with fitz.open(session['drawing_source']) as pdf:
         import math
@@ -65,9 +76,9 @@ def bind_source(record,item_id):
 
 def validate_source(source):
     b=source.get('roof_binding',{})
-    if b.get('policy')!=POLICY:raise ValueError('قرارداد اتصال PDF سقف معتبر نیست')
+    if b.get('policy') not in (POLICY,PLANAR_POLICY):raise ValueError('قرارداد اتصال PDF سقف معتبر نیست')
     expected=bind_source({'id':b.get('session_id'),'revision':b.get('revision'),
-                          'session':b.get('session',{}),'source_sha256':b.get('session',{}).get('source_sha256')},b.get('item_id'))
+                          'session':b.get('session',{}),'source_sha256':b.get('session',{}).get('source_sha256')},b.get('item_id'),local_frame=b.get('local_frame'))
     for key in ('mode','source_id','drawing_path','sha256','page','selected_region','roof_binding'):
         if source.get(key)!=expected[key]:raise ValueError('منشأ یا کالیبراسیون ناحیه با نشست معتبر تطبیق ندارد')
     return b
@@ -76,6 +87,10 @@ def validate_source(source):
 def dimensions(source):
     b=validate_source(source);s=b['session']
     item=next(x for x in s['items'] if x['id']==b['item_id'])
+    if b['policy']==PLANAR_POLICY:
+        outer,_=_local_geometry(b);xs=[number(p[0],'مختصات محلی') for p in outer];ys=[number(p[1],'مختصات محلی') for p in outer]
+        if min(xs)!=0 or min(ys)!=0:raise ValueError('مبدأ مستند باید گوشه پوش مختصات محلی را تعریف کند')
+        return max(xs),max(ys)
     xs,ys=_rectangle(item['geometry']);cal=s['calibrations'][str(item['page'])]
     with localcontext() as ctx:
         ctx.prec=256
@@ -92,6 +107,8 @@ def validate_detail(data):
         from core.projects.project_model import _identity
         if any(meta.get(k) and _identity(meta[k])!=_identity(data.get(d,'')) for k,d in (('floor_id','floor_id'),('member_id','system_id'))):
             raise ValueError('هویت عضو و طبقه سقف با ناحیه برداشت‌شده تطبیق ندارد')
+    if b['policy']==PLANAR_POLICY:
+        _validate_planar_detail(data,b);return b
     g=data.get('roof_detail',{}).get('geometry',{});length,width=dimensions(source)
     if number(g.get('length'),'طول سقف')!=length or number(g.get('width'),'عرض سقف')!=width or number(g.get('count'),'تعداد سقف')!=1:
         raise ValueError('ابعاد و تعداد سقف باید با همان یک ناحیه کالیبره‌شده تطبیق داشته باشد')
@@ -130,6 +147,14 @@ def overlapping_pdf_roof_regions(first, second):
     if first.get('sha256') != second.get('sha256') or first.get('page') != second.get('page'):
         return False
 
+    if any(s.get('roof_binding',{}).get('policy')==PLANAR_POLICY for s in (first,second)):
+        from core.drawings.planar_geometry import measurement_overlap
+        owners=[]
+        for source in (first,second):
+            binding=validate_source(source)
+            owners.append(next(i for i in binding['session']['items'] if i['id']==binding['item_id']))
+        return measurement_overlap(*owners)
+
     def limits(source):
         rect = source.get('selected_region')
         if not isinstance(rect, (list, tuple)) or len(rect) != 4:
@@ -161,7 +186,8 @@ def project_gate(project,data,*,exclude=None):
         if other.get('identity')==b['identity']:raise ValueError('همین محدوده سقف قبلاً به عضو دیگری تخصیص یافته است')
         if other and overlapping_pdf_roof_regions(source,other_source):
             raise ValueError('دو ناحیه سقف در یک صفحه PDF هم‌پوشانی مساحتی دارند؛ متره مضاعف ممنوع است')
-    for row in project.get('takeoffs',[]):
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    for row in effective_takeoffs(project,project.get('takeoffs',[])):
         params=row.get('params') or {}
         if params.get('source_sha256')==session['source_sha256'] and params.get('page')==item['page'] and params.get('geometry'):
             if params.get('geometry_evidence'):
@@ -262,3 +288,73 @@ def same_source_identity(a,b):
     if not isinstance(a,dict) or not isinstance(b,dict):return a==b
     def identity(v):return {k:x for k,x in v.items() if k not in ('detail_path','detail_sha256')}
     return json.dumps(identity(a),sort_keys=True)==json.dumps(identity(b),sort_keys=True)
+
+PLANAR_POLICY='pdf_roof_planar_v2'
+
+
+def local_frame(frame):
+    from core.drawings.planar_geometry import coordinate
+    from core.takeoff.reviewed_components import require_text
+    if not isinstance(frame,dict) or set(frame)!={'origin_pdf','axis_x','source_ref','approved_by'}:
+        raise ValueError('مبدأ، محور محلی، مرجع و بازبین چارچوب لازم است')
+    require_text(frame['source_ref'],'مرجع چارچوب');require_text(frame['approved_by'],'بازبین چارچوب')
+    if len(frame['origin_pdf'])!=2 or len(frame['axis_x'])!=2:raise ValueError('چارچوب دوبعدی معتبر لازم است')
+    origin=tuple(coordinate(v) for v in frame['origin_pdf']);axis=tuple(coordinate(v) for v in frame['axis_x'])
+    if sum(v*v for v in axis)!=1:raise ValueError('محور محلی باید بردار واحد دقیق باشد؛ تقریب زاویه پذیرفته نمی‌شود')
+    return origin,axis
+
+
+def _local_geometry(binding):
+    from fractions import Fraction
+    from core.drawings.planar_geometry import coordinate,decimal_text
+    origin,axis=local_frame(binding['local_frame']);session=binding['session']
+    item=next(x for x in session['items'] if x['id']==binding['item_id']);c=session['calibrations'][str(item['page'])]
+    scale=Fraction(str(c['reference_meters']))/Fraction(str(c['reference_pixels']))
+    def transform(points):
+        values=[]
+        for x,y in points:
+            dx,dy=coordinate(x)-origin[0],coordinate(y)-origin[1]
+            values.append([decimal_text((dx*axis[0]+dy*axis[1])*scale),decimal_text((-dx*axis[1]+dy*axis[0])*scale)])
+        return values
+    return transform(item['geometry']),[transform(h) for h in item.get('holes',[])]
+
+
+def planar_geometry(source):
+    b=validate_source(source)
+    if b['policy']!=PLANAR_POLICY:raise ValueError('چارچوب محلی مستند انتخاب نشده است')
+    outer,_=_local_geometry(b)
+    return {'policy':'roof_planar_partition_v1','outer':outer}
+
+
+def _validate_detail_bytes(data):
+    source=data['source'];path=Path(str(source.get('detail_path','')))
+    if not path.is_file() or sha256(path.read_bytes()).hexdigest()!=source.get('detail_sha256'):
+        raise ValueError('فایل دیتایل و SHA-256 معتبر لازم است')
+    def meaningful(v):
+        if isinstance(v,dict):return {k:meaningful(x) for k,x in v.items() if x not in (None,'',[],{})}
+        if isinstance(v,list):return [meaningful(x) for x in v]
+        return v
+    if meaningful(json.loads(path.read_text(encoding='utf-8-sig')))!=meaningful(detail_payload(data)):
+        raise ValueError('محتوای دیتایل با ورودی جاری سقف مطابقت ندارد')
+
+
+def _validate_planar_detail(data,binding):
+    from core.drawings.planar_geometry import canonical_ring
+    outer,holes=_local_geometry(binding);g=data.get('roof_detail',{}).get('geometry',{})
+    if g.get('shape')!='documented_planar' or canonical_ring(g.get('planar',{}).get('outer',[]))!=canonical_ring(outer):
+        raise ValueError('ناحیه محلی دیتایل با رأس‌های واقعی PDF تطبیق ندارد')
+    length,width=dimensions(data['source'])
+    if number(g.get('length'),'پوش مختصات طول')!=length or number(g.get('width'),'پوش مختصات عرض')!=width or number(g.get('count'),'تعداد')!=1:
+        raise ValueError('پوش مختصات و تعداد سقف با چارچوب PDF یکسان نیست')
+    item=next(x for x in binding['session']['items'] if x['id']==binding['item_id'])
+    refs=(item.get('geometry_evidence') or {}).get('opening_refs',[])
+    expected=sorted((canonical_ring(h),ref) for h,ref in zip(holes,refs))
+    if len(refs)!=len(holes):raise ValueError('مرجع مستقل بازشوهای نقشه ناقص است')
+    actual=[]
+    for p in data['roof_detail'].get('deductions',[]):
+        if p.get('kind')!='opening':continue
+        if number(p.get('z'),'تراز کسر')!=0 or number(p.get('height'),'ارتفاع کسر')!=number(g.get('depth'),'عمق سقف'):
+            raise ValueError('بازشوی PDF در این قرارداد باید تمام‌عمق و صریح باشد')
+        actual.append((canonical_ring(p.get('footprint',[])),p.get('source_ref')))
+    if sorted(actual)!=expected:raise ValueError('بازشوها و مرجع مستقل نقشه باید دقیقاً با کسورات دیتایل تطبیق داشته باشند')
+    _validate_detail_bytes(data)

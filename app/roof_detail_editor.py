@@ -19,7 +19,7 @@ PANELS=[('id','شناسه قطعه نهایی'),('physical_key','هویت فیز
 VOID_FORMERS=[('id','شناسه حفره‌ساز'),('physical_key','هویت فیزیکی مستقل'),('region_id','سلول مالک'),('shape','نوع هندسه گواهی‌شده'),('count','تعداد؛ یک عدد در سلول'),('x','مختصات ابتدا طول'),('y','مختصات ابتدا عرض'),('z','تراز ابتدا'),('length','طول پوش'),('width','عرض پوش'),('height','ارتفاع پوش'),('diameter_m','قطر کروی (متر؛ کوبیاکس)'),('certified_void_volume_m3','حجم گواهی‌شده حفره (متر مکعب)'),('volume_source_ref','مرجع حجم واقعی'),('spec_ref','گواهی قطعه'),('source_ref','مرجع جانمایی'),('approved_by','بازبین')]
 FACES=[('id','شناسه وجه'),('physical_key','هویت سطح مستقل'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر سطح مستند'),('source_ref','مرجع')]
 PROPS=[('id','شناسه شمع'),('physical_key','هویت مستقل'),('count','تعداد'),('height_m','ارتفاع (متر)'),('source_ref','مرجع'),('system_ref','روش و مشخصات')]
-ENUMS={'steel_kind':[('میلگرد معمولی','reinforcing_bar'),('رشته پیش‌تنیدگی کارخانه‌ای','prestressing_strand')],'mass_scope':[('جرم کل قطعه شامل فولاد کارخانه‌ای','whole_panel_including_factory_steel')],'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism'),('قطعه نهایی مستطیلی کارخانه','factory_finished_rectangle'),('حفره کروی کوبیاکس با گواهی حجم','certified_sphere')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions','joints','cast_in_place')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
+ENUMS={'steel_kind':[('میلگرد معمولی','reinforcing_bar'),('رشته پیش‌تنیدگی کارخانه‌ای','prestressing_strand')],'mass_scope':[('جرم کل قطعه شامل فولاد کارخانه‌ای','whole_panel_including_factory_steel')],'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism'),('قطعه نهایی مستطیلی کارخانه','factory_finished_rectangle'),('حفره کروی کوبیاکس با گواهی حجم','certified_sphere')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions','joints','cast_in_place','opening_void')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
 
 
 def fill_table(table,cols,records):
@@ -80,7 +80,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  project=line(f,'project','پروژه',project_id);floor=line(f,'floor','طبقه',floor_id)
  kindbox=combo(f,'kind','سیستم سقف',[(SPECS[k].title,k) for k in KINDS]);kindbox.setCurrentIndex(kindbox.findData(kind))
  for key,title in [('id','شناسه سقف'),('building','شناسه ساختمان'),('source','شناسه منبع مستقل'),('plan','پلان مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
- combo(f,'joist_supply_scope','دامنه تأمین تیرچه',[('تیرچه خریداری‌شده؛ بتن و میلگرد کارخانه‌ای غیرقابل پرداخت مستقل','purchased_joists')]);combo(f,'unit','واحد ابعاد',[('متر','m')]);combo(f,'shape','هندسه',[('مستطیلی و ناحیه‌های مستقل','rectangular')]);combo(f,'repeat_scope','دامنه تکرار',[('سقف‌های هم‌تیپ با تکرار صریح','identical_roofs')]);combo(f,'action','رفتار مستند دال',[('یک‌طرفه','one_way'),('دوطرفه','two_way')]);combo(f,'joist_axis','جهت تیرچه',[('امتداد طول','x'),('امتداد عرض','y')])
+ combo(f,'joist_supply_scope','دامنه تأمین تیرچه',[('تیرچه خریداری‌شده؛ بتن و میلگرد کارخانه‌ای غیرقابل پرداخت مستقل','purchased_joists')]);combo(f,'unit','واحد ابعاد',[('متر','m')]);combo(f,'shape','هندسه',[('مستطیلی و ناحیه‌های مستقل','rectangular'),('پلان دقیق با چارچوب محلی مستند','documented_planar')]);combo(f,'repeat_scope','دامنه تکرار',[('سقف‌های هم‌تیپ با تکرار صریح','identical_roofs')]);combo(f,'action','رفتار مستند دال',[('یک‌طرفه','one_way'),('دوطرفه','two_way')]);combo(f,'joist_axis','جهت تیرچه',[('امتداد طول','x'),('امتداد عرض','y')])
  for key,title in [('length','طول کل (متر)'),('width','عرض کل (متر)'),('depth','ارتفاع کل (متر)'),('count','تعداد سقف هم‌تیپ'),('topping_thickness','ضخامت رویه (متر)'),('bottom_thickness','ضخامت لایه زیرین (متر)'),('joist_count','تعداد واقعی تیرچه'),('joist_spacing','فاصله واقعی محور تیرچه (متر)'),('geometry_ref','مرجع هندسه'),('geometry_approver','تأییدکننده هندسه'),('deductions_ref','مرجع کسورات یا نبود تقاطع'),('pieces_ref','مرجع چیدمان قطعات یا عدم کاربرد')]:line(f,key,title)
  combo(f,'panel_axis','جهت نصب قطعات هالوکور',[('امتداد طول','x'),('امتداد عرض','y')])
  combo(f,'rib_axis','جهت اصلی ریب وافل',[('امتداد طول','x'),('امتداد عرض','y')])
@@ -138,7 +138,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if d['kind']==HOLLOW_KIND:controls['regions'].setProperty('allowed_components',['topping','precast','joints','cast_in_place','solid_zones'])
   elif d['kind'] in WAFFLE_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
   elif d['kind'] in VOID_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
-  else:controls['regions'].setProperty('allowed_components',['concrete','topping','ribs','ties','solid_zones','precast','void'])
+  else:controls['regions'].setProperty('allowed_components',['concrete','topping','ribs','ties','solid_zones','precast','void']+(['opening_void'] if g.get('shape')=='documented_planar' else []))
   controls['bars'].setProperty('is_hollow',d['kind']==HOLLOW_KIND);controls['bars'].setColumnCount(len(steel_columns()));controls['bars'].setHorizontalHeaderLabels([title for _,title in steel_columns()])
   controls['pieces'].setColumnCount(len(piece_columns()));controls['pieces'].setHorizontalHeaderLabels([title for _,title in piece_columns()])
   for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT),('panels',PANELS),('void_formers',VOID_FORMERS)]:fill_table(controls[key],cols,rd.get(key,[]))
@@ -173,6 +173,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if kindbox.currentData() not in WAFFLE_KINDS:g.pop('rib_axis',None)
   if kindbox.currentData()!=HOLLOW_KIND:g.pop('panel_axis',None)
   if kindbox.currentData() not in VOID_KINDS:g.pop('bottom_thickness',None)
+  if d.get('roof_detail',{}).get('geometry',{}).get('planar'):g['planar']=deepcopy(d['roof_detail']['geometry']['planar'])
   g.update(source_ref=controls['geometry_ref'].text().strip(),approved_by=controls['geometry_approver'].text().strip());d['building_id']=controls['building'].text().strip()
   source=deepcopy(d.get('source',{}));source.update(mode=source.get('mode','manual'),source_id=controls['source'].text().strip(),plan_ref=controls['plan'].text().strip(),detail_ref=controls['detail'].text().strip());d['source']=source
   rd={'geometry':g,'rebars':deepcopy(bars_data)}
@@ -206,6 +207,9 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
    length,width=dimensions(drawing_source)
    d['source']=deepcopy(drawing_source)
    d['roof_detail']={'geometry':{'length':str(length),'width':str(width),'count':'1','unit':'m','shape':'rectangular','repeat_scope':'identical_roofs'}}
+   if drawing_source.get('roof_binding',{}).get('policy')=='pdf_roof_planar_v2':
+    from core.drawings.roof_region import planar_geometry
+    d['roof_detail']['geometry'].update(shape='documented_planar',planar=planar_geometry(drawing_source))
   paint({'status':'draft','revision':0,'data':d})
  def save():
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))

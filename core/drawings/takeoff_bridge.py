@@ -77,12 +77,14 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     return rows
 
 
-def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]], *, exclude_source_ids=()) -> None:
     from core.drawings.roof_region import reject_reserved_regions
     reject_reserved_regions(project,record,rows)
     from core.drawings.planar_geometry import measurement_overlap
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    existing=[r for r in effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] not in exclude_source_ids]
     candidates=[]
-    for old in project.get('takeoffs',[]):
+    for old in existing:
         p=old.get('params') or {}
         if old.get('domain')=='drawing' and old.get('item')=='area':
             candidates.append({**p,'kind':'area'})
@@ -107,12 +109,12 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
                     if measurement_overlap(row,old):
                         raise ValueError('هم‌پوشانی برداشت با مالکیت نامعلوم؛ بازبینی مستقل پیش از پرداخت لازم است')
             candidates.append(row)
-    known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
+    known = {(row.get("params") or {}).get("measurement_identity") for row in existing}
     if any(row["measurement_identity"] in known for row in rows):
         raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")
     source = Path(str(record.get("drawing_source", ""))).resolve()
     sessions = project.get("drawing_sessions", {}) or {}
-    for old in project.get("takeoffs", []):
+    for old in existing:
         if old.get("domain") not in {"drawing", "drawing_ai"}: continue
         params = old.get("params") or {}
         old_session = sessions.get(str(old.get("drawing_session_id", "")), {}) or {}

@@ -632,6 +632,14 @@ class StructuralProApp:
         self.store.save(pid,p,expected_digest=digest)
         return deepcopy(row)
 
+    def drawing_amendment_document(self,project_id,source_id,payload,**kwargs):
+        from core.takeoff.manual_formula_amendments import drawing_document
+        return drawing_document(self,project_id,source_id,payload,**kwargs)
+
+    def create_drawing_amendment(self,project_id,source_id,payload,**kwargs):
+        from core.takeoff.manual_formula_amendments import drawing_create
+        return drawing_create(self,project_id,source_id,payload,**kwargs)
+
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
                                      session_id: str | None = None,
                                      expected_revision: int | None = None) -> dict[str, Any]:

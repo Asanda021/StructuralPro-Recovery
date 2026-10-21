@@ -16,7 +16,7 @@ HOLLOW_KIND='hollow_core_detail'
 VOID_KINDS=('uboot','cobiax')
 KINDS=('solid_slab','joist_block','joist_foam')+WAFFLE_KINDS+(HOLLOW_KIND,)+VOID_KINDS
 BARS=('main_x','main_y','distribution','thermal','rib','additional','opening','solid','tie')
-LABELS={'joints':'بتن درز هالوکور','cast_in_place':'بتن درجاریز مستقل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی کارخانه‌ای','ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','void_formers':'حفره‌ساز خریداری‌شده مستقل','void_cells':'بتن خالص سلول دارای حفره‌ساز','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
+LABELS={'opening_void':'فضای بازشوی مستند؛ غیرقابل پرداخت','joints':'بتن درز هالوکور','cast_in_place':'بتن درجاریز مستقل','hollow_core_panels':'قطعه نهایی هالوکور','precast_panel_mass':'جرم کل قطعه شامل فولاد کارخانه‌ای','prestressing_steel':'فولاد پیش‌تنیدگی کارخانه‌ای','ribs_x':'بتن ریب جهت طول','ribs_y':'بتن ریب جهت عرض','junctions':'بتن تقاطع مستقل ریب‌ها','void_formers':'حفره‌ساز خریداری‌شده مستقل','void_cells':'بتن خالص سلول دارای حفره‌ساز','waffle_molds':'قالب وافل؛ تعداد قطعه مستقل','concrete':'بتن درجاریز','topping':'بتن رویه','ribs':'بتن ریب درجاریز','ties':'بتن کلاف','solid_zones':'بتن ناحیه توپر','precast':'بتن پیش‌ساخته','void':'فضای بلوک یا فوم','main_x':'میلگرد اصلی جهت اول','main_y':'میلگرد اصلی جهت دوم','distribution':'میلگرد توزیعی','thermal':'میلگرد حرارتی','rib':'میلگرد ریب','additional':'میلگرد تقویتی','opening':'میلگرد بازشو','solid':'میلگرد ناحیه توپر','tie':'میلگرد کلاف','formwork':'قالب‌بندی','shoring':'شمع‌بندی','blocks':'بلوک','foam':'فوم','joists':'تیرچه'}
 
 
 def n(v,label,zero=False,integer=False):
@@ -88,11 +88,21 @@ def box(part,limit):
 
 
 def overlap(a,b):
+ if isinstance(a,PlanarPrism) or isinstance(b,PlanarPrism):
+  from core.drawings.planar_geometry import intersection,decimal_text
+  from fractions import Fraction
+  height=max(Decimal(0),min(a[1][2],b[1][2])-max(a[0][2],b[0][2]))
+  return number(decimal_text(intersection(_prism_footprint(a),_prism_footprint(b))*Fraction(height)),'حجم تقاطع دقیق')
  ext=[max(Decimal(0),min(x,y)-max(s,t)) for s,x,t,y in zip(a[0],a[1],b[0],b[1])]
  return ext[0]*ext[1]*ext[2]
 
 
-def volume(b):return (b[1][0]-b[0][0])*(b[1][1]-b[0][1])*(b[1][2]-b[0][2])
+def volume(b):
+ if isinstance(b,PlanarPrism):
+  from core.drawings.planar_geometry import signed,decimal_text
+  from fractions import Fraction
+  return number(decimal_text(abs(signed(b.footprint))*Fraction(b[1][2]-b[0][2])),'حجم منشور دقیق')
+ return (b[1][0]-b[0][0])*(b[1][1]-b[0][1])*(b[1][2]-b[0][2])
 
 
 def review_digest(data):
@@ -295,9 +305,30 @@ def preview(data,engine,require_review=False):
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')
   if any(part!={'status':'unreviewed'} for part in data['components'].values()):raise ValueError('دیتایل عمومی و تخصصی سقف نباید هم‌زمان شمرده شوند')
   d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels','void_formers'),'دیتایل سقف')
-  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','bottom_thickness','source_ref','approved_by'),'هندسه');checked(g)
-  if g.get('unit')!='m' or g.get('shape')!='rectangular':raise ValueError('فقط هندسه مستطیلی با واحد صریح متر پشتیبانی می‌شود')
+  g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','bottom_thickness','source_ref','approved_by','planar'),'هندسه');checked(g)
+  planar=g.get('shape')=='documented_planar'
+  if g.get('unit')!='m' or g.get('shape') not in ('rectangular','documented_planar'):raise ValueError('هندسه دارای قرارداد معتبر و واحد متر نیست')
+  if not planar and g.get('planar'):raise ValueError('حذف صریح قرارداد پلان محلی مجاز نیست')
+  if planar and (kind not in ('solid_slab','joist_block','joist_foam') or g.get('planar',{}).get('policy')!='roof_planar_partition_v1'):raise ValueError('قرارداد پلان فقط برای سه سقف مصوب است')
   L,W,H=(n(g.get(k),k) for k in ('length','width','depth'));count=n(g.get('count'),'تعداد سقف',integer=True)
+  if planar:
+   from core.drawings.planar_geometry import ring,signed,decimal_text
+   owner=ring(g['planar']['outer'])
+   if min(p[0] for p in owner)!=0 or min(p[1] for p in owner)!=0 or max(p[0] for p in owner)!=L or max(p[1] for p in owner)!=W:raise ValueError('پوش محلی جزء با رأس‌های واقعی سقف یکسان نیست')
+   plan_area=number(decimal_text(abs(signed(owner))),'مساحت واقعی سقف')
+   zones=[];zone_ids=set()
+   for zone in g['planar'].get('thickness_zones',[]):
+    if kind!='solid_slab':raise ValueError('ضخامت متغیر در این قرارداد فقط برای دال با ناحیه‌بندی مستقل است')
+    strict(zone,('id','footprint','depth','source_ref','approved_by'),'ناحیه ضخامت');checked(zone)
+    key=canonical(zone.get('id'))
+    if key in zone_ids:raise ValueError('ناحیه ضخامت تکراری است')
+    zone_ids.add(key);footprint=ring(zone['footprint']);depth=n(zone['depth'],'ضخامت مستند ناحیه')
+    from core.drawings.planar_geometry import intersection
+    if depth>H or intersection(owner,footprint)!=abs(signed(footprint)):raise ValueError('ناحیه ضخامت خارج از سقف است')
+    zones.append(PlanarPrism(footprint,Decimal(0),depth))
+   if zones and (any(overlap(a,b)>0 for a,b in combinations(zones,2)) or sum((number(decimal_text(abs(signed(z.footprint))),'سطح ناحیه') for z in zones),Decimal(0))!=plan_area or max(z.z1 for z in zones)!=H):raise ValueError('ناحیه‌بندی ضخامت کامل، مستقل و مطابق پوش ارتفاع نیست')
+  make_box=(lambda p,limit:planar_box(p,limit,owner)) if planar else box
+  make_region_box=(lambda p,limit:planar_box(p,limit,owner,zones)) if planar else box
   if g.get('repeat_scope')!='identical_roofs':raise ValueError('تکرار صریح سقف‌های هم‌تیپ لازم است')
   if kind=='solid_slab' and g.get('action') not in ('one_way','two_way'):raise ValueError('جهت دال باید مستند باشد')
   if kind not in WAFFLE_KINDS and (d.get('rib_layout') or g.get('rib_axis') not in (None,'')):raise ValueError('دیتایل ریب وافل در خانواده دیگر مجاز نیست')
@@ -320,30 +351,35 @@ def preview(data,engine,require_review=False):
   if not isinstance(parts,list) or not 0<len(parts)<=512:raise ValueError('جدول ناحیه‌ها باید شامل یک تا۵۱۲ناحیه واقعی باشد')
   regions=[]
   allowed={'concrete'} if kind=='solid_slab' else {'topping','ribs','ties','solid_zones','precast','void'}
+  if planar:allowed=allowed|{'opening_void'}
   if kind in WAFFLE_KINDS:allowed={'topping','ribs_x','ribs_y','junctions','solid_zones','void'}
   if kind==HOLLOW_KIND:allowed={'topping','precast','joints','cast_in_place','solid_zones'}
   if kind in VOID_KINDS:allowed={'topping','solid_zones','ribs_x','ribs_y','junctions','void'}
   for p in parts:
-   strict(p,('id','component','x','y','z','length','width','height','source_ref','approved_by'),'ناحیه')
+   strict(p,('id','component','x','y','z','length','width','height','source_ref','approved_by')+(('footprint',) if planar else ()),'ناحیه')
    identity(p)
    if p.get('component') not in allowed:raise ValueError('نوع ناحیه با سیستم سقف تطبیق ندارد')
-   regions.append((p,box(p,(L,W,H))))
+   regions.append((p,make_region_box(p,(L,W,H))))
   if any(overlap(a,b)>0 for (_,a),(_,b) in combinations(regions,2)):raise ValueError('نواحی هندسی سقف هم‌پوشان‌اند')
-  gross=L*W*H
+  gross=(sum((volume(z) for z in zones),Decimal(0)) if zones else plan_area*H) if planar else L*W*H
   if sum((volume(b) for _,b in regions),Decimal(0))!=gross:raise ValueError('ناحیه‌بندی کامل سقف نیست؛ حجم ناشناخته مجاز نیست')
   deductions=[];require_text(d.get('deductions_ref'),'مرجع کسورات یا نبود تقاطع')
   for p in d['deductions']:
-   strict(p,('id','kind','owner_source_id','x','y','z','length','width','height','source_ref','approved_by'),'کسر')
+   strict(p,('id','kind','owner_source_id','x','y','z','length','width','height','source_ref','approved_by')+(('footprint',) if planar else ()),'کسر')
    identity(p)
    if p.get('kind') not in ('opening','beam_joint'):raise ValueError('نوع کسر معتبر نیست')
    if p['kind']=='beam_joint':require_text(p.get('owner_source_id'),'منبع مالک بتن مشترک تیر و سقف')
-   deductions.append((p,box(p,(L,W,H))))
+   deductions.append((p,make_box(p,(L,W,H))))
   if any(overlap(a,b)>0 for (_,a),(_,b) in combinations(deductions,2)):raise ValueError('کسورات مشترک یا هم‌پوشان تکراری ممنوع است')
+  if planar:
+   for p,b in regions:
+    if p['component']=='opening_void' and (b[0][2]!=0 or b[1][2]!=H or not any(q['kind']=='opening' and overlap(b,c)==volume(b)==volume(c) for q,c in deductions)):
+     raise ValueError('فضای بازشو باید دقیقاً به کسر تمام‌عمق مستند متصل باشد')
   if kind==HOLLOW_KIND:validate_hollow_core(d,regions,deductions,(L,W,H),identity,emit)
   if kind in VOID_KINDS:validate_void_formers(d,kind,regions,deductions,(L,W,H),identity,emit)
   allocations=[]
   for p,b in regions:
-   if p['component']=='void' or (kind==HOLLOW_KIND and p['component']=='precast'):continue
+   if p['component'] in ('void','opening_void') or (kind==HOLLOW_KIND and p['component']=='precast'):continue
    deducted=sum((overlap(b,c) for _,c in deductions),Decimal(0))
    if p['component']=='precast' and deducted:raise ValueError('بازشو در قطعه پیش‌ساخته به هندسه و دیتایل قطعه اصلاح‌شده نیاز دارد')
    code='precast_concrete' if p['component']=='precast' else 'concrete'
@@ -365,34 +401,48 @@ def preview(data,engine,require_review=False):
    if t>=H:raise ValueError('ضخامت رویه از ارتفاع سقف کمتر باشد')
    tops=[(p,b) for p,b in regions if p['component']=='topping']
    if not tops or any(b[0][2]!=H-t or b[1][2]!=H for _,b in tops):raise ValueError('رویه باید دقیقاً در تراز و ضخامت مستند باشد')
-   if any(b[1][2]>H-t for p,b in regions if p['component'] not in ('topping','solid_zones')):raise ValueError('ناحیه زیرین وارد رویه شده است')
+   if any(b[1][2]>H-t for p,b in regions if p['component'] not in ('topping','solid_zones','opening_void')):raise ValueError('ناحیه زیرین وارد رویه شده است')
    axis=g.get('joist_axis')
    if axis not in ('x','y'):raise ValueError('جهت تیرچه مستند نیست')
    if g.get('joist_supply_scope')!='purchased_joists':raise ValueError('قرارداد فعلی نیازمند دامنه صریح تیرچه خریداری‌شده است')
    jc=n(g.get('joist_count'),'تعداد واقعی تیرچه',integer=True);spacing=n(g.get('joist_spacing'),'فاصله واقعی تیرچه')
    layout=d['joist_layout'];joists=[]
    for p in layout:
-    strict(p,('id','x','y','z','length','width','height','source_ref','approved_by'),'جانمایی تیرچه');identity(p);joists.append((p,box(p,(L,W,H-t))))
+    strict(p,('id','x','y','z','length','width','height','source_ref','approved_by')+(('physical_key','run_id','span_ref') if planar else ()),'جانمایی تیرچه');identity(p,planar);joists.append((p,make_box(p,(L,W,H-t))))
    if len(joists)!=jc:raise ValueError('تعداد واقعی تیرچه با جانمایی تطبیق ندارد')
    if any(overlap(a,b)>0 for (_,a),(_,b) in combinations(joists,2)):raise ValueError('تیرچه‌های جانمایی‌شده هم‌پوشان‌اند')
    long=0 if axis=='x' else 1;trans=1-long
-   if any(b[0][long]!=0 or b[1][long]!=(L,W)[long] or b[0][2]!=0 or b[1][2]!=H-t for _,b in joists):raise ValueError('جانمایی مستند تیرچه باید تمام‌دهانه و تمام ارتفاع زیر رویه باشد')
-   centers=sorted((b[0][trans]+b[1][trans])/2 for _,b in joists)
+   if any((not planar and (b[0][long]!=0 or b[1][long]!=(L,W)[long])) or b[0][2]!=0 or b[1][2]!=H-t for _,b in joists):raise ValueError('جانمایی مستند تیرچه با دهانه و ارتفاع تطبیق ندارد')
+   if planar:
+    runs={}
+    for p,b in joists:
+     require_text(p.get('span_ref'),'دیتایل دهانه و انتهای هر قطعه تیرچه')
+     run=canonical(p.get('run_id'));center=(b[0][trans]+b[1][trans])/2
+     if run in runs and runs[run]!=center:raise ValueError('محور قطعات یک تیرچه تطبیق ندارد')
+     runs[run]=center
+     if any(overlap(b,c)>0 for _,c in deductions):raise ValueError('قطعه تیرچه وارد بازشو شده است؛ قطعه‌بندی مستقل لازم است')
+    if len(set(runs.values()))!=len(runs):raise ValueError('دو شناسه تیرچه روی یک محور تعریف شده است')
+   centers=sorted(runs.values()) if planar else sorted((b[0][trans]+b[1][trans])/2 for _,b in joists)
    if any(y-x!=spacing for x,y in zip(centers,centers[1:])):raise ValueError('فاصله تیرچه‌ها با جانمایی واقعی تطبیق ندارد')
    for _,j in joists:
     if sum((overlap(j,b) for p,b in regions if p['component']!='void'),Decimal(0))!=volume(j):raise ValueError('اجزای بتن تیرچه با جانمایی واقعی تطبیق ندارند')
     if not any(overlap(j,b)>0 for p,b in regions if p['component']=='precast'):raise ValueError('تیرچه خریداری‌شده نیازمند دیتایل قطعه پیش‌ساخته است')
    for p,b in regions:
     if p['component'] in ('ribs','precast') and sum((overlap(b,j) for _,j in joists),Decimal(0))!=volume(b):raise ValueError('ریب یا قطعه پیش‌ساخته بیرون جانمایی تیرچه است')
-   emit('joists',jc,'عدد','joists','joist-count','تعداد واقعی ردیف‌های تیرچه',{'source_ref':g['source_ref'],'reviewed_by':g['approved_by'],'axis':axis,'spacing_m':wire(spacing)})
+   emit('joists',jc,'عدد','joists','joist-count','تعداد واقعی ردیف‌های تیرچه',{'source_ref':g['source_ref'],'reviewed_by':g['approved_by'],'axis':axis,'spacing_m':wire(spacing),**({'documented_layout':deepcopy(layout)} if planar else {})})
    voids={p['id']:(p,b) for p,b in regions if p['component']=='void'};seen=set()
    for piece in pieces:
-    ident=identity(piece);require_text(piece.get('source_ref'),'منبع قطعه');require_text(piece.get('spec_ref'),'مشخصات قطعه')
+    ident=identity(piece,planar);require_text(piece.get('source_ref'),'منبع قطعه');require_text(piece.get('spec_ref'),'مشخصات قطعه')
     region_id=piece['region_id']
     if region_id not in voids or region_id in seen:raise ValueError('قطعه باید به یک ناحیه پرکننده مستقل مرتبط باشد')
     seen.add(region_id);_,b=voids[region_id]
     dims=[n(piece.get(k),k) for k in ('length','width','height')];nums=[n(piece.get(k),k,integer=True) for k in ('nx','ny','nz')];qty=n(piece.get('count'),'تعداد قطعه',integer=True)
-    if qty!=nums[0]*nums[1]*nums[2] or any(a*c!=e-s for a,c,s,e in zip(dims,nums,b[0],b[1])):raise ValueError('تعداد و ابعاد قطعات با چیدمان واقعی تطبیق ندارد')
+    if planar and piece.get('cut_footprint'):
+     from core.drawings.planar_geometry import canonical_ring,decimal_text
+     require_text(piece.get('cut_ref'),'دیتایل برش قطعه خریداری‌شده');require_text(piece.get('approved_by'),'بازبین قطعه بریده')
+     if qty!=1 or nums!=[1,1,1] or canonical_ring(piece['cut_footprint'])!=canonical_ring([(decimal_text(x),decimal_text(y)) for x,y in b.footprint]) or dims[2]!=b[1][2]-b[0][2] or any(dims[k]<b[1][k]-b[0][k] for k in (0,1)):
+      raise ValueError('قطعه بریده باید یک قطعه مستقل با هندسه نهایی و پوش خرید صریح باشد')
+    elif qty!=nums[0]*nums[1]*nums[2] or any(a*c!=e-s for a,c,s,e in zip(dims,nums,b[0],b[1])):raise ValueError('تعداد و ابعاد قطعات با چیدمان واقعی تطبیق ندارد')
     emit('blocks' if kind=='joist_block' else 'foam',qty,'عدد','blocks' if kind=='joist_block' else 'foam',ident,'چیدمان مستند سه‌محوره قطعات',deepcopy(piece))
    if seen!=set(voids) or not voids:raise ValueError('همه نواحی پرکننده باید دیتایل قطعه داشته باشند')
    # An opening cannot silently remove purchased pieces/joists from their schedules.
@@ -435,6 +485,11 @@ def preview(data,engine,require_review=False):
    for face in part['faces']:
     ident=identity(face,True);require_text(face.get('source_ref'),'مرجع وجه قالب')
     gross_face=n(face.get('length_m'),'طول وجه')*n(face.get('width_m'),'عرض وجه');ded=n(face.get('deduction_m2'),'کسر سطح مستند',True)
+    if planar and face.get('footprint'):
+     from core.drawings.planar_geometry import evidence,TOPOLOGY_V2
+     face_evidence=evidence(face['footprint'],face.get('holes',[]),1,face.get('opening_refs',[]),topology=TOPOLOGY_V2)
+     gross_face=number(face_evidence['net_m2'],'سطح هندسی وجه قالب')
+     if ded:require_text(face.get('deduction_ref'),'مدرک مستقل کسر وجه قالب')
     if ded>=gross_face:raise ValueError('سطح خالص قالب نامعتبر است')
     emit('formwork',gross_face-ded,'m2','formwork',ident,'طول وجه × عرض وجه − کسر مستند',deepcopy(face))
   part=d['shoring'];strict(part,('status','approved_by','source_ref','reason','props'),'شمع‌بندی')
@@ -456,3 +511,31 @@ def takeoffs(data,version):
  r=preview(data,TakeoffEngine())
  if not r['ready']:raise ValueError('سقف ناقص است: '+'؛ '.join(r['blockers']))
  return [{'id':v['source_id'],'source_id':v['source_id'],'member_code':data['system_id'],'system':data['floor_id'],'domain':v['domain'],'item':v['item_code'],'description':v['description'],'params':deepcopy(v['params']),'provenance':deepcopy(data['source']),'revision':version,'quantities':[{'code':v['item_code'],'title':v['description'],'unit':v['unit'],'amount':v['quantity'],'role':v['role'],'formula':v['formula'],'price_code':None,'unit_price':None}]} for v in r['rows']]
+
+class PlanarPrism:
+ """Exact footprint for the same region-volume/overlap formulas above."""
+ def __init__(self,footprint,z0,z1):
+  self.footprint=footprint;self.z0=z0;self.z1=z1
+  self.bounds=((min(p[0] for p in footprint),min(p[1] for p in footprint),z0),
+               (max(p[0] for p in footprint),max(p[1] for p in footprint),z1))
+ def __getitem__(self,index):return self.bounds[index]
+
+
+def planar_box(part,limit,owner,zones=()):
+ from core.drawings.planar_geometry import ring,intersection,signed
+ from fractions import Fraction
+ bounds=box(part,limit)
+ points=part.get('footprint') or [(bounds[0][0],bounds[0][1]),(bounds[1][0],bounds[0][1]),(bounds[1][0],bounds[1][1]),(bounds[0][0],bounds[1][1])]
+ footprint=ring(points)
+ if (min(p[0] for p in footprint),min(p[1] for p in footprint))!=tuple(Fraction(v) for v in bounds[0][:2]) or (max(p[0] for p in footprint),max(p[1] for p in footprint))!=tuple(Fraction(v) for v in bounds[1][:2]):
+  raise ValueError('پوش مختصات جزء با رأس‌های واقعی آن یکسان نیست')
+ if intersection(owner,footprint)!=abs(signed(footprint)):raise ValueError('جزء از هندسه واقعی سقف خارج است')
+ result=PlanarPrism(footprint,bounds[0][2],bounds[1][2])
+ if zones and sum((overlap(result,z) for z in zones),Decimal(0))!=volume(result):raise ValueError('جزء وارد ضخامت یا حجم نامعتبر ناحیه شده است')
+ return result
+
+
+def _prism_footprint(value):
+ if isinstance(value,PlanarPrism):return value.footprint
+ from core.drawings.planar_geometry import ring
+ return ring([(value[0][0],value[0][1]),(value[1][0],value[0][1]),(value[1][0],value[1][1]),(value[0][0],value[1][1])])
