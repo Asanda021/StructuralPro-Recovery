@@ -86,6 +86,12 @@ def dimensions(source):
 def validate_detail(data):
     source=data['source'];b=validate_source(source)
     if data.get('kind') not in KINDS:raise ValueError('فقط سه سقف مصوب در اتصال PDF پشتیبانی می‌شوند')
+    measured=next(x for x in b['session']['items'] if x['id']==b['item_id'])
+    meta=measured.get('geometry_evidence') or {}
+    if meta:
+        from core.projects.project_model import _identity
+        if any(meta.get(k) and _identity(meta[k])!=_identity(data.get(d,'')) for k,d in (('floor_id','floor_id'),('member_id','system_id'))):
+            raise ValueError('هویت عضو و طبقه سقف با ناحیه برداشت‌شده تطبیق ندارد')
     g=data.get('roof_detail',{}).get('geometry',{});length,width=dimensions(source)
     if number(g.get('length'),'طول سقف')!=length or number(g.get('width'),'عرض سقف')!=width or number(g.get('count'),'تعداد سقف')!=1:
         raise ValueError('ابعاد و تعداد سقف باید با همان یک ناحیه کالیبره‌شده تطبیق داشته باشد')
@@ -158,6 +164,11 @@ def project_gate(project,data,*,exclude=None):
     for row in project.get('takeoffs',[]):
         params=row.get('params') or {}
         if params.get('source_sha256')==session['source_sha256'] and params.get('page')==item['page'] and params.get('geometry'):
+            if params.get('geometry_evidence'):
+                from core.drawings.planar_geometry import regions_overlap
+                if regions_overlap(item['geometry'],item.get('holes',()),params['geometry'],params.get('holes',())):
+                    raise ValueError('هم‌پوشانی ناحیه سقف و برداشت عمومی؛ مالکیت باید مستقل بازبینی شود')
+                continue
             if _identity(session,{'page':params['page'],'geometry':params['geometry']})==b['identity']:
                 raise ValueError('ناحیه قبلاً از مسیر متره عمومی ثبت شده است؛ شمارش دوم ممنوع است')
 
@@ -167,6 +178,14 @@ def reject_reserved_regions(project,record,rows):
                 for r in (project.get('reviewed_aec_systems') or {}).values()}
     for row in rows:
         if row.get('kind')!='area':continue
+        if row.get('geometry_evidence'):
+            from core.drawings.planar_geometry import regions_overlap
+            for reserved in (project.get('reviewed_aec_systems') or {}).values():
+                source=reserved.get('data',{}).get('source',{});binding=source.get('roof_binding')
+                if not binding or source.get('sha256')!=record['session'].get('source_sha256') or source.get('page')!=row['page']:continue
+                owner=next(x for x in binding['session']['items'] if x['id']==binding['item_id'])
+                if regions_overlap(row['geometry'],row.get('holes',()),owner['geometry'],owner.get('holes',())):
+                    raise ValueError('هم‌پوشانی برداشت عمومی و سقف تخصصی؛ پرداخت دوم ممنوع است')
         try:ident=_identity(record['session'],row)
         except ValueError:continue
         if ident in identities:raise ValueError('ناحیه به سقف تخصصی تخصیص یافته است؛ پرداخت سطح عمومی دوباره مجاز نیست')
@@ -179,6 +198,7 @@ def add_rectangular_opening(session,item_id,points,reference):
     reference=require_text(reference,'مرجع بازشو')
     item=session.find(item_id)
     if item.kind!='area':raise ValueError('بازشو فقط روی متره سطحی اعمال می‌شود')
+    if item.geometry_evidence is not None:return session.add_polygon_opening(item_id,points,reference)
     outer_x,outer_y=_rectangle(item.geometry);xs,ys=_rectangle(points)
     if not (outer_x[0]<=xs[0]<xs[1]<=outer_x[1] and outer_y[0]<=ys[0]<ys[1]<=outer_y[1]):
         raise ValueError('بازشو خارج از سطح مالک است')
@@ -196,6 +216,19 @@ def add_rectangular_opening(session,item_id,points,reference):
 
 def guard_project_change(previous,updated):
     """Reuse the existing ProjectStore invariant hook, including direct writes."""
+    # An edited session may add new drafts, but cannot rewrite paid polygon
+    # evidence. A session revision is not a financial amendment authorization.
+    old_sessions=(previous or {}).get('drawing_sessions') or {}
+    new_sessions=updated.get('drawing_sessions') or {}
+    for row in (previous or {}).get('takeoffs',[]):
+        if row.get('domain')!='drawing' or not (row.get('params') or {}).get('geometry_evidence'):continue
+        sid=row.get('drawing_session_id');ident=row.get('drawing_takeoff_id')
+        old_session=(old_sessions.get(sid) or {}).get('session',{})
+        new_session=(new_sessions.get(sid) or {}).get('session',{})
+        old_item=next((x for x in old_session.get('items',[]) if x.get('id')==ident),None)
+        new_item=next((x for x in new_session.get('items',[]) if x.get('id')==ident),None)
+        if json.dumps(old_item,sort_keys=True)!=json.dumps(new_item,sort_keys=True) or old_session.get('source_sha256')!=new_session.get('source_sha256') or old_session.get('calibrations')!=new_session.get('calibrations'):
+            raise ValueError('هندسه یا منشأ برداشت قطعی فقط از مسیر اصلاحیه مالی معتبر قابل تغییر است')
     old_records=(previous or {}).get('reviewed_aec_systems',{})
     new_records=updated.get('reviewed_aec_systems',{})
     if not isinstance(old_records,dict) or not isinstance(new_records,dict):

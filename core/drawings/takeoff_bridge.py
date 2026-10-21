@@ -36,6 +36,9 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
                 page = int(row["page"])
                 if not 1 <= page <= len(document) or not document[page-1].get_drawings():
                     raise ValueError("صفحه PDF فاقد شاهد برداری معتبر است؛ کمیت رستری وارد BOQ نمی‌شود")
+                bounds=document[page-1].rect
+                if row.get("geometry_evidence") and any(not (0<=float(x)<=math.ceil(bounds.width*150/72) and 0<=float(y)<=math.ceil(bounds.height*150/72)) for x,y in row["geometry"]):
+                    raise ValueError("هندسه خارج از صفحه نقشه است")
     else:
         from core.drawings.viewer_model import DrawingViewerModel
         try:
@@ -47,7 +50,9 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     items = {str(item["id"]): item for item in payload.get("items", [])}
     def canonical(points, closed=False):
         points = tuple(tuple(float(v) for v in point) for point in points)
-        if closed and points and points[0] == points[-1]: points = points[:-1]
+        if closed:
+            from core.drawings.planar_geometry import canonical_ring
+            return canonical_ring(points)
         variants = [points, points[::-1]]
         if closed and points:
             variants = (variant[i:]+variant[:i] for variant in variants for i in range(len(variant)))
@@ -75,6 +80,31 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
 def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
     from core.drawings.roof_region import reject_reserved_regions
     reject_reserved_regions(project,record,rows)
+    from core.drawings.planar_geometry import regions_overlap
+    candidates=[]
+    for old in project.get('takeoffs',[]):
+        p=old.get('params') or {}
+        if old.get('domain')=='drawing' and old.get('item')=='area':
+            candidates.append({**p,'kind':'area'})
+    for row in rows:
+        if row['kind']=='area':
+            meta=row.get('geometry_evidence')
+            if meta and not meta.get('quantity_owner','').strip():raise ValueError('مالک مقدار و مرجع آن برای ثبت برداشت چندضلعی الزامی است')
+            if meta and project.get('floors'):
+                from core.projects.project_model import _identity
+                floor=_identity(meta.get('floor_id',''));member=_identity(meta.get('member_id',''))
+                if floor not in {_identity(f['id']) for f in project['floors']} or not any(_identity(m['id'])==member and _identity(m['floor_id'])==floor for m in project.get('members',[])):
+                    raise ValueError('عضو و طبقه برداشت با هویت صریح پروژه مطابقت ندارند')
+            for old in candidates:
+                old_meta=old.get('geometry_evidence') or {}
+                if meta and old_meta and meta.get('floor_id') and meta.get('member_id'):
+                    from core.projects.project_model import _identity
+                    if all(_identity(meta[k])==_identity(old_meta.get(k,'')) for k in ('floor_id','member_id')):
+                        raise ValueError('عضو فیزیکی قبلاً متره شده است؛ نسخه جدید نقشه نیازمند اصلاحیه رسمی است')
+                if (row.get('geometry_evidence') or old.get('geometry_evidence')) and row.get('source_sha256')==old.get('source_sha256') and row.get('page')==old.get('page'):
+                    if regions_overlap(row['geometry'],row.get('holes',()),old['geometry'],old.get('holes',())):
+                        raise ValueError('هم‌پوشانی برداشت با مالکیت نامعلوم؛ بازبینی مستقل پیش از پرداخت لازم است')
+            candidates.append(row)
     known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
     if any(row["measurement_identity"] in known for row in rows):
         raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")
@@ -126,6 +156,14 @@ def validate_session_payload(payload: dict[str, Any]) -> dict[str, Any]:
             if item.kind in {"length", "area"} and item.page in session.calibrations:
                 factor = session.calibrations[item.page].meters_per_pixel
                 points = [Point(*point) for point in item.geometry]
+                if item.kind == "area" and item.geometry_evidence is not None:
+                    meta=item.geometry_evidence
+                    if not isinstance(meta,dict):raise ValueError("قرارداد هندسه نامعتبر است")
+                    verified=session._polygon_evidence(item.geometry,item.holes,item.page,meta.get("opening_refs",[]),
+                        **{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+                    if meta!=verified or item.quantity!=float(verified["net_m2"]):
+                        raise ValueError("مقدار دقیق یا مدارک هندسه با رأس‌ها و مقیاس مطابقت ندارد")
+                    continue
                 if item.kind == "length":
                     expected = polyline_length(points) * factor
                 else:
@@ -178,7 +216,8 @@ def session_to_boq_rows(
             "page": item.page,
             "kind": item.kind,
             "description": item.label.strip() or item.takeoff_code.strip() or item.kind,
-            "quantity": float(item.quantity),
+            "quantity": item.geometry_evidence["net_m2"] if item.geometry_evidence else float(item.quantity),
+            "geometry_evidence": item.geometry_evidence,
             "unit": item.unit,
             "item_code": item.takeoff_code.strip() or f"DRAW-{item.kind.upper()}",
             "price_code": item.takeoff_code.strip() or None,
@@ -210,13 +249,17 @@ def build_takeoff_export_payload(session: DrawingTakeoffSession) -> dict[str, An
         "takeoff_code": items_by_id[row["takeoff_id"]].takeoff_code,
         "status": "needs_review",
     } for row in validated]
+    from core.commercial.exact_values import exact,number,wire
+    @exact
+    def total(unit):
+        return wire(sum((number(row['quantity'],'مقدار هندسی') for row in validated if row['unit']==unit),number(0,'صفر')))
     return {
         "schema": "structuralpro.drawing-takeoff.v1",
         "drawing_source": source, "approval_required": True, "items": rows,
         "summary": {
             "items": len(rows), "needs_review": len(rows),
             "by_unit": {
-                unit: sum(row["quantity"] for row in rows if row["unit"] == unit)
+                unit: total(unit)
                 for unit in sorted({row["unit"] for row in rows})
             },
         },
