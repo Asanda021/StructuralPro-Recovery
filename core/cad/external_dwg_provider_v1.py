@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import re
 from core.cad.ezdxf_provider_v1 import DXFDocumentEvidence, read_dxf
 
 class DWGProviderError(ValueError):
@@ -41,6 +42,14 @@ class ACadSharpDWGProvider:
         except DWGProviderError:
             return False
         return True
+
+    @property
+    def version(self) -> str:
+        try:
+            result=subprocess.run([self._resolve_executable(),'--version'],capture_output=True,text=True,check=False,timeout=10)
+            match=re.fullmatch(r'ACadSharp ([0-9]+(?:\.[0-9]+){2,3})',result.stdout.strip())
+            return match.group(1) if result.returncode==0 and match else 'unverified'
+        except Exception:return 'unverified'
 
     def _resolve_executable(self) -> str:
         configured = self.config.executable or os.environ.get(self.ENV_NAME)

@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_pdf_pan_drag_fit_and_highlight_preserve_measurements ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_pdf_pan_drag_fit_and_high0')
+
+    def test_pdf_pan_drag_fit_and_highlight_preserve_measurements(tmp_path):
+        global _qt
+        _qt = QApplication.instance() or QApplication([])
+        app, session, item, record = fixture(tmp_path)
+        dialog = GraphicalTakeoffDialog(pdf_path=str(tmp_path/'plan.pdf'), app_service=app, project_id='P')
+        dialog.session = session
+        dialog.canvas.session = session
+        dialog.refresh()
+        dialog.resize(1100, 800)
+        dialog.show()
+        _qt.processEvents()
+        try:
+>           assert hasattr(dialog, 'pan'), 'PDF window needs an operational Pan control'
+E           AssertionError: PDF window needs an operational Pan control
+E           assert False
+E            +  where False = hasattr(<app.graphical_takeoff.GraphicalTakeoffDialog(0x199166c0) at 0x7fca62d34280>, 'pan')
+
+tests/test_phase2_pdf_navigation.py:23: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_phase2_pdf_navigation.py::test_pdf_pan_drag_fit_and_highlight_preserve_measurements
+1 failed in 0.64s

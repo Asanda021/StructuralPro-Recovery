@@ -56,7 +56,7 @@ class DrawingViewerModel:
                     raise ValueError("PDF هیچ صفحه قابل‌نمایشی ندارد.")
         elif ext in {".dwg", ".dxf"}:
             from core.drawings.dwg_takeoff import DWGTakeoffEngine
-            new_cad_document = DWGTakeoffEngine().import_file(p)
+            new_cad_document = DWGTakeoffEngine.with_array_support().import_file(p)
             new_kind = "cad"
             new_page_count = 1
         elif ext == ".ifc":

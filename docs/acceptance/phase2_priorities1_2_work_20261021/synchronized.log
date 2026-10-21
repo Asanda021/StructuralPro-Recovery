@@ -1,0 +1,48 @@
+.............................................F...........                [100%]
+=================================== FAILURES ===================================
+___ test_pdf_roof_overlap_gate_is_atomic_with_real_sqlite[vertices0-1-True] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_pdf_roof_overlap_gate_is_0')
+vertices = [(300, 300), (700, 300), (700, 700), (300, 700)], page = 1
+rejected = True
+
+    @pytest.mark.parametrize('vertices,page,rejected',[
+        ([(300,300),(700,300),(700,700),(300,700)],1,True),
+        ([(500,100),(800,100),(800,500),(500,500)],1,False),
+        ([(100,100),(500,100),(500,500),(100,500)],2,False),
+    ])
+    def test_pdf_roof_overlap_gate_is_atomic_with_real_sqlite(tmp_path,vertices,page,rejected):
+        from core.drawings.roof_region import detail_payload
+        app,first,item,original,doc=bound(tmp_path,'joist_block')
+        try:
+            app.save_aec_system_draft('P',doc,expected_revision=0)
+            candidate=deepcopy(doc)
+            candidate['system_id']='SECOND-ROOF'
+            candidate['source']=_additional_region_source(app,tmp_path,vertices,page=page)
+            candidate['source'].update(plan_ref='independent synthetic plan',
+                                       detail_ref='independent synthetic schedule')
+            x0,y0=vertices[0];x1,y1=vertices[2]
+            candidate['roof_detail']['geometry']['length']=str((x1-x0)/100)
+            candidate['roof_detail']['geometry']['width']=str((y1-y0)/100)
+            schedule=tmp_path/'schedule_second.json'
+            schedule.write_text(json.dumps(detail_payload(candidate),ensure_ascii=False),encoding='utf8')
+            candidate['source'].update(detail_path=str(schedule),
+                                       detail_sha256=sha256(schedule.read_bytes()).hexdigest())
+            old=deepcopy(app.open_project('P'))
+            digest=app.store.current_digest('P')
+            if rejected:
+                with pytest.raises(ValueError,match='هم.پوشانی'):
+                    app.save_aec_system_draft('P',candidate,expected_revision=0)
+                assert app.store.current_digest('P')==digest
+>               assert app.open_project('P')==old
+E               AssertionError: assert {'boq': [], '...': True}, ...} == {'boq': [], '...': True}, ...}
+E                 
+E                 Omitting 7 identical items, use -vv to show
+E                 Differing items:
+E                 {'drawing_sessions': {'42f64f14752b4319a446660908e2ea5a': {'ai_committed_item_ids': [], 'committed_item_ids': [], 'dra...tmp/pytest-of-root/pytest-1/test_pdf_roof_overlap_gate_is_0/plan.pdf', 'id': 'b692b42ce14549d58c7daa72edf0cf47', ...}}} != {'drawing_sessions': {'42f64f14752b4319a446660908e2ea5a': {'ai_committed_item_ids': [], 'committed_item_ids': [], 'dra...s': {'1': {'meters_per_pixel': 0.01, 'page': 1, 'reference_pixels': 400.0, 'reference_meters': 4.0, ...}}, ...}, ...}}}
+E                 Use -v to get more diff
+
+tests/test_phase2_pdf_roof.py:302: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase2_pdf_roof.py::test_pdf_roof_overlap_gate_is_atomic_with_real_sqlite[vertices0-1-True]
+1 failed, 56 passed in 3.10s

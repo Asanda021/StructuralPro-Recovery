@@ -1,0 +1,75 @@
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+[
+  {
+    "family": "solid_slab",
+    "format": "csv",
+    "source_rows": 4,
+    "status": "PASS"
+  },
+  {
+    "family": "solid_slab",
+    "format": "xlsx",
+    "source_rows": 4,
+    "status": "PASS"
+  },
+  {
+    "family": "solid_slab",
+    "format": "docx",
+    "source_rows": 4,
+    "status": "PASS"
+  },
+  {
+    "family": "solid_slab",
+    "format": "pdf",
+    "source_rows": 4,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_block",
+    "format": "csv",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_block",
+    "format": "xlsx",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_block",
+    "format": "docx",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_block",
+    "format": "pdf",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_foam",
+    "format": "csv",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_foam",
+    "format": "xlsx",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_foam",
+    "format": "docx",
+    "source_rows": 11,
+    "status": "PASS"
+  },
+  {
+    "family": "joist_foam",
+    "format": "pdf",
+    "source_rows": 11,
+    "status": "PASS"
+  }
+]

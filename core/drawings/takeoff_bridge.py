@@ -36,10 +36,17 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
                 page = int(row["page"])
                 if not 1 <= page <= len(document) or not document[page-1].get_drawings():
                     raise ValueError("صفحه PDF فاقد شاهد برداری معتبر است؛ کمیت رستری وارد BOQ نمی‌شود")
+                bounds=document[page-1].rect
+                if row.get("geometry_evidence") and any(not (0<=float(x)<=math.ceil(bounds.width*150/72) and 0<=float(y)<=math.ceil(bounds.height*150/72)) for x,y in row["geometry"]):
+                    raise ValueError("هندسه خارج از صفحه نقشه است")
     else:
         from core.drawings.viewer_model import DrawingViewerModel
         try:
-            DrawingViewerModel(path)
+            viewer=DrawingViewerModel(path)
+            if viewer.kind=="cad":
+                from core.drawings.dwg_takeoff import cad_unit_factor
+                if cad_unit_factor(viewer.cad_document.units) is None and any(r["kind"] in {"length","area"} and not (r.get("cad_evidence") or {}).get("unit_evidence") for r in rows):raise ValueError("واحد منبع CAD نامشخص است؛ کالیبراسیون نمایشی جای مدرک واحد را نمی‌گیرد")
+                if any(not r.get("cad_evidence") for r in rows):raise ValueError("برداشت CAD پیش از ثبت مالی نیازمند اتصال Entity و بازبینی مستقل است")
         except Exception as exc:
             raise ValueError("منبع CAD/BIM با واردکننده اصلی معتبر شناخته نشد") from exc
         if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
@@ -47,13 +54,21 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     items = {str(item["id"]): item for item in payload.get("items", [])}
     def canonical(points, closed=False):
         points = tuple(tuple(float(v) for v in point) for point in points)
-        if closed and points and points[0] == points[-1]: points = points[:-1]
+        if closed:
+            from core.drawings.planar_geometry import canonical_ring
+            return canonical_ring(points)
         variants = [points, points[::-1]]
         if closed and points:
             variants = (variant[i:]+variant[:i] for variant in variants for i in range(len(variant)))
         return min(variants)
     seen = set()
     for row in rows:
+        cad=items[row["takeoff_id"]].get("cad_evidence")
+        if cad:
+            from core.drawings.dwg_takeoff import verify_cad_item
+            if path.suffix.lower() not in {".dxf",".dwg"}:raise ValueError("قرارداد CAD فقط برای فایل CAD مجاز است")
+            restored=DrawingTakeoffSession.from_dict(payload);verify_cad_item(restored.find(row["takeoff_id"]),viewer.cad_document)
+            if payload.get("calibrations",{}).get("1",{}).get("meters_per_pixel")!=1:raise ValueError("مقیاس نشست CAD تغییر کرده است")
         calibration = (payload.get("calibrations", {}) or {}).get(str(row["page"]))
         if calibration is None and row["kind"] in {"length", "area"}:
             raise ValueError("کالیبراسیون صریح صفحه احراز نشده است")
@@ -64,6 +79,12 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
                     # Scale and display counters cannot turn the same physical
                     # source/geometry/operation into an independent measurement.
                     "measurement_context": str(items[row["takeoff_id"]].get("source", "")) if row["kind"] == "count" and not row["geometry"] else ""}
+        if cad:
+            from core.drawings.dwg_takeoff import cad_entity_geometry
+            from core.drawings.dwg_takeoff import apply_documented_units
+            document=apply_documented_units(viewer.cad_document,cad['unit_evidence']) if cad.get('unit_evidence') else viewer.cad_document
+            _,model_points,_=cad_entity_geometry(document,cad['handle'],row['kind'])
+            identity.update(geometry=canonical(model_points,row['kind']=='area') if cad.get('metric_contract')!='cad_analytic_v1' else model_points,operation='cad:'+row['kind'],measurement_context=cad['handle'])
         fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
         if fingerprint in seen:
             raise ValueError("متره تکراری با هندسه و منشأ یکسان در انتخاب فعلی وجود دارد")
@@ -72,13 +93,74 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     return rows
 
 
-def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]]) -> None:
-    known = {(row.get("params") or {}).get("measurement_identity") for row in project.get("takeoffs", [])}
+def cad_source_keys(meta):
+    """The original and converted bytes are aliases, not new physical ownership."""
+    conversion=meta.get('conversion') or {}
+    return {v for v in (meta.get('source_sha256'),conversion.get('source_sha256'),conversion.get('output_sha256')) if v}
+
+
+def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]], *, exclude_source_ids=()) -> None:
+    from core.drawings.roof_region import reject_reserved_regions
+    reject_reserved_regions(project,record,rows)
+    from core.drawings.planar_geometry import measurement_overlap
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    existing=[r for r in effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] not in exclude_source_ids]
+    cad_history=existing+[r for r in project.get('takeoffs',[]) if r.get('source_id') not in exclude_source_ids]+[r for a in project.get('beam_amendments',{}).values() if a.get('status')=='applied' for r in a.get('rows',[]) if r.get('source_id') not in exclude_source_ids]
+    candidates=[];cad_claims=set();cad_batch_claims=[]
+    for old in existing:
+        p=old.get('params') or {}
+        if old.get('domain')=='drawing' and old.get('item')=='area' and (p.get('cad_evidence') or {}).get('metric_contract')!='cad_analytic_v1':
+            candidates.append({**p,'kind':'area'})
+    for row in rows:
+        cad=row.get('cad_evidence')
+        if cad:
+            from core.projects.project_model import _identity
+            from core.takeoff.manual_formula_amendments import financial_block
+            financial_block(project)
+            claim=tuple(_identity(cad[k]) for k in ("floor_id","member_id"))+(row["kind"],row["unit"])
+            if claim in cad_claims:raise ValueError("دو مطالبه هم‌زمان برای همان عضو و عملیات CAD ممنوع است")
+            cad_claims.add(claim)
+            for previous in cad_batch_claims:
+                if cad_source_keys(previous)&cad_source_keys(cad):
+                    a=previous.get('entity_claims') or [{'handle':previous.get('handle')}]
+                    b=cad.get('entity_claims') or [{'handle':cad.get('handle')}]
+                    if {x['handle'] for x in a}&{x['handle'] for x in b} or {x.get('geometry_sha256') for x in a if x.get('geometry_sha256')}&{x.get('geometry_sha256') for x in b if x.get('geometry_sha256')}:raise ValueError('پرداخت هم‌زمان والد و فرزند CAD یا هندسه مشترک ممنوع است')
+            cad_batch_claims.append(cad)
+            if not any(_identity(m['id'])==_identity(cad['member_id']) and _identity(m['floor_id'])==_identity(cad['floor_id']) for m in project.get('members',[])):raise ValueError('عضو و طبقه CAD در پروژه ثبت نشده است')
+            for old in cad_history:
+                other=(old.get('params') or {}).get('cad_evidence')
+                if not other and old.get('domain')=='drawing' and (old.get('params') or {}).get('source_sha256')==row.get('source_sha256'):raise ValueError('سابقه قدیمی CAD فاقد اتصال Entity است؛ تطبیق مستقل پیش از ثبت جدید لازم است')
+                if other and old.get('item')==row['kind'] and (cad_source_keys(other)&cad_source_keys(cad) or other.get('source_path')==cad.get('source_path') and cad.get('source_path')):
+                    oldclaims=other.get('entity_claims') or [{'handle':other.get('handle')}]
+                    newclaims=cad.get('entity_claims') or [{'handle':cad.get('handle')}]
+                    if {x['handle'] for x in oldclaims}&{x['handle'] for x in newclaims} or {x.get('geometry_sha256') for x in oldclaims if x.get('geometry_sha256')}&{x.get('geometry_sha256') for x in newclaims if x.get('geometry_sha256')}:raise ValueError('والد/فرزند یا هندسه CAD قبلاً پرداخت شده است')
+                if other and old.get('item')==row['kind'] and all(_identity(cad[k])==_identity(other[k]) for k in ('floor_id','member_id')):raise ValueError('مالک مقدار CAD قبلاً ثبت شده؛ اصلاحیه رسمی لازم است')
+        if row['kind']=='area' and (cad or {}).get('metric_contract')!='cad_analytic_v1':
+            meta=row.get('geometry_evidence')
+            if meta and not meta.get('quantity_owner','').strip():raise ValueError('مالک مقدار و مرجع آن برای ثبت برداشت چندضلعی الزامی است')
+            if meta and (not meta.get('floor_id','').strip() or not meta.get('member_id','').strip() or not project.get('floors') or not project.get('members')):
+                raise ValueError('شناسه طبقه و عضو ثبت‌شده پروژه برای انتقال چندضلعی به BOQ الزامی است')
+            if meta and project.get('floors'):
+                from core.projects.project_model import _identity
+                floor=_identity(meta.get('floor_id',''));member=_identity(meta.get('member_id',''))
+                if floor not in {_identity(f['id']) for f in project['floors']} or not any(_identity(m['id'])==member and _identity(m['floor_id'])==floor for m in project.get('members',[])):
+                    raise ValueError('عضو و طبقه برداشت با هویت صریح پروژه مطابقت ندارند')
+            for old in candidates:
+                old_meta=old.get('geometry_evidence') or {}
+                if meta and old_meta and meta.get('floor_id') and meta.get('member_id'):
+                    from core.projects.project_model import _identity
+                    if all(_identity(meta[k])==_identity(old_meta.get(k,'')) for k in ('floor_id','member_id')):
+                        raise ValueError('عضو فیزیکی قبلاً متره شده است؛ نسخه جدید نقشه نیازمند اصلاحیه رسمی است')
+                if (row.get('geometry_evidence') or old.get('geometry_evidence')) and row.get('source_sha256')==old.get('source_sha256') and row.get('page')==old.get('page'):
+                    if measurement_overlap(row,old):
+                        raise ValueError('هم‌پوشانی برداشت با مالکیت نامعلوم؛ بازبینی مستقل پیش از پرداخت لازم است')
+            candidates.append(row)
+    known = {(row.get("params") or {}).get("measurement_identity") for row in existing}
     if any(row["measurement_identity"] in known for row in rows):
         raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")
     source = Path(str(record.get("drawing_source", ""))).resolve()
     sessions = project.get("drawing_sessions", {}) or {}
-    for old in project.get("takeoffs", []):
+    for old in existing:
         if old.get("domain") not in {"drawing", "drawing_ai"}: continue
         params = old.get("params") or {}
         old_session = sessions.get(str(old.get("drawing_session_id", "")), {}) or {}
@@ -98,6 +180,9 @@ def validate_session_payload(payload: dict[str, Any]) -> dict[str, Any]:
     try:
         session = DrawingTakeoffSession.from_dict(payload)
         report = session.validate()
+        if session.cad_unit_evidence:
+            from core.drawings.dwg_takeoff import apply_documented_units,DWGTakeoffEngine
+            apply_documented_units(DWGTakeoffEngine.with_array_support().import_file(session.drawing_source),session.cad_unit_evidence)
         issues.extend(report.get("issues", []))
         if not str(session.drawing_source).strip():
             issues.append("مسیر/شناسه منبع نقشه ثبت نشده است")
@@ -124,6 +209,18 @@ def validate_session_payload(payload: dict[str, Any]) -> dict[str, Any]:
             if item.kind in {"length", "area"} and item.page in session.calibrations:
                 factor = session.calibrations[item.page].meters_per_pixel
                 points = [Point(*point) for point in item.geometry]
+                if (item.cad_evidence or {}).get('metric_contract')=='cad_analytic_v1':
+                    from core.drawings.dwg_takeoff import DWGTakeoffEngine,verify_cad_item
+                    verify_cad_item(item,DWGTakeoffEngine.with_array_support().import_file(session.drawing_source),require_review=False)
+                    continue
+                if item.kind == "area" and item.geometry_evidence is not None:
+                    meta=item.geometry_evidence
+                    if not isinstance(meta,dict):raise ValueError("قرارداد هندسه نامعتبر است")
+                    verified=session._polygon_evidence(item.geometry,item.holes,item.page,meta.get("opening_refs",[]),
+                        topology=meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+                    if meta!=verified or item.quantity!=float(verified["net_m2"]):
+                        raise ValueError("مقدار دقیق یا مدارک هندسه با رأس‌ها و مقیاس مطابقت ندارد")
+                    continue
                 if item.kind == "length":
                     expected = polyline_length(points) * factor
                 else:
@@ -176,10 +273,12 @@ def session_to_boq_rows(
             "page": item.page,
             "kind": item.kind,
             "description": item.label.strip() or item.takeoff_code.strip() or item.kind,
-            "quantity": float(item.quantity),
+            "quantity": item.geometry_evidence["net_m2"] if item.geometry_evidence else float(item.quantity),
+            "geometry_evidence": item.geometry_evidence,
+            "cad_evidence":item.cad_evidence,
             "unit": item.unit,
             "item_code": item.takeoff_code.strip() or f"DRAW-{item.kind.upper()}",
-            "price_code": item.takeoff_code.strip() or None,
+            "price_code": None if item.cad_evidence else (item.takeoff_code.strip() or None),
             "unit_price": None,
             "formula": item.formula,
             "geometry": [list(point) for point in item.geometry],
@@ -208,13 +307,17 @@ def build_takeoff_export_payload(session: DrawingTakeoffSession) -> dict[str, An
         "takeoff_code": items_by_id[row["takeoff_id"]].takeoff_code,
         "status": "needs_review",
     } for row in validated]
+    from core.commercial.exact_values import exact,number,wire
+    @exact
+    def total(unit):
+        return wire(sum((number(row['quantity'],'مقدار هندسی') for row in validated if row['unit']==unit),number(0,'صفر')))
     return {
         "schema": "structuralpro.drawing-takeoff.v1",
         "drawing_source": source, "approval_required": True, "items": rows,
         "summary": {
             "items": len(rows), "needs_review": len(rows),
             "by_unit": {
-                unit: sum(row["quantity"] for row in rows if row["unit"] == unit)
+                unit: total(unit)
                 for unit in sorted({row["unit"] for row in rows})
             },
         },

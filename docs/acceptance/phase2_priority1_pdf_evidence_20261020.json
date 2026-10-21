@@ -1,0 +1,113 @@
+{
+  "scope": "phase2_priority1_only",
+  "phase2_official_weight_percent": 20,
+  "base_head": "2080ec7a24a81609cf1bd9283698c1583f18994e",
+  "phase1_ref_unchanged": true,
+  "branch": "feature/phase2-priority1-pdf-specialist-takeoff-20261020",
+  "tested_local_code_commit": "02686480c1ff2e02371d3ecf42e109baa646dd75",
+  "equivalent_published_code_commit": "bf91d789bb3e00f1a64975fa37250346dbfae52e",
+  "tested_code_tree": "832c048e0167877b76f9b11f5e89ebd40ab410d2",
+  "full": {
+    "passed": 6957,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 5,
+    "tests": 6962,
+    "args": [
+      "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "--basetemp=/workspace/scratch/61dce18379e6/phase2-evidence/final-full-data",
+      "--junitxml=/workspace/scratch/61dce18379e6/phase2-evidence/final-full.xml",
+      "-o",
+      "faulthandler_timeout=180"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 320.17586759999995,
+    "head": "02686480c1ff2e02371d3ecf42e109baa646dd75",
+    "tree": "832c048e0167877b76f9b11f5e89ebd40ab410d2"
+  },
+  "opening_additional": {
+    "passed": 2,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "tests": 2,
+    "exit_code": 0,
+    "command": "python -m pytest -q tests/test_phase2_pdf_roof_openings.py",
+    "note": "test-only addition after full-suite collection; same production tree"
+  },
+  "reports_external": {
+    "passed": 12,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "tests": 12,
+    "exit_code": 0,
+    "command": "python -m pytest -q evidence/test_generated_reports.py"
+  },
+  "targeted": {
+    "passed": 52,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "tests": 52,
+    "exit_code": 0,
+    "note": "overlaps full; not additive"
+  },
+  "initial_full": {
+    "passed": 6955,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 1,
+    "cause": "legacy button label source assertion; restored original label without modifying test",
+    "head": "46cc912b219043556c4c0ae1750ddd18cae8d71d"
+  },
+  "benchmark": {
+    "source_bytes": 1851592,
+    "pages": 24,
+    "vector_segments_per_page": 12000,
+    "open_seconds": 0.002972957000565657,
+    "render_dpi": 150,
+    "renders": [
+      {
+        "page": 1,
+        "seconds": 0.34419233500011615,
+        "png_bytes": 77196
+      },
+      {
+        "page": 12,
+        "seconds": 0.33284620300037204,
+        "png_bytes": 77456
+      },
+      {
+        "page": 24,
+        "seconds": 0.3427756870005396,
+        "png_bytes": 77532
+      }
+    ],
+    "process_peak_rss_before_kib": 145760,
+    "process_peak_rss_after_kib": 173796,
+    "note": "high-water process RSS; not a claim of maximum supported PDF size"
+  },
+  "new_tests": 43,
+  "new_qt_tests": 7,
+  "windows": "not_tested",
+  "microsoft_office": "not_tested",
+  "real_approved_drawing": "not_available",
+  "engineering_acceptance": false,
+  "technical_scope": "three existing roofs, calibrated axis-aligned rectangle, explicit full detail schedule and supported opening partition",
+  "source_detail_format": "UTF-8 JSON containing kind/floor_id/system_id/building_id/roof_detail, byte-bound and content-compared",
+  "blocked": [
+    "missing scale or same-page source",
+    "stale session/record revision",
+    "changed PDF/detail bytes",
+    "undocumented reinforcement/formwork/pieces",
+    "second generic/specialist claim of the same roof rectangle",
+    "unreviewed or financially locked commit",
+    "openings cutting joists/purchased pieces without a supported independent partition"
+  ],
+  "phase1_matrix_and_financial_policies": "unchanged on PR18; new-branch adapter reuses existing gates; no schema/prices/workflow changes"
+}

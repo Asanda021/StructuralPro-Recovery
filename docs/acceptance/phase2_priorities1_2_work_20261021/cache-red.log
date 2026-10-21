@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_cached_project_equals_reopened_project_with_tuple_geometry ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_cached_project_equals_reo0')
+
+    def test_cached_project_equals_reopened_project_with_tuple_geometry(tmp_path):
+        path = tmp_path / 'projects.sqlite'
+        store = ProjectStore(path)
+        try:
+            store.save('P', {'id': 'P', 'name': 'آزمون', 'takeoffs': [], 'boq': [],
+                             'drawing_sessions': {'S': {'geometry': ((1, 2), (3, 4))}}})
+            cached = store.get('P')
+            other = ProjectStore(path)
+            try:
+>               assert other.get('P') == cached
+E               AssertionError: assert {'boq': [], '... 'آزمون', ...} == {'id': 'P', '...boq': [], ...}
+E                 
+E                 Omitting 5 identical items, use -vv to show
+E                 Differing items:
+E                 {'drawing_sessions': {'S': {'geometry': [[1, 2], [3, 4]]}}} != {'drawing_sessions': {'S': {'geometry': ((1, 2), (3, 4))}}}
+E                 Use -v to get more diff
+
+tests/test_phase2_project_snapshot_cache.py:14: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase2_project_snapshot_cache.py::test_cached_project_equals_reopened_project_with_tuple_geometry
+1 failed in 0.13s

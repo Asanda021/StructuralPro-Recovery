@@ -632,6 +632,14 @@ class StructuralProApp:
         self.store.save(pid,p,expected_digest=digest)
         return deepcopy(row)
 
+    def drawing_amendment_document(self,project_id,source_id,payload,**kwargs):
+        from core.takeoff.manual_formula_amendments import drawing_document
+        return drawing_document(self,project_id,source_id,payload,**kwargs)
+
+    def create_drawing_amendment(self,project_id,source_id,payload,**kwargs):
+        from core.takeoff.manual_formula_amendments import drawing_create
+        return drawing_create(self,project_id,source_id,payload,**kwargs)
+
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
                                      session_id: str | None = None,
                                      expected_revision: int | None = None) -> dict[str, Any]:
@@ -734,6 +742,8 @@ class StructuralProApp:
                 "params": {"drawing_session_id": sid, "drawing_source": row["drawing_source"],
                            "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
                            "calibration": row["calibration"], "holes": row.get("holes", []),
+                           "geometry_evidence": row.get("geometry_evidence"),
+                           **({"cad_evidence":row["cad_evidence"]} if row.get("cad_evidence") else {}),
                            "page": row["page"], "geometry": row["geometry"],
                            "confidence": row["confidence"], "formula": row["formula"]},
                 "revision": 1, "drawing_session_id": sid, "drawing_takeoff_id": row["takeoff_id"],
@@ -741,6 +751,8 @@ class StructuralProApp:
                                "drawing_session_id": sid, "drawing_source": row["drawing_source"],
                            "source_sha256": row["source_sha256"], "measurement_identity": row["measurement_identity"],
                            "calibration": row["calibration"], "holes": row.get("holes", []),
+                           "geometry_evidence": row.get("geometry_evidence"),
+                           **({"cad_evidence":row["cad_evidence"]} if row.get("cad_evidence") else {}),
                                "page": row["page"]},
                 "description": row["description"], "system": f"صفحه {row['page']}",
                 "quantities": [{

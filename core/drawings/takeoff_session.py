@@ -34,8 +34,14 @@ class TakeoffItem:
     confidence: float = 1.0
     holes: tuple[tuple[tuple[float, float], ...], ...] = ()
 
+    geometry_evidence: dict | None = None
+    cad_evidence: dict | None = None
+
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if self.geometry_evidence is None:data.pop("geometry_evidence",None)
+        if self.cad_evidence is None:data.pop("cad_evidence",None)
+        return data
 
 
 @dataclass(frozen=True)
@@ -61,6 +67,7 @@ class DrawingTakeoffSession:
         self.calibrations: dict[int, Calibration] = {}
         self.items: list[TakeoffItem] = []
         self.markups = MarkupStore()
+        self.cad_unit_evidence=None
         self.current_page = 1
         self._counter = 0
         self._undo: list[dict[str, Any]] = []
@@ -90,6 +97,9 @@ class DrawingTakeoffSession:
         meters = float(reference_meters)
         if page < 1 or not math.isfinite(px) or not math.isfinite(meters) or px <= 0 or meters <= 0:
             raise ValueError("calibration values must be positive and finite")
+        factor=meters/px
+        if not math.isfinite(factor) or factor<=0:
+            raise ValueError("نسبت کالیبراسیون خارج از دامنه عددی معتبر است")
         previous = self.calibrations.get(page)
         if previous and not math.isclose(previous.meters_per_pixel, meters / px, rel_tol=1e-12) and any(
             item.page == page and item.kind in {"length", "area"} for item in self.items
@@ -126,11 +136,13 @@ class DrawingTakeoffSession:
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
+            **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
             "current_page": self.current_page,
             "counter": self._counter,
         }
 
     def _restore(self, state: dict[str, Any]) -> None:
+        self.cad_unit_evidence=deepcopy(state.get("cad_unit_evidence"))
         raw = state.get("calibration")
         self.calibration = Calibration(**raw) if raw else None
         saved_calibrations = state.get("calibrations")
@@ -148,6 +160,7 @@ class DrawingTakeoffSession:
                 geometry=tuple(tuple(p) for p in x.get("geometry", ())),
                 formula=str(x.get("formula", "")), confidence=float(x.get("confidence", 1.0)),
                 holes=tuple(tuple(tuple(p) for p in hole) for hole in x.get("holes", ())),
+                geometry_evidence=deepcopy(x.get("geometry_evidence")),cad_evidence=deepcopy(x.get("cad_evidence")),
             )
             for x in state.get("items", [])
         ]
@@ -198,6 +211,49 @@ class DrawingTakeoffSession:
         if any(x.source == source and x.id != ignore_id for x in self.items):
             raise ValueError(f"منبع متره تکراری و مستعد دوباره‌شماری: {source}")
 
+    def set_cad_units(self,document,evidence):
+        from core.drawings.dwg_takeoff import apply_documented_units
+        if self.items:raise ValueError('متره قبلی نباید بازتفسیر شود؛ نشست یا اصلاحیه مستقل لازم است')
+        if document.source_sha256!=self.source_sha256:raise ValueError('منبع واحد با نشست مطابق نیست')
+        resolved=apply_documented_units(document,evidence)
+        self._record();self.cad_unit_evidence=deepcopy(evidence);self._commit();return resolved
+
+    def add_cad_entity(self,document,handle,metric,*,takeoff_code,floor_id,member_id,quantity_owner,created_by,reference,scene_origin=(0,0)):
+        from core.drawings.dwg_takeoff import cad_entity_geometry
+        from dataclasses import replace
+        if document.source_sha256!=self.source_sha256:raise ValueError('فایل CAD با نشست یکسان نیست')
+        e,points,amount=cad_entity_geometry(document,handle,metric,scene_origin)
+        meta={'policy':'cad_entity_review_v1','source_sha256':document.source_sha256,'handle':handle,'layer':e.layer,'unit_basis':document.units,'scene_origin':list(scene_origin),'floor_id':floor_id,'member_id':member_id,'quantity_owner':quantity_owner,'created_by':created_by,'reference':reference}
+        from core.drawings.dwg_takeoff import cad_unit_factor
+        if getattr(document,'unit_evidence',None):meta['unit_evidence']=deepcopy(document.unit_evidence)
+        from core.drawings.dwg_takeoff import cad_entity_claims
+        meta.update(entity_claims=cad_entity_claims(document,handle,metric),source_path=str(Path(document.source).resolve()))
+        analytic=e.entity_type in {'INSERT','CIRCLE','ARC'}
+        if analytic:meta['metric_contract']='cad_analytic_v1'
+        meta.update(source_format=document.format,dxf_version=document.dxf_version,conversion=deepcopy(document.conversion),unit_factor_to_m=str(cad_unit_factor(document.units)),insert_chain=[{'handle':v.handle,'block':v.data.get('block'),'rotation_degrees':v.data.get('rotation'),'scale':v.data.get('scale'),'insert_m':v.data.get('insert')} for v in document.entities if v.entity_type=='INSERT' and handle.startswith(v.handle+'/')])
+        if any(not str(meta[k]).strip() for k in ('floor_id','member_id','quantity_owner','created_by','reference')):raise ValueError('هویت و مدرک CAD ناقص است')
+        if self.items and self.calibrations.get(1) and self.calibrations[1].meters_per_pixel!=1:raise ValueError('مقیاس قبلی با مختصات استاندارد CAD مطابق نیست؛ نشست مستقل لازم است')
+        self.calibrate(1,1,1)
+        kw={'page':1,'takeoff_code':takeoff_code,'source':'cad-entity:'+handle}
+        if analytic:
+            self._ensure_source_unique(kw['source']);self._record();ident=self._next_id()
+            item=TakeoffItem(ident,metric,amount,'m' if metric=='length' else 'm2',1,'',takeoff_code,kw['source'],self._source_ref(1,ident),tuple(points),'CAD analytic source metric; circle/arc IEEE754 and disjoint child sum; rel tolerance 1e-12',cad_evidence=meta)
+            self.items.append(item);self._commit()
+        elif metric=='area':item=self.add_polygon([Point(*p) for p in points],floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner,**kw)
+        else:item=self.add_length([Point(*p) for p in points],**kw)
+        if not math.isclose(item.quantity,amount,rel_tol=1e-12,abs_tol=0):
+            self.undo();raise ValueError('افت دقت در تبدیل مختصات CAD؛ ثبت مسدود است')
+        item=replace(item,cad_evidence=meta);self.items[-1]=item;return item
+
+    def review_cad_entity(self,item_id,*,reviewer,note):
+        from core.drawings.dwg_takeoff import DWGTakeoffEngine,verify_cad_item,cad_review_digest
+        from core.projects.project_model import _identity
+        from dataclasses import replace
+        item=self.find(item_id);verify_cad_item(item,DWGTakeoffEngine.with_array_support().import_file(self.drawing_source),require_review=False)
+        if not reviewer.strip() or not note.strip() or _identity(reviewer).casefold()==_identity(item.cad_evidence['created_by']).casefold():raise ValueError('بازبین مستقل و یادداشت لازم است')
+        meta=deepcopy(item.cad_evidence);meta['review']={'reviewer':reviewer,'note':note,'digest':cad_review_digest(item)}
+        self._record();updated=replace(item,cad_evidence=meta);self.items[self.items.index(item)]=updated;self._commit();return updated
+
     def add_length(
         self, points: Iterable[Point], *, page: int | None = None, label: str = "",
         takeoff_code: str = "", source: str = "", confidence: float = 1.0,
@@ -209,6 +265,8 @@ class DrawingTakeoffSession:
         factor = self._factor_for(page)
         px = polyline_length(pts)
         quantity = self._ensure_finite(px * factor)
+        if quantity==0 and any(a!=b for a,b in zip(pts,pts[1:])):
+            raise ValueError("طول غیرصفر خارج از دقت عددی است؛ مقدار صفر ثبت نمی‌شود")
         self._ensure_source_unique(source)
         confidence = self._ensure_confidence(confidence)
         self._record()
@@ -225,22 +283,31 @@ class DrawingTakeoffSession:
     def add_area(
         self, points: Iterable[Point], *, holes: Iterable[Iterable[Point]] = (),
         page: int | None = None, label: str = "", takeoff_code: str = "",
-        source: str = "", confidence: float = 1.0,
+        source: str = "", confidence: float = 1.0, geometry_evidence: dict | None = None,
     ) -> TakeoffItem:
         pts = tuple(points)
         if len(pts) < 3:
             raise ValueError("مساحت حداقل به سه نقطه نیاز دارد")
         page = self.current_page if page is None else self._page_number(page)
         factor = self._factor_for(page)
-        gross_px = polygon_area(pts)
+        gross_px = polygon_area(pts) if geometry_evidence is None else 0
         hole_points = tuple(tuple(h) for h in holes)
+        if geometry_evidence is not None:
+            if not isinstance(geometry_evidence,dict):raise ValueError('قرارداد هندسه نامعتبر است')
+            verified=self._polygon_evidence([(p.x,p.y) for p in pts], [[(p.x,p.y) for p in h] for h in hole_points],page,geometry_evidence.get('opening_refs',[]),
+                topology=geometry_evidence.get('policy','exact_simple_polygon_v1'),**{k:geometry_evidence.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+            if verified!=geometry_evidence:raise ValueError('شواهد هندسی با ورودی معتبر تطبیق ندارند')
         if any(len(hole) < 3 for hole in hole_points):
             raise ValueError("هندسه هر بازشو حداقل به سه نقطه نیاز دارد")
-        holes_px = sum(polygon_area(h) for h in hole_points)
+        holes_px = sum(polygon_area(h) for h in hole_points) if geometry_evidence is None else 0
         net_px = gross_px - holes_px
-        if net_px < -1e-9:
+        if geometry_evidence is None and net_px < -1e-9:
             raise ValueError("مجموع بازشوها از مساحت اصلی بیشتر است")
         quantity = self._ensure_finite(max(0.0, net_px) * factor * factor)
+        if geometry_evidence is not None:
+            quantity = float(geometry_evidence["net_m2"])
+        if net_px>0 and quantity==0:
+            raise ValueError("مساحت غیرصفر خارج از دقت عددی است؛ مقدار صفر ثبت نمی‌شود")
         self._ensure_source_unique(source)
         confidence = self._ensure_confidence(confidence)
         self._record()
@@ -250,10 +317,60 @@ class DrawingTakeoffSession:
             self._source_ref(page, item_id), tuple((p.x, p.y) for p in pts),
             f"{max(0.0, net_px):g} px² × {factor:g}²", self._ensure_confidence(confidence),
             tuple(tuple((p.x, p.y) for p in hole) for hole in hole_points),
+            deepcopy(geometry_evidence),
         )
+        if geometry_evidence is not None:
+            from dataclasses import replace
+            item=replace(item,formula="مساحت دقیق حلقه مالک منهای بازشوهای مستند × مقیاس همان صفحه²")
         self.items.append(item)
         self._commit()
         return item
+
+    def _polygon_evidence(self, points, holes, page, refs, *, topology='exact_simple_polygon_v1', **identity):
+        page=self._page_number(page)
+        from core.drawings.planar_geometry import evidence
+        from fractions import Fraction
+        cal=self.calibrations.get(page)
+        self._factor_for(page)
+        factor=Fraction(str(cal.reference_meters))/Fraction(str(cal.reference_pixels))
+        if float(factor)!=cal.meters_per_pixel:raise ValueError('کالیبراسیون با دو مرجع صریح مطابقت ندارد')
+        result=evidence(points,holes,factor,refs,topology=topology,**identity)
+        from decimal import Decimal
+        if any(Decimal(str(float(v)))!=Decimal(str(v)) for loop in [points]+list(holes) for p in loop for v in p):
+            raise ValueError('مختصات در مرز نمایش Qt دقت خود را از دست می‌دهند؛ ثبت مسدود است')
+        path=Path(self.drawing_source)
+        if path.is_file() and path.suffix.lower()=='.pdf':
+            import fitz
+            with fitz.open(path) as pdf:
+                if not 1<=page<=len(pdf):raise ValueError('شماره صفحه نقشه نامعتبر است')
+                rect=pdf[page-1].rect
+                if any(not (0<=float(x)<=math.ceil(rect.width*150/72) and 0<=float(y)<=math.ceil(rect.height*150/72)) for x,y in points):
+                    raise ValueError('رأس چندضلعی خارج از دامنه صفحه نقشه است')
+        return result
+
+    def add_polygon(self, points, *, holes=(), opening_refs=(), floor_id='', member_id='', quantity_owner='', topology='exact_simple_polygon_v1', **kwargs):
+        pts=tuple(points);hs=tuple(tuple(h) for h in holes)
+        page=kwargs.get('page',self.current_page)
+        evidence=self._polygon_evidence([(p.x,p.y) for p in pts], [[(p.x,p.y) for p in h] for h in hs],page,opening_refs,
+                    topology=topology,floor_id=floor_id,member_id=member_id,quantity_owner=quantity_owner)
+        return self.add_area(pts,holes=hs,geometry_evidence=evidence,**kwargs)
+
+    def edit_polygon(self, item_id, points, *, holes=None, opening_refs=None, topology=None):
+        old=self.find(item_id)
+        if old.kind!='area':raise ValueError('هندسه سطح لازم است')
+        hs=old.holes if holes is None else tuple(tuple(tuple(p) for p in h) for h in holes)
+        meta=old.geometry_evidence or {}
+        refs=meta.get('opening_refs',[]) if opening_refs is None else opening_refs
+        points=tuple(tuple(p) for p in points)
+        ev=self._polygon_evidence(points,hs,old.page,refs,topology=topology or meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+        return self.edit(item_id,geometry=points,holes=hs,quantity=float(ev['net_m2']),geometry_evidence=ev,
+                         formula='مساحت دقیق حلقه مالک منهای بازشوهای مستند × مقیاس همان صفحه²')
+
+    def add_polygon_opening(self, item_id, points, reference, *, topology=None):
+        old=self.find(item_id);meta=old.geometry_evidence or {}
+        if old.holes and not meta:raise ValueError('بازشوهای تاریخی فاقد مرجع مستقل‌اند؛ بازبینی صریح لازم است')
+        return self.edit_polygon(item_id,old.geometry,holes=old.holes+(tuple(tuple(p) for p in points),),
+                                 opening_refs=list(meta.get('opening_refs',[]))+[reference],topology=topology)
 
     def add_count(
         self, count: int = 1, *, page: int | None = None, label: str = "",
@@ -299,6 +416,13 @@ class DrawingTakeoffSession:
             self._ensure_source_unique(str(data["source"]), ignore_id=item_id)
         if "geometry" in data:
             data["geometry"] = tuple(tuple(p) for p in data["geometry"])
+        if old.geometry_evidence is not None and data.get('geometry_evidence') is None:
+            raise ValueError('حذف قرارداد دقیق هندسه مجاز نیست')
+        if data.get('geometry_evidence') is not None:
+            meta=data['geometry_evidence']
+            verified=self._polygon_evidence(data['geometry'],data.get('holes',()),data['page'],meta.get('opening_refs',[]),
+                topology=meta.get('policy','exact_simple_polygon_v1'),**{k:meta.get(k,'') for k in ('floor_id','member_id','quantity_owner')})
+            if meta!=verified or data['quantity']!=float(verified['net_m2']):raise ValueError('ویرایش مقدار بدون هندسه و مدرک همسان ممنوع است')
         self._record()
         self.items[index] = TakeoffItem(**data)
         self._commit()
@@ -395,7 +519,7 @@ class DrawingTakeoffSession:
                 "source": item.source_ref,
                 "source_id": item.source_ref,
                 "description": item.label or item.takeoff_code or item.kind,
-                "quantity": item.quantity,
+                "quantity": item.geometry_evidence["net_m2"] if item.geometry_evidence else item.quantity,
                 "unit": item.unit,
                 "price_code": item.takeoff_code or None,
                 "takeoff_id": item.id,
@@ -422,6 +546,7 @@ class DrawingTakeoffSession:
             "source_sha256": self.source_sha256,
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
+            **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
             "current_page": self.current_page,
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
@@ -433,6 +558,7 @@ class DrawingTakeoffSession:
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "DrawingTakeoffSession":
         session = cls()
+        session.cad_unit_evidence=deepcopy(data.get("cad_unit_evidence"))
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
         session.source_sha256 = str(data.get("source_sha256", ""))
@@ -466,6 +592,7 @@ class DrawingTakeoffSession:
                 geometry=tuple(tuple(p) for p in x.get("geometry", ())),
                 formula=str(x.get("formula", "")), confidence=float(x.get("confidence", 1.0)),
                 holes=tuple(tuple(tuple(p) for p in hole) for hole in x.get("holes", ())),
+                geometry_evidence=deepcopy(x.get("geometry_evidence")),cad_evidence=deepcopy(x.get("cad_evidence")),
             )
             for x in data.get("items", [])
         ]

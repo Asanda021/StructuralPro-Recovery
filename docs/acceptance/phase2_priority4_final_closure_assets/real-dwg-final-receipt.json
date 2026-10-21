@@ -1,0 +1,24 @@
+{
+  "synthetic": true,
+  "binary_dwg_header": "AC1032",
+  "decoder": {
+    "provider": "ACadSharp bridge",
+    "source_sha256": "e601d44cf8c24728c67b9f20a9ad8ef3950b330f4636033b9410292399f1ba59",
+    "output_sha256": "28328b701b552643c353163c932e461dbf8203757a3fbccc812d4b77b42fc9e8",
+    "decoder_version": "3.8.0.0",
+    "exit_code": 0
+  },
+  "source_sha256": "e601d44cf8c24728c67b9f20a9ad8ef3950b330f4636033b9410292399f1ba59",
+  "original_array_lines": 6,
+  "original_oracle_m": 30,
+  "revised_array_lines": 8,
+  "revised_oracle_m": 40,
+  "effective_boq_m": 40,
+  "delta_m": 10,
+  "original_takeoffs_unchanged": true,
+  "reopen_equal": true,
+  "integrity": "ok",
+  "duplicate_amendment_rejected": true,
+  "stale_CAS_rejected": true,
+  "exit_code": 0
+}

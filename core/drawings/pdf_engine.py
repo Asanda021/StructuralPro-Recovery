@@ -67,8 +67,10 @@ class PDFDrawingEngine:
     def _page(self, page: int):
         self.open()
         try:
+            if isinstance(page,bool) or not math.isfinite(float(page)) or float(page)!=int(page):
+                raise ValueError("شماره صفحه باید عدد صحیح باشد")
             page = int(page)
-        except (TypeError, ValueError) as exc:
+        except (TypeError, ValueError, OverflowError) as exc:
             raise ValueError("شماره صفحه باید عدد صحیح باشد.") from exc
         if not 1 <= page <= len(self._doc):
             raise IndexError(f"شماره صفحه خارج از محدوده PDF است: {page}")

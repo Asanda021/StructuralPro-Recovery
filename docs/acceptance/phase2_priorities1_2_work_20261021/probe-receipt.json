@@ -1,0 +1,366 @@
+{
+  "fixture": "synthetic explicit phase-one rectangular roof schedules",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "roofs": {
+    "solid_slab": {
+      "session_id": "a943c46b699a4041ac57547f3037489c",
+      "measurement_id": "TO-00001",
+      "boq_count": 4,
+      "source": {
+        "mode": "drawing",
+        "source_id": "pdf-roof:d248080232663cafbe8b7cc690a64482a91b9cccc6b2542bf65dcb8f54023529",
+        "drawing_path": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf",
+        "sha256": "0801a607e70776bec25ee10e4ac85003c793018a5be93bbda56c8589a4c6b6d9",
+        "page": 1,
+        "selected_region": [
+          100.0,
+          100.0,
+          400.0,
+          400.0
+        ],
+        "roof_binding": {
+          "policy": "pdf_roof_region_v1",
+          "session_id": "a943c46b699a4041ac57547f3037489c",
+          "revision": 1,
+          "item_id": "TO-00001",
+          "identity": "d248080232663cafbe8b7cc690a64482a91b9cccc6b2542bf65dcb8f54023529",
+          "session": {
+            "calibration": {
+              "meters_per_pixel": 0.01,
+              "page": 1,
+              "reference_meters": 4.0,
+              "reference_pixels": 400.0,
+              "source": "manual-reference"
+            },
+            "calibrations": {
+              "1": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              }
+            },
+            "current_page": 1,
+            "drawing_source": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf",
+            "items": [
+              {
+                "confidence": 1.0,
+                "formula": "160000 px² × 0.01²",
+                "geometry": [
+                  [
+                    100,
+                    100
+                  ],
+                  [
+                    500,
+                    100
+                  ],
+                  [
+                    500,
+                    500
+                  ],
+                  [
+                    100,
+                    500
+                  ]
+                ],
+                "holes": [],
+                "id": "TO-00001",
+                "kind": "area",
+                "label": "",
+                "page": 1,
+                "quantity": 16.0,
+                "source": "explicit-roof",
+                "source_ref": "/tmp/phase2-final-evidence/probe/solid_slab/plan.pdf#page=1&takeoff=TO-00001",
+                "takeoff_code": "",
+                "unit": "m2"
+              }
+            ],
+            "markups": [],
+            "source_sha256": "0801a607e70776bec25ee10e4ac85003c793018a5be93bbda56c8589a4c6b6d9"
+          }
+        },
+        "plan_ref": "پلان مصنوعی",
+        "detail_ref": "جدول صریح مصنوعی",
+        "detail_path": "/tmp/phase2-final-evidence/probe/solid_slab/schedule.json",
+        "detail_sha256": "0622f11920f6dc956ae96f838fa4ada55f0fb31fcf6824f08cba538f44586974"
+      },
+      "totals": {
+        "concrete": "3.2",
+        "rebar": "71.04",
+        "formwork": "16"
+      },
+      "outputs": {
+        "pdf": {
+          "bytes": 37078,
+          "sha256": "741e2f57a36e870fb7386a29a5761a2b5d2a9e719993a5e1cde5e04e4cb856f4"
+        },
+        "xlsx": {
+          "bytes": 9628,
+          "sha256": "d49faa7fc54b2c59dbce8a4fb4c4d45f9e6d2a69c732c902ffe169876beb65aa"
+        },
+        "docx": {
+          "bytes": 40418,
+          "sha256": "026b36678956d8f092d279c31494aaaabc767bdfbf65104144802d139b7d559e"
+        },
+        "csv": {
+          "bytes": 4717,
+          "sha256": "c5c862ea676e3665dc7466853c03eb5f4e9824eeb1331d1580a8bf140cbe3e65"
+        }
+      },
+      "sqlite_integrity": "ok"
+    },
+    "joist_block": {
+      "session_id": "2b75047866c34e4eb91418bcc3281d58",
+      "measurement_id": "TO-00001",
+      "boq_count": 7,
+      "source": {
+        "mode": "drawing",
+        "source_id": "pdf-roof:bb4e5ca93f783c3bfdd166a311ca93dc059d96de5171a08070f46190205e47f9",
+        "drawing_path": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf",
+        "sha256": "1d64e6c2c08b59769576749d365c4f214b77a670ff5edb2ffbc4a6c9b7961648",
+        "page": 1,
+        "selected_region": [
+          100.0,
+          100.0,
+          400.0,
+          400.0
+        ],
+        "roof_binding": {
+          "policy": "pdf_roof_region_v1",
+          "session_id": "2b75047866c34e4eb91418bcc3281d58",
+          "revision": 1,
+          "item_id": "TO-00001",
+          "identity": "bb4e5ca93f783c3bfdd166a311ca93dc059d96de5171a08070f46190205e47f9",
+          "session": {
+            "calibration": {
+              "meters_per_pixel": 0.01,
+              "page": 1,
+              "reference_meters": 4.0,
+              "reference_pixels": 400.0,
+              "source": "manual-reference"
+            },
+            "calibrations": {
+              "1": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              }
+            },
+            "current_page": 1,
+            "drawing_source": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf",
+            "items": [
+              {
+                "confidence": 1.0,
+                "formula": "160000 px² × 0.01²",
+                "geometry": [
+                  [
+                    100,
+                    100
+                  ],
+                  [
+                    500,
+                    100
+                  ],
+                  [
+                    500,
+                    500
+                  ],
+                  [
+                    100,
+                    500
+                  ]
+                ],
+                "holes": [],
+                "id": "TO-00001",
+                "kind": "area",
+                "label": "",
+                "page": 1,
+                "quantity": 16.0,
+                "source": "explicit-roof",
+                "source_ref": "/tmp/phase2-final-evidence/probe/joist_block/plan.pdf#page=1&takeoff=TO-00001",
+                "takeoff_code": "",
+                "unit": "m2"
+              }
+            ],
+            "markups": [],
+            "source_sha256": "1d64e6c2c08b59769576749d365c4f214b77a670ff5edb2ffbc4a6c9b7961648"
+          }
+        },
+        "plan_ref": "پلان مصنوعی",
+        "detail_ref": "جدول صریح مصنوعی",
+        "detail_path": "/tmp/phase2-final-evidence/probe/joist_block/schedule.json",
+        "detail_sha256": "a6008a0d1a21ac6100a77643f1aae6fe5d1ff519a1928a9990d6c083ae679ea6"
+      },
+      "totals": {
+        "concrete": "1.04",
+        "precast_concrete": "0.08",
+        "joists": "2",
+        "blocks": "4",
+        "rebar": "71.04",
+        "formwork": "16"
+      },
+      "outputs": {
+        "pdf": {
+          "bytes": 40557,
+          "sha256": "bd036e7a5fa8e0d05d85e371699640b39da7c73789391de4dff1b4a1cd0a78cb"
+        },
+        "xlsx": {
+          "bytes": 10607,
+          "sha256": "5753283872d2e4dba88162629d3f04843948cab39377ca5b6b0a7584f76209db"
+        },
+        "docx": {
+          "bytes": 41644,
+          "sha256": "c86c36ecb2c4557b8955971a511e66de17ea63a87a2d19a1978c5b9589c8ef9d"
+        },
+        "csv": {
+          "bytes": 8202,
+          "sha256": "f662e30c73e5d459c7c0ac2d7355bc01b5a888a51d39e2ba38abeaf8d37fa8a8"
+        }
+      },
+      "sqlite_integrity": "ok"
+    },
+    "joist_foam": {
+      "session_id": "53bba49adbc749c8bbf1bbb1af192aa8",
+      "measurement_id": "TO-00001",
+      "boq_count": 7,
+      "source": {
+        "mode": "drawing",
+        "source_id": "pdf-roof:f73ddb15f366cf3da635ba1aecc3394e465c337444995ee80610d7c61c1779a7",
+        "drawing_path": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf",
+        "sha256": "49ad25535c2cd75ff80de213f3360ce60c1908c917215ee8d0f2ae9ba71e7d44",
+        "page": 1,
+        "selected_region": [
+          100.0,
+          100.0,
+          400.0,
+          400.0
+        ],
+        "roof_binding": {
+          "policy": "pdf_roof_region_v1",
+          "session_id": "53bba49adbc749c8bbf1bbb1af192aa8",
+          "revision": 1,
+          "item_id": "TO-00001",
+          "identity": "f73ddb15f366cf3da635ba1aecc3394e465c337444995ee80610d7c61c1779a7",
+          "session": {
+            "calibration": {
+              "meters_per_pixel": 0.01,
+              "page": 1,
+              "reference_meters": 4.0,
+              "reference_pixels": 400.0,
+              "source": "manual-reference"
+            },
+            "calibrations": {
+              "1": {
+                "meters_per_pixel": 0.01,
+                "page": 1,
+                "reference_meters": 4.0,
+                "reference_pixels": 400.0,
+                "source": "manual-reference"
+              }
+            },
+            "current_page": 1,
+            "drawing_source": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf",
+            "items": [
+              {
+                "confidence": 1.0,
+                "formula": "160000 px² × 0.01²",
+                "geometry": [
+                  [
+                    100,
+                    100
+                  ],
+                  [
+                    500,
+                    100
+                  ],
+                  [
+                    500,
+                    500
+                  ],
+                  [
+                    100,
+                    500
+                  ]
+                ],
+                "holes": [],
+                "id": "TO-00001",
+                "kind": "area",
+                "label": "",
+                "page": 1,
+                "quantity": 16.0,
+                "source": "explicit-roof",
+                "source_ref": "/tmp/phase2-final-evidence/probe/joist_foam/plan.pdf#page=1&takeoff=TO-00001",
+                "takeoff_code": "",
+                "unit": "m2"
+              }
+            ],
+            "markups": [],
+            "source_sha256": "49ad25535c2cd75ff80de213f3360ce60c1908c917215ee8d0f2ae9ba71e7d44"
+          }
+        },
+        "plan_ref": "پلان مصنوعی",
+        "detail_ref": "جدول صریح مصنوعی",
+        "detail_path": "/tmp/phase2-final-evidence/probe/joist_foam/schedule.json",
+        "detail_sha256": "e3bd6ec3d64614f307a51659b1c6cc2cfb3ded7c68af2f9adfe7f1142751858c"
+      },
+      "totals": {
+        "concrete": "1.04",
+        "precast_concrete": "0.08",
+        "joists": "2",
+        "foam": "4",
+        "rebar": "71.04",
+        "formwork": "16"
+      },
+      "outputs": {
+        "pdf": {
+          "bytes": 40563,
+          "sha256": "29bee14cdb0667dc255b2a4fdb386e092ac47defc20f439b7eea151912eddf40"
+        },
+        "xlsx": {
+          "bytes": 10610,
+          "sha256": "aac0b1c08e9dfb634ca43b9df06c4d021788ffd8f1864bd3a62532a1f36e9a65"
+        },
+        "docx": {
+          "bytes": 41649,
+          "sha256": "913434f88468c9747c01d2259af52bec1cc66fcc26daffd53c8f37ed9fbe0e53"
+        },
+        "csv": {
+          "bytes": 8199,
+          "sha256": "c9b40ad7dd27c3db16e96dd74f65a8b23e48e62738fd19d8393ff62e442a3a87"
+        }
+      },
+      "sqlite_integrity": "ok"
+    }
+  },
+  "benchmark": {
+    "source_bytes": 1851592,
+    "pages": 24,
+    "vector_segments_per_page": 12000,
+    "open_seconds": 0.0009949860000233457,
+    "render_dpi": 150,
+    "renders": [
+      {
+        "page": 1,
+        "seconds": 0.3487387549999994,
+        "png_bytes": 77196
+      },
+      {
+        "page": 12,
+        "seconds": 0.3572831110000152,
+        "png_bytes": 77456
+      },
+      {
+        "page": 24,
+        "seconds": 0.33029418600000326,
+        "png_bytes": 77532
+      }
+    ],
+    "process_peak_rss_before_kib": 144680,
+    "process_peak_rss_after_kib": 172724,
+    "note": "high-water process RSS; not a claim of maximum supported PDF size"
+  }
+}

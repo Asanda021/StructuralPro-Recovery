@@ -31,6 +31,12 @@ def export(service,pid,kind,floor,sid,path,*,format):
    notes+='؛ اجزای برش: '+'؛ '.join(str(p['id'])+'، '+str(p['length_m'])+' متر، '+p['source_ref'] for p in s['cut_parts'])
   if 'geometry' in params:
    g=params['geometry'];notes+='؛ ناحیه: '+g['id']+'؛ ابتدا (متر): '+', '.join(str(g[k]) for k in ('x','y','z'))+'؛ طول، عرض، ارتفاع (متر): '+', '.join(str(g[k]) for k in ('length','width','height'))+'؛ ناخالص هر سقف: '+str(params['gross_m3'])+'؛ کسر هر سقف: '+str(params['deducted_m3'])
+  if params.get('geometry',{}).get('footprint'):
+   import json
+   notes+='؛ رأس‌های واقعی پلان جزء (متر): '+json.dumps(params['geometry']['footprint'],ensure_ascii=False)+'؛ طول و عرض بالا فقط پوش مختصات هستند.'
+  if params.get('footprint'):
+   import json
+   notes+='؛ رأس‌های واقعی وجه (متر): '+json.dumps(params['footprint'],ensure_ascii=False)+'؛ بازشوها: '+json.dumps(params.get('holes',[]),ensure_ascii=False)
   for key,label in [('length','طول قطعه'),('width','عرض قطعه'),('height','ارتفاع قطعه'),('nx','تعداد در طول'),('ny','تعداد در عرض'),('nz','تعداد در ارتفاع'),('count','تعداد'),('spec_ref','مشخصات قطعه'),('physical_key','هویت فیزیکی'),('approved_by','تأییدکننده'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر وجه (متر مربع)'),('height_m','ارتفاع شمع (متر)'),('system_ref','روش شمع‌بندی'),('spacing_m','فاصله تیرچه (متر)')]:
    if key in params:notes+='؛ '+label+': '+str(params[key])
   rows.append({'description':v['description'],'quantity':v['quantity'],'unit':v['unit'],'source':v['source_id'],'formula':v['formula'],'notes':notes})
@@ -52,6 +58,17 @@ def export(service,pid,kind,floor,sid,path,*,format):
    rows.append({'description':'مقایسه مقدار پیشین، پیشنهادی و اختلاف اصلاحیه','quantity':delta,'unit':old.get('unit') or new.get('quantities',[{}])[0].get('unit',''),'source':source_id,'notes':'پیشین: '+str(old.get('quantity',0))+'؛ پیشنهادی: '+str(new.get('quantities',[{'amount':0}])[0]['amount'])+'؛ اختلاف: '+str(delta)})
  effective_review=project.get('beam_amendments',{}).get(record.get('amendment_id'),{}).get('review',{}).get('reviewer')
  meta={'project_name':project['name'],'building_id':d['building_id'],'floor':floor,'member':sid,'revision':record['revision'],'status':{'draft':'پیش‌نویس','committed':'قطعی'}[record['status']],'source':d['source']['source_id'],'پلان':d['source']['plan_ref'],'دیتایل':d['source']['detail_ref'],'بازبین':effective_review or d.get('roof_review',{}).get('reviewer','نیازمند بازبینی'),'طول (متر)':d['roof_detail']['geometry']['length'],'عرض (متر)':d['roof_detail']['geometry']['width'],'ارتفاع کل (متر)':d['roof_detail']['geometry']['depth'],'تعداد سقف هم‌تیپ':d['roof_detail']['geometry']['count'],'منبع کسورات':d['roof_detail']['deductions_ref']}
+ if d['roof_detail']['geometry'].get('shape')=='documented_planar':
+  from core.drawings.planar_geometry import evidence,TOPOLOGY_V2
+  from core.drawings.roof_region import PLANAR_POLICY
+  g=d['roof_detail']['geometry'];openings=[p for p in d['roof_detail']['deductions'] if p['kind']=='opening']
+  ev=evidence(g['planar']['outer'],[p['footprint'] for p in openings],1,[p['source_ref'] for p in openings],topology=TOPOLOGY_V2)
+  meta['پوش مختصات طول (متر)']=meta.pop('طول (متر)');meta['پوش مختصات عرض (متر)']=meta.pop('عرض (متر)')
+  for key,label in [('gross_m2','مساحت ناخالص هندسی'),('deducted_m2','مساحت بازشوهای مستند'),('net_m2','مساحت خالص هندسی')]:meta[label+' (مترمربع)']=ev[key]
+  meta['تعداد اجزای مستقل هندسی']=len(ev['components'])
+  binding=d['source'].get('roof_binding',{})
+  if binding.get('policy')==PLANAR_POLICY:
+   frame=binding['local_frame'];meta['چارچوب محلی']=str(frame['origin_pdf'])+'؛ محور اول: '+str(frame['axis_x'])+'؛ مرجع: '+frame['source_ref'];meta['صفحه PDF']=d['source']['page'];meta['SHA-256 نقشه']=d['source']['sha256']
  if kind in VOID_KINDS:
   meta['ضخامت بتن رویه (متر)']=d['roof_detail']['geometry']['topping_thickness']
   meta['ضخامت بتن زیرین (متر)']=d['roof_detail']['geometry']['bottom_thickness']

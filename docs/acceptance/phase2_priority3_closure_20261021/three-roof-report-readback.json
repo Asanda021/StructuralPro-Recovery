@@ -1,0 +1,35 @@
+{
+  "solid_slab": {
+    "csv_rows_verified": 4,
+    "xlsx_rows_verified": 4,
+    "docx_rows_verified": 4,
+    "pdf_rows_verified": 4,
+    "pdf_pages": 4,
+    "xlsx_rtl": true,
+    "docx_table_rtl": true,
+    "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+    "windows_office_acceptance": false
+  },
+  "joist_block": {
+    "csv_rows_verified": 11,
+    "xlsx_rows_verified": 11,
+    "docx_rows_verified": 11,
+    "pdf_rows_verified": 11,
+    "pdf_pages": 5,
+    "xlsx_rtl": true,
+    "docx_table_rtl": true,
+    "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+    "windows_office_acceptance": false
+  },
+  "joist_foam": {
+    "csv_rows_verified": 11,
+    "xlsx_rows_verified": 11,
+    "docx_rows_verified": 11,
+    "pdf_rows_verified": 11,
+    "pdf_pages": 5,
+    "xlsx_rtl": true,
+    "docx_table_rtl": true,
+    "pdf_method": "rendered vector table cells, numeric/unit/source readback; visual QA separately",
+    "windows_office_acceptance": false
+  }
+}

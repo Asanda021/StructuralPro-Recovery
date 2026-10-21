@@ -1,0 +1,373 @@
+[
+  {
+    "path": "core/platform/application.py",
+    "phase1_blob": "56ee2a266d606d8724e9262228cb453e711d5cb6",
+    "phase2_blob": "56ee2a266d606d8724e9262228cb453e711d5cb6",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "core/projects/project_model.py",
+    "phase1_blob": "318c2658ea88e6971157fc413bcc9d2b7fb05e3f",
+    "phase2_blob": "318c2658ea88e6971157fc413bcc9d2b7fb05e3f",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "core/projects/user_workflow.py",
+    "phase1_blob": "49dc0427c3fb36e0a27549dee8428b80dc9cc36b",
+    "phase2_blob": "49dc0427c3fb36e0a27549dee8428b80dc9cc36b",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "core/takeoff/reviewed_aec.py",
+    "phase1_blob": "56f368c67273de5792ba221d738dc8427e7c1101",
+    "phase2_blob": "93dcb822c3de31536db71d191dfbc1eace72412a",
+    "identical": false,
+    "intentional_phase2_adapter": true
+  },
+  {
+    "path": "core/takeoff/roof_detail.py",
+    "phase1_blob": "10ec4d4247cc6327fa45bd0f1ea134d084993e77",
+    "phase2_blob": "a7a907a37e1b98e00da172fbf18a5675e5404804",
+    "identical": false,
+    "intentional_phase2_adapter": true
+  },
+  {
+    "path": "docs/acceptance/phase1_37_family_actionable_triage_20261021.json",
+    "phase1_blob": "a28de5647376cb4c2b25dca9f98ab2d6d1181750",
+    "phase2_blob": "a28de5647376cb4c2b25dca9f98ab2d6d1181750",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_37_family_audit_chat_closure_20261021.md",
+    "phase1_blob": "3648f7fb7d0f3e1ffd8d2e64c68201464e5e6a85",
+    "phase2_blob": "3648f7fb7d0f3e1ffd8d2e64c68201464e5e6a85",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_blinding_concrete_independent_oracle_20261021.md",
+    "phase1_blob": "973d4464a29149d1fa7ad2d454c2f57cff3c91c8",
+    "phase2_blob": "973d4464a29149d1fa7ad2d454c2f57cff3c91c8",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_chat_followup_provenance_sqlite_20261021.md",
+    "phase1_blob": "505692b6528b814356315cbfff351fe4811d8bc3",
+    "phase2_blob": "505692b6528b814356315cbfff351fe4811d8bc3",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_chat_verified_unit_gate_20261021.json",
+    "phase1_blob": "c446004cc087df3759b0ba3b65b6b375e9a953e4",
+    "phase2_blob": "c446004cc087df3759b0ba3b65b6b375e9a953e4",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_cloud_execution_20261021.json",
+    "phase1_blob": "b0785a1d9dc4983e18e375661cd1b209dff88852",
+    "phase2_blob": "b0785a1d9dc4983e18e375661cd1b209dff88852",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_cloud_execution_20261021.md",
+    "phase1_blob": "6573824d0cda8ce5b02bbcf04b6c40b0f6930580",
+    "phase2_blob": "6573824d0cda8ce5b02bbcf04b6c40b0f6930580",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_cloud_full_20261021.log",
+    "phase1_blob": "515459b2e5e4e77e0deb49838c41c5ea4867ec18",
+    "phase2_blob": "515459b2e5e4e77e0deb49838c41c5ea4867ec18",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_live_floor_event_chat_20261020.md",
+    "phase1_blob": "24dcf55b8a85698e7f8824b57d08331143f81172",
+    "phase2_blob": "24dcf55b8a85698e7f8824b57d08331143f81172",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/compile.log",
+    "phase1_blob": "9a93ceeddc399234336204fa0f5eaeb022bb3cb7",
+    "phase2_blob": "9a93ceeddc399234336204fa0f5eaeb022bb3cb7",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/discipline-red.log.gz",
+    "phase1_blob": "c1c68b7c60f944a1916b7535234a2ed4889ba686",
+    "phase2_blob": "c1c68b7c60f944a1916b7535234a2ed4889ba686",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/families.log",
+    "phase1_blob": "342df34178a4817a21401c187bd21a89856c186d",
+    "phase2_blob": "342df34178a4817a21401c187bd21a89856c186d",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/five-floor.log",
+    "phase1_blob": "0acd1ea9f3e3991e91accba09d16f1131a0565f6",
+    "phase2_blob": "0acd1ea9f3e3991e91accba09d16f1131a0565f6",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/full.junit.xml.gz",
+    "phase1_blob": "f35b92ff64f75fb10a3bcec638cfbf5191a63b02",
+    "phase2_blob": "f35b92ff64f75fb10a3bcec638cfbf5191a63b02",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/full.log",
+    "phase1_blob": "9d2b0fafd6d42aa67fc390d71a30e40e9a0d690f",
+    "phase2_blob": "9d2b0fafd6d42aa67fc390d71a30e40e9a0d690f",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/installed-requirements.txt",
+    "phase1_blob": "85435eb0a7cb89c81e203a603e93caca95380afb",
+    "phase2_blob": "85435eb0a7cb89c81e203a603e93caca95380afb",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/physical-identity-red.log",
+    "phase1_blob": "e07a7b95fd51a65bbae6746b824b40d286507b6f",
+    "phase2_blob": "e07a7b95fd51a65bbae6746b824b40d286507b6f",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/pip-check.log",
+    "phase1_blob": "9c632311f29083d154c15cc6054f28cd472941fd",
+    "phase2_blob": "9c632311f29083d154c15cc6054f28cd472941fd",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/real-building-discovery.json",
+    "phase1_blob": "669017b12d9fa5e40e9717cb426dee525b580183",
+    "phase2_blob": "669017b12d9fa5e40e9717cb426dee525b580183",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/real-building-gate.log",
+    "phase1_blob": "f6d23706a4c5ea932475daf42584e2f5d2f357d5",
+    "phase2_blob": "f6d23706a4c5ea932475daf42584e2f5d2f357d5",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/related.log",
+    "phase1_blob": "27e9e8bb4f53ae832c03bf712e9ad702ee5fab2c",
+    "phase2_blob": "27e9e8bb4f53ae832c03bf712e9ad702ee5fab2c",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/report-readback.log",
+    "phase1_blob": "efc73827df3d1521319112fa81e62a87d26a175b",
+    "phase2_blob": "efc73827df3d1521319112fa81e62a87d26a175b",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/revision-type-red.log",
+    "phase1_blob": "b132b357bcb2ca36fc211ec48c0c14278a9076d9",
+    "phase2_blob": "b132b357bcb2ca36fc211ec48c0c14278a9076d9",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/runtime.json",
+    "phase1_blob": "c7d1555063fbdb2c4e5605a32c7441c795f7d7eb",
+    "phase2_blob": "c7d1555063fbdb2c4e5605a32c7441c795f7d7eb",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/targeted-initial.log",
+    "phase1_blob": "7eb899794098cc2d9488667ef98b85bcd8126e11",
+    "phase2_blob": "7eb899794098cc2d9488667ef98b85bcd8126e11",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/targeted.log",
+    "phase1_blob": "bacf6df1d26c99e1b90885cff9374e6ebecb942b",
+    "phase2_blob": "bacf6df1d26c99e1b90885cff9374e6ebecb942b",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_cloud_20261021/triage.log",
+    "phase1_blob": "0dc01c781014f1d5936a6d78c4815b1a4ded6b56",
+    "phase2_blob": "0dc01c781014f1d5936a6d78c4815b1a4ded6b56",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_final_cloud_20261021.json",
+    "phase1_blob": "7cda31c6415013cd393119578a205fd0fe49e737",
+    "phase2_blob": "7cda31c6415013cd393119578a205fd0fe49e737",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_nonwindows_final_cloud_20261021.md",
+    "phase1_blob": "1b7558f3840e3396cd6d4e97bb2fadcfc2c702e2",
+    "phase2_blob": "1b7558f3840e3396cd6d4e97bb2fadcfc2c702e2",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_persisted_identity_action1_20261020.md",
+    "phase1_blob": "a87468906ae175129cdf369d344e2bdec5fa452a",
+    "phase2_blob": "a87468906ae175129cdf369d344e2bdec5fa452a",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_real_five_storey_evidence_intake_20261021.json",
+    "phase1_blob": "a3e8b4eb3ba00c613e97579e12596f0cfce7f22c",
+    "phase2_blob": "a3e8b4eb3ba00c613e97579e12596f0cfce7f22c",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_sqlite_live_readonly_bridge_20261020.md",
+    "phase1_blob": "fc6b88abcf3929615a527204b8c8c1ddbd7ea3d0",
+    "phase2_blob": "fc6b88abcf3929615a527204b8c8c1ddbd7ea3d0",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_three_actions_execution_reality_20261021.md",
+    "phase1_blob": "b70af80fdffcd677f2571bb7fedf8f951ca4696c",
+    "phase2_blob": "b70af80fdffcd677f2571bb7fedf8f951ca4696c",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_two_bounded_oracles_chat_20261021.md",
+    "phase1_blob": "ee6755deaa7f12c0f3cb8467f63bc0b5b1962ac9",
+    "phase2_blob": "ee6755deaa7f12c0f3cb8467f63bc0b5b1962ac9",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/acceptance/phase1_work_two_gates_20261021.md",
+    "phase1_blob": "b235c024028f710352d11014ac4068cbf9d8e2a5",
+    "phase2_blob": "b235c024028f710352d11014ac4068cbf9d8e2a5",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "docs/plans/STRUCTURALPRO_8_PHASE_MASTER_20261020.md",
+    "phase1_blob": "f0d80a984ad66c4057a9c65888a52010a0bd3d7b",
+    "phase2_blob": "f0d80a984ad66c4057a9c65888a52010a0bd3d7b",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "scripts/phase1_real_building_gate.py",
+    "phase1_blob": "ddb133dff6fb192dcf0f62550bf2e0a5e2b0a450",
+    "phase2_blob": "ddb133dff6fb192dcf0f62550bf2e0a5e2b0a450",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "scripts/validate_phase1_37_family_triage.py",
+    "phase1_blob": "178d46f3dec03f393afeab6bdd02dbe75235a47f",
+    "phase2_blob": "178d46f3dec03f393afeab6bdd02dbe75235a47f",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_36_family_sqlite_cloud.py",
+    "phase1_blob": "12c88f78549575cc4044f724d02cebc63bf0843e",
+    "phase2_blob": "12c88f78549575cc4044f724d02cebc63bf0843e",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_37_family_triage_gate_chat.py",
+    "phase1_blob": "a8e2cbb2ecb084df93526a3b0d3ed15207051060",
+    "phase2_blob": "a8e2cbb2ecb084df93526a3b0d3ed15207051060",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_aec_revision_type_cloud.py",
+    "phase1_blob": "a80226966b950be027e5a522665769fcbcf6ac91",
+    "phase2_blob": "a80226966b950be027e5a522665769fcbcf6ac91",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_blinding_concrete_independent_oracle_chat.py",
+    "phase1_blob": "7c86e165663bf2dfebe4203e51d5e168fc8c1606",
+    "phase2_blob": "7c86e165663bf2dfebe4203e51d5e168fc8c1606",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_cement_render_net_surface_chat.py",
+    "phase1_blob": "44a1f0af98ef24479cdbc89669ab13815d70f9c4",
+    "phase2_blob": "44a1f0af98ef24479cdbc89669ab13815d70f9c4",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_cloud_independent_component_oracles.py",
+    "phase1_blob": "3c1b4c94115fb9a80f9d6730d841d0df19d967a3",
+    "phase2_blob": "3c1b4c94115fb9a80f9d6730d841d0df19d967a3",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_cross_line_physical_identity_cloud.py",
+    "phase1_blob": "c866b26ba86db8970827be463c18d541dc27a1ba",
+    "phase2_blob": "c866b26ba86db8970827be463c18d541dc27a1ba",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_live_floor_events_chat.py",
+    "phase1_blob": "7c93f02c7bc996396642ff68011428da09b92fcb",
+    "phase2_blob": "7c93f02c7bc996396642ff68011428da09b92fcb",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_persisted_identity_reconciliation_chat.py",
+    "phase1_blob": "d8394c6af4acf284ae0d88c8ea7b5bb38ebb8af4",
+    "phase2_blob": "d8394c6af4acf284ae0d88c8ea7b5bb38ebb8af4",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  },
+  {
+    "path": "tests/test_phase1_real_building_gate_chat.py",
+    "phase1_blob": "7268357717fc573b6ced47d784f68ecba5168739",
+    "phase2_blob": "7268357717fc573b6ced47d784f68ecba5168739",
+    "identical": true,
+    "intentional_phase2_adapter": false
+  }
+]

@@ -1,0 +1,19 @@
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+SELECTION 0 1
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+REVIEW [] بازبینی مستقل CAD ثبت شد؛ ذخیره و کنترل نسخه برای انتقال الزامی است {'reviewer': 'independent reviewer', 'note': '30 m synthetic oracle', 'digest': '6dffef480375099489e859179b76139b1af46082fc1bfa43d81088e26514b732'}
+BEFORE COMMIT True 0 [0] 🟢 نشست نقشه ذخیره شد | نسخه 1 | متره‌ها: 1 | شناسه نشست: 27089902940a4e6d9d3f50e4b1dad2d9
+This plugin does not support propagateSizeHints()
+AFTER 🟢 انتقال به BOQ انجام شد | ردیف جدید: 1 | BOQ: 1 ردیف | نشست نسخه 3
+{'synthetic': True, 'decoder': {'provider': 'ACadSharp bridge', 'source_sha256': 'e601d44cf8c24728c67b9f20a9ad8ef3950b330f4636033b9410292399f1ba59', 'output_sha256': 'df666d9f0cabe4a58afbe7767942f04dc404b845028c13bdecf68cfe15863986', 'decoder_version': '3.8.0.0', 'exit_code': 0}, 'device_pixel_ratio': 1.5, 'qt_scale_factor': '1.5', 'array_lines': 6, 'highlighted_graphics': 12, 'oracle_m': 30, 'boq_m': 30, 'real_mouse_and_native_dialogs': True, 'exit_code': 0}

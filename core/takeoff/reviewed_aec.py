@@ -616,7 +616,10 @@ class ReviewedAECWorkflow:
             raise ValueError("ساختار گروه‌های متره ناقص است")
         source = data.get("source", {})
         if source:
-            _validate_source(source, sid)
+            if data.get('measurement_policy')=='roof_specialist_v1':
+                from core.takeoff.roof_detail import validate_roof_source
+                validate_roof_source(source,sid)
+            else:_validate_source(source, sid)
         try:
             json.dumps(data, ensure_ascii=False, allow_nan=False)
         except (TypeError, ValueError, OverflowError) as exc:
@@ -626,6 +629,8 @@ class ReviewedAECWorkflow:
         if not isinstance(register, dict):
             raise ValueError("دفتر ثبت متره AEC نامعتبر است")
         key = _id(kind, floor, sid)
+        from core.drawings.roof_region import project_gate
+        project_gate(project,data,exclude=key)
         old = register.get(key)
         if old and old.get("status") == "committed":
             raise ValueError("سیستم قبلاً به متره قطعی منتقل شده است")
@@ -694,6 +699,11 @@ class ReviewedAECWorkflow:
             raise ValueError("دیتایل یا تأیید ناقص است؛ ثبت قطعی متوقف شد: " + "؛ ".join(out["blockers"]))
         if record["data"].get("measurement_policy") in ("shear_wall_specialist_v1","stair_specialist_reviewed_v1"):
             module.project_gate(project,_id(kind,floor,sid))
+            from core.takeoff.manual_formula_amendments import financial_block
+            financial_block(project)
+        from core.drawings.roof_region import project_gate
+        project_gate(project,record['data'],exclude=_id(kind,floor,sid))
+        if record['data'].get('source',{}).get('roof_binding'):
             from core.takeoff.manual_formula_amendments import financial_block
             financial_block(project)
         existing = project.get("takeoffs") or []

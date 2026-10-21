@@ -1,0 +1,36 @@
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+{
+  "synthetic": true,
+  "engineering_approval": false,
+  "pages": 24,
+  "pdf_bytes": 200295,
+  "source_sha256": "cfe5e9bfba928f9dd653329242b9fdbdf44ffa0198a80c1b9e64a4a54e2237d3",
+  "segments_per_page": 2000,
+  "open_seconds": 3.95480001316173e-05,
+  "renders": [
+    {
+      "page": 1,
+      "seconds": 0.1825450430001183
+    },
+    {
+      "page": 12,
+      "seconds": 0.17715689999977258
+    },
+    {
+      "page": 24,
+      "seconds": 0.17274058000020887
+    }
+  ],
+  "polygon_64_with_16_holes_seconds": 0.4448710750002647,
+  "save_seconds": 0.24936583499993503,
+  "commit_21_regions_seconds": 0.49171868900020854,
+  "reopen_seconds": 0.006346312999994552,
+  "regions": 21,
+  "outer_vertices": 64,
+  "holes": 16,
+  "boq_rows": 2,
+  "sqlite_integrity": "ok",
+  "roundtrip_equal": true,
+  "intersection_64_by_64_seconds": 4.241827022999587,
+  "process_peak_rss_kib": 81604
+}

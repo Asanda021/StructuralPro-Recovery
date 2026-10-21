@@ -1,0 +1,6 @@
+UNSAFE_SECOND_PAYMENT
+Traceback (most recent call last):
+  File "/tmp/p4-close/derived_dxf_probe.py", line 13, in <module>
+    app.store.close();print(result);assert result=='REJECTED'
+                                           ^^^^^^^^^^^^^^^^^^
+AssertionError

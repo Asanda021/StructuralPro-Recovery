@@ -3,7 +3,7 @@ from copy import deepcopy
 from hashlib import sha256
 from pathlib import Path
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QTableWidgetItem,QMessageBox,QFileDialog,QScrollArea)
+from PySide6.QtWidgets import (QCheckBox,QDialog,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QComboBox,QPushButton,QLabel,QTabWidget,QWidget,QTableWidget,QTableWidgetItem,QMessageBox,QFileDialog,QScrollArea,QHeaderView)
 from core.takeoff.roof_detail import KINDS,WAFFLE_KINDS,HOLLOW_KIND,VOID_KINDS,BARS,LABELS,POLICY,review_digest
 from core.takeoff.reviewed_aec import SPECS,preview_system,_id
 
@@ -19,7 +19,7 @@ PANELS=[('id','شناسه قطعه نهایی'),('physical_key','هویت فیز
 VOID_FORMERS=[('id','شناسه حفره‌ساز'),('physical_key','هویت فیزیکی مستقل'),('region_id','سلول مالک'),('shape','نوع هندسه گواهی‌شده'),('count','تعداد؛ یک عدد در سلول'),('x','مختصات ابتدا طول'),('y','مختصات ابتدا عرض'),('z','تراز ابتدا'),('length','طول پوش'),('width','عرض پوش'),('height','ارتفاع پوش'),('diameter_m','قطر کروی (متر؛ کوبیاکس)'),('certified_void_volume_m3','حجم گواهی‌شده حفره (متر مکعب)'),('volume_source_ref','مرجع حجم واقعی'),('spec_ref','گواهی قطعه'),('source_ref','مرجع جانمایی'),('approved_by','بازبین')]
 FACES=[('id','شناسه وجه'),('physical_key','هویت سطح مستقل'),('length_m','طول (متر)'),('width_m','عرض (متر)'),('deduction_m2','کسر سطح مستند'),('source_ref','مرجع')]
 PROPS=[('id','شناسه شمع'),('physical_key','هویت مستقل'),('count','تعداد'),('height_m','ارتفاع (متر)'),('source_ref','مرجع'),('system_ref','روش و مشخصات')]
-ENUMS={'steel_kind':[('میلگرد معمولی','reinforcing_bar'),('رشته پیش‌تنیدگی کارخانه‌ای','prestressing_strand')],'mass_scope':[('جرم کل قطعه شامل فولاد کارخانه‌ای','whole_panel_including_factory_steel')],'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism'),('قطعه نهایی مستطیلی کارخانه','factory_finished_rectangle'),('حفره کروی کوبیاکس با گواهی حجم','certified_sphere')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions','joints','cast_in_place')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
+ENUMS={'steel_kind':[('میلگرد معمولی','reinforcing_bar'),('رشته پیش‌تنیدگی کارخانه‌ای','prestressing_strand')],'mass_scope':[('جرم کل قطعه شامل فولاد کارخانه‌ای','whole_panel_including_factory_steel')],'axis':[('امتداد طول','x'),('امتداد عرض','y')],'shape':[('منشوری مستطیلی مستند','rectangular_prism'),('قطعه نهایی مستطیلی کارخانه','factory_finished_rectangle'),('حفره کروی کوبیاکس با گواهی حجم','certified_sphere')],'supply_scope':[('کارگاهی؛ پرداخت مستقل','site'),('داخل تیرچه خریداری‌شده؛ مصالح غیرقابل پرداخت مستقل','factory')],'component':[(LABELS[k],k) for k in ('concrete','topping','ribs','ties','solid_zones','precast','void','ribs_x','ribs_y','junctions','joints','cast_in_place','opening_void')],'kind':[('بازشو','opening'),('تقاطع تیر و سقف','beam_joint')]}
 
 
 def fill_table(table,cols,records):
@@ -49,7 +49,7 @@ def read_table(table,cols):
  return rows
 
 
-def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab'):
+def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None):
  dialog=QDialog(parent);dialog.setObjectName('RoofDetailEditor');dialog.setWindowTitle('متره تخصصی '+SPECS[kind].title+' — ناحیه‌بندی و دیتایل مستند');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1280,850)
  outer=QVBoxLayout(dialog);tabs=QTabWidget();outer.addWidget(tabs);controls={};state={'record':None,'identity':None}
  def page(title):
@@ -80,10 +80,13 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  project=line(f,'project','پروژه',project_id);floor=line(f,'floor','طبقه',floor_id)
  kindbox=combo(f,'kind','سیستم سقف',[(SPECS[k].title,k) for k in KINDS]);kindbox.setCurrentIndex(kindbox.findData(kind))
  for key,title in [('id','شناسه سقف'),('building','شناسه ساختمان'),('source','شناسه منبع مستقل'),('plan','پلان مرجع'),('detail','دیتایل مرجع')]:line(f,key,title)
- combo(f,'joist_supply_scope','دامنه تأمین تیرچه',[('تیرچه خریداری‌شده؛ بتن و میلگرد کارخانه‌ای غیرقابل پرداخت مستقل','purchased_joists')]);combo(f,'unit','واحد ابعاد',[('متر','m')]);combo(f,'shape','هندسه',[('مستطیلی و ناحیه‌های مستقل','rectangular')]);combo(f,'repeat_scope','دامنه تکرار',[('سقف‌های هم‌تیپ با تکرار صریح','identical_roofs')]);combo(f,'action','رفتار مستند دال',[('یک‌طرفه','one_way'),('دوطرفه','two_way')]);combo(f,'joist_axis','جهت تیرچه',[('امتداد طول','x'),('امتداد عرض','y')])
+ combo(f,'joist_supply_scope','دامنه تأمین تیرچه',[('تیرچه خریداری‌شده؛ بتن و میلگرد کارخانه‌ای غیرقابل پرداخت مستقل','purchased_joists')]);combo(f,'unit','واحد ابعاد',[('متر','m')]);combo(f,'shape','هندسه',[('مستطیلی و ناحیه‌های مستقل','rectangular'),('پلان دقیق با چارچوب محلی مستند','documented_planar')]);combo(f,'repeat_scope','دامنه تکرار',[('سقف‌های هم‌تیپ با تکرار صریح','identical_roofs')]);combo(f,'action','رفتار مستند دال',[('یک‌طرفه','one_way'),('دوطرفه','two_way')]);combo(f,'joist_axis','جهت تیرچه',[('امتداد طول','x'),('امتداد عرض','y')])
  for key,title in [('length','طول کل (متر)'),('width','عرض کل (متر)'),('depth','ارتفاع کل (متر)'),('count','تعداد سقف هم‌تیپ'),('topping_thickness','ضخامت رویه (متر)'),('bottom_thickness','ضخامت لایه زیرین (متر)'),('joist_count','تعداد واقعی تیرچه'),('joist_spacing','فاصله واقعی محور تیرچه (متر)'),('geometry_ref','مرجع هندسه'),('geometry_approver','تأییدکننده هندسه'),('deductions_ref','مرجع کسورات یا نبود تقاطع'),('pieces_ref','مرجع چیدمان قطعات یا عدم کاربرد')]:line(f,key,title)
  combo(f,'panel_axis','جهت نصب قطعات هالوکور',[('امتداد طول','x'),('امتداد عرض','y')])
  combo(f,'rib_axis','جهت اصلی ریب وافل',[('امتداد طول','x'),('امتداد عرض','y')])
+ source_geometry_amendment=QCheckBox('اصلاح هندسه با ناحیه فعلی PDF؛ فقط درخواست اصلاحیه و بازبینی مستقل')
+ source_geometry_amendment.setToolTip('نسخه اصل سقف محفوظ است؛ سند تطبیق دو منبع و دیتایل جدید لازم است')
+ basic.addWidget(source_geometry_amendment);controls['source_geometry_amendment']=source_geometry_amendment
  basic.addWidget(QLabel('قرارداد فعلی: ناحیه‌بندی مستطیلی کامل و غیرهم‌پوشان؛ بازشوی قطع‌کننده تیرچه/قطعه نیازمند قرارداد قطعه‌بندی مستقل است.'))
  table(page('جانمایی واقعی تیرچه‌ها'),'joist_layout',LAYOUT);table(page('نواحی بتن و پرکننده'),'regions',REGIONS);table(page('بازشو و تقاطع مستند'),'deductions',DEDUCTIONS);table(page('قطعات و قالب‌های وافل'),'pieces',piece_columns());table(page('جانمایی مستقل ریب‌های وافل'),'rib_layout',RIB_LAYOUT);table(page('قطعات نهایی هالوکور و گواهی‌ها'),'panels',PANELS);table(page('حفره‌سازهای یوبوت و کوبیاکس با گواهی حجم'),'void_formers',VOID_FORMERS)
  steel=page('گروه‌های مستقل میلگرد');sf=QFormLayout();steel.addLayout(sf);group=combo(sf,'bar_group','گروه مستقل',[(LABELS[k],k) for k in BARS]);bar_state=combo(sf,'bar_status','وضعیت',[('تأییدشده','confirmed'),('عدم کاربرد مستند','not_applicable'),('نیازمند دیتایل','unreviewed')]);line(sf,'bar_approver','تأییدکننده');line(sf,'bar_ref','مرجع گروه');line(sf,'bar_reason','دلیل عدم کاربرد');table(steel,'bars',steel_columns())
@@ -95,7 +98,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   table(layout,key,cols)
  review_page=page('بازبینی، اصلاحیه و گزارش');rf=QFormLayout();review_page.addLayout(rf)
  for key,title in [('reviewer','بازبین مستقل'),('note','یادداشت بازبینی'),('creator','سازنده اصلاحیه'),('reason','علت اصلاح، کپی یا حذف'),('evidence_path','فایل مدرک جدید اصلاحیه'),('evidence_ref','مرجع مدرک جدید'),('amend_id','شناسه اصلاحیه'),('new_id','شناسه مستقل کپی'),('new_source','منبع مستقل کپی')]:line(rf,key,title)
- summary=QTableWidget(0,4);summary.setHorizontalHeaderLabels(['شرح','مقدار','واحد','منبع']);review_page.addWidget(summary);controls['summary']=summary
+ summary=QTableWidget(0,4);summary.setHorizontalHeaderLabels(['شرح','مقدار','واحد','فرمول و منبع']);summary.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch);review_page.addWidget(summary);controls['summary']=summary
  message=QLabel('سقف جدید بدون داده فرضی ایجاد می‌شود؛ بررسی‌نشده به معنی صفر نیست.');message.setWordWrap(True);outer.addWidget(message);controls['message']=message
  buttons={};bar=QHBoxLayout();outer.addLayout(bar)
  for action,label in [('new','عضو جدید'),('load','بازگشایی'),('save','ذخیره SQLite'),('preview','پیش‌نمایش'),('review','بازبینی نسخه جاری'),('commit','ثبت قطعی BOQ'),('copy','کپی مستقل'),('delete','حذف پیش‌نویس')]:
@@ -103,6 +106,10 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  second=QHBoxLayout();review_page.addLayout(second)
  for action,label in [('create_amendment','درخواست اصلاحیه'),('review_amendment','بازبینی مستقل اصلاحیه'),('apply_amendment','اعمال اصلاحیه'),('pdf','پی‌دی‌اف'),('xlsx','اکسل'),('docx','ورد'),('csv','داده متنی')]:
   b=QPushButton(label);second.addWidget(b);buttons[action]=b
+ if drawing_source:
+  kindbox.setEnabled(False);controls['source'].setEnabled(False)
+  import_button=QPushButton('ورود جدول دیتایل مستند (JSON)');second.addWidget(import_button);buttons['import_detail']=import_button
+  document_label=QLabel('منبع PDF متصل است؛ فایل جدول دیتایل و بازبینی مستقل لازم است.');document_label.setWordWrap(True);outer.addWidget(document_label)
  controls.update(buttons);dialog.roof_controls=controls
  bars_data={k:{'status':'unreviewed'} for k in BARS};editing=[None]
  def context():
@@ -134,7 +141,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if d['kind']==HOLLOW_KIND:controls['regions'].setProperty('allowed_components',['topping','precast','joints','cast_in_place','solid_zones'])
   elif d['kind'] in WAFFLE_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
   elif d['kind'] in VOID_KINDS:controls['regions'].setProperty('allowed_components',['topping','ribs_x','ribs_y','junctions','solid_zones','void'])
-  else:controls['regions'].setProperty('allowed_components',['concrete','topping','ribs','ties','solid_zones','precast','void'])
+  else:controls['regions'].setProperty('allowed_components',['concrete','topping','ribs','ties','solid_zones','precast','void']+(['opening_void'] if g.get('shape')=='documented_planar' else []))
   controls['bars'].setProperty('is_hollow',d['kind']==HOLLOW_KIND);controls['bars'].setColumnCount(len(steel_columns()));controls['bars'].setHorizontalHeaderLabels([title for _,title in steel_columns()])
   controls['pieces'].setColumnCount(len(piece_columns()));controls['pieces'].setHorizontalHeaderLabels([title for _,title in piece_columns()])
   for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT),('panels',PANELS),('void_formers',VOID_FORMERS)]:fill_table(controls[key],cols,rd.get(key,[]))
@@ -144,6 +151,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
    controls[key+'_status'].setCurrentIndex(max(0,controls[key+'_status'].findData(p.get('status'))))
    for suffix,field in [('approver','approved_by'),('ref','source_ref'),('reason','reason')]:controls[key+'_'+suffix].setText(str(p.get(field,'')))
    fill_table(controls[key],cols,p.get(listkey,[]))
+  source_geometry_amendment.setEnabled(bool(drawing_source and drawing_source.get('roof_binding',{}).get('policy')=='pdf_roof_planar_v2' and d.get('source',{}).get('roof_binding',{}).get('policy')=='pdf_roof_planar_v2' and entry['status']=='committed'))
   is_slab=d['kind']=='solid_slab';is_waffle=d['kind'] in WAFFLE_KINDS;is_void=d['kind'] in VOID_KINDS
   dialog.setWindowTitle('متره تخصصی '+SPECS[d['kind']].title+' — ناحیه‌بندی و دیتایل مستند')
   for key in ('action',):controls[key].setEnabled(is_slab or is_waffle)
@@ -169,9 +177,18 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if kindbox.currentData() not in WAFFLE_KINDS:g.pop('rib_axis',None)
   if kindbox.currentData()!=HOLLOW_KIND:g.pop('panel_axis',None)
   if kindbox.currentData() not in VOID_KINDS:g.pop('bottom_thickness',None)
+  if d.get('roof_detail',{}).get('geometry',{}).get('planar'):g['planar']=deepcopy(d['roof_detail']['geometry']['planar'])
   g.update(source_ref=controls['geometry_ref'].text().strip(),approved_by=controls['geometry_approver'].text().strip());d['building_id']=controls['building'].text().strip()
-  source=deepcopy(d.get('source',{}));source.update(mode=source.get('mode','manual'),source_id=controls['source'].text().strip(),plan_ref=controls['plan'].text().strip(),detail_ref=controls['detail'].text().strip());d['source']=source
+  source=deepcopy(d.get('source',{}))
+  if source_geometry_amendment.isChecked():
+   if not drawing_source:raise ValueError('ناحیه جدید PDF انتخاب نشده است')
+   selected=deepcopy(drawing_source)
+   for k in ('detail_path','detail_sha256'):
+    if k in source:selected[k]=source[k]
+   source=selected
+  source.update(mode=source.get('mode','manual'),source_id=(source['source_id'] if source_geometry_amendment.isChecked() else controls['source'].text().strip()),plan_ref=controls['plan'].text().strip(),detail_ref=controls['detail'].text().strip());d['source']=source
   rd={'geometry':g,'rebars':deepcopy(bars_data)}
+  if d.get('roof_detail',{}).get('geometry_change'):rd['geometry_change']=deepcopy(d['roof_detail']['geometry_change'])
   for key,cols in [('regions',REGIONS),('deductions',DEDUCTIONS),('pieces',piece_columns()),('joist_layout',LAYOUT),('rib_layout',RIB_LAYOUT),('panels',PANELS),('void_formers',VOID_FORMERS)]:rd[key]=read_table(controls[key],cols)
   if kindbox.currentData() not in WAFFLE_KINDS:rd.pop('rib_layout',None)
   if kindbox.currentData()!=HOLLOW_KIND:rd.pop('panels',None)
@@ -185,17 +202,27 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   summary.setRowCount(0)
   for v in r['rows']:
    i=summary.rowCount();summary.insertRow(i)
-   for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']]):summary.setItem(i,j,QTableWidgetItem(str(x)))
+   for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']+' | '+v.get('formula','')]):summary.setItem(i,j,QTableWidgetItem(str(x)))
+  summary.resizeRowsToContents()
   message.setText('محاسبه معتبر؛ ثبت نیازمند بازبینی نسخه جاری است' if r['ready'] else 'نیازمند اطلاعات یا دیتایل: '+'؛ '.join(r['blockers']))
  def load():
   ctx=context();e=service.get_aec_system(*ctx)
   if not e:raise ValueError('عضو ذخیره‌شده یافت نشد؛ عضو جدید را انتخاب کنید')
   if e['data'].get('measurement_policy')!=POLICY:raise ValueError('عضو تاریخی فاقد قرارداد تخصصی است؛ تبدیل خودکار ممنوع')
-  paint(e)
+  source_geometry_amendment.setChecked(False);paint(e)
  def new():
   pid,k,fl,mid=context()
   if service.get_aec_system(pid,k,fl,mid):raise ValueError('شناسه موجود است؛ بازگشایی کنید')
-  d=service.new_aec_system(k,fl,mid);d['measurement_policy']=POLICY;paint({'status':'draft','revision':0,'data':d})
+  d=service.new_aec_system(k,fl,mid);d['measurement_policy']=POLICY
+  if drawing_source:
+   from core.drawings.roof_region import dimensions
+   length,width=dimensions(drawing_source)
+   d['source']=deepcopy(drawing_source)
+   d['roof_detail']={'geometry':{'length':str(length),'width':str(width),'count':'1','unit':'m','shape':'rectangular','repeat_scope':'identical_roofs'}}
+   if drawing_source.get('roof_binding',{}).get('policy')=='pdf_roof_planar_v2':
+    from core.drawings.roof_region import planar_geometry
+    d['roof_detail']['geometry'].update(shape='documented_planar',planar=planar_geometry(drawing_source))
+  paint({'status':'draft','revision':0,'data':d})
  def save():
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))
  def unchanged():
@@ -235,13 +262,43 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   records=read_table(controls['bars'],steel_columns());child=QDialog(dialog);child.setObjectName('RoofCutParts');child.setWindowTitle('اجزای طول برش مستند');child.setLayoutDirection(Qt.RightToLeft);layout=QVBoxLayout(child);cols=[('id','شناسه جزء'),('length_m','طول مستند (متر)'),('source_ref','مرجع مستقیم، خم، قلاب یا وصله')];t=table(layout,'cut_parts',cols);fill_table(t,cols,records[row].get('cut_parts',[]));actions=QHBoxLayout();layout.addLayout(actions);ok=QPushButton('اعمال اجزای برش');cancel=QPushButton('انصراف');actions.addWidget(ok);actions.addWidget(cancel);ok.clicked.connect(child.accept);cancel.clicked.connect(child.reject);child.cut_controls={'grid':t,'add':controls['cut_parts_add'],'remove':controls['cut_parts_remove'],'save':ok,'cancel':cancel}
   if child.exec()==QDialog.Accepted:records[row]['cut_parts']=read_table(t,cols);fill_table(controls['bars'],steel_columns(),records)
   for k in ('cut_parts','cut_parts_add','cut_parts_remove'):controls.pop(k,None)
+ def import_detail():
+  import json
+  from core.drawings.roof_region import detail_payload
+  d=capture();path=QFileDialog.getOpenFileName(dialog,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی','','JSON (*.json)')[0]
+  if not path:return
+  file=Path(path);payload=json.loads(file.read_text(encoding='utf-8-sig'))
+  if not isinstance(payload,dict) or set(payload)!=set(detail_payload(d)):raise ValueError('ساختار جدول دیتایل معتبر نیست')
+  if any(payload[k]!=d[k] for k in ('kind','floor_id','system_id')):raise ValueError('هویت جدول دیتایل با سقف جاری یکسان نیست')
+  d.update(deepcopy(payload));d['source'].update(detail_path=str(file),detail_sha256=sha256(file.read_bytes()).hexdigest())
+  paint({**state['record'],'data':d});document_label.setText('مدرک ورودی: '+str(file)+' | SHA-256: '+d['source']['detail_sha256'])
  def run(fn):
   try:fn()
   except Exception as exc:QMessageBox.warning(dialog,'کنترل دیتایل سقف',str(exc))
  for key,fn in [('new',new),('load',load),('save',save),('preview',lambda:show_preview(preview_system(capture(),service.takeoff))),('review',review),('commit',commit),('copy',copy),('delete',delete),('create_amendment',create_amendment),('review_amendment',review_amendment),('apply_amendment',apply_amendment)]:buttons[key].clicked.connect(lambda _=False,f=fn:run(f))
  for fmt in ('pdf','xlsx','docx','csv'):buttons[fmt].clicked.connect(lambda _=False,f=fmt:run(lambda:report(f)))
+ if drawing_source:buttons['import_detail'].clicked.connect(lambda:run(import_detail))
  cut.clicked.connect(lambda:run(cut_parts));store_bar.clicked.connect(lambda:run(capture_bar))
  def switch_group():capture_bar();show_bar()
  group.currentIndexChanged.connect(lambda:run(switch_group))
  controls['capture']=capture;controls['paint']=paint
  return dialog.exec()
+
+
+def ask_local_frame(parent=None):
+ """Explicit source-frame input; no origin, angle or scale is guessed."""
+ from core.drawings.roof_region import local_frame
+ dialog=QDialog(parent);dialog.setObjectName('RoofLocalFrame');dialog.setWindowTitle('چارچوب محلی مستند سقف');dialog.setLayoutDirection(Qt.RightToLeft)
+ layout=QVBoxLayout(dialog);layout.addWidget(QLabel('مبدأ بر حسب مختصات مرجع PDF است؛ محور دوم عمود بر محور اول با قرارداد (منفی مؤلفه دوم، مؤلفه اول) است. مقیاس از همان صفحه خوانده می‌شود.'))
+ form=QFormLayout();layout.addLayout(form);controls={};result={}
+ for key,label in [('origin_x','مختصات افقی مبدأ مستند'),('origin_y','مختصات عمودی مبدأ مستند'),('axis_x','مؤلفه افقی بردار واحد محور اول'),('axis_y','مؤلفه عمودی بردار واحد محور اول'),('reference','مرجع چارچوب و مبدأ'),('reviewer','بازبین چارچوب')]:
+  field=QLineEdit();form.addRow(label,field);controls[key]=field
+ bar=QHBoxLayout();layout.addLayout(bar)
+ def confirm():
+  try:
+   frame={'origin_pdf':[controls[k].text().strip() for k in ('origin_x','origin_y')],'axis_x':[controls[k].text().strip() for k in ('axis_x','axis_y')],'source_ref':controls['reference'].text().strip(),'approved_by':controls['reviewer'].text().strip()}
+   local_frame(frame);result.update(frame);dialog.accept()
+  except Exception as exc:QMessageBox.warning(dialog,'چارچوب محلی معتبر نیست',str(exc))
+ save=QPushButton('تأیید چارچوب مستند');cancel=QPushButton('انصراف');bar.addWidget(save);bar.addWidget(cancel);save.clicked.connect(confirm);cancel.clicked.connect(dialog.reject)
+ controls.update(confirm=save,cancel=cancel);dialog.frame_controls=controls
+ return result if dialog.exec()==QDialog.Accepted else None

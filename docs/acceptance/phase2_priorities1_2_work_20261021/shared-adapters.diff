@@ -1,0 +1,61 @@
+diff --git a/core/takeoff/reviewed_aec.py b/core/takeoff/reviewed_aec.py
+index 56f368c..93dcb82 100644
+--- a/core/takeoff/reviewed_aec.py
++++ b/core/takeoff/reviewed_aec.py
+@@ -616,7 +616,10 @@ class ReviewedAECWorkflow:
+             raise ValueError("ساختار گروه‌های متره ناقص است")
+         source = data.get("source", {})
+         if source:
+-            _validate_source(source, sid)
++            if data.get('measurement_policy')=='roof_specialist_v1':
++                from core.takeoff.roof_detail import validate_roof_source
++                validate_roof_source(source,sid)
++            else:_validate_source(source, sid)
+         try:
+             json.dumps(data, ensure_ascii=False, allow_nan=False)
+         except (TypeError, ValueError, OverflowError) as exc:
+@@ -626,6 +629,8 @@ class ReviewedAECWorkflow:
+         if not isinstance(register, dict):
+             raise ValueError("دفتر ثبت متره AEC نامعتبر است")
+         key = _id(kind, floor, sid)
++        from core.drawings.roof_region import project_gate
++        project_gate(project,data,exclude=key)
+         old = register.get(key)
+         if old and old.get("status") == "committed":
+             raise ValueError("سیستم قبلاً به متره قطعی منتقل شده است")
+@@ -696,6 +701,11 @@ class ReviewedAECWorkflow:
+             module.project_gate(project,_id(kind,floor,sid))
+             from core.takeoff.manual_formula_amendments import financial_block
+             financial_block(project)
++        from core.drawings.roof_region import project_gate
++        project_gate(project,record['data'],exclude=_id(kind,floor,sid))
++        if record['data'].get('source',{}).get('roof_binding'):
++            from core.takeoff.manual_formula_amendments import financial_block
++            financial_block(project)
+         existing = project.get("takeoffs") or []
+         new_ids = {x["source_id"] for x in out["rows"]}
+         takeoffs = deepcopy(existing)
+diff --git a/core/takeoff/roof_detail.py b/core/takeoff/roof_detail.py
+index 10ec4d4..a7a907a 100644
+--- a/core/takeoff/roof_detail.py
++++ b/core/takeoff/roof_detail.py
+@@ -35,6 +35,9 @@ def strict(part,allowed,label):
+ 
+ 
+ def validate_roof_source(source,identity):
++ if source.get('mode')=='drawing' and source.get('roof_binding'):
++  from core.drawings.roof_region import validate_source
++  validate_source(source);return source['source_id']
+  if source.get('mode')=='drawing':raise ValueError('برداشت نقشه‌ای تخصصی سقف تا اتصال مقیاس معتبر و قرارداد ناحیه‌بندی نقشه مسدود است؛ متره دستی مستند قابل استفاده است')
+  return _validate_source(source,identity)
+ 
+@@ -284,6 +287,9 @@ def preview(data,engine,require_review=False):
+  try:
+   if kind not in KINDS or data.get('measurement_policy')!=POLICY:raise ValueError('قرارداد سقف معتبر نیست')
+   validate_roof_source(source,sid)
++  if source.get('roof_binding'):
++   from core.drawings.roof_region import validate_detail
++   validate_detail(data)
+   for key in ('plan_ref','detail_ref'):require_text(source.get(key),'پلان و دیتایل منبع')
+   require_text(data.get('building_id'),'شناسه ساختمان')
+   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')

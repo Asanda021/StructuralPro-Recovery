@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "modelspace_entities": 3000,
+  "expanded_entities": 5000,
+  "inserts": 2000,
+  "texts": 1000,
+  "layers": 50,
+  "open_render_seconds": 0.6751162890004707,
+  "peak_rss_kib": 150340,
+  "length_oracle_m": 10000,
+  "length_actual_m": 10000.0,
+  "absolute_error": 0.0,
+  "allowed_absolute_error_m": 1e-08,
+  "all_expanded_entities_retained": true
+}

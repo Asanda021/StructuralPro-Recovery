@@ -1,0 +1,414 @@
+{
+  "synthetic": true,
+  "engineering_approval": false,
+  "project_id": "P",
+  "floor_id": "L1",
+  "member_id": "S1",
+  "project_title": "آزمون مصنوعی یکپارچه؛ پذیرش طراحی واقعی نیست",
+  "pdf_page_points": [
+    400,
+    400
+  ],
+  "outer_pdf": [
+    [
+      100,
+      100
+    ],
+    [
+      600,
+      100
+    ],
+    [
+      600,
+      600
+    ],
+    [
+      100,
+      600
+    ]
+  ],
+  "initial_opening_pdf": [
+    [
+      300,
+      100
+    ],
+    [
+      400,
+      100
+    ],
+    [
+      400,
+      600
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  "revised_opening_pdf": [
+    [
+      300,
+      100
+    ],
+    [
+      350,
+      100
+    ],
+    [
+      350,
+      600
+    ],
+    [
+      300,
+      600
+    ]
+  ],
+  "frame": {
+    "origin_pdf": [
+      "100",
+      "100"
+    ],
+    "axis_x": [
+      "1",
+      "0"
+    ],
+    "source_ref": "SYNTHETIC explicit PDF frame",
+    "approved_by": "SYNTHETIC frame checker"
+  },
+  "calibration": {
+    "page1": [
+      50,
+      1
+    ],
+    "page2": [
+      100,
+      2
+    ]
+  },
+  "roof_data": {
+    "kind": "solid_slab",
+    "floor_id": "L1",
+    "system_id": "S1",
+    "source": {
+      "mode": "manual",
+      "source_id": "SYNTHETIC-solid_slab",
+      "plan_ref": "پلان مصنوعی",
+      "detail_ref": "دیتایل مصنوعی"
+    },
+    "components": {
+      "concrete": {
+        "status": "unreviewed"
+      },
+      "top_rebar": {
+        "status": "unreviewed"
+      },
+      "bottom_rebar": {
+        "status": "unreviewed"
+      },
+      "edge_beams": {
+        "status": "unreviewed"
+      },
+      "formwork": {
+        "status": "unreviewed"
+      },
+      "openings": {
+        "status": "unreviewed"
+      }
+    },
+    "measurement_policy": "roof_specialist_v1",
+    "building_id": "B1",
+    "roof_detail": {
+      "geometry": {
+        "unit": "m",
+        "shape": "documented_planar",
+        "length": "10",
+        "width": "10",
+        "depth": ".2",
+        "count": "1",
+        "repeat_scope": "identical_roofs",
+        "action": "two_way",
+        "source_ref": "پلان مصنوعی",
+        "approved_by": "کنترل مصنوعی",
+        "planar": {
+          "policy": "roof_planar_partition_v1",
+          "outer": [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              10
+            ],
+            [
+              0,
+              10
+            ]
+          ]
+        }
+      },
+      "regions": [
+        {
+          "id": "C1",
+          "component": "concrete",
+          "x": "0",
+          "y": "0",
+          "z": "0",
+          "length": "10",
+          "width": "10",
+          "height": "0.2",
+          "source_ref": "دیتایل مصنوعی",
+          "approved_by": "کنترل مصنوعی",
+          "footprint": [
+            [
+              0,
+              0
+            ],
+            [
+              10,
+              0
+            ],
+            [
+              10,
+              10
+            ],
+            [
+              0,
+              10
+            ]
+          ]
+        }
+      ],
+      "joist_layout": [],
+      "deductions": [
+        {
+          "id": "OPENING-1",
+          "kind": "opening",
+          "owner_source_id": "",
+          "x": "4",
+          "y": "0",
+          "z": "0",
+          "length": "2",
+          "width": "10",
+          "height": ".2",
+          "footprint": [
+            [
+              4,
+              0
+            ],
+            [
+              6,
+              0
+            ],
+            [
+              6,
+              10
+            ],
+            [
+              4,
+              10
+            ]
+          ],
+          "source_ref": "SYNTHETIC opening revision 1",
+          "approved_by": "SYNTHETIC geometry checker"
+        }
+      ],
+      "deductions_ref": "SYNTHETIC full-depth opening schedule",
+      "rebars": {
+        "main_x": {
+          "status": "confirmed",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "series": [
+            {
+              "id": "B-main_x",
+              "physical_key": "physical-main_x",
+              "diameter_mm": "12",
+              "supply_scope": "site",
+              "count": "10",
+              "cut_length_m": "4",
+              "unit_weight_kg_m": ".888",
+              "unit_weight_source": "جدول مصنوعی صریح",
+              "shape_ref": "برش مصنوعی",
+              "source_ref": "دیتایل مصنوعی",
+              "cut_parts": [
+                {
+                  "id": "straight",
+                  "length_m": "4",
+                  "source_ref": "طول مصنوعی"
+                }
+              ]
+            }
+          ]
+        },
+        "main_y": {
+          "status": "confirmed",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "series": [
+            {
+              "id": "B-main_y",
+              "physical_key": "physical-main_y",
+              "diameter_mm": "12",
+              "supply_scope": "site",
+              "count": "10",
+              "cut_length_m": "4",
+              "unit_weight_kg_m": ".888",
+              "unit_weight_source": "جدول مصنوعی صریح",
+              "shape_ref": "برش مصنوعی",
+              "source_ref": "دیتایل مصنوعی",
+              "cut_parts": [
+                {
+                  "id": "straight",
+                  "length_m": "4",
+                  "source_ref": "طول مصنوعی"
+                }
+              ]
+            }
+          ]
+        },
+        "distribution": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        },
+        "thermal": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        },
+        "rib": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        },
+        "additional": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        },
+        "opening": {
+          "status": "confirmed",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "series": [
+            {
+              "id": "B-opening",
+              "physical_key": "physical-opening",
+              "diameter_mm": "12",
+              "supply_scope": "site",
+              "count": "10",
+              "cut_length_m": "4",
+              "unit_weight_kg_m": ".888",
+              "unit_weight_source": "جدول مصنوعی صریح",
+              "shape_ref": "برش مصنوعی",
+              "source_ref": "دیتایل مصنوعی",
+              "cut_parts": [
+                {
+                  "id": "straight",
+                  "length_m": "4",
+                  "source_ref": "طول مصنوعی"
+                }
+              ]
+            }
+          ]
+        },
+        "solid": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        },
+        "tie": {
+          "status": "not_applicable",
+          "approved_by": "کنترل مصنوعی",
+          "source_ref": "دیتایل مصنوعی",
+          "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+        }
+      },
+      "pieces": [],
+      "pieces_ref": "چیدمان مصنوعی",
+      "formwork": {
+        "status": "confirmed",
+        "approved_by": "کنترل مصنوعی",
+        "source_ref": "قالب مصنوعی",
+        "faces": [
+          {
+            "id": "F1",
+            "physical_key": "underside",
+            "length_m": "10",
+            "width_m": "10",
+            "deduction_m2": "0",
+            "source_ref": "قالب مصنوعی",
+            "footprint": [
+              [
+                0,
+                0
+              ],
+              [
+                10,
+                0
+              ],
+              [
+                10,
+                10
+              ],
+              [
+                0,
+                10
+              ]
+            ],
+            "holes": [
+              [
+                [
+                  4,
+                  0
+                ],
+                [
+                  6,
+                  0
+                ],
+                [
+                  6,
+                  10
+                ],
+                [
+                  4,
+                  10
+                ]
+              ]
+            ],
+            "opening_refs": [
+              "SYNTHETIC opening revision 1"
+            ]
+          }
+        ]
+      },
+      "shoring": {
+        "status": "not_applicable",
+        "approved_by": "کنترل مصنوعی",
+        "source_ref": "دیتایل مصنوعی",
+        "reason": "عدم کاربرد صرفاً در نمونه مصنوعی"
+      }
+    }
+  },
+  "initial_expected": {
+    "concrete": "16",
+    "formwork": "80",
+    "rebar": "106.560"
+  },
+  "revised_expected": {
+    "concrete": "18",
+    "formwork": "90",
+    "rebar": "106.560"
+  },
+  "oracle_explanation": "Explicit 10×10 m outer; original 2×10 m opening -> 80 m2, revised 1×10 -> 90 m2; thickness .2 -> 16/18 m3. Three documented bar groups: 10×4×.888 kg each ->106.560 kg. No prices, waste or design quantities inferred."
+}

@@ -1,0 +1,46 @@
+{
+  "outer_vertices": 83,
+  "openings": 20,
+  "opening_vertices": 80,
+  "seconds": 1.3036174779999783,
+  "process_peak_rss_kib": 12288,
+  "net_m2": "588",
+  "limits": {
+    "ring_vertices": 128,
+    "holes": 32,
+    "total_vertices": 512
+  },
+  "method": "one measured exact rational topology build, not a throughput guarantee",
+  "independent_regions": {
+    "count": 20,
+    "pair_checks": 190,
+    "seconds": 0.23912931799986836,
+    "oracle": "20 disjoint 2x2 squares at 3m intervals"
+  },
+  "large_pdf": {
+    "synthetic": true,
+    "sha256": "40c07bc6765544770f0f6f1bec5d35a42acc89afd15c411cd47deb35532759dd",
+    "bytes": 6106385,
+    "pages": 24,
+    "open_seconds": 0.1145340640005088,
+    "render_dpi": 120,
+    "renders": [
+      {
+        "page": 1,
+        "seconds": 0.4232889499999146,
+        "png_bytes": 50576
+      },
+      {
+        "page": 24,
+        "seconds": 0.3678641280002921,
+        "png_bytes": 50576
+      },
+      {
+        "page": 1,
+        "seconds": 0.36675359699984256,
+        "png_bytes": 50576
+      }
+    ],
+    "process_peak_rss_kib": 75612
+  }
+}
