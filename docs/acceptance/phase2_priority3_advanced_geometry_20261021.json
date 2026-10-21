@@ -1,0 +1,178 @@
+{
+  "initial_pr20_head": "58c77da8f99fa8eae7e584fc51f2ac3ed7bb6944",
+  "pr18_unchanged_head": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "tested_local_code_head": "10f9dc7b11cd2270538a003e24612a387dafcd28",
+  "published_code_head": "4f9b778ac7acaf43846a259f9ac86dd87d386ab1",
+  "tested_tree": "a580aa1d86713dbc67fba5bfe803c7b1d88bf332",
+  "tested_component_trees": {
+    "core": "c8e229e610fa7e04a885d0b058987421bcbd7b0e",
+    "app": "23d229dbf968ad2f8a51506c275b34315703daa3",
+    "tests": "a8b1265945f084a22b904e354c32e0cfa308889f",
+    "scripts": "42a868ba9078ad04d7460e7d614b9d2148ab26f3"
+  },
+  "documentation_head": "This evidence-only commit; resolve with git log -- docs/acceptance/phase2_priority3_advanced_geometry_20261021.json",
+  "overall": "PARTIAL/BLOCKED",
+  "full_regression": {
+    "tests": 7371,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "passed": 7366,
+    "exit_code": 0,
+    "junit_seconds": 437.07,
+    "seconds": 437.21
+  },
+  "targeted": {
+    "passed": 119,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 8.07,
+    "overlaps_full": true
+  },
+  "independent_restore": {
+    "passed": 149,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 10.85,
+    "overlaps_full": true
+  },
+  "external_supplemental": {
+    "passed": 4,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 0.33,
+    "not_in_full_collection": true
+  },
+  "qa_initial_error": {
+    "errors": 1,
+    "cause": "Supplemental harness imported roof_region before application initialization; same circular import reproduced at baseline58c77. Harness now follows real application startup. Product was not changed for this pre-existing import-order limitation."
+  },
+  "changed_product_and_test_files": [
+    "app/graphical_takeoff.py",
+    "core/drawings/planar_geometry.py",
+    "core/drawings/roof_region.py",
+    "core/drawings/takeoff_bridge.py",
+    "core/drawings/takeoff_session.py",
+    "core/platform/application.py",
+    "scripts/phase2_advanced_geometry_probe.py",
+    "tests/test_phase2_advanced_geometry.py",
+    "tests/test_phase2_advanced_geometry_sqlite.py",
+    "tests/test_phase2_advanced_geometry_ui.py"
+  ],
+  "commands": {
+    "full": "QT_QPA_PLATFORM=offscreen PYTHONFAULTHANDLER=1 python -m pytest -q -ra --junitxml=/tmp/p3-evidence/full.junit.xml",
+    "targeted": "QT_QPA_PLATFORM=offscreen python -m pytest -q tests/test_phase2_advanced_geometry.py tests/test_phase2_advanced_geometry_sqlite.py tests/test_phase2_advanced_geometry_ui.py tests/test_phase2_pdf_roof.py tests/test_phase2_pdf_roof_ui.py tests/test_phase2_pdf_roof_openings.py tests/test_phase2_pdf_navigation.py tests/test_phase2_project_snapshot_cache.py",
+    "restore": "targeted command plus tests/test_phase1_persisted_identity_reconciliation_chat.py",
+    "supplemental": "PYTHONPATH=.:tests QT_QPA_PLATFORM=offscreen python -m pytest -q supplemental_oracles.py"
+  },
+  "local_to_remote_commits": {
+    "6c60d69ed90ab6556657333298eec9f80875a859": "4149c243626d61f0d117fae434aaebb0f91bbdf7",
+    "d374cecfab63d36184386c53c81b89475e3642c8": "3ff3a4765ba488279696131d205f263f07bdaec4",
+    "4fa9996aa17033467249b9ba9a737038e92091fe": "37cb880fef5bd0d8a03c537f2727911a34a42b83",
+    "10f9dc7b11cd2270538a003e24612a387dafcd28": "4f9b778ac7acaf43846a259f9ac86dd87d386ab1"
+  },
+  "capabilities": {
+    "generic_simple_polygon": "COMPLETE within explicit numerical/topology limits",
+    "rotated_area": "COMPLETE; no bounding-box area substitution",
+    "strictly_internal_polygon_openings": "COMPLETE; per-opening references",
+    "overlap": "COMPLETE bounded conservative positive-area rejection",
+    "specialist_axis_aligned_rectangle_three_roofs": "COMPLETE using existing engines",
+    "specialist_nonrectangular_or_rotated_materials": "BLOCKED: no validated decomposition or local-axis material/detail contract",
+    "draft_revision_cas_roundtrip": "COMPLETE",
+    "paid_polygon_financial_amendment": "BLOCKED; history is immutable and rewrite is rejected",
+    "boundary_connected_holes_multipart": "BLOCKED unsupported topology"
+  },
+  "limits": {
+    "max_vertices_per_ring": 128,
+    "max_holes": 32,
+    "max_total_vertices": 512,
+    "max_intersection_triangle_pairs": 20000,
+    "max_intersection_hole_pairs": 256,
+    "coordinate_digits": 32,
+    "coordinate_adjusted_exponent": [
+      -100,
+      12
+    ],
+    "decimal_precision": 256,
+    "inexact_decimal": "reject",
+    "qt_coordinate_literal_loss": "reject",
+    "hole_contacts": "one connected boundary contact per pair, acyclic contact graph; multi-ring junction cycles conservatively blocked"
+  },
+  "previous_verified_backup": {
+    "path": "/StructuralPro/Backups/StructuralPro_Phase2_P3_4fa9996_code.bundle",
+    "sha256": "bfe689e20db5cfa9f318a2f09c4cae99f5e67a0c803eab2ae007f233e1c867ec",
+    "redownload_verified": true,
+    "git_fsck_exit": 0
+  },
+  "final_backup": "Final evidence archive includes complete code bundle and evidence-only published history; separate restore receipt records archive SHA and post-download tests.",
+  "performance": {
+    "synthetic": true,
+    "engineering_approval": false,
+    "pages": 24,
+    "pdf_bytes": 200295,
+    "source_sha256": "cfe5e9bfba928f9dd653329242b9fdbdf44ffa0198a80c1b9e64a4a54e2237d3",
+    "segments_per_page": 2000,
+    "open_seconds": 3.95480001316173e-05,
+    "renders": [
+      {
+        "page": 1,
+        "seconds": 0.1825450430001183
+      },
+      {
+        "page": 12,
+        "seconds": 0.17715689999977258
+      },
+      {
+        "page": 24,
+        "seconds": 0.17274058000020887
+      }
+    ],
+    "polygon_64_with_16_holes_seconds": 0.4448710750002647,
+    "save_seconds": 0.24936583499993503,
+    "commit_21_regions_seconds": 0.49171868900020854,
+    "reopen_seconds": 0.006346312999994552,
+    "regions": 21,
+    "outer_vertices": 64,
+    "holes": 16,
+    "boq_rows": 2,
+    "sqlite_integrity": "ok",
+    "roundtrip_equal": true,
+    "intersection_64_by_64_seconds": 4.241827022999587,
+    "process_peak_rss_kib": 81604
+  },
+  "large_pdf_performance": {
+    "synthetic": true,
+    "engineering_approval": false,
+    "pages": 24,
+    "segments_per_page": 40000,
+    "bytes": 6106385,
+    "sha256": "40c07bc6765544770f0f6f1bec5d35a42acc89afd15c411cd47deb35532759dd",
+    "open_seconds": 7.136500016713399e-05,
+    "renders": [
+      {
+        "page": 1,
+        "seconds": 0.5599035289999392
+      },
+      {
+        "page": 12,
+        "seconds": 0.4580764679999447
+      },
+      {
+        "page": 24,
+        "seconds": 0.41584163000015906
+      }
+    ],
+    "process_peak_rss_kib": 84492
+  },
+  "engineering_acceptance": false,
+  "windows_office": "NOT_TESTED",
+  "physical_identity_limit": "Same registered physical member is blocked across changed PDF bytes. Automatic equivalence of renamed members across distinct drawing versions is not asserted; an approved physical ownership crosswalk and independent review are required.",
+  "historical_log_limit": "Scratch reset lost intermediate red/green logs and an unobserved full run. These are not reconstructed or counted as passes. Current code recovered from verified Dropbox bundle; fresh final logs attached.",
+  "source_paths_restore": "Probe SQLite retains absolute original source paths. For relocated evidence, resolve read I/O to archived matching bytes; do not rewrite signed provenance. Independent test restore creates its own explicit fixture files."
+}

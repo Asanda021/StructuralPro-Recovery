@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+  File "/tmp/p3-baseline-import/core/drawings/roof_region.py", line 14, in <module>
+    from core.commercial.exact_values import number
+  File "/tmp/p3-baseline-import/core/commercial/__init__.py", line 1, in <module>
+    from .contract import Contract, ContractItem
+  File "/tmp/p3-baseline-import/core/commercial/contract.py", line 4, in <module>
+    from core.commercial.exact_values import number,wire,exact
+  File "/tmp/p3-baseline-import/core/commercial/exact_values.py", line 4, in <module>
+    from core.commercial.statement_amendment import number
+  File "/tmp/p3-baseline-import/core/commercial/statement_amendment.py", line 16, in <module>
+    from core.takeoff.units import normalize_unit
+  File "/tmp/p3-baseline-import/core/takeoff/__init__.py", line 3, in <module>
+    from .construction_core import ConstructionQuantityCore, QuantityLine, validate_quantity_lines
+  File "/tmp/p3-baseline-import/core/takeoff/construction_core.py", line 7, in <module>
+    from .units import convert, normalize_unit
+  File "/tmp/p3-baseline-import/core/takeoff/units.py", line 92, in <module>
+    from core.commercial.exact_values import exact as _exact
+ImportError: cannot import name 'exact' from partially initialized module 'core.commercial.exact_values' (most likely due to a circular import) (/tmp/p3-baseline-import/core/commercial/exact_values.py)
+EXIT:1

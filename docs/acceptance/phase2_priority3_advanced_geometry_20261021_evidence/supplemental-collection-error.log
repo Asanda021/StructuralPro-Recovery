@@ -1,0 +1,32 @@
+
+==================================== ERRORS ====================================
+___________________ ERROR collecting supplemental_oracles.py ___________________
+ImportError while importing test module '/tmp/p3-evidence/supplemental_oracles.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/tmp/p3-evidence/supplemental_oracles.py:5: in <module>
+    from core.drawings.roof_region import bind_source
+core/drawings/roof_region.py:14: in <module>
+    from core.commercial.exact_values import number
+core/commercial/__init__.py:1: in <module>
+    from .contract import Contract, ContractItem
+core/commercial/contract.py:4: in <module>
+    from core.commercial.exact_values import number,wire,exact
+core/commercial/exact_values.py:4: in <module>
+    from core.commercial.statement_amendment import number
+core/commercial/statement_amendment.py:16: in <module>
+    from core.takeoff.units import normalize_unit
+core/takeoff/__init__.py:3: in <module>
+    from .construction_core import ConstructionQuantityCore, QuantityLine, validate_quantity_lines
+core/takeoff/construction_core.py:7: in <module>
+    from .units import convert, normalize_unit
+core/takeoff/units.py:92: in <module>
+    from core.commercial.exact_values import exact as _exact
+E   ImportError: cannot import name 'exact' from partially initialized module 'core.commercial.exact_values' (most likely due to a circular import) (/workspace/scratch/61dce18379e6/p3-recovered/core/commercial/exact_values.py)
+=========================== short test summary info ============================
+ERROR ../../../../tmp/p3-evidence/supplemental_oracles.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 0.16s
