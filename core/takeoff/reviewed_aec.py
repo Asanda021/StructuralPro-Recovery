@@ -18,6 +18,7 @@ from core.takeoff.commit_guards import require_source_unused, validate_commit_ro
 from core.takeoff.engine import TakeoffEngine
 from core.takeoff.units import normalize_unit
 from core.takeoff.reviewed_components import require_text, positive
+from core.takeoff.bored_pile_ownership_preflight import _canonical
 from core.takeoff.reviewed_structural import _validate_source
 
 REGISTER = "reviewed_aec_systems"
@@ -358,7 +359,8 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
                     "deck_concrete", "waist_concrete", "step_concrete", "landing_concrete",
                     "mortar", "screed"},
                 "net_surface": {"surface", "formwork", "forms", "tiles", "stone",
-                    "membrane", "glazing", "finish_coats", "base_coats"},
+                    "membrane", "glazing", "finish_coats", "base_coats",
+                    "render_coat"},
                 "steel_profile_schedule": {"columns", "beams", "bracing", "steel",
                     "steel_members", "profiles"},
                 "steel_plate_schedule": {"plates", "edge_plates", "steel_members", "steel"},
@@ -385,7 +387,7 @@ def _preview_component(component: dict, name: str, engine: TakeoffEngine, *, sys
             # Physical schedule IDs remain unique across every line in this
             # component, not just within one calculator invocation.
             for member in checked["details"]:
-                member_id = member["id"]
+                member_id = _canonical(member["id"])
                 if member_id in seen_detail_members:
                     raise ValueError("جزء فیزیکی با شناسه تکراری در چند ریزقلم آمده است")
                 seen_detail_members.add(member_id)
@@ -605,6 +607,8 @@ class ReviewedAECWorkflow:
         return deepcopy(record)
 
     def save_draft(self, pid: str, data: dict, *, expected_revision: int = 0) -> dict:
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError("نسخه مورد انتظار باید عدد صحیح نامنفی باشد")
         if not isinstance(data, dict) or data.get("kind") not in SPECS:
             raise ValueError("نوع سیستم ناشناخته است")
         kind, floor, sid = data["kind"], require_text(data.get("floor_id"), "طبقه"), require_text(data.get("system_id"), "شناسه سیستم")
@@ -675,6 +679,8 @@ class ReviewedAECWorkflow:
         return out
 
     def commit(self, pid: str, kind: str, floor: str, sid: str, *, expected_revision: int) -> dict:
+        if type(expected_revision) is not int or expected_revision < 0:
+            raise ValueError("نسخه مورد انتظار باید عدد صحیح نامنفی باشد")
         project, digest = self._get_project(pid)
         reg = project.get(REGISTER) or {}
         record = reg.get(_id(kind, floor, sid))

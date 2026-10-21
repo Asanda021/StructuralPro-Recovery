@@ -43,6 +43,8 @@ def validate_roof_source(source,identity):
 
 
 def physical_identity_guard(project):
+ if not isinstance(project.get('reviewed_aec_systems',{}),dict):
+  raise ValueError('ساختار دفتر سیستم‌های بازبینی‌شده نامعتبر است')
  seen=set()
  for record in project.get('reviewed_aec_systems',{}).values():
   d=record.get('data',{})

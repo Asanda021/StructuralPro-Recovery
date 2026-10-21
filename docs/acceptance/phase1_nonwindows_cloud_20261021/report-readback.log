@@ -1,0 +1,4 @@
+[0;93m2026-10-21 04:27:00.622718200 [W:onnxruntime:Default, telemetry_1ds.cc:600 operator()] Failed to persist telemetry device ID; using an in-memory identifier[m
+{"status": "PASS", "scope": "independent report readback of explicit synthetic references; not design/Office certification", "rows_checked_per_format": 170, "formats": ["csv", "xlsx", "docx"], "checks": ["unique source price code", "contract quantity", "unit", "unit price", "40% current quantity", "current amount"], "decimal_absolute_tolerance": "1e-9", "max_absolute_difference": "1E-13", "pdf_pages": 19, "pdf_price_codes_found": 170, "pdf_scope": "All page rendering is exercised by the scenario; readback here checks code presence, not visual approval."}
+
+EXIT_CODE=0
