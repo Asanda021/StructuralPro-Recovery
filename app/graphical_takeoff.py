@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication
+    QDoubleSpinBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -357,6 +357,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_polygon = QPushButton('لغو چندضلعی')
         self.edit_vertices = QPushButton('ویرایش رأس‌های سطح')
         self.remove_opening=QPushButton('حذف بازشوی مستند')
+        self.drawing_amendment_button=QPushButton('اصلاحیه برداشت قطعی')
+        self.drawing_amendment_button.setEnabled(self.app_service is not None)
+        self.drawing_amendment_button.setToolTip('اصل نشست حفظ می‌شود؛ درخواست مستند، بازبینی مستقل و قفل مالی الزامی است')
         self.geometry_components=QComboBox();self.geometry_components.addItem('تمام اجزای سطح',None)
         self.back_vertex.setToolTip('فقط رأس‌های انتخاب در حال ترسیم را اصلاح می‌کند')
         self.edit_vertices.setToolTip('مختصات مرجع صفحه به صورت JSON؛ تغییر مقدار فقط از هندسه معتبر')
@@ -390,7 +393,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
-            self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.project_id_input, self.save_session_button,
+            self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
             actions.addWidget(x, index // 6, index % 6)
@@ -457,6 +460,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_polygon.clicked.connect(self.cancel_pending_polygon)
         self.edit_vertices.clicked.connect(self.edit_polygon_vertices)
         self.remove_opening.clicked.connect(self.remove_selected_opening)
+        self.drawing_amendment_button.clicked.connect(self.open_drawing_correction)
         self.geometry_components.currentIndexChanged.connect(self.highlight_component)
         self.mode.currentTextChanged.connect(self.apply_tool)
         self.calibrate.clicked.connect(self.calibrate_scale)
@@ -866,17 +870,19 @@ class GraphicalTakeoffDialog(QDialog):
         """Bind a selected PDF rectangle to the existing three-roof editor."""
         from core.drawings.roof_region import KINDS, bind_source
         from core.takeoff.reviewed_aec import SPECS
-        from app.roof_detail_editor import open_roof_editor
+        from app.roof_detail_editor import open_roof_editor,ask_local_frame
         try:
             rect=self.canvas._selected_region_rect
-            selected_item=None
+            selected_item=None;needs_frame=False
             selected_row=self.table.currentRow()
             if selected_row>=0:
                 candidate=self.session.find(self.table.item(selected_row,0).text())
                 if candidate.geometry_evidence:
                     from core.drawings.roof_region import _rectangle
                     try:xs,ys=_rectangle(candidate.geometry)
-                    except ValueError as exc:raise ValueError('سطح چندضلعی یا چرخیده فقط برداشت عمومی است؛ قرارداد محلی دیتایل سقف و تقسیم‌بندی مصوب موجود نیست. Bounding Box جای سطح واقعی نیست.') from exc
+                    except ValueError:
+                        xs=[min(p[0] for p in candidate.geometry),max(p[0] for p in candidate.geometry)];ys=[min(p[1] for p in candidate.geometry),max(p[1] for p in candidate.geometry)];needs_frame=True
+                    if candidate.holes or candidate.geometry_evidence.get('policy')=='exact_planar_region_v2':needs_frame=True
                     selected_item=candidate
                     rect=QRectF(float(xs[0]),float(ys[0]),float(xs[1]-xs[0]),float(ys[1]-ys[0]))
             if self.viewer.kind!='pdf' or rect is None:
@@ -888,6 +894,8 @@ class GraphicalTakeoffDialog(QDialog):
             label,ok=QInputDialog.getItem(self,"انتخاب عملیات سقف","نوع سقف را طبق نقشه تأیید کنید:",labels,0,False)
             if not ok:return
             kind=KINDS[labels.index(label)]
+            frame=ask_local_frame(self) if needs_frame else None
+            if needs_frame and frame is None:return
             points=rectangle_to_points(rect.left(),rect.top(),rect.right(),rect.bottom())
             item=selected_item or next((x for x in self.session.for_page(self.page)
                        if x.kind=='area' and tuple(x.geometry)==tuple(points)),None)
@@ -904,8 +912,8 @@ class GraphicalTakeoffDialog(QDialog):
                     if not self.save_session_to_project():return
             elif not self.save_session_to_project():return
             record=self.app_service.load_drawing_takeoff_session(pid,self.persisted_session_id)
-            source=bind_source(record,item.id)
-            open_roof_editor(self.app_service,parent=self,project_id=pid,kind=kind,drawing_source=source)
+            source=bind_source(record,item.id,local_frame=frame)
+            open_roof_editor(self.app_service,parent=self,project_id=pid,floor_id=(item.geometry_evidence or {}).get('floor_id',''),kind=kind,drawing_source=source)
             self.status.setText("فرم تخصصی بسته شد؛ انتقال فقط از بازبینی و ثبت مجاز همان فرم انجام می‌شود")
         except Exception as exc:
             QMessageBox.warning(self,"سقف از ناحیه",str(exc))
@@ -1007,6 +1015,70 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas.points=[];self.redraw_current_page();self.refresh()
             self.status.setText(f"ناخالص: {checked['gross_m2']} | کسورات: {checked['deducted_m2']} | خالص: {checked['net_m2']} مترمربع | صفحه {self.page}")
         except Exception as exc:QMessageBox.warning(self,'هندسه چندضلعی',str(exc))
+
+    def open_drawing_correction(self):
+        """Use the existing correction journal; the original session stays immutable."""
+        from hashlib import sha256
+        from core.takeoff.manual_formula_amendments import beam_current,digest,beam_effective_takeoffs
+        from core.drawings.takeoff_bridge import validate_session_payload
+        from core.commercial.exact_values import number,exact
+        try:
+            row=self.table.currentRow();pid=self.project_id_input.text().strip()
+            if row<0 or not self.persisted_session_id:raise ValueError('یک برداشت قطعی از نشست ذخیره‌شده را انتخاب کنید')
+            selected=self.table.item(row,0).text();project=self.app_service.open_project(pid)
+            originals=[r for r in project.get('takeoffs',[]) if r.get('drawing_session_id')==self.persisted_session_id and r.get('drawing_takeoff_id')==selected]
+            if len(originals)!=1:raise ValueError('این ردیف هنوز برداشت قطعی یکتا نیست')
+            root=originals[0]['source_id'];base=beam_current(project,root);session_revision=project['drawing_sessions'][self.persisted_session_id]['revision']
+            child=QDialog(self);child.setObjectName('DrawingPolygonCorrection');child.setWindowTitle('اصلاحیه مستند برداشت قطعی — اصل و تاریخچه محفوظ');child.setLayoutDirection(Qt.RightToLeft);child.resize(850,550)
+            layout=QVBoxLayout(child);form=QFormLayout();layout.addLayout(form);controls={}
+            for key,label in [('path','فایل مدرک اصلاحیه (JSON)'),('reference','مرجع مدرک'),('author','ایجادکننده درخواست'),('reason','دلیل اصلاح'),('reviewer','بازبین مستقل'),('note','یادداشت کنترل'),('id','شناسه اصلاحیه برای بازگشایی')]:
+                field=QLineEdit();form.addRow(label,field);controls[key]=field
+            summary=QLabel('نسخه مؤثر مبنا: '+str(base['revision'])+'؛ نسخه نشست: '+str(session_revision)+'؛ اصل نشست و ریزمتره هرگز بازنویسی نمی‌شود.');summary.setWordWrap(True);layout.addWidget(summary);controls['summary']=summary
+            actions=QGridLayout();layout.addLayout(actions)
+            def selected_amendment():
+                a=self.app_service.open_project(pid).get('beam_amendments',{}).get(controls['id'].text().strip())
+                if not a or a.get('kind')!='drawing_polygon_amendment' or a['beam_key']!=root:raise ValueError('اصلاحیه متعلق به برداشت انتخاب‌شده نیست')
+                return a
+            @exact
+            def document():
+                path=Path(controls['path'].text().strip())
+                if not path.is_file():raise ValueError('فایل مدرک اصلاحیه انتخاب نشده است')
+                doc=json.loads(path.read_text(encoding='utf-8-sig'));payload=doc.get('proposed_session',{})
+                expected=self.app_service.drawing_amendment_document(pid,root,payload,expected_revision=base['revision'],expected_session_revision=session_revision)
+                if digest(expected)!=digest(doc):raise ValueError('مدرک با نسخه و منبع مبنا مطابقت ندارد')
+                report=validate_session_payload(payload)
+                if not report['valid']:raise ValueError('؛ '.join(report['issues']))
+                proposed=DrawingTakeoffSession.from_dict(payload);item=proposed.find(selected)
+                effective=next(r for r in beam_effective_takeoffs(project,project['takeoffs']) if r['source_id']==root)
+                previous=number(effective['quantities'][0]['amount'],'مقدار مبنا');quantity=number(item.geometry_evidence['net_m2'],'مقدار پیشنهاد')
+                summary.setText('مبنا: '+str(previous)+'؛ پیشنهاد: '+str(quantity)+'؛ اختلاف: '+str(quantity-previous)+' مترمربع؛ صفحه '+str(item.page)+'؛ منبع: '+proposed.drawing_source+'؛ SHA-256: '+proposed.source_sha256)
+                return path,payload
+            def create():
+                path,payload=document()
+                if QMessageBox.question(child,'ثبت درخواست اصلاحیه','درخواست با این مدرک ثبت شود؟ این اقدام تأیید مهندسی یا اعمال مالی نیست.',QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
+                a=self.app_service.create_drawing_amendment(pid,root,payload,expected_revision=base['revision'],expected_session_revision=session_revision,created_by=controls['author'].text(),reason=controls['reason'].text(),evidence={'evidence_path':str(path),'evidence_sha256':sha256(path.read_bytes()).hexdigest(),'evidence_reference':controls['reference'].text()})
+                controls['id'].setText(a['id']);load()
+            def load():
+                a=selected_amendment();summary.setText('نسخه مبنا: '+str(a['base_revision'])+'؛ نسخه جدید: '+str(a['base_revision']+1)+'؛ اختلاف مقدار: '+str(a['delta'][root])+' مترمربع؛ وضعیت: '+{'draft':'پیش‌نویس','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]+'؛ اصل نشست محفوظ است.')
+            def review():
+                a=selected_amendment();self.app_service.review_beam_amendment(pid,a['id'],expected_revision=a['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text());load()
+            def apply():
+                a=selected_amendment();self.app_service.apply_beam_amendment(pid,a['id'],expected_revision=a['revision']);load()
+                self.status.setText('اثر اصلاحیه در BOQ ثبت شد؛ جدول نشست، اصل تاریخی است. هندسه مؤثر از پنجره اصلاحیه قابل مشاهده است.')
+            def highlight():
+                a=selected_amendment();payload=a['proposal']['proposed_session'];proposed=DrawingTakeoffSession.from_dict(payload);item=proposed.find(selected)
+                if proposed.drawing_source!=self.session.drawing_source:
+                    viewer=GraphicalTakeoffDialog(child,proposed.drawing_source);viewer.session=proposed;viewer.canvas.session=proposed;viewer.load_page(item.page);viewer.canvas.highlight_measurement(item);viewer.exec()
+                else:
+                    if item.page!=self.page:self.load_page(item.page)
+                    self.canvas.highlight_measurement(item)
+            def run(fn):
+                try:fn()
+                except Exception as exc:QMessageBox.warning(child,'کنترل اصلاحیه برداشت',str(exc))
+            for index,(key,label,fn) in enumerate([('preview','پیش‌نمایش مدرک',document),('create','ثبت درخواست',create),('load','بازگشایی اصلاحیه',load),('review','بازبینی مستقل',review),('apply','اعمال مجاز به BOQ',apply),('highlight','هایلایت هندسه پیشنهادی/مؤثر',highlight)]):
+                button=QPushButton(label);button.clicked.connect(lambda _=False,f=fn:run(f));actions.addWidget(button,index//3,index%3);controls[key]=button
+            child.correction_controls=controls;child.exec()
+        except Exception as exc:QMessageBox.warning(self,'اصلاحیه برداشت',str(exc))
 
     def remove_selected_opening(self):
         try:

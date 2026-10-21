@@ -91,3 +91,33 @@ def test_successive_corrections_increase_then_remove_opening_without_history_los
  assert Decimal(str(project['boq'][0]['quantity']))==100
  assert project['beam_amendments'][b['id']]['boq_before_apply'][0]['quantity']==96
  app.store.close()
+
+
+def test_new_pdf_bytes_need_documented_correction_and_preserve_original(tmp_path):
+ import fitz
+ app,s,i,r,key=setup(tmp_path);original=deepcopy(app.open_project('P'))
+ new=tmp_path/'revised-plan.pdf'
+ with fitz.open(tmp_path/'plan.pdf') as pdf:pdf[0].insert_text((20,20),'explicit synthetic drawing revision');pdf.save(new)
+ changed=DrawingTakeoffSession(str(new));changed.calibrate(1,50,1)
+ from core.drawings.graphical_takeoff import Point
+ j=changed.add_polygon([Point(100,100),Point(550,100),Point(550,600),Point(100,600)],topology='exact_planar_region_v2',source='explicit synthetic revised source',floor_id='L1',member_id='M1',quantity_owner=i.geometry_evidence['quantity_owner'])
+ a=propose(app,changed,j,r,key,tmp_path,'document');app.review_beam_amendment('P',a['id'],expected_revision=1,reviewer='other',note='new PDF and 90 m2 oracle');app.apply_beam_amendment('P',a['id'],expected_revision=1)
+ assert app.open_project('P')['takeoffs']==original['takeoffs'] and app.open_project('P')['drawing_sessions']==original['drawing_sessions']
+ assert app.open_project('P')['boq'][0]['quantity']==90;app.store.close()
+
+
+def test_drawing_session_revision_changed_after_proposal_is_atomic(tmp_path):
+ app,s,i,r,key=setup(tmp_path);a=propose(app,s,i,r,key,tmp_path,'document')
+ s.add_count(1,page=1,source='explicit unrelated draft count')
+ app.save_drawing_takeoff_session('P',s,session_id=r['session_id'],expected_revision=2)
+ before=deepcopy(app.open_project('P'))
+ with pytest.raises(RuntimeError):app.review_beam_amendment('P',a['id'],expected_revision=1,reviewer='other',note='stale session')
+ assert app.open_project('P')==before;app.store.close()
+
+
+def test_source_file_changed_after_review_blocks_apply(tmp_path):
+ app,s,i,r,key=setup(tmp_path);a=propose(app,s,i,r,key,tmp_path)
+ app.review_beam_amendment('P',a['id'],expected_revision=1,reviewer='other',note='explicit source oracle');before=deepcopy(app.open_project('P'))
+ (tmp_path/'plan.pdf').write_bytes(b'changed source, invalid PDF')
+ with pytest.raises(ValueError):app.apply_beam_amendment('P',a['id'],expected_revision=1)
+ assert app.open_project('P')==before;app.store.close()

@@ -2,7 +2,7 @@
 
 Decimal coordinate literals are rational numbers; no epsilon is used for topology.
 128 vertices/ring, 32 holes and 512 total vertices bound quadratic work. External
-boundary-contact holes and disconnected interiors are intentionally unsupported.
+boundary-contact cuts and multipart interiors require the explicit v2 contract.
 """
 from decimal import Decimal, localcontext, Inexact
 from fractions import Fraction as F

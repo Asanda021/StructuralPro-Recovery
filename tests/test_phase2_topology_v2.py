@@ -43,3 +43,13 @@ def test_multipart_overlap_compares_net_material_not_cut():
  cut=[[(4,0),(6,0),(6,10),(4,10)]]
  assert not pg.regions_overlap(OUTER,cut,[(4,2),(6,2),(6,8),(4,8)],[],topology_a=pg.TOPOLOGY_V2)
  assert pg.regions_overlap(OUTER,cut,[(3,2),(5,2),(5,8),(3,8)],[],topology_a=pg.TOPOLOGY_V2)
+
+
+def test_point_contact_and_many_vertex_many_hole_exact_oracles():
+ e=pg.evidence(OUTER,[[(0,5),(2,4),(2,6)]],1,['explicit point contact'],topology=pg.TOPOLOGY_V2)
+ assert Decimal(e['net_m2'])==98 and len(e['components'])==1
+ outer=[(0,0),(40,0),(40,10)]
+ for j in reversed(range(20)):outer.extend([(2*j+1,10),(2*j+1,20),(2*j,20),(2*j,10)])
+ holes=[[(str(Decimal(2*j)+Decimal('.2')),2),(str(Decimal(2*j)+Decimal('.8')),2),(str(Decimal(2*j)+Decimal('.8')),3),(str(Decimal(2*j)+Decimal('.2')),3)] for j in range(20)]
+ e=pg.evidence(outer,holes,1,['explicit hole '+str(j) for j in range(20)],topology=pg.TOPOLOGY_V2)
+ assert Decimal(e['gross_m2'])==600 and Decimal(e['deducted_m2'])==12 and Decimal(e['net_m2'])==588

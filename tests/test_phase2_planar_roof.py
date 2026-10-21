@@ -96,3 +96,75 @@ def test_explicit_cut_foam_piece_uses_one_documented_stock_piece(tmp_path):
  assert sum(Decimal(str(v['quantity'])) for v in r['rows'] if v['item_code']=='foam')==2
  assert sum(Decimal(str(v['quantity'])) for v in r['rows'] if v['item_code']=='concrete')==Decimal('.77375')
  app.store.close()
+
+
+def test_legacy_rectangle_binding_cannot_silently_authorize_different_planar_area(tmp_path):
+ from test_phase2_pdf_roof import bound
+ from core.takeoff.reviewed_aec import preview_system
+ app,_,_,_,old=bound(tmp_path,'solid_slab');d=planar_sample('solid_slab');d['source']=old['source']
+ path=tmp_path/'mismatch-planar.json';path.write_text(json.dumps(detail_payload(d)));d['source'].update(detail_path=str(path),detail_sha256=sha256(path.read_bytes()).hexdigest())
+ assert not preview_system(d,app.takeoff)['ready'];app.store.close()
+
+
+def test_planar_pdf_geometry_correction_preserves_roof_history_and_ownership(tmp_path):
+ from core.drawings import roof_region as rr
+ from core.drawings.takeoff_session import DrawingTakeoffSession
+ assert hasattr(rr,'source_signature'),'missing explicit PDF revision mapping'
+ app,s,item,r,d,original,proposal,evidence,new,points=prepared_geometry_revision(tmp_path)
+ a=app.create_roof_amendment('P','solid_slab','L1','S1',proposal,expected_revision=2,created_by='author',reason='one explicit vertex changes area by 1 m2',evidence=evidence)
+ app.review_beam_amendment('P',a['id'],expected_revision=1,reviewer='other',note='13 m2, 2.6 m3 oracle');app.apply_beam_amendment('P',a['id'],expected_revision=1)
+ after=deepcopy(app.open_project('P'));assert after['takeoffs']==original['takeoffs'] and after['reviewed_aec_systems']==original['reviewed_aec_systems']
+ assert sum(Decimal(str(v['quantity'])) for v in after['boq'] if v['item_code']=='concrete')==Decimal('2.6')
+ app.add_project_member('P','OTHER','L1','سقف')
+ other=DrawingTakeoffSession(str(tmp_path/'plan.pdf'));other.calibrate(1,50,1)
+ local=[('2.5','2.1'),('2.7','2.1'),('2.7','2.2'),('2.5','2.2')]
+ pts=[Point(float(200+(Decimal(x)*Decimal('.8')-Decimal(y)*Decimal('.6'))*50),float(100+(Decimal(x)*Decimal('.6')+Decimal(y)*Decimal('.8'))*50)) for x,y in local]
+ j=other.add_polygon(pts,topology='exact_planar_region_v2',floor_id='L1',member_id='OTHER',quantity_owner='explicit other owner',source='explicit synthetic overlap of amended area')
+ rec=app.save_drawing_takeoff_session('P',other);snapshot=deepcopy(app.open_project('P'))
+ with pytest.raises(ValueError):app.commit_drawing_takeoff_to_boq('P',rec['session_id'],[j.id],expected_session_revision=1)
+ assert app.open_project('P')==snapshot
+ # The new paid measurement snapshot is as immutable as the original.
+ s.edit_polygon(item.id,[(float(x+1),float(y)) for x,y in points])
+ with pytest.raises(ValueError):app.save_drawing_takeoff_session('P',s,session_id=new['session_id'],expected_revision=1)
+ app.store.close()
+
+
+@pytest.mark.parametrize('building',['B1','B۱'])
+def test_same_physical_part_on_another_page_is_not_paid_again(tmp_path,building):
+ app,s,item,rec,d=bound_planar(tmp_path,'solid_slab');app.save_aec_system_draft('P',d,expected_revision=0)
+ app.review_roof_system('P','solid_slab','L1','S1',expected_revision=1,reviewer='other',note='oracle');app.commit_aec_system('P','solid_slab','L1','S1',expected_revision=2)
+ app.add_project_member('P','S2','L1','سقف')
+ second=DrawingTakeoffSession(str(tmp_path/'plan.pdf'));second.calibrate(2,50,1);second.current_page=2
+ j=second.add_polygon([Point(*p) for p in item.geometry],page=2,topology='exact_planar_region_v2',source='explicit other drawing',floor_id='L1',member_id='S2',quantity_owner='other explicit owner')
+ r=app.save_drawing_takeoff_session('P',second);copy=planar_sample('solid_slab');copy['system_id']='S2';copy['building_id']=building
+ copy['source']=bind_source(app.load_drawing_takeoff_session('P',r['session_id']),j.id,local_frame=FRAME);copy['source'].update(plan_ref='synthetic page 2',detail_ref='same claimed physical bar')
+ path=tmp_path/'same-physical-part.json';path.write_text(json.dumps(detail_payload(copy)));copy['source'].update(detail_path=str(path),detail_sha256=sha256(path.read_bytes()).hexdigest())
+ before=deepcopy(app.open_project('P'))
+ with pytest.raises(ValueError):app.save_aec_system_draft('P',copy,expected_revision=0)
+ assert app.open_project('P')==before;app.store.close()
+
+def prepared_geometry_revision(tmp_path):
+ from core.drawings import roof_region as rr
+ app,s,item,r,d=bound_planar(tmp_path,'solid_slab')
+ app.save_aec_system_draft('P',d,expected_revision=0);app.review_roof_system('P','solid_slab','L1','S1',expected_revision=1,reviewer='other',note='12 m2 oracle');app.commit_aec_system('P','solid_slab','L1','S1',expected_revision=2)
+ original=deepcopy(app.open_project('P'))
+ revised=[[0,0],[4,0],[4,2],[3,2],[2,4],[0,4]] # analytic area 13 m2
+ points=[(200+(Decimal(str(x))*Decimal('.8')-Decimal(str(y))*Decimal('.6'))*50,100+(Decimal(str(x))*Decimal('.6')+Decimal(str(y))*Decimal('.8'))*50) for x,y in revised]
+ s.edit_polygon(item.id,[(float(x),float(y)) for x,y in points]);new=app.save_drawing_takeoff_session('P',s)
+ proposal=deepcopy(app.get_aec_system('P','solid_slab','L1','S1')['data']);proposal.pop('roof_review',None)
+ proposal['source']=bind_source(app.load_drawing_takeoff_session('P',new['session_id']),item.id,local_frame=FRAME)
+ proposal['source'].update(plan_ref=d['source']['plan_ref'],detail_ref=d['source']['detail_ref'])
+ rd=proposal['roof_detail'];rd['geometry']['planar']['outer']=revised;rd['regions'][0]['footprint']=revised;rd['formwork']['faces'][0]['footprint']=revised
+ rd['geometry_change']={'policy':'pdf_roof_geometry_change_v1','previous_source_signature':rr.source_signature(d['source']),'new_source_signature':rr.source_signature(proposal['source']),'source_ref':'explicit synthetic amended plan','approved_by':'independent synthetic geometry reviewer'}
+ path=tmp_path/'roof-geometry-amendment.json';path.write_text(json.dumps(detail_payload(proposal)));proposal['source'].update(detail_path=str(path),detail_sha256=sha256(path.read_bytes()).hexdigest())
+ evidence={'evidence_path':str(path),'evidence_sha256':sha256(path.read_bytes()).hexdigest(),'evidence_reference':'explicit synthetic revision'}
+ return app,s,item,r,d,original,proposal,evidence,new,points
+
+
+
+def test_planar_formula_and_report_label_the_envelope_as_envelope(tmp_path):
+ app,_,_,_,d=bound_planar(tmp_path,'solid_slab');app.save_aec_system_draft('P',d,expected_revision=0)
+ r=app.preview_aec_system('P','solid_slab','L1','S1');assert 'چندضلعی' in r['rows'][0]['formula']
+ path=tmp_path/'planar-report.csv';app.export_roof_detail_report('P','solid_slab','L1','S1',path,format='csv')
+ text=path.read_text(encoding='utf-8-sig');assert 'پوش مختصات طول' in text and 'مساحت خالص هندسی' in text
+ app.store.close()

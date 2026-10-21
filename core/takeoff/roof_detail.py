@@ -62,6 +62,8 @@ def physical_identity_guard(project):
     old=previous.get('data',{})
     if old.get('kind')=='hollow_core' and all(canonical(old.get(k))==canonical(d.get(k)) for k in ('floor_id','system_id')):raise ValueError('هالوکور تاریخی هم‌هویت وجود دارد؛ تبدیل یا شمارش مجدد بدون گردش مهاجرت معتبر ممنوع است')
 
+ _planar_physical_guard(project)
+
 
 def checked(part):
  require_text(part.get('source_ref'),'مرجع دیتایل')
@@ -304,15 +306,17 @@ def preview(data,engine,require_review=False):
   require_text(data.get('building_id'),'شناسه ساختمان')
   strict(data,('kind','floor_id','system_id','source','components','measurement_policy','building_id','roof_detail','roof_review'),'سقف')
   if any(part!={'status':'unreviewed'} for part in data['components'].values()):raise ValueError('دیتایل عمومی و تخصصی سقف نباید هم‌زمان شمرده شوند')
-  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels','void_formers'),'دیتایل سقف')
+  d=data['roof_detail'];strict(d,('geometry','regions','deductions','deductions_ref','rebars','pieces','pieces_ref','formwork','shoring','joist_layout','rib_layout','panels','void_formers','geometry_change'),'دیتایل سقف')
   g=d['geometry'];strict(g,('unit','shape','length','width','depth','count','repeat_scope','action','topping_thickness','joist_axis','joist_count','joist_spacing','joist_supply_scope','rib_axis','panel_axis','bottom_thickness','source_ref','approved_by','planar'),'هندسه');checked(g)
   planar=g.get('shape')=='documented_planar'
+  if d.get('geometry_change') and (not planar or source.get('roof_binding',{}).get('policy')!='pdf_roof_planar_v2'):raise ValueError('اصلاح هندسه نیازمند اتصال صریح پلان PDF است')
   if g.get('unit')!='m' or g.get('shape') not in ('rectangular','documented_planar'):raise ValueError('هندسه دارای قرارداد معتبر و واحد متر نیست')
   if not planar and g.get('planar'):raise ValueError('حذف صریح قرارداد پلان محلی مجاز نیست')
   if planar and (kind not in ('solid_slab','joist_block','joist_foam') or g.get('planar',{}).get('policy')!='roof_planar_partition_v1'):raise ValueError('قرارداد پلان فقط برای سه سقف مصوب است')
   L,W,H=(n(g.get(k),k) for k in ('length','width','depth'));count=n(g.get('count'),'تعداد سقف',integer=True)
   if planar:
    from core.drawings.planar_geometry import ring,signed,decimal_text
+   strict(g['planar'],('policy','outer','thickness_zones'),'قرارداد پلان محلی')
    owner=ring(g['planar']['outer'])
    if min(p[0] for p in owner)!=0 or min(p[1] for p in owner)!=0 or max(p[0] for p in owner)!=L or max(p[1] for p in owner)!=W:raise ValueError('پوش محلی جزء با رأس‌های واقعی سقف یکسان نیست')
    plan_area=number(decimal_text(abs(signed(owner))),'مساحت واقعی سقف')
@@ -383,7 +387,7 @@ def preview(data,engine,require_review=False):
    deducted=sum((overlap(b,c) for _,c in deductions),Decimal(0))
    if p['component']=='precast' and deducted:raise ValueError('بازشو در قطعه پیش‌ساخته به هندسه و دیتایل قطعه اصلاح‌شده نیاز دارد')
    code='precast_concrete' if p['component']=='precast' else 'concrete'
-   emit(code,volume(b)-deducted,'m3',p['component'],p['id'],'حجم ناحیه مستطیلی منهای تقاطع مکانی مستند',{'geometry':deepcopy(p),'gross_m3':volume(b),'deducted_m3':deducted,'source_ref':p['source_ref'],'reviewed_by':p['approved_by']})
+   emit(code,volume(b)-deducted,'m3',p['component'],p['id'],('مساحت دقیق چندضلعی جزء × ضخامت صریح − تقاطع حجمی مستند' if planar else 'حجم ناحیه مستطیلی منهای تقاطع مکانی مستند'),{'geometry':deepcopy(p),'gross_m3':volume(b),'deducted_m3':deducted,'source_ref':p['source_ref'],'reviewed_by':p['approved_by']})
    allocations.append({'region_id':p['id'],'deducted_m3':wire(deducted)})
   if not rows:raise ValueError('سقف فاقد حجم بتن خالص است')
   rows[0]['params'].update(intersections=[{'id':p['id'],'source_ref':p['source_ref']} for p,_ in deductions],deduction_allocations=allocations,gross_roof_m3=wire(gross),roof_geometry=deepcopy(g))
@@ -491,7 +495,7 @@ def preview(data,engine,require_review=False):
      gross_face=number(face_evidence['net_m2'],'سطح هندسی وجه قالب')
      if ded:require_text(face.get('deduction_ref'),'مدرک مستقل کسر وجه قالب')
     if ded>=gross_face:raise ValueError('سطح خالص قالب نامعتبر است')
-    emit('formwork',gross_face-ded,'m2','formwork',ident,'طول وجه × عرض وجه − کسر مستند',deepcopy(face))
+    emit('formwork',gross_face-ded,'m2','formwork',ident,('مساحت دقیق وجه و بازشوهای مستند − کسر مستقل' if planar and face.get('footprint') else 'طول وجه × عرض وجه − کسر مستند'),deepcopy(face))
   part=d['shoring'];strict(part,('status','approved_by','source_ref','reason','props'),'شمع‌بندی')
   if applicable(part):
    if not part.get('props'):raise ValueError('جدول شمع‌بندی مستند لازم است')
@@ -539,3 +543,21 @@ def _prism_footprint(value):
  if isinstance(value,PlanarPrism):return value.footprint
  from core.drawings.planar_geometry import ring
  return ring([(value[0][0],value[0][1]),(value[1][0],value[0][1]),(value[1][0],value[1][1]),(value[0][0],value[1][1])])
+
+
+def _planar_physical_guard(project):
+ from core.takeoff.manual_formula_amendments import beam_current
+ entries=[]
+ for key,record in project.get('reviewed_aec_systems',{}).items():
+  current=beam_current(project,key) if key in project.get('beam_amendment_applied',{}) else record
+  d=current.get('data',{})
+  if d.get('measurement_policy')!=POLICY:continue
+  rd=d.get('roof_detail',{});physical=[]
+  for group in rd.get('rebars',{}).values():physical.extend(group.get('series',[]))
+  physical.extend(rd.get('pieces',[]));physical.extend(rd.get('joist_layout',[]));physical.extend(rd.get('formwork',{}).get('faces',[]));physical.extend(rd.get('shoring',{}).get('props',[]))
+  keys={canonical(p['physical_key']) for p in physical if p.get('physical_key')}
+  entries.append((key,d.get('building_id'),rd.get('geometry',{}).get('shape')=='documented_planar',keys))
+ for i,(key,building,planar,parts) in enumerate(entries):
+  for other,other_building,other_planar,other_parts in entries[:i]:
+   if (planar or other_planar) and canonical(building)==canonical(other_building) and parts&other_parts:
+    raise ValueError('هویت قطعه فیزیکی در سقف دیگری مطالبه شده است؛ مالکیت مشترک بدون سند مستقل دوباره پرداخت نمی‌شود')

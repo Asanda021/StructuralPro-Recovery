@@ -54,6 +54,8 @@ def bind_source(record,item_id,*,local_frame=None):
         # Validate the frame before recording it; quantity still comes from the
         # exact original polygon, never from the display envelope.
         globals()['local_frame'](local_frame)
+        meta=raw.get('geometry_evidence') or {}
+        if any(not meta.get(k,'').strip() for k in ('floor_id','member_id','quantity_owner')):raise ValueError('هویت طبقه، عضو و مرجع مالک مقدار برای چارچوب سقف الزامی است')
         fingerprint=sha256(json.dumps([session['source_sha256'],item.page,canonical_ring(raw['geometry']),sorted(canonical_ring(h) for h in raw.get('holes',[]))],separators=(',',':')).encode()).hexdigest()
         xs=[float(p[0]) for p in raw['geometry']];ys=[float(p[1]) for p in raw['geometry']]
         return {'mode':'drawing','source_id':'pdf-roof:'+fingerprint,'drawing_path':session['drawing_source'],'sha256':session['source_sha256'],'page':item.page,
@@ -109,7 +111,9 @@ def validate_detail(data):
             raise ValueError('هویت عضو و طبقه سقف با ناحیه برداشت‌شده تطبیق ندارد')
     if b['policy']==PLANAR_POLICY:
         _validate_planar_detail(data,b);return b
-    g=data.get('roof_detail',{}).get('geometry',{});length,width=dimensions(source)
+    g=data.get('roof_detail',{}).get('geometry',{})
+    if g.get('shape')!='rectangular':raise ValueError('پلان غیرمستطیلی به چارچوب محلی صریح نیاز دارد')
+    length,width=dimensions(source)
     if number(g.get('length'),'طول سقف')!=length or number(g.get('width'),'عرض سقف')!=width or number(g.get('count'),'تعداد سقف')!=1:
         raise ValueError('ابعاد و تعداد سقف باید با همان یک ناحیه کالیبره‌شده تطبیق داشته باشد')
     path=Path(str(source.get('detail_path','')))
@@ -181,6 +185,9 @@ def project_gate(project,data,*,exclude=None):
     session=b['session'];item=next(x for x in session['items'] if x['id']==b['item_id'])
     for key,record in (project.get('reviewed_aec_systems') or {}).items():
         if key==exclude:continue
+        if key in project.get('beam_amendment_applied',{}):
+            from core.takeoff.manual_formula_amendments import beam_current
+            record=beam_current(project,key)
         other_source=record.get('data',{}).get('source',{})
         other=other_source.get('roof_binding',{})
         if other.get('identity')==b['identity']:raise ValueError('همین محدوده سقف قبلاً به عضو دیگری تخصیص یافته است')
@@ -201,12 +208,19 @@ def project_gate(project,data,*,exclude=None):
 
 def reject_reserved_regions(project,record,rows):
     identities={r.get('data',{}).get('source',{}).get('roof_binding',{}).get('identity')
-                for r in (project.get('reviewed_aec_systems') or {}).values()}
+                for r in _effective_roof_records(project)}
     for row in rows:
         if row.get('kind')!='area':continue
+        meta=row.get('geometry_evidence') or {}
+        if meta.get('floor_id') and meta.get('member_id'):
+            from core.projects.project_model import _identity as member_identity
+            for reserved in list((project.get('reviewed_aec_systems') or {}).values())+list(_effective_roof_records(project)):
+                data=reserved.get('data',{})
+                if data.get('measurement_policy')=='roof_specialist_v1' and data.get('kind') in KINDS and member_identity(data.get('floor_id',''))==member_identity(meta['floor_id']) and member_identity(data.get('system_id',''))==member_identity(meta['member_id']):
+                    raise ValueError('همین عضو سقف به متره تخصصی تخصیص یافته است؛ تغییر صفحه یا نسخه مجوز پرداخت عمومی دوم نیست')
         if row.get('geometry_evidence'):
             from core.drawings.planar_geometry import measurement_overlap
-            for reserved in (project.get('reviewed_aec_systems') or {}).values():
+            for reserved in _effective_roof_records(project):
                 source=reserved.get('data',{}).get('source',{});binding=source.get('roof_binding')
                 if not binding or source.get('sha256')!=record['session'].get('source_sha256') or source.get('page')!=row['page']:continue
                 owner=next(x for x in binding['session']['items'] if x['id']==binding['item_id'])
@@ -244,6 +258,7 @@ def guard_project_change(previous,updated):
     """Reuse the existing ProjectStore invariant hook, including direct writes."""
     # An edited session may add new drafts, but cannot rewrite paid polygon
     # evidence. A session revision is not a financial amendment authorization.
+    _protect_planar_snapshots(previous or {},updated)
     old_sessions=(previous or {}).get('drawing_sessions') or {}
     new_sessions=updated.get('drawing_sessions') or {}
     for row in (previous or {}).get('takeoffs',[]):
@@ -271,6 +286,7 @@ def guard_project_change(previous,updated):
         if ident in seen:raise ValueError('ناحیه سقف در دو رکورد تکرار شده است')
         seen.add(ident)
         if record!=old:
+            if data.get('roof_detail',{}).get('geometry_change'):raise ValueError('اصلاح هندسه فقط در دفتر اصلاحیه مجاز است؛ اصل رکورد بازنویسی نمی‌شود')
             project_gate(updated,data,exclude=key)
             if record.get('status')=='committed':validate_detail(data)
     for ident,am in (updated.get('beam_amendments') or {}).items():
@@ -278,7 +294,7 @@ def guard_project_change(previous,updated):
         proposal=am.get('proposal') or {};base=new_records.get(am.get('beam_key'),{}).get('data',{})
         if base.get('source',{}).get('roof_binding'):
             if not proposal.get('source',{}).get('roof_binding'):raise ValueError('منشأ نقشه در اصلاحیه سقف باید حفظ شود')
-            if not same_source_identity(base['source'],proposal['source']):raise ValueError('منشأ PDF در اصلاحیه باید ثابت بماند')
+            if not same_source_identity(base['source'],proposal['source']):validate_planar_source_change(am.get('previous',{}).get('data',base),proposal)
             evidence=am.get('evidence') or {}
             if proposal['source'].get('detail_sha256')!=evidence.get('evidence_sha256') or proposal['source'].get('detail_path')!=evidence.get('evidence_path'):raise ValueError('مدرک دیتایل با مدرک اصلاحیه یکسان نیست')
             project_gate(updated,proposal,exclude=am.get('beam_key'))
@@ -357,4 +373,54 @@ def _validate_planar_detail(data,binding):
             raise ValueError('بازشوی PDF در این قرارداد باید تمام‌عمق و صریح باشد')
         actual.append((canonical_ring(p.get('footprint',[])),p.get('source_ref')))
     if sorted(actual)!=expected:raise ValueError('بازشوها و مرجع مستقل نقشه باید دقیقاً با کسورات دیتایل تطبیق داشته باشند')
+    mapping=data['roof_detail'].get('geometry_change')
+    if mapping and (mapping.get('policy')!='pdf_roof_geometry_change_v1' or mapping.get('new_source_signature')!=source_signature(data['source'])):raise ValueError('منبع جدید سند اصلاح هندسه تطبیق ندارد')
     _validate_detail_bytes(data)
+
+
+def source_signature(source):
+    """Bind the measured source independently of the separate detail file path."""
+    return sha256(json.dumps({k:v for k,v in source.items() if k not in ('detail_path','detail_sha256')},sort_keys=True,separators=(',',':'),ensure_ascii=False).encode()).hexdigest()
+
+
+def validate_planar_source_change(previous,proposed):
+    old=previous.get('source',{});new=proposed.get('source',{})
+    if old.get('roof_binding',{}).get('policy')!=PLANAR_POLICY or new.get('roof_binding',{}).get('policy')!=PLANAR_POLICY:
+        raise ValueError('تغییر هندسه فقط در قرارداد صریح پلان محلی و اصلاحیه مستند مجاز است')
+    if any(previous.get(k)!=proposed.get(k) for k in ('kind','floor_id','system_id','building_id')):
+        raise ValueError('هویت فیزیکی سقف در اصلاح هندسه تغییر نمی‌کند')
+    a=validate_source(old);b=validate_source(new)
+    def meta(binding):return next(x for x in binding['session']['items'] if x['id']==binding['item_id']).get('geometry_evidence',{})
+    if any(not meta(a).get(k) or meta(a).get(k)!=meta(b).get(k) for k in ('floor_id','member_id','quantity_owner')):
+        raise ValueError('مالک، عضو و طبقه اندازه‌گیری دو نسخه باید یکسان باشند')
+    mapping=proposed.get('roof_detail',{}).get('geometry_change',{})
+    from core.takeoff.reviewed_components import require_text
+    if set(mapping)!={'policy','previous_source_signature','new_source_signature','source_ref','approved_by'} or mapping['policy']!='pdf_roof_geometry_change_v1' or mapping['previous_source_signature']!=source_signature(old) or mapping['new_source_signature']!=source_signature(new):
+        raise ValueError('سند تطبیق نسخه قدیم و جدید هندسه با منشأ معتبر لازم است')
+    require_text(mapping['source_ref'],'مرجع اصلاح هندسه');require_text(mapping['approved_by'],'بازبین هندسه')
+    validate_detail(previous);validate_detail(proposed)
+    return True
+
+
+def amendment_source_identity(previous,proposed):
+    if same_source_identity(previous.get('source'),proposed.get('source')) and not proposed.get('roof_detail',{}).get('geometry_change'):return True
+    return validate_planar_source_change(previous,proposed)
+
+
+def _effective_roof_records(project):
+    from core.takeoff.manual_formula_amendments import beam_current
+    for key,record in project.get('reviewed_aec_systems',{}).items():
+        yield beam_current(project,key) if key in project.get('beam_amendment_applied',{}) else record
+
+
+def _protect_planar_snapshots(previous,updated):
+    sources=[r['data'].get('source',{}) for r in previous.get('reviewed_aec_systems',{}).values() if r.get('status')=='committed']
+    sources.extend(a.get('proposal',{}).get('source',{}) for a in previous.get('beam_amendments',{}).values() if a.get('kind')=='roof_amendment' and a.get('status')=='applied')
+    for source in sources:
+        b=source.get('roof_binding',{})
+        if b.get('policy')!=PLANAR_POLICY:continue
+        old=previous.get('drawing_sessions',{}).get(b['session_id'],{}).get('session',{})
+        new=updated.get('drawing_sessions',{}).get(b['session_id'],{}).get('session',{})
+        def selected(session):return {'item':next((i for i in session.get('items',[]) if i['id']==b['item_id']),None),'calibrations':session.get('calibrations'),'source_sha256':session.get('source_sha256'),'drawing_source':session.get('drawing_source')}
+        if json.dumps(selected(old),sort_keys=True)!=json.dumps(selected(new),sort_keys=True):
+            raise ValueError('اندازه‌گیری سقف قطعی محفوظ است؛ نسخه هندسی جدید باید در نشست مستقل و اصلاحیه ثبت شود')
