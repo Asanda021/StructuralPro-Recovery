@@ -8,7 +8,7 @@ import hashlib
 import io
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class DWGEntity:
     entity_type: str
     layer: str
