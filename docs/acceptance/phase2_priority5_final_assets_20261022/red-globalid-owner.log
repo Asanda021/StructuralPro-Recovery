@@ -1,0 +1,23 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_same_global_id_cannot_change_physical_member_across_revisions ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_same_global_id_cannot_cha0')
+
+    def test_same_global_id_cannot_change_physical_member_across_revisions(tmp_path):
+        import ifcopenshell,hashlib
+        app,p,proof,proposal,args=identity_case(tmp_path)
+        app.review_ifc_identity('P',**args)
+        app.add_project_member('P','B2','F1','beam')
+        model=ifcopenshell.open(str(p));model.by_guid(proposal['global_id']).Name='Changed label only'
+        revised=tmp_path/'renamed.ifc';model.write(str(revised))
+        candidate=app.save_ifc_identity_proposal('P',str(revised),revision='R2',global_id=proposal['global_id'],floor_id='F1',member_id='B2',author='author',reference='Proposed different owner; must be rejected',expected_digest=app.store.current_digest('P'),source_sha256=hashlib.sha256(revised.read_bytes()).hexdigest())
+        before=app.store.current_digest('P')
+>       with pytest.raises(ValueError,match='GlobalId'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_phase2_priority5_closure.py:495: Failed
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_closure.py::test_same_global_id_cannot_change_physical_member_across_revisions
+1 failed in 0.66s

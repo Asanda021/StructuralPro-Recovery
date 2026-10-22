@@ -1,0 +1,10 @@
+{
+  "sample_count": 1000,
+  "before_record_bytes": 152000,
+  "after_record_bytes": 64000,
+  "excluded": "shared nested source data; this is object storage, not process RSS",
+  "source_data_preserved": true,
+  "pickle_roundtrip": true,
+  "threshold_changed": false,
+  "gc_configuration_changed": false
+}

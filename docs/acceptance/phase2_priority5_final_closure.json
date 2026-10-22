@@ -1,0 +1,344 @@
+{
+  "date": "2026-10-22",
+  "status": "PARTIAL",
+  "mission_initial_head": "75d344171049c2c6ddfda7d51409bdc2d99b5bf8",
+  "continuation_initial_head": "2941c795882257c4fafd0cf9a3a391fe04b188ec",
+  "final_executable_head": "62bbccba2b27fae856b2083ab26e6927ee992756",
+  "local_tested_head": "4efceed633a9069cad9179f0862aaba24ec8859a",
+  "tested_tree": "04c5216d1bb46bea13c47b24265464ec3e4c3c44",
+  "delivery_head_note": "Resolve the documentation-only delivery commit from Git history; executable app/core/tests are unchanged from the exact tested tree.",
+  "commits": [
+    {
+      "sha": "a8b5ba977ae12710b9ae7d863a8afe5a0f3d8689",
+      "message": "fix: release closed drawing workspaces and their retained large Qt scenes [skip ci]"
+    },
+    {
+      "sha": "367e7997d3d5b234ce09fdf6f7a6adf3f2ab927b",
+      "message": "feat: review IFC identity proposals with existing collaboration roles and immutable SQLite history [skip ci]"
+    },
+    {
+      "sha": "949fb727b297aa0d73ef4f2a60d38f4bec8f67e1",
+      "message": "feat: connect reviewed IFC quantities and crosswalks to canonical takeoff workflows [skip ci]"
+    },
+    {
+      "sha": "d06f2c8c29e668a05d5043e5c265d17ef077088c",
+      "message": "fix: stop linked selection callbacks when Qt scenes are being destroyed [skip ci]"
+    },
+    {
+      "sha": "2941c795882257c4fafd0cf9a3a391fe04b188ec",
+      "message": "fix: retain IFC identity events and resolve PDF ownership across sessions and operation codes [skip ci]"
+    },
+    {
+      "sha": "c728fbd2a470010e6dbaf1d22fadf9971ed58b61",
+      "message": "perf: reduce retained CAD entity record allocations without changing source geometry [skip ci]"
+    },
+    {
+      "sha": "d08a40f9d65a1dc6cb0d4ca2bbc4a5c157e68c9e",
+      "message": "fix: reject conflicting IFC GlobalId owners across source revisions [skip ci]"
+    },
+    {
+      "sha": "62bbccba2b27fae856b2083ab26e6927ee992756",
+      "message": "fix: synchronize IFC inspector state with linked drawing and model selections [skip ci]"
+    }
+  ],
+  "changed_code_and_tests": [
+    "app/graphical_takeoff.py",
+    "app/main.py",
+    "core/drawings/bim_quantities.py",
+    "core/drawings/dwg_takeoff.py",
+    "core/drawings/ifc_pipeline.py",
+    "core/platform/application.py",
+    "core/projects/store.py",
+    "core/takeoff/commit_guards.py",
+    "core/takeoff/manual_formula_amendments.py",
+    "core/takeoff/manual_formula_register.py",
+    "core/takeoff/reviewed_structural.py",
+    "tests/test_phase2_priority5_closure.py"
+  ],
+  "gates": {
+    "A": {
+      "status": "COMPLETE",
+      "evidence": "IFC4 واقعی، IfcOpenShell 0.9.0.post1، کنترل SHA، Schema، هویت و واحد؛ آزموده‌شده در همین اجرا."
+    },
+    "B": {
+      "status": "COMPLETE",
+      "evidence": "Placementهای صلب محلی و تبدیل صریح SI متر/میلی‌متر؛ MapConversion و Schemaهای دیگر پذیرفته‌شده معرفی نشده‌اند."
+    },
+    "C": {
+      "status": "PARTIAL",
+      "evidence": "نقش مجاز و بازبین مستقل، رویدادهای تغییرناپذیر SQLite، CAS، Revision یک‌به‌یک با GlobalId ثابت/جدید و رد مالک ناسازگار.",
+      "blocker": "آشتی کامل Split/Merge و ماتریس همه حالات تغییر مالکیت و مقدار تحویل نشده است."
+    },
+    "D": {
+      "status": "COMPLETE",
+      "evidence": "QTO عمومی و مسیر کامل دیتایل مستقل ستون از موتور موجود؛ بازشوی واقعی، مرجع تحلیلی مستقل و آزمون تضاد؛ بدون استنتاج مصالح از Mesh."
+    },
+    "E": {
+      "status": "PARTIAL",
+      "evidence": "Crosswalk بازبینی‌شده PDF/CAD، انتخاب دوطرفه واقعی CAD/IFC و همگامی فهرست/فرم، کنترل پرداخت دوم از منابع مختلف.",
+      "blocker": "مهاجرت مثبت Crosswalk نسخه جدید، سناریوی کامل IFC/DWG تبدیل‌شده و تمام تعاملات PDF و Split/Merge تکمیل یا اثبات نشده‌اند."
+    },
+    "F": {
+      "status": "PARTIAL",
+      "evidence": "متره عمومی IFC از دفتر فرمول و BOQ موجود، اصلاحیه API با حفظ اصل ۴ و مقدار مؤثر ۵، و دیتایل مستقل ستون تا BOQ.",
+      "blocker": "گردش کامل اصلاحیه IFC در Qt و مهاجرت منبع/دیتایل تخصصی نسخه جدید تحویل نشده است."
+    },
+    "G": {
+      "status": "BLOCKED",
+      "evidence": "رگرسیون دقیق Tree نهایی و بکاپ مستقل ثبت شدند؛ بازیابی ۱۱۳ PASS است.",
+      "blocker": "وقفه ۰٫۵۴۴۷۲۳۹۲۸ ثانیه در آزمون جامع صد‌هزارعضوی، بیشتر از حد ثابت ۰٫۵۰۰ ثانیه است."
+    }
+  },
+  "targeted": {
+    "passed": 117,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": "33.994"
+  },
+  "full": {
+    "passed": 7585,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 1,
+    "seconds": "356.662"
+  },
+  "skips": [
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+      "reason": "PowerShell runtime unavailable"
+    }
+  ],
+  "root_cause": {
+    "diagnostic_tree": "f50a9b9be25df4a4d5926a08abfc461dd1f06800",
+    "gap_s": 0.5830931849999956,
+    "generation2_gc_s": 0.5685346159999654,
+    "phase": "CAD entity receive; existing heap collection",
+    "memory_optimization": {
+      "sample_count": 1000,
+      "before_record_bytes": 152000,
+      "after_record_bytes": 64000,
+      "excluded": "shared nested source data; this is object storage, not process RSS",
+      "source_data_preserved": true,
+      "pickle_roundtrip": true,
+      "threshold_changed": false,
+      "gc_configuration_changed": false
+    },
+    "slots_experiment_gap_s": 0.5154572640000197,
+    "final_gap_s": 0.5447239279999394,
+    "threshold_s": 0.5,
+    "gc_configuration_changed": false,
+    "old_threshold_test_unchanged": true
+  },
+  "sample": {
+    "generic_quantity": "4",
+    "unit": "m",
+    "boq_rows": 1,
+    "takeoff_rows": 1,
+    "crosswalks": 1,
+    "sqlite_integrity": {
+      "ok": true,
+      "integrity_check": "ok",
+      "counts": {
+        "projects": 1,
+        "revisions": 10
+      }
+    },
+    "exports_read": [
+      "xlsx",
+      "pdf",
+      "docx",
+      "csv"
+    ],
+    "synthetic": true,
+    "office_visual_verified": false,
+    "volume_oracle": {
+      "source_sha256": "65c19da3067077430d9e382dbe65c234ced614f27baed9777cc8c1d61daa7516",
+      "revision": "R1",
+      "global_id": "2GKuaIuHz649QcM1vh5B5H",
+      "opening_ids": [
+        "0V5Gc3jbr9efcQlLVv4Ybi"
+      ],
+      "gross_volume_m3": "2.4000000000000004",
+      "net_volume_m3": "2.0",
+      "comparisons": [
+        {
+          "qto_step_id": 240,
+          "name": "GrossVolume",
+          "basis": "gross",
+          "qto_m3": "2.4",
+          "geometry_m3": "2.4000000000000004",
+          "difference_m3": "4E-16",
+          "tolerance_m3": "3.4E-8",
+          "within_tolerance": true
+        },
+        {
+          "qto_step_id": 241,
+          "name": "NetVolume",
+          "basis": "net",
+          "qto_m3": "2",
+          "geometry_m3": "2.0",
+          "difference_m3": "0.0",
+          "tolerance_m3": "3E-8",
+          "within_tolerance": true
+        }
+      ],
+      "within_tolerance": true,
+      "numeric_policy": "IfcOpenShell local SI mesh diagnostic; abs 1e-8 m3 + rel 1e-8",
+      "commit_allowed": false,
+      "payable_rows": [],
+      "warning": "مقایسه تشخیصی هندسه است؛ تأیید مصالح یا مجوز پرداخت نیست"
+    },
+    "specialist_oracle": {
+      "concrete_m3": "0.6",
+      "formwork_m2": "2.7",
+      "reinforcement_kg": "21.488"
+    },
+    "revision_oracle": {
+      "original_m": "4",
+      "effective_m": "5",
+      "delta_m": "1",
+      "new_global_id": true,
+      "original_takeoffs_preserved": true
+    }
+  },
+  "backup": {
+    "archive_sha256": "a2c5c85ae20a2fc7a40650f24a2a8cba2921ccdabaf2fc5e8e128de85fec779d",
+    "manifest_files": 56,
+    "head": "62bbccba2b27fae856b2083ab26e6927ee992756",
+    "tree": "04c5216d1bb46bea13c47b24265464ec3e4c3c44",
+    "git_fsck_exit": 0,
+    "source_paths_rewritten": false,
+    "root_mapping": "Original task samples moved aside; original path aliases only restored files during readback.",
+    "ifc_elements": 12,
+    "storeys": 2,
+    "sqlite_integrity": {
+      "ok": true,
+      "integrity_check": "ok",
+      "counts": {
+        "projects": 1,
+        "revisions": 10
+      }
+    },
+    "boq_rows": 1,
+    "crosswalks": 1,
+    "approved_identities": 1,
+    "crosswalk_qt_readback": true,
+    "amendment_original_m": "4",
+    "amendment_effective_m": "5",
+    "amendments": 1,
+    "manifest_sha256": "aa7460478ffe8e521cf8e107339b12056a61631b202f778f0bac501ee3d1af6f",
+    "manifest_after_readback_unchanged": true,
+    "passed": 113,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "status": "PASS for independent restore, not for priority5 acceptance",
+    "dropbox_path": "/StructuralPro/Backups/StructuralPro_P5_Followup_62bbccba_20261022.zip",
+    "databases": [
+      {
+        "path": "samples/app/projects.db",
+        "integrity": "ok",
+        "takeoffs": 1,
+        "boq_rows": 1,
+        "boq_quantities": [
+          {
+            "quantity": 4,
+            "unit": "m"
+          }
+        ]
+      },
+      {
+        "path": "samples/column/app/projects.db",
+        "integrity": "ok",
+        "takeoffs": 3,
+        "boq_rows": 3,
+        "boq_quantities": [
+          {
+            "quantity": 0.6,
+            "unit": "m3"
+          },
+          {
+            "quantity": 2.7,
+            "unit": "m2"
+          },
+          {
+            "quantity": 21.488,
+            "unit": "kg"
+          }
+        ]
+      },
+      {
+        "path": "samples/revision/app/projects.db",
+        "integrity": "ok",
+        "takeoffs": 1,
+        "boq_rows": 1,
+        "boq_quantities": [
+          {
+            "quantity": 5,
+            "unit": "m"
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Synthetic fixtures and registered test roles are not customer engineering approval, professional licensure or digital signatures.",
+    "Volume geometry comparison is an IfcOpenShell local SI tessellation diagnostic: absolute 1e-8 m3 + relative 1e-8, never automatic material quantities.",
+    "Crosswalk contract checks a supplied SI rigid transform and a reference point; independent human evidence supplies physical identity and the remaining coordinate basis.",
+    "Role registration is application-workspace local; approval snapshots persist. No legal identity authentication is claimed.",
+    "IFC4 and SI local coordinates only in the verified evidence contract; unsupported geometry/details are not inferred.",
+    "Windows, native PowerShell and Microsoft Office remain unaccepted.",
+    "No priority6, merge, force push, release, executable or manual Actions run."
+  ],
+  "assets": {
+    "docs/acceptance/phase2_priority5_final_assets_20261022/build_samples.py": "93726e373801cae8d5e0b169320e7042ecfc66fca81c1ff1bd8ffa9bd9228153",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/cad-linked.png": "0fbcccf37007dacd1045913c63c7d8b3e2f214fbad549d3ada8b8e27c0aefa2c",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/closure-final.log.gz": "597a51e2f9263f6557427c176d281138584c0664273a8f8ff22c83d25deff3e3",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/closure-final.xml.gz": "dabb598ed4db90dabe1c20def0f129a8896fa04af24aa292ec439e42d1bde948",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/diagnostic-full.log.gz": "556cf45fe81408ea234b004c9714c8b8a103ca982473cc68152e636d30fe9617",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/diagnostic-full.xml.gz": "890a9662738209548d1f9248eaad7f884e5359e781d5ff7e666eaa08d46f07f0",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/environment.json": "7a7e95330023afd44a6cff7146e354f7042d0f9848874885ed05c20f13a80002",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/final.log.gz": "8988e8f60560eae2e28de37fa1f9f282f08baf113f94b91c62e7cf80efa24544",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/final.xml.gz": "9b5f21245515d304d592bba28503c833ff8ffb7345b46607e25e18673eb421d2",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/full-cad-trace.json": "4525aec6ef0f49646b95a4b2b894034d444f2c7d35818e8b75d67b869ba80fc0",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/green-globalid-owner.log": "1e82c0d386bb5bf71aaae82fcca0da31de977fbe1b2a89e8d73c44f8714a70c9",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/green-selection-sync.log": "0acc72f43be9a3cf3a27f3a3cff7508bee3f0667ae8ee03ad7d256f66fc8f5e3",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/ifc-inspector.png": "905af403d425d90ef06f928354c24852a0f4ff4f6b4d34d9fda55ec2b12c6166",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/ifc-model.png": "78a246264bb38ffc26ff5d2f72b3fc2fb5f1ce7591b05db75fd38bdf198317d3",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/p5_trace.py": "00f7a16520bc4b3cf01a4a7abbf112c414c3a7b8071daf6567848beeb2a803b5",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/record-storage.json": "ff59a6e8c7d830461dfeae0f200ccf8437cc2f3f1fc7b4d9fa95b7390051b15a",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/red-globalid-owner.log": "c62d68600dcb61c9a7981a78e94dbb5503d157afd571b6b79905a3fc6228aa09",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/red-selection-sync.log": "428aa82f292b6c7147e1995adcaa7aa5c3f03c6ec270b48bf0f5573eb59d4d3a",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/refresh_ui.py": "38a59e0bcfc5ac1505a6387e0a25994dc3c76dc30b94687ef12c6bf72b722e83",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/report-page1.png": "6b248f2cfc0d380a868373e14258f7c0f706c835211f6efa6cba62a8015e5bd6",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/restore-receipt.json": "a578f632b18be65c7a5cfa430b1b61248e830704e6a4bd43d5b95a1e6fafeddc",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/restore-verify.log": "36c88121022968b06abaa6105261128a42e97b0a368b5465be0025bf4fd75d38",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/restore.py": "e73b7bdde7624634da91e1ae12630c990d3a9f0d41da23cab77bb9c2aec4b766",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/restored.log.gz": "e443ce2dcd650faf7b984f5fa417df07ff2ed0b6f91adb0fd7267ae477fa9b08",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/restored.xml.gz": "f9e35d12f0f9c370fd860b7da3d38e8b2fa5b1a21e3e08056ca7fbc64b844557",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/sample-projects.zip": "d81458fdc985cc7d1171322b600f40e1d6d7f0741a2876f12259f5660730854f",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/targeted-final.log.gz": "f3ca5327bf046df30360acbb9d6ec942a444331cef883278e6baf3b55612e892",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/targeted-final.xml.gz": "7f20e38d56e7e16f52d6e0d068aa422c4caf881d964ac14401b7b0c753ece7dc",
+    "docs/acceptance/phase2_priority5_final_assets_20261022/verification.log": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+  }
+}

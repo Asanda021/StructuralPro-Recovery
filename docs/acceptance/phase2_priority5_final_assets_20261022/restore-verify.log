@@ -1,0 +1,4 @@
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+{"archive_sha256": "a2c5c85ae20a2fc7a40650f24a2a8cba2921ccdabaf2fc5e8e128de85fec779d", "manifest_files": 56, "head": "62bbccba2b27fae856b2083ab26e6927ee992756", "tree": "04c5216d1bb46bea13c47b24265464ec3e4c3c44", "git_fsck_exit": 0, "source_paths_rewritten": false, "root_mapping": "Original task samples moved aside; original path aliases only restored files during readback.", "ifc_elements": 12, "storeys": 2, "sqlite_integrity": {"ok": true, "integrity_check": "ok", "counts": {"projects": 1, "revisions": 10}}, "boq_rows": 1, "crosswalks": 1, "approved_identities": 1, "crosswalk_qt_readback": true, "amendment_original_m": "4", "amendment_effective_m": "5", "amendments": 1}

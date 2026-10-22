@@ -1,0 +1,13 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "ifcopenshell": "0.9.0.post1",
+  "pyside6": "6.12.0",
+  "ezdxf": "1.4.5",
+  "qt_platform": "offscreen",
+  "diagnostic_start_head": "2941c795882257c4fafd0cf9a3a391fe04b188ec",
+  "diagnostic_start_tree": "f50a9b9be25df4a4d5926a08abfc461dd1f06800",
+  "final_published_code_head": "62bbccba2b27fae856b2083ab26e6927ee992756",
+  "final_tested_local_head": "4efceed633a9069cad9179f0862aaba24ec8859a",
+  "final_tested_tree": "04c5216d1bb46bea13c47b24265464ec3e4c3c44"
+}

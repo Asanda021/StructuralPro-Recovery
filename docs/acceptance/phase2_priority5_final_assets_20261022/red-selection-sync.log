@@ -1,0 +1,50 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_crosswalk_real_qt_bidirectional_selection ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_crosswalk_real_qt_bidirec0')
+
+    def test_crosswalk_real_qt_bidirectional_selection(tmp_path):
+        from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QTreeWidget
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app,p,drawing,session,proposal,kw=crosswalk_case(tmp_path)
+        qt=QApplication.instance() or QApplication([])
+        w=GraphicalTakeoffDialog(app_service=app,project_id='P');w.show();w.open_drawing(str(p))
+        QTest.keyClicks(w.ifc_revision,'R1');QTest.mouseClick(w.ifc_inspect_button,Qt.LeftButton)
+        inspector=w._ifc_inspector
+        QTest.keyClicks(inspector.findChild(QLineEdit,'ifc_search'),proposal['global_id'])
+        tree=inspector.findChild(QTreeWidget,'ifc_tree');tree.setCurrentItem(tree.topLevelItem(0).child(0))
+        QTest.keyClicks(inspector.findChild(QLineEdit,'ifc_author'),'author')
+        inspector.findChild(QLineEdit,'ifc_crosswalk_evidence').setText(kw['evidence_path'])
+        QTest.mouseClick(inspector.findChild(QPushButton,'ifc_save_crosswalk'),Qt.LeftButton)
+        assert app.open_project('P').get('ifc_2d_crosswalks')
+        link=app.open_project('P')['ifc_2d_crosswalks'][0]
+        QTest.mouseClick(inspector.findChild(QPushButton,'ifc_show_crosswalk'),Qt.LeftButton)
+        other=w._ifc_crosswalk_window
+        handle=link['drawing']['handle'];assert other._cad_handle_items[handle].isSelected()
+        inspector.findChild(QLineEdit,'ifc_search').clear()
+        candidates=[tree.topLevelItem(i).child(j) for i in range(tree.topLevelItemCount()) for j in range(tree.topLevelItem(i).childCount())]
+        tree.setCurrentItem(next(x for x in candidates if x.data(0,Qt.UserRole)!=proposal['global_id']))
+        w.highlight_ifc_member('');other.canvas.scene.clearSelection()
+        other.canvas.set_mode('cad_select');other.reset_zoom();other.canvas.set_mode('cad_select')
+        item=other._cad_handle_items[handle]
+        point=other.canvas.mapFromScene(item.sceneBoundingRect().center())
+        QTest.mouseClick(other.canvas.viewport(),Qt.LeftButton,pos=point)
+        assert w._ifc_selected_global_id==proposal['global_id']
+>       assert tree.currentItem().data(0,Qt.UserRole)==proposal['global_id']
+E       AssertionError: assert '08eVyxES90IAKpjojaF048' == '1C38eofqv2Su8KeucWD6v0'
+E         
+E         - 1C38eofqv2Su8KeucWD6v0
+E         + 08eVyxES90IAKpjojaF048
+
+tests/test_phase2_priority5_closure.py:342: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_closure.py::test_crosswalk_real_qt_bidirectional_selection
+1 failed in 0.84s
