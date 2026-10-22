@@ -606,7 +606,14 @@ class GraphicalTakeoffDialog(QDialog):
             except StopIteration:
                 if self.engine is not None:self.engine.close()
                 self.engine=None;self.pdf_path=str(path)
-                if self.session.drawing_source!=str(path):self.session=DrawingTakeoffSession(str(path));self.canvas.session=self.session;self.persisted_session_id=None;self.persisted_session_revision=None
+                if self.session.drawing_source!=str(path):
+                    # The parser already hashed the full file off the GUI thread.
+                    # Re-reading a large CAD/IFC here creates an unbounded final
+                    # I/O/allocation pause. Financial commit rechecks the bytes.
+                    self.session=DrawingTakeoffSession()
+                    self.session.drawing_source=str(path)
+                    self.session.source_sha256=job['ifc_document'].source_sha256 if 'ifc_document' in job else self.cad_document.source_sha256
+                    self.canvas.session=self.session;self.persisted_session_id=None;self.persisted_session_revision=None
                 if 'ifc_document' in job:
                     self.viewer.path=Path(path);self.viewer.kind='ifc';self.viewer.page_count=1;self.viewer.current_page=1
                     self.viewer.ifc_document=job['ifc_document'];self.viewer.cad_document=None;self.cad_document=None
@@ -964,7 +971,7 @@ class GraphicalTakeoffDialog(QDialog):
             raise RuntimeError("سند CAD برای نمایش آماده نیست.")
         self.cad_controls.show();self._cad_items={};self._cad_handle_items={};self.cad_layers.clear()
         from collections import Counter
-        for layer,count in sorted(Counter(e.layer for e in doc.entities).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
+        for layer,count in sorted((doc._layer_counts if hasattr(doc,'_layer_counts') else Counter(e.layer for e in doc.entities)).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
         coords=[]
         for entity in ([] if hasattr(doc,'_render_bounds') else doc.entities):
             data=entity.data
@@ -987,10 +994,13 @@ class GraphicalTakeoffDialog(QDialog):
         def sx(x): return x-min_x
         def sy(y): return max_y-y
         pen=QPen(Qt.GlobalColor.darkBlue,0)
+        render_bounds=QRectF(0,0,max_x-min_x,max_y-min_y)
+        unsupported_count=0
         for entity_index,entity in enumerate(doc.entities):
             if entity_index%128==0:yield entity_index
             item=None
             d=entity.data
+            unsupported_count+=bool(d.get('unsupported_measurement'))
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):
                 a,b=d["start"],d["end"]
                 item=self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
@@ -1038,8 +1048,10 @@ class GraphicalTakeoffDialog(QDialog):
                 item.setData(0,entity.handle);item.setData(1,entity.entity_type+' | '+entity.layer+' | '+doc.units)
                 item.setToolTip(str(entity.handle)+' | '+entity.entity_type+' | '+entity.layer+'‏ | '+doc.units+'\n'+str(d.get('unsupported_measurement') or ('طول: '+str(d.get('length','—'))+'؛ سطح: '+str(d.get('area','—'))))+'\n'+str(d.get('font_notice',''))+' '+str(d.get('font_name','')))
                 item.setVisible(d.get('layer_visible',True));self._cad_items.setdefault(entity.layer,[]).append(item);self._cad_handle_items[entity.handle]=item
-        self.canvas.setSceneRect(QRectF(0,0,max_x-min_x,max_y-min_y).united(self.canvas.scene.itemsBoundingRect()))
-        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {sum(bool(e.data.get('unsupported_measurement')) for e in doc.entities)} | هشدار: {len(doc.warnings)}")
+                render_bounds=render_bounds.united(item.sceneBoundingRect())
+        yield len(doc.entities)  # Yield before publishing the completed scene.
+        self.canvas.setSceneRect(render_bounds)
+        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {unsupported_count} | هشدار: {len(doc.warnings)}")
 
     def _render_ifc_steps(self,doc):
         """One selectable path per real mesh; all source triangles retained.
