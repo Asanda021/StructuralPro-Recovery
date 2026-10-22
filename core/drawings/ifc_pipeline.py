@@ -292,10 +292,20 @@ def crosswalk_guard(previous,updated,command):
         raise ValueError('تاریخچه Crosswalk IFC قابل بازنویسی نیست')
     if not command or command.get('action')!='crosswalk' or command.get('record')!=new[-1]:
         raise ValueError('Crosswalk IFC فقط از مسیر بازبینی رسمی ثبت می‌شود')
+    event=new[-1]
+    if event.get('supersedes') is not None:
+        prior=next((x for x in reversed(old) if x['session_id']==event['session_id'] and x['item_id']==event['item_id']),None)
+        binding=next((x for x in updated.get('ifc_identity_reviews',[]) if x['proposal_id']==event['proposal_id']),{})
+        if (prior is None or prior['id']!=event['supersedes']
+                or event['revision']!=prior['revision']+1
+                or binding.get('supersedes')!=prior['proposal_id']
+                or any(event[k]!=prior[k] for k in ('floor_id','member_id','building_id'))
+                or event['coordinate_evidence'].get('supersedes')!=prior['id']):
+            raise ValueError('زنجیره مهاجرت Crosswalk IFC نامعتبر است')
 
 
 def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,reviewer,
-                   evidence_path,evidence_sha256,expected_digest):
+                   evidence_path,evidence_sha256,expected_digest,supersedes=None):
     """Reviewed reference-point mapping, not automatic geometric equivalence.
 
     The explicit SI rigid transform is supplied in a SHA-bound evidence document.
@@ -361,8 +371,23 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
             actual=[v+Decimal(str(origin_xy[i])) for i,v in enumerate(actual)]
         if anchor!=actual or [a*origin[0]+b*origin[1]+tx,c*origin[0]+d*origin[1]+ty]!=anchor:
             raise ValueError('نقطه مرجع IFC و منبع دوبعدی با تبدیل مستند تطبیق ندارد')
-    if any(x['session_id']==session_id and x['item_id']==item_id for x in project.get('ifc_2d_crosswalks',[])):
-        raise ValueError('همین جزء دوبعدی قبلاً Crosswalk IFC دارد')
+    prior_links=[x for x in project.get('ifc_2d_crosswalks',[]) if x['session_id']==session_id and x['item_id']==item_id]
+    prior=None
+    if prior_links:
+        if supersedes != prior_links[-1]['id']:
+            raise ValueError('همین جزء دوبعدی قبلاً Crosswalk IFC دارد؛ مهاجرت صریح نسخه جاری لازم است')
+        prior=prior_links[-1]
+        if (evidence.get('supersedes') != supersedes
+            or binding.get('supersedes') != prior['proposal_id']
+            or binding['document']['revision'] == prior['ifc_document']['revision']
+            or binding['document']['source_sha256'] == prior['ifc_document']['source_sha256']
+            or any(_identity(binding[k]) != _identity(prior[k]) for k in ('floor_id','member_id','building_id'))):
+            raise ValueError('مهاجرت Crosswalk به نسخه و مالک مستقل بازبینی‌شده نیاز دارد')
+        previous_proof=Path(prior['evidence_path'])
+        if not previous_proof.is_file() or sha256(previous_proof.read_bytes()).hexdigest()!=prior['evidence_sha256']:
+            raise ValueError('مدرک Crosswalk مبنا تغییر کرده است')
+    elif supersedes is not None or evidence.get('supersedes') is not None:
+        raise ValueError('Crosswalk مبنای مهاجرت یافت نشد')
     from datetime import datetime,timezone
     result={'id':sha256((proposal_id+session_id+item_id+evidence_sha256).encode()).hexdigest(),
         'revision':1,'created_at':datetime.now(timezone.utc).isoformat(),'building_id':binding['building_id'],
@@ -371,17 +396,19 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
         'ifc_document':deepcopy(binding['document']),'session_id':session_id,'item_id':item_id,
         'drawing':{'path':str(source.resolve()),'source_sha256':session.source_sha256,'page':item.page,
             'handle':(item.cad_evidence or {}).get('handle'),'session_revision':record['revision'],
+            'conversion':deepcopy((item.cad_evidence or {}).get('conversion') or {}),
             'geometry_identity':drawing_geometry_identity(session.source_sha256,item.page,item.kind,item.geometry,item.holes),
             'item_digest':sha256(json.dumps(item.to_dict(),sort_keys=True,ensure_ascii=False).encode()).hexdigest()},
         'evidence_path':str(proof.resolve()),'evidence_sha256':evidence_sha256,'coordinate_evidence':evidence,
         'author':author,'reviewer':reviewer,'reviewer_role':review_user.role,'status':'approved',
         'commit_allowed':False,'payable_rows':[]}
+    if prior is not None:result.update(revision=prior['revision']+1,supersedes=prior['id'])
     project.setdefault('ifc_2d_crosswalks',[]).append(result)
     service.store.save(project_id,project,expected_digest=expected_digest,ifc_command={'action':'crosswalk','record':result})
     return deepcopy(result)
 
 
-def validate_specialist_detail(service,project,data):
+def validate_specialist_detail(service,project,data,*,reviewer=None):
     """Attach explicit external column detail to the existing specialist engine.
 
     Geometry comparison is diagnostic; all payable concrete/form/rebar inputs
@@ -397,6 +424,9 @@ def validate_specialist_detail(service,project,data):
     if service is None:raise ValueError('مسیر تخصصی IFC به سرویس بازبینی واقعی نیاز دارد')
     _authorized(service,meta.get('author'),'edit');_authorized(service,meta.get('reviewer'),'review')
     if _identity(meta['author'])==_identity(meta['reviewer']):raise ValueError('بازبین دیتایل IFC باید مستقل باشد')
+    if reviewer is not None:
+        _authorized(service,reviewer,'review')
+        if _identity(reviewer)!=_identity(meta['reviewer']):raise ValueError('بازبین اصلاحیه باید همان بازبین مجاز دیتایل IFC باشد')
     binding,element=_binding(project,meta['proposal_id'])
     if data.get('kind')!='column' or element['ifc_type']!='IfcColumn' or data.get('measurement_policy')!='column_specialist_v1':
         raise ValueError('این اتصال تخصصی IFC فقط قرارداد ستون موجود را می‌پذیرد')
@@ -423,7 +453,7 @@ def validate_specialist_detail(service,project,data):
         raise ValueError('حجم دیتایل مستقل با هندسه IFC سازگار نیست')
 
 
-def save_column_detail(service,project_id,*,proposal_id,detail_path,detail_sha256,author,reviewer,expected_revision=0):
+def column_detail_data(service,project_id,*,proposal_id,detail_path,detail_sha256,author,reviewer):
     from pathlib import Path
     from hashlib import sha256
     import json
@@ -437,6 +467,11 @@ def save_column_detail(service,project_id,*,proposal_id,detail_path,detail_sha25
         'ifc_identity':{'proposal_id':proposal_id,'author':author,'reviewer':reviewer,
             'detail_path':str(path.resolve()),'detail_sha256':detail_sha256}}
     validate_specialist_detail(service,service.open_project(project_id),data)
+    return data
+
+
+def save_column_detail(service,project_id,*,expected_revision=0,**kwargs):
+    data=column_detail_data(service,project_id,**kwargs)
     return service.save_structural_member_draft(project_id,data,expected_revision=expected_revision,reason='دیتایل مستقل و مستند IFC؛ موتور تخصصی ستون موجود')
 
 
@@ -452,3 +487,38 @@ def drawing_geometry_identity(source_sha256,page,kind,geometry,holes=()):
         return min(p,p[::-1])
     value=[source_sha256,page,kind,points(geometry),sorted(canonical_ring(h) for h in holes)]
     return sha256(json.dumps(value,ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+
+
+def ifc_amendment_source_identity(project, before, after):
+    """Allow only an explicit reviewed successor for the same specialist owner.
+
+    Called again at SQLite's existing amendment boundary. The stable source id
+    and internal physical member remain unchanged; source/detail evidence can
+    change only to the declared next IFC review and a SHA-bound complete detail.
+    """
+    from pathlib import Path
+    from hashlib import sha256
+    import json
+    old=before.get('source') or {}; new=after.get('source') or {}
+    a=old.get('ifc_identity'); b=new.get('ifc_identity')
+    if not isinstance(a,dict) or not isinstance(b,dict): return False
+    current,_=_binding(project,b.get('proposal_id'))
+    previous=next((x for x in project.get('ifc_identity_reviews',[]) if x['proposal_id']==a.get('proposal_id')),None)
+    if (previous is None or current.get('supersedes')!=previous['proposal_id']
+            or any(current[k]!=previous[k] for k in ('project_id','floor_id','member_id','building_id'))
+            or current['document']['revision']==previous['document']['revision']
+            or current['document']['source_sha256']==previous['document']['source_sha256']):
+        return False
+    for path_key,hash_key,record in (('source_path','source_sha256',previous['document']),('evidence_path','evidence_sha256',previous['review'])):
+        artifact=Path(record[path_key])
+        if not artifact.is_file() or sha256(artifact.read_bytes()).hexdigest()!=record[hash_key]:return False
+    if set(old)!=set(new) or set(a)!=set(b): return False
+    if any(old.get(k)!=new.get(k) for k in set(old)-{'plan_ref','detail_ref','ifc_identity'}):return False
+    if old.get('plan_ref')!=previous['document']['source_sha256'] or new.get('plan_ref')!=current['document']['source_sha256']:return False
+    for data,meta,source in ((before,a,old),(after,b,new)):
+        path=Path(meta.get('detail_path',''))
+        if (not path.is_file() or sha256(path.read_bytes()).hexdigest()!=meta.get('detail_sha256')
+                or source.get('detail_ref')!=meta['detail_sha256']
+                or json.loads(path.read_text(encoding='utf-8-sig'))!={k:v for k,v in data.items() if k!='source'}):
+            return False
+    return True

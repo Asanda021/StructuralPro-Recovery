@@ -226,3 +226,69 @@ def review_lineage(service, project_id, *, mode, previous_proposal_ids,
         ifc_command={"action": "review_lineage", "record": record},
     )
     return deepcopy(record)
+
+
+def assess_quantities(service, project_id, *, lineage_id, evidence_path,
+                      evidence_sha256, author, reviewer, expected_digest):
+    """Read-only independent QTO allocation assessment on the existing ledger.
+
+    Explicit source quantities are checked, never divided or inferred. This
+    report intentionally does not retire financial owners or authorize a post;
+    such a transition must use the canonical versioned financial correction.
+    """
+    from decimal import Decimal, localcontext
+    from core.drawings.ifc_pipeline import _authorized, _binding
+    from core.platform.concurrency import assert_unchanged
+    from core.projects.project_model import _identity
+    _authorized(service,author,'edit');_authorized(service,reviewer,'review')
+    if _identity(author)==_identity(reviewer):
+        raise ValueError('بازبین آشتی مقدار IFC باید مستقل باشد')
+    service.store._cache.pop(str(project_id),None)
+    project=deepcopy(service.open_project(project_id))
+    if not expected_digest:raise ValueError('CAS برای آشتی مقدار IFC لازم است')
+    assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    event=next((x for x in project.get('ifc_identity_lineages',[]) if x['id']==lineage_id),None)
+    if event is None:raise ValueError('دفتر تغییر هویت IFC یافت نشد')
+    original=Path(event['evidence_path'])
+    if not original.is_file() or sha256(original.read_bytes()).hexdigest()!=event['evidence_sha256']:
+        raise ValueError('مدرک Split/Merge مبنا تغییر کرده است')
+    proof=Path(evidence_path)
+    if not proof.is_file() or sha256(proof.read_bytes()).hexdigest()!=evidence_sha256:
+        raise ValueError('مدرک تخصیص مقدار IFC مفقود یا تغییرکرده است')
+    evidence=json.loads(proof.read_text(encoding='utf-8-sig'))
+    if not isinstance(evidence,dict):raise ValueError('مدرک تخصیص مقدار باید ساختار معتبر داشته باشد')
+    if any(evidence.get(k)!=v for k,v in {
+        'policy':'reviewed_ifc_quantity_allocation_v1','project_id':str(project_id),'lineage_id':lineage_id}.items()):
+        raise ValueError('مدرک تخصیص با پروژه و Split/Merge مطابقت ندارد')
+    # Remove ONLY this lineage in a private read-only snapshot to inspect its
+    # original independently approved source bindings; never save this snapshot.
+    project['ifc_identity_lineages']=[x for x in project.get('ifc_identity_lineages',[]) if x['id']!=lineage_id]
+    with localcontext() as context:
+        context.prec=160
+        totals=[];tables=[]
+        for label,ids in [('previous',event['previous_proposal_ids']),('current',event['current_proposal_ids'])]:
+            table=evidence.get(label)
+            if not isinstance(table,list) or len(table)!=len(ids):raise ValueError('جدول تخصیص مقدار همه اعضا را پوشش نمی‌دهد')
+            actual=[x.get('proposal_id') for x in table if isinstance(x,dict)]
+            if len(actual)!=len(set(actual)) or set(actual)!=set(ids):raise ValueError('عضو تکراری یا نامعتبر در جدول تخصیص IFC')
+            total=Decimal(0);rows=[]
+            for entry in table:
+                if not isinstance(entry.get('scope_reference'),str) or not entry['scope_reference'].strip():raise ValueError('مرجع محدوده هر سهم مقدار لازم است')
+                decision,element=_binding(project,entry['proposal_id'])
+                q=next((x for x in element['quantities'] if x['name']==evidence.get('quantity_name')),None)
+                if q is None or q['unit']!=evidence.get('unit'):raise ValueError('کمیت و واحد صریح منبع با تخصیص IFC ناسازگار است')
+                if not isinstance(entry.get('quantity'),str):raise ValueError('مقدار تخصیص باید Decimal صریح باشد')
+                try:value=Decimal(entry['quantity'])
+                except ArithmeticError as exc:raise ValueError('مقدار تخصیص Decimal معتبر نیست') from exc
+                if not value.is_finite() or value<=0 or len(value.as_tuple().digits)>64 or value!=Decimal(q['value_si']):raise ValueError('سهم تخصیص با مقدار مستقل QTO مطابقت ندارد')
+                total+=value
+                rows.append({**deepcopy(entry),'unit':q['unit'],'qto_step_id':q['step_id'],'floor_id':decision['floor_id'],'member_id':decision['member_id'],'source_sha256':decision['document']['source_sha256'],'revision':decision['document']['revision']})
+            totals.append(total);tables.append(rows)
+        delta=totals[1]-totals[0]
+        if delta and (not isinstance(evidence.get('quantity_change_reference'),str) or not evidence['quantity_change_reference'].strip()):
+            raise ValueError('اختلاف مقدار به مدرک اصلاحی صریح و گردش مالی نسخه‌دار نیاز دارد')
+        return {'lineage_id':lineage_id,'unit':evidence['unit'],'previous':tables[0],'current':tables[1],
+            'previous_total':format(totals[0],'f'),'current_total':format(totals[1],'f'),'delta':format(delta,'f'),
+            'evidence_path':str(proof.resolve()),'evidence_sha256':evidence_sha256,'author':author,'reviewer':reviewer,
+            'requires_financial_amendment':True,'commit_allowed':False,'payable_rows':[],
+            'blocker':'انتقال مالکیت مالی گروهی Split/Merge هنوز اعمال نشده است؛ این گزارش فقط آشتی مستقل مقدار است'}

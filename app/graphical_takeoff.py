@@ -1234,6 +1234,8 @@ class GraphicalTakeoffDialog(QDialog):
         evidence.setPlaceholderText('مسیر فایل مدرک تطبیق مستقل')
         browse=QPushButton('انتخاب مدرک تطبیق')
         browse.clicked.connect(lambda: evidence.setText(QFileDialog.getOpenFileName(dialog,'مدرک تطبیق هویت')[0]))
+        identity_prior=QLineEdit();identity_prior.setObjectName('ifc_identity_supersedes')
+        form.addRow('شناسه تطبیق قبلی؛ فقط مهاجرت بازبینی‌شده',identity_prior)
         review_note=QLineEdit();review_note.setObjectName('ifc_review_note')
         form.addRow('بازبین ثبت‌شده با نقش مجاز',reviewers)
         form.addRow('مدرک بازبینی',evidence);form.addRow('',browse)
@@ -1253,7 +1255,7 @@ class GraphicalTakeoffDialog(QDialog):
                 proof=Path(evidence.text())
                 self.app_service.review_ifc_identity(pid,proposal_id=proposal['id'],reviewer=reviewers.currentData(),
                     evidence_path=str(proof),evidence_sha256=sha256(proof.read_bytes()).hexdigest(),
-                    note=review_note.text(),expected_digest=digest)
+                    note=review_note.text(),expected_digest=digest,supersedes=identity_prior.text().strip() or None)
                 digest=self.app_service.store.current_digest(pid)
                 outcome.setText('هویت با مدرک و نقش بازبین تأیید شد؛ انتقال کمیت و پرداخت همچنان مسدود است')
             except Exception as exc:outcome.setText('بازبینی انجام نشد: '+str(exc))
@@ -1329,6 +1331,8 @@ class GraphicalTakeoffDialog(QDialog):
         mapping_path.setPlaceholderText('فایل JSON مدرک تبدیل صلب SI و هویت فیزیکی')
         map_browse=QPushButton('انتخاب مدرک Crosswalk')
         map_browse.clicked.connect(lambda:mapping_path.setText(QFileDialog.getOpenFileName(dialog,'مدرک Crosswalk IFC')[0]))
+        mapping_prior=QLineEdit();mapping_prior.setObjectName('ifc_crosswalk_supersedes')
+        form.addRow('شناسه Crosswalk قبلی؛ فقط مهاجرت نسخه',mapping_prior)
         form.addRow('برداشت دوبعدی ذخیره‌شده',links);form.addRow('مدرک Crosswalk',mapping_path);form.addRow('',map_browse)
         save_link=QPushButton('تأیید مستقل و ذخیره Crosswalk؛ فاقد مجوز پرداخت')
         save_link.setObjectName('ifc_save_crosswalk');layout.addWidget(save_link)
@@ -1341,7 +1345,7 @@ class GraphicalTakeoffDialog(QDialog):
                 if not links.currentData():raise ValueError('ابتدا نشست دوبعدی معتبر را ذخیره کنید')
                 sid,iid=links.currentData();current=self.app_service.open_project(pid)
                 if show:
-                    link=next((x for x in current.get('ifc_2d_crosswalks',[]) if x['global_id']==selected['element']['global_id'] and x['session_id']==sid and x['item_id']==iid),None)
+                    link=next((x for x in reversed(current.get('ifc_2d_crosswalks',[])) if x['global_id']==selected['element']['global_id'] and x['ifc_document']['source_sha256']==doc['source_sha256'] and x['session_id']==sid and x['item_id']==iid),None)
                     if link is None:raise ValueError('Crosswalk بازبینی‌شده یافت نشد')
                     self.open_ifc_crosswalk(link['id'])
                 else:
@@ -1351,11 +1355,15 @@ class GraphicalTakeoffDialog(QDialog):
                     proof=Path(mapping_path.text())
                     self.app_service.save_ifc_crosswalk(pid,proposal_id=proposal['id'],session_id=sid,item_id=iid,
                         author=author.text(),reviewer=reviewers.currentData(),evidence_path=str(proof),
-                        evidence_sha256=sha256(proof.read_bytes()).hexdigest(),expected_digest=digest)
+                        evidence_sha256=sha256(proof.read_bytes()).hexdigest(),expected_digest=digest,supersedes=mapping_prior.text().strip() or None)
                     digest=self.app_service.store.current_digest(pid)
                     outcome.setText('Crosswalk با مدرک منبع، تبدیل صلب و بازبین مستقل ذخیره شد؛ پرداختی ایجاد نشد')
             except Exception as exc:outcome.setText('Crosswalk انجام نشد: '+str(exc))
         save_link.clicked.connect(lambda:crosswalk_step(False));show_link.clicked.connect(lambda:crosswalk_step(True))
+        if project is not None:
+            from app.ifc_amendment_controls import install_ifc_amendment_controls
+            install_ifc_amendment_controls(dialog,layout,self.app_service,pid,doc,selected,
+                                           author,reviewers,review_note,outcome)
         save.clicked.connect(persist);dialog.show()
 
     def open_ifc_crosswalk(self, crosswalk_id):

@@ -150,6 +150,10 @@ class StructuralProApp:
         from core.drawings.ifc_pipeline import review_identity
         return review_identity(self, project_id, **kwargs)
 
+    def assess_ifc_lineage_quantities(self, project_id, **kwargs):
+        from core.drawings.ifc_lineage import assess_quantities
+        return assess_quantities(self, project_id, **kwargs)
+
     def review_ifc_identity_lineage(self, project_id, **kwargs):
         """Record explicit non-payable split/merge of approved IFC member identities."""
         from core.drawings.ifc_lineage import review_lineage
