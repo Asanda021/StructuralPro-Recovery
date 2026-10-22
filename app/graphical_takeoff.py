@@ -310,6 +310,8 @@ class TakeoffCanvas(QGraphicsView):
 class GraphicalTakeoffDialog(QDialog):
     def __init__(self, parent=None, pdf_path="", *, app_service=None, project_id=""):
         super().__init__(parent)
+        # Closed workspaces must release Qt signal cycles and their large scenes.
+        self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.setWindowTitle("متره گرافیکی — نقشه‌محور")
         self.resize(1450, 920)
