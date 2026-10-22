@@ -431,3 +431,18 @@ def test_ifc_commit_rechecks_source_after_quantity_review(tmp_path):
     with pytest.raises(ValueError,match='تغییر'):formula.commit(app,'P','Q',expected_revision=1)
     assert app.store.current_digest('P')==before and app.open_project('P')['boq']==[]
     app.store.close()
+
+
+def test_crosswalk_close_does_not_call_deleted_scene(tmp_path,monkeypatch):
+    import sys
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QCoreApplication,QEvent
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app,p,drawing,session,proposal,kw=crosswalk_case(tmp_path);link=app.save_ifc_crosswalk('P',**kw)
+    qt=QApplication.instance() or QApplication([]);errors=[]
+    monkeypatch.setattr(sys,'excepthook',lambda typ,value,tb:errors.append(str(value)))
+    w=GraphicalTakeoffDialog(app_service=app,project_id='P');w.show();w.open_drawing(str(p))
+    other=w.open_ifc_crosswalk(link['id']);w.close()
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);qt.processEvents()
+    assert errors==[]
+    app.store.close()

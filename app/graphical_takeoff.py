@@ -1358,8 +1358,9 @@ class GraphicalTakeoffDialog(QDialog):
         other.persisted_session_id=link['session_id'];other.persisted_session_revision=record['revision']
         other.redraw_current_page();other.refresh();other.show()
         self._ifc_crosswalk_window=other;busy={'active':False}
+        from shiboken6 import isValid
         def from_ifc(gid):
-            if busy['active'] or gid!=link['global_id']:return
+            if busy['active'] or gid!=link['global_id'] or not isValid(other.canvas.scene):return
             busy['active']=True
             try:
                 if other.viewer.kind=='cad':
@@ -1370,7 +1371,7 @@ class GraphicalTakeoffDialog(QDialog):
                         if other.table.item(row,0).text()==item.id:other.table.setCurrentCell(row,0);break
             finally:busy['active']=False
         def from_drawing():
-            if busy['active']:return
+            if busy['active'] or not isValid(other.canvas.scene) or not isValid(self.canvas.scene):return
             if other.viewer.kind=='cad':matched=any(x.data(0)==link['drawing']['handle'] for x in other.canvas.scene.selectedItems())
             else:
                 row=other.table.currentRow();matched=row>=0 and other.table.item(row,0).text()==item.id
