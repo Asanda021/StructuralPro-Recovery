@@ -66,6 +66,8 @@ def identity_guard(previous, updated, command=None):
     Legacy proposed records remain readable, but cannot be rewritten after review.
     """
     crosswalk_guard(previous,updated,command)
+    from core.drawings.ifc_lineage import lineage_guard
+    lineage_guard(previous,updated,command)
     old = previous.get('ifc_identity_proposals', [])
     new = updated.get('ifc_identity_proposals', [])
     if not isinstance(new, list) or new[:len(old)] != old:
@@ -184,6 +186,9 @@ def _binding(project, proposal_id):
     if decision is None:raise ValueError('تطبیق هویت IFC تأیید نشده است')
     if any(x.get('supersedes')==proposal_id for x in project.get('ifc_identity_reviews',[])):
         raise ValueError('Revision هویت IFC قدیمی است؛ از تطبیق جاری استفاده کنید')
+    if any(proposal_id in (event.get('previous_proposal_ids',[]) + event.get('current_proposal_ids',[]))
+           for event in project.get('ifc_identity_lineages',[])):
+        raise ValueError('تطبیق IFC در Split/Merge ثبت شده است؛ تا آشتی مستقل مقادیر، برداشت و پرداخت جدید مسدود است')
     proof=decision['review'];path=Path(proof['evidence_path'])
     if not path.is_file() or sha256(path.read_bytes()).hexdigest()!=proof['evidence_sha256']:
         raise ValueError('مدرک تطبیق IFC تغییر کرده یا مفقود است')
