@@ -150,6 +150,11 @@ class StructuralProApp:
         from core.drawings.ifc_pipeline import review_identity
         return review_identity(self, project_id, **kwargs)
 
+    def review_ifc_identity_lineage(self, project_id, **kwargs):
+        """Record explicit non-payable split/merge of approved IFC member identities."""
+        from core.drawings.ifc_lineage import review_lineage
+        return review_lineage(self, project_id, **kwargs)
+
     def live_takeoff_tracker(self, project_id: str, *, boq_receipt_verifier=None):
         """Load audited live member identities from this application's canonical SQLite.
 
