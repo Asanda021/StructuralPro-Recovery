@@ -262,6 +262,20 @@ def physical_quantity_guard(project, incoming):
                 floor,member=link['floor_id'],link['member_id'];break
         if not floor or not member:return set()
         return {(_identity(floor),_identity(member),q.get('unit')) for q in row.get('quantities',[])}
+    # An explicit split/merge review proves neither quantity shares nor a
+    # successor's right to bill. Block linked CAD and manual member claims too,
+    # not just IFC QTO, until an independent quantity-allocation workflow exists.
+    blocked=set()
+    approved={r.get('proposal_id'):r for r in project.get('ifc_identity_reviews',[])}
+    for event in project.get('ifc_identity_lineages',[]):
+        for proposal_id in event.get('previous_proposal_ids',[])+event.get('current_proposal_ids',[]):
+            owner=approved.get(proposal_id)
+            if owner is None:
+                raise ValueError('دفتر Split/Merge دارای هویت بدون بازبینی است')
+            blocked.add((_identity(owner['floor_id']),_identity(owner['member_id'])))
+    for candidate in incoming:
+        if any((floor,member) in blocked for floor,member,_ in claim(candidate)):
+            raise ValueError('مالک IFC در Split/Merge قرار دارد؛ آشتی مستقل مقدار قبل از BOQ لازم است')
     existing=list(project.get('takeoffs',[]))
     for row in incoming:
         is_ifc=bool((row.get('params') or {}).get('ifc_evidence') or (row.get('provenance') or {}).get('ifc_identity'))
