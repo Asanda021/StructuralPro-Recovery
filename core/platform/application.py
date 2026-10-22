@@ -70,6 +70,14 @@ class StructuralProApp:
         self.qa=ProjectQA()
         self.ai_assistant = EngineeringAssistant()
         self.engineering = EngineeringLibrary()
+        from core.collaboration.workspace import CollaborationWorkspace, Role
+        self.collaboration = CollaborationWorkspace()
+        for name, permissions in {
+            'owner': {'edit','review','approve'}, 'admin': {'edit','review'},
+            'editor': {'edit'}, 'reviewer': {'review'}, 'viewer': set(),
+        }.items():
+            self.collaboration.add_role(Role(name, frozenset(permissions)))
+
 
     def create_project(self,name:str,project_id:str)->dict[str,Any]:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
@@ -129,6 +137,10 @@ class StructuralProApp:
         proposals.append(result)
         self.store.save(project_id,project,expected_digest=expected_digest)
         return deepcopy(result)
+
+    def review_ifc_identity(self, project_id, **kwargs):
+        from core.drawings.ifc_pipeline import review_identity
+        return review_identity(self, project_id, **kwargs)
 
     def live_takeoff_tracker(self, project_id: str, *, boq_receipt_verifier=None):
         """Load audited live member identities from this application's canonical SQLite.

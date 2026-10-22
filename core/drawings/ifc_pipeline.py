@@ -57,3 +57,95 @@ def map_ifc_to_boq(rows:Iterable[dict[str,Any]],mapping:dict[str,str]):
                            "source":f'ifc:{r["global_id"] or r["name"]}:{key}',"needs_confirmation":True})
     return {"rows":result,"unmapped":unmapped}
 
+
+
+def identity_guard(previous, updated, command=None):
+    """Append-only IFC identity decisions in the canonical project transaction.
+
+    Identity approval is deliberately NOT a quantity/material/payment approval.
+    Legacy proposed records remain readable, but cannot be rewritten after review.
+    """
+    old = previous.get('ifc_identity_proposals', [])
+    new = updated.get('ifc_identity_proposals', [])
+    if not isinstance(new, list) or new[:len(old)] != old:
+        raise ValueError('تاریخچه پیشنهاد هویت IFC قابل بازنویسی نیست')
+    before = previous.get('ifc_identity_reviews', [])
+    after = updated.get('ifc_identity_reviews', [])
+    if before == after:
+        return
+    if not isinstance(after, list) or after[:len(before)] != before or len(after) != len(before)+1:
+        raise ValueError('تاریخچه بازبینی IFC فقط از مسیر رسمی قابل افزودن است')
+    decision = after[-1]
+    if not command or command.get('action') != 'review_identity' or command.get('decision') != decision:
+        raise ValueError('ثبت بازبینی IFC نیازمند فرمان رسمی است')
+    proposal = next((x for x in old if x.get('id') == decision.get('proposal_id')), None)
+    if proposal is None or any(x.get('proposal_id') == proposal['id'] for x in before):
+        raise ValueError('پیشنهاد IFC نامعتبر یا قبلاً بازبینی شده است')
+    for key in ('project_id','building_id','floor_id','member_id','global_id','document'):
+        if decision.get(key) != proposal.get(key):
+            raise ValueError('تصمیم IFC با پیشنهاد اصلی تطبیق ندارد')
+    if decision.get('status') != 'approved' or decision.get('commit_allowed') is not False or decision.get('payable_rows') != []:
+        raise ValueError('بازبینی هویت IFC مجوز پرداخت نیست')
+
+
+def review_identity(service, project_id, *, proposal_id, reviewer, evidence_path,
+                    evidence_sha256, note, expected_digest):
+    """Review a proposed mapping using existing collaboration roles and source proof.
+
+    Local role authorization is not professional licensure or a digital signature.
+    A different revision/GlobalId requires a separate explicit proposal; split/merge
+    cannot be approved by this one-to-one operation.
+    """
+    from copy import deepcopy
+    from hashlib import sha256
+    from pathlib import Path
+    from core.projects.project_model import _identity
+    from core.platform.concurrency import assert_unchanged
+    from core.drawings.bim_adapter import BIMAdapter
+    if not expected_digest or not isinstance(note,str) or not note.strip():
+        raise ValueError('CAS و یادداشت بازبینی IFC الزامی است')
+    service.store._cache.pop(str(project_id), None)
+    project=deepcopy(service.store.get(project_id))
+    if project is None:raise KeyError(project_id)
+    assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    proposal=next((x for x in project.get('ifc_identity_proposals',[]) if x.get('id')==proposal_id),None)
+    if proposal is None:raise ValueError('پیشنهاد IFC یافت نشد')
+    workspace=service.collaboration
+    for uid, permission in ((proposal['author'],'edit'),(reviewer,'review')):
+        user=workspace.users.get(uid)
+        if user is None or not workspace.roles[user.role].allows(permission):
+            raise PermissionError('کاربر ثبت‌شده با نقش مجاز برای بازبینی IFC لازم است')
+    if _identity(proposal['author'])==_identity(reviewer):
+        raise ValueError('بازبین IFC باید مستقل از ثبت‌کننده باشد')
+    if any(x['proposal_id']==proposal_id for x in project.get('ifc_identity_reviews',[])):
+        raise ValueError('بازبینی IFC قبلاً ثبت شده است')
+    evidence=Path(evidence_path)
+    if not evidence.is_file() or not evidence.stat().st_size or sha256(evidence.read_bytes()).hexdigest()!=evidence_sha256:
+        raise ValueError('مدرک تطبیق IFC مفقود یا تغییرکرده است')
+    source=proposal['document']
+    doc=BIMAdapter().read_document(source['source_path'],revision=source['revision'])
+    if doc['source_sha256']!=source['source_sha256']:
+        raise ValueError('فایل IFC پس از پیشنهاد تغییر کرده است')
+    element=next((x for x in doc['elements'] if x['global_id']==proposal['global_id']),None)
+    if element is None or element['storey_id']!=proposal['storey_id'] or element['placement_matrix_si']!=proposal['placement_matrix_si']:
+        raise ValueError('هویت یا Placement عضو IFC تغییر کرده است')
+    floors=project.get('floors',[]);members=project.get('members',[])
+    floor=next((x for x in floors if _identity(x['id'])==_identity(proposal['floor_id'])),None)
+    member=next((x for x in members if _identity(x['id'])==_identity(proposal['member_id'])),None)
+    if floor is None or member is None or _identity(member['floor_id'])!=_identity(floor['id']):
+        raise ValueError('FloorID یا MemberID معتبر پروژه لازم است')
+    # Different source revisions are not silently treated as new physical owners.
+    # A future quantity handoff must resolve revision ownership explicitly.
+    for old in project.get('ifc_identity_reviews',[]):
+        if old['document']['source_sha256']==source['source_sha256'] and _identity(old['member_id'])==_identity(proposal['member_id']):
+            raise ValueError('همین عضو فیزیکی در این IFC قبلاً تطبیق شده است')
+    decision={k:deepcopy(proposal[k]) for k in ('project_id','building_id','floor_id','member_id','global_id','document')}
+    user=workspace.users[reviewer]
+    decision.update(proposal_id=proposal_id,status='approved',commit_allowed=False,payable_rows=[],
+        review={'user_id':reviewer,'display_name':user.display_name,'role':user.role,'note':note.strip(),
+                'evidence_path':str(evidence.resolve()),'evidence_sha256':evidence_sha256,
+                'author':proposal['author'],'base_project_version':project['_meta']['version']})
+    project.setdefault('ifc_identity_reviews',[]).append(decision)
+    service.store.save(project_id,project,expected_digest=expected_digest,
+                       ifc_command={'action':'review_identity','decision':decision})
+    return deepcopy(decision)

@@ -763,15 +763,7 @@ def main()->int:
 
     # Collaboration workspace — uses the existing provider-neutral collaboration core.
     p,v=page("همکاری پروژه","مدیریت اعضا، تخصیص کار، نظرها و بازبینی‌های پروژه در همان هسته همکاری موجود؛ بدون ایجاد منطق موازی.")
-    collaboration=CollaborationWorkspace()
-    for role_name, permissions in {
-        "owner": frozenset({"edit","review","approve"}),
-        "admin": frozenset({"edit","review"}),
-        "editor": frozenset({"edit"}),
-        "reviewer": frozenset({"review"}),
-        "viewer": frozenset(),
-    }.items():
-        collaboration.add_role(Role(role_name, permissions))
+    collaboration=service.collaboration
     cform=QFormLayout(); cuser=QLineEdit(); cname=QLineEdit(); crole=QComboBox(); crole.addItems(["owner","admin","editor","reviewer","viewer"])
     cform.addRow("شناسه عضو:",cuser); cform.addRow("نام نمایشی:",cname); cform.addRow("نقش:",crole); v.addLayout(cform)
     cadd=QPushButton("➕ افزودن عضو"); cadd.setObjectName("PrimaryAction")

@@ -1186,7 +1186,7 @@ class GraphicalTakeoffDialog(QDialog):
         floors.currentIndexChanged.connect(member_list);member_list()
         for label,field in [('طبقه واقعی پروژه',floors),('عضو واقعی پروژه',members),('ثبت‌کننده پیشنهاد',author),('مرجع تطبیق صریح',reference)]:form.addRow(label,field)
         save=QPushButton('ذخیره پیشنهاد هویت در پروژه؛ فاقد تأیید مالی');save.setObjectName('ifc_save_proposal');save.setEnabled(project is not None);layout.addWidget(save)
-        outcome=QLabel();outcome.setWordWrap(True);layout.addWidget(outcome)
+        outcome=QLabel();outcome.setObjectName('ifc_review_outcome');outcome.setWordWrap(True);layout.addWidget(outcome)
         def persist():
             nonlocal digest
             try:
@@ -1194,6 +1194,40 @@ class GraphicalTakeoffDialog(QDialog):
                 self.app_service.save_ifc_identity_proposal(pid,str(self.viewer.path),revision=doc['revision'],global_id=selected['element']['global_id'],floor_id=floors.currentData(),member_id=members.currentData(),author=author.text(),reference=reference.text(),expected_digest=digest,source_sha256=doc['source_sha256'])
                 digest=self.app_service.store.current_digest(pid);outcome.setText('پیشنهاد هویت ذخیره شد؛ بازبینی و ثبت مالی هنوز مجاز نیست')
             except Exception as exc:outcome.setText('ذخیره انجام نشد: '+str(exc))
+        reviewers=QComboBox();reviewers.setObjectName('ifc_reviewer')
+        if self.app_service:
+            workspace=self.app_service.collaboration
+            for uid,user in workspace.users.items():
+                if workspace.roles[user.role].allows('review'):
+                    reviewers.addItem(user.display_name+' | '+uid,uid)
+        evidence=QLineEdit();evidence.setObjectName('ifc_identity_evidence')
+        evidence.setPlaceholderText('مسیر فایل مدرک تطبیق مستقل')
+        browse=QPushButton('انتخاب مدرک تطبیق')
+        browse.clicked.connect(lambda: evidence.setText(QFileDialog.getOpenFileName(dialog,'مدرک تطبیق هویت')[0]))
+        review_note=QLineEdit();review_note.setObjectName('ifc_review_note')
+        form.addRow('بازبین ثبت‌شده با نقش مجاز',reviewers)
+        form.addRow('مدرک بازبینی',evidence);form.addRow('',browse)
+        form.addRow('یادداشت تصمیم هویت',review_note)
+        approve=QPushButton('تأیید مستقل هویت؛ بدون مجوز پرداخت')
+        approve.setObjectName('ifc_review_identity');approve.setEnabled(project is not None)
+        layout.addWidget(approve)
+        def review_mapping():
+            nonlocal digest
+            try:
+                from hashlib import sha256
+                if 'element' not in selected:raise ValueError('ابتدا عضو IFC را انتخاب کنید')
+                current=self.app_service.open_project(pid)
+                proposal=next((x for x in current.get('ifc_identity_proposals',[])
+                    if x['global_id']==selected['element']['global_id'] and x['document']['source_sha256']==doc['source_sha256']),None)
+                if proposal is None:raise ValueError('ابتدا پیشنهاد تطبیق را ذخیره کنید')
+                proof=Path(evidence.text())
+                self.app_service.review_ifc_identity(pid,proposal_id=proposal['id'],reviewer=reviewers.currentData(),
+                    evidence_path=str(proof),evidence_sha256=sha256(proof.read_bytes()).hexdigest(),
+                    note=review_note.text(),expected_digest=digest)
+                digest=self.app_service.store.current_digest(pid)
+                outcome.setText('هویت با مدرک و نقش بازبین تأیید شد؛ انتقال کمیت و پرداخت همچنان مسدود است')
+            except Exception as exc:outcome.setText('بازبینی انجام نشد: '+str(exc))
+        approve.clicked.connect(review_mapping)
         save.clicked.connect(persist);dialog.show()
 
     def _activate_view_tool(self, mode: str, instruction: str):
