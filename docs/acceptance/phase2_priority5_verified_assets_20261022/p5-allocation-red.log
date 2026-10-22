@@ -1,0 +1,120 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+____ test_real_ifc_lineage_quantity_oracle_never_authorizes_payment[split] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_real_ifc_lineage_quantity0')
+mode = 'split'
+
+    @pytest.mark.parametrize('mode',['split','merge'])
+    def test_real_ifc_lineage_quantity_oracle_never_authorizes_payment(tmp_path,mode):
+        app,args,proof,data=quantity_lineage_case(tmp_path,mode)
+        before=app.store.current_digest('P')
+>       assert hasattr(app,'assess_ifc_lineage_quantities'), 'independent quantity reconciliation is missing'
+E       AssertionError: independent quantity reconciliation is missing
+E       assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2e2dab260>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:326: AssertionError
+____ test_real_ifc_lineage_quantity_oracle_never_authorizes_payment[merge] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_real_ifc_lineage_quantity1')
+mode = 'merge'
+
+    @pytest.mark.parametrize('mode',['split','merge'])
+    def test_real_ifc_lineage_quantity_oracle_never_authorizes_payment(tmp_path,mode):
+        app,args,proof,data=quantity_lineage_case(tmp_path,mode)
+        before=app.store.current_digest('P')
+>       assert hasattr(app,'assess_ifc_lineage_quantities'), 'independent quantity reconciliation is missing'
+E       AssertionError: independent quantity reconciliation is missing
+E       assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2e9533290>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:326: AssertionError
+____ test_lineage_quantity_assessment_bad_evidence_is_atomic[missing_table] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme0')
+bad = 'missing_table'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2cc3d7f20>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+___ test_lineage_quantity_assessment_bad_evidence_is_atomic[wrong_quantity] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme1')
+bad = 'wrong_quantity'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2cbdd3b00>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+______ test_lineage_quantity_assessment_bad_evidence_is_atomic[duplicate] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme2')
+bad = 'duplicate'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2cbcf4f20>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+____ test_lineage_quantity_assessment_bad_evidence_is_atomic[changed_proof] ____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme3')
+bad = 'changed_proof'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2e2717bc0>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+_____ test_lineage_quantity_assessment_bad_evidence_is_atomic[self_review] _____
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme4')
+bad = 'self_review'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2cbce2db0>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+________ test_lineage_quantity_assessment_bad_evidence_is_atomic[stale] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_lineage_quantity_assessme5')
+bad = 'stale'
+
+    @pytest.mark.parametrize('bad',['missing_table','wrong_quantity','duplicate','changed_proof','self_review','stale'])
+    def test_lineage_quantity_assessment_bad_evidence_is_atomic(tmp_path,bad):
+        app,args,proof,data=quantity_lineage_case(tmp_path)
+>       assert hasattr(app,'assess_ifc_lineage_quantities')
+E       AssertionError: assert False
+E        +  where False = hasattr(<core.platform.application.StructuralProApp object at 0x7fc2cbce2cc0>, 'assess_ifc_lineage_quantities')
+
+tests/test_phase2_priority5_verified.py:337: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_verified.py::test_real_ifc_lineage_quantity_oracle_never_authorizes_payment[split]
+FAILED tests/test_phase2_priority5_verified.py::test_real_ifc_lineage_quantity_oracle_never_authorizes_payment[merge]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[missing_table]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[wrong_quantity]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[duplicate]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[changed_proof]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[self_review]
+FAILED tests/test_phase2_priority5_verified.py::test_lineage_quantity_assessment_bad_evidence_is_atomic[stale]
+8 failed, 15 deselected in 1.56s

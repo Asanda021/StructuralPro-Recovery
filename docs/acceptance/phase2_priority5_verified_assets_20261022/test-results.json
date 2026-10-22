@@ -1,0 +1,38 @@
+{
+  "full": {
+    "passed": 7632,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 0,
+    "duration_s": 370.41,
+    "skip_reason": "PowerShell runtime unavailable",
+    "tree": "3c4e48df0f61b16c6fb69da523fb783b4c60d582"
+  },
+  "last_targeted": {
+    "passed": 66,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "preceding_targeted": {
+    "passed": 192,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "note": "Before last two UI fixes; not substituted for final full run"
+  },
+  "repeated_cad": {
+    "runs": 3,
+    "passed_each": 1,
+    "threshold_s": 0.5
+  },
+  "aborted_full": {
+    "exit_code": 130,
+    "complete": false,
+    "observed_failure": "test_five_core_areas_end_to_end with globally selected real converter overriding its fake fixture backend"
+  },
+  "standalone_diagnostic_collection_error": "Legacy circular import when test_five_core_e2e collected alone; replay using actual application import order. Canonical full collection succeeded."
+}

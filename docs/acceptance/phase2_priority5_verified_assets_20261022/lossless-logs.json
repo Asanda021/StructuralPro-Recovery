@@ -1,0 +1,32 @@
+[
+  {
+    "raw_log": "p5-column-red.log",
+    "gzip": "p5-column-red.log.gz",
+    "raw_sha256": "28cc8053a0059417a78c55ab9a37baa4f6cff66eceef5fb19cab3e889b767852",
+    "gzip_sha256": "ff43be270e92c2d38158f45d3e5d023317dbe13d8962503b0b31029822023319"
+  },
+  {
+    "raw_log": "p5-gc-green.log",
+    "gzip": "p5-gc-green.log.gz",
+    "raw_sha256": "f1d337f67a8f63cbf04190ed5bf1b002e8c8dc460d2c5ab4dc6be643642376e2",
+    "gzip_sha256": "a893ad93146cf466eb12b1d0ac9322f7b3a271168a7a5bf7aa18152df9534170"
+  },
+  {
+    "raw_log": "p5-converter-env-repro.log",
+    "gzip": "p5-converter-env-repro.log.gz",
+    "raw_sha256": "eac8a1ab7b0b86ae4b92d750dab3202b72fa89da050d84d194c333ce4cd8818d",
+    "gzip_sha256": "681281408d81bedb4ebb467f1cb6f055a954168bcbb92a7d02bfe0d8f2f13d91"
+  },
+  {
+    "raw_log": "p5-ui-diagnostic.log",
+    "gzip": "p5-ui-diagnostic.log.gz",
+    "raw_sha256": "9a549be1ca7f34badf5eb378800db49584018bbc9b39394c083679e64ee9fe60",
+    "gzip_sha256": "2a7867a91d081a81e96668539c98957b54f7a8c8d2c873d4043c8ba5f5d12283"
+  },
+  {
+    "raw_log": "p5-migration-red.log",
+    "gzip": "p5-migration-red.log.gz",
+    "raw_sha256": "09a3906808fcac634086aa0b031e302ed960a346c52baa9ff12b2986b10a64a4",
+    "gzip_sha256": "55eff9a43197f4f55eaedf26314ad8802bd5acce8bdc4a6434963864dd07024f"
+  }
+]

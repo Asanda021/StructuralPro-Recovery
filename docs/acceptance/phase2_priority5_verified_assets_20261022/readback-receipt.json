@@ -1,0 +1,168 @@
+{
+  "restored_root": "/tmp/p5-independent-restore",
+  "code_head": "b683ba614d5f013ba47a2f2c69e2f02cac431f40",
+  "readback": [
+    {
+      "scenario": "generic",
+      "takeoffs": 1,
+      "boq": [
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "کمیت عمومی IFC — Length",
+          "effective_quantity": 5,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "manual_workbench",
+          "item_no": 1,
+          "notes": "",
+          "price_code": null,
+          "quantity": 5,
+          "source": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+          "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+          "source_ids": [
+            "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "m",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        }
+      ],
+      "crosswalks": 0,
+      "integrity": "ok"
+    },
+    {
+      "scenario": "column",
+      "takeoffs": 3,
+      "boq": [
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "بتن ستون C1",
+          "effective_quantity": 0.75,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "concrete",
+          "item_no": 1,
+          "notes": "",
+          "price_code": null,
+          "quantity": 0.75,
+          "source": "structural:column:F1:C1:concrete",
+          "source_id": "structural:column:F1:C1:concrete",
+          "source_ids": [
+            "structural:column:F1:C1:concrete"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "m3",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        },
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "قالب ستون C1",
+          "effective_quantity": 3,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "formwork",
+          "item_no": 2,
+          "notes": "",
+          "price_code": null,
+          "quantity": 3,
+          "source": "structural:column:F1:C1:formwork",
+          "source_id": "structural:column:F1:C1:formwork",
+          "source_ids": [
+            "structural:column:F1:C1:formwork"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "m2",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        },
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "میلگرد طولی ستون C1",
+          "effective_quantity": 21.488,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "rebar",
+          "item_no": 3,
+          "notes": "",
+          "price_code": null,
+          "quantity": 21.488,
+          "source": "structural:column:F1:C1:rebar:longitudinal",
+          "source_id": "structural:column:F1:C1:rebar:longitudinal",
+          "source_ids": [
+            "structural:column:F1:C1:rebar:longitudinal"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "kg",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        }
+      ],
+      "crosswalks": 0,
+      "integrity": "ok"
+    },
+    {
+      "scenario": "migration",
+      "takeoffs": 0,
+      "boq": [],
+      "crosswalks": 2,
+      "integrity": "ok",
+      "native_qt_restored_crosswalk": true
+    },
+    {
+      "scenario": "pdf",
+      "takeoffs": 0,
+      "boq": [],
+      "crosswalks": 1,
+      "integrity": "ok",
+      "native_qt_restored_crosswalk": true
+    },
+    {
+      "scenario": "dwg",
+      "boq_m": 5,
+      "dwg_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+      "conversion": {
+        "decoder_version": "3.8.0.0",
+        "exit_code": 0,
+        "output_sha256": "a11d11d9d96328c4112a2542a28748e23fcb5fdc878efd17de2f8188936246ec",
+        "provider": "ACadSharp bridge",
+        "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145"
+      },
+      "native_qt_restored_crosswalk": true,
+      "integrity": "ok"
+    },
+    {
+      "scenario": "lineage-split",
+      "nonfinancial": true,
+      "boq": [],
+      "integrity": true
+    },
+    {
+      "scenario": "lineage-merge",
+      "nonfinancial": true,
+      "boq": [],
+      "integrity": true
+    }
+  ]
+}

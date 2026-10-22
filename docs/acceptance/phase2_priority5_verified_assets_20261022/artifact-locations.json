@@ -1,0 +1,17 @@
+{
+  "final-ui-samples.zip": {
+    "archive": "/StructuralPro/Backups/StructuralPro_P5_Verified_b683ba61_20261022.zip",
+    "contents_location": "samples/ui/",
+    "original_zip_sha256": "a94121244c529d682003c9e9ef5de2fac731fa40378b25e2e155b9717fd88bc5"
+  },
+  "dwg-samples.zip": {
+    "archive": "/StructuralPro/Backups/StructuralPro_P5_Verified_b683ba61_20261022.zip",
+    "contents_location": "samples/dwg/",
+    "original_zip_sha256": "e4cb1790a291d9ee5e3265f312de2d2553b15a1004ad8c4d40db7305bd4b1662"
+  },
+  "repeat-fixtures.zip": {
+    "archive": "/StructuralPro/Backups/StructuralPro_P5_Verified_b683ba61_20261022.zip",
+    "contents_location": "evidence/repeat-fixtures.zip",
+    "original_zip_sha256": "3a76c845c1cb36390982919337ab54e0763c561a9dd85873924a67e95b31e04d"
+  }
+}

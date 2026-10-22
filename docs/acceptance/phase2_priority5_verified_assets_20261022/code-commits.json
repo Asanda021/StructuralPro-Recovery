@@ -1,0 +1,83 @@
+{
+  "initial_head": "b3ecdaab7c546bbc77101dc04125246b459b6239",
+  "protected_head": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "code_remote": "b683ba614d5f013ba47a2f2c69e2f02cac431f40",
+  "commits": [
+    {
+      "local": "27f2c366eac1893d32ac1538934032839ca5e0fb",
+      "tree": "793bd0f3d6fd2b06a6ced33275c86450e2793658",
+      "message": "fix: defer automatic full-heap GC only during active GUI imports and restore every terminal path [skip ci]",
+      "files": [
+        {
+          "path": "app/graphical_takeoff.py",
+          "size": 125240
+        },
+        {
+          "path": "core/drawings/gui_load_gc.py",
+          "size": 1426
+        },
+        {
+          "path": "tests/test_phase2_priority5_gc_scope.py",
+          "size": 1863
+        }
+      ],
+      "remote": "c9065086bdcd82a982bf3dac9722caf8f5102ba1"
+    },
+    {
+      "local": "ac4fd3e2d32cb6fbb9a91cbf09b15ee54f4f66a5",
+      "tree": "9c511276485bc0e50bcdaae05617c908ce0d5ed4",
+      "message": "feat: review IFC source migrations and native amendments while keeping unresolved split merge ownership fail closed [skip ci]",
+      "files": [
+        {
+          "path": "app/graphical_takeoff.py",
+          "size": 126089
+        },
+        {
+          "path": "app/ifc_amendment_controls.py",
+          "size": 8679
+        },
+        {
+          "path": "core/drawings/ifc_lineage.py",
+          "size": 17583
+        },
+        {
+          "path": "core/drawings/ifc_pipeline.py",
+          "size": 36244
+        },
+        {
+          "path": "core/platform/application.py",
+          "size": 164082
+        },
+        {
+          "path": "core/takeoff/manual_formula_amendments.py",
+          "size": 72165
+        },
+        {
+          "path": "tests/test_phase2_priority5_verified.py",
+          "size": 25834
+        }
+      ],
+      "remote": "b64f37f06fa24c3f5e73b497c5877230935ca8e6"
+    },
+    {
+      "local": "9eb9259036807733533b16b119a55096da79ee3a",
+      "tree": "3c4e48df0f61b16c6fb69da523fb783b4c60d582",
+      "message": "fix: show reviewed IFC member identity and applied amendment history in native inspector [skip ci]",
+      "files": [
+        {
+          "path": "app/graphical_takeoff.py",
+          "size": 126729
+        },
+        {
+          "path": "app/ifc_amendment_controls.py",
+          "size": 8729
+        },
+        {
+          "path": "tests/test_phase2_priority5_verified.py",
+          "size": 26210
+        }
+      ],
+      "remote": "b683ba614d5f013ba47a2f2c69e2f02cac431f40"
+    }
+  ]
+}

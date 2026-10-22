@@ -1,0 +1,8 @@
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+Traceback (most recent call last):
+  File "/workspace/scratch/61dce18379e6/p5-verified/docs/acceptance/phase2_priority5_verified_assets_20261022/dwg_ifc_probe.py", line 47, in <module>
+    assert link['drawing']['conversion']==doc.conversion, 'DWG and DXF provenance missing in Crosswalk'
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+KeyError: 'conversion'

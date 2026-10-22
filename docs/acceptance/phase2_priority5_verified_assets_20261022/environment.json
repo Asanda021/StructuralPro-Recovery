@@ -1,0 +1,11 @@
+{
+  "date_utc": "2026-10-22T21:15:31+00:00",
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "runtime_archive_sha256": "1d7a338cada885183b54d43247604e05b8719a08861e47dd032e2a3b8171b3ce",
+  "dotnet_runtime": "8.0.21",
+  "acadsharp": "3.8.0.0",
+  "real_dwg_probe_exit": 0,
+  "source_test_unchanged_sha256": "77abd1fd142bc876a8202e3c6406969f803f5cf6e38ed711178236afbe658f66",
+  "source_test_git_blob": "a84d7f7685709a2591c392d06e1d0fba5c0900cb"
+}

@@ -1,0 +1,97 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+___________ test_generic_ifc_amendment_native_qt_keeps_original_boq ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-25/test_generic_ifc_amendment_nat0')
+
+    def test_generic_ifc_amendment_native_qt_keeps_original_boq(tmp_path):
+        from test_phase2_priority5_closure import identity_case
+        from core.drawings.ifc_pipeline import quantity_formula_data
+        from core.takeoff import manual_formula_register as register
+        from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QComboBox, QTreeWidget, QLabel
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        import ifcopenshell
+        app, source, proof, proposal, kw = identity_case(tmp_path)
+        app.review_ifc_identity('P', **kw)
+        data = quantity_formula_data(app,'P',proposal['id'],'Length',author='author')
+        register.save(app,'P','Q',data,expected_revision=0,reason='Explicit QTO oracle 4m')
+        register.review(app,'P','Q',expected_revision=1,reviewer='reviewer',note='4m checked')
+        register.commit(app,'P','Q',expected_revision=1)
+        original = deepcopy(app.open_project('P'))
+        model = ifcopenshell.open(str(source)); model.by_type('IfcQuantityLength')[0].LengthValue = 5.
+        newer=tmp_path/'R2.ifc';model.write(str(newer))
+        new=app.save_ifc_identity_proposal('P',str(newer),revision='R2',global_id=proposal['global_id'],floor_id='F1',member_id='B1',author='author',reference='Synthetic explicit revised length 5m',source_sha256=sha256(newer.read_bytes()).hexdigest(),expected_digest=app.store.current_digest('P'))
+        app.review_ifc_identity('P', **{**kw, 'proposal_id':new['id'],'expected_digest':app.store.current_digest('P')}, supersedes=proposal['id'])
+        qt=QApplication.instance() or QApplication([])
+        w=GraphicalTakeoffDialog(app_service=app,project_id='P'); w.show(); w.open_drawing(str(newer)); w.ifc_revision.setText('R2')
+        QTest.mouseClick(w.ifc_inspect_button,Qt.LeftButton)
+        dialog=w._ifc_inspector
+        try:
+            dialog.findChild(QLineEdit,'ifc_search').setText(new['global_id'])
+            tree=dialog.findChild(QTreeWidget,'ifc_tree'); tree.setCurrentItem(tree.topLevelItem(0).child(0))
+            dialog.findChild(QLineEdit,'ifc_author').setText('author')
+            dialog.findChild(QLineEdit,'ifc_review_note').setText('Independent corrected QTO 4 -> 5m')
+            rows=dialog.findChild(QComboBox,'ifc_amend_row')
+            assert rows is not None, 'IFC inspector has no native amendment workflow'
+            assert rows.count() == 1; rows.setCurrentIndex(0)
+            dialog.findChild(QLineEdit,'ifc_amend_reason').setText('Explicit revision correction evidence; original retained')
+            for action in ('preview','create','review','apply'):
+                QTest.mouseClick(dialog.findChild(QPushButton,'ifc_amend_'+action),Qt.LeftButton)
+                qt.processEvents()
+                assert 'انجام نشد' not in dialog.findChild(QLabel,'ifc_review_outcome').text(), dialog.findChild(QLabel,'ifc_review_outcome').text()
+            project=app.open_project('P')
+            assert project['takeoffs']==original['takeoffs']
+            assert project['manual_formula_register']==original['manual_formula_register']
+            assert str(project['boq'][0]['quantity']) in ('5','5.0')
+            assert len(project['manual_formula_amendments'])==1
+>           assert next(iter(project['manual_formula_amendments'])) in dialog.findChild(QLabel,'ifc_amend_summary').text()
+E           assert 'MA-1074d75689524f888c54a92aac197df5' in 'm: مقدار قبلی 4؛ پیشنهادی 5؛ اختلاف 1\nمنبع: b37746a1794eb494ebd3669a6508cebe0b4446f1d7c85f84daf9b66ce62358dc | R2\nتاریخچه: بدون اصلاحیه\nمقدار مؤثر BOQ: 5 m؛ اصل قطعی محفوظ است'
+E            +  where 'MA-1074d75689524f888c54a92aac197df5' = next(<dict_keyiterator object at 0x7ff7714c3a60>)
+E            +    where <dict_keyiterator object at 0x7ff7714c3a60> = iter({'MA-1074d75689524f888c54a92aac197df5': {'applied_at': '2026-10-22T21:11:36.660666+00:00', 'base_digest': 'f93cd65a7cb...5d50347913c474e66bb219c546bd1a5556bbc37e6', 'base_revision': 1, 'created_at': '2026-10-22T21:11:36.625785+00:00', ...}})
+E            +  and   'm: مقدار قبلی 4؛ پیشنهادی 5؛ اختلاف 1\nمنبع: b37746a1794eb494ebd3669a6508cebe0b4446f1d7c85f84daf9b66ce62358dc | R2\nتاریخچه: بدون اصلاحیه\nمقدار مؤثر BOQ: 5 m؛ اصل قطعی محفوظ است' = <built-in method text of PySide6.QtWidgets.QLabel object at 0x7ff771851b40>()
+E            +    where <built-in method text of PySide6.QtWidgets.QLabel object at 0x7ff771851b40> = <PySide6.QtWidgets.QLabel(0xabea4b0, name="ifc_amend_summary") at 0x7ff771851b40>.text
+E            +      where <PySide6.QtWidgets.QLabel(0xabea4b0, name="ifc_amend_summary") at 0x7ff771851b40> = <built-in method findChild of PySide6.QtWidgets.QDialog object at 0x7ff7717d8b40>(<class 'PySide6.QtWidgets.QLabel'>, 'ifc_amend_summary')
+E            +        where <built-in method findChild of PySide6.QtWidgets.QDialog object at 0x7ff7717d8b40> = <PySide6.QtWidgets.QDialog(0xab672d0) at 0x7ff7717d8b40>.findChild
+
+tests/test_phase2_priority5_verified.py:108: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+____________ test_ifc_column_revision_amendment_real_qt_and_reopen _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-25/test_ifc_column_revision_amend0')
+
+    def test_ifc_column_revision_amendment_real_qt_and_reopen(tmp_path):
+        from decimal import Decimal
+        from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QComboBox,QTreeWidget,QLabel
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app,source,new,detail,data,original=column_revision_case(tmp_path)
+        qt=QApplication.instance() or QApplication([])
+        w=GraphicalTakeoffDialog(app_service=app,project_id='P');w.show();w.open_drawing(str(source));w.ifc_revision.setText('R2');QTest.mouseClick(w.ifc_inspect_button,Qt.LeftButton)
+        dialog=w._ifc_inspector
+        try:
+            dialog.findChild(QLineEdit,'ifc_search').setText(new['global_id'])
+            tree=dialog.findChild(QTreeWidget,'ifc_tree');tree.setCurrentItem(tree.topLevelItem(0).child(0))
+            dialog.findChild(QLineEdit,'ifc_author').setText('author')
+            dialog.findChild(QLineEdit,'ifc_review_note').setText('Synthetic independent complete R2 detail')
+            rows=dialog.findChild(QComboBox,'ifc_amend_row')
+            assert rows.count()==1, 'committed IFC column missing from amendment UI'
+            rows.setCurrentIndex(0)
+>           assert dialog.findChild(QComboBox,'ifc_member').currentData()=='C1'
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: 'NoneType' object has no attribute 'currentData'
+
+tests/test_phase2_priority5_verified.py:184: AttributeError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_verified.py::test_generic_ifc_amendment_native_qt_keeps_original_boq
+FAILED tests/test_phase2_priority5_verified.py::test_ifc_column_revision_amendment_real_qt_and_reopen
+2 failed, 22 deselected in 0.90s

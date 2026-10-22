@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_crosswalk_revision_migration_native_qt_selects_current_source ______
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-15/test_crosswalk_revision_migrat0')
+
+    def test_crosswalk_revision_migration_native_qt_selects_current_source(tmp_path):
+        from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QTreeWidget,QLabel
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app,source,new,first,args=revised_crosswalk_case(tmp_path)
+        qt=QApplication.instance() or QApplication([])
+        w=GraphicalTakeoffDialog(app_service=app,project_id='P');w.show();w.open_drawing(str(source));w.ifc_revision.setText('R2');QTest.mouseClick(w.ifc_inspect_button,Qt.LeftButton)
+        dialog=w._ifc_inspector
+        try:
+            dialog.findChild(QLineEdit,'ifc_search').setText(new['global_id'])
+            tree=dialog.findChild(QTreeWidget,'ifc_tree');tree.setCurrentItem(tree.topLevelItem(0).child(0))
+            dialog.findChild(QLineEdit,'ifc_author').setText('author')
+            prior=dialog.findChild(QLineEdit,'ifc_crosswalk_supersedes')
+>           assert prior is not None, 'revision migration is absent in native inspector'
+E           AssertionError: revision migration is absent in native inspector
+E           assert None is not None
+
+tests/test_phase2_priority5_verified.py:214: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_verified.py::test_crosswalk_revision_migration_native_qt_selects_current_source
+1 failed, 8 deselected in 0.85s

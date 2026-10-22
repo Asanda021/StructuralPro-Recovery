@@ -1,0 +1,97 @@
+{
+  "schema": "IFC4",
+  "dwg_version": "AC1032",
+  "converter": {
+    "provider": "ACadSharp bridge",
+    "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+    "output_sha256": "a11d11d9d96328c4112a2542a28748e23fcb5fdc878efd17de2f8188936246ec",
+    "decoder_version": "3.8.0.0",
+    "exit_code": 0
+  },
+  "oracle_m": "5",
+  "ifc_qto_m": "5",
+  "cad_length_m": 5.0,
+  "boq_m": 5,
+  "crosswalk": {
+    "author": "author",
+    "building_id": "1M5NSUl_HC88LwQtrBTEnv",
+    "commit_allowed": false,
+    "coordinate_evidence": {
+      "drawing_anchor_xy": [
+        "0",
+        "0"
+      ],
+      "drawing_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145",
+      "ifc_origin_m": [
+        "1000000",
+        "7",
+        "0"
+      ],
+      "ifc_sha256": "f26698773ea0b679bc227bb3957646a912f59bbf05eda442357424e046da1a64",
+      "ifc_to_drawing_si": [
+        "1",
+        "0",
+        "0",
+        "1",
+        "-1000000",
+        "-7"
+      ],
+      "item_id": "TO-00001",
+      "physical_identity_reference": "Synthetic B1 explicit same 5m quantity owner; not automatic geometry equality",
+      "policy": "reviewed_reference_point_v1",
+      "project_id": "P",
+      "proposal_id": "b1e8543b0f9b6c570f5d93d96ee9e282fb9dcdf5d1549ea3d2e9bf80ef428c1f",
+      "session_id": "f3b62844024f457d8e31316da16361a3",
+      "unit_evidence_reference": "IFC metre and CAD explicit INSUNITS metre"
+    },
+    "created_at": "2026-10-22T21:07:23.656432+00:00",
+    "drawing": {
+      "conversion": {
+        "decoder_version": "3.8.0.0",
+        "exit_code": 0,
+        "output_sha256": "a11d11d9d96328c4112a2542a28748e23fcb5fdc878efd17de2f8188936246ec",
+        "provider": "ACadSharp bridge",
+        "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145"
+      },
+      "geometry_identity": "f3a86feedbda650b3c0db48686c5f8a272086f15771c955d6e59fc50a7d18d6b",
+      "handle": "30",
+      "item_digest": "3225cd6f20227ef92654ea1d5376f49f9fdcd7ffbef932e578e816a4dafb642d",
+      "page": 1,
+      "path": "/tmp/p5-dwg-ifc-accepted/reference.dwg",
+      "session_revision": 1,
+      "source_sha256": "2c45c2f962b8a556953710a3f3dd829d2656c220a0bb252422dd0aba0d686145"
+    },
+    "evidence_path": "/tmp/p5-dwg-ifc-accepted/crosswalk.json",
+    "evidence_sha256": "710e89c71d00f7436acb56248938dc8d3812b5ca6871148acd37da96ccab188d",
+    "floor_id": "F1",
+    "global_id": "2PHNqprSX04Oqw5kcb12K0",
+    "id": "98bbc9cac41af2c140261fed3593f0e97681f8d90d37e13b44bac8fd88be65ac",
+    "ifc_document": {
+      "parser": "IfcOpenShell 0.9.0.post1",
+      "revision": "R1",
+      "schema": "IFC4",
+      "source_id": "ifc:f26698773ea0b679bc227bb3957646a912f59bbf05eda442357424e046da1a64",
+      "source_path": "/tmp/p5-dwg-ifc-accepted/beam-5m.ifc",
+      "source_sha256": "f26698773ea0b679bc227bb3957646a912f59bbf05eda442357424e046da1a64",
+      "unit_factors_si": {
+        "AREAUNIT": "1",
+        "LENGTHUNIT": "1",
+        "VOLUMEUNIT": "1"
+      }
+    },
+    "item_id": "TO-00001",
+    "member_id": "B1",
+    "payable_rows": [],
+    "project_id": "P",
+    "proposal_id": "b1e8543b0f9b6c570f5d93d96ee9e282fb9dcdf5d1549ea3d2e9bf80ef428c1f",
+    "reviewer": "reviewer",
+    "reviewer_role": "reviewer",
+    "revision": 1,
+    "session_id": "f3b62844024f457d8e31316da16361a3",
+    "status": "approved"
+  },
+  "duplicate_rejected_atomically": true,
+  "sqlite_integrity": "ok",
+  "native_qt_bidirectional": true,
+  "synthetic": true
+}

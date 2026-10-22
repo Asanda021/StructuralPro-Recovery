@@ -1,0 +1,140 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+________ test_import_gc_policy_restored_on_every_terminal_path[cancel] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_import_gc_policy_restored0')
+finish = 'cancel'
+
+    @pytest.mark.parametrize('finish', ['cancel', 'success', 'error', 'close'])
+    def test_import_gc_policy_restored_on_every_terminal_path(tmp_path, finish):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from PySide6.QtCore import QCoreApplication, QEvent
+        qt()
+        path = fixture(tmp_path, 30)
+        if finish == 'error':
+            path.write_text('corrupt DXF')
+        original = gc.get_threshold()
+        enabled = gc.isenabled()
+        window = GraphicalTakeoffDialog()
+        window.show()
+        try:
+            window.open_cad_async(str(path))
+            current = gc.get_threshold()
+            assert current[:2] == original[:2]
+>           assert current[2] > original[2], 'full-heap collection still scheduled in GUI load'
+E           AssertionError: full-heap collection still scheduled in GUI load
+E           assert 10 > 10
+
+tests/test_phase2_priority5_gc_scope.py:22: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+________ test_import_gc_policy_restored_on_every_terminal_path[success] ________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_import_gc_policy_restored1')
+finish = 'success'
+
+    @pytest.mark.parametrize('finish', ['cancel', 'success', 'error', 'close'])
+    def test_import_gc_policy_restored_on_every_terminal_path(tmp_path, finish):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from PySide6.QtCore import QCoreApplication, QEvent
+        qt()
+        path = fixture(tmp_path, 30)
+        if finish == 'error':
+            path.write_text('corrupt DXF')
+        original = gc.get_threshold()
+        enabled = gc.isenabled()
+        window = GraphicalTakeoffDialog()
+        window.show()
+        try:
+            window.open_cad_async(str(path))
+            current = gc.get_threshold()
+            assert current[:2] == original[:2]
+>           assert current[2] > original[2], 'full-heap collection still scheduled in GUI load'
+E           AssertionError: full-heap collection still scheduled in GUI load
+E           assert 10 > 10
+
+tests/test_phase2_priority5_gc_scope.py:22: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_________ test_import_gc_policy_restored_on_every_terminal_path[error] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_import_gc_policy_restored2')
+finish = 'error'
+
+    @pytest.mark.parametrize('finish', ['cancel', 'success', 'error', 'close'])
+    def test_import_gc_policy_restored_on_every_terminal_path(tmp_path, finish):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from PySide6.QtCore import QCoreApplication, QEvent
+        qt()
+        path = fixture(tmp_path, 30)
+        if finish == 'error':
+            path.write_text('corrupt DXF')
+        original = gc.get_threshold()
+        enabled = gc.isenabled()
+        window = GraphicalTakeoffDialog()
+        window.show()
+        try:
+            window.open_cad_async(str(path))
+            current = gc.get_threshold()
+            assert current[:2] == original[:2]
+>           assert current[2] > original[2], 'full-heap collection still scheduled in GUI load'
+E           AssertionError: full-heap collection still scheduled in GUI load
+E           assert 10 > 10
+
+tests/test_phase2_priority5_gc_scope.py:22: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+_________ test_import_gc_policy_restored_on_every_terminal_path[close] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_import_gc_policy_restored3')
+finish = 'close'
+
+    @pytest.mark.parametrize('finish', ['cancel', 'success', 'error', 'close'])
+    def test_import_gc_policy_restored_on_every_terminal_path(tmp_path, finish):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from PySide6.QtCore import QCoreApplication, QEvent
+        qt()
+        path = fixture(tmp_path, 30)
+        if finish == 'error':
+            path.write_text('corrupt DXF')
+        original = gc.get_threshold()
+        enabled = gc.isenabled()
+        window = GraphicalTakeoffDialog()
+        window.show()
+        try:
+            window.open_cad_async(str(path))
+            current = gc.get_threshold()
+            assert current[:2] == original[:2]
+>           assert current[2] > original[2], 'full-heap collection still scheduled in GUI load'
+E           AssertionError: full-heap collection still scheduled in GUI load
+E           assert 10 > 10
+
+tests/test_phase2_priority5_gc_scope.py:22: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+__________ test_overlapping_windows_release_policy_after_last_import ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_overlapping_windows_relea0')
+
+    def test_overlapping_windows_release_policy_after_last_import(tmp_path):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        qt(); path = fixture(tmp_path, 30); original = gc.get_threshold()
+        a, b = GraphicalTakeoffDialog(), GraphicalTakeoffDialog()
+        try:
+            a.open_cad_async(str(path)); b.open_cad_async(str(path))
+            a.cancel_cad_loading()
+>           assert gc.get_threshold()[2] > original[2]
+E           assert 10 > 10
+
+tests/test_phase2_priority5_gc_scope.py:42: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority5_gc_scope.py::test_import_gc_policy_restored_on_every_terminal_path[cancel]
+FAILED tests/test_phase2_priority5_gc_scope.py::test_import_gc_policy_restored_on_every_terminal_path[success]
+FAILED tests/test_phase2_priority5_gc_scope.py::test_import_gc_policy_restored_on_every_terminal_path[error]
+FAILED tests/test_phase2_priority5_gc_scope.py::test_import_gc_policy_restored_on_every_terminal_path[close]
+FAILED tests/test_phase2_priority5_gc_scope.py::test_overlapping_windows_release_policy_after_last_import
+5 failed in 0.47s

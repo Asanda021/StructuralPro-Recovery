@@ -1,0 +1,6 @@
+This plugin does not support propagateSizeHints()
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+Restored IFC/SQLite/native crosswalk/amendment/lineage readback PASS
