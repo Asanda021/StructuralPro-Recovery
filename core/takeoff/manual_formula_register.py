@@ -30,7 +30,7 @@ def revision(value,current):
 
 def clean(data):
     if not isinstance(data,dict):raise ValueError('ساختار ورودی فرمول نامعتبر است')
-    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions','block','location','variable_units','unit_policy'}
+    allowed={'family','title','floor','member','unit','expression','variables','references','source_id','basis','deductions','block','location','variable_units','unit_policy','ifc_evidence'}
     if set(data)-allowed:raise ValueError('فیلد تعریف‌نشده در قرارداد فرمول')
     d=deepcopy(data)
     for k,label in {'family':'خانواده','title':'شرح','floor':'طبقه','member':'شناسه عضو','expression':'فرمول','source_id':'منبع','basis':'مبنای محاسبه و واحد ورودی‌ها'}.items():d[k]=text(d.get(k),label)
@@ -120,6 +120,8 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
         text(key,'شناسه ردیف');old=register.get(key);
         if not old and key in project.get('manual_formula_deleted',{}):raise ValueError('شناسه حذف‌شده فقط با واگرد قابل بازیابی است')
         revision(expected_revisions[key],old['revision'] if old else 0);d=clean(data)
+        from core.drawings.ifc_pipeline import validate_quantity_handoff
+        validate_quantity_handoff(service,project,d)
         if 'variable_units' not in d:raise ValueError('ثبت یا ویرایش تازه نیازمند تعیین صریح واحد ساختاریافته همه پارامترها است')
         if old and 'variable_units' in old['data'] and 'variable_units' not in d:raise ValueError('حذف قرارداد واحد ساختاریافته مجاز نیست')
         if old and old['status']=='committed':raise ValueError('ردیف قطعی قابل تغییر مستقیم نیست')
@@ -184,6 +186,8 @@ def load(service,pid):return verified(read(service,pid)[0])
 
 def review(service,pid,key,*,expected_revision,reviewer,note):
     reviewer=text(reviewer,'بازبین');note=text(note,'یادداشت کنترل فرمول و واحد');project,digest=read(service,pid);reg=verified(project);row=reg[key];revision(expected_revision,row['revision'])
+    from core.drawings.ifc_pipeline import validate_quantity_handoff
+    validate_quantity_handoff(service,project,row['data'],reviewer=reviewer)
     if row['status']=='committed':raise ValueError('ردیف قطعی دوباره بازبینی نمی‌شود')
     if 'variable_units' not in row['data']:raise ValueError('ردیف تاریخی بدون قرارداد واحد نیازمند مهاجرت صریح و بازبینی است')
     row.update(status='reviewed',review={'reviewer':reviewer,'note':note,'digest':fingerprints(reg)[key],'at':datetime.now(timezone.utc).isoformat()})
@@ -194,6 +198,8 @@ def commit(service,pid,key,*,expected_revision):
     if 'variable_units' not in r['data']:raise ValueError('انتقال تازه بدون قرارداد واحد ساختاریافته مجاز نیست')
     if r['status']!='reviewed':raise ValueError('انتقال فقط برای فرمول بازبینی‌شده مجاز است')
     d=r['data'];sid=d['source_id'];amount=r['quantity']
+    from core.drawings.ifc_pipeline import validate_quantity_handoff
+    validate_quantity_handoff(service,project,d,reviewer=r.get('review',{}).get('reviewer'))
     if number(amount,'مقدار')<=0:raise ValueError('مقدار انتقال باید مثبت باشد')
     row={'id':'manual-formula:'+key,'source_id':sid,'member_code':d['member'],'domain':'building','item':d['family'],'params':{**deepcopy(d),'intersections':[deepcopy(v) for v in d['deductions']]},'revision':r['revision'],'system':d['floor'],'description':d['title'],'review':deepcopy(r['review']),'provenance':{'mode':'manual_formula','source_id':sid,'row_id':key,'numeric_policy':POLICY},'quantities':[{'code':d['family'],'title':d['title'],'unit':d['unit'],'amount':amount,'formula':d['expression'],'role':'work','price_code':None,'unit_price':None}]}
     validated=validate_commit_rows(project,[row],source_id=sid)

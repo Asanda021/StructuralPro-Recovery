@@ -107,6 +107,8 @@ def validate_commit_rows(
         raise ValueError("ساختار ریزمتره پروژه معتبر نیست")
     require_source_unused(project, source_id, exclude=expected_current_registry)
     incoming = list(rows)
+    from core.drawings.ifc_pipeline import physical_quantity_guard
+    physical_quantity_guard(project,incoming)
     from core.takeoff.manual_formula_amendments import mapping_guard_new_rows
     mapping_guard_new_rows(project,incoming,source_id,expected_current_registry)
     if not incoming:

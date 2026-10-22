@@ -37,6 +37,9 @@ def proposal(service,pid,key,data,*,expected_revision,created_by,reason):
     actor=text(created_by,'سازنده اصلاحیه');reason=text(reason,'علت اصلاح');project,token=read(service,pid);reg=verified(project);old=reg[key];revision(expected_revision,old['revision'])
     if old['status']!='committed':raise ValueError('اصلاحیه فقط برای ردیف قطعی است')
     d=clean(data)
+    if old['data'].get('ifc_evidence') and not d.get('ifc_evidence'):raise ValueError('حذف اتصال IFC در اصلاحیه مجاز نیست')
+    from core.drawings.ifc_pipeline import validate_quantity_handoff
+    validate_quantity_handoff(service,project,d)
     if 'variable_units' not in d:raise ValueError('اصلاحیه تازه نیازمند واحد ساختاریافته و کنترل ابعادی است')
     if 'variable_units' in old['data'] and 'variable_units' not in d:raise ValueError('حذف قرارداد واحد در اصلاحیه مجاز نیست')
     for field in ('source_id','family','unit','member','floor','references','block','location'):
@@ -55,6 +58,8 @@ def check_base(project,a):
 def review(service,pid,aid,*,expected_revision,reviewer,note):
     actor=text(reviewer,'بازبین مستقل');note=text(note,'یادداشت کنترل');project,token=read(service,pid);a=project['manual_formula_amendments'][aid];revision(expected_revision,a['revision']);check_base(project,a)
     if a['status']!='draft':raise ValueError('اصلاحیه قابل بازبینی نیست')
+    from core.drawings.ifc_pipeline import validate_quantity_handoff
+    validate_quantity_handoff(service,project,a['proposal'],reviewer=actor)
     if actor.casefold()==a['created_by'].casefold():raise ValueError('سازنده نمی‌تواند بازبین اصلاحیه خودش باشد')
     a.update(status='reviewed',review={'reviewer':actor,'note':note,'digest':digest(a['proposal']),'at':datetime.now(timezone.utc).isoformat()})
     service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'review','id':aid});return deepcopy(a)
@@ -63,6 +68,8 @@ def apply(service,pid,aid,*,expected_revision):
     project,token=read(service,pid);a=project['manual_formula_amendments'][aid];revision(expected_revision,a['revision'])
     if a['status']!='reviewed':raise ValueError('اصلاحیه ابتدا باید مستقل بازبینی شود')
     check_base(project,a);financial_block(project)
+    from core.drawings.ifc_pipeline import validate_quantity_handoff
+    validate_quantity_handoff(service,project,a['proposal'],reviewer=a.get('review',{}).get('reviewer'))
     if a['review']['digest']!=digest(a['proposal']):raise ValueError('داده اصلاحیه پس از بازبینی تغییر کرده است')
     reg=verified(project);candidate=deepcopy(reg);key=a['row_id'];candidate[key].update(data=deepcopy(a['proposal']),quantity=a['quantity']);values=evaluate_rows(graph(candidate));before=fingerprints(reg);after=fingerprints(candidate)
     for k,row in candidate.items():
@@ -289,6 +296,8 @@ def beam_create(service,pid,floor,beam,data,*,expected_revision,created_by,reaso
     @exact
     def delta():return {k:wire(after.get(k,number(0,'صفر'))-before.get(k,number(0,'صفر'))) for k in sorted(set(before)|set(after))}
     a={'id':'BA-'+uuid4().hex,'beam_key':key,'revision':1,'base_revision':old['revision'],'base_digest':digest(old),'original_digest':digest(beam_original(project,key)),'previous':deepcopy(old),'proposal':d,'rows':rows,'delta':delta(),'created_by':text(created_by,'سازنده'),'reason':text(reason,'علت اصلاح'),'status':'draft','created_at':datetime.now(timezone.utc).isoformat()}
+    from core.drawings.ifc_pipeline import validate_specialist_detail
+    validate_specialist_detail(service,project,d)
     if column:a['kind']='column_amendment'
     if foundation_kind or roof_kind:
         if not isinstance(evidence,dict):raise ValueError('مدرک جدید اصلاحیه لازم است')
@@ -304,6 +313,8 @@ def beam_review(service,pid,aid,*,expected_revision,reviewer,note):
     if a.get('migration'):beam_migration_evidence(a['migration'])
     if a.get('kind') in ('foundation_amendment','roof_amendment','drawing_polygon_amendment'):beam_migration_evidence(a['evidence'])
     if a['status']!='draft' or actor.casefold()==a['created_by'].casefold():raise ValueError('بازبینی مستقل اصلاحیه تیر معتبر نیست')
+    from core.drawings.ifc_pipeline import validate_specialist_detail
+    validate_specialist_detail(service,project,a['proposal'])
     if beam_rows(a['proposal'],a['base_revision']+1)!=a['rows']:raise ValueError('مقدار پیشنهاد تغییر کرده است')
     a.update(status='reviewed',review={'reviewer':actor,'note':text(note,'یادداشت کنترل'),'digest':digest(beam_review_payload(a))});service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'beam_review','id':aid});return deepcopy(a)
 
@@ -312,6 +323,8 @@ def beam_apply(service,pid,aid,*,expected_revision):
     project,token=read(service,pid);a=project[BEAM_FIELDS[0]][aid];revision(expected_revision,a['revision'])
     if a['status']!='reviewed' or a['review']['digest']!=digest(beam_review_payload(a)):raise ValueError('اعمال تکراری یا بدون بازبینی معتبر ممنوع است')
     beam_base(project,a);financial_block(project)
+    from core.drawings.ifc_pipeline import validate_specialist_detail
+    validate_specialist_detail(service,project,a['proposal'])
     if a.get('kind') in ('foundation_amendment','roof_amendment','drawing_polygon_amendment') and beam_rows(a['proposal'],a['base_revision']+1)!=a['rows']:raise ValueError('دیتایل اصلاحیه با قرارداد جاری کامل نیست')
     if a.get('migration'):beam_migration_evidence(a['migration'])
     if a.get('kind') in ('foundation_amendment','roof_amendment','drawing_polygon_amendment'):beam_migration_evidence(a['evidence'])

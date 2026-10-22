@@ -301,8 +301,9 @@ def preview_member(data: dict, engine: Any, *, _historical_tie=False) -> dict:
 class ReviewedStructuralWorkflow:
     """Separate non-beam register, reusing StructuralPro ProjectStore and BOQ."""
 
-    def __init__(self, store: Any, engine: Any):
+    def __init__(self, store: Any, engine: Any, *, application=None):
         self.store, self.engine = store, engine
+        self.application = application
 
     def _load(self, project_id: str):
         digest = self.store.current_digest(project_id)
@@ -333,6 +334,8 @@ class ReviewedStructuralWorkflow:
         except (TypeError, ValueError) as exc:
             raise ValueError("پیش‌نویس دارای داده نامعتبر است") from exc
         project, digest = self._load(project_id)
+        from core.drawings.ifc_pipeline import validate_specialist_detail
+        validate_specialist_detail(self.application,project,draft)
         register = project.setdefault(REGISTER, {})
         if not isinstance(register, dict):
             raise ValueError("ساختار ثبت اعضای سازه نامعتبر است")
@@ -446,6 +449,8 @@ class ReviewedStructuralWorkflow:
             raise ValueError("عضو قبلاً ثبت قطعی شده است")
         if record["revision"] != expected_revision:
             raise RuntimeError("تعارض نسخه؛ ثبت قطعی رد شد")
+        from core.drawings.ifc_pipeline import validate_specialist_detail
+        validate_specialist_detail(self.application,project,record['data'])
         report = preview_member(record["data"], self.engine)
         if not report["ready"]:
             raise ValueError("متره ناقص؛ ورود به BOQ مسدود است: " + "؛ ".join(report["blockers"]))

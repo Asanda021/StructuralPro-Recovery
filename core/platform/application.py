@@ -138,6 +138,14 @@ class StructuralProApp:
         self.store.save(project_id,project,expected_digest=expected_digest)
         return deepcopy(result)
 
+    def save_ifc_column_detail(self, project_id, **kwargs):
+        from core.drawings.ifc_pipeline import save_column_detail
+        return save_column_detail(self, project_id, **kwargs)
+
+    def save_ifc_crosswalk(self, project_id, **kwargs):
+        from core.drawings.ifc_pipeline import save_crosswalk
+        return save_crosswalk(self, project_id, **kwargs)
+
     def review_ifc_identity(self, project_id, **kwargs):
         from core.drawings.ifc_pipeline import review_identity
         return review_identity(self, project_id, **kwargs)
@@ -326,7 +334,7 @@ class StructuralProApp:
     def structural_member_workflow(self):
         """Column, grade beam and foundation reviews use the same canonical engine/store."""
         from core.takeoff.reviewed_structural import ReviewedStructuralWorkflow
-        return ReviewedStructuralWorkflow(self.store, self.takeoff)
+        return ReviewedStructuralWorkflow(self.store, self.takeoff, application=self)
 
     def new_structural_member(self, kind: str, floor_id: str, member_id: str) -> dict[str, Any]:
         from core.takeoff.reviewed_structural import empty_member

@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication, QTreeWidget, QTreeWidgetItem
+    QDoubleSpinBox, QCheckBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication, QTreeWidget, QTreeWidgetItem
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -1116,7 +1116,10 @@ class GraphicalTakeoffDialog(QDialog):
     def _ifc_scene_selection(self):
         if self.viewer.kind!='ifc':return
         selected=self.canvas.scene.selectedItems()
-        if selected:self._ifc_selected_global_id=selected[0].data(0)
+        if selected:
+            self._ifc_selected_global_id=selected[0].data(0)
+            callback=getattr(self,'_ifc_crosswalk_notify',None)
+            if callback:callback(self._ifc_selected_global_id)
 
     def highlight_ifc_member(self,gid):
         if self.viewer.kind!='ifc':return
@@ -1129,6 +1132,8 @@ class GraphicalTakeoffDialog(QDialog):
                     item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
+        callback=getattr(self,'_ifc_crosswalk_notify',None)
+        if callback:callback(gid)
 
     def open_ifc_inspector(self):
         if self.viewer.kind!='ifc' or self.cad_loading:return
@@ -1142,7 +1147,8 @@ class GraphicalTakeoffDialog(QDialog):
         dialog=QDialog(self);self._ifc_inspector=dialog
         dialog.setAttribute(Qt.WA_DeleteOnClose);dialog.setWindowTitle('بررسی مهندسی IFC — پیشنهاد هویت، بدون مجوز مالی')
         dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1000,700)
-        layout=QVBoxLayout(dialog)
+        outer=QVBoxLayout(dialog);scroll=QScrollArea();scroll.setWidgetResizable(True)
+        body=QWidget();layout=QVBoxLayout(body);scroll.setWidget(body);outer.addWidget(scroll)
         title=QLabel(doc['schema']+' | '+doc['parser']+' | '+doc['project_name']+'\nSHA-256: '+doc['source_sha256']+'\nضرایب SI: '+str(doc['unit_factors_si']))
         title.setTextInteractionFlags(Qt.TextSelectableByMouse);title.setWordWrap(True);layout.addWidget(title)
         search=QLineEdit();search.setObjectName('ifc_search');search.setPlaceholderText('جست‌وجوی دقیق GlobalId یا نام عضو')
@@ -1152,7 +1158,7 @@ class GraphicalTakeoffDialog(QDialog):
         tree=QTreeWidget();tree.setObjectName('ifc_tree');tree.setHeaderLabels(['طبقه / عضو','نوع و GlobalId']);layout.addWidget(tree)
         detail=QLabel('یک عضو را انتخاب کنید؛ QTO صریح، مقدار مصالح یا مجوز پرداخت نیست')
         detail.setObjectName('ifc_detail');detail.setWordWrap(True);detail.setTextInteractionFlags(Qt.TextSelectableByMouse);layout.addWidget(detail)
-        selected={}
+        selected={};quantities=QComboBox();quantities.setObjectName('ifc_quantity')
         def populate():
             tree.clear();needle=search.text().strip();roots={}
             for e in doc['elements']:
@@ -1168,8 +1174,10 @@ class GraphicalTakeoffDialog(QDialog):
             gid=item.data(0,Qt.UserRole) if item else None
             if not gid:return
             e=next(x for x in doc['elements'] if x['global_id']==gid);selected['element']=e;self.highlight_ifc_member(gid)
+            quantities.clear()
+            for q in e['quantities']:quantities.addItem(q['name']+' | '+q['value_si']+' '+q['unit'],q['name'])
             qs='\n'.join(q['name']+': '+q['value_si']+' '+q['unit']+' | '+q['basis']+' | '+q['qset_name'] for q in e['quantities']) or 'فاقد QTO؛ مصالح تخمین زده نمی‌شود'
-            detail.setText('GlobalId: '+gid+'\nمبدأ SI: '+str(e['origin_m'])+'\n'+qs+'\n'+'؛ '.join(e['warnings'])+'\nثبت مالی مسدود: هویت و Crosswalk بازبینی‌شده و پل مالی IFC تکمیل نشده است')
+            detail.setText('GlobalId: '+gid+'\nمبدأ SI: '+str(e['origin_m'])+'\n'+qs+'\n'+'؛ '.join(e['warnings'])+'\nQTO مقدار مصالح نیست؛ انتقال عمومی فقط پس از کنترل هویت، مدرک، واحد و بازبینی مستقل از کنترل‌های پایین مجاز است')
         tree.currentItemChanged.connect(lambda current,previous:choose(current))
         search.textChanged.connect(populate);types.currentIndexChanged.connect(populate);populate()
         form=QFormLayout();layout.addLayout(form)
@@ -1228,7 +1236,153 @@ class GraphicalTakeoffDialog(QDialog):
                 outcome.setText('هویت با مدرک و نقش بازبین تأیید شد؛ انتقال کمیت و پرداخت همچنان مسدود است')
             except Exception as exc:outcome.setText('بازبینی انجام نشد: '+str(exc))
         approve.clicked.connect(review_mapping)
+        form.addRow('کمیت عمومی صریح؛ بدون استنتاج مصالح',quantities)
+        formula_preview=QPushButton('پیش‌نمایش و ذخیره کمیت در دفتر فرمول موجود')
+        formula_review=QPushButton('بازبینی مستقل کمیت عمومی')
+        formula_commit=QPushButton('ثبت کمیت بازبینی‌شده در BOQ بدون قیمت')
+        confirm=QCheckBox('کمیت عمومی و واحد را کنترل کرده‌ام؛ این مقدار مصالح نیست')
+        confirm.setObjectName('ifc_confirm_quantity')
+        for button,name in ((formula_preview,'ifc_quantity_preview'),(formula_review,'ifc_quantity_review'),(formula_commit,'ifc_quantity_commit')):
+            button.setObjectName(name);layout.addWidget(button);button.setEnabled(project is not None)
+        layout.addWidget(confirm)
+        active_formula={}
+        def quantity_step(step):
+            nonlocal digest
+            try:
+                from core.takeoff import manual_formula_register as register
+                from core.drawings.ifc_pipeline import quantity_formula_data
+                if 'element' not in selected:raise ValueError('ابتدا عضو IFC را انتخاب کنید')
+                current=self.app_service.open_project(pid)
+                proposal=next((x for x in current.get('ifc_identity_proposals',[]) if x['global_id']==selected['element']['global_id'] and x['document']['source_sha256']==doc['source_sha256']),None)
+                if proposal is None:raise ValueError('پیشنهاد هویت یافت نشد')
+                data=quantity_formula_data(self.app_service,pid,proposal['id'],quantities.currentData(),author=author.text())
+                key='IFC-'+data['source_id'].split(':')[-1]
+                if step=='preview':
+                    old=register.load(self.app_service,pid).get(key)
+                    row=register.save(self.app_service,pid,key,data,expected_revision=old['revision'] if old else 0,reason='ورود صریح QTO از IFC؛ فاقد استنتاج مصالح')
+                    active_formula.update(key=key,revision=row['revision'],data=data)
+                    outcome.setText('پیش‌نویس دفتر فرمول: Q = '+data['variables']['Q']+' '+data['unit']+'؛ منبع '+doc['source_sha256'])
+                else:
+                    if active_formula.get('key')!=key or active_formula.get('data')!=data:raise ValueError('ابتدا پیش‌نمایش همین عضو و کمیت را ذخیره کنید')
+                    if not confirm.isChecked():raise ValueError('تأیید صریح کمیت عمومی لازم است')
+                    if step=='review':
+                        register.review(self.app_service,pid,key,expected_revision=active_formula['revision'],reviewer=reviewers.currentData(),note=review_note.text())
+                        outcome.setText('کمیت در دفتر موجود مستقل بازبینی شد؛ هنوز BOQ ثبت نشده است')
+                    else:
+                        register.commit(self.app_service,pid,key,expected_revision=active_formula['revision'])
+                        outcome.setText('کمیت عمومی در BOQ موجود ثبت شد؛ قیمت و مصالح استنتاج نشد')
+                digest=self.app_service.store.current_digest(pid)
+            except Exception as exc:outcome.setText('انتقال کمیت انجام نشد: '+str(exc))
+        formula_preview.clicked.connect(lambda:quantity_step('preview'))
+        formula_review.clicked.connect(lambda:quantity_step('review'))
+        formula_commit.clicked.connect(lambda:quantity_step('commit'))
+
+        column_path=QLineEdit();column_path.setObjectName('ifc_column_detail')
+        column_path.setPlaceholderText('فایل JSON دیتایل کامل ستون؛ بدون برآورد میلگرد از IFC')
+        column_browse=QPushButton('انتخاب دیتایل تخصصی مستقل ستون')
+        column_browse.clicked.connect(lambda:column_path.setText(QFileDialog.getOpenFileName(dialog,'دیتایل ستون IFC')[0]))
+        form.addRow('دیتایل مستقل ستون',column_path);form.addRow('',column_browse)
+        column_save=QPushButton('اتصال دیتایل به موتور تخصصی ستون موجود')
+        column_save.setObjectName('ifc_column_save');layout.addWidget(column_save)
+        def save_column():
+            nonlocal digest
+            try:
+                from hashlib import sha256
+                if 'element' not in selected:raise ValueError('ابتدا ستون IFC را انتخاب کنید')
+                current=self.app_service.open_project(pid)
+                proposal=next((x for x in current.get('ifc_identity_proposals',[]) if x['global_id']==selected['element']['global_id'] and x['document']['source_sha256']==doc['source_sha256']),None)
+                if proposal is None:raise ValueError('تطبیق هویت ستون یافت نشد')
+                path=Path(column_path.text())
+                result=self.app_service.save_ifc_column_detail(pid,proposal_id=proposal['id'],detail_path=str(path),
+                    detail_sha256=sha256(path.read_bytes()).hexdigest(),author=author.text(),reviewer=reviewers.currentData())
+                digest=self.app_service.store.current_digest(pid)
+                outcome.setText('دیتایل در موتور ستون موجود ذخیره شد؛ برای بازبینی و ثبت از فرم تخصصی ستون استفاده کنید. نسخه: '+str(result['revision']))
+            except Exception as exc:outcome.setText('دیتایل ستون ثبت نشد: '+str(exc))
+        column_save.clicked.connect(save_column)
+        links=QComboBox();links.setObjectName('ifc_crosswalk_item')
+        for sid,record in (project or {}).get('drawing_sessions',{}).items():
+            for item in record['session']['items']:
+                links.addItem(Path(record['drawing_source']).name+' | '+item['id'],(sid,item['id']))
+        mapping_path=QLineEdit();mapping_path.setObjectName('ifc_crosswalk_evidence')
+        mapping_path.setPlaceholderText('فایل JSON مدرک تبدیل صلب SI و هویت فیزیکی')
+        map_browse=QPushButton('انتخاب مدرک Crosswalk')
+        map_browse.clicked.connect(lambda:mapping_path.setText(QFileDialog.getOpenFileName(dialog,'مدرک Crosswalk IFC')[0]))
+        form.addRow('برداشت دوبعدی ذخیره‌شده',links);form.addRow('مدرک Crosswalk',mapping_path);form.addRow('',map_browse)
+        save_link=QPushButton('تأیید مستقل و ذخیره Crosswalk؛ فاقد مجوز پرداخت')
+        save_link.setObjectName('ifc_save_crosswalk');layout.addWidget(save_link)
+        show_link=QPushButton('بازکردن نمای متناظر و انتخاب دوطرفه')
+        show_link.setObjectName('ifc_show_crosswalk');layout.addWidget(show_link)
+        def crosswalk_step(show=False):
+            nonlocal digest
+            try:
+                if 'element' not in selected:raise ValueError('ابتدا عضو IFC را انتخاب کنید')
+                if not links.currentData():raise ValueError('ابتدا نشست دوبعدی معتبر را ذخیره کنید')
+                sid,iid=links.currentData();current=self.app_service.open_project(pid)
+                if show:
+                    link=next((x for x in current.get('ifc_2d_crosswalks',[]) if x['global_id']==selected['element']['global_id'] and x['session_id']==sid and x['item_id']==iid),None)
+                    if link is None:raise ValueError('Crosswalk بازبینی‌شده یافت نشد')
+                    self.open_ifc_crosswalk(link['id'])
+                else:
+                    from hashlib import sha256
+                    proposal=next((x for x in current.get('ifc_identity_proposals',[]) if x['global_id']==selected['element']['global_id'] and x['document']['source_sha256']==doc['source_sha256']),None)
+                    if proposal is None:raise ValueError('پیشنهاد هویت یافت نشد')
+                    proof=Path(mapping_path.text())
+                    self.app_service.save_ifc_crosswalk(pid,proposal_id=proposal['id'],session_id=sid,item_id=iid,
+                        author=author.text(),reviewer=reviewers.currentData(),evidence_path=str(proof),
+                        evidence_sha256=sha256(proof.read_bytes()).hexdigest(),expected_digest=digest)
+                    digest=self.app_service.store.current_digest(pid)
+                    outcome.setText('Crosswalk با مدرک منبع، تبدیل صلب و بازبین مستقل ذخیره شد؛ پرداختی ایجاد نشد')
+            except Exception as exc:outcome.setText('Crosswalk انجام نشد: '+str(exc))
+        save_link.clicked.connect(lambda:crosswalk_step(False));show_link.clicked.connect(lambda:crosswalk_step(True))
         save.clicked.connect(persist);dialog.show()
+
+    def open_ifc_crosswalk(self, crosswalk_id):
+        from hashlib import sha256
+        from core.drawings.ifc_pipeline import _binding
+        pid=self.project_id_input.text().strip();project=self.app_service.open_project(pid)
+        link=next((x for x in project.get('ifc_2d_crosswalks',[]) if x['id']==crosswalk_id),None)
+        if link is None:raise ValueError('Crosswalk IFC یافت نشد')
+        _binding(project,link['proposal_id'])
+        if self.viewer.kind!='ifc' or self.viewer.ifc_document.source_sha256!=link['ifc_document']['source_sha256']:
+            raise ValueError('نمای IFC با Crosswalk یکسان نیست')
+        record=self.app_service.load_drawing_takeoff_session(pid,link['session_id'])
+        restored=DrawingTakeoffSession.from_dict(record['session']);item=restored.find(link['item_id'])
+        digest=sha256(json.dumps(item.to_dict(),sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        if record['revision']!=link['drawing']['session_revision'] or digest!=link['drawing']['item_digest']:
+            raise ValueError('Revision برداشت دوبعدی تغییر کرده است؛ Crosswalk تازه لازم است')
+        proof=Path(link['evidence_path']);source=Path(link['drawing']['path'])
+        if sha256(proof.read_bytes()).hexdigest()!=link['evidence_sha256'] or sha256(source.read_bytes()).hexdigest()!=link['drawing']['source_sha256']:
+            raise ValueError('منبع یا مدرک Crosswalk تغییر کرده است')
+        other=GraphicalTakeoffDialog(app_service=self.app_service,project_id=pid,parent=self)
+        other.open_drawing(str(source));other.session=restored;other.canvas.session=restored
+        other.persisted_session_id=link['session_id'];other.persisted_session_revision=record['revision']
+        other.redraw_current_page();other.refresh();other.show()
+        self._ifc_crosswalk_window=other;busy={'active':False}
+        def from_ifc(gid):
+            if busy['active'] or gid!=link['global_id']:return
+            busy['active']=True
+            try:
+                if other.viewer.kind=='cad':
+                    other.cad_handle.setText(link['drawing']['handle']);other.find_cad_handle()
+                else:
+                    other.page=item.page;other.redraw_current_page();other.canvas.highlight_measurement(item)
+                    for row in range(other.table.rowCount()):
+                        if other.table.item(row,0).text()==item.id:other.table.setCurrentCell(row,0);break
+            finally:busy['active']=False
+        def from_drawing():
+            if busy['active']:return
+            if other.viewer.kind=='cad':matched=any(x.data(0)==link['drawing']['handle'] for x in other.canvas.scene.selectedItems())
+            else:
+                row=other.table.currentRow();matched=row>=0 and other.table.item(row,0).text()==item.id
+            if matched:
+                busy['active']=True
+                try:self.highlight_ifc_member(link['global_id'])
+                finally:busy['active']=False
+        self._ifc_crosswalk_notify=from_ifc
+        if other.viewer.kind=='cad':other.canvas.scene.selectionChanged.connect(from_drawing)
+        else:other.table.itemSelectionChanged.connect(from_drawing)
+        other.destroyed.connect(lambda:setattr(self,'_ifc_crosswalk_notify',None))
+        from_ifc(link['global_id']);return other
 
     def _activate_view_tool(self, mode: str, instruction: str):
         self.canvas.set_mode(mode)
