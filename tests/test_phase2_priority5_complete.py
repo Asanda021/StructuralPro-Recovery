@@ -19,7 +19,8 @@ def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, na
         if member not in existing:app.add_project_member('P',member,'F1','beam')
     model=ifc.open(str(path));first=model.by_type('IfcBeam')[0]
     if identity is not None:first.GlobalId=ifc.guid.new()
-    second=model.create_entity('IfcBeam',GlobalId=ifc.guid.new(),Name='Second explicit beam',ObjectPlacement=first.ObjectPlacement)
+    placement=model.create_entity('IfcLocalPlacement',PlacementRelTo=first.ObjectPlacement.PlacementRelTo,RelativePlacement=model.create_entity('IfcAxis2Placement3D',Location=model.create_entity('IfcCartesianPoint',Coordinates=(7.,0.,0.))))
+    second=model.create_entity('IfcBeam',GlobalId=ifc.guid.new(),Name='Second explicit beam',ObjectPlacement=placement)
     storey=first.ContainedInStructure[0].RelatingStructure
     model.create_entity('IfcRelContainedInSpatialStructure',GlobalId=ifc.guid.new(),RelatedElements=[second],RelatingStructure=storey)
     def length(obj,value):
@@ -29,6 +30,14 @@ def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, na
             q=model.create_entity('IfcQuantityLength',Name='Length',LengthValue=float(value))
             qs=model.create_entity('IfcElementQuantity',GlobalId=ifc.guid.new(),Name='Qto_Beam',MethodOfMeasurement='Explicit synthetic segment schedule',Quantities=[q])
             model.create_entity('IfcRelDefinesByProperties',GlobalId=ifc.guid.new(),RelatedObjects=[obj],RelatingPropertyDefinition=qs)
+        # Real swept solid: 0.2 x 0.3 section, extrusion along the member X axis.
+        # Building rotation maps that axis to world Y: lengths are independently
+        # observable as 6m or adjacent 2m/4m intervals [7,9] and [9,13].
+        axes=model.create_entity('IfcAxis2Placement3D',Location=model.create_entity('IfcCartesianPoint',Coordinates=(0.,0.,0.)),Axis=model.create_entity('IfcDirection',DirectionRatios=(1.,0.,0.)),RefDirection=model.create_entity('IfcDirection',DirectionRatios=(0.,1.,0.)))
+        profile=model.create_entity('IfcRectangleProfileDef',ProfileType='AREA',XDim=.2,YDim=.3)
+        solid=model.create_entity('IfcExtrudedAreaSolid',SweptArea=profile,Position=axes,ExtrudedDirection=model.create_entity('IfcDirection',DirectionRatios=(0.,0.,1.)),Depth=float(value))
+        rep=model.create_entity('IfcShapeRepresentation',ContextOfItems=model.by_type('IfcGeometricRepresentationContext')[0],RepresentationIdentifier='Body',RepresentationType='SweptSolid',Items=[solid])
+        obj.Representation=model.create_entity('IfcProductDefinitionShape',Representations=[rep])
     length(first,6 if mode=='split' else 2);length(second,4)
     oldpath=tmp_path/'beams-R1.ifc';model.write(str(oldpath))
     old=[_review(app,oldpath,revision='R1',gid=first.GlobalId,member=names[0],proof=proof)]
@@ -73,6 +82,12 @@ def test_group_transfer_changes_only_effective_owners_and_reopens(tmp_path,mode)
     assert after['manual_formula_register']==original['manual_formula_register']
     assert sum(Decimal(str(r['quantity'])) for r in after['boq'])==Decimal(6)
     assert {s for r in after['boq'] for s in r['source_ids']}=={r['source_id'] for r in result['rows']}
+    from core.bim.ifc import DeepIFCAdapter
+    source=after['ifc_identity_reviews'][-1]['document']['source_path']
+    meshes={m.global_id:m for m in DeepIFCAdapter().read_display_meshes(source).meshes}
+    for allocation in result['current']:
+        mesh=meshes[allocation['global_id']]
+        assert Decimal(str(max(v[1] for v in mesh.vertices)-min(v[1] for v in mesh.vertices)))==Decimal(allocation['quantity'])
     before=app.store.current_digest('P')
     with pytest.raises((ValueError,RuntimeError)):app.apply_ifc_quantity_transfer('P',**{**args,'expected_digest':before})
     assert app.store.current_digest('P')==before
@@ -132,7 +147,7 @@ def drawing_mapping(app,tmp_path,pid,index,kind='dxf',length=6):
         session=DrawingTakeoffSession(str(path));item=session.add_cad_entity(doc,handle,'length',takeoff_code='TEST',floor_id=binding['floor_id'],member_id=binding['member_id'],quantity_owner='Documented scope',created_by='author',reference='Synthetic segment schedule')
         session.review_cad_entity(item.id,reviewer='reviewer',note='Independent synthetic review')
     saved=app.save_drawing_takeoff_session('P',session)
-    evidence={'policy':'reviewed_reference_point_v1','project_id':'P','proposal_id':pid,'session_id':saved['session_id'],'item_id':item.id,'ifc_sha256':binding['document']['source_sha256'],'drawing_sha256':sha256(path.read_bytes()).hexdigest(),'ifc_origin_m':['1000000','7','0'],'drawing_anchor_xy':['0','0'],'ifc_to_drawing_si':['1','0','0','1','-1000000','-7'],'physical_identity_reference':'Explicit synthetic ownership schedule','unit_evidence_reference':'Documented SI mapping'}
+    evidence={'policy':'reviewed_reference_point_v1','project_id':'P','proposal_id':pid,'session_id':saved['session_id'],'item_id':item.id,'ifc_sha256':binding['document']['source_sha256'],'drawing_sha256':sha256(path.read_bytes()).hexdigest(),'ifc_origin_m':['1000000','9' if index.endswith('-1') else '7','0'],'drawing_anchor_xy':['0','0'],'ifc_to_drawing_si':['1','0','0','1','-1000000','-9' if index.endswith('-1') else '-7'],'physical_identity_reference':'Explicit synthetic ownership schedule','unit_evidence_reference':'Documented SI mapping'}
     ep=tmp_path/f'crosswalk-{index}.json';ep.write_text(json.dumps(evidence))
     return dict(proposal_id=pid,session_id=saved['session_id'],item_id=item.id,evidence_path=str(ep),evidence_sha256=sha256(ep.read_bytes()).hexdigest())
 
@@ -206,6 +221,8 @@ def test_group_ownership_and_crosswalk_native_qt(tmp_path,kind,mode):
             other.table.clearSelection();point=other.table.visualItemRect(other.table.item(0,0)).center()
             QTest.mouseClick(other.table.viewport(),Qt.LeftButton,pos=point);qt.processEvents()
         assert w._ifc_selected_global_id==target['global_id']
+        assert target['global_id'] in w._ifc_handle_items, 'The selected IFC product has no actual displayed mesh'
+        assert any(item.isSelected() for item in w._ifc_handle_items[target['global_id']])
         scroll.ensureWidgetVisible(dialog.findChild(QTableWidget,'ifc_group_quantities'));qt.processEvents()
         dialog.grab().save(str(tmp_path/'group-ownership-qt.png'));other.grab().save(str(tmp_path/'group-linked-qt.png'))
     finally:w.close();qt.processEvents();app.store.close()
