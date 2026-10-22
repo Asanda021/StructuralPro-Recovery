@@ -4,6 +4,20 @@ from pathlib import Path
 from core.drawings.dwg_takeoff import DWGTakeoffEngine
 
 def main():
+ if Path(sys.argv[1]).suffix.lower()=='.ifc':
+  from core.bim.ifc import DeepIFCAdapter
+  from core.drawings.bim_adapter import BIMAdapter
+  from types import SimpleNamespace
+  # Same isolated parser transport as CAD; meshes remain display-only.
+  evidence=BIMAdapter().read_document(sys.argv[1],revision='unversioned-preview')
+  document=DeepIFCAdapter().read_display_meshes(sys.argv[1])
+  if document.source_sha256!=evidence['source_sha256']:raise ValueError('منبع IFC هنگام بارگذاری تغییر کرده است')
+  meshes=list(document.meshes)
+  header=SimpleNamespace(entities=[],_entity_count=len(meshes),_ifc_header=(document.source,document.source_sha256,document.omitted_ids))
+  with Path(sys.argv[2]).open('wb') as f:
+   pickle.dump(header,f,protocol=5)
+   for start in range(0,len(meshes),100):pickle.dump(meshes[start:start+100],f,protocol=5)
+  return
  doc=DWGTakeoffEngine.with_array_support().import_file(sys.argv[1])
  from collections import Counter
  doc._layer_counts=Counter(e.layer for e in doc.entities);coords=[]

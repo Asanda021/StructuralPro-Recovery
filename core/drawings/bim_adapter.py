@@ -29,7 +29,7 @@ class BIMAdapter:
     def read_document(self, path: str | Path, *, revision: str) -> dict[str, Any]:
         """IFC4 engineering evidence, separate from tessellated display quantities.
 
-        Values are decimal strings from the parser's source scalars. No mesh,
+        QTO values retain STEP decimal scalars; placement uses parser scalars. No mesh,
         bounding box, material quantity or ownership is inferred. Only SI units
         and rigid local placements are supported here; map conversion is retained
         as an explicit crosswalk blocker.
@@ -61,6 +61,43 @@ class BIMAdapter:
             except Exception as exc:raise ValueError('GlobalId نامعتبر است') from exc
             if gid in seen:raise ValueError('GlobalId تکراری است: '+gid)
             seen.add(gid)
+        # IfcOpenShell exposes IFC REAL values as binary doubles. Preserve the
+        # literal QTO scalar by its parser-validated STEP entity id; this is a
+        # lexical evidence reader, not a second IFC semantic/geometry parser.
+        import re
+        source_text=raw.decode('utf-8-sig');literals={};i=0
+        quantity_pattern=re.compile(r"#([0-9]+)\s*=\s*(IFCQUANTITY(?:LENGTH|AREA|VOLUME|COUNT))\s*\(",re.I)
+        def quoted_end(text,start):
+            k=start+1
+            while k<len(text):
+                if text[k]=="'":
+                    if k+1<len(text) and text[k+1]=="'":k+=2;continue
+                    return k+1
+                k+=1
+            raise ValueError('رشته STEP ناقص است')
+        while i<len(source_text):
+            if source_text[i]=="'":i=quoted_end(source_text,i);continue
+            if source_text.startswith('/*',i):
+                end=source_text.find('*/',i+2)
+                if end<0:raise ValueError('توضیح STEP ناقص است')
+                i=end+2;continue
+            match=quantity_pattern.match(source_text,i) if source_text[i]=='#' else None
+            if not match:i+=1;continue
+            start=k=match.end();depth=0;args=[]
+            while k<len(source_text):
+                char=source_text[k]
+                if char=="'":k=quoted_end(source_text,k);continue
+                if char=='(':depth+=1
+                elif char==')':
+                    if depth==0:
+                        args.append(source_text[start:k].strip());break
+                    depth-=1
+                elif char==',' and depth==0:args.append(source_text[start:k].strip());start=k+1
+                k+=1
+            if k>=len(source_text) or len(args)<4:raise ValueError('اسکالر مستند کمیت IFC ناقص است')
+            sid=int(match.group(1))
+            if sid in literals:raise ValueError('شناسه STEP کمیت تکراری است')
+            literals[sid]=(match.group(2).upper(),args[3]);i=k+1
         project=projects[0]
         prefixes={None:Decimal(1),'MILLI':Decimal('.001'),'CENTI':Decimal('.01'),'DECI':Decimal('.1'),'KILO':Decimal(1000),'MICRO':Decimal('.000001')}
         types={'LENGTHUNIT':('METRE',1,'m'),'AREAUNIT':('SQUARE_METRE',2,'m2'),'VOLUMEUNIT':('CUBIC_METRE',3,'m3')}
@@ -154,7 +191,12 @@ class BIMAdapter:
                         qnames.add(name)
                         spec=fields.get(q.is_a())
                         if not spec:warnings.append('نوع کمیت فاقد قرارداد: '+q.is_a());continue
-                        attr,kind,unit=spec;v=number(getattr(q,attr),'کمیت')
+                        attr,kind,unit=spec
+                        literal=literals.get(q.id())
+                        if not literal or literal[0]!=q.is_a().upper():raise ValueError('اسکالر منبع کمیت IFC احراز نشد')
+                        v=number(literal[1],'کمیت')
+                        if len(v.as_tuple().digits)>64:raise ValueError('تعداد ارقام کمیت خارج از قرارداد دقیق است')
+                        if float(v)!=getattr(q,attr):raise ValueError('اسکالر STEP با Parser کمیت تطابق ندارد')
                         if v<0:raise ValueError('کمیت منفی IFC مجاز نیست')
                         explicit=getattr(q,'Unit',None)
                         if kind is None:
@@ -164,7 +206,7 @@ class BIMAdapter:
                         value=v*factor
                         if value and value.adjusted() < -24:raise ValueError('کمیت کمتر از حد دقت قرارداد است')
                         quantities.append({'name':name,'value_source':str(v),'value_si':str(value),'unit':unit,
-                            'factor_to_si':str(factor),'source_kind':'explicit_qto','qset_id':qset.GlobalId,
+                            'factor_to_si':str(factor),'source_kind':'explicit_qto','numeric_source':'STEP scalar bound to parser entity id','qset_id':qset.GlobalId,
                             'qset_name':qset.Name or '', 'step_id':q.id(),
                             'method':qset.MethodOfMeasurement or '',
                             'basis':'gross' if name.lower().startswith('gross') else 'net' if name.lower().startswith('net') else 'unspecified'})
@@ -183,5 +225,5 @@ class BIMAdapter:
             'buildings':[{'global_id':x.GlobalId,'name':x.Name or ''} for x in model.by_type('IfcBuilding')],
             'unit_factors_si':{k:str(v) for k,v in units.items()},'storeys':storeys,'elements':elements,
             'map_conversion_supported':False,'map_conversion_present':bool(model.by_type('IfcMapConversion')),
-            'numeric_policy':'Decimal80 over parser scalars; rigid placements <=1e12m; orthogonality 1e-24; minimum nonzero quantity 1e-24',
+            'numeric_policy':'Decimal80; exact QTO STEP scalars <=64 significant digits; placement over parser scalars; rigid placements <=1e12m; orthogonality 1e-24; minimum nonzero quantity 1e-24',
             'ready':False,'commit_allowed':False,'payable_rows':[]}

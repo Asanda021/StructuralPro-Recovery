@@ -226,3 +226,44 @@ def test_ifc_preview_cannot_be_promoted_by_generic_confirmation(tmp_path):
     result=UnifiedDrawingTakeoff().inspect(p)
     with pytest.raises(ValueError,match='IFC'):UnifiedDrawingTakeoff().candidates_to_rows(result,{1:True})
     with pytest.raises(ValueError,match='IFC'):TakeoffWorkflow().confirm(result,{1})
+
+
+def test_async_ifc_load_cancel_replace_and_responsive_event_loop(tmp_path):
+    import time
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QTimer
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app=QApplication.instance() or QApplication([])
+    p=tmp_path/'async.ifc';m,objs=model_file(p);base=objs[0];st=m.by_type('IfcBuildingStorey')[0]
+    for i in range(988):
+        obj=m.create_entity('IfcBeam',GlobalId=ifc.guid.new(),Name='Stress',ObjectPlacement=base.ObjectPlacement,Representation=base.Representation)
+        m.create_entity('IfcRelContainedInSpatialStructure',GlobalId=ifc.guid.new(),RelatedElements=[obj],RelatingStructure=st)
+    m.write(str(p));w=GraphicalTakeoffDialog();w.show();ticks=[time.monotonic()];timer=QTimer();timer.timeout.connect(lambda:ticks.append(time.monotonic()));timer.start(10)
+    try:
+        w.open_cad_async(str(p));assert w.cad_loading and not w.commit_boq_button.isEnabled()
+        end=time.monotonic()+60
+        while w.cad_loading and time.monotonic()<end:QTest.qWait(10)
+        QTest.qWait(50);ticks.append(time.monotonic())
+        assert not w.cad_loading and w.viewer.kind=='ifc'
+        assert len(w.viewer.ifc_document.meshes)==1000 and len(w._ifc_handle_items)==1000
+        assert max(b-a for a,b in zip(ticks,ticks[1:]))<.5
+        assert not w.finish.isEnabled() and w.ifc_controls.isVisible()
+        previous=w.viewer.ifc_document
+        w.open_cad_async(str(p));w.cancel_cad_loading();assert w.viewer.ifc_document is previous
+        bad=tmp_path/'bad.ifc';bad.write_text('broken');w.open_cad_async(str(bad))
+        end=time.monotonic()+10
+        while w.cad_loading and time.monotonic()<end:QTest.qWait(10)
+        assert w.viewer.ifc_document is previous and w.session.items==[]
+    finally:timer.stop();w.close()
+
+
+def test_qto_decimal_source_digits_survive_ifcopenshell_double_boundary(tmp_path):
+    import re
+    p=tmp_path/'precision.ifc';m,objs=model_file(p)
+    q=m.by_type('IfcQuantityLength')[0]
+    raw=p.read_text();value='3.500000000000000014'
+    raw,n=re.subn(r'(#'+str(q.id())+r'=IFCQUANTITYLENGTH\([^,]*,[^,]*,[^,]*,)4\.',r'\g<1>'+value,raw,count=1)
+    assert n==1;p.write_text(raw)
+    e=next(x for x in read(p)['elements'] if x['global_id']==objs[0].GlobalId)
+    assert Decimal(e['quantities'][0]['value_si'])==Decimal(value)

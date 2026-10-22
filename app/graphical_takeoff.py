@@ -528,7 +528,7 @@ class GraphicalTakeoffDialog(QDialog):
 
         if pdf_path:
             try:
-                self.open_cad_async(pdf_path) if Path(pdf_path).suffix.lower() in {'.dxf','.dwg'} and Path(pdf_path).stat().st_size>512_000 else self.open_drawing(pdf_path)
+                self.open_cad_async(pdf_path) if Path(pdf_path).suffix.lower()=='.ifc' or (Path(pdf_path).suffix.lower() in {'.dxf','.dwg'} and Path(pdf_path).stat().st_size>512_000) else self.open_drawing(pdf_path)
             except Exception as exc:
                 QMessageBox.warning(self, "نقشه", "فایل برای نمایش گرافیکی باز نشد: " + str(exc))
 
@@ -546,6 +546,7 @@ class GraphicalTakeoffDialog(QDialog):
         job=self._cad_job
         if not job:return
         self._cad_job=None;p=job['process'];p.blockSignals(True)
+        if 'old_ifc_items' in job:self._ifc_handle_items=job['old_ifc_items']
         if p.state()!=QProcess.ProcessState.NotRunning:p.kill();p.waitForFinished(1000)
         if job.get('old'):
             self.cad_document,self.canvas.scene,self._cad_items,self._cad_handle_items,self._cad_scene_origin=job['old'];job['scene'].deleteLater()
@@ -587,16 +588,35 @@ class GraphicalTakeoffDialog(QDialog):
                 job['stream'].close();job['stream']=None
                 job['old']=(self.cad_document,self.canvas.scene,self._cad_items,self._cad_handle_items,self._cad_scene_origin)
                 scene=QGraphicsScene(self);scene.setItemIndexMethod(QGraphicsScene.ItemIndexMethod.NoIndex);job['scene']=scene
-                self.cad_document=doc;self.canvas.scene=scene;job['steps']=self._render_cad_steps();QTimer.singleShot(0,batch)
+                self.canvas.scene=scene
+                if hasattr(doc,'_ifc_header'):
+                    from core.bim.ifc import IFCDisplayDocument
+                    source,sha,omitted=doc._ifc_header
+                    job['ifc_document']=IFCDisplayDocument(source,sha,tuple(doc.entities),tuple(omitted))
+                    job['old_ifc_items']=getattr(self,'_ifc_handle_items',{})
+                    job['steps']=self._render_ifc_steps(job['ifc_document'])
+                else:
+                    self.cad_document=doc;job['steps']=self._render_cad_steps()
+                QTimer.singleShot(0,batch)
             except Exception as exc:failed(str(exc))
         def batch():
             if self._cad_job is not job:return
             try:
-                n=next(job['steps']);self.status.setText(f'ساخت نمایش CAD: {n} از {len(self.cad_document.entities)} جزء؛ متره مسدود است');QTimer.singleShot(0,batch)
+                n=next(job['steps']);self.status.setText(f"ساخت نمایش نقشه: {n} از {job['document']._entity_count} جزء؛ متره مسدود است");QTimer.singleShot(0,batch)
             except StopIteration:
                 if self.engine is not None:self.engine.close()
                 self.engine=None;self.pdf_path=str(path)
                 if self.session.drawing_source!=str(path):self.session=DrawingTakeoffSession(str(path));self.canvas.session=self.session;self.persisted_session_id=None;self.persisted_session_revision=None
+                if 'ifc_document' in job:
+                    self.viewer.path=Path(path);self.viewer.kind='ifc';self.viewer.page_count=1;self.viewer.current_page=1
+                    self.viewer.ifc_document=job['ifc_document'];self.viewer.cad_document=None;self.cad_document=None
+                    self.page=1;self.canvas.read_only_model=True;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
+                    self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False)
+                    self.ifc_controls.show();self.cad_controls.hide()
+                    for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.region_to_roof,self.commit_boq_button,self.export_boq):control.setEnabled(False)
+                    self.canvas.set_mode('pan');self.scale_label.setText('نمای مدل؛ متره از تصویر غیرفعال است')
+                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();return
+                self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
                 self.page=1;self.canvas.read_only_model=False;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
                 self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
@@ -775,7 +795,7 @@ class GraphicalTakeoffDialog(QDialog):
         if not path:
             return
         try:
-            self.open_cad_async(path) if Path(path).suffix.lower() in {'.dwg','.dxf'} else self.open_drawing(path)
+            self.open_cad_async(path) if Path(path).suffix.lower() in {'.dwg','.dxf','.ifc'} else self.open_drawing(path)
         except Exception as exc:
             QMessageBox.critical(self, "خطای نقشه", str(exc))
 
@@ -1020,6 +1040,28 @@ class GraphicalTakeoffDialog(QDialog):
                 item.setVisible(d.get('layer_visible',True));self._cad_items.setdefault(entity.layer,[]).append(item);self._cad_handle_items[entity.handle]=item
         self.canvas.setSceneRect(QRectF(0,0,max_x-min_x,max_y-min_y).united(self.canvas.scene.itemsBoundingRect()))
         self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {sum(bool(e.data.get('unsupported_measurement')) for e in doc.entities)} | هشدار: {len(doc.warnings)}")
+
+    def _render_ifc_steps(self,doc):
+        """One selectable path per real mesh; all source triangles retained.
+
+        Grouping display primitives avoids twelve or more Qt objects per solid.
+        It never computes or simplifies an engineering quantity.
+        """
+        self._ifc_handle_items={};self._ifc_selected_global_id=None
+        for n,mesh in enumerate(doc.meshes,1):
+            path=QPainterPath()
+            for triangle in mesh.triangles:
+                points=[QPointF((x-y)*0.866025403784,(x+y)*.5-z) for x,y,z in (mesh.vertices[i] for i in triangle)]
+                path.addPolygon(QPolygonF(points));path.closeSubpath()
+            path.setFillRule(Qt.WindingFill)
+            item=self.canvas.scene.addPath(path,QPen(QColor(42,75,110),0),QBrush(QColor(155,190,215)))
+            item.setData(0,mesh.global_id);item.setFlag(QGraphicsItem.ItemIsSelectable,True)
+            item.setToolTip(mesh.name+'\nGlobalId: '+mesh.global_id+'\nSHA-256: '+doc.source_sha256)
+            self._ifc_handle_items[mesh.global_id]=[item]
+            if n%32==0:yield n
+        self.canvas.scene.selectionChanged.connect(self._ifc_scene_selection)
+        self.canvas.setSceneRect(self.canvas.scene.itemsBoundingRect())
+        yield len(doc.meshes)
 
     def _ifc_status(self):
         doc = self.viewer.ifc_document
