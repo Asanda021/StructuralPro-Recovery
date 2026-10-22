@@ -1,0 +1,44 @@
+[
+  {
+    "elements": 100,
+    "source_bytes": 25667,
+    "engineering_read_s": 0.01998606799998015,
+    "gui_open_s": 0.1281100940000215,
+    "mesh_count": 100,
+    "max_event_gap_s": 0.12811311999985264,
+    "peak_rss_kib": 143440,
+    "event_timestamps": [
+      1511.956264945,
+      1511.966375732,
+      1511.971460569,
+      1512.099573689,
+      1512.137145555
+    ],
+    "threshold_s": 0.5,
+    "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+    "display_path": "synchronous existing IFC mesh loader",
+    "payable_geometry": false,
+    "responsiveness_pass": true
+  },
+  {
+    "elements": 1000,
+    "source_bytes": 168764,
+    "engineering_read_s": 0.06766081900013887,
+    "gui_open_s": 1.1736936770000739,
+    "mesh_count": 1000,
+    "max_event_gap_s": 1.4653719430000365,
+    "peak_rss_kib": 755116,
+    "event_timestamps": [
+      1512.323442522,
+      1512.333539659,
+      1512.340665194,
+      1513.514361936,
+      1514.979733879
+    ],
+    "threshold_s": 0.5,
+    "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+    "display_path": "synchronous existing IFC mesh loader",
+    "payable_geometry": false,
+    "responsiveness_pass": false
+  }
+]

@@ -1,0 +1,487 @@
+{
+  "date": "2026-10-22",
+  "status": "PARTIAL",
+  "initial_head": "aaad93cb6c77661bc60c221c39519d9399022825",
+  "final_executable_head": "cc67da692cc0e74e5b667a45b41dce6c2ef51d80",
+  "tested_tree": "bc11b6e69c5423c7ddec2ee23ceeda4e54883f4c",
+  "local_tested_head": "e3aead281b3d9bd02e1063c0248c2880d717bf6e",
+  "delivery_head_note": "The commit containing these reports is documentation/evidence only; resolve its exact SHA from Git history. app/core/tests must equal the executable head.",
+  "code_commits": [
+    "2570ed103f84e24bbd2d7f3b5dc1b7b3fab9432d",
+    "021b0195b4e6e32c63426edb4e67372d024b76b0",
+    "4baf76c5a6dd32ad869b2d80a0bc47a4dc7a55ad",
+    "4b5a848c61843fa44eeeee037282b2fde73ee053",
+    "cc67da692cc0e74e5b667a45b41dce6c2ef51d80"
+  ],
+  "changed_product_and_test_files": [
+    "app/graphical_takeoff.py",
+    "core/drawings/bim_adapter.py",
+    "core/drawings/cad_import_worker.py",
+    "core/drawings/takeoff_bridge.py",
+    "core/drawings/unified_takeoff.py",
+    "core/platform/application.py",
+    "core/takeoff/workflow.py",
+    "tests/test_phase2_priority5_ifc.py"
+  ],
+  "gates": {
+    "A": {
+      "status": "COMPLETE",
+      "scope": "Actual IFC4 / IfcOpenShell 0.9.0.post1, source SHA, SI engineering import. Other schemas not accepted by this evidence contract."
+    },
+    "B": {
+      "status": "COMPLETE",
+      "scope": "Rigid IfcLocalPlacement chains, explicit SI m/mm conversions and source QTO units; local coordinates only. MapConversion and non-SI are unsupported and not used for crosswalk."
+    },
+    "C": {
+      "status": "PARTIAL",
+      "blocker": "Only proposed bindings to existing FloorID/MemberID persist. Independent identity approval, revision/split/merge reconciliation and physical ownership rules are not implemented."
+    },
+    "D": {
+      "status": "PARTIAL",
+      "blocker": "Exact explicit QTO preview is implemented. Independent solid/net geometry quantity verification and verified links to specialist detail calculators are not implemented."
+    },
+    "E": {
+      "status": "BLOCKED",
+      "blocker": "Persisted reviewed PDF/CAD–IFC crosswalk, bidirectional selection and cross-source physical-ownership reconciliation are not implemented. The companion DXF is an explicitly unreviewed fixture only."
+    },
+    "F": {
+      "status": "PARTIAL",
+      "blocker": "Actual native Qt inspection/highlight and SQLite/CAS proposals work. Independent IFC review, permitted BOQ posting and existing-journal IFC amendments are not implemented; the financial paths remain blocked."
+    },
+    "G": {
+      "status": "BLOCKED",
+      "blocker": "Final comprehensive run failed the unchanged 100000-entity CAD responsiveness test: 0.6173058429999401s > 0.5s. Restored targeted tests and backup integrity do not override this failure."
+    }
+  },
+  "full_regression": {
+    "passed": 7543,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 1,
+    "time_s": "353.089"
+  },
+  "skips": [
+    {
+      "test": "tests.test_windows_build_native_failures.test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures.test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures.test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures.test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures.test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+      "reason": "PowerShell runtime unavailable"
+    }
+  ],
+  "baseline": {
+    "passed": 52,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "final_targeted": {
+    "passed": 86,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "new_tests": 34,
+  "not_additive": "Targeted, comprehensive and restored results overlap and are not summed.",
+  "incomplete_runs": [
+    {
+      "log": "development-evidence.zip/full.log",
+      "exit_code": 130,
+      "accepted": false,
+      "reason": "Stopped while further IFC unit/async/precision defects were being fixed."
+    },
+    {
+      "log": "development-evidence.zip/full-final.log",
+      "exit_code": 130,
+      "accepted": false,
+      "reason": "Stopped after the noncanonical GlobalId defect was reproduced. Superseded by final comprehensive run."
+    }
+  ],
+  "failed_comprehensive_before_tail_fix": {
+    "passed": 7543,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 1,
+    "case": "tests/test_phase2_priority4_closure.py::test_async_responsiveness_and_oracle[100000]",
+    "gap_s": 0.5048411349998787,
+    "unchanged_limit_s": 0.5,
+    "fix": "Worker source SHA handoff; incremental scene bounds; no full-file reread at final GUI handoff"
+  },
+  "numeric_contract": "IFC4 SI units. Decimal80 QTO scalar preservation via parser-validated STEP ids (<=64 significant digits, 1e-24..1e30 nonzero). Placement matrices use Decimal over parser scalars, <=1e12m, orthogonality1e-24. Display meshes never yield financial materials.",
+  "financial_state": {
+    "ready": false,
+    "commit_allowed": false,
+    "payable_rows": [],
+    "sample_boq_rows": 0
+  },
+  "schemas_tested": [
+    "IFC4"
+  ],
+  "schemas_not_accepted": [
+    "IFC2X3",
+    "IFC4X3",
+    "IFCZIP"
+  ],
+  "element_types_tested": [
+    "IfcBeam",
+    "IfcColumn",
+    "IfcSlab",
+    "IfcWall",
+    "IfcFooting",
+    "IfcMember"
+  ],
+  "scenario": {
+    "source_sha256": "d66da5b1688bef5843dfe8ee47ef4a11a026a270e7e33ea0800cfd85058ac13d",
+    "schema": "IFC4",
+    "parser": "IfcOpenShell 0.9.0.post1",
+    "elements": 12,
+    "storeys": 2,
+    "oracle_origin_m": [
+      "1000000",
+      "7",
+      "0"
+    ],
+    "first_beam_origin_m": [
+      "1000000.00",
+      "7.00",
+      "0.00"
+    ],
+    "explicit_qto_values_m": [
+      "4"
+    ],
+    "identity_proposals": 1,
+    "proposal_status": "proposed",
+    "boq_rows": 0,
+    "integrity": {
+      "ok": true,
+      "integrity_check": "ok",
+      "counts": {
+        "projects": 1,
+        "revisions": 4
+      }
+    },
+    "financial_path": "BLOCKED pending implementation of reviewed identity/crosswalk/IFC BOQ bridge"
+  },
+  "benchmarks_before": [
+    {
+      "elements": 100,
+      "source_bytes": 25667,
+      "engineering_read_s": 0.01998606799998015,
+      "gui_open_s": 0.1281100940000215,
+      "mesh_count": 100,
+      "max_event_gap_s": 0.12811311999985264,
+      "peak_rss_kib": 143440,
+      "event_timestamps": [
+        1511.956264945,
+        1511.966375732,
+        1511.971460569,
+        1512.099573689,
+        1512.137145555
+      ],
+      "threshold_s": 0.5,
+      "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+      "display_path": "synchronous existing IFC mesh loader",
+      "payable_geometry": false,
+      "responsiveness_pass": true
+    },
+    {
+      "elements": 1000,
+      "source_bytes": 168764,
+      "engineering_read_s": 0.06766081900013887,
+      "gui_open_s": 1.1736936770000739,
+      "mesh_count": 1000,
+      "max_event_gap_s": 1.4653719430000365,
+      "peak_rss_kib": 755116,
+      "event_timestamps": [
+        1512.323442522,
+        1512.333539659,
+        1512.340665194,
+        1513.514361936,
+        1514.979733879
+      ],
+      "threshold_s": 0.5,
+      "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+      "display_path": "synchronous existing IFC mesh loader",
+      "payable_geometry": false,
+      "responsiveness_pass": false
+    }
+  ],
+  "benchmarks_after": [
+    {
+      "elements": 100,
+      "source_bytes": 25667,
+      "engineering_read_s": 0.025589448000118864,
+      "gui_open_s": 0.34357155799989414,
+      "mesh_count": 100,
+      "max_event_gap_s": 0.014888272000007419,
+      "peak_rss_kib": 120676,
+      "event_timestamps": [
+        3083.437285422,
+        3083.447401806,
+        3083.451493409,
+        3083.459262631,
+        3083.466411317,
+        3083.476517814,
+        3083.486620227,
+        3083.496735337,
+        3083.506853133,
+        3083.516976756,
+        3083.527098397,
+        3083.537222822,
+        3083.547338724,
+        3083.557493535,
+        3083.567642367,
+        3083.580086963,
+        3083.590204567,
+        3083.600322823,
+        3083.610446056,
+        3083.620550702,
+        3083.630666594,
+        3083.64079839,
+        3083.65092579,
+        3083.66107386,
+        3083.671198917,
+        3083.681352154,
+        3083.691521117,
+        3083.701682168,
+        3083.71184526,
+        3083.722037779,
+        3083.732194402,
+        3083.742349484,
+        3083.752508611,
+        3083.763320103,
+        3083.778208375,
+        3083.783637887,
+        3083.795056765,
+        3083.79506675,
+        3083.802081142,
+        3083.812170355,
+        3083.822342301
+      ],
+      "threshold_s": 0.5,
+      "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+      "display_path": "existing isolated worker + bounded mesh-path batches",
+      "payable_geometry": false,
+      "responsiveness_pass": true
+    },
+    {
+      "elements": 1000,
+      "source_bytes": 168764,
+      "engineering_read_s": 0.07718885799977215,
+      "gui_open_s": 1.2691862930000752,
+      "mesh_count": 1000,
+      "max_event_gap_s": 0.06033907499977431,
+      "peak_rss_kib": 142052,
+      "event_timestamps": [
+        3083.981357343,
+        3083.991489449,
+        3083.99658688,
+        3084.002197645,
+        3084.009395164,
+        3084.019540681,
+        3084.02968753,
+        3084.039846106,
+        3084.050052495,
+        3084.060219094,
+        3084.070393635,
+        3084.080579382,
+        3084.090761504,
+        3084.100931578,
+        3084.111083284,
+        3084.121259157,
+        3084.131377613,
+        3084.144033277,
+        3084.15411017,
+        3084.164188366,
+        3084.174265399,
+        3084.18434058,
+        3084.194429011,
+        3084.204511322,
+        3084.216812071,
+        3084.226895184,
+        3084.237014551,
+        3084.247111284,
+        3084.257223501,
+        3084.267365422,
+        3084.277500413,
+        3084.287677568,
+        3084.297778888,
+        3084.307915542,
+        3084.318092185,
+        3084.328226996,
+        3084.338381667,
+        3084.348521986,
+        3084.358752931,
+        3084.368962696,
+        3084.379106079,
+        3084.389315693,
+        3084.399500919,
+        3084.409685075,
+        3084.419879185,
+        3084.43009624,
+        3084.440261847,
+        3084.450416498,
+        3084.460567333,
+        3084.470695247,
+        3084.480930881,
+        3084.491069797,
+        3084.501190287,
+        3084.51133354,
+        3084.521464335,
+        3084.531574188,
+        3084.541693815,
+        3084.55180459,
+        3084.561915314,
+        3084.572076891,
+        3084.582231411,
+        3084.592392482,
+        3084.602548283,
+        3084.612710206,
+        3084.622861952,
+        3084.633042241,
+        3084.643191053,
+        3084.653349078,
+        3084.663496348,
+        3084.67365842,
+        3084.683821704,
+        3084.69401951,
+        3084.704177425,
+        3084.714337764,
+        3084.724496441,
+        3084.734661087,
+        3084.744817229,
+        3084.754983268,
+        3084.765132479,
+        3084.775285699,
+        3084.785440309,
+        3084.795596121,
+        3084.805780858,
+        3084.815945843,
+        3084.826101546,
+        3084.836255054,
+        3084.846408344,
+        3084.856535152,
+        3084.866690614,
+        3084.87684854,
+        3084.887032664,
+        3084.897183119,
+        3084.907340744,
+        3084.917502766,
+        3084.92766648,
+        3084.937830756,
+        3084.94803475,
+        3084.958178795,
+        3084.968330041,
+        3084.978479503,
+        3084.988646122,
+        3084.998803517,
+        3085.008963526,
+        3085.019108872,
+        3085.029263794,
+        3085.039376931,
+        3085.049535418,
+        3085.059687775,
+        3085.069846562,
+        3085.080035344,
+        3085.090178858,
+        3085.100306418,
+        3085.110421388,
+        3085.120580927,
+        3085.130733354,
+        3085.140885671,
+        3085.151061444,
+        3085.161204046,
+        3085.171366078,
+        3085.181523813,
+        3085.191708719,
+        3085.202065875,
+        3085.207756561,
+        3085.219497375,
+        3085.230143818,
+        3085.238867099,
+        3085.249702166,
+        3085.260335409,
+        3085.265775026,
+        3085.326114101
+      ],
+      "threshold_s": 0.5,
+      "threshold_reason": "Existing P4 coarse 500ms bound on this Linux host; not a Windows SLA",
+      "display_path": "existing isolated worker + bounded mesh-path batches",
+      "payable_geometry": false,
+      "responsiveness_pass": true
+    }
+  ],
+  "restore": {
+    "archive_sha256": "de923b8cfc986fa1218c8542f0c095388c501d039626d0b04d542e43c370637f",
+    "manifest_files": 66,
+    "head": "cc67da692cc0e74e5b667a45b41dce6c2ef51d80",
+    "tree": "bc11b6e69c5423c7ddec2ee23ceeda4e54883f4c",
+    "git_fsck_exit": 0,
+    "ifc_reopened": {
+      "sha": "d66da5b1688bef5843dfe8ee47ef4a11a026a270e7e33ea0800cfd85058ac13d",
+      "elements": 12,
+      "storeys": 2,
+      "values": [
+        "4"
+      ]
+    },
+    "sqlite_integrity": "ok",
+    "boq_rows": 0,
+    "identity_status": "proposed",
+    "approved_crosswalks": 0,
+    "passed": 86,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "status": "PASS for restore integrity, not complete priority5",
+    "stored_document_paths_rewritten": false,
+    "dropbox_path": "/StructuralPro/Backups/StructuralPro_P5_Partial_cc67da69_20261022.zip"
+  },
+  "artifact_sha256": {
+    "compileall.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "scenario.json": "ff3a2bc5deb9b81f3828517b1e2a995d31a10dd672565df37314c919a9d48cb1",
+    "pip-check.log": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09",
+    "restore-tests.xml": "f08f9c56123ba96de49d308e2db059ddfdbadc38bab43a294697c51ef1efca15",
+    "ifc-viewer.png": "b397099c3bdc0b47ca1222c3017baa922d4af3502a1c773b41c1dfdd00332e45",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unreviewed-2d-reference.json": "12a73429b38003b2caf1f4383a7efe258a49c7f95df6998abd70abd8223fc393",
+    "full-accepted.log": "627bc6ea5249ae8e647caa5cbb5998c52404a1d7df8791a19d5bea4faa3224ce",
+    "sample-project.zip": "d8e9169a9084fe457b1e1f6e7646fa0b066c5da21d5e0d70bc108ecf32095e5e",
+    "restore-receipt.json": "348cd40360935eb1092c2d5340aff6d49c9c5264680355042a97d42e460e2d4a",
+    "target-accepted.xml": "91817b81f94c2d2bb52497949d691d5c703f1161cbfa36b6fe236da97abf3336",
+    "target-accepted.log": "4356c6075b75cc80621259dc25c53713cc82cc3f2e898613b3d49b7c7eec0da8",
+    "restore-tests.log": "c4798a30a4f1014ad6fb522937fb6fe81c16bc0410d9e101115a2577b1aef401",
+    "benchmark-before.json": "6fc8c6f55646480f92c43803505e04da343e03584151b20e7f95c8c622f7cc39",
+    "benchmark-after.json": "16d07d216b34f615073345122ed093626fae6e554522d5954fcff53e4240b816",
+    "new-final.log": "c93b27d72717ffc7d22d3038e2f99b750bffee715c8f7ee28508c26a41e8790c",
+    "development-evidence.zip": "05036f0787c207f0779c8413161699616cab332aa9016577cdc4520d93d866d7",
+    "phase2_priority5_ifc_final.xml.gz": "7966aee4edef81dd3e097cc1088752267690e0601ed6889e9eb4b0f4ac6d1c28",
+    "ifc-inspector.png": "cf6cb72bd46e9768a35d92a004e89d450d13897181c39243c7ebee8b5c8e56a4"
+  },
+  "pr20": "Open / Draft; no merge",
+  "protected_pr18_head": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "limits": [
+    "No approved customer model or engineering design acceptance.",
+    "Windows / Microsoft Office untested.",
+    "No claim of all software tasks being complete; C/D/E/F are remaining software work, not merely missing external signatures.",
+    "Priority 6 not started."
+  ]
+}

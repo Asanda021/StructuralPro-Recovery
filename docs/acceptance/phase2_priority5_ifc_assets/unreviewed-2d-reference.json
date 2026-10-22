@@ -1,0 +1,24 @@
+{
+  "status": "unreviewed_fixture_reference",
+  "financial_approval": false,
+  "ifc_sha256": "d66da5b1688bef5843dfe8ee47ef4a11a026a270e7e33ea0800cfd85058ac13d",
+  "ifc_global_id": "0697VQcR1Ec9xLy626_r3I",
+  "ifc_revision": "R1",
+  "drawing_sha256": "a3d0e37c72e53e1b42927feb3121d0f4bd0a8e3793077ce0a97a2a89d426548d",
+  "drawing_revision": "synthetic-R1",
+  "cad_handle": "2F",
+  "units": "m",
+  "reference_endpoints_m": [
+    [
+      1000000,
+      5
+    ],
+    [
+      1000000,
+      9
+    ]
+  ],
+  "analytic_length_m": "4",
+  "coordinate_mapping": "explicit synthetic local XY to CAD identity; z=0 only",
+  "limitation": "Not a persisted approved crosswalk; no bidirectional UI or financial permission is claimed"
+}

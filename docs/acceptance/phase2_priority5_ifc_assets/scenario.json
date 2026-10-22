@@ -1,0 +1,32 @@
+{
+  "source_sha256": "d66da5b1688bef5843dfe8ee47ef4a11a026a270e7e33ea0800cfd85058ac13d",
+  "schema": "IFC4",
+  "parser": "IfcOpenShell 0.9.0.post1",
+  "elements": 12,
+  "storeys": 2,
+  "oracle_origin_m": [
+    "1000000",
+    "7",
+    "0"
+  ],
+  "first_beam_origin_m": [
+    "1000000.00",
+    "7.00",
+    "0.00"
+  ],
+  "explicit_qto_values_m": [
+    "4"
+  ],
+  "identity_proposals": 1,
+  "proposal_status": "proposed",
+  "boq_rows": 0,
+  "integrity": {
+    "ok": true,
+    "integrity_check": "ok",
+    "counts": {
+      "projects": 1,
+      "revisions": 4
+    }
+  },
+  "financial_path": "BLOCKED pending implementation of reviewed identity/crosswalk/IFC BOQ bridge"
+}

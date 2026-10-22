@@ -1,0 +1,27 @@
+{
+  "archive_sha256": "de923b8cfc986fa1218c8542f0c095388c501d039626d0b04d542e43c370637f",
+  "manifest_files": 66,
+  "head": "cc67da692cc0e74e5b667a45b41dce6c2ef51d80",
+  "tree": "bc11b6e69c5423c7ddec2ee23ceeda4e54883f4c",
+  "git_fsck_exit": 0,
+  "ifc_reopened": {
+    "sha": "d66da5b1688bef5843dfe8ee47ef4a11a026a270e7e33ea0800cfd85058ac13d",
+    "elements": 12,
+    "storeys": 2,
+    "values": [
+      "4"
+    ]
+  },
+  "sqlite_integrity": "ok",
+  "boq_rows": 0,
+  "identity_status": "proposed",
+  "approved_crosswalks": 0,
+  "passed": 86,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "exit_code": 0,
+  "status": "PASS for restore integrity, not complete priority5",
+  "stored_document_paths_rewritten": false,
+  "dropbox_path": "/StructuralPro/Backups/StructuralPro_P5_Partial_cc67da69_20261022.zip"
+}
