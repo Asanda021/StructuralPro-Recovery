@@ -267,3 +267,8 @@ def test_qto_decimal_source_digits_survive_ifcopenshell_double_boundary(tmp_path
     assert n==1;p.write_text(raw)
     e=next(x for x in read(p)['elements'] if x['global_id']==objs[0].GlobalId)
     assert Decimal(e['quantities'][0]['value_si'])==Decimal(value)
+
+
+def test_noncanonical_global_id_is_not_accepted_by_permissive_guid_decoder(tmp_path):
+    p=tmp_path/'gid.ifc';m,objs=model_file(p);objs[0].GlobalId='zzzzzzzzzzzzzzzzzzzzzz';m.write(str(p))
+    with pytest.raises(ValueError,match='GlobalId'):read(p)

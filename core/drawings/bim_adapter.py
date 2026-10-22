@@ -57,7 +57,9 @@ class BIMAdapter:
             gid=getattr(root,'GlobalId',None)
             if not gid or not isinstance(gid,str) or len(gid)!=22:
                 raise ValueError('GlobalId باید معتبر و صریح باشد')
-            try:ifcopenshell.guid.expand(gid)
+            try:
+                if ifcopenshell.guid.compress(ifcopenshell.guid.expand(gid))!=gid:
+                    raise ValueError('GlobalId غیرکانونی است')
             except Exception as exc:raise ValueError('GlobalId نامعتبر است') from exc
             if gid in seen:raise ValueError('GlobalId تکراری است: '+gid)
             seen.add(gid)
