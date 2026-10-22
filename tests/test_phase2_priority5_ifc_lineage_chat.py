@@ -188,3 +188,26 @@ def test_lineage_cannot_be_reapplied_or_forged_with_direct_sqlite_command(tmp_pa
                        ifc_command={"action":"review_lineage","record":fake})
     assert app.store.current_digest("P")==before
     app.store.close()
+
+
+@pytest.mark.parametrize("mode", ["split", "merge"])
+def test_lineage_blocks_linked_cad_and_manual_member_boq_claims(tmp_path, mode):
+    from core.takeoff.commit_guards import validate_commit_rows
+
+    app, args, _, _ = _case(tmp_path, mode)
+    app.review_ifc_identity_lineage("P", **args)
+    project=app.open_project("P")
+    target="B2" if mode == "split" else "B3"
+    before=app.store.current_digest("P")
+    # A distinct CAD source id cannot conceal the unresolved physical owner.
+    row={
+        "id":"CAD-NEW","source_id":"independent-cad-session",
+        "member_code":target,"system":"F1",
+        "params":{"cad_evidence":{"floor_id":"F1","member_id":target}},
+        "quantities":[{"unit":"m","amount":"4","code":"Q","title":"طول"}],
+    }
+    with pytest.raises(ValueError,match="Split/Merge"):
+        validate_commit_rows(project,[row],source_id=row["source_id"])
+    assert app.store.current_digest("P")==before
+    assert app.open_project("P")["boq"]==[]
+    app.store.close()
