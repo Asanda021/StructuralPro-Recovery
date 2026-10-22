@@ -58,7 +58,17 @@ def export(service,pid,path,*,format):
     headers=['شناسه','طبقه','عضو','خانواده','شرح','مقدار دقیق','واحد','فرمول','مبنا و واحد ورودی','منبع','نسخه','وضعیت','بلوک','محل اجرا']
     datasets={'ریز متره':(headers,details),'ورودی‌ها':(['شناسه','پارامتر','مقدار دقیق','مبنا','واحد ساختاریافته','قرارداد واحد'],parameters),'کسورات':(['شناسه','منبع کسر','مقدار','واحد','مبنا','منبع هندسی'],deductions),'منابع و مدارک':(['شناسه','منبع','مبنا','وابستگی','بازبین'],sources),'تاریخچه':(['شناسه','نسخه','علت','زمان ثبت UTC'],history),'بررسی‌نشده':(headers,unreviewed),'ارتباط BOQ':(['شناسه','منبع','وضعیت','ردیف مرتبط','مقدار','واحد'],links)}
     for name,groups in summaries.items():datasets[name]=(['گروه','واحد','وضعیت','جمع دقیق'],[[a,b,STATES[c],str(v)] for (a,b,c),v in sorted(groups.items())])
-    datasets['اصلاحیه قطعی']=(['شناسه اصلاحیه','ردیف','نسخه مبنا','علت','سازنده','بازبین','مقدار پیشنهادی','وضعیت'],[[a['id'],a['row_id'],str(a['base_revision']),a['reason'],a['created_by'],a.get('review',{}).get('reviewer',''),str(a['quantity']),{'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]] for a in project.get('manual_formula_amendments',{}).values()])
+    datasets['اصلاحیه قطعی']=(['شناسه اصلاحیه','ردیف','نسخه مبنا','علت','سازنده','بازبین','مقدار پیشنهادی','وضعیت'],[[a['id'],a['row_id'],str(a['base_revision']),a['reason'],a['created_by'],a.get('review',{}).get('reviewer',''),str(a['quantity']),{'draft':'بررسی‌نشده','reviewed':'بازبینی‌شده','applied':'اعمال‌شده'}[a['status']]] for a in project.get('manual_formula_amendments',{}).values() if a.get('kind')!='reviewed_ifc_quantity_transfer_v1'])
+    # Original register rows above remain an audit record; effective group owners
+    # and their allocations are reported explicitly, without rewriting history.
+    transfers=[]
+    for a in project.get('manual_formula_amendments',{}).values():
+        if a.get('kind')!='reviewed_ifc_quantity_transfer_v1':continue
+        for stage,rows in [('تاریخی؛ مصرف‌شده',a['consumed_rows']),('جاری؛ مؤثر',a['rows'])]:
+            for row in rows:
+                q=row['quantities'][0]
+                transfers.append([a['lineage_id'],stage,row['member_code'],row['source_id'],str(q['amount']),q['unit'],a['delta'],a['evidence_sha256'],a['reviewer']])
+    if transfers:datasets['انتقال مالکیت IFC']=(['دفتر تغییر هویت','وضعیت مالکیت','عضو','منبع مقدار','مقدار','واحد','اختلاف گروه','SHA مدرک','بازبین'],transfers)
     from core.takeoff.manual_formula_deductions import summary as deduction_summary
     datasets['قبل و بعد کسر']=(['شناسه','پیش از کسر','خالص','کسر مؤثر','واحد'],[[key,str(v['gross']),str(v['net']),str(v['deducted']),UNITS[v['unit']]] for key in keys if reg[key]['data']['deductions'] for v in [deduction_summary(service,pid,key)]])
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)

@@ -36,6 +36,10 @@ def require_source_unused(project: dict, source_id: str, *, exclude: tuple[str, 
     region / source_id must still remain uniquely identified.
     """
     source_id = _canonical_source_id(source_id)
+    for event in project.get('manual_formula_amendments',{}).values():
+        if event.get('kind')=='reviewed_ifc_quantity_transfer_v1' and any(
+                r.get('source_id')==source_id for r in event.get('rows',[])):
+            raise ValueError('منبع مقدار در انتقال گروهی IFC مصرف شده است؛ ثبت دوم ممنوع')
     for registry in _REGISTRIES:
         entries = project.get(registry) or {}
         if not isinstance(entries, dict):

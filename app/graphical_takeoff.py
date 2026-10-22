@@ -1372,6 +1372,8 @@ class GraphicalTakeoffDialog(QDialog):
             from app.ifc_amendment_controls import install_ifc_amendment_controls
             install_ifc_amendment_controls(dialog,layout,self.app_service,pid,doc,selected,
                                            author,reviewers,review_note,outcome)
+            from app.ifc_lineage_controls import install_ifc_lineage_controls
+            install_ifc_lineage_controls(dialog,layout,self,self.app_service,pid,author,reviewers,outcome)
         save.clicked.connect(persist);dialog.show()
 
     def open_ifc_crosswalk(self, crosswalk_id):
@@ -1380,7 +1382,10 @@ class GraphicalTakeoffDialog(QDialog):
         pid=self.project_id_input.text().strip();project=self.app_service.open_project(pid)
         link=next((x for x in project.get('ifc_2d_crosswalks',[]) if x['id']==crosswalk_id),None)
         if link is None:raise ValueError('Crosswalk IFC یافت نشد')
-        _binding(project,link['proposal_id'])
+        if link.get('lineage_id') or any(link['proposal_id'] in x.get('previous_proposal_ids',[]) for x in project.get('ifc_identity_lineages',[])):
+            from core.drawings.ifc_pipeline import lineage_view_binding
+            lineage_view_binding(project,link['proposal_id'])
+        else:_binding(project,link['proposal_id'])
         if self.viewer.kind!='ifc' or self.viewer.ifc_document.source_sha256!=link['ifc_document']['source_sha256']:
             raise ValueError('نمای IFC با Crosswalk یکسان نیست')
         record=self.app_service.load_drawing_takeoff_session(pid,link['session_id'])

@@ -247,6 +247,16 @@ def assess_quantities(service, project_id, *, lineage_id, evidence_path,
     project=deepcopy(service.open_project(project_id))
     if not expected_digest:raise ValueError('CAS برای آشتی مقدار IFC لازم است')
     assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    return assess_project_quantities(project, lineage_id=lineage_id, evidence_path=evidence_path,
+        evidence_sha256=evidence_sha256, author=author, reviewer=reviewer)
+
+
+def assess_project_quantities(project, *, lineage_id, evidence_path, evidence_sha256, author, reviewer):
+    """Pure source validation shared by preview and the SQLite correction guard."""
+    from decimal import Decimal, localcontext
+    from core.drawings.ifc_pipeline import _binding
+    project=deepcopy(project)
+    project_id=project['id']
     event=next((x for x in project.get('ifc_identity_lineages',[]) if x['id']==lineage_id),None)
     if event is None:raise ValueError('دفتر تغییر هویت IFC یافت نشد')
     original=Path(event['evidence_path'])
@@ -273,6 +283,7 @@ def assess_quantities(service, project_id, *, lineage_id, evidence_path,
             if len(actual)!=len(set(actual)) or set(actual)!=set(ids):raise ValueError('عضو تکراری یا نامعتبر در جدول تخصیص IFC')
             total=Decimal(0);rows=[]
             for entry in table:
+                if set(entry)!={'proposal_id','quantity','scope_reference'}:raise ValueError('فیلدهای جدول تخصیص باید صریح و بدون بازتعریف هویت باشند')
                 if not isinstance(entry.get('scope_reference'),str) or not entry['scope_reference'].strip():raise ValueError('مرجع محدوده هر سهم مقدار لازم است')
                 decision,element=_binding(project,entry['proposal_id'])
                 q=next((x for x in element['quantities'] if x['name']==evidence.get('quantity_name')),None)
@@ -282,7 +293,7 @@ def assess_quantities(service, project_id, *, lineage_id, evidence_path,
                 except ArithmeticError as exc:raise ValueError('مقدار تخصیص Decimal معتبر نیست') from exc
                 if not value.is_finite() or value<=0 or len(value.as_tuple().digits)>64 or value!=Decimal(q['value_si']):raise ValueError('سهم تخصیص با مقدار مستقل QTO مطابقت ندارد')
                 total+=value
-                rows.append({**deepcopy(entry),'unit':q['unit'],'qto_step_id':q['step_id'],'floor_id':decision['floor_id'],'member_id':decision['member_id'],'source_sha256':decision['document']['source_sha256'],'revision':decision['document']['revision']})
+                rows.append({**deepcopy(entry),'unit':q['unit'],'classification':q['basis'],'global_id':decision['global_id'],'building_id':decision['building_id'],'qto_step_id':q['step_id'],'floor_id':decision['floor_id'],'member_id':decision['member_id'],'source_sha256':decision['document']['source_sha256'],'revision':decision['document']['revision']})
             totals.append(total);tables.append(rows)
         delta=totals[1]-totals[0]
         if delta and (not isinstance(evidence.get('quantity_change_reference'),str) or not evidence['quantity_change_reference'].strip()):

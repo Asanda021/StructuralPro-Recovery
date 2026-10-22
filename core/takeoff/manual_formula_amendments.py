@@ -85,7 +85,7 @@ def apply(service,pid,aid,*,expected_revision):
     service.store.save(pid,project,expected_digest=token,manual_formula_command={'action':'apply','id':aid});return deepcopy(a)
 
 def effective_takeoffs(project,rows):
-    if not project.get('manual_formula_applied'):return beam_effective_takeoffs(project,rows)
+    if not project.get('manual_formula_applied'):return ifc_transfer_effective(project,beam_effective_takeoffs(project,rows))
     reg=verified(project);by_source={v['data']['source_id']:v for v in reg.values() if v.get('amendment_id')};result=deepcopy(rows)
     for row in result:
         if row.get('source_id') not in by_source:continue
@@ -97,7 +97,7 @@ def effective_takeoffs(project,rows):
         if ids & used:raise ValueError('منبع هندسی کسر در نمای مؤثر تکراری است')
         used.update(ids)
     if by_source:raise ValueError('اصل متره مؤثر در پروژه یافت نشد')
-    return beam_effective_takeoffs(project,result)
+    return ifc_transfer_effective(project,beam_effective_takeoffs(project,result))
 
 def guard(previous,updated,command):
     beam_guard(previous,updated,command)
@@ -106,6 +106,8 @@ def guard(previous,updated,command):
     protected_sources={r['data']['source_id'] for r in previous.get('manual_formula_register',{}).values() if r.get('status')=='committed'}
     for sid in protected_sources:
         if [r for r in previous.get('takeoffs',[]) if r.get('source_id')==sid]!=[r for r in updated.get('takeoffs',[]) if r.get('source_id')==sid]:raise ValueError('اصل ریزمتره قطعی فرمول تغییرپذیر نیست')
+    protected_sources.update(r['source_id'] for a in previous.get(FIELDS[0],{}).values()
+        if a.get('kind')==IFC_TRANSFER and a.get('status')=='applied' for r in a['rows'])
     if protected_sources:
         from core.takeoff.commit_guards import rebuild_project_boq
         _,expected_boq=rebuild_project_boq(updated,updated.get('takeoffs',[]))
@@ -118,6 +120,9 @@ def guard(previous,updated,command):
                 result[ids]=(number(row['quantity'],'مقدار قطعی'),row['unit'],row['item_code'])
             return result
         if controlled(expected_boq)!=controlled(updated.get('boq',[])):raise ValueError('BOQ قطعی با فرمول مؤثر بازبینی‌شده مطابقت ندارد')
+    if isinstance(command,dict) and command.get('action')=='ifc_transfer':
+        ifc_transfer_guard(previous,updated,command)
+        return
     changed=[f for f in FIELDS if previous.get(f,{})!=updated.get(f,{})]
     if not changed:return
     if not isinstance(command,dict) or command.get('action') not in {'create','review','apply'}:raise ValueError('اصلاحیه متره فقط از گردش رسمی قابل ثبت است')
@@ -756,3 +761,138 @@ def drawing_guard(previous,updated,command):
             pointer={**pointer,a['beam_key']:aid}
     if updated.get(BEAM_FIELDS[1],{})!=pointer or updated.get(BEAM_FIELDS[2],{})!=previous.get(BEAM_FIELDS[2],{}) or updated.get('takeoffs',[])!=previous.get('takeoffs',[]):raise ValueError('اشاره‌گر، اصل یا اتصال تاریخی اصلاحیه تغییر غیرمجاز کرده است')
     return True
+
+# IFC reallocation is a group entry in this existing immutable correction journal.
+# Raw takeoffs and the committed formula register are never rewritten.
+IFC_TRANSFER = 'reviewed_ifc_quantity_transfer_v1'
+
+
+def ifc_transfer_payload(project, *, lineage_id, evidence_path, evidence_sha256,
+                         author, reviewer, expected_digest):
+    from core.drawings.ifc_lineage import assess_project_quantities
+    from core.drawings.ifc_pipeline import quantity_data
+    from core.takeoff.manual_formula_register import committed_takeoff
+    from core.projects.project_model import _identity
+    from decimal import Decimal, localcontext
+    from pathlib import Path
+    report=assess_project_quantities(project,lineage_id=lineage_id,evidence_path=evidence_path,
+        evidence_sha256=evidence_sha256,author=author,reviewer=reviewer)
+    evidence=json.loads(Path(evidence_path).read_text(encoding='utf-8-sig'))
+    classification=evidence.get('classification')
+    if classification not in ('gross','net','unspecified') or any(
+            r['classification']!=classification for r in report['previous']+report['current']):
+        raise ValueError('طبقه‌بندی Gross/Net مقدار تخصیص باید صریح و یکسان باشد')
+    if _identity(author)==_identity(reviewer):raise ValueError('بازبین انتقال مقدار باید مستقل باشد')
+    event=next(x for x in project['ifc_identity_lineages'] if x['id']==lineage_id)
+    if any(a.get('kind')==IFC_TRANSFER and a.get('lineage_id')==lineage_id
+           for a in project.get('manual_formula_amendments',{}).values()):
+        raise ValueError('انتقال گروهی Split/Merge قبلاً ثبت شده است')
+    owners={(r['floor_id'],r['member_id']) for r in report['previous']+report['current']}
+    if len({r['floor_id'] for r in report['previous']+report['current']})!=1:
+        raise ValueError('انتقال طبقه در این قرارداد به مدرک مستقل نیاز دارد')
+    # Only independently committed, exact generic QTO rows may be consumed here.
+    # Specialist components retain their own existing amendment contracts.
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    current=effective_takeoffs(project,project.get('takeoffs',[]))
+    consumed=[]
+    for allocation in report['previous']:
+        matches=[r for r in current if (r.get('params') or {}).get('ifc_evidence',{}).get('proposal_id')==allocation['proposal_id']]
+        if len(matches)!=1:raise ValueError('مالک قبلی باید دقیقاً یک مقدار قطعی جاری داشته باشد')
+        row=matches[0];params=row['params'];quantities=row['quantities']
+        if (params.get('ifc_evidence',{}).get('quantity_name')!=evidence['quantity_name'] or
+                len(quantities)!=1 or quantities[0]['unit']!=report['unit'] or
+                number(quantities[0]['amount'],'مقدار قبلی')!=Decimal(allocation['quantity'])):
+            raise ValueError('مقدار مؤثر قبلی با جدول تخصیص و QTO مستقل یکسان نیست')
+        consumed.append(deepcopy(row))
+    snapshot=deepcopy(project)
+    snapshot['ifc_identity_lineages']=[x for x in snapshot['ifc_identity_lineages'] if x['id']!=lineage_id]
+    rows=[]
+    for allocation in report['current']:
+        data=clean(quantity_data(snapshot,allocation['proposal_id'],evidence['quantity_name'],author=author))
+        if any(r['source_id']==data['source_id'] for r in current):raise ValueError('مالک جدید قبلاً مقدار جاری دارد')
+        values=evaluate_rows(graph({'group':{'data':data}}))
+        row=committed_takeoff(lineage_id+':'+allocation['proposal_id'],data,values['group'],1,
+                              {'reviewer':reviewer,'digest':evidence_sha256})
+        row['provenance']['ifc_transfer']=lineage_id
+        rows.append(row)
+    if len({r['source_id'] for r in rows})!=len(rows):raise ValueError('مالک مقدار جدید تکراری است')
+    # A changed total requires a separate source-bound correction document.
+    change=None
+    if Decimal(report['delta']):
+        change=evidence.get('quantity_change_document')
+        if not isinstance(change,dict) or set(change)!={'path','sha256'}:raise ValueError('مدرک مستقل اختلاف مقدار لازم است')
+        path=Path(change['path'])
+        if not path.is_file() or sha256(path.read_bytes()).hexdigest()!=change['sha256']:raise ValueError('مدرک اختلاف مقدار تغییر کرده است')
+        proof=json.loads(path.read_text(encoding='utf-8-sig'))
+        expected={'policy':'reviewed_ifc_quantity_delta_v1','project_id':project['id'],
+                  'lineage_id':lineage_id,'previous_source_sha256':event['previous_source_sha256'],
+                  'current_source_sha256':event['current_source_sha256'],'delta':report['delta'],
+                  'unit':report['unit'],'classification':classification}
+        if any(proof.get(k)!=v for k,v in expected.items()) or not str(proof.get('reason','')).strip():
+            raise ValueError('مدرک اختلاف با نسخه و مقدار گروه مطابقت ندارد')
+    return {'kind':IFC_TRANSFER,'lineage_id':lineage_id,'operation':event['mode'],
+        'project_id':project['id'],'building_id':report['previous'][0]['building_id'],
+        'group_revision':1,'quantity_name':evidence['quantity_name'],'unit':report['unit'],
+        'classification':classification,'previous':report['previous'],'current':report['current'],
+        'previous_total':report['previous_total'],'current_total':report['current_total'],'delta':report['delta'],
+        'consumed_rows':consumed,'rows':rows,'evidence_path':report['evidence_path'],
+        'evidence_sha256':evidence_sha256,'quantity_change_document':change,
+        'created_by':author,'reviewer':reviewer,'expected_project_digest':expected_digest}
+
+
+def apply_ifc_transfer(service,pid,*,lineage_id,evidence_path,evidence_sha256,author,reviewer,expected_digest):
+    """One reviewed group correction and one existing SQLite/CAS transaction."""
+    from core.drawings.ifc_pipeline import _authorized
+    from core.platform.concurrency import assert_unchanged
+    _authorized(service,author,'edit');user=_authorized(service,reviewer,'review')
+    project,token=read(service,pid)
+    assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    financial_block(project)
+    payload=ifc_transfer_payload(project,lineage_id=lineage_id,evidence_path=evidence_path,
+        evidence_sha256=evidence_sha256,author=author,reviewer=reviewer,expected_digest=expected_digest)
+    event={**payload,'id':'MA-'+uuid4().hex,'status':'applied','revision':1,
+           'created_at':datetime.now(timezone.utc).isoformat(),
+           'review':{'reviewer':reviewer,'role':user.role,'digest':digest(payload)}}
+    project.setdefault('manual_formula_amendments',{})[event['id']]=event
+    from core.takeoff.commit_guards import rebuild_project_boq
+    _,project['boq']=rebuild_project_boq(project,project.get('takeoffs',[]))
+    service.store.save(pid,project,expected_digest=expected_digest,
+        manual_formula_command={'action':'ifc_transfer','id':event['id']})
+    return deepcopy(event)
+
+
+def ifc_transfer_effective(project,rows):
+    result=deepcopy(rows)
+    for event in project.get('manual_formula_amendments',{}).values():
+        if event.get('kind')!=IFC_TRANSFER:continue
+        payload={k:v for k,v in event.items() if k not in ('id','status','revision','created_at','review')}
+        if event.get('status')!='applied' or event.get('review',{}).get('digest')!=digest(payload):
+            raise ValueError('بازبینی انتقال گروهی مقدار معتبر نیست')
+        old={r['source_id']:r for r in event['consumed_rows']}
+        found={r['source_id']:r for r in result if r['source_id'] in old}
+        if found!=old:raise ValueError('مالک مقدار قبلی مصرف شده یا تغییر کرده است')
+        result=[r for r in result if r['source_id'] not in old]+deepcopy(event['rows'])
+    ids=[r['source_id'] for r in result]
+    if len(ids)!=len(set(ids)):raise ValueError('مالک مقدار مؤثر تکراری است')
+    return result
+
+
+def ifc_transfer_guard(previous,updated,command):
+    aid=command['id'];old=previous.get(FIELDS[0],{});new=updated.get(FIELDS[0],{})
+    event=new.get(aid,{})
+    if aid in old or set(new)!=set(old)|{aid} or any(new[k]!=v for k,v in old.items()):
+        raise ValueError('تاریخچه اصلاحیه گروهی قابل تغییر نیست')
+    if event.get('kind')!=IFC_TRANSFER or event.get('status')!='applied':raise ValueError('انتقال گروهی معتبر نیست')
+    if previous.get(FIELDS[1],{})!=updated.get(FIELDS[1],{}) or previous.get('takeoffs',[])!=updated.get('takeoffs',[]):
+        raise ValueError('اصل متره و اشاره‌گر اصلاحیه نباید تغییر کند')
+    financial_block(previous)
+    expected=ifc_transfer_payload(previous,lineage_id=event.get('lineage_id'),
+        evidence_path=event.get('evidence_path'),evidence_sha256=event.get('evidence_sha256'),
+        author=event.get('created_by'),reviewer=event.get('reviewer'),expected_digest=event.get('expected_project_digest'))
+    from core.platform.concurrency import assert_unchanged
+    assert_unchanged({k:v for k,v in previous.items() if k!='_meta'},event['expected_project_digest'])
+    if (any(event.get(k)!=v for k,v in expected.items()) or event.get('review',{}).get('digest')!=digest(expected)
+            or event['review'].get('reviewer')!=event['reviewer']):raise ValueError('ثبت انتقال گروهی با مدرک بازبینی‌شده مطابقت ندارد')
+    from core.takeoff.commit_guards import rebuild_project_boq
+    _,boq=rebuild_project_boq(updated,updated.get('takeoffs',[]))
+    if updated.get('boq')!=boq:raise ValueError('BOQ با مالکیت مؤثر گروه مطابقت ندارد')

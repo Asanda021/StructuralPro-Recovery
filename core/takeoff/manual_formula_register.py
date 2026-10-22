@@ -201,7 +201,14 @@ def commit(service,pid,key,*,expected_revision):
     from core.drawings.ifc_pipeline import validate_quantity_handoff
     validate_quantity_handoff(service,project,d,reviewer=r.get('review',{}).get('reviewer'))
     if number(amount,'مقدار')<=0:raise ValueError('مقدار انتقال باید مثبت باشد')
-    row={'id':'manual-formula:'+key,'source_id':sid,'member_code':d['member'],'domain':'building','item':d['family'],'params':{**deepcopy(d),'intersections':[deepcopy(v) for v in d['deductions']]},'revision':r['revision'],'system':d['floor'],'description':d['title'],'review':deepcopy(r['review']),'provenance':{'mode':'manual_formula','source_id':sid,'row_id':key,'numeric_policy':POLICY},'quantities':[{'code':d['family'],'title':d['title'],'unit':d['unit'],'amount':amount,'formula':d['expression'],'role':'work','price_code':None,'unit_price':None}]}
+    row=committed_takeoff(key,d,amount,r['revision'],r['review'])
     validated=validate_commit_rows(project,[row],source_id=sid)
     project['takeoffs'],project['boq']=rebuild_project_boq(project,project.get('takeoffs',[])+validated)
     r['status']='committed';project['manual_formula_register']=preserve_originals(project,reg);service.store.save(pid,project,expected_digest=digest);return deepcopy(row)
+
+
+def committed_takeoff(key, d, amount, version, review):
+    """One canonical row constructor for commits and reviewed group corrections."""
+    sid=d['source_id']
+    row={'id':'manual-formula:'+key,'source_id':sid,'member_code':d['member'],'domain':'building','item':d['family'],'params':{**deepcopy(d),'intersections':[deepcopy(v) for v in d['deductions']]},'revision':version,'system':d['floor'],'description':d['title'],'review':deepcopy(review),'provenance':{'mode':'manual_formula','source_id':sid,'row_id':key,'numeric_policy':POLICY},'quantities':[{'code':d['family'],'title':d['title'],'unit':d['unit'],'amount':amount,'formula':d['expression'],'role':'work','price_code':None,'unit_price':None}]}
+    return row

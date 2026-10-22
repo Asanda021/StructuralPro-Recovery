@@ -55,7 +55,7 @@ def install_ifc_amendment_controls(dialog, layout, service, project_id, document
                     if proposal['id']==old['data']['ifc_evidence']['proposal_id']:
                         raise ValueError('برای اصلاحیه IFC منبع نسخه جدید و مدرک تغییر لازم است')
                     before={data['unit']:Decimal(str(old['quantity']))};after={data['unit']:Decimal(data['variables']['Q'])}
-                    history=[a['id']+' | '+a['status'] for a in current.get('manual_formula_amendments',{}).values() if a['row_id']==key]
+                    history=[a['id']+' | '+a['status'] for a in current.get('manual_formula_amendments',{}).values() if a.get('row_id')==key]
                 elif kind=='column':
                     floor,member=key
                     old=service.get_structural_member(project_id,'column',floor,member)

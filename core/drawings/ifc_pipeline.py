@@ -209,6 +209,15 @@ def quantity_formula_data(service, project_id, proposal_id, quantity_name, *, au
     from core.projects.project_model import _identity
     _authorized(service,author,'edit')
     project=service.open_project(project_id)
+    return quantity_data(project, proposal_id, quantity_name, author=author)
+
+
+def quantity_data(project, proposal_id, quantity_name, *, author):
+    """Canonical QTO formula payload from a validated project snapshot."""
+    from hashlib import sha256
+    import json
+    from core.projects.project_model import _identity
+    project_id=project['id']
     decision,element=_binding(project,proposal_id)
     q=next((x for x in element['quantities'] if x['name']==quantity_name),None)
     if q is None:raise ValueError('کمیت صریح IFC یافت نشد')
@@ -288,6 +297,9 @@ def physical_quantity_guard(project, incoming):
 def crosswalk_guard(previous,updated,command):
     old=previous.get('ifc_2d_crosswalks',[]);new=updated.get('ifc_2d_crosswalks',[])
     if old==new:return
+    if command and command.get('action')=='crosswalk_group':
+        crosswalk_group_guard(previous,updated,command)
+        return
     if not isinstance(new,list) or new[:len(old)]!=old or len(new)!=len(old)+1:
         raise ValueError('تاریخچه Crosswalk IFC قابل بازنویسی نیست')
     if not command or command.get('action')!='crosswalk' or command.get('record')!=new[-1]:
@@ -326,8 +338,27 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
     if not expected_digest:raise ValueError('CAS برای Crosswalk IFC الزامی است')
     service.store._cache.pop(str(project_id),None);project=deepcopy(service.store.get(project_id))
     assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
-    binding,element=_binding(project,proposal_id)
     record=service.load_drawing_takeoff_session(project_id,session_id)
+    result=crosswalk_record(project,record,proposal_id=proposal_id,session_id=session_id,item_id=item_id,
+        author=author,reviewer=reviewer,reviewer_role=review_user.role,evidence_path=evidence_path,
+        evidence_sha256=evidence_sha256,supersedes=supersedes)
+    project.setdefault('ifc_2d_crosswalks',[]).append(result)
+    service.store.save(project_id,project,expected_digest=expected_digest,ifc_command={'action':'crosswalk','record':result})
+    return deepcopy(result)
+
+
+def crosswalk_record(project, record, *, proposal_id, session_id, item_id, author,
+                     reviewer, reviewer_role, evidence_path, evidence_sha256, supersedes=None):
+    """Canonical source validation shared by scalar and grouped migrations."""
+    import json
+    from pathlib import Path
+    from hashlib import sha256
+    from copy import deepcopy
+    from decimal import Decimal, localcontext
+    from core.projects.project_model import _identity
+    from core.drawings.takeoff_session import DrawingTakeoffSession
+    project_id=project['id']
+    binding,element=_binding(project,proposal_id)
     session=DrawingTakeoffSession.from_dict(record['session']);item=session.find(item_id)
     source=Path(session.drawing_source)
     if source.suffix.lower() not in ('.pdf','.dxf','.dwg') or sha256(source.read_bytes()).hexdigest()!=session.source_sha256:
@@ -400,12 +431,10 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
             'geometry_identity':drawing_geometry_identity(session.source_sha256,item.page,item.kind,item.geometry,item.holes),
             'item_digest':sha256(json.dumps(item.to_dict(),sort_keys=True,ensure_ascii=False).encode()).hexdigest()},
         'evidence_path':str(proof.resolve()),'evidence_sha256':evidence_sha256,'coordinate_evidence':evidence,
-        'author':author,'reviewer':reviewer,'reviewer_role':review_user.role,'status':'approved',
+        'author':author,'reviewer':reviewer,'reviewer_role':reviewer_role,'status':'approved',
         'commit_allowed':False,'payable_rows':[]}
     if prior is not None:result.update(revision=prior['revision']+1,supersedes=prior['id'])
-    project.setdefault('ifc_2d_crosswalks',[]).append(result)
-    service.store.save(project_id,project,expected_digest=expected_digest,ifc_command={'action':'crosswalk','record':result})
-    return deepcopy(result)
+    return result
 
 
 def validate_specialist_detail(service,project,data,*,reviewer=None):
@@ -522,3 +551,95 @@ def ifc_amendment_source_identity(project, before, after):
                 or json.loads(path.read_text(encoding='utf-8-sig'))!={k:v for k,v in data.items() if k!='source'}):
             return False
     return True
+
+
+def lineage_view_binding(project,proposal_id):
+    """Read-only lineage inspection; never used by the financial handoff."""
+    from copy import deepcopy
+    snapshot=deepcopy(project)
+    snapshot['ifc_identity_lineages']=[]
+    return _binding(snapshot,proposal_id)
+
+
+def crosswalk_group_records(project,*,lineage_id,evidence_path,evidence_sha256,author,reviewer,reviewer_role):
+    from pathlib import Path
+    from hashlib import sha256
+    from copy import deepcopy
+    import json
+    from core.projects.project_model import _identity
+    from core.drawings.ifc_lineage import _ids
+    if _identity(author)==_identity(reviewer):raise ValueError('بازبین مهاجرت گروهی باید مستقل باشد')
+    event=next((x for x in project.get('ifc_identity_lineages',[]) if x['id']==lineage_id),None)
+    if event is None:raise ValueError('دفتر Split/Merge مبنای Crosswalk یافت نشد')
+    original=Path(event['evidence_path'])
+    if not original.is_file() or sha256(original.read_bytes()).hexdigest()!=event['evidence_sha256']:raise ValueError('مدرک تغییر هویت تغییر کرده است')
+    path=Path(evidence_path)
+    if not path.is_file() or sha256(path.read_bytes()).hexdigest()!=evidence_sha256:raise ValueError('مدرک مهاجرت گروهی تغییر کرده است')
+    proof=json.loads(path.read_text(encoding='utf-8-sig'))
+    if any(proof.get(k)!=v for k,v in {'policy':'reviewed_ifc_crosswalk_group_v1','project_id':project['id'],'lineage_id':lineage_id}.items()):raise ValueError('مدرک مهاجرت با دفتر و پروژه تطبیق ندارد')
+    ids=_ids(proof.get('previous_crosswalk_ids'),'Crosswalkهای قبلی')
+    old=[next((x for x in project.get('ifc_2d_crosswalks',[]) if x['id']==key),None) for key in ids]
+    if any(x is None for x in old) or {x['proposal_id'] for x in old}!=set(event['previous_proposal_ids']) or len(old)!=len(event['previous_proposal_ids']):
+        raise ValueError('Crosswalkهای مبنا همه اعضای قبلی را دقیقاً پوشش نمی‌دهند')
+    if any(set(x.get('previous_crosswalk_ids',[]))&set(ids) for x in project.get('ifc_2d_crosswalks',[])):
+        raise ValueError('Crosswalk قبلی در مهاجرت گروهی مصرف شده است')
+    for link in old:
+        p=Path(link['evidence_path']);src=Path(link['drawing']['path'])
+        if (not p.is_file() or sha256(p.read_bytes()).hexdigest()!=link['evidence_sha256'] or
+                not src.is_file() or sha256(src.read_bytes()).hexdigest()!=link['drawing']['source_sha256']):raise ValueError('منبع یا مدرک Crosswalk مبنا تغییر کرده است')
+        from core.drawings.takeoff_session import DrawingTakeoffSession
+        saved=project.get('drawing_sessions',{}).get(link['session_id'])
+        if saved is None:raise ValueError('نشست Crosswalk مبنا یافت نشد')
+        old_item=DrawingTakeoffSession.from_dict(saved['session']).find(link['item_id'])
+        old_digest=sha256(json.dumps(old_item.to_dict(),sort_keys=True,ensure_ascii=False).encode()).hexdigest()
+        if saved['revision']!=link['drawing']['session_revision'] or old_digest!=link['drawing']['item_digest']:
+            raise ValueError('Revision برداشت Crosswalk مبنا تغییر کرده است')
+        binding,_=lineage_view_binding(project,link['proposal_id'])
+        if binding['document']!=link['ifc_document']:raise ValueError('Revision مدل مبنای Crosswalk تطبیق ندارد')
+    targets=proof.get('current')
+    if not isinstance(targets,list) or len(targets)!=len(event['current_proposal_ids']):raise ValueError('جدول Crosswalk جاری ناقص است')
+    pids=[x.get('proposal_id') for x in targets if isinstance(x,dict)]
+    if len(set(pids))!=len(pids) or set(pids)!=set(event['current_proposal_ids']):raise ValueError('عضو جاری Crosswalk تکراری یا نامعتبر است')
+    snapshot=deepcopy(project);snapshot['ifc_identity_lineages']=[]
+    records=[];items=set()
+    for target in targets:
+        if set(target)!={'proposal_id','session_id','item_id','evidence_path','evidence_sha256'}:raise ValueError('قرارداد پیوند جاری Crosswalk نامعتبر است')
+        key=(target['session_id'],target['item_id'])
+        if key in items or any((x['session_id'],x['item_id'])==key for x in old):raise ValueError('مهاجرت گروهی به برداشت دوبعدی جدید و مستقل نیاز دارد')
+        items.add(key)
+        saved=project.get('drawing_sessions',{}).get(target['session_id'])
+        if saved is None:raise ValueError('نشست دوبعدی Crosswalk جاری یافت نشد')
+        row=crosswalk_record(snapshot,saved,**target,author=author,reviewer=reviewer,reviewer_role=reviewer_role)
+        row.update(lineage_id=lineage_id,previous_crosswalk_ids=ids,
+            revision=max(x['revision'] for x in old)+1,
+            group_evidence_path=str(path.resolve()),group_evidence_sha256=evidence_sha256)
+        if row['ifc_document']['source_sha256']!=event['current_source_sha256'] or any(x['ifc_document']['source_sha256']!=event['previous_source_sha256'] for x in old):raise ValueError('نسخه‌های مدل و Crosswalk با دفتر تغییر هویت ناسازگارند')
+        records.append(row)
+    return records
+
+
+def migrate_crosswalk_group(service,project_id,*,lineage_id,evidence_path,evidence_sha256,author,reviewer,expected_digest):
+    from copy import deepcopy
+    from core.platform.concurrency import assert_unchanged
+    _authorized(service,author,'edit');user=_authorized(service,reviewer,'review')
+    if not expected_digest:raise ValueError('CAS برای مهاجرت گروهی لازم است')
+    service.store._cache.pop(str(project_id),None);project=deepcopy(service.open_project(project_id))
+    assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    records=crosswalk_group_records(project,lineage_id=lineage_id,evidence_path=evidence_path,
+        evidence_sha256=evidence_sha256,author=author,reviewer=reviewer,reviewer_role=user.role)
+    project.setdefault('ifc_2d_crosswalks',[]).extend(records)
+    service.store.save(project_id,project,expected_digest=expected_digest,
+        ifc_command={'action':'crosswalk_group','records':records})
+    return deepcopy(records)
+
+
+def crosswalk_group_guard(previous,updated,command):
+    old=previous.get('ifc_2d_crosswalks',[]);new=updated.get('ifc_2d_crosswalks',[])
+    records=command.get('records')
+    if not isinstance(records,list) or not records or new!=old+records:raise ValueError('تاریخچه Crosswalk گروهی فقط الحاقی است')
+    event=records[0]
+    expected=crosswalk_group_records(previous,lineage_id=event.get('lineage_id'),
+        evidence_path=event.get('group_evidence_path'),evidence_sha256=event.get('group_evidence_sha256'),
+        author=event.get('author'),reviewer=event.get('reviewer'),reviewer_role=event.get('reviewer_role'))
+    def stable(rows):return [{k:v for k,v in r.items() if k!='created_at'} for r in rows]
+    if stable(expected)!=stable(records):raise ValueError('ثبت مهاجرت گروهی با منابع بازبینی‌شده تطبیق ندارد')

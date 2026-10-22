@@ -150,6 +150,14 @@ class StructuralProApp:
         from core.drawings.ifc_pipeline import review_identity
         return review_identity(self, project_id, **kwargs)
 
+    def migrate_ifc_crosswalk_group(self, project_id, **kwargs):
+        from core.drawings.ifc_pipeline import migrate_crosswalk_group
+        return migrate_crosswalk_group(self, project_id, **kwargs)
+
+    def apply_ifc_quantity_transfer(self, project_id, **kwargs):
+        from core.takeoff.manual_formula_amendments import apply_ifc_transfer
+        return apply_ifc_transfer(self, project_id, **kwargs)
+
     def assess_ifc_lineage_quantities(self, project_id, **kwargs):
         from core.drawings.ifc_lineage import assess_quantities
         return assess_quantities(self, project_id, **kwargs)
