@@ -557,6 +557,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layers.setCurrentIndex(job['layer_index'])
         if job.get('stream'):job['stream'].close()
         job['temp'].cleanup();p.deleteLater();self._cad_busy(False);self.cad_controls.setVisible(self.viewer.kind=='cad');self.status.setText('بارگذاری CAD لغو شد؛ نقشه و متره قبلی محفوظ است')
+        job['gc_lease'].release()
 
     def open_cad_async(self,path):
         import tempfile,sys
@@ -565,9 +566,12 @@ class GraphicalTakeoffDialog(QDialog):
             if QMessageBox.question(self,'تغییر نقشه','نشست دارای متره است؛ پیش از تغییر، ذخیره را بررسی کنید. ادامه؟',QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
         p=QProcess(self);temp=tempfile.TemporaryDirectory(prefix='structuralpro-cad-')
         job={'process':p,'temp':temp,'result':str(Path(temp.name)/'result'),'old':None,'layers':[(self.cad_layers.itemText(i),self.cad_layers.itemData(i)) for i in range(self.cad_layers.count())],'layer_index':self.cad_layers.currentIndex()}
+        from core.drawings.gui_load_gc import GuiLoadGcLease
+        job['gc_lease']=GuiLoadGcLease()
         self._cad_job=job;self._cad_busy(True);self.status.setText('در حال تحلیل CAD در پردازش مستقل؛ لغو فعال است')
         def failed(message):
-            if self._cad_job is not job:return
+            if self._cad_job is not job:
+                job['gc_lease'].release();return
             self.cancel_cad_loading();self.status.setText('خطای بارگذاری CAD؛ نقشه قبلی محفوظ است: '+message)
         def parsed(code,status):
             if self._cad_job is not job:return
@@ -624,11 +628,12 @@ class GraphicalTakeoffDialog(QDialog):
                     self.ifc_controls.show();self.cad_controls.hide()
                     for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.region_to_roof,self.commit_boq_button,self.export_boq):control.setEnabled(False)
                     self.canvas.set_mode('pan');self.scale_label.setText('نمای مدل؛ متره از تصویر غیرفعال است')
-                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();return
+                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release();return
                 self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
                 self.page=1;self.canvas.read_only_model=False;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
                 self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
+                job['gc_lease'].release()
             except Exception as exc:failed(str(exc))
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
 
