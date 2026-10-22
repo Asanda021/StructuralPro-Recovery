@@ -1199,11 +1199,19 @@ class GraphicalTakeoffDialog(QDialog):
             quantities.clear()
             for q in e['quantities']:quantities.addItem(q['name']+' | '+q['value_si']+' '+q['unit'],q['name'])
             qs='\n'.join(q['name']+': '+q['value_si']+' '+q['unit']+' | '+q['basis']+' | '+q['qset_name'] for q in e['quantities']) or 'فاقد QTO؛ مصالح تخمین زده نمی‌شود'
+            if self.app_service and self.project_id_input.text().strip():
+                saved_project=self.app_service.open_project(self.project_id_input.text().strip())
+                identity=next((x for x in saved_project.get('ifc_identity_reviews',[])
+                    if x['global_id']==gid and x['document']['source_sha256']==doc['source_sha256']),None)
+                if identity:
+                    floors.setCurrentIndex(floors.findData(identity['floor_id']))
+                    members.setCurrentIndex(members.findData(identity['member_id']))
             detail.setText('GlobalId: '+gid+'\nمبدأ SI: '+str(e['origin_m'])+'\n'+qs+'\n'+'؛ '.join(e['warnings'])+'\nQTO مقدار مصالح نیست؛ انتقال عمومی فقط پس از کنترل هویت، مدرک، واحد و بازبینی مستقل از کنترل‌های پایین مجاز است')
         tree.currentItemChanged.connect(lambda current,previous:choose(current))
         search.textChanged.connect(populate);types.currentIndexChanged.connect(populate);populate()
         form=QFormLayout();layout.addLayout(form)
         floors=QComboBox();members=QComboBox();author=QLineEdit();reference=QLineEdit()
+        floors.setObjectName('ifc_floor');members.setObjectName('ifc_member')
         author.setObjectName('ifc_author');reference.setObjectName('ifc_reference')
         pid=self.project_id_input.text().strip();project=self.app_service.open_project(pid) if self.app_service and pid else None
         digest=self.app_service.store.current_digest(pid) if project else None

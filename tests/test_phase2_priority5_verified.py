@@ -105,6 +105,7 @@ def test_generic_ifc_amendment_native_qt_keeps_original_boq(tmp_path):
         assert project['manual_formula_register']==original['manual_formula_register']
         assert str(project['boq'][0]['quantity']) in ('5','5.0')
         assert len(project['manual_formula_amendments'])==1
+        assert next(iter(project['manual_formula_amendments'])) in dialog.findChild(QLabel,'ifc_amend_summary').text()
         assert '1' in dialog.findChild(QLabel,'ifc_amend_summary').text()
         before=app.store.current_digest('P')
         QTest.mouseClick(dialog.findChild(QPushButton,'ifc_amend_apply'),Qt.LeftButton)
@@ -180,6 +181,7 @@ def test_ifc_column_revision_amendment_real_qt_and_reopen(tmp_path):
         rows=dialog.findChild(QComboBox,'ifc_amend_row')
         assert rows.count()==1, 'committed IFC column missing from amendment UI'
         rows.setCurrentIndex(0)
+        assert dialog.findChild(QComboBox,'ifc_member').currentData()=='C1'
         dialog.findChild(QLineEdit,'ifc_amend_detail').setText(str(detail))
         dialog.findChild(QLineEdit,'ifc_amend_reason').setText('Explicit corrected width and face areas; no rebar inference')
         for step in ('preview','create','review','apply'):
@@ -188,6 +190,9 @@ def test_ifc_column_revision_amendment_real_qt_and_reopen(tmp_path):
         project=app.open_project('P')
         assert project['takeoffs']==original['takeoffs'] and project['reviewed_structural_members']==original['reviewed_structural_members']
         assert {r['unit']:Decimal(str(r['quantity'])) for r in project['boq']}=={'m3':Decimal('.75'),'m2':Decimal('3'),'kg':Decimal('21.488')}
+        from PySide6.QtWidgets import QScrollArea
+        dialog.findChild(QScrollArea).ensureWidgetVisible(dialog.findChild(QLabel,'ifc_amend_summary'))
+        qt.processEvents()
         dialog.grab().save(str(tmp_path/'column-amendment-qt.png'))
     finally:w.close();qt.processEvents();app.store.close()
     from core.platform.application import StructuralProApp

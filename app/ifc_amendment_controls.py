@@ -91,7 +91,7 @@ def install_ifc_amendment_controls(dialog, layout, service, project_id, document
                     else:
                         service.apply_beam_amendment(project_id,aid,expected_revision=1)
                         result=str(preview_column(service.get_structural_member(project_id,'column',*key)['data']))
-                    summary.setText(summary.text()+'\nمقدار مؤثر BOQ: '+result+'؛ اصل قطعی محفوظ است')
+                    summary.setText(summary.text()+'\nمقدار مؤثر BOQ: '+result+'؛ اصل قطعی محفوظ است'+'\nتاریخچه: '+aid+' | اعمال‌شده')
                     outcome.setText('اصلاحیه از دفتر نسخه‌دار موجود اعمال شد؛ قیمت ایجاد نشد')
             state['base_digest']=service.store.current_digest(project_id)
         except Exception as exc:
