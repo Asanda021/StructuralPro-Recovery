@@ -330,12 +330,16 @@ def test_crosswalk_real_qt_bidirectional_selection(tmp_path):
     QTest.mouseClick(inspector.findChild(QPushButton,'ifc_show_crosswalk'),Qt.LeftButton)
     other=w._ifc_crosswalk_window
     handle=link['drawing']['handle'];assert other._cad_handle_items[handle].isSelected()
+    inspector.findChild(QLineEdit,'ifc_search').clear()
+    candidates=[tree.topLevelItem(i).child(j) for i in range(tree.topLevelItemCount()) for j in range(tree.topLevelItem(i).childCount())]
+    tree.setCurrentItem(next(x for x in candidates if x.data(0,Qt.UserRole)!=proposal['global_id']))
     w.highlight_ifc_member('');other.canvas.scene.clearSelection()
     other.canvas.set_mode('cad_select');other.reset_zoom();other.canvas.set_mode('cad_select')
     item=other._cad_handle_items[handle]
     point=other.canvas.mapFromScene(item.sceneBoundingRect().center())
     QTest.mouseClick(other.canvas.viewport(),Qt.LeftButton,pos=point)
     assert w._ifc_selected_global_id==proposal['global_id']
+    assert tree.currentItem().data(0,Qt.UserRole)==proposal['global_id']
     w.highlight_ifc_member('');other.canvas.scene.clearSelection()
     w.highlight_ifc_member(proposal['global_id'])
     assert item.isSelected()

@@ -1116,10 +1116,7 @@ class GraphicalTakeoffDialog(QDialog):
     def _ifc_scene_selection(self):
         if self.viewer.kind!='ifc':return
         selected=self.canvas.scene.selectedItems()
-        if selected:
-            self._ifc_selected_global_id=selected[0].data(0)
-            callback=getattr(self,'_ifc_crosswalk_notify',None)
-            if callback:callback(self._ifc_selected_global_id)
+        if selected:self.highlight_ifc_member(selected[0].data(0))
 
     def highlight_ifc_member(self,gid):
         if self.viewer.kind!='ifc':return
@@ -1132,6 +1129,24 @@ class GraphicalTakeoffDialog(QDialog):
                     item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
+        dialog=getattr(self,'_ifc_inspector',None)
+        from shiboken6 import isValid
+        if dialog is not None and isValid(dialog) and not getattr(self,'_ifc_tree_syncing',False):
+            self._ifc_tree_syncing=True
+            try:
+                tree=dialog.findChild(QTreeWidget,'ifc_tree')
+                def matching():
+                    return next((tree.topLevelItem(i).child(j) for i in range(tree.topLevelItemCount())
+                        for j in range(tree.topLevelItem(i).childCount())
+                        if tree.topLevelItem(i).child(j).data(0,Qt.UserRole)==gid),None)
+                target=matching()
+                if gid and target is None:
+                    dialog.findChild(QComboBox,'ifc_type_filter').setCurrentIndex(0)
+                    dialog.findChild(QLineEdit,'ifc_search').setText(gid)
+                    target=matching()
+                tree.setCurrentItem(target)
+                if target:tree.scrollToItem(target)
+            finally:self._ifc_tree_syncing=False
         callback=getattr(self,'_ifc_crosswalk_notify',None)
         if callback:callback(gid)
 
@@ -1152,7 +1167,7 @@ class GraphicalTakeoffDialog(QDialog):
         title=QLabel(doc['schema']+' | '+doc['parser']+' | '+doc['project_name']+'\nSHA-256: '+doc['source_sha256']+'\nضرایب SI: '+str(doc['unit_factors_si']))
         title.setTextInteractionFlags(Qt.TextSelectableByMouse);title.setWordWrap(True);layout.addWidget(title)
         search=QLineEdit();search.setObjectName('ifc_search');search.setPlaceholderText('جست‌وجوی دقیق GlobalId یا نام عضو')
-        types=QComboBox();types.addItem('تمام انواع','')
+        types=QComboBox();types.setObjectName('ifc_type_filter');types.addItem('تمام انواع','')
         for t in sorted({x['ifc_type'] for x in doc['elements']}):types.addItem(t,t)
         layout.addWidget(search);layout.addWidget(types)
         tree=QTreeWidget();tree.setObjectName('ifc_tree');tree.setHeaderLabels(['طبقه / عضو','نوع و GlobalId']);layout.addWidget(tree)
@@ -1172,7 +1187,9 @@ class GraphicalTakeoffDialog(QDialog):
             tree.expandAll()
         def choose(item):
             gid=item.data(0,Qt.UserRole) if item else None
-            if not gid:return
+            if not gid:
+                selected.clear();quantities.clear();detail.setText('ابتدا عضو IFC را انتخاب کنید؛ عضو قبلی برای ثبت فعال نیست')
+                return
             e=next(x for x in doc['elements'] if x['global_id']==gid);selected['element']=e;self.highlight_ifc_member(gid)
             quantities.clear()
             for q in e['quantities']:quantities.addItem(q['name']+' | '+q['value_si']+' '+q['unit'],q['name'])
