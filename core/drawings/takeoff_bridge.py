@@ -29,6 +29,8 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     actual = hashlib.sha256(data).hexdigest()
     if actual != expected or payload.get("source_sha256") != expected:
         raise ValueError("فایل منبع نقشه پس از اندازه‌گیری تغییر کرده است؛ ثبت متره رد شد")
+    if path.suffix.lower() == ".ifc":
+        raise ValueError("متره IFC بدون قرارداد هویت، کمیت و بازبینی مستقل مجاز نیست؛ تصویر Mesh شاهد مالی نیست")
     if path.suffix.lower() == ".pdf":
         import fitz
         with fitz.open(stream=data, filetype="pdf") as document:

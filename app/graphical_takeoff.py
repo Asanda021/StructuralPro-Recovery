@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
     QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
-    QDoubleSpinBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication
+    QDoubleSpinBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication, QTreeWidget, QTreeWidgetItem
 )
 
 from core.drawings.graphical_takeoff import Point
@@ -424,6 +424,11 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
         self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
+        self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
+        self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
+        self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
+        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button)
+        self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
 
@@ -811,6 +816,7 @@ class GraphicalTakeoffDialog(QDialog):
 
     def load_page(self, page):
         if self.cad_loading:return
+        self.ifc_controls.setVisible(self.viewer.kind=="ifc")
         self.cad_controls.setVisible(self.viewer.kind=="cad")
         if not self.viewer.path or page < 1 or page > max(1, self.viewer.page_count):
             return
@@ -1029,6 +1035,8 @@ class GraphicalTakeoffDialog(QDialog):
         if doc is None:
             raise RuntimeError("مدل برای نمایش آماده نیست.")
         triangles = []
+        self._ifc_handle_items={}
+        self._ifc_selected_global_id=None
         for mesh in doc.meshes:
             for indices in mesh.triangles:
                 points = [mesh.vertices[i] for i in indices]
@@ -1039,11 +1047,98 @@ class GraphicalTakeoffDialog(QDialog):
         for _, mesh, points in sorted(triangles, key=lambda row: row[0]):
             item = self.canvas.scene.addPolygon(QPolygonF(points), pen, QBrush(QColor(155, 190, 215)))
             item.setToolTip(f"{mesh.name}\nشناسه: {mesh.global_id}\nاثر انگشت: {doc.source_sha256}")
-            item.setAcceptedMouseButtons(Qt.MouseButton.NoButton)
+            item.setData(0,mesh.global_id)
+            item.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIsSelectable,True)
+            item.setAcceptedMouseButtons(Qt.MouseButton.LeftButton)
+            self._ifc_handle_items.setdefault(mesh.global_id,[]).append(item)
+        self.canvas.scene.selectionChanged.connect(self._ifc_scene_selection)
         bounds = self.canvas.scene.itemsBoundingRect()
         margin = max(bounds.width(), bounds.height(), 1.0) * 0.05
         self.canvas.setSceneRect(bounds.adjusted(-margin, -margin, margin, margin))
         self._ifc_status()
+
+    def _ifc_scene_selection(self):
+        if self.viewer.kind!='ifc':return
+        selected=self.canvas.scene.selectedItems()
+        if selected:self._ifc_selected_global_id=selected[0].data(0)
+
+    def highlight_ifc_member(self,gid):
+        if self.viewer.kind!='ifc':return
+        self.canvas.scene.blockSignals(True)
+        try:
+            self.canvas.scene.clearSelection()
+            for key,items in self._ifc_handle_items.items():
+                for item in items:
+                    item.setSelected(key==gid)
+                    item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
+            self._ifc_selected_global_id=gid
+        finally:self.canvas.scene.blockSignals(False)
+
+    def open_ifc_inspector(self):
+        if self.viewer.kind!='ifc' or self.cad_loading:return
+        try:
+            from core.drawings.bim_adapter import BIMAdapter
+            doc=BIMAdapter().read_document(self.viewer.path,revision=self.ifc_revision.text())
+            if doc['source_sha256']!=self.viewer.ifc_document.source_sha256:
+                raise ValueError('مدل پس از نمایش تغییر کرده است؛ دوباره باز کنید')
+        except Exception as exc:
+            self.status.setText('بررسی IFC انجام نشد: '+str(exc));return
+        dialog=QDialog(self);self._ifc_inspector=dialog
+        dialog.setAttribute(Qt.WA_DeleteOnClose);dialog.setWindowTitle('بررسی مهندسی IFC — پیشنهاد هویت، بدون مجوز مالی')
+        dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1000,700)
+        layout=QVBoxLayout(dialog)
+        title=QLabel(doc['schema']+' | '+doc['parser']+' | '+doc['project_name']+'\nSHA-256: '+doc['source_sha256']+'\nضرایب SI: '+str(doc['unit_factors_si']))
+        title.setTextInteractionFlags(Qt.TextSelectableByMouse);title.setWordWrap(True);layout.addWidget(title)
+        search=QLineEdit();search.setObjectName('ifc_search');search.setPlaceholderText('جست‌وجوی دقیق GlobalId یا نام عضو')
+        types=QComboBox();types.addItem('تمام انواع','')
+        for t in sorted({x['ifc_type'] for x in doc['elements']}):types.addItem(t,t)
+        layout.addWidget(search);layout.addWidget(types)
+        tree=QTreeWidget();tree.setObjectName('ifc_tree');tree.setHeaderLabels(['طبقه / عضو','نوع و GlobalId']);layout.addWidget(tree)
+        detail=QLabel('یک عضو را انتخاب کنید؛ QTO صریح، مقدار مصالح یا مجوز پرداخت نیست')
+        detail.setObjectName('ifc_detail');detail.setWordWrap(True);detail.setTextInteractionFlags(Qt.TextSelectableByMouse);layout.addWidget(detail)
+        selected={}
+        def populate():
+            tree.clear();needle=search.text().strip();roots={}
+            for e in doc['elements']:
+                if types.currentData() and e['ifc_type']!=types.currentData():continue
+                if needle and needle not in e['global_id'] and needle not in e['name']:continue
+                sid=e['storey_id'] or ''
+                if sid not in roots:
+                    st=next((x for x in doc['storeys'] if x['global_id']==sid),{})
+                    roots[sid]=QTreeWidgetItem(tree,[st.get('name','فاقد طبقه'),str(st.get('elevation_m',''))+' m'])
+                leaf=QTreeWidgetItem(roots[sid],[e['name'],e['ifc_type']+' | '+e['global_id']]);leaf.setData(0,Qt.UserRole,e['global_id'])
+            tree.expandAll()
+        def choose(item):
+            gid=item.data(0,Qt.UserRole) if item else None
+            if not gid:return
+            e=next(x for x in doc['elements'] if x['global_id']==gid);selected['element']=e;self.highlight_ifc_member(gid)
+            qs='\n'.join(q['name']+': '+q['value_si']+' '+q['unit']+' | '+q['basis']+' | '+q['qset_name'] for q in e['quantities']) or 'فاقد QTO؛ مصالح تخمین زده نمی‌شود'
+            detail.setText('GlobalId: '+gid+'\nمبدأ SI: '+str(e['origin_m'])+'\n'+qs+'\n'+'؛ '.join(e['warnings'])+'\nثبت مالی مسدود: هویت و Crosswalk بازبینی‌شده و پل مالی IFC تکمیل نشده است')
+        tree.currentItemChanged.connect(lambda current,previous:choose(current))
+        search.textChanged.connect(populate);types.currentIndexChanged.connect(populate);populate()
+        form=QFormLayout();layout.addLayout(form)
+        floors=QComboBox();members=QComboBox();author=QLineEdit();reference=QLineEdit()
+        author.setObjectName('ifc_author');reference.setObjectName('ifc_reference')
+        pid=self.project_id_input.text().strip();project=self.app_service.open_project(pid) if self.app_service and pid else None
+        digest=self.app_service.store.current_digest(pid) if project else None
+        for f in (project or {}).get('floors',[]):floors.addItem(f['name']+' | '+f['id'],f['id'])
+        def member_list():
+            members.clear()
+            from core.projects.project_model import _identity
+            for m in (project or {}).get('members',[]):
+                if _identity(m.get('floor_id'))==_identity(floors.currentData()):members.addItem(m['id'],m['id'])
+        floors.currentIndexChanged.connect(member_list);member_list()
+        for label,field in [('طبقه واقعی پروژه',floors),('عضو واقعی پروژه',members),('ثبت‌کننده پیشنهاد',author),('مرجع تطبیق صریح',reference)]:form.addRow(label,field)
+        save=QPushButton('ذخیره پیشنهاد هویت در پروژه؛ فاقد تأیید مالی');save.setObjectName('ifc_save_proposal');save.setEnabled(project is not None);layout.addWidget(save)
+        outcome=QLabel();outcome.setWordWrap(True);layout.addWidget(outcome)
+        def persist():
+            nonlocal digest
+            try:
+                if 'element' not in selected:raise ValueError('ابتدا عضو IFC را انتخاب کنید')
+                self.app_service.save_ifc_identity_proposal(pid,str(self.viewer.path),revision=doc['revision'],global_id=selected['element']['global_id'],floor_id=floors.currentData(),member_id=members.currentData(),author=author.text(),reference=reference.text(),expected_digest=digest,source_sha256=doc['source_sha256'])
+                digest=self.app_service.store.current_digest(pid);outcome.setText('پیشنهاد هویت ذخیره شد؛ بازبینی و ثبت مالی هنوز مجاز نیست')
+            except Exception as exc:outcome.setText('ذخیره انجام نشد: '+str(exc))
+        save.clicked.connect(persist);dialog.show()
 
     def _activate_view_tool(self, mode: str, instruction: str):
         self.canvas.set_mode(mode)

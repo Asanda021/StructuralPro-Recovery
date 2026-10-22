@@ -77,6 +77,59 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+    def save_ifc_identity_proposal(self, project_id, path, *, revision, global_id,
+                                   floor_id, member_id, author, reference, expected_digest, source_sha256):
+        """Persist an explicit identity proposal, never an approval or BOQ receipt.
+
+        Uses the existing project transaction/CAS and keeps previous proposals.
+        Spatial evidence does not establish a reviewed 2D/BIM ownership crosswalk.
+        """
+        from copy import deepcopy
+        from hashlib import sha256
+        import json
+        from core.drawings.bim_adapter import BIMAdapter
+        from core.projects.project_model import _identity
+        from core.platform.concurrency import assert_unchanged
+        if not isinstance(expected_digest,str) or not expected_digest:
+            raise ValueError('Snapshot و CAS برای پیشنهاد IFC الزامی است')
+        self.store._cache.pop(str(project_id),None)
+        project=deepcopy(self.store.get(project_id))
+        if project is None:raise KeyError(project_id)
+        assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+        for value in (global_id,floor_id,member_id,author,reference):
+            if not isinstance(value,str) or not value.strip():raise ValueError('هویت و مرجع پیشنهاد باید صریح باشد')
+        floors=project.get('floors') or []
+        members=project.get('members') or []
+        floor=next((x for x in floors if _identity(x.get('id'))==_identity(floor_id)),None)
+        member=next((x for x in members if _identity(x.get('id'))==_identity(member_id)),None)
+        if floor is None or member is None or _identity(member.get('floor_id'))!=_identity(floor['id']):
+            raise ValueError('FloorID یا MemberID عضو در پروژه معتبر نیست')
+        doc=BIMAdapter().read_document(path,revision=revision)
+        if doc['source_sha256']!=source_sha256:
+            raise ValueError('منبع IFC پس از مشاهده تغییر کرده است')
+        element=next((x for x in doc['elements'] if x['global_id']==global_id),None)
+        if element is None or not element['storey_id'] or not element['placement_step_id']:
+            raise ValueError('عضو IFC فاقد طبقه یا Placement معتبر است')
+        proposals=project.setdefault('ifc_identity_proposals',[])
+        for old in proposals:
+            if old['document']['source_sha256']==doc['source_sha256'] and old['global_id']==global_id:
+                raise ValueError('پیشنهاد همین عضو و منبع قبلاً ثبت شده است')
+            if old['document']['source_sha256']==doc['source_sha256'] and old['storey_id']==element['storey_id'] and _identity(old['floor_id'])!=_identity(floor['id']):
+                raise ValueError('طبقه IFC در پیشنهاد قبلی به طبقه دیگری متصل است؛ بازبینی مستقل لازم است')
+        source={k:doc[k] for k in ('source_path','source_sha256','source_id','schema','parser','revision','unit_factors_si')}
+        result={'project_id':str(project_id),'building_id':element['building_id'],
+                'floor_id':floor['id'],'member_id':member['id'],'storey_id':element['storey_id'],
+                'global_id':global_id,'ifc_type':element['ifc_type'],'document':source,
+                'placement_matrix_si':element['placement_matrix_si'],'author':author.strip(),
+                'reference':reference.strip(),'status':'proposed','ready':False,
+                'commit_allowed':False,'payable_rows':[],
+                'blockers':['تطبیق طبقه و هویت فیزیکی نیازمند بازبینی مستقل است',
+                            'Crosswalk چندمنبعی و قرارداد انتقال مالی هنوز تأیید نشده‌اند']}
+        result['id']=sha256(json.dumps(result,ensure_ascii=False,sort_keys=True).encode()).hexdigest()
+        proposals.append(result)
+        self.store.save(project_id,project,expected_digest=expected_digest)
+        return deepcopy(result)
+
     def live_takeoff_tracker(self, project_id: str, *, boq_receipt_verifier=None):
         """Load audited live member identities from this application's canonical SQLite.
 
