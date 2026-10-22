@@ -36,6 +36,7 @@ def test_reviewed_identity_persists_and_cannot_be_forged(tmp_path):
     result=app.review_ifc_identity('P',**args)
     assert result['status']=='approved' and result['member_id']=='B1'
     assert result['review']['user_id']=='reviewer'
+    assert result['revision']==1 and result['created_at'] and result['event_id'].startswith('IFC-IDENTITY-')
     assert result['commit_allowed'] is False and result['payable_rows']==[]
     before=app.store.current_digest('P');project=deepcopy(app.open_project('P'))
     project['ifc_identity_proposals'][0]['member_id']='other'
@@ -204,7 +205,8 @@ def test_generic_ifc_quantity_blocks_manual_or_cad_second_claim(tmp_path):
     assert app.store.current_digest('P')==before;app.store.close()
 
 
-def test_ifc_revision_amendment_uses_existing_journal_without_history_rewrite(tmp_path):
+@pytest.mark.parametrize('new_guid',[False,True])
+def test_ifc_revision_amendment_uses_existing_journal_without_history_rewrite(tmp_path,new_guid):
     from copy import deepcopy
     from hashlib import sha256
     from core.takeoff import manual_formula_register as formula
@@ -218,9 +220,14 @@ def test_ifc_revision_amendment_uses_existing_journal_without_history_rewrite(tm
     formula.review(app,'P','Q',expected_revision=1,reviewer='reviewer',note='checked')
     formula.commit(app,'P','Q',expected_revision=1);original=deepcopy(app.open_project('P'))
     m=ifcopenshell.open(str(p));m.by_type('IfcQuantityLength')[0].LengthValue=5.
+    gid=proposal['global_id']
+    if new_guid:
+        obj=m.by_guid(gid);obj.GlobalId=ifcopenshell.guid.new();gid=obj.GlobalId
     newpath=tmp_path/'R2.ifc';m.write(str(newpath))
-    proposed=app.save_ifc_identity_proposal('P',str(newpath),revision='R2',global_id=proposal['global_id'],floor_id='F1',member_id='B1',author='author',reference='Explicit same physical member R2',expected_digest=app.store.current_digest('P'),source_sha256=sha256(newpath.read_bytes()).hexdigest())
-    newargs={**args,'proposal_id':proposed['id'],'expected_digest':app.store.current_digest('P')}
+    proposed=app.save_ifc_identity_proposal('P',str(newpath),revision='R2',global_id=gid,floor_id='F1',member_id='B1',author='author',reference='Explicit same physical member R2',expected_digest=app.store.current_digest('P'),source_sha256=sha256(newpath.read_bytes()).hexdigest())
+    revision_proof=tmp_path/'revision-mapping.txt'
+    revision_proof.write_text('Explicit synthetic same physical B1: '+proposal['global_id']+' -> '+gid+'; new source '+sha256(newpath.read_bytes()).hexdigest())
+    newargs={**args,'proposal_id':proposed['id'],'evidence_path':str(revision_proof),'evidence_sha256':sha256(revision_proof.read_bytes()).hexdigest(),'expected_digest':app.store.current_digest('P')}
     with pytest.raises(ValueError,match='Revision'):app.review_ifc_identity('P',**newargs)
     app.review_ifc_identity('P',**newargs,supersedes=proposal['id'])
     with pytest.raises(ValueError,match='قدیمی'):quantity_formula_data(app,'P',proposal['id'],'Length',author='author')
@@ -373,7 +380,9 @@ def test_ifc_column_explicit_detail_uses_existing_specialist_and_boq(tmp_path):
     source=tmp_path/'column.ifc';m.write(str(source))
     app.add_project_member('P','C1','F1','column')
     mapping=app.save_ifc_identity_proposal('P',str(source),revision='R1',global_id=obj.GlobalId,floor_id='F1',member_id='C1',author='author',reference='explicit independent column C1',expected_digest=app.store.current_digest('P'),source_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
-    app.review_ifc_identity('P',**{**args,'proposal_id':mapping['id'],'expected_digest':app.store.current_digest('P')})
+    column_proof=tmp_path/'column-mapping.txt'
+    column_proof.write_text('Explicit synthetic C1 / F1 column mapping '+obj.GlobalId+'; source '+hashlib.sha256(source.read_bytes()).hexdigest())
+    app.review_ifc_identity('P',**{**args,'proposal_id':mapping['id'],'evidence_path':str(column_proof),'evidence_sha256':hashlib.sha256(column_proof.read_bytes()).hexdigest(),'expected_digest':app.store.current_digest('P')})
     data=column(count=1);data['member_id']='C1';data['floor_id']='F1';data.pop('source')
     detail=tmp_path/'column-detail.json';detail.write_text(json.dumps(data),encoding='utf-8')
     saved=app.save_ifc_column_detail('P',proposal_id=mapping['id'],detail_path=str(detail),detail_sha256=hashlib.sha256(detail.read_bytes()).hexdigest(),author='author',reviewer='reviewer')
@@ -445,4 +454,30 @@ def test_crosswalk_close_does_not_call_deleted_scene(tmp_path,monkeypatch):
     other=w.open_ifc_crosswalk(link['id']);w.close()
     QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);qt.processEvents()
     assert errors==[]
+    app.store.close()
+
+
+@pytest.mark.parametrize('ifc_first',[False,True])
+def test_pdf_line_ifc_second_payment_rejected_both_directions(tmp_path,ifc_first):
+    import fitz,json,hashlib
+    from core.drawings.takeoff_session import DrawingTakeoffSession
+    from core.drawings.graphical_takeoff import Point
+    from core.drawings.ifc_pipeline import quantity_formula_data
+    from core.takeoff import manual_formula_register as formula
+    app,p,proof,proposal,args=identity_case(tmp_path);app.review_ifc_identity('P',**args)
+    pdf=tmp_path/'line.pdf';document=fitz.open();page=document.new_page(width=100,height=100);page.draw_line((0,0),(40,0));document.save(pdf);document.close()
+    session=DrawingTakeoffSession(str(pdf));session.calibrate(1,10,1);item=session.add_length([Point(0,0),Point(40,0)],takeoff_code='TEST')
+    saved=app.save_drawing_takeoff_session('P',session)
+    evidence={'policy':'reviewed_reference_point_v1','project_id':'P','proposal_id':proposal['id'],'session_id':saved['session_id'],'item_id':item.id,'ifc_sha256':proposal['document']['source_sha256'],'drawing_sha256':hashlib.sha256(pdf.read_bytes()).hexdigest(),'ifc_origin_m':['1000000','7','0'],'drawing_anchor_xy':['0','0'],'ifc_to_drawing_si':['1','0','0','1','-1000000','-7'],'physical_identity_reference':'Explicit synthetic B1 reviewed source owner','unit_evidence_reference':'.1m/reference pixel and IFC metre'}
+    path=tmp_path/'mapping.json';path.write_text(json.dumps(evidence))
+    app.save_ifc_crosswalk('P',proposal_id=proposal['id'],session_id=saved['session_id'],item_id=item.id,author='author',reviewer='reviewer',evidence_path=str(path),evidence_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),expected_digest=app.store.current_digest('P'))
+    data=quantity_formula_data(app,'P',proposal['id'],'Length',author='author')
+    formula.save(app,'P','Q',data,expected_revision=0,reason='QTO');formula.review(app,'P','Q',expected_revision=1,reviewer='reviewer',note='checked')
+    if ifc_first:
+        formula.commit(app,'P','Q',expected_revision=1);before=app.store.current_digest('P')
+        with pytest.raises(ValueError,match='IFC'):app.commit_drawing_takeoff_to_boq('P',saved['session_id'],[item.id],expected_session_revision=1)
+    else:
+        app.commit_drawing_takeoff_to_boq('P',saved['session_id'],[item.id],expected_session_revision=1);before=app.store.current_digest('P')
+        with pytest.raises(ValueError,match='IFC'):formula.commit(app,'P','Q',expected_revision=1)
+    assert app.store.current_digest('P')==before and len(app.open_project('P')['takeoffs'])==1
     app.store.close()

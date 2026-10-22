@@ -148,7 +148,13 @@ def review_identity(service, project_id, *, proposal_id, reviewer, evidence_path
         raise ValueError('مبنای Revision هویت IFC یافت نشد')
     decision={k:deepcopy(proposal[k]) for k in ('project_id','building_id','floor_id','member_id','global_id','document')}
     user=workspace.users[reviewer]
-    decision.update(proposal_id=proposal_id,supersedes=supersedes,status='approved',commit_allowed=False,payable_rows=[],
+    from datetime import datetime,timezone
+    timestamp=datetime.now(timezone.utc).isoformat()
+    event_id='IFC-IDENTITY-'+sha256((proposal_id+reviewer+evidence_sha256+timestamp).encode()).hexdigest()
+    decision.update(event_id=event_id,created_at=timestamp,revision=1+len(prior),
+        ifc_type=proposal['ifc_type'],storey_id=proposal['storey_id'],
+        placement_matrix_si=deepcopy(proposal['placement_matrix_si']),
+        proposal_id=proposal_id,supersedes=supersedes,status='approved',ready=False,commit_allowed=False,payable_rows=[],
         review={'user_id':reviewer,'display_name':user.display_name,'role':user.role,'note':note.strip(),
                 'evidence_path':str(evidence.resolve()),'evidence_sha256':evidence_sha256,
                 'author':proposal['author'],'base_project_version':project['_meta']['version']})
@@ -242,7 +248,8 @@ def physical_quantity_guard(project, incoming):
             cad=params.get('cad_evidence') or {}
             same_cad=bool(cad.get('handle')) and cad.get('source_sha256')==link['drawing']['source_sha256'] and cad.get('handle')==link['drawing'].get('handle')
             same_item=row.get('drawing_session_id')==link['session_id'] and row.get('drawing_takeoff_id')==link['item_id']
-            if same_cad or same_item:
+            same_geometry=bool(params.get('geometry')) and link['drawing'].get('geometry_identity')==drawing_geometry_identity(params.get('source_sha256'),params.get('page'),row.get('item'),params['geometry'],params.get('holes',[]))
+            if same_cad or same_item or same_geometry:
                 floor,member=link['floor_id'],link['member_id'];break
         if not floor or not member:return set()
         return {(_identity(floor),_identity(member),q.get('unit')) for q in row.get('quantities',[])}
@@ -293,7 +300,7 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
     if source.suffix.lower() not in ('.pdf','.dxf','.dwg') or sha256(source.read_bytes()).hexdigest()!=session.source_sha256:
         raise ValueError('منبع دوبعدی Crosswalk IFC نامعتبر یا تغییرکرده است')
     owner=item.cad_evidence or item.geometry_evidence or {}
-    if _identity(owner.get('floor_id'))!=_identity(binding['floor_id']) or _identity(owner.get('member_id'))!=_identity(binding['member_id']):
+    if (owner or source.suffix.lower()!='.pdf') and (_identity(owner.get('floor_id'))!=_identity(binding['floor_id']) or _identity(owner.get('member_id'))!=_identity(binding['member_id'])):
         raise ValueError('عضو و طبقه دوبعدی با تطبیق IFC یکسان نیست')
     if not item.geometry:raise ValueError('نقطه مرجع دوبعدی معتبر لازم است')
     cal=session.calibrations.get(item.page)
@@ -333,12 +340,15 @@ def save_crosswalk(service,project_id,*,proposal_id,session_id,item_id,author,re
             raise ValueError('نقطه مرجع IFC و منبع دوبعدی با تبدیل مستند تطبیق ندارد')
     if any(x['session_id']==session_id and x['item_id']==item_id for x in project.get('ifc_2d_crosswalks',[])):
         raise ValueError('همین جزء دوبعدی قبلاً Crosswalk IFC دارد')
+    from datetime import datetime,timezone
     result={'id':sha256((proposal_id+session_id+item_id+evidence_sha256).encode()).hexdigest(),
+        'revision':1,'created_at':datetime.now(timezone.utc).isoformat(),'building_id':binding['building_id'],
         'project_id':project_id,'proposal_id':proposal_id,'global_id':binding['global_id'],
         'floor_id':binding['floor_id'],'member_id':binding['member_id'],
         'ifc_document':deepcopy(binding['document']),'session_id':session_id,'item_id':item_id,
         'drawing':{'path':str(source.resolve()),'source_sha256':session.source_sha256,'page':item.page,
             'handle':(item.cad_evidence or {}).get('handle'),'session_revision':record['revision'],
+            'geometry_identity':drawing_geometry_identity(session.source_sha256,item.page,item.kind,item.geometry,item.holes),
             'item_digest':sha256(json.dumps(item.to_dict(),sort_keys=True,ensure_ascii=False).encode()).hexdigest()},
         'evidence_path':str(proof.resolve()),'evidence_sha256':evidence_sha256,'coordinate_evidence':evidence,
         'author':author,'reviewer':reviewer,'reviewer_role':review_user.role,'status':'approved',
@@ -405,3 +415,17 @@ def save_column_detail(service,project_id,*,proposal_id,detail_path,detail_sha25
             'detail_path':str(path.resolve()),'detail_sha256':detail_sha256}}
     validate_specialist_detail(service,service.open_project(project_id),data)
     return service.save_structural_member_draft(project_id,data,expected_revision=expected_revision,reason='دیتایل مستقل و مستند IFC؛ موتور تخصصی ستون موجود')
+
+
+def drawing_geometry_identity(source_sha256,page,kind,geometry,holes=()):
+    """Source geometry identity independent of session, row title or payment code."""
+    import json
+    from hashlib import sha256
+    from decimal import Decimal
+    from core.drawings.planar_geometry import canonical_ring
+    def points(ring):
+        if kind=='area':return canonical_ring(ring)
+        p=tuple(tuple(str(Decimal(str(v)).normalize()) for v in point) for point in ring)
+        return min(p,p[::-1])
+    value=[source_sha256,page,kind,points(geometry),sorted(canonical_ring(h) for h in holes)]
+    return sha256(json.dumps(value,ensure_ascii=False,sort_keys=True).encode()).hexdigest()
