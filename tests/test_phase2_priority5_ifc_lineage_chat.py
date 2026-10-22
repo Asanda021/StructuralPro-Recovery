@@ -155,10 +155,19 @@ def test_lineage_rejects_bad_evidence_or_owner_without_sqlite_write(tmp_path, mu
     elif mutation == "stale_revision":
         app.add_project_floor("P","new",level="F2")
     elif mutation == "changed_owner":
-        # Approved project structure cannot silently be interpreted as another owner.
-        p=deepcopy(app.open_project("P"))
-        p["members"][1]["floor_id"]="F999"
-        app.store.save("P",p,expected_digest=app.store.current_digest("P"))
+        # Verify a corrupted ownership snapshot without writing bad source to SQLite.
+        from core.drawings.ifc_lineage import validate_lineage
+        bad_project=deepcopy(app.open_project("P"))
+        bad_project["members"][1]["floor_id"]="F999"
+        before=app.store.current_digest("P")
+        with pytest.raises(ValueError):
+            validate_lineage(
+                bad_project, mode="split",
+                previous_proposal_ids=args["previous_proposal_ids"],
+                current_proposal_ids=args["current_proposal_ids"], evidence=data)
+        assert app.store.current_digest("P")==before
+        app.store.close()
+        return
     if mutation in {"wrong_source","missing_edge","duplicate_edge","wrong_edge","empty_scope"}:
         evidence.write_text(json.dumps(data,ensure_ascii=False),encoding="utf-8")
         args["evidence_sha256"] = sha256(evidence.read_bytes()).hexdigest()
