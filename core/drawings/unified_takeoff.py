@@ -61,19 +61,28 @@ class UnifiedDrawingTakeoff:
                 "document": doc,
             }
 
-        if ext in {".ifc", ".ifczip"}:
-            rows = read_ifc(p)
-            candidates = []
-            for row in rows:
-                for key, value in row.get("quantities", {}).items():
+        if ext == ".ifc":
+            from core.drawings.bim_adapter import BIMAdapter
+            # No source revision is claimed by a preview. The actual project
+            # binding must supply and review its own document revision.
+            doc=BIMAdapter().read_document(p,revision="unversioned-preview")
+            candidates=[]
+            for element in doc['elements']:
+                for q in element['quantities']:
                     candidates.append({
-                        "source": f'ifc:{row.get("global_id", "") or row.get("name", "")}:{key}',
-                        "description": f'{row.get("ifc_type", "")} {row.get("name", "")} {key}',
-                        "quantity": value,
-                        "unit": _BIM_UNITS.get(key, "unknown"),
-                        "needs_confirmation": True,
+                        'source':doc['source_id']+':'+element['global_id']+':'+q['name'],
+                        'source_sha256':doc['source_sha256'],
+                        'description':element['name']+' | '+q['name'],
+                        'quantity':q['value_si'],'unit':q['unit'],
+                        'global_id':element['global_id'],'storey_id':element['storey_id'],
+                        'quantity_evidence':q,'needs_confirmation':True,
+                        'ready':False,'commit_allowed':False,
+                        'blocker':'QTO پیش‌نمایش است؛ هویت، Crosswalk و بازبینی مالی IFC لازم است',
                     })
-            return {"kind": "bim", "source": str(p), "objects": len(rows), "candidates": candidates}
+            return {'kind':'bim','source':str(p),'objects':len(doc['elements']),
+                    'candidates':candidates,'ifc_evidence':doc,'commit_allowed':False}
+        if ext == ".ifczip":
+            raise ValueError('IFCZIP در قرارداد خواندن مهندسی فعلی پشتیبانی نمی‌شود')
 
         raise ValueError("فرمت نقشه پشتیبانی نمی‌شود؛ PDF، DWG، DXF یا IFC انتخاب کنید.")
 
@@ -88,6 +97,8 @@ class UnifiedDrawingTakeoff:
         return accepted, audit
 
     def candidates_to_rows(self, inspection, confirmations=None):
+        if inspection.get('kind')=='bim':
+            raise ValueError('پیش‌نمایش IFC بدون قرارداد هویت و بازبینی مستقل به ردیف مالی تبدیل نمی‌شود')
         accepted, _audit = self.review_candidates(inspection, confirmations)
         out = []
         seen_sources = set()

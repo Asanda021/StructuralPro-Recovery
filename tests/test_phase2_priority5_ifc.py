@@ -207,3 +207,22 @@ def test_unsupported_schema_and_map_conversion_not_claimed(tmp_path):
     with pytest.raises(ValueError,match='Schema'):read(p)
     p=tmp_path/'ifc4.ifc';model_file(p);doc=read(p)
     assert doc['map_conversion_supported'] is False
+
+
+def test_existing_unified_ifc_inspection_uses_si_qto_and_not_price_inference(tmp_path):
+    from core.drawings.unified_takeoff import UnifiedDrawingTakeoff
+    p=tmp_path/'millimetres.ifc';model_file(p,millimetres=True)
+    result=UnifiedDrawingTakeoff().inspect(p)
+    assert result['kind']=='bim'
+    assert len(result['candidates'])==12
+    assert all(Decimal(str(q['quantity']))==4 and q['unit']=='m' for q in result['candidates'])
+    assert all(q.get('commit_allowed') is False and q.get('source_sha256')==hashlib.sha256(p.read_bytes()).hexdigest() for q in result['candidates'])
+
+
+def test_ifc_preview_cannot_be_promoted_by_generic_confirmation(tmp_path):
+    from core.drawings.unified_takeoff import UnifiedDrawingTakeoff
+    from core.takeoff.workflow import TakeoffWorkflow
+    p=tmp_path/'preview.ifc';model_file(p)
+    result=UnifiedDrawingTakeoff().inspect(p)
+    with pytest.raises(ValueError,match='IFC'):UnifiedDrawingTakeoff().candidates_to_rows(result,{1:True})
+    with pytest.raises(ValueError,match='IFC'):TakeoffWorkflow().confirm(result,{1})

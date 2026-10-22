@@ -23,6 +23,8 @@ class TakeoffWorkflow:
         selected=set(selected)
         if any(isinstance(i, bool) or not isinstance(i, int) or i < 1 or i > len(rows) for i in selected):
             raise ValueError("شناسه ردیف انتخاب‌شده معتبر نیست")
+        if any(rows[i-1].get('commit_allowed') is False for i in selected):
+            raise ValueError('کمیت IFC یا منبع مسدود بدون قرارداد و بازبینی قابل تأیید مالی نیست')
         return [dict(r,confirmed=True) for i,r in enumerate(rows,1) if i in selected]
 
     def map_price_codes(self,rows,catalog_rows):
