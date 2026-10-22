@@ -481,3 +481,18 @@ def test_pdf_line_ifc_second_payment_rejected_both_directions(tmp_path,ifc_first
         with pytest.raises(ValueError,match='IFC'):formula.commit(app,'P','Q',expected_revision=1)
     assert app.store.current_digest('P')==before and len(app.open_project('P')['takeoffs'])==1
     app.store.close()
+
+
+def test_same_global_id_cannot_change_physical_member_across_revisions(tmp_path):
+    import ifcopenshell,hashlib
+    app,p,proof,proposal,args=identity_case(tmp_path)
+    app.review_ifc_identity('P',**args)
+    app.add_project_member('P','B2','F1','beam')
+    model=ifcopenshell.open(str(p));model.by_guid(proposal['global_id']).Name='Changed label only'
+    revised=tmp_path/'renamed.ifc';model.write(str(revised))
+    candidate=app.save_ifc_identity_proposal('P',str(revised),revision='R2',global_id=proposal['global_id'],floor_id='F1',member_id='B2',author='author',reference='Proposed different owner; must be rejected',expected_digest=app.store.current_digest('P'),source_sha256=hashlib.sha256(revised.read_bytes()).hexdigest())
+    before=app.store.current_digest('P')
+    with pytest.raises(ValueError,match='GlobalId'):
+        app.review_ifc_identity('P',**{**args,'proposal_id':candidate['id'],'expected_digest':before})
+    assert app.store.current_digest('P')==before and app.open_project('P')['boq']==[]
+    app.store.close()

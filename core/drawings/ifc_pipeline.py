@@ -138,6 +138,10 @@ def review_identity(service, project_id, *, proposal_id, reviewer, evidence_path
     # Different source revisions are not silently treated as new physical owners.
     # A future quantity handoff must resolve revision ownership explicitly.
     for old in project.get('ifc_identity_reviews',[]):
+        if old['global_id']==proposal['global_id'] and (
+                _identity(old['member_id'])!=_identity(proposal['member_id']) or
+                _identity(old['floor_id'])!=_identity(proposal['floor_id'])):
+            raise ValueError('GlobalId تأییدشده نمی‌تواند با تغییر Revision به عضو یا طبقه ناسازگار متصل شود')
         if old['document']['source_sha256']==source['source_sha256'] and _identity(old['member_id'])==_identity(proposal['member_id']):
             raise ValueError('همین عضو فیزیکی در این IFC قبلاً تطبیق شده است')
     prior=[x for x in project.get('ifc_identity_reviews',[]) if _identity(x['member_id'])==_identity(proposal['member_id']) and _identity(x['floor_id'])==_identity(proposal['floor_id'])]
