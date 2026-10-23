@@ -203,3 +203,49 @@ def test_statement_report_previous_work_includes_posted_amendments(tmp_path):
     rows=list(csv.reader(p.open(encoding='utf-8-sig')))
     assert any('مقدار قبلی W' in row and '4' in row for row in rows)
     a.store.close()
+
+
+def amend_period(a,docs,no,quantity):
+    d=a.create_statement_amendment('P',no,created_by='writer',expected_project_version=version(a),reason='آزمون استهلاک',source_documents=docs,
+        lines=[{'price_code':'W','source_id':'wall-1','corrected_period_quantity':quantity,'reason':'آزمون','detail_source_ref':'DETAIL-1'}])
+    return advance(a,d)
+
+
+def test_later_amendment_uses_posted_before_when_earlier_period_frees_advance(tmp_path):
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs,advance_paid='135')
+    issue(a,'S3','2');issue(a,'S4','1')
+    amend_period(a,docs,3,'1')
+    d=amend_period(a,docs,4,'2')
+    assert Decimal(d['effective_before']['advance_recovery'])==0
+    assert Decimal(d['deltas']['advance_recovery'])==50
+    assert Decimal(d['deltas']['payable_current'])==50
+    net=a.statement_amendment_summary('P',4)['net']
+    assert Decimal(net['advance_recovery'])==50 and Decimal(net['payable_current'])==150
+    a.store.close()
+
+
+def test_all_financial_depth_readers_exclude_reversals(tmp_path):
+    a,docs,_,_=fixture(tmp_path);posted(a,'budget','B','1000');c=posted(a,'commitment','C','100');cost=posted(a,'cost','I','100',commitment_id=c['id']);pay=posted(a,'payment','PAY','30',cost_id=cost['id'],commitment_id=c['id'])
+    for record,ref in [(pay,'REV-PAY'),(cost,'REV-COST')]:
+        a.financial_command('P','reverse',actor='approver',expected_version=version(a),id=record['id'],reference=ref,date='2026-10-23',reason='آزمون برگشت',source_documents=docs)
+    assert a.project_cash_flow_control('P')['cash_out']==0
+    assert a.project_budget_control('P')['actual_total']==0
+    snap=a.project_finance_payment_depth_snapshot('P')
+    assert snap['cash_flow']['cash_out']==0 and snap['budget']['actual_total']==0
+    a.store.close()
+
+
+def test_counterparty_rollup_keeps_approved_ledger_digits(tmp_path):
+    a,docs,_,_=fixture(tmp_path);a.add_project_counterparty('P','مصنوعی')
+    c=posted(a,'commitment','C','100.000000000000000000123')
+    row=next(r for r in a.project_counterparty_financial_rollup('P') if r['name']=='مصنوعی')
+    assert Decimal(str(row['commitment_amount']))==Decimal('100.000000000000000000123')
+    a.store.close()
+
+
+def test_counterparty_cash_is_only_actual_payment_not_cost_plus_commitment(tmp_path):
+    a,docs,_,_=fixture(tmp_path);a.add_project_counterparty('P','مصنوعی')
+    c=posted(a,'commitment','C','100');cost=posted(a,'cost','I','100',commitment_id=c['id']);posted(a,'payment','PAY','30',cost_id=cost['id'],commitment_id=c['id'])
+    assert a.project_counterparty_ledger('P','مصنوعی')['cash_out']==30
+    assert a.project_counterparty_summary('P')['counterparties'][0]['paid_commitments']==30
+    a.store.close()

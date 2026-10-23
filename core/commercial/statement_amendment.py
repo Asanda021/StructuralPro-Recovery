@@ -204,7 +204,9 @@ def _preview(project,no,raw_lines,docs):
         for change in _posted(project):
             if change['issued_period_no']!=no:used+=number(change['deltas']['advance_recovery'],'اصلاح استهلاک',True)
         cap=max(number(terms['advance_paid'],'پیش‌پرداخت')-used,Decimal(0))
-    money_before=_money(before,prices,rates,p['money'],advance_cap=cap,other_deduction_rate=other)
+    # The historical effective money is authoritative; freed advance capacity
+    # may change the new result, but must never rewrite the comparison baseline.
+    money_before=summary(project,no)['net']
     money_after=_money(after,prices,rates,p['money'],advance_cap=cap,other_deduction_rate=other)
     return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS}
 

@@ -131,7 +131,8 @@ def test_financial_rollup_report_kpi_audit_and_id_ledger(tmp_path):
     assert roll[0]["counterparty_id"]==cp["id"]
     assert a.project_counterparty_financial_rollup_report("audit1","csv",tmp_path/"rollup.csv").exists()
     ledger=a.project_counterparty_ledger_by_id("audit1",cp["id"])
-    assert ledger["row_count"]==4
+    assert ledger["row_count"]==5
+    assert ledger["cash_out"]==250
     k=a.project_financial_kpi_summary("audit1","1405/07/01")
     assert k["overdue_count"]==1 and k["overdue_amount"]==750
     audit=a.project_financial_audit_summary("audit1")
