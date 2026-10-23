@@ -1,0 +1,15 @@
+From /workspace/scratch/61dce18379e6/p346-restored/code.bundle
+ * remote-tracking branch origin/feature/phase3-priorities4-6-statements-ledger-20261023 -> FETCH_HEAD
+HEAD is now at 8fb1074 fix: preserve legacy amendment seals with optional deductions [skip ci]
+{
+  "zip_sha256": "859c0840e7b247e7f424c7b91a936a3d52c0c7a1639dc65cbc35fd26ba692cb2",
+  "manifest_files_verified": 42,
+  "git_head": "8fb107492a3eae4811d9cfcf11580b6887c86437",
+  "git_tree": "82fa1f14fffaa7932b3e9a6b5b7160a21a6baf86",
+  "git_fsck": "PASS",
+  "sqlite_integrity": "ok",
+  "restored_snapshot_equal": true,
+  "two_periods": true,
+  "original_fixture_unavailable_during_readback": true,
+  "recovered_reports": 4
+}
