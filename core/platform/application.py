@@ -1267,6 +1267,48 @@ class StructuralProApp:
         return {"source_id": source, "deleted_revision": current,
                 "remaining_takeoffs": len(project["takeoffs"]), "status": "retired"}
 
+    def review_boq_price_mapping(self, project_id, mapping, *, reviewer, expected_digest):
+        """Approve explicit BOQ indices against the imported file; preserve takeoffs."""
+        from core.reports.aec_office_package import audit_boq
+        from core.pricing.catalog import PriceCatalog
+        from core.pricing.import_service import verify_reviewed_rates
+        if not str(reviewer or "").strip() or not isinstance(mapping, dict) or not mapping:
+            raise ValueError("نگاشت صریح ردیف و بازبین الزامی‌اند")
+        digest = self.store.current_digest(project_id)
+        if digest != expected_digest:
+            raise RuntimeError("project changed since write began")
+        self.store._cache.pop(str(project_id), None)
+        project = self.store.get(project_id)
+        audit_boq(project)
+        book = project.get("user_pricebook_review") or {}
+        if book.get("status") != "approved" or book.get("currency") not in {"IRR", "IRT"}:
+            raise ValueError("فهرست‌بهای تأییدشده با واحد پولی صریح الزامی است")
+        verify_reviewed_rates(Path(book["path"]), book)
+        rows = deepcopy(project["boq"])
+        changes = []
+        used = set()
+        for key, code in mapping.items():
+            if isinstance(key, bool) or str(key) != str(int(key)):
+                raise ValueError("شناسه ردیف نگاشت نامعتبر است")
+            index = int(key)
+            if index < 0 or index >= len(rows) or index in used:
+                raise ValueError("ردیف نگاشت ناموجود یا تکراری است")
+            used.add(index)
+            row = rows[index]
+            price = book["rows_by_code"].get(code)
+            if not price or not PriceCatalog._units_compatible(row["unit"], price["unit"]):
+                raise ValueError("کد قیمت مفقود یا واحد ناسازگار است")
+            changes.append({"index": index, "source_ids": row.get("source_ids"),
+                            "item_code": row.get("item_code"), "price_code": code})
+            row["price_code"] = code
+            row["unit_price"] = price["unit_price"]
+        project["boq"] = build_boq(rows, aggregate=False)
+        audit_boq(project, require_pricebook=True)
+        project.setdefault("price_mapping_reviews", []).append({"reviewer": reviewer,
+            "pricebook_sha256": book["sha256"], "basis_digest": digest, "changes": changes})
+        self.store.save(project_id, project, expected_digest=digest)
+        return deepcopy(project["boq"])
+
     def review_project_factors(self, project_id, path, *, sha256, author, reviewer, expected_digest):
         """Review explicit sequential factor evidence; never infer a contract formula."""
         import hashlib, json

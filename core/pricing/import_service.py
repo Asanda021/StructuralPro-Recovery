@@ -65,10 +65,11 @@ class PricebookImportService:
         mapping: dict[str, int] = {}
         for field, aliases in cls._ALIASES.items():
             aliases_norm = {cls._norm(x) for x in aliases}
-            for idx, header in enumerate(normalized):
-                if header in aliases_norm:
-                    mapping[field] = idx
-                    break
+            matches = [idx for idx, header in enumerate(normalized) if header in aliases_norm]
+            if len(matches) > 1:
+                raise ValueError("ستون تکراری یا مبهم فهرست‌بها: " + field)
+            if matches:
+                mapping[field] = matches[0]
         return mapping
 
     @staticmethod

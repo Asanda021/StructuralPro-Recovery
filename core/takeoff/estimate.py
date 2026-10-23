@@ -22,10 +22,26 @@ def compare_estimates(old: dict[str, Any], new: dict[str, Any]) -> dict[str, Any
     """Compare two estimate snapshots without mutating either input."""
     a = number(old.get("cost", {}).get("grand_total", 0), "جمع قبلی")
     b = number(new.get("cost", {}).get("grand_total", 0), "جمع جدید")
-    old_rows = {str(r.get("price_code") or r.get("item_code") or r.get("description") or r.get("source") or i): r
-                for i, r in enumerate(old.get("boq", []) or [])}
-    new_rows = {str(r.get("price_code") or r.get("item_code") or r.get("description") or r.get("source") or i): r
-                for i, r in enumerate(new.get("boq", []) or [])}
+    from collections import Counter
+    import json
+    def base_key(row, index):
+        return str(row.get("price_code") or row.get("item_code") or row.get("description") or row.get("source") or index)
+    counts = [Counter(base_key(r,i) for i,r in enumerate(snapshot.get("boq",[]) or [])) for snapshot in (old,new)]
+    duplicate_codes = {key for count in counts for key,n in count.items() if n > 1}
+    def index_rows(snapshot):
+        result = {}
+        for i,row in enumerate(snapshot.get("boq",[]) or []):
+            key = base_key(row,i)
+            if key in duplicate_codes:
+                sources = row.get("source_ids") or [row.get("source_id") or row.get("source")]
+                if not all(isinstance(x,str) and x.strip() for x in sources):
+                    raise ValueError("مقایسه ردیف‌های همنام به هویت منبع نیاز دارد")
+                key += ":" + json.dumps([sorted(sources),row.get("item_code"),row.get("unit"),row.get("group")],ensure_ascii=False)
+            if key in result:
+                raise ValueError("هویت ردیف مقایسه تکراری است")
+            result[key] = row
+        return result
+    old_rows, new_rows = index_rows(old), index_rows(new)
     keys = old_rows.keys() | new_rows.keys()
     line_changes = []
     for key in sorted(keys):

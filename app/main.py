@@ -435,6 +435,12 @@ def main()->int:
             FactorReviewDialog(service,bpid.text().strip(),w).exec()
         except Exception as exc:QMessageBox.critical(w,"خطای مدرک ضرایب",str(exc))
     factor_review_button=QPushButton("بازبینی مدرک ضرایب");factor_review_button.clicked.connect(review_factor_document);bv.addWidget(factor_review_button)
+    def review_price_mapping():
+        try:
+            from app.financial_factor_review import BOQPriceMappingDialog
+            BOQPriceMappingDialog(service,bpid.text().strip(),w).exec()
+        except Exception as exc:QMessageBox.critical(w,"خطای تطبیق قیمت",str(exc))
+    mapping_button=QPushButton("تطبیق و تأیید قیمت");mapping_button.clicked.connect(review_price_mapping);bv.addWidget(mapping_button)
     bgo.clicked.connect(show_boq)
     pages.addWidget(p); idx_boq=pages.count()-1
 

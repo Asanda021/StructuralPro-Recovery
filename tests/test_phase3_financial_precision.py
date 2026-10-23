@@ -134,3 +134,33 @@ def test_reviewed_factors_use_document_order_after_sqlite_reopen(tmp_path):
     with pytest.raises(ValueError):app.recalculate_estimate('P')
     assert app.store.current_digest('P')==before
     app.store.close()
+
+
+def test_reviewed_boq_mapping_uses_imported_rate_without_changing_takeoff(tmp_path):
+    from core.platform.application import StructuralProApp
+    from copy import deepcopy
+    app=StructuralProApp(tmp_path/'app');app.create_project('fixture','P')
+    app.add_takeoff('P','building','wall',source_id='fixture:mapping:wall',length=3,height=2,openings=0,count=1)
+    p=tmp_path/'p.csv';p.write_text('code,description,unit,unit_price\nA,test,m2,100\nB,wrong unit,m,200\n')
+    app.import_project_pricebook('P',p,year=1405,approved_by='reviewer',currency='IRR',source_version='R1')
+    before=deepcopy(app.open_project('P'));digest=app.store.current_digest('P')
+    with pytest.raises(ValueError):app.review_boq_price_mapping('P',{'0':'B'},reviewer='reviewer',expected_digest=digest)
+    assert app.store.current_digest('P')==digest
+    app.review_boq_price_mapping('P',{'0':'A'},reviewer='reviewer',expected_digest=digest)
+    assert app.open_project('P')['takeoffs']==before['takeoffs']
+    assert app.recalculate_estimate('P')['cost']['grand_total']==600
+    app.store.close()
+
+
+def test_pricebook_ambiguous_duplicate_headers_are_rejected(tmp_path):
+    p=tmp_path/'ambiguous.csv';p.write_text('code,code,description,unit,unit_price\nA,B,fixture,m,100\n')
+    service=PricebookImportService()
+    with pytest.raises(ValueError):service.import_file(p,year=1405)
+    assert not service.catalog._items
+
+
+def test_snapshot_comparison_does_not_drop_same_code_different_sources():
+    old={'cost':{'grand_total':300},'boq':[{'item_code':'A','source_id':'S1','quantity':1,'unit_price':100},{'item_code':'A','source_id':'S2','quantity':2,'unit_price':100}]}
+    new={'cost':{'grand_total':400},'boq':[{'item_code':'A','source_id':'S1','quantity':2,'unit_price':100},{'item_code':'A','source_id':'S2','quantity':2,'unit_price':100}]}
+    changes=compare_estimates(old,new)['line_changes']
+    assert len(changes)==1 and changes[0]['quantity_delta']==1

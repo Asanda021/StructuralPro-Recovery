@@ -23,3 +23,19 @@ def test_real_factor_review_click_persists_document(tmp_path):
     assert service.store.current_digest('P')==before
     assert 'نامعتبر' in dialog.findChild(QLabel,'FactorReviewStatus').text()
     dialog.close();service.store.close()
+
+
+def test_real_boq_price_mapping_click(tmp_path):
+    from app.financial_factor_review import BOQPriceMappingDialog
+    from PySide6.QtWidgets import QTableWidget,QTableWidgetItem
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'app');service.create_project('fixture','P')
+    service.add_takeoff('P','building','wall',source_id='fixture:qt:mapping',length=3,height=2,openings=0,count=1)
+    p=tmp_path/'p.csv';p.write_text('code,description,unit,unit_price\nA,test,m2,100\n')
+    service.import_project_pricebook('P',p,year=1405,approved_by='reviewer',currency='IRR')
+    dialog=BOQPriceMappingDialog(service,'P');dialog.show();qt.processEvents()
+    dialog.findChild(QLineEdit,'MappingReviewer').setText('reviewer')
+    dialog.findChild(QTableWidget,'BOQPriceMapping').setItem(0,3,QTableWidgetItem('A'))
+    QTest.mouseClick(dialog.findChild(QPushButton,'ApprovePriceMapping'),Qt.MouseButton.LeftButton)
+    assert service.recalculate_estimate('P')['cost']['grand_total']==600
+    dialog.close();service.store.close()
