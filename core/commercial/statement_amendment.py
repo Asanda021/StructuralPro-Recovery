@@ -102,12 +102,18 @@ def _basis(project):
 
 def _posted(project):return [d for d in project.get('statement_amendments',[]) if d.get('status')=='POSTED']
 def _posted_digest(project):return digest([(d['amendment_id'],d['audit_hash']) for d in _posted(project)])
+def _subject(doc):
+    result={k:doc[k] for k in SUBJECT_KEYS}
+    for k in ('effective_rates_before','effective_rates_after'):
+        if k in doc:result[k]=doc[k]
+    return result
+
 def _seal(doc):
-    doc['content_digest']=digest({k:doc[k] for k in SUBJECT_KEYS})
+    doc['content_digest']=digest(_subject(doc))
     doc['audit_hash']=digest({k:v for k,v in doc.items() if k!='audit_hash'})
     return doc
 def _verify(doc):
-    if doc.get('content_digest')!=digest({k:doc[k] for k in SUBJECT_KEYS}):raise ValueError("اثر انگشت محتوای اصلاحیه نامعتبر است")
+    if doc.get('content_digest')!=digest(_subject(doc)):raise ValueError("اثر انگشت محتوای اصلاحیه نامعتبر است")
     if doc.get('audit_hash')!=digest({k:v for k,v in doc.items() if k!='audit_hash'}):raise ValueError("زنجیره ممیزی اصلاحیه نامعتبر است")
 
 def _snapshot(project,doc):
@@ -152,7 +158,7 @@ def _money(quantities,prices,rates,m,*,advance_cap=None,other_deduction_rate=0):
         ctx.traps[Inexact]=False;ctx.traps[Rounded]=False
         return {k:format(v.quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k,v in raw.items()}
 
-def _preview(project,no,raw_lines,docs):
+def _preview(project,no,raw_lines,docs,corrected_rates=None):
     from core.takeoff.units import normalize_unit
     from core.reports.aec_office_package import audit_boq
     audit_boq(project,require_pricebook=True)
@@ -198,7 +204,7 @@ def _preview(project,no,raw_lines,docs):
                       'reviewed_unit_price':quantity_text(prices[code]),'pricebook_sha256':project['user_pricebook_review']['sha256'],
                       'reason':_text(raw['reason'],'علت ردیف'),'detail_source_ref':ref})
     cap=None;other=0
-    if issued.get('reference') and project.get('statement_workflow_terms'):
+    if project.get('statement_workflow_terms'):
         terms=project['statement_workflow_terms']['terms'];other=terms['other_deduction_rate']
         used=sum((number(x['advance_recovery'],'استهلاک') for x in project.get('statement_periods',[]) if x['number']!=no),Decimal(0))
         for change in _posted(project):
@@ -207,8 +213,21 @@ def _preview(project,no,raw_lines,docs):
     # The historical effective money is authoritative; freed advance capacity
     # may change the new result, but must never rewrite the comparison baseline.
     money_before=summary(project,no)['net']
-    money_after=_money(after,prices,rates,p['money'],advance_cap=cap,other_deduction_rate=other)
-    return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS}
+    effective_rates={**rates,'other_deduction_rate':number(other,'سایر کسورات')}
+    for change in _posted(project):
+        if change['issued_period_no']==no and change.get('effective_rates_after'):
+            effective_rates={k:number(v,k) for k,v in change['effective_rates_after'].items()}
+    next_rates=dict(effective_rates)
+    if corrected_rates is not None:
+        if not project.get('statement_workflow_terms'):raise ValueError('اصلاح نرخ کسورات نیازمند شرایط صریح قرارداد است')
+        if not isinstance(corrected_rates,dict) or set(corrected_rates)!=set(effective_rates):
+            raise ValueError('هر پنج نرخ اصلاحی باید صریح و کامل باشند')
+        next_rates={k:number(v,'نرخ اصلاحی '+k) for k,v in corrected_rates.items()}
+        if any(v>1 for v in next_rates.values()):raise ValueError('نرخ اصلاحی باید بین صفر و یک باشد')
+    money_after=_money(after,prices,next_rates,p['money'],advance_cap=cap,other_deduction_rate=next_rates['other_deduction_rate'])
+    rate_evidence={'effective_rates_before':{k:quantity_text(v) for k,v in effective_rates.items()},
+                   'effective_rates_after':{k:quantity_text(v) for k,v in next_rates.items()}}
+    return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS},rate_evidence
 
 def dispatch(previous,command):
     project=deepcopy(previous);project.pop('_meta',None)
@@ -217,6 +236,8 @@ def dispatch(previous,command):
         op=command['op'];actor=_text(command['actor'],'مسئول');at=command['at']
         if op=='configure':
             if project.get('statement_amendment_policy'):raise ValueError("سیاست مالی ثبت‌شده قابل جایگزینی مستقیم نیست")
+            if not (project.get('metadata') or {}).get('financial_owner_id') and command.get('establish_owner') is True:
+                project.setdefault('metadata',{})['financial_owner_id']=actor
             if actor!=(project.get('metadata') or {}).get('financial_owner_id'):
                 raise ValueError("مالک مالی پروژه صریح تعیین نشده یا مسئول مجاز نیست")
             raw=command['policy'];m=raw.get('money',{});authorities=raw.get('authorities')
@@ -235,10 +256,10 @@ def dispatch(previous,command):
         docs=project.setdefault('statement_amendments',[])
         if op=='create':
             actor=authorize(project,actor,'create');no=_int(command['period_no'],'شماره دوره')
-            source_docs=documents(command['source_documents']);lines,before,after,deltas=_preview(project,no,command['lines'],source_docs)
+            source_docs=documents(command['source_documents']);lines,before,after,deltas,rate_evidence=_preview(project,no,command['lines'],source_docs,command.get('corrected_rates'))
             if any(d['amendment_id']==command['id'] for d in docs):raise ValueError("شناسه اصلاحیه تکراری است")
             d={'amendment_id':command['id'],'project_id':project['id'],'issued_period_no':no,'sequence':len(docs)+1,
-               'revision':1,'status':'DRAFT','created_by':actor,'created_at':at,'reason':_text(command['reason'],'علت اصلاحیه'),
+               **rate_evidence,'revision':1,'status':'DRAFT','created_by':actor,'created_at':at,'reason':_text(command['reason'],'علت اصلاحیه'),
                'source_documents':source_docs,'lines':lines,'deltas':deltas,'effective_before':before,'effective_after':after,
                'issued_statement_digest':digest(_period(project,no)),'contract_basis_digest':_basis(project),
                'issued_history_digest':digest(project.get('statement_periods',[])),'posted_state_digest':_posted_digest(project),
@@ -252,8 +273,8 @@ def dispatch(previous,command):
             actor=authorize(project,actor,'create')
             if d['status']!='DRAFT' or actor!=d['created_by']:raise ValueError("فقط نویسنده می‌تواند پیش‌نویس را ویرایش کند")
             source_docs=documents(command['source_documents'])
-            lines,before,after,deltas=_preview(project,d['issued_period_no'],command['lines'],source_docs)
-            d.update(reason=_text(command['reason'],'علت اصلاحیه'),source_documents=source_docs,
+            lines,before,after,deltas,rate_evidence=_preview(project,d['issued_period_no'],command['lines'],source_docs,command.get('corrected_rates'))
+            d.update(**rate_evidence,reason=_text(command['reason'],'علت اصلاحیه'),source_documents=source_docs,
                      lines=lines,effective_before=before,effective_after=after,deltas=deltas,
                      issued_statement_digest=digest(_period(project,d['issued_period_no'])),
                      contract_basis_digest=_basis(project),issued_history_digest=digest(project.get('statement_periods',[])),

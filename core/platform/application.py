@@ -1500,8 +1500,8 @@ class StructuralProApp:
         from core.commercial.statement_amendment import StatementAmendmentService
         return StatementAmendmentService(self.store).execute(project_id, op, actor, expected_project_version, **data)
 
-    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version):
-        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents)
+    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version, establish_owner=False):
+        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents, establish_owner=establish_owner)
 
     def create_statement_amendment(self, project_id, period_no, *, created_by, expected_project_version, **data):
         return self._amendment(project_id, 'create', created_by, expected_project_version, period_no=period_no, **data)

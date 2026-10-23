@@ -25,6 +25,10 @@ class StatementAmendmentDialog(QDialog):
         for label,widget in [('مسئول دارای مجوز مالک',self.actor),('شماره صورت‌وضعیت صادرشده',self.period),
                              ('سند موجود',self.selected),('علت / علت رد',self.reason),
                              ('مدارک JSON: ref, path, sha256',self.docs),('مقدار اصلاحی مستند (JSON)',self.lines)]:form.addRow(label,widget)
+        self.corrected_rates={}
+        for key,label in [('retention_rate','سپرده'),('advance_recovery_rate','استهلاک'),('tax_rate','مالیات'),('insurance_rate','بیمه'),('other_deduction_rate','سایر کسورات')]:
+            entry=QLineEdit();entry.setObjectName('AmendmentCorrection_'+key);entry.setPlaceholderText('اختیاری؛ برای اصلاح نرخ، هر پنج نرخ صریح لازم است')
+            self.corrected_rates[key]=entry;form.addRow('نرخ اصلاحی '+label,entry)
         commands=QHBoxLayout();layout.addLayout(commands);self.buttons={}
         for op,title in [('refresh','بازخوانی صریح'),('create','پیش‌نویس جدید'),('edit','ویرایش پیش‌نویس'),
                          ('review','بازبینی'),('approve','تأیید مستقل'),('post','ثبت نهایی'),('reject','رد')]:
@@ -59,6 +63,7 @@ class StatementAmendmentDialog(QDialog):
         self.period.setText(str(d['issued_period_no']));self.reason.setText(d['reason'])
         self.docs.setPlainText(json.dumps([{k:x[k] for k in ('ref','path','sha256')} for x in d['source_documents']],ensure_ascii=False,indent=2))
         self.lines.setPlainText(json.dumps([{k:x[k] for k in ('price_code','source_id','corrected_period_quantity','reason','detail_source_ref')} for x in d['lines']],ensure_ascii=False,indent=2))
+        for key,entry in self.corrected_rates.items():entry.setText((d.get('effective_rates_after') or {}).get(key,'') if self.snapshot.get('statement_workflow_terms') else '')
         self.output.setPlainText(json.dumps({'document':d,'summary':self.service.statement_amendment_summary(self.project_id,d['issued_period_no'])},ensure_ascii=False,indent=2))
 
     def run(self,op):
@@ -68,6 +73,8 @@ class StatementAmendmentDialog(QDialog):
             base={'expected_project_version':version}
             if op in ('create','edit'):
                 data={'reason':self.reason.text(),'source_documents':json.loads(self.docs.toPlainText()),'lines':json.loads(self.lines.toPlainText()),**base}
+                rates={key:entry.text().strip() for key,entry in self.corrected_rates.items()}
+                if any(rates.values()):data['corrected_rates']=rates
                 if op=='create':result=self.service.create_statement_amendment(self.project_id,int(self.period.text()),created_by=actor,**data)
                 else:
                     if not d:raise ValueError('اصلاحیه را انتخاب کنید')

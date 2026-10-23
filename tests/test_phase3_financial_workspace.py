@@ -77,3 +77,42 @@ w=FinancialWorkspace(a,'P');w.show();qt.processEvents();w.grab().save({str(tmp_p
 '''
     p=subprocess.run([sys.executable,'-X','faulthandler','-c',code],capture_output=True,text=True,env={**os.environ,'QT_QPA_PLATFORM':'offscreen'},timeout=30)
     assert p.returncode==0,p.stderr
+
+
+def test_deduction_correction_fields_really_create_amendment(tmp_path):
+    import json
+    from app.statement_amendment import StatementAmendmentDialog
+    from test_phase3_statement_ledger_completion import setup_workflow,issue
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs);issue(a,'S3','1')
+    qt=QApplication.instance() or QApplication([]);w=StatementAmendmentDialog(a,'P');w.show();qt.processEvents()
+    w.actor.setText('writer');w.period.setText('3');w.reason.setText('اصلاح مستند کسور');w.docs.setPlainText(json.dumps(docs));w.lines.setPlainText(json.dumps([{'price_code':'W','source_id':'wall-1','corrected_period_quantity':'1','reason':'اصلاح کسور','detail_source_ref':'DETAIL-1'}]))
+    for key,value in {'retention_rate':'.2','advance_recovery_rate':'.5','tax_rate':'0','insurance_rate':'0','other_deduction_rate':'0'}.items():w.corrected_rates[key].setText(value)
+    QTest.mouseClick(w.buttons['create'],Qt.LeftButton)
+    assert w.document()['deltas']['payable_current']=='-20.00',w.output.toPlainText()
+    w.close();a.store.close()
+
+
+def test_fresh_project_authority_can_be_explicitly_configured_in_ui(tmp_path):
+    from core.platform.application import StructuralProApp
+    from app.financial_workspace import FinancialWorkspace
+    import hashlib
+    a=StructuralProApp(tmp_path/'new');a.create_project('پروژه آزمایشی','P')
+    proof=tmp_path/'owner.txt';proof.write_text('Explicit synthetic owner declaration and authorities, not authenticated identity.')
+    qt=QApplication.instance() or QApplication([]);w=FinancialWorkspace(a,'P');w.show();w.findChild(QTabWidget).setCurrentIndex(3);qt.processEvents()
+    for name,value in [('FinanceProof',str(proof)),('FinanceSHA',hashlib.sha256(proof.read_bytes()).hexdigest()),('FinanceOwner','owner'),('FinanceCreator','writer'),('FinanceReviewer','reviewer'),('FinanceApprover','approver'),('FinancePrecision','2')]:w.findChild(QLineEdit,name).setText(value)
+    w.currency.setCurrentIndex(w.currency.findData('IRR'));w.rounding.setCurrentIndex(w.rounding.findData('ROUND_HALF_UP'))
+    QTest.mouseClick(w.findChild(QPushButton,'FinanceConfigureAuthority'),Qt.LeftButton)
+    p=a.open_project('P');assert p['metadata']['financial_owner_id']=='owner'
+    assert p['statement_amendment_policy']['authorities']['reviewer']==['review']
+    w.close();a.store.close()
+
+
+def test_financial_workspace_accepts_jalali_date_and_stores_iso(tmp_path):
+    from app.financial_workspace import FinancialWorkspace
+    a,docs,_,_=fixture(tmp_path);qt=QApplication.instance() or QApplication([]);w=FinancialWorkspace(a,'P')
+    w.inputs['Date'].setText('۱۴۰۵/۰۸/۰۱')
+    assert w.date_iso()=='2026-10-23'
+    w.inputs['Date'].setText('۱۴۰۵/۰۷/۳۱')
+    import pytest
+    with pytest.raises(ValueError):w.date_iso()
+    w.close();a.store.close()

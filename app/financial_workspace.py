@@ -20,11 +20,13 @@ class FinancialWorkspace(QDialog):
         layout=QVBoxLayout(self)
         note=QLabel('ثبت مسئولیت بر اساس مجوز مستند مالک است؛ احراز هویت اشخاص انجام نمی‌شود. هیچ پرداخت بانکی از این پنجره اجرا نمی‌شود.');note.setWordWrap(True);layout.addWidget(note)
         self.inputs={};common=QFormLayout()
-        for key,label in [('Actor','مسئول عملیات'),('Date','تاریخ سند میلادی YYYY-MM-DD؛ نمایش گزارش شمسی'),('Proof','مسیر مدرک'),('SHA','SHA-256 مدرک')]:self.field(common,key,label)
+        for key,label in [('Actor','مسئول عملیات'),('Date','تاریخ شمسی سند'),('Proof','مسیر مدرک'),('SHA','SHA-256 مدرک')]:self.field(common,key,label)
+        self.inputs['Date'].setPlaceholderText('۱۴۰۵/۰۸/۰۱')
+        self.inputs['Date'].editingFinished.connect(self.normalize_date)
         layout.addLayout(common);tabs=QTabWidget();layout.addWidget(tabs,1)
         statement=QWidget();sv=QVBoxLayout(statement);form=QFormLayout()
         for key,label in [('Contract','شماره قرارداد'),('Advance','پیش‌پرداخت پرداخت‌شده'),('Retention','نرخ سپرده'),('Recovery','نرخ استهلاک'),('Tax','نرخ مالیات'),('Insurance','نرخ بیمه'),('Other','نرخ سایر کسورات')]:self.field(form,key,label)
-        self.currency=QComboBox();self.currency.addItem('انتخاب واحد پول',None);self.currency.addItem('ریال','IRR');self.currency.addItem('تومان','IRT');form.addRow('واحد پول صریح',self.currency)
+        self.currency=QComboBox();self.currency.addItem('انتخاب واحد پول',None);self.currency.addItem('ریال','IRR');self.currency.addItem('تومان','IRT');common.addRow('واحد پول صریح',self.currency)
         self.factor=QComboBox();self.factor.addItem('نرخ پایه؛ عدم اعمال ضرایب برآورد','base_rates_only');self.factor.addItem('ضرایب ترتیبی بازبینی‌شده','reviewed_sequential_factors');form.addRow('مبنای قراردادی ضرایب',self.factor)
         sv.addLayout(form);self.button(sv,'تنظیم شرایط قرارداد','StatementConfigure',self.configure)
         form=QFormLayout();self.field(form,'StatementReference','شماره صورت‌وضعیت');self.field(form,'Quantities','کارکرد همه کدها، حتی صفر: کد=مقدار, کد=مقدار');sv.addLayout(form)
@@ -47,6 +49,13 @@ class FinancialWorkspace(QDialog):
         self.format=QComboBox()
         for value in ['pdf','xlsx','docx','csv']:self.format.addItem(value.upper(),value)
         dv.addWidget(self.format);self.button(dv,'خروجی دفتر مالی','FinanceExport',self.export);tabs.addTab(dashboard,'کنترل هزینه و گزارش')
+        authority=QWidget();av=QVBoxLayout(authority);af=QFormLayout()
+        for key,label in [('Owner','هویت اظهارشده مالک مالی'),('Creator','ثبت‌کننده مجاز'),('Reviewer','بازبین مستقل مجاز'),('Approver','تأییدکننده و صادرکننده مجاز'),('Precision','تعداد اعشار پول، صریح بین صفر تا شش')]:self.field(af,key,label)
+        self.rounding=QComboBox();self.rounding.addItem('انتخاب سیاست گردکردن',None)
+        for text,value in [('نزدیک‌ترین؛ نیم به بالا','ROUND_HALF_UP'),('نزدیک‌ترین؛ نیم به زوج','ROUND_HALF_EVEN'),('قطع اعشار','ROUND_DOWN')]:self.rounding.addItem(text,value)
+        af.addRow('سیاست گردکردن مستند',self.rounding);av.addLayout(af)
+        note=QLabel('این ثبت، اظهار مالک و مجوزهای مستند محلی است؛ هویت یا امضای اشخاص توسط نرم‌افزار احراز نمی‌شود. مدرک و هش را صریح وارد کنید. سیاست موجود بازنویسی نمی‌شود.');note.setWordWrap(True);av.addWidget(note)
+        self.button(av,'ثبت اظهار مالک و مجوز مستند','FinanceConfigureAuthority',self.configure_authority);tabs.addTab(authority,'سیاست و مجوز')
         self.status=QLabel('در انتظار ورودی صریح');self.status.setObjectName('FinanceStatus');self.status.setWordWrap(True);layout.addWidget(self.status)
         self.refresh()
 
@@ -85,7 +94,7 @@ class FinancialWorkspace(QDialog):
                     parts=token.split('=')
                     if len(parts)!=2 or not parts[0].strip() or parts[0].strip() in values:raise ValueError('کارکرد باید کد=مقدار و بدون تکرار باشد')
                     values[parts[0].strip()]=parts[1].strip()
-                args={'reference':self.text('StatementReference'),'date':self.text('Date'),'current_quantities':values}
+                args={'reference':self.text('StatementReference'),'date':self.date_iso(),'current_quantities':values}
             else:args['id']=self.selected(self.statements)
             self.service.statement_workflow(self.pid,op,actor=self.text('Actor'),expected_version=self.version,**args)
         self.call(run)
@@ -94,12 +103,12 @@ class FinancialWorkspace(QDialog):
         def run():
             args={}
             if op=='create':
-                args=dict(kind=self.kind.currentData(),reference=self.text('Reference'),amount=self.text('Amount'),currency=self.currency.currentData(),date=self.text('Date'),counterparty=self.text('Party'),description=self.text('Description'),source_documents=self.docs())
+                args=dict(kind=self.kind.currentData(),reference=self.text('Reference'),amount=self.text('Amount'),currency=self.currency.currentData(),date=self.date_iso(),counterparty=self.text('Party'),description=self.text('Description'),source_documents=self.docs())
                 for field,key in [('Commitment','commitment_id'),('Cost','cost_id'),('Period','statement_no')]:
                     if self.text(field):args[key]=int(self.text(field))
             else:
                 args['id']=self.selected(self.records)
-                if op=='reverse':args.update(reference=self.text('Reference'),date=self.text('Date'),reason=self.text('Reason'),source_documents=self.docs())
+                if op=='reverse':args.update(reference=self.text('Reference'),date=self.date_iso(),reason=self.text('Reason'),source_documents=self.docs())
             self.service.financial_command(self.pid,op,actor=self.text('Actor'),expected_version=self.version,**args)
         self.call(run)
 
@@ -148,3 +157,30 @@ class FinancialWorkspace(QDialog):
     def amendment(self):
         from app.statement_amendment import StatementAmendmentDialog
         self.call(lambda:StatementAmendmentDialog(self.service,self.pid,self).exec())
+
+    def configure_authority(self):
+        def run():
+            names=[self.text(key) for key in ('Creator','Reviewer','Approver')]
+            if any(not name for name in names) or len(set(names))!=3:raise ValueError('سه مسئول مستقل و صریح لازم است')
+            policy={'money':{'currency':self.currency.currentData(),'decimal_places':int(self.text('Precision')),'rounding':self.rounding.currentData()},
+                    'authorities':{names[0]:['create'],names[1]:['review'],names[2]:['approve','post']}}
+            self.service.configure_statement_amendments(self.pid,owner_id=self.text('Owner'),policy=policy,source_documents=self.docs(),expected_project_version=self.version,establish_owner=True)
+        self.call(run)
+
+    def date_iso(self):
+        from PySide6.QtCore import QCalendar
+        from datetime import date
+        raw=self.text('Date').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789'))
+        try:
+            year,month,day=map(int,raw.replace('-','/').split('/'))
+            if year<1700:
+                q=QCalendar(QCalendar.Jalali).dateFromParts(year,month,day)
+                if not q.isValid():raise ValueError()
+                return q.toString('yyyy-MM-dd')
+            return date(year,month,day).isoformat()
+        except (ValueError,TypeError):raise ValueError('تاریخ شمسی معتبر به شکل سال/ماه/روز وارد کنید')
+
+    def normalize_date(self):
+        from datetime import date
+        try:self.inputs['Date'].setText(report_date(date.fromisoformat(self.date_iso())))
+        except ValueError:pass

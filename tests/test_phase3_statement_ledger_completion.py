@@ -256,3 +256,37 @@ def test_new_ledger_cannot_reuse_existing_legacy_bank_reference(tmp_path):
     before=a.open_project('P')
     with pytest.raises(ValueError):ledger(a,kind='payment',reference='OLD-BANK',amount='10',currency='IRR',date='2026-10-23',counterparty='مصنوعی',description='تکرار سند قبلی')
     assert a.open_project('P')==before;a.store.close()
+
+
+def test_official_deduction_correction_preserves_original_and_subsequent_baseline(tmp_path):
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs);issue(a,'S3','1')
+    before=a.statement_periods('P')[2]
+    rates={'retention_rate':'.2','advance_recovery_rate':'.5','tax_rate':'0','insurance_rate':'0','other_deduction_rate':'0'}
+    d=a.create_statement_amendment('P',3,created_by='writer',expected_project_version=version(a),reason='اصلاح مستند نرخ کسورات',source_documents=docs,corrected_rates=rates,
+        lines=[{'price_code':'W','source_id':'wall-1','corrected_period_quantity':'1','reason':'مقدار بدون تغییر؛ اصلاح کسور','detail_source_ref':'DETAIL-1'}])
+    d=advance(a,d)
+    assert Decimal(d['deltas']['retention'])==20 and Decimal(d['deltas']['payable_current'])==-20
+    assert a.statement_periods('P')[2]==before
+    d2=amend_period(a,docs,3,'1')
+    assert Decimal(d2['deltas']['payable_current'])==0
+    assert Decimal(a.statement_amendment_summary('P',3)['net']['payable_current'])==80
+    a.store.close()
+
+
+@pytest.mark.parametrize('rates',[{'retention_rate':'.2'},{'retention_rate':True,'advance_recovery_rate':'.5','tax_rate':'0','insurance_rate':'0','other_deduction_rate':'0'},{'retention_rate':'2','advance_recovery_rate':'.5','tax_rate':'0','insurance_rate':'0','other_deduction_rate':'0'}])
+def test_invalid_deduction_correction_rolls_back(tmp_path,rates):
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs);issue(a,'S3','1');before=a.open_project('P')
+    with pytest.raises(ValueError):a.create_statement_amendment('P',3,created_by='writer',expected_project_version=version(a),reason='آزمون',source_documents=docs,corrected_rates=rates,
+        lines=[{'price_code':'W','source_id':'wall-1','corrected_period_quantity':'1','reason':'آزمون','detail_source_ref':'DETAIL-1'}])
+    assert a.open_project('P')==before;a.store.close()
+
+
+def test_legacy_rate_correction_cannot_exceed_documented_total_advance(tmp_path):
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs)
+    d=a.create_statement_amendment('P',1,created_by='writer',expected_project_version=version(a),reason='اصلاح مستند',source_documents=docs,
+        corrected_rates={'retention_rate':'0','advance_recovery_rate':'1','tax_rate':'0','insurance_rate':'0','other_deduction_rate':'0'},
+        lines=[{'price_code':'W','source_id':'wall-1','corrected_period_quantity':'5','reason':'بدون تغییر مقدار','detail_source_ref':'DETAIL-1'}])
+    d=advance(a,d)
+    assert Decimal(a.statement_amendment_summary('P',1)['net']['advance_recovery'])==25
+    assert Decimal(a.statement_amendment_summary('P',2)['net']['advance_recovery'])==10
+    a.store.close()
