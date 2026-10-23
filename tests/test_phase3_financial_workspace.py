@@ -35,7 +35,7 @@ def test_real_workspace_registers_budget_and_rejects_duplicate(tmp_path):
     w.close();a.store.close()
 
 
-def test_statement_lifecycle_real_clicks(tmp_path):
+def test_statement_lifecycle_real_clicks(tmp_path,monkeypatch):
     from app.financial_workspace import FinancialWorkspace
     from test_phase3_statement_ledger_completion import setup_workflow
     a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs)
@@ -47,4 +47,18 @@ def test_statement_lifecycle_real_clicks(tmp_path):
         w.findChild(QLineEdit,'FinanceActor').setText(actor);QTest.mouseClick(w.findChild(QPushButton,name),Qt.LeftButton)
     assert a.open_project('P')['statement_workflow'][0]['status']=='ISSUED',w.status.text()
     assert len(a.statement_periods('P'))==3
+    from PySide6.QtWidgets import QFileDialog
+    target=tmp_path/'clicked-statement.pdf'
+    monkeypatch.setattr(QFileDialog,'getSaveFileName',lambda *args,**kwargs:(str(target),'PDF'))
+    qt.processEvents();QTest.mouseClick(w.statements.viewport(),Qt.LeftButton,pos=w.statements.visualItemRect(w.statements.item(0,0)).center())
+    QTest.mouseClick(w.findChild(QPushButton,'StatementExport'),Qt.LeftButton)
+    assert target.stat().st_size>100,w.status.text()
+    w.close();a.store.close()
+
+
+def test_workspace_exposes_real_statement_export_and_amendment(tmp_path):
+    from app.financial_workspace import FinancialWorkspace
+    a,docs,_,_=fixture(tmp_path);qt=QApplication.instance() or QApplication([]);w=FinancialWorkspace(a,'P')
+    assert w.findChild(QPushButton,'StatementExport') is not None
+    assert w.findChild(QPushButton,'StatementAmendment') is not None
     w.close();a.store.close()

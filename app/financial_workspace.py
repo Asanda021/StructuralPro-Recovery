@@ -29,7 +29,10 @@ class FinancialWorkspace(QDialog):
         form=QFormLayout();self.field(form,'StatementReference','شماره صورت‌وضعیت');self.field(form,'Quantities','کارکرد همه کدها، حتی صفر: کد=مقدار, کد=مقدار');sv.addLayout(form)
         bar=QHBoxLayout()
         for title,name,op in [('پیش‌نویس','StatementCreate','create'),('بازبینی','StatementReview','review'),('تأیید','StatementApprove','approve'),('صدور','StatementIssue','issue')]:self.button(bar,title,name,lambda checked=False,op=op:self.statement(op))
-        sv.addLayout(bar);self.statements=self.table(['شماره سند','تاریخ شمسی','وضعیت','ناخالص','خالص']);sv.addWidget(self.statements);tabs.addTab(statement,'صورت‌وضعیت')
+        sv.addLayout(bar);self.statements=self.table(['شماره سند','تاریخ شمسی','وضعیت','ناخالص','خالص']);sv.addWidget(self.statements)
+        self.button(sv,'خروجی صورت‌وضعیت انتخاب‌شده','StatementExport',self.export_statement)
+        self.button(sv,'اصلاحیه رسمی مستقل','StatementAmendment',self.amendment)
+        tabs.addTab(statement,'صورت‌وضعیت')
         ledger=QWidget();lv=QVBoxLayout(ledger);form=QFormLayout()
         self.kind=QComboBox();self.kind.setObjectName('FinanceKind')
         for key,label in KINDS.items():self.kind.addItem(label,key)
@@ -129,3 +132,18 @@ class FinancialWorkspace(QDialog):
     def export(self):
         fmt=self.format.currentData();path=QFileDialog.getSaveFileName(self,'ذخیره گزارش','دفتر-مالی.'+fmt,'*.'+fmt)[0]
         if path:self.call(lambda:self.service.verified_financial_report(self.pid,fmt,path))
+
+    def export_statement(self):
+        def run():
+            identity=self.selected(self.statements)
+            p=self.service.open_project(self.pid)
+            doc=next(d for d in p['statement_workflow'] if d['id']==identity)
+            if doc['status']!='ISSUED':raise ValueError('گزارش رسمی فقط برای سند صادرشده مجاز است')
+            fmt=self.format.currentData()
+            path=QFileDialog.getSaveFileName(self,'گزارش صورت‌وضعیت','صورت‌وضعیت.'+fmt,'*.'+fmt)[0]
+            if path:self.service.verified_statement_report(self.pid,doc['period']['number'],fmt,path)
+        self.call(run)
+
+    def amendment(self):
+        from app.statement_amendment import StatementAmendmentDialog
+        self.call(lambda:StatementAmendmentDialog(self.service,self.pid,self).exec())

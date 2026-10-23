@@ -186,3 +186,20 @@ def test_receipt_blocks_amendment_that_would_over_settle(tmp_path):
     before=a.open_project('P')
     with pytest.raises(ValueError):a.post_statement_amendment('P',d['amendment_id'],posted_by='approver',expected_revision=d['revision'],expected_project_version=version(a))
     assert a.open_project('P')==before;a.store.close()
+
+
+def test_statement_report_localizes_engineering_units(tmp_path):
+    import csv
+    a,docs,_,_=fixture(tmp_path);p=tmp_path/'statement.csv';a.verified_statement_report('P',1,'csv',p)
+    rows=list(csv.reader(p.open(encoding='utf-8-sig')))
+    assert any('متر مربع' in row for row in rows)
+    a.store.close()
+
+
+def test_statement_report_previous_work_includes_posted_amendments(tmp_path):
+    import csv
+    a,docs,_,_=fixture(tmp_path);advance(a,draft(a,docs,'4'))
+    p=tmp_path/'second.csv';a.verified_statement_report('P',2,'csv',p)
+    rows=list(csv.reader(p.open(encoding='utf-8-sig')))
+    assert any('مقدار قبلی W' in row and '4' in row for row in rows)
+    a.store.close()

@@ -1648,6 +1648,7 @@ class StructuralProApp:
         for r in snap['reversals']:rows.append({'field':'مرجع برگشت '+r['reference'],'value':str(r['target_id'])+' / '+r['reason']})
         return build_report(p['name']+' — دفتر مالی و کنترل هزینه',rows,metadata={'project_id':project_id,'currency':snap['currency'],'عنوان بخش':'ریز دفتر مالی و اسناد پشتیبان'}).export(path,fmt)
 
+    @exact
     def verified_statement_report(self, project_id, period_no, fmt, path):
         from core.reports.project_report import build_report
         from core.commercial.statement_amendment import summary
@@ -1655,13 +1656,19 @@ class StructuralProApp:
         from datetime import date
         p=self.open_project(project_id);period=self.project_statement_period(project_id,period_no)
         net=summary(p,period_no)
+        previous_effective={}
+        for prior in p.get('statement_periods',[]):
+            if prior['number']<period_no:
+                for r in summary(p,prior['number'])['lines']:
+                    code=r['price_code'];previous_effective[code]=previous_effective.get(code,number(0,'صفر'))+number(r['net_quantity'],'کارکرد قبلی')
         rows=[]
         for line in period['lines']:
             code=line['code'];effective=next(x['net_quantity'] for x in net['lines'] if x['price_code']==code)
             rows.extend([{'field':'شرح ردیف '+code,'value':line['description']},
-                         {'field':'واحد ردیف '+code,'value':line['unit']},
-                         {'field':'مقدار قبلی '+code,'value':line['previous_quantity']},
+                         {'field':'واحد ردیف '+code,'value':__import__('core.reports.exporters',fromlist=['FA_UNITS']).FA_UNITS.get(line['unit'],line['unit'])},
+                         {'field':'مقدار قبلی '+code,'value':wire(previous_effective.get(code,number(0,'صفر')))},
                          {'field':'مقدار این دوره '+code,'value':effective},
+                         {'field':'مقدار تجمعی مؤثر '+code,'value':wire(previous_effective.get(code,number(0,'صفر'))+number(effective,'کارکرد مؤثر'))},
                          {'field':'مقدار تجمعی اصل سند '+code,'value':line['cumulative_quantity']},
                          {'field':'بهای واحد '+code,'value':line['unit_price']},
                          {'field':'منبع ردیف '+code,'value':', '.join(line.get('source_ids',[])) or 'اصل BOQ محفوظ پروژه'}])
