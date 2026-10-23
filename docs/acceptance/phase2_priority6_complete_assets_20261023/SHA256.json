@@ -1,0 +1,42 @@
+{
+  "report-readback.json": {
+    "bytes": 585,
+    "sha256": "9f8d13ba06ffd13325d39d7f241553477201339c928e34b8aa70f2ad3e3425db"
+  },
+  "restore.log.gz": {
+    "bytes": 2640,
+    "sha256": "818c08e522dc39c1913e1bc7e158025b4f69b8a83c5db3bdf07cfc0d2225e072"
+  },
+  "restored.log.gz": {
+    "bytes": 80,
+    "sha256": "c1f85abec9599860f41ee729eb3a4741cce5e370ed47c809eba4e13c56042985"
+  },
+  "cad-100000.json": {
+    "bytes": 15070,
+    "sha256": "91feb648f0d5585ad79756b5ed3a4ca67cc4825f77d45a2a2c59f28294610566"
+  },
+  "restore-probe.py": {
+    "bytes": 4595,
+    "sha256": "7bd0f7b928b473541cb601b8c74e9e94a9d5054e14d4af0fddd4bcb145630654"
+  },
+  "restored.xml.gz": {
+    "bytes": 3559,
+    "sha256": "2b4d1e7e5de4d2a395a3006281aafeaea81138b3c7efdd78ac715435d77aadc2"
+  },
+  "cad-10000.json": {
+    "bytes": 1826,
+    "sha256": "a07cd0cdad3cfcfb58a66a7362deb30a74a5be0a04c62043376c18e5be702a71"
+  },
+  "drive-download.json": {
+    "bytes": 319,
+    "sha256": "38289e46ecaff4f1aec569145a069d193ed5e421f995d352474bf8d879358a17"
+  },
+  "drive-restore.json": {
+    "bytes": 4719,
+    "sha256": "30af75872d49b5c1fce16d8285409aa8d0ac14b05ccb149e6fa56f02d4be03f6"
+  },
+  "cad-50000.json": {
+    "bytes": 6867,
+    "sha256": "e0fcd6f00bca987ee719011fc01894b03b45d9f07a7db47bd0f8879c053e3845"
+  }
+}

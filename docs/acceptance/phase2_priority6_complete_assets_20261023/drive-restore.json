@@ -1,0 +1,72 @@
+{
+  "status": "PASS",
+  "mode": "compact",
+  "archive_from_google_drive": true,
+  "archive_sha256": "f111b655e44315803644d138e98024aba371f6e257f8936a78614115888871a7",
+  "archive_bytes": 13144105,
+  "manifest_files": 140,
+  "code_sha": "1bff974083cdfaff892c037139191fc31c35b65d",
+  "code_tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc",
+  "git_fsck": true,
+  "sqlite": [
+    {
+      "sample": "sample",
+      "digest": "4f61df9f8fd955a03a93154fbc1e5fb652acfe5581038a15bcd030833892731a",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    },
+    {
+      "sample": "attempt2/sample",
+      "digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    },
+    {
+      "sample": "report-sample",
+      "digest": "e7737ee26b6a2d39e4fdec64a9fa50d3da4e198b4b34117472bb0b5d67967d7f",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    }
+  ],
+  "actual_inference": [
+    {
+      "edition": "standard",
+      "seconds": 6.590308651000669,
+      "response": {
+        "text": "For a slab without dimensions or thickness, the following documents are typically required:\n\n1. **Construction Specifications**: This document should specify the dimensions and thickness of the slab. It should also include any other relevant dimensions such as length, width, and height.\n\n2. **Design Specifications**: This document should provide the design dimensions and any other necessary dimensions for the slab, such as the maximum load it can support.\n\n3. **Construction Plan**: This plan should outline the construction process, including the layout of the slab, the placement of beams, and any other necessary construction elements.\n\n4. **Technical Specifications**: This document should provide the technical specifications for the slab, including the type of concrete used, the strength requirements, and any other relevant information.\n\n5. **Construction Drawings**: This document should include the construction drawings, which should include the dimensions and layout of the slab, as well as any necessary elevations or plans.\n\n6. **Inspection and Testing**: This document should outline the inspection and testing procedures for the slab, including the types of inspections and the testing methods used.\n\n7. **Supervision Document**: This document should outline the supervision process, including the roles and responsibilities of the supervising engineer, the schedule for inspections, and the procedures for handling any issues or problems.\n\nThese documents are essential for ensuring that the construction of the slab is carried out according to the necessary specifications and requirements. [end of text]",
+        "source": "local-gguf",
+        "confidence": 0.85,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "p6-delete-verified.gguf",
+          "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      }
+    },
+    {
+      "edition": "pro",
+      "seconds": 24.572934597999847,
+      "response": {
+        "text": "The image shows a synthetic plan with a red rectangle labeled \"OPENING?\" within a larger rectangular boundary. The plan is labeled \"SYNTHETIC PLAN - NO SCALE - NO DIMENSIONS.\" This suggests that the plan is intended for conceptual or illustrative purposes rather than for construction or precise measurement. The red rectangle likely represents a specific area or feature of interest within the larger plan.",
+        "source": "local-gguf-vision",
+        "confidence": 0.8,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+          "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "source_path": "/workspace/scratch/61dce18379e6/p6-drive-verified/compact/evidence/attempt2/plan.png",
+          "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+          "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+        }
+      }
+    }
+  ],
+  "runtime": "reprovisioned from official pinned URL",
+  "gguf_assets": "External pinned prerequisites, SHA verified by previous download and actual response provenance; Standard bytes freshly downloaded from Dropbox before authorized deletion."
+}
