@@ -249,3 +249,10 @@ def test_counterparty_cash_is_only_actual_payment_not_cost_plus_commitment(tmp_p
     assert a.project_counterparty_ledger('P','مصنوعی')['cash_out']==30
     assert a.project_counterparty_summary('P')['counterparties'][0]['paid_commitments']==30
     a.store.close()
+
+
+def test_new_ledger_cannot_reuse_existing_legacy_bank_reference(tmp_path):
+    a,docs,_,_=fixture(tmp_path);a.add_project_payment('P','10',reference='OLD-BANK',date='2026-10-23')
+    before=a.open_project('P')
+    with pytest.raises(ValueError):ledger(a,kind='payment',reference='OLD-BANK',amount='10',currency='IRR',date='2026-10-23',counterparty='مصنوعی',description='تکرار سند قبلی')
+    assert a.open_project('P')==before;a.store.close()

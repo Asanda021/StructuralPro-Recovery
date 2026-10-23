@@ -79,7 +79,9 @@ def ledger_dispatch(previous,command):
         authorize(p,actor,'create');kind=command['kind']
         if kind not in COLLECTIONS:raise ValueError('نوع ثبت مالی نامعتبر است')
         reference=_text(command['reference'],'مرجع یکتای سند')
-        if any(r['reference']==reference for r in records) or any(r['reference']==reference for r in p.get('financial_reversals',[])):
+        legacy_refs={str(r.get('reference') or r.get('document_number') or '').strip()
+                     for collection in tuple(COLLECTIONS.values())+('financial_documents',) for r in p.get(collection,[])}
+        if reference in legacy_refs or any(r['reference']==reference for r in records) or any(r['reference']==reference for r in p.get('financial_reversals',[])):
             raise ValueError('مرجع سند مالی تکراری است')
         currency=command['currency']
         if currency not in {'IRR','IRT'} or currency!=policy(p)['money']['currency']:raise ValueError('واحد پول با سیاست پروژه ناسازگار است')
