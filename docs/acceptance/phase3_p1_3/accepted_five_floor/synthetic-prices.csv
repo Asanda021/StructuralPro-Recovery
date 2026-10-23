@@ -1,0 +1,5 @@
+year,code,description,unit,unit_price
+1405,concrete,Synthetic fixture concrete,m3,100
+1405,formwork,Synthetic fixture formwork,m2,20
+1405,rebar,Synthetic fixture rebar,kg,10
+1405,wall,Synthetic fixture wall,m2,50

@@ -1,0 +1,14 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+______________________ test_real_boq_price_mapping_click _______________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-17/test_real_boq_price_mapping_cl0')
+
+    def test_real_boq_price_mapping_click(tmp_path):
+>       from app.financial_factor_review import BOQPriceMappingDialog
+E       ImportError: cannot import name 'BOQPriceMappingDialog' from 'app.financial_factor_review' (/workspace/scratch/61dce18379e6/phase3-work/app/financial_factor_review.py)
+
+tests/test_phase3_factor_review_qt.py:29: ImportError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_factor_review_qt.py::test_real_boq_price_mapping_click
+1 failed, 1 passed in 0.40s

@@ -1,0 +1,90 @@
+FFFFFF                                                                   [100%]
+=================================== FAILURES ===================================
+______________ test_snapshot_delta_preserves_sub_float_precision _______________
+
+    def test_snapshot_delta_preserves_sub_float_precision():
+        old={'cost':{'grand_total':'10000000000000000.000000000000000001'}}
+        new={'cost':{'grand_total':'10000000000000000.000000000000000003'}}
+>       assert Decimal(str(compare_estimates(old,new)['delta'])) == Decimal('0.000000000000000002')
+E       AssertionError: assert Decimal('0.0') == Decimal('2E-18')
+E        +  where Decimal('0.0') = Decimal('0.0')
+E        +    where '0.0' = str(0.0)
+E        +  and   Decimal('2E-18') = Decimal('0.000000000000000002')
+
+tests/test_phase3_financial_precision.py:11: AssertionError
+_________________ test_factor_registry_preserves_source_digits _________________
+
+    def test_factor_registry_preserves_source_digits():
+        rate='0.12345678901234567890123456789'
+        registry=FactorRegistry([FactorSet(1405,'fixture',{'overhead':rate})])
+>       assert Decimal(str(registry.rates(1405,'fixture')['overhead'])) == Decimal(rate)
+E       AssertionError: assert Decimal('0.12345678901234568') == Decimal('0.12345678901234567890123456789')
+E        +  where Decimal('0.12345678901234568') = Decimal('0.12345678901234568')
+E        +    where '0.12345678901234568' = str(0.12345678901234568)
+E        +  and   Decimal('0.12345678901234567890123456789') = Decimal('0.12345678901234567890123456789')
+
+tests/test_phase3_financial_precision.py:17: AssertionError
+______________________ test_boolean_factor_is_not_a_rate _______________________
+
+    def test_boolean_factor_is_not_a_rate():
+>       with pytest.raises(ValueError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_phase3_financial_precision.py:21: Failed
+__________________ test_unpriced_estimate_cannot_be_finalized __________________
+
+    def test_unpriced_estimate_cannot_be_finalized():
+        estimate=build_estimate([{'description':'fixture','item_code':'A','quantity':2,'unit':'m'}])
+>       assert not estimate['finalizable']
+E       assert not True
+
+tests/test_phase3_financial_precision.py:27: AssertionError
+________ test_incomplete_excel_row_fails_without_partial_import[.xlsx] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_incomplete_excel_row_fail0')
+suffix = '.xlsx'
+
+    @pytest.mark.parametrize('suffix',['.xlsx','.xlsm'])
+    def test_incomplete_excel_row_fails_without_partial_import(tmp_path,suffix):
+        from openpyxl import Workbook
+        path=tmp_path/('fixture'+suffix)
+        wb=Workbook();ws=wb.active
+        ws.append(['code','description','unit','unit_price'])
+        ws.append(['A','valid fixture','m','12.34'])
+        ws.append(['B',None,'m','56.78'])
+        wb.save(path)
+        service=PricebookImportService()
+>       with pytest.raises(ValueError): service.import_file(path,year=1405)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_phase3_financial_precision.py:40: Failed
+________ test_incomplete_excel_row_fails_without_partial_import[.xlsm] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_incomplete_excel_row_fail1')
+suffix = '.xlsm'
+
+    @pytest.mark.parametrize('suffix',['.xlsx','.xlsm'])
+    def test_incomplete_excel_row_fails_without_partial_import(tmp_path,suffix):
+        from openpyxl import Workbook
+        path=tmp_path/('fixture'+suffix)
+        wb=Workbook();ws=wb.active
+        ws.append(['code','description','unit','unit_price'])
+        ws.append(['A','valid fixture','m','12.34'])
+        ws.append(['B',None,'m','56.78'])
+        wb.save(path)
+        service=PricebookImportService()
+>       with pytest.raises(ValueError): service.import_file(path,year=1405)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_phase3_financial_precision.py:40: Failed
+=========================== short test summary info ============================
+FAILED tests/test_phase3_financial_precision.py::test_snapshot_delta_preserves_sub_float_precision
+FAILED tests/test_phase3_financial_precision.py::test_factor_registry_preserves_source_digits
+FAILED tests/test_phase3_financial_precision.py::test_boolean_factor_is_not_a_rate
+FAILED tests/test_phase3_financial_precision.py::test_unpriced_estimate_cannot_be_finalized
+FAILED tests/test_phase3_financial_precision.py::test_incomplete_excel_row_fails_without_partial_import[.xlsx]
+FAILED tests/test_phase3_financial_precision.py::test_incomplete_excel_row_fails_without_partial_import[.xlsm]
+6 failed in 0.32s

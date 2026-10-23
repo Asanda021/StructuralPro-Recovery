@@ -100,6 +100,8 @@ def exercise(app):
         price_path=home/'explicit-prices.xlsx';book.save(price_path)
         p=go('فهرست‌بها');entry(p,'سال').setText('1404')
         p.findChild(QLineEdit,'PricebookReviewer').setText('بازبین مستقل داده مصنوعی آزمون')
+        next(c for c in p.findChildren(QComboBox) if c.findData('IRR')>=0).setCurrentIndex(1)
+        entry(p,'نسخه منبع').setText('synthetic-R1')
         page.findChildren(QLineEdit)[0].setText('F')
         QFileDialog.getOpenFileName=lambda *a,**k:(str(price_path),'')
         click(p,'📥 ورود Excel / CSV / PDF')

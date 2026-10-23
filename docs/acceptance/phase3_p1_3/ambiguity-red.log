@@ -1,0 +1,29 @@
+...................FF                                                    [100%]
+=================================== FAILURES ===================================
+___________ test_pricebook_ambiguous_duplicate_headers_are_rejected ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-21/test_pricebook_ambiguous_dupli0')
+
+    def test_pricebook_ambiguous_duplicate_headers_are_rejected(tmp_path):
+        p=tmp_path/'ambiguous.csv';p.write_text('code,code,description,unit,unit_price\nA,B,fixture,m,100\n')
+        service=PricebookImportService()
+>       with pytest.raises(ValueError):service.import_file(p,year=1405)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+tests/test_phase3_financial_precision.py:158: Failed
+______ test_snapshot_comparison_does_not_drop_same_code_different_sources ______
+
+    def test_snapshot_comparison_does_not_drop_same_code_different_sources():
+        old={'cost':{'grand_total':300},'boq':[{'item_code':'A','source_id':'S1','quantity':1,'unit_price':100},{'item_code':'A','source_id':'S2','quantity':2,'unit_price':100}]}
+        new={'cost':{'grand_total':400},'boq':[{'item_code':'A','source_id':'S1','quantity':2,'unit_price':100},{'item_code':'A','source_id':'S2','quantity':2,'unit_price':100}]}
+        changes=compare_estimates(old,new)['line_changes']
+>       assert len(changes)==1 and changes[0]['quantity_delta']==1
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests/test_phase3_financial_precision.py:166: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_financial_precision.py::test_pricebook_ambiguous_duplicate_headers_are_rejected
+FAILED tests/test_phase3_financial_precision.py::test_snapshot_comparison_does_not_drop_same_code_different_sources
+2 failed, 19 passed in 0.58s

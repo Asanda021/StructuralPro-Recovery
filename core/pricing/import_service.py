@@ -65,10 +65,11 @@ class PricebookImportService:
         mapping: dict[str, int] = {}
         for field, aliases in cls._ALIASES.items():
             aliases_norm = {cls._norm(x) for x in aliases}
-            for idx, header in enumerate(normalized):
-                if header in aliases_norm:
-                    mapping[field] = idx
-                    break
+            matches = [idx for idx, header in enumerate(normalized) if header in aliases_norm]
+            if len(matches) > 1:
+                raise ValueError("ستون تکراری یا مبهم فهرست‌بها: " + field)
+            if matches:
+                mapping[field] = matches[0]
         return mapping
 
     @staticmethod
@@ -113,11 +114,13 @@ class PricebookImportService:
                     def val(field: str, default: Any = ""):
                         idx = mapping.get(field)
                         return values[idx] if idx is not None and idx < len(values) else default
-                    code = str(val("code")).strip()
-                    desc = str(val("description")).strip()
-                    unit = str(val("unit")).strip()
-                    if not code or not desc or not unit:
+                    if all(v is None or str(v).strip() == "" for v in values):
                         continue
+                    code = str(val("code") or "").strip()
+                    desc = str(val("description") or "").strip()
+                    unit = str(val("unit") or "").strip()
+                    if not code or not desc or not unit:
+                        raise ValueError("ردیف ناقص Excel: کد، شرح و واحد الزامی‌اند")
                     year_value = val("year", fallback_year)
                     group = str(val("group", "")).strip()
                     chapter = str(val("chapter", "")).strip()

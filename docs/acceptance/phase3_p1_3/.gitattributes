@@ -1,0 +1,4 @@
+# Preserve raw evidence bytes; validate these formats by SHA/CRC, not text whitespace.
+*.log -diff
+accepted_five_floor/*.csv -diff
+accepted_five_floor/*.pdf -diff

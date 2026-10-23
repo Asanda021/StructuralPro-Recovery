@@ -1,0 +1,30 @@
+{
+  "size": 13214661,
+  "sha256": "1c0ade59874fa1c5ea56a5a61cc0be11b90099f309f9670232902bf3be8be534",
+  "manifest_files": 53,
+  "code_head": "786515689e5976a1b375960d4920defac2c948de",
+  "tested_tree": "355475521afd27efeb7811d85caa47dc73489afa",
+  "status": "PASS",
+  "drive_file_id": "1sxOtu61bdVHvtFbOOCnCq5x4hqikwOTz",
+  "drive_url": "https://drive.google.com/file/d/1sxOtu61bdVHvtFbOOCnCq5x4hqikwOTz/view?usp=drivesdk",
+  "manifest_verified": 53,
+  "download_sha_verified": true,
+  "git_fsck": "PASS",
+  "sqlite": {
+    "sqlite_integrity": "ok",
+    "floors": 5,
+    "effective_total": 2402.862,
+    "currency": "IRR",
+    "payload_sha256": "8ebdbd94c15e9a8287456baefe3ba903ec141619fc633af3004c4c1d163fdcc3",
+    "revision_count": 20
+  },
+  "restored_tests": {
+    "passed": 80,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "independent_code_path": "/workspace/scratch/61dce18379e6/p3-restore/repo",
+  "recovery_method": "Explicit bundle ref fetch then checkout, full fsck; read-only restored original SQLite; new end-to-end fixtures run from independent recovered checkout. No original approval paths rewritten."
+}

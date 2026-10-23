@@ -72,7 +72,7 @@ def flatten_takeoffs(project: dict) -> list[dict]:
         for i, item in enumerate(quantities, 1):
             if not isinstance(item, dict):
                 raise ValueError("ریزکمیت نامعتبر است")
-            quantity = finite_quantity(item.get("amount"), "کمیت ریزمتره", zero=True)
+            quantity = wire(number(item.get("amount"), "کمیت ریزمتره"))
             unit = normalize_unit(_required_text(item.get("unit"), "واحد ریزمتره"))
             rows.append({
                 "source_id": sid, "floor": record.get("system", ""),
@@ -90,7 +90,9 @@ def flatten_takeoffs(project: dict) -> list[dict]:
 @exact
 def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     """Reconcile every BOQ source-group quantity to its original takeoff rows."""
-    details = flatten_takeoffs(project)
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    effective = effective_takeoffs(project, project.get("takeoffs") or [])
+    details = flatten_takeoffs({**project, "takeoffs": effective})
     boq = project.get("boq") or []
     result = validate_boq_structure(boq)
     if not result["valid"]:
@@ -121,12 +123,12 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     if require_pricebook:
         from core.pricing.import_service import verify_reviewed_rates
         exact_source=verify_reviewed_rates(raw_path,pricebook)
-    payable_sources = {(r["source_id"],q["code"],normalize_unit(q["unit"])) for r in project.get("takeoffs", []) for q in r.get("quantities", []) if _is_payable_quantity(r,q)}
+    payable_sources = {(r["source_id"],q["code"],normalize_unit(q["unit"])) for r in effective for q in r.get("quantities", []) if _is_payable_quantity(r,q)}
     expected = {}
     for row in details:
         if (row["source_id"],row["item_code"],row["unit"]) not in payable_sources: continue
         key = (row["source_id"], row["item_code"], row["unit"])
-        expected[key] = expected.get(key, 0.0) + row["quantity"]
+        expected[key] = expected.get(key, number(0,"جمع")) + number(row["quantity"],"کمیت")
     actual = {}
     unpriced = []
     for n, row in enumerate(boq, 1):
@@ -134,7 +136,7 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
             raise ValueError("ردیف برآورد نامعتبر است")
         code = _required_text(row.get("item_code"), "کد عملیات برآورد")
         unit = normalize_unit(_required_text(row.get("unit"), "واحد برآورد"))
-        amount = finite_quantity(row.get("quantity"), "کمیت برآورد", zero=True)
+        amount = number(row.get("quantity"), "کمیت برآورد")
         source_ids = row.get("source_ids")
         if not isinstance(source_ids, list) or not source_ids:
             raw = row.get("source_id")
@@ -147,8 +149,8 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
                     and key[1] == code and key[2] == unit]
         if not matching:
             raise ValueError("کد، واحد یا منبع ردیف برآورد با ریزمتره تطبیق ندارد")
-        expected_total = math.fsum(expected[k] for k in matching)
-        if not math.isclose(expected_total, amount, rel_tol=1e-9, abs_tol=1e-8):
+        expected_total = sum((expected[k] for k in matching), number(0,"جمع"))
+        if expected_total != amount:
             raise ValueError("جمع کمیت ردیف BOQ با ریزمتره اصلی یکسان نیست")
         for key in matching:
             if key in actual:

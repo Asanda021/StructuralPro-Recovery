@@ -1,0 +1,1 @@
+{"version": "synthetic-R1", "year": 1405, "currency": "IRR", "effective_date": "2026-10-23", "basis": "sequential_compound", "factors": [{"name": "overhead", "rate": "0.1"}, {"name": "region", "rate": "0.05"}]}

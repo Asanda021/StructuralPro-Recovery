@@ -23,7 +23,8 @@ def test_golden_quantities_and_boq_are_deterministic():
     line=ConstructionQuantityCore.rectangular_volume(element)
     assert abs(line.quantity-1.8)<1e-12 and line.unit=="m3"
     estimate=build_estimate([line],aggregate=True)
-    assert estimate["finalizable"] and estimate["boq"]
+    assert estimate["validation"]["valid"] and estimate["boq"]
+    assert not estimate["finalizable"], "Unknown prices must not finalize a financial estimate"
 
 def test_security_and_path_traversal_fail_closed():
     with tempfile.TemporaryDirectory() as d:

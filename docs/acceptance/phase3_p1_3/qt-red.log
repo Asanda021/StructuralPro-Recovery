@@ -1,0 +1,14 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______________ test_real_factor_review_click_persists_document ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-11/test_real_factor_review_click_0')
+
+    def test_real_factor_review_click_persists_document(tmp_path):
+>       from app.financial_factor_review import FactorReviewDialog
+E       ModuleNotFoundError: No module named 'app.financial_factor_review'
+
+tests/test_phase3_factor_review_qt.py:9: ModuleNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_factor_review_qt.py::test_real_factor_review_click_persists_document
+1 failed in 0.25s
