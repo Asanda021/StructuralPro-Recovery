@@ -1,0 +1,53 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+________________________ test_native_runtime_discovery _________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_native_runtime_discovery0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9fcfab8f0>
+
+    def test_native_runtime_discovery(tmp_path, monkeypatch):
+        monkeypatch.setenv('STRUCTURALPRO_AI_RUNTIME_DIR', str(tmp_path))
+        binary=tmp_path/('llama-cli.exe' if os.name=='nt' else 'llama-cli')
+        binary.write_text('path fixture');binary.chmod(0o755)
+>       assert LocalAIEngine(model_dir=tmp_path,edition='standard')._binary('llama-cli')==binary
+E       AssertionError: assert None == PosixPath('/tmp/pytest-of-root/pytest-0/test_native_runtime_discovery0/llama-cli')
+E        +  where None = _binary('llama-cli')
+E        +    where _binary = <core.ai.local_engine.LocalAIEngine object at 0x7fb9fd246ae0>._binary
+E        +      where <core.ai.local_engine.LocalAIEngine object at 0x7fb9fd246ae0> = LocalAIEngine(model_dir=PosixPath('/tmp/pytest-of-root/pytest-0/test_native_runtime_discovery0'), edition='standard')
+
+tests/test_local_ai_host_runtime.py:11: AssertionError
+________________________ test_external_model_directory _________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_external_model_directory0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9fcfab020>
+
+    def test_external_model_directory(tmp_path,monkeypatch):
+        monkeypatch.setenv('STRUCTURALPRO_AI_MODEL_DIR',str(tmp_path))
+>       assert LocalAIEngine(edition='standard').model_dir==tmp_path
+E       AssertionError: assert PosixPath('/workspace/scratch/61dce18379e6/p6-ai-real/models') == PosixPath('/tmp/pytest-of-root/pytest-0/test_external_model_directory0')
+E        +  where PosixPath('/workspace/scratch/61dce18379e6/p6-ai-real/models') = <core.ai.local_engine.LocalAIEngine object at 0x7fb9fcfaad20>.model_dir
+E        +    where <core.ai.local_engine.LocalAIEngine object at 0x7fb9fcfaad20> = LocalAIEngine(edition='standard')
+
+tests/test_local_ai_host_runtime.py:16: AssertionError
+________________ test_bounded_text_command_and_project_evidence ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_bounded_text_command_and_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb9fcfaaf30>
+
+    def test_bounded_text_command_and_project_evidence(tmp_path,monkeypatch):
+        e=LocalAIEngine(model_dir=tmp_path,edition='standard',n_ctx=2048)
+        e.model_path=tmp_path/'hash-only.fixture';e.model_path.write_bytes(b'not a model')
+        command=[]
+        def capture(argv,**kwargs):
+            command.extend(argv);return subprocess.CompletedProcess(argv,0,'fixture output','')
+        monkeypatch.setattr(subprocess,'run',capture)
+        e._llama_text_answer('question',{'name':'P','takeoffs':[{'member_code':'B1','quantities':[{'amount':'6','unit':'m'}]}]})
+>       assert '-sys' in command
+E       AssertionError: assert '-sys' in ['None', '-m', '/tmp/pytest-of-root/pytest-0/test_bounded_text_command_and_0/hash-only.fixture', '-p', 'You are Struct...wer replaces a deterministic engineering calculation.\nProject summary: name=P, takeoffs=1\nUser: question', '-n', ...]
+
+tests/test_local_ai_host_runtime.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_local_ai_host_runtime.py::test_native_runtime_discovery - A...
+FAILED tests/test_local_ai_host_runtime.py::test_external_model_directory - A...
+FAILED tests/test_local_ai_host_runtime.py::test_bounded_text_command_and_project_evidence
+3 failed in 0.14s

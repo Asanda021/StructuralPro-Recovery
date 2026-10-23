@@ -1,0 +1,15 @@
+{
+  "name": "identity",
+  "takeoffs": [
+    {
+      "member_code": "B1",
+      "quantities": [
+        {
+          "amount": "6",
+          "unit": "m",
+          "source": "Explicit synthetic IFC R1 QTO Length"
+        }
+      ]
+    }
+  ]
+}

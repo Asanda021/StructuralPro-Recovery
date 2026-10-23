@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_project_question_uses_available_model_not_rules _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_project_question_uses_ava0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f146d48bf50>
+
+    def test_project_question_uses_available_model_not_rules(tmp_path,monkeypatch):
+        from core.ai.local_engine import AIResponse
+        e=LocalAIEngine(model_dir=tmp_path,edition='standard')
+        e.model_path=tmp_path/'presence-only.fixture';e.model_path.write_bytes(b'not a GGUF')
+        monkeypatch.setattr(e,'_binary',lambda name:tmp_path/name)
+        called=[]
+        def record(prompt,project):
+            called.append((prompt,project));return AIResponse('dispatch fixture')
+        monkeypatch.setattr(e,'_llama_text_answer',record)
+        e.answer('بررسی متره',{'name':'P'})
+>       assert called==[('بررسی متره',{'name':'P'})]
+E       AssertionError: assert [] == [('بررسی متره...'name': 'P'})]
+E         
+E         Right contains one more item: ('بررسی متره', {'name': 'P'})
+E         Use -v to get more diff
+
+tests/test_local_ai_host_runtime.py:71: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_local_ai_host_runtime.py::test_project_question_uses_available_model_not_rules
+1 failed in 0.10s

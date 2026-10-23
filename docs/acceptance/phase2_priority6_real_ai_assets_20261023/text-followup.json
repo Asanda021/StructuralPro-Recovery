@@ -1,0 +1,38 @@
+[
+  {
+    "scenario": "A2",
+    "prompt": "در یک جمله کوتاه فارسی توضیح بده چرا باید پیش از تأیید ریزمتره، محاسبات توسط فرد دیگری با مدارک تطبیق داده شود. از اعداد و فهرست استفاده نکن.",
+    "seconds": 2.174915472000066,
+    "response": {
+      "text": "برای تأیید ریزمتره، محاسبات توسط فرد دیگری با مدارک تطبیق داده شود، از اعداد و فهرست استفاده نکن. [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    }
+  },
+  {
+    "scenario": "B2",
+    "prompt": "Read member_code, NOT project name. Quote the member_code, recorded amount and unit from the supplied takeoffs. Do not infer anything.",
+    "seconds": 1.5117610380000315,
+    "response": {
+      "text": "B1, 6, m [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888"
+      }
+    }
+  }
+]

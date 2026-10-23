@@ -1,0 +1,366 @@
+{
+  "date": "2026-10-23",
+  "status": "PARTIAL",
+  "initial_head": "9e18dee86e46d2de0d4f3168708d2cc513739b6c",
+  "tested_code_head": "1bff974083cdfaff892c037139191fc31c35b65d",
+  "tested_code_tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc",
+  "delivery_head": "Resolve the documentation commit containing this file; executable app/core/tests unchanged from tested_code_head.",
+  "protected_pr18_head": "3434f63ee3718f6399bbf06bc8ca7a2c6a835b29",
+  "full_regression": {
+    "tests": 7706,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "passed": 7701,
+    "exit_code": 0,
+    "seconds": 413.982
+  },
+  "targeted": {
+    "passed": 49,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "local_restore_tests": {
+    "passed": 195,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "is_dropbox_archive_restore": false
+  },
+  "actual_engine_inferences": [
+    {
+      "edition": "standard",
+      "scenario": "A",
+      "prompt": "چرا باید مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند؟ کوتاه و بدون عدد توضیح بده.",
+      "seconds": 13.526101625000024,
+      "response": {
+        "text": "برای اطمینان داشتن اطمینان، می‌توانید از این موارد استفاده کنید:\n\n1. از مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند: این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند",
+        "source": "local-gguf",
+        "confidence": 0.85,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+          "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      },
+      "load_error": null
+    },
+    {
+      "edition": "standard",
+      "scenario": "B",
+      "prompt": "Summarize only the documented member and its recorded length in the supplied evidence. Do not infer materials or prices.",
+      "seconds": 1.5589236139999798,
+      "response": {
+        "text": "The documented member is \"identity\" and its recorded length is 6 meters. [end of text]",
+        "source": "local-gguf",
+        "confidence": 0.85,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+          "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+          "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888"
+        }
+      },
+      "load_error": null
+    },
+    {
+      "edition": "standard",
+      "scenario": "C",
+      "prompt": "The slab has no documented length, width or thickness. State what evidence is missing and why no volume can be approved. Do not give numeric examples.",
+      "seconds": 2.1514837839999927,
+      "response": {
+        "text": "The evidence missing is that the slab has no documented length, width, or thickness. Since no volume can be approved, it's crucial to have these dimensions to ensure the slab is constructed according to the design specifications. Without these details, it's impossible to determine the exact dimensions and thus cannot approve the volume of the slab. [end of text]",
+        "source": "local-gguf",
+        "confidence": 0.85,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+          "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      },
+      "load_error": null
+    },
+    {
+      "edition": "pro",
+      "scenario": "vision",
+      "prompt": "Describe visible boundaries and the red rectangle. This is a synthetic unscaled plan. Identify missing evidence. Suggestions only; human review is mandatory.",
+      "seconds": 33.281659382999976,
+      "response": {
+        "text": "The image is a synthetic plan with no scale or dimensions provided. The plan features a large rectangular area with a smaller red rectangle within it. The red rectangle is labeled \"OPENING?\" This suggests that the plan is intended to represent a space with an unspecified opening or feature.\n\n### Visible Boundaries:\n- The outer boundary of the plan is a large rectangular outline.\n- The inner boundary is a smaller rectangular outline, which contains the red rectangle.\n\n### Red Rectangle:\n- The red rectangle is positioned within the smaller rectangular outline.\n- The label \"OPENING?\" is written inside the red rectangle.\n\n### Missing Evidence:\n- The exact size, shape, and purpose of the opening are not specified.\n- The materials, reinforcement, and any specific features of the opening are not detailed.\n- The scale and dimensions of the plan are not provided, making it impossible to determine the actual size of the opening or the surrounding space.\n\n### Suggestions:\n- **Human Review:** It is crucial to have human review to ensure that the plan accurately represents the intended space and features, especially when dealing with unspecified elements like openings.\n- **Detailed Description:** The plan should include a detailed description of the opening, its purpose, and any specific features or materials used.\n- **Scale and Dimensions:** The plan should be provided with a scale and dimensions to allow for accurate interpretation and construction.\n\nThis synthetic plan serves as a placeholder for a more detailed and accurate representation of the intended space.",
+        "source": "local-gguf-vision",
+        "confidence": 0.8,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+          "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+          "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888",
+          "source_path": "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+          "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+          "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+        }
+      },
+      "load_error": null
+    },
+    {
+      "edition": "enterprise",
+      "scenario": "vision",
+      "prompt": "Describe the outer and inner boundaries. No documented scale or dimensions exist. Suggestions only; require human review.",
+      "seconds": 24.227219394999963,
+      "response": {
+        "text": "The image depicts a synthetic plan with the following characteristics:\n\n1. **Outer Boundary**: The outer boundary is a rectangular shape with a solid black outline.\n2. **Inner Boundary**: Inside the outer boundary, there is a smaller rectangular area outlined in red. This red outlined area is labeled \"OPENING?\".\n\nThe plan is labeled as \"SYNTHETIC PLAN - NO SCALE - NO DIMENSIONS,\" indicating that no specific measurements or scales are provided. The red outlined area labeled \"OPENING?\" suggests a specific area of interest or a point of focus within the plan.\n\nThis synthetic plan is intended for illustrative purposes and should be reviewed by a human for further details and context.",
+        "source": "local-gguf-vision",
+        "confidence": 0.8,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+          "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+          "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888",
+          "source_path": "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+          "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+          "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+        }
+      },
+      "load_error": null
+    }
+  ],
+  "actual_commands": [
+    {
+      "command": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "-sys",
+        "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.",
+        "-p",
+        "User: چرا باید مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند؟ کوتاه و بدون عدد توضیح بده.",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1",
+        "-st",
+        "--no-display-prompt"
+      ],
+      "cwd": "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549",
+      "exit_code": 0,
+      "seconds": 13.215605565000033
+    },
+    {
+      "command": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "-sys",
+        "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.",
+        "-p",
+        "Read-only project evidence: {\"name\": \"identity\", \"takeoffs\": [{\"member_code\": \"B1\", \"quantities\": [{\"amount\": \"6\", \"source\": \"Explicit synthetic IFC R1 QTO Length\", \"unit\": \"m\"}]}]}\nUser: Summarize only the documented member and its recorded length in the supplied evidence. Do not infer materials or prices.",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1",
+        "-st",
+        "--no-display-prompt"
+      ],
+      "cwd": "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549",
+      "exit_code": 0,
+      "seconds": 1.2327862090000394
+    },
+    {
+      "command": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "-sys",
+        "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.",
+        "-p",
+        "User: The slab has no documented length, width or thickness. State what evidence is missing and why no volume can be approved. Do not give numeric examples.",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1",
+        "-st",
+        "--no-display-prompt"
+      ],
+      "cwd": "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549",
+      "exit_code": 0,
+      "seconds": 1.8326589299999796
+    },
+    {
+      "command": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-mtmd-cli",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+        "--mmproj",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+        "--image",
+        "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+        "-p",
+        "Advisory suggestions only. Never infer undocumented dimensions, scale, thickness, materials, reinforcement or prices. State missing evidence and require human review.\nDescribe visible boundaries and the red rectangle. This is a synthetic unscaled plan. Identify missing evidence. Suggestions only; human review is mandatory.",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1"
+      ],
+      "cwd": "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549",
+      "exit_code": 0,
+      "seconds": 31.455538629999978
+    },
+    {
+      "command": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-mtmd-cli",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+        "--mmproj",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+        "--image",
+        "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+        "-p",
+        "Advisory suggestions only. Never infer undocumented dimensions, scale, thickness, materials, reinforcement or prices. State missing evidence and require human review.\nDescribe the outer and inner boundaries. No documented scale or dimensions exist. Suggestions only; require human review.",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1"
+      ],
+      "cwd": "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549",
+      "exit_code": 0,
+      "seconds": 22.388163855000016
+    }
+  ],
+  "data_safety": {
+    "before_digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d",
+    "after_digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d",
+    "boq_unchanged": true,
+    "cases": 5
+  },
+  "qt": {
+    "light": {
+      "status": "PASS",
+      "edition": "light",
+      "qt_click": false,
+      "disabled_checked": true,
+      "boq_unchanged": true
+    },
+    "standard": {
+      "model_output": "پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\nVerified source documents and human review are essential for several reasons:\n\n1. **Verification of Data Accuracy**: When you use data from a source, it's important to verify its accuracy. This ensures that the information you're using is reliable and not based on faulty or incomplete data. This is crucial for ensuring the accuracy of your calculations and estimates.\n\n2. **Validation of Methods**: When you use a method or technique from a source, it's important to validate its accuracy and reliability. This involves checking if the method is appropriate for the problem at hand and if it produces the same results as the source. This helps ensure that your calculations are based on valid and consistent methods.\n\n3. **Verification of Sources**: When you use a source, it's important to verify that it is a reliable source. This involves checking if the source is credible, has a proven track record, and is not based on biased or incomplete data. This helps ensure that your calculations are based on valid and reliable sources.\n\n4. **Human Review**: Human review is essential for ensuring that your calculations are based on valid and reliable sources. This involves checking your calculations for errors, inconsistencies, and any other issues that may arise. This helps ensure that your calculations are based on valid and reliable data.\n\n5. **Consistency and Relevance**: When you use a source, it's important to ensure that the information is consistent and relevant to the problem at hand. This helps ensure that your calculations are based on valid and relevant data.\n\nBy using verified source documents and human review, you can ensure that your calculations are based on valid and reliable data, and that your estimates are based on valid and consistent methods. This helps ensure that your construction projects are accurate and successful. [end of text]\n\nمنشأ: local-gguf",
+      "status": "PASS",
+      "edition": "standard",
+      "qt_click": true,
+      "disabled_checked": false,
+      "boq_unchanged": true
+    },
+    "pro": {
+      "model_output": "پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\nVerified source documents and human review are necessary to ensure the accuracy and reliability of construction quantity takeoffs. They help in:\n\n1. **Ensuring Compliance**: Ensuring that the takeoff adheres to local, state, and national building codes and regulations.\n2. **Avoiding Errors**: Reducing the risk of human error in calculations and ensuring consistency in measurements and quantities.\n3. **Quality Control**: Providing a second opinion to verify the accuracy of the takeoff, which can catch mistakes that might have been missed by the initial calculation.\n4. **Legal and Regulatory Compliance**: Ensuring that the takeoff meets legal and regulatory requirements, which is crucial for project success and compliance.\n5. **Cost Estimation Accuracy**: Ensuring that the quantities are correctly estimated, which is essential for accurate cost estimation and project budgeting.\n6. **Project Management**: Facilitating better project management by providing a clear and accurate record of the quantities used in the project.\n\nBy combining the precision of verified documents with the expertise of human review, the accuracy and reliability of construction quantity takeoffs are significantly enhanced. [end of text]\n\nمنشأ: local-gguf",
+      "vision_output": "پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\nThe image shows a synthetic plan with the following details:\n\n- **Title**: Synthetic Plan - No Scale - No Dimensions\n- **Shape**: The plan is a rectangle with a red rectangle inside it.\n- **Red Rectangle**: The red rectangle is labeled \"OPENING?\" and is positioned in the center of the larger rectangle.\n\nThe plan does not provide any specific dimensions, scale, or details about the materials, reinforcement, or prices. Therefore, the following points are required for human review:\n\n1. **Missing Evidence**: The plan lacks specific dimensions, scale, thickness, materials, reinforcement, and prices.\n2. **Human Review**: The plan should be reviewed by a human to ensure that all necessary details are provided and to verify the accuracy of the information.\n\nمنشأ: local-gguf-vision",
+      "status": "PASS",
+      "edition": "pro",
+      "qt_click": true,
+      "disabled_checked": false,
+      "boq_unchanged": true
+    },
+    "enterprise": {
+      "model_output": "پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\nVerified source documents and human review are necessary to ensure the accuracy and reliability of construction quantity takeoffs. They help in:\n\n1. **Ensuring Compliance**: Ensuring that the takeoff adheres to project specifications, codes, and standards.\n2. **Avoiding Errors**: Reducing the risk of human error in complex calculations and data entry.\n3. **Quality Control**: Providing a second opinion to check the completeness and correctness of the takeoff.\n4. **Documentation**: Maintaining a record of the takeoff process for future reference and accountability.\n5. **Accuracy**: Ensuring that the quantities are precise and up-to-date, which is crucial for budgeting and scheduling.\n6. **Risk Management**: Identifying potential issues early in the process to mitigate risks and delays.\n7. **Efficiency**: Streamlining the process by reducing the need for rework and ensuring that the takeoff is completed efficiently.\n\nBy combining the structured approach of verified documents with the human judgment of experienced professionals, the accuracy and reliability of the construction quantity takeoff are significantly enhanced. [end of text]\n\nمنشأ: local-gguf",
+      "vision_output": "پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\nThe image shows a synthetic plan with the following details:\n\n- **Title**: Synthetic Plan - No Scale - No Dimensions\n- **Shape**: The plan is a rectangle with a red rectangle inside it.\n- **Red Rectangle**: The red rectangle is labeled \"OPENING?\"\n\nThe plan does not provide any specific dimensions, scale, or materials for the opening. Therefore, it is recommended to review the image and ensure that all necessary information is provided before proceeding with any further actions or calculations.\n\nمنشأ: local-gguf-vision",
+      "status": "PASS",
+      "edition": "enterprise",
+      "qt_click": true,
+      "disabled_checked": false,
+      "boq_unchanged": true
+    }
+  },
+  "cad_100000": {
+    "entities": 100000,
+    "elapsed_s": 14.057061561999944,
+    "max_event_gap_s": 0.2128234550000343,
+    "threshold_s": 0.5,
+    "threshold_reason": "Coarse interactive 500ms upper bound on this shared Linux host; 10ms timer. Not a cross-machine SLA.",
+    "peak_rss_kib": 1366148,
+    "oracle_m": 500000,
+    "all_retained": true
+  },
+  "licenses": {
+    "standard": {
+      "license": "Apache-2.0",
+      "url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/raw/main/LICENSE"
+    },
+    "vision": {
+      "license": "Qwen Research License",
+      "url": "https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct/raw/main/LICENSE",
+      "non_commercial_evaluation_only_without_separate_upstream_permission": true
+    },
+    "runtime": {
+      "license": "MIT",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/b2e5e9b28/LICENSE"
+    },
+    "commercial_release_approved": false
+  },
+  "dropbox": {
+    "code_backup_status": "BLOCKED",
+    "error": "RESOURCE_EXHAUSTED / INSUFFICIENT_SPACE",
+    "rejected_archives": [
+      "StructuralPro_P6_RealAI_1bff9740_20261023.zip",
+      "StructuralPro_P6_RealAI_1bff9740_20261023.compact.zip"
+    ],
+    "standard_model_status": "uploaded, independently downloaded, SHA verified, used in restored-engine inference",
+    "standard_file_id": "id:npSmebsorqwAAAAAAAAAwA",
+    "standard_path": "/StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf",
+    "standard_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    "previous_backups_deleted": false,
+    "new_model_deleted": false,
+    "compact_candidate": {
+      "file": "/workspace/scratch/61dce18379e6/StructuralPro_P6_RealAI_1bff9740_20261023.compact.zip",
+      "bytes": 13144105,
+      "sha256": "f111b655e44315803644d138e98024aba371f6e257f8936a78614115888871a7",
+      "manifest_files": 140,
+      "rejected_primary_reason": "Dropbox INSUFFICIENT_SPACE",
+      "runtime_and_vision_assets": "exact pinned external prerequisites; no offline-installation completeness claim"
+    }
+  },
+  "limitations": [
+    "Small Standard model gave repetitive Persian and initially confused project name with member identity. Follow-up read B1, 6, m correctly; raw outputs retained. No general accuracy certification.",
+    "Vision model is research-licensed; commercial shipment not approved.",
+    "Qt tested visible advisory, actual model dispatch, missing-assets message, Light block and discard; quantity approval remains existing evidence-backed service, never free-text-to-payment.",
+    "System-call network tracing denied by host PTRACE permissions; no cloud inference/API used, all model invocations supplied local assets.",
+    "Native Windows, PowerShell and Microsoft Office not accepted."
+  ],
+  "changed_files": [
+    "app/main.py",
+    "core/ai/local_engine.py",
+    "core/ai/edition_models.py",
+    "tests/test_local_ai_host_runtime.py",
+    "tests/phase2_priority6_model_ui_probe.py"
+  ]
+}

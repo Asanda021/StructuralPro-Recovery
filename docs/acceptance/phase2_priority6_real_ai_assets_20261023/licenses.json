@@ -1,0 +1,16 @@
+{
+  "standard": {
+    "license": "Apache-2.0",
+    "url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/raw/main/LICENSE"
+  },
+  "vision": {
+    "license": "Qwen Research License",
+    "url": "https://huggingface.co/Qwen/Qwen2.5-VL-3B-Instruct/raw/main/LICENSE",
+    "non_commercial_evaluation_only_without_separate_upstream_permission": true
+  },
+  "runtime": {
+    "license": "MIT",
+    "url": "https://github.com/ggml-org/llama.cpp/blob/b2e5e9b28/LICENSE"
+  },
+  "commercial_release_approved": false
+}

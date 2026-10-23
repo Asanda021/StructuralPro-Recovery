@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "sqlite_effective_m": "6",
+  "current_members": {
+    "B2": "2",
+    "B3": "4"
+  },
+  "pdf_pages": 6,
+  "docx_tables": 2,
+  "xlsx_rtl": true,
+  "csv_rows": 84,
+  "farsi_text_extracted": true,
+  "files": {
+    "pdf": "fff308ed2738fb8d547fd571f335b8450a51f9c6b68d1b2389bf91cac0ea1043",
+    "xlsx": "d60473294ae0a080526b850aeb22920afc793394bc0242af8b162e6dfa430d0c",
+    "docx": "11294d2b237445101a5afa7d0b7b0ad717560593ee71535c8055985c2bddec01",
+    "csv": "a92541e9e3b5f046491f797a86dff56fa4370e27e4a03a3309951266994b4d84"
+  },
+  "windows_office_tested": false
+}

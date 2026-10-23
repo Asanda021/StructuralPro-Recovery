@@ -1,0 +1,35 @@
+{
+  "status": "LOCAL_RESTORE_PASS",
+  "dropbox_code_archive_restored": false,
+  "reason": "Both new archive uploads rejected: INSUFFICIENT_SPACE",
+  "manifest_files": 140,
+  "code_sha": "1bff974083cdfaff892c037139191fc31c35b65d",
+  "code_tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc",
+  "git_fsck": true,
+  "sqlite": [
+    {
+      "sample": "sample",
+      "boq_rows": 1,
+      "digest": "4f61df9f8fd955a03a93154fbc1e5fb652acfe5581038a15bcd030833892731a"
+    },
+    {
+      "sample": "attempt2/sample",
+      "boq_rows": 1,
+      "digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d"
+    },
+    {
+      "sample": "report-sample",
+      "boq_rows": 1,
+      "digest": "e7737ee26b6a2d39e4fdec64a9fa50d3da4e198b4b34117472bb0b5d67967d7f"
+    }
+  ],
+  "runtime_reprovisioned_from_official_url": true,
+  "standard_model_from_dropbox": true,
+  "actual_restored_model_output": "The slab has no dimensions or thickness, and the only evidence available is that it is a concrete slab. [end of text]",
+  "provenance": {
+    "mode": "local_gguf_advisory",
+    "model_id": "p6-ai-standard-restored.gguf",
+    "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+  }
+}

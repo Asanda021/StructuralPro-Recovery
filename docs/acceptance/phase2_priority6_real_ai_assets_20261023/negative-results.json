@@ -1,0 +1,99 @@
+{
+  "scenarios": [
+    {
+      "scenario": "invalid_gguf_real_runtime",
+      "response": {
+        "text": "مدل محلی در دسترس نبود؛ کنترل پایه آفلاین فعال است.",
+        "source": "local-rule-engine",
+        "confidence": 0.7,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "model_id": "local-rule-engine-v1",
+          "mode": "deterministic_offline_qa"
+        }
+      },
+      "error": "0.00.019.802 I llama_completion: llama backend init\n0.00.019.832 I llama_completion: load the model and apply lora adapter, if any\n0.00.019.903 E gguf_init_from_reader: invalid magic characters: 'This', expected 'GGUF'\n0.00.020.002 E llama_model_load: error loading model: llama_model_loader: failed to load model from /workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf\n0.00.020.023 E llama_model_load_from_file_impl: failed to load model\n0.00.020.048 E common_fit_params: encountered an error while trying to fit params to free device memory: failed to load model\n0.00.020.066 E gguf_init_from_reader: invalid magic characters: 'This', expected 'GGUF'\n0.00.020.081 E llama_model_load: error loading model: llama_model_loader: failed to load model from /workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf\n0.00.020.081 E llama_model_load_from_file_impl: failed to load model\n0.00.020.083 E cmn  common_init_: failed to load model '/workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf'\n0.00.020.087 E llama_completion: error: unable to create context"
+    },
+    {
+      "scenario": "actual_runtime_timeout_1ms",
+      "response": {
+        "text": "مدل محلی در دسترس نبود؛ کنترل پایه آفلاین فعال است.",
+        "source": "local-rule-engine",
+        "confidence": 0.7,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "model_id": "local-rule-engine-v1",
+          "mode": "deterministic_offline_qa"
+        }
+      },
+      "error": "Command '['/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion', '-m', '/workspace/scratch/61dce18379e6/p6-ai-assets/qwen2.5-0.5b-instruct-q4_k_m.gguf', '-sys', 'You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.', '-p', 'User: Explain source review', '-n', '768', '-c', '4096', '-t', '4', '--temp', '0.1', '-st', '--no-display-prompt']' timed out after 0.001 seconds"
+    },
+    {
+      "scenario": "light_with_assets_no_execution",
+      "response": {
+        "text": "نسخه سبک فاقد هوش مصنوعی محلی است.",
+        "source": "fail-closed",
+        "confidence": 0.0,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "model_id": "local-rule-engine-v1",
+          "mode": "deterministic_offline_qa"
+        }
+      }
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf",
+        "-sys",
+        "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.",
+        "-p",
+        "User: Explain source review",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1",
+        "-st",
+        "--no-display-prompt"
+      ],
+      "exit_code": 1,
+      "stderr": "0.00.019.802 I llama_completion: llama backend init\n0.00.019.832 I llama_completion: load the model and apply lora adapter, if any\n0.00.019.903 E gguf_init_from_reader: invalid magic characters: 'This', expected 'GGUF'\n0.00.020.002 E llama_model_load: error loading model: llama_model_loader: failed to load model from /workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf\n0.00.020.023 E llama_model_load_from_file_impl: failed to load model\n0.00.020.048 E common_fit_params: encountered an error while trying to fit params to free device memory: failed to load model\n0.00.020.066 E gguf_init_from_reader: invalid magic characters: 'This', expected 'GGUF'\n0.00.020.081 E llama_model_load: error loading model: llama_model_loader: failed to load model from /workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf\n0.00.020.081 E llama_model_load_from_file_impl: failed to load model\n0.00.020.083 E cmn  common_init_: failed to load model '/workspace/scratch/61dce18379e6/p6-ai-evidence/explicit-invalid.gguf'\n0.00.020.087 E llama_completion: error: unable to create context\n"
+    },
+    {
+      "argv": [
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/runtime-linux/llama-b10549/llama-completion",
+        "-m",
+        "/workspace/scratch/61dce18379e6/p6-ai-assets/qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "-sys",
+        "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. Never invent numeric measurements, example dimensions, prices or material details. If required inputs are missing, request verified documents and human review; do not calculate. Never claim that an AI answer replaces a deterministic engineering calculation.",
+        "-p",
+        "User: Explain source review",
+        "-n",
+        "768",
+        "-c",
+        "4096",
+        "-t",
+        "4",
+        "--temp",
+        "0.1",
+        "-st",
+        "--no-display-prompt"
+      ],
+      "timeout_seconds": 0.001,
+      "actual_process_timeout": true
+    }
+  ],
+  "boq_unchanged": true,
+  "digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d",
+  "status": "PASS"
+}

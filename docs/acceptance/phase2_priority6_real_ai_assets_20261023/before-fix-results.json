@@ -1,0 +1,98 @@
+[
+  {
+    "edition": "standard",
+    "scenario": "A",
+    "prompt": "چرا باید مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند؟ کوتاه و بدون عدد توضیح بده.",
+    "seconds": 15.733320493999997,
+    "response": {
+      "text": "برای اطمینان دارید که مدارک و بازبینی مستقل را از دسترسی به پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید:\n\n1. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده کنید. این موارد به عنوان یکی از اینکه مدارک و بازبینی مستقل را برای پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید.\n\n2. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده کنید. این موارد به عنوان یکی از اینکه مدارک و بازبینی مستقل را برای پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید.\n\n3. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده کنید. این موارد به عنوان یکی از اینکه مدارک و بازبینی مستقل را برای پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید.\n\n4. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده کنید. این موارد به عنوان یکی از اینکه مدارک و بازبینی مستقل را برای پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید.\n\n5. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده کنید. این موارد به عنوان یکی از اینکه مدارک و بازبینی مستقل را برای پرداخت بررسی نکنند، می‌توانید از این موارد استفاده کنید.\n\n6. از دسترسی به مدارک و بازبینی مستقل برای پرداخت بررسی نکنند: این موارد از دسترسی به مدارک و بازبینی مستقل استفاده",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "standard",
+    "scenario": "B",
+    "prompt": "Summarize only the documented member and its recorded length in the supplied evidence. Do not infer materials or prices.",
+    "seconds": 1.7916519799999833,
+    "response": {
+      "text": "The documented member is \"identity\" and its recorded length is 6 meters. [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "standard",
+    "scenario": "C",
+    "prompt": "The slab has no documented length, width or thickness. State what evidence is missing and why no volume can be approved. Do not give numeric examples.",
+    "seconds": 1.9872144619999972,
+    "response": {
+      "text": "The evidence missing is the length, width, and thickness of the slab. Since no volume can be approved without these dimensions, the slab must be measured and documented to ensure it meets the necessary specifications. [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "pro",
+    "scenario": "vision",
+    "prompt": "Describe visible boundaries and the red rectangle. This is a synthetic unscaled plan. Identify missing evidence. Suggestions only; human review is mandatory.",
+    "seconds": 0.027691105999963384,
+    "response": {
+      "text": "تحلیل تصویری AI ناموفق بود؛ نتیجه حدس‌زده وارد BOQ نمی‌شود.",
+      "source": "fail-closed",
+      "confidence": 0.0,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "model_id": "local-rule-engine-v1",
+        "mode": "deterministic_offline_qa"
+      }
+    },
+    "load_error": "error: invalid argument: -st"
+  },
+  {
+    "edition": "enterprise",
+    "scenario": "vision",
+    "prompt": "Describe the outer and inner boundaries. No documented scale or dimensions exist. Suggestions only; require human review.",
+    "seconds": 0.024712797000006503,
+    "response": {
+      "text": "تحلیل تصویری AI ناموفق بود؛ نتیجه حدس‌زده وارد BOQ نمی‌شود.",
+      "source": "fail-closed",
+      "confidence": 0.0,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "model_id": "local-rule-engine-v1",
+        "mode": "deterministic_offline_qa"
+      }
+    },
+    "load_error": "error: invalid argument: -st"
+  }
+]

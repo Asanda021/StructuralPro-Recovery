@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_multimodal_command_matches_pinned_runtime ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_multimodal_command_matche0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f84be81fb60>
+
+    def test_multimodal_command_matches_pinned_runtime(tmp_path,monkeypatch):
+        """Flag contract only; synthetic bytes are not a model acceptance test."""
+        e=LocalAIEngine(model_dir=tmp_path,edition='pro')
+        e.model_path=tmp_path/'hash-only.fixture';e.model_path.write_bytes(b'model hash fixture')
+        e.mmproj_path=tmp_path/'projector.fixture';e.mmproj_path.write_bytes(b'projector hash fixture')
+        image=tmp_path/'image.fixture';image.write_bytes(b'image hash fixture')
+        monkeypatch.setattr(e,'_binary',lambda name:tmp_path/name)
+        command=[]
+        def capture(argv,**kwargs):
+            command.extend(argv);return subprocess.CompletedProcess(argv,0,'fixture output','')
+        monkeypatch.setattr(subprocess,'run',capture)
+        result=e.answer_with_image(image,'Describe only')
+>       assert '-st' not in command
+E       AssertionError: assert '-st' not in ['/tmp/pytest-of-root/pytest-3/test_multimodal_command_matche0/llama-mtmd-cli', '-m', '/tmp/pytest-of-root/pytest-3/te...fixture', '--mmproj', '/tmp/pytest-of-root/pytest-3/test_multimodal_command_matche0/projector.fixture', '--image', ...]
+
+tests/test_local_ai_host_runtime.py:56: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_local_ai_host_runtime.py::test_multimodal_command_matches_pinned_runtime
+1 failed in 0.12s

@@ -1,0 +1,15 @@
+{
+  "python": "3.12.14",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "memory_limit_bytes": "8589934592",
+  "cpu_count": 9,
+  "runtime_binaries": {
+    "llama-cli": "13f001de45c167bfec2ae33252b5b3579178e9e4c3fb29da46b93aa7ea23a706",
+    "llama-completion": "7119bef261611b26f326f7c4da4dc3fdeb7bb28e2faf1ec392bda7b21215ef52",
+    "llama-mtmd-cli": "5988f5074b01d923f19324b838c7e2dbdfc773209e3b23610cbab2911163d658"
+  },
+  "code_sha": "1bff974083cdfaff892c037139191fc31c35b65d",
+  "code_tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc",
+  "inference_service": "none; local CPU subprocesses with explicitly provisioned model paths",
+  "windows_tested": false
+}

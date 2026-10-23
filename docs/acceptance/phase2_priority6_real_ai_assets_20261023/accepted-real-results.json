@@ -1,0 +1,108 @@
+[
+  {
+    "edition": "standard",
+    "scenario": "A",
+    "prompt": "چرا باید مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند؟ کوتاه و بدون عدد توضیح بده.",
+    "seconds": 13.526101625000024,
+    "response": {
+      "text": "برای اطمینان داشتن اطمینان، می‌توانید از این موارد استفاده کنید:\n\n1. از مدارک و بازبینی مستقل قبل از پرداخت بررسی شوند: این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند به اطمینان داشتن اطمینان، از مدارک و بازبینی مستقل استفاده کنید. این می‌تواند",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "standard",
+    "scenario": "B",
+    "prompt": "Summarize only the documented member and its recorded length in the supplied evidence. Do not infer materials or prices.",
+    "seconds": 1.5589236139999798,
+    "response": {
+      "text": "The documented member is \"identity\" and its recorded length is 6 meters. [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "standard",
+    "scenario": "C",
+    "prompt": "The slab has no documented length, width or thickness. State what evidence is missing and why no volume can be approved. Do not give numeric examples.",
+    "seconds": 2.1514837839999927,
+    "response": {
+      "text": "The evidence missing is that the slab has no documented length, width, or thickness. Since no volume can be approved, it's crucial to have these dimensions to ensure the slab is constructed according to the design specifications. Without these details, it's impossible to determine the exact dimensions and thus cannot approve the volume of the slab. [end of text]",
+      "source": "local-gguf",
+      "confidence": 0.85,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+        "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "pro",
+    "scenario": "vision",
+    "prompt": "Describe visible boundaries and the red rectangle. This is a synthetic unscaled plan. Identify missing evidence. Suggestions only; human review is mandatory.",
+    "seconds": 33.281659382999976,
+    "response": {
+      "text": "The image is a synthetic plan with no scale or dimensions provided. The plan features a large rectangular area with a smaller red rectangle within it. The red rectangle is labeled \"OPENING?\" This suggests that the plan is intended to represent a space with an unspecified opening or feature.\n\n### Visible Boundaries:\n- The outer boundary of the plan is a large rectangular outline.\n- The inner boundary is a smaller rectangular outline, which contains the red rectangle.\n\n### Red Rectangle:\n- The red rectangle is positioned within the smaller rectangular outline.\n- The label \"OPENING?\" is written inside the red rectangle.\n\n### Missing Evidence:\n- The exact size, shape, and purpose of the opening are not specified.\n- The materials, reinforcement, and any specific features of the opening are not detailed.\n- The scale and dimensions of the plan are not provided, making it impossible to determine the actual size of the opening or the surrounding space.\n\n### Suggestions:\n- **Human Review:** It is crucial to have human review to ensure that the plan accurately represents the intended space and features, especially when dealing with unspecified elements like openings.\n- **Detailed Description:** The plan should include a detailed description of the opening, its purpose, and any specific features or materials used.\n- **Scale and Dimensions:** The plan should be provided with a scale and dimensions to allow for accurate interpretation and construction.\n\nThis synthetic plan serves as a placeholder for a more detailed and accurate representation of the intended space.",
+      "source": "local-gguf-vision",
+      "confidence": 0.8,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+        "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+        "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888",
+        "source_path": "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+        "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+        "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+      }
+    },
+    "load_error": null
+  },
+  {
+    "edition": "enterprise",
+    "scenario": "vision",
+    "prompt": "Describe the outer and inner boundaries. No documented scale or dimensions exist. Suggestions only; require human review.",
+    "seconds": 24.227219394999963,
+    "response": {
+      "text": "The image depicts a synthetic plan with the following characteristics:\n\n1. **Outer Boundary**: The outer boundary is a rectangular shape with a solid black outline.\n2. **Inner Boundary**: Inside the outer boundary, there is a smaller rectangular area outlined in red. This red outlined area is labeled \"OPENING?\".\n\nThe plan is labeled as \"SYNTHETIC PLAN - NO SCALE - NO DIMENSIONS,\" indicating that no specific measurements or scales are provided. The red outlined area labeled \"OPENING?\" suggests a specific area of interest or a point of focus within the plan.\n\nThis synthetic plan is intended for illustrative purposes and should be reviewed by a human for further details and context.",
+      "source": "local-gguf-vision",
+      "confidence": 0.8,
+      "requires_user_confirmation": true,
+      "quantity_authority": false,
+      "provenance": {
+        "mode": "local_gguf_advisory",
+        "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+        "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+        "data_sha256": "9b9da0a7b6914151f99fe8532bea9f45315f696ec68067c7c9aec946f9bda888",
+        "source_path": "/workspace/scratch/61dce18379e6/p6-ai-evidence/attempt2/plan.png",
+        "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+        "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+      }
+    },
+    "load_error": null
+  }
+]
