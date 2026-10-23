@@ -341,7 +341,7 @@ def summary(project,no):
             if d['issued_period_no']==no:
                 if d['issued_statement_digest']!=digest(issued):raise ValueError("اصل صورت‌وضعیت تغییر کرده است")
                 posted.append(d['amendment_id'])
-                for k in MONEY_KEYS:changes[k]+=number(d['deltas'][k],k,True)
+                for k in MONEY_KEYS:changes[k]+=number(d['deltas'].get(k,0) if k=='other_deductions' else d['deltas'][k],k,True)
                 for line in d['lines']:q[line['price_code']]+=number(line['delta_quantity'],'مابه‌التفاوت',True)
         return {'issued_period_no':no,'original':original,'amendment_deltas':{k:format(v,'f') for k,v in changes.items()},
                 'net':{k:format(Decimal(original[k])+changes[k],'f') for k in MONEY_KEYS},'posted_amendment_ids':posted,

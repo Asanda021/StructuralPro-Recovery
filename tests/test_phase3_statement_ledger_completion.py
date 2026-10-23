@@ -290,3 +290,14 @@ def test_legacy_rate_correction_cannot_exceed_documented_total_advance(tmp_path)
     assert Decimal(a.statement_amendment_summary('P',1)['net']['advance_recovery'])==25
     assert Decimal(a.statement_amendment_summary('P',2)['net']['advance_recovery'])==10
     a.store.close()
+
+
+def test_historical_amendment_without_new_optional_deduction_field_remains_readable(tmp_path):
+    from core.commercial.statement_amendment import summary,_seal
+    a,docs,_,_=fixture(tmp_path);advance(a,draft(a,docs,'4'));historical=deepcopy(a.open_project('P'))
+    doc=historical['statement_amendments'][0]
+    for key in ('effective_before','effective_after','deltas'):doc[key].pop('other_deductions',None)
+    for key in ('effective_rates_before','effective_rates_after'):doc.pop(key,None)
+    _seal(doc)  # Reproduce the pre-extension historical content contract in memory.
+    assert Decimal(summary(historical,1)['net']['payable_current'])==Decimal('363.80')
+    a.store.close()
