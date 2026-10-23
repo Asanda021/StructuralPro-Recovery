@@ -337,11 +337,13 @@ def main()->int:
     pyear=QLineEdit(); pyear.setPlaceholderText("سال؛ اگر داخل فایل نیست وارد کن")
     price_reviewer=QLineEdit(); price_reviewer.setObjectName("PricebookReviewer")
     price_reviewer.setPlaceholderText("هویت واقعی بازبین فهرست‌بهای همین پروژه؛ تأیید خودکار ممنوع")
+    price_currency=QComboBox();price_currency.addItem("واحد پولی را انتخاب کنید",None);price_currency.addItem("ریال","IRR");price_currency.addItem("تومان","IRT")
+    price_version=QLineEdit();price_version.setPlaceholderText("نسخه منبع")
     pquery=QLineEdit(); pquery.setPlaceholderText("🔎 کد، شرح، فصل یا واحد")
     load=QPushButton("📥 ورود Excel / CSV / PDF"); load.setObjectName("PrimaryAction")
     export_prices=QPushButton("⬇️ خروجی CSV"); export_prices.setObjectName("SecondaryAction")
     search=QPushButton("🔎 جستجو"); search.setObjectName("SecondaryAction")
-    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(QLabel("بازبین")); pform.addWidget(price_reviewer,2); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
+    pform.addWidget(QLabel("سال")); pform.addWidget(pyear,1); pform.addWidget(QLabel("بازبین")); pform.addWidget(price_reviewer,2); pform.addWidget(price_currency); pform.addWidget(price_version); pform.addWidget(pquery,3); pform.addWidget(load); pform.addWidget(export_prices); pform.addWidget(search); v.addWidget(ptools)
     import_status=QLabel("🟡 هنوز فهرست‌بهایی وارد نشده است. فایل Excel یا PDF متنی خودت را انتخاب کن؛ هیچ فهرست‌بهای داخلی اجباری وجود ندارد."); import_status.setObjectName("DashboardNotice"); import_status.setWordWrap(True); v.addWidget(import_status)
     ptitle=QLabel("📚 کتابخانه فهرست‌بهای پروژه"); ptitle.setObjectName("SectionTitle"); v.addWidget(ptitle)
     ptable=QTableWidget(0,7); ptable.setAlternatingRowColors(True); ptable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows); ptable.setHorizontalHeaderLabels(["سال","کد","شرح","واحد","بهای واحد","فصل","رشته"]); ptable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch); v.addWidget(ptable,1)
@@ -351,7 +353,7 @@ def main()->int:
         rows=catalog.search(pquery.text(),year=year,limit=250); ptable.setRowCount(0)
         for i,x in enumerate(rows):
             ptable.insertRow(i)
-            for j,val in enumerate([x.year,x.code,x.description,x.unit,f"{x.unit_price:,.2f}",x.chapter,x.group]): ptable.setItem(i,j,QTableWidgetItem(str(val)))
+            for j,val in enumerate([x.year,x.code,x.description,x.unit,str(x.unit_price),x.chapter,x.group]): ptable.setItem(i,j,QTableWidgetItem(str(val)))
         import_status.setText(f"🟢 {len(rows)} ردیف نمایش داده شد | آماده استفاده در متره/BOQ")
     def load_prices():
         path=QFileDialog.getOpenFileName(w,"ورود فهرست‌بها","","Excel (*.xlsx *.xlsm);;CSV (*.csv);;PDF (*.pdf);;همه فایل‌ها (*)")[0]
@@ -369,7 +371,14 @@ def main()->int:
             receipt=pricebook_importer.import_file(path,year=selected_year or 0,discipline="building",source_id="user-import",replace_year=True)
             if receipt.sha256 != info["sha256"]:raise ValueError("فایل فهرست‌بها پس از بررسی تغییر کرده است")
             if bound_project:
-                service.import_project_pricebook(project_id,path,year=receipt.year,approved_by=reviewer)
+                if not price_currency.currentData() or not price_version.text().strip():
+                    raise ValueError("واحد پولی و نسخه منبع باید صریح وارد شوند")
+                existing=service.open_project(project_id).get("user_pricebook_review")
+                replace_approved=False
+                if existing:
+                    replace_approved=QMessageBox.question(w,"جایگزینی نسخه تأییدشده","نسخه قبلی حفظ می‌شود. جایگزینی فهرست‌بهای جاری را تأیید می‌کنید؟")==QMessageBox.StandardButton.Yes
+                    if not replace_approved:return
+                service.import_project_pricebook(project_id,path,year=receipt.year,approved_by=reviewer,currency=price_currency.currentData(),source_version=price_version.text().strip(),replace_approved=replace_approved,expected_digest=service.store.current_digest(project_id))
             pricebook_store.parent.mkdir(parents=True, exist_ok=True)
             pricebook_store.write_text(catalog.export_csv(receipt.year or selected_year or None), encoding="utf-8-sig")
             pyear.setText(str(receipt.year if receipt.year else selected_year))
@@ -411,15 +420,21 @@ def main()->int:
             factors={}
             for token in bfactors.text().split(","):
                 if "=" in token:
-                    k,val=token.split("=",1); factors[k.strip()]=float(val.strip())
+                    k,val=token.split("=",1); factors[k.strip()]=val.strip()
             estimate=service.recalculate_estimate(bpid.text().strip(),factors=factors if bfactors.text().strip() else None)
             rows=estimate["boq"]; btable.setRowCount(0)
             for i,r in enumerate(rows):
                 btable.insertRow(i)
                 vals=[r.get("item_no",i+1),r.get("description",""),r.get("quantity",0),r.get("unit",""),r.get("price_code",""),r.get("total","")]
                 for j,val in enumerate(vals): btable.setItem(i,j,QTableWidgetItem(str(val)))
-            status.setText(f'🟢 برآورد به‌روزرسانی شد | مبلغ پایه: {estimate["cost"]["base"]:,.2f} | مبلغ نهایی: {estimate["cost"]["grand_total"]:,.2f}')
+            status.setText(f'🟢 برآورد به‌روزرسانی شد | مبلغ پایه: {estimate["cost"]["base"]} | مبلغ نهایی: {estimate["cost"]["grand_total"]}')
         except Exception as e: QMessageBox.critical(w,"خطای برآورد",str(e))
+    def review_factor_document():
+        try:
+            from app.financial_factor_review import FactorReviewDialog
+            FactorReviewDialog(service,bpid.text().strip(),w).exec()
+        except Exception as exc:QMessageBox.critical(w,"خطای مدرک ضرایب",str(exc))
+    factor_review_button=QPushButton("بازبینی مدرک ضرایب");factor_review_button.clicked.connect(review_factor_document);bv.addWidget(factor_review_button)
     bgo.clicked.connect(show_boq)
     pages.addWidget(p); idx_boq=pages.count()-1
 

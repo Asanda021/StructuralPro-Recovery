@@ -254,7 +254,9 @@ class StructuralProApp:
         return deepcopy(result)
 
     def import_project_pricebook(self, project_id: str, path: str | Path, *, year: int,
-                                 approved_by: str) -> dict[str, Any]:
+                                 approved_by: str, currency: str | None = None,
+                                 source_version: str = "", replace_approved: bool = False,
+                                 expected_digest: str | None = None) -> dict[str, Any]:
         """Bind a real user import and explicit reviewer to this project's pricing gate."""
         from core.pricing.catalog import PriceCatalog
         from core.pricing.import_service import PricebookImportService
@@ -262,6 +264,10 @@ class StructuralProApp:
         reviewer = str(approved_by or "").strip()
         if not reviewer: raise ValueError("تأییدکننده فهرست‌بهای پروژه الزامی است")
         digest = self.store.current_digest(project_id)
+        if expected_digest is not None and expected_digest != digest:
+            raise RuntimeError("project changed since write began")
+        if currency is not None and currency not in {"IRR", "IRT"}:
+            raise ValueError("واحد پولی باید صریحاً ریال یا تومان باشد؛ تبدیل خودکار انجام نمی‌شود")
         self.store._cache.pop(str(project_id), None)
         project = self.store.get(project_id)
         if project is None: raise KeyError(project_id)
@@ -274,6 +280,15 @@ class StructuralProApp:
                   "sha256":receipt.sha256, "receipt":receipt.as_dict(),
                   "rows_by_code":{x.code:{"unit":x.unit,"unit_price":x.unit_price}
                                   for x in catalog.search("",year=year,limit=receipt.rows)}}
+        review["currency"] = currency
+        review["source_version"] = str(source_version).strip()
+        previous = project.get("user_pricebook_review")
+        if previous and previous != review:
+            if not replace_approved:
+                raise ValueError("جایگزینی فهرست‌بهای تأییدشده نیازمند تأیید صریح کاربر است")
+            history = list(project.get("pricebook_review_history") or [])
+            history.append(deepcopy(previous))
+            project["pricebook_review_history"] = history
         project["user_pricebook_review"] = review
         self.store.save(project_id,project,expected_digest=digest)
         return deepcopy(review)
@@ -1252,6 +1267,50 @@ class StructuralProApp:
         return {"source_id": source, "deleted_revision": current,
                 "remaining_takeoffs": len(project["takeoffs"]), "status": "retired"}
 
+    def review_project_factors(self, project_id, path, *, sha256, author, reviewer, expected_digest):
+        """Review explicit sequential factor evidence; never infer a contract formula."""
+        import hashlib, json
+        from datetime import date
+        if not str(author or "").strip() or not str(reviewer or "").strip() or author == reviewer:
+            raise ValueError("ثبت‌کننده و بازبین مستقل ضرایب الزامی‌اند")
+        digest = self.store.current_digest(project_id)
+        if digest != expected_digest:
+            raise RuntimeError("project changed since write began")
+        source = Path(path).resolve()
+        raw = source.read_bytes()
+        if len(raw) > 1024 * 1024 or hashlib.sha256(raw).hexdigest() != sha256:
+            raise ValueError("SHA-256 یا اندازه مدرک ضرایب نامعتبر است")
+        data = json.loads(raw)
+        if not isinstance(data, dict) or data.get("basis") != "sequential_compound":
+            raise ValueError("فقط مبنای صریح ترکیب ترتیبی موجود پشتیبانی می‌شود")
+        if not str(data.get("version", "")).strip():
+            raise ValueError("نسخه مدرک ضرایب الزامی است")
+        date.fromisoformat(data["effective_date"])
+        self.store._cache.pop(str(project_id), None)
+        project = self.store.get(project_id)
+        book = project.get("user_pricebook_review") or {}
+        if data.get("currency") not in {"IRR", "IRT"} or data["currency"] != book.get("currency"):
+            raise ValueError("واحد پولی ضرایب با فهرست‌بها تطبیق ندارد")
+        if data.get("year") != (book.get("receipt") or {}).get("year"):
+            raise ValueError("سال ضرایب با فهرست‌بها تطبیق ندارد")
+        if not isinstance(data.get("factors"), list):
+            raise ValueError("ترتیب ضرایب باید صریح باشد")
+        rates = {}
+        for item in data["factors"]:
+            name = str(item.get("name", "")).strip()
+            if not name or name in rates:
+                raise ValueError("نام ضریب نامعتبر یا تکراری است")
+            rates[name] = wire(number(item.get("rate"), "ضریب مستند"))
+        review = {**data, "rates": rates, "status": "approved", "path": str(source),
+                  "sha256": sha256, "author": author, "reviewer": reviewer,
+                  "pricebook_sha256": book["sha256"]}
+        previous = project.get("factor_review")
+        if previous:
+            project.setdefault("factor_review_history", []).append(deepcopy(previous))
+        project["factor_review"] = review
+        self.store.save(project_id, project, expected_digest=digest)
+        return deepcopy(review)
+
     def recalculate_estimate(self, project_id: str, *, factors: dict[str,float] | None = None) -> dict[str,Any]:
         """Financial estimate needs priced BOQ, finite rates and a version-safe save."""
         pid=str(project_id or "").strip()
@@ -1266,15 +1325,32 @@ class StructuralProApp:
         for row in boq:
             if row.get("unit_price") is None or not row.get("price_code"):
                 raise ValueError("قیمت واحد و کد فهرست‌بها برای همه ردیف‌های برآورد الزامی است")
-            price=float(row["unit_price"])
-            if not math.isfinite(price) or price<0:
-                raise ValueError("بهای واحد باید متناهی و نامنفی باشد")
+            number(row["unit_price"], "بهای واحد")
         # A nonempty hand-entered rate/code is not proof of a reviewed,
         # user-imported pricebook. The same source-to-BOQ reconciliation gate
         # used for financial exports must also protect the estimate service.
         from core.reports.aec_office_package import audit_boq
         audit_boq(project, require_pricebook=True)
-        if factors is None:
+        factor_review = project.get("factor_review")
+        if factor_review:
+            import hashlib
+            raw_factor_document = Path(factor_review["path"]).read_bytes()
+            if hashlib.sha256(raw_factor_document).hexdigest() != factor_review["sha256"]:
+                raise ValueError("مدرک ضرایب تغییر کرده است")
+            if factor_review["pricebook_sha256"] != project["user_pricebook_review"]["sha256"]:
+                raise ValueError("ضرایب متعلق به نسخه دیگری از فهرست‌بها هستند")
+            import json
+            original_factors = json.loads(raw_factor_document)
+            if any(factor_review.get(key) != value for key, value in original_factors.items()):
+                raise ValueError("نسخه ذخیره‌شده ضرایب با مدرک منطبق نیست")
+            documented_rates = {item["name"]: wire(number(item["rate"], "ضریب مستند"))
+                                for item in original_factors["factors"]}
+            if documented_rates != factor_review["rates"]:
+                raise ValueError("نرخ ضرایب ذخیره‌شده با مدرک منطبق نیست")
+            if factors is not None and factors != documented_rates:
+                raise ValueError("تغییر ضرایب نیازمند مدرک و بازبینی جدید است")
+            factors = documented_rates
+        elif factors is None:
             factors = (project.get("estimate") or {}).get("factors", {})
         normalized_factors={}
         for name,value in (factors or {}).items():
@@ -1285,6 +1361,11 @@ class StructuralProApp:
         estimate=build_estimate(boq,factors=normalized_factors,aggregate=False)
         estimate["numeric_encoding_version"]=2
         estimate["financial_policy_status"]="EXPLICIT_OWNER_POLICY" if project.get("statement_amendment_policy") else "LEGACY_PREVIEW_NOT_FINANCIALLY_APPROVED"
+        if factor_review:
+            estimate["factor_review_sha256"] = factor_review["sha256"]
+            estimate["currency"] = factor_review["currency"]
+        if project.get("estimate"):
+            project.setdefault("estimate_history", []).append(deepcopy(project["estimate"]))
         project["estimate"]=estimate
         self.store.save(pid,project,expected_digest=digest)
         return estimate

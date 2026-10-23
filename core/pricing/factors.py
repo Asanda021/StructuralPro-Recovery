@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, replace
 from decimal import Decimal, InvalidOperation
-import math
 from typing import Iterable, Mapping
 
 
@@ -45,20 +44,21 @@ class FactorRegistry:
         if not isinstance(factor_set.factors, Mapping):
             raise ValueError("factors must be a mapping")
 
+        from core.commercial.exact_values import number, wire
         normalized: dict[str, float] = {}
         for raw_name, raw_rate in factor_set.factors.items():
             key = raw_name.strip() if isinstance(raw_name, str) else ""
             if not key:
                 raise ValueError("factor name cannot be empty")
             try:
-                rate = float(raw_rate)
+                rate = number(raw_rate, "factor rate", negative=True)
             except (TypeError, ValueError, OverflowError) as exc:
                 raise ValueError(f"factor rate is invalid: {key}") from exc
-            if not math.isfinite(rate) or rate < -1:
+            if rate < -1:
                 raise ValueError(f"factor rate must be finite and >= -1: {key}")
             if key in normalized:
                 raise ValueError(f"duplicate factor name after normalization: {key}")
-            normalized[key] = rate
+            normalized[key] = wire(rate)
 
         for field_name in ("source", "effective_date", "notes"):
             if not isinstance(getattr(factor_set, field_name), str):

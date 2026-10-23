@@ -113,11 +113,13 @@ class PricebookImportService:
                     def val(field: str, default: Any = ""):
                         idx = mapping.get(field)
                         return values[idx] if idx is not None and idx < len(values) else default
-                    code = str(val("code")).strip()
-                    desc = str(val("description")).strip()
-                    unit = str(val("unit")).strip()
-                    if not code or not desc or not unit:
+                    if all(v is None or str(v).strip() == "" for v in values):
                         continue
+                    code = str(val("code") or "").strip()
+                    desc = str(val("description") or "").strip()
+                    unit = str(val("unit") or "").strip()
+                    if not code or not desc or not unit:
+                        raise ValueError("ردیف ناقص Excel: کد، شرح و واحد الزامی‌اند")
                     year_value = val("year", fallback_year)
                     group = str(val("group", "")).strip()
                     chapter = str(val("chapter", "")).strip()
