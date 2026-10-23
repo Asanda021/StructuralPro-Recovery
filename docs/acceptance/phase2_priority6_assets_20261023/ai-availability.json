@@ -1,0 +1,50 @@
+[
+  {
+    "edition": "light",
+    "tier": "none",
+    "has_llm_model": false,
+    "has_vision_model": false,
+    "runtime_available": false,
+    "model_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/models",
+    "runtime_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/ai_runtime",
+    "model_files": [
+      "README.md"
+    ]
+  },
+  {
+    "edition": "standard",
+    "tier": "base",
+    "has_llm_model": false,
+    "has_vision_model": false,
+    "runtime_available": false,
+    "model_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/models",
+    "runtime_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/ai_runtime",
+    "model_files": [
+      "README.md"
+    ]
+  },
+  {
+    "edition": "pro",
+    "tier": "takeoff",
+    "has_llm_model": false,
+    "has_vision_model": false,
+    "runtime_available": false,
+    "model_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/models",
+    "runtime_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/ai_runtime",
+    "model_files": [
+      "README.md"
+    ]
+  },
+  {
+    "edition": "enterprise",
+    "tier": "takeoff",
+    "has_llm_model": false,
+    "has_vision_model": false,
+    "runtime_available": false,
+    "model_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/models",
+    "runtime_dir": "/workspace/scratch/61dce18379e6/p5-complete-recovered/ai_runtime",
+    "model_files": [
+      "README.md"
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "query": "gguf",
+      "result": {
+        "has_more": false,
+        "results": [],
+        "total_results": 0
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "query": "Qwen",
+      "result": {
+        "has_more": false,
+        "results": [],
+        "total_results": 0
+      }
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "query": "llama",
+      "result": {
+        "has_more": false,
+        "results": [],
+        "total_results": 0
+      }
+    }
+  }
+]

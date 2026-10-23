@@ -1,0 +1,51 @@
+[
+  {
+    "name": "compileall",
+    "command": [
+      "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+      "-m",
+      "compileall",
+      "-q",
+      "core",
+      "app",
+      "tests"
+    ],
+    "exit_code": 0,
+    "seconds": 0.05077099800109863
+  },
+  {
+    "name": "pip-check",
+    "command": [
+      "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+      "-m",
+      "pip",
+      "check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.21877813339233398
+  },
+  {
+    "name": "full",
+    "command": [
+      "/workspace/scratch/61dce18379e6/structuralpro-venv/bin/python",
+      "-m",
+      "pytest",
+      "-q",
+      "-ra",
+      "--basetemp=/tmp/p6-final-samples",
+      "--junitxml=/tmp/p6-evidence/phase2_priority6.xml"
+    ],
+    "exit_code": 0,
+    "seconds": 364.0922808647156
+  },
+  {
+    "name": "diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "seconds": 0.0035881996154785156
+  }
+]

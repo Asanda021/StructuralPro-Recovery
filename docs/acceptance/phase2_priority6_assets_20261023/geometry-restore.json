@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "source_from_restored_bytes": true,
+  "read_only": true,
+  "sqlite_integrity": true
+}

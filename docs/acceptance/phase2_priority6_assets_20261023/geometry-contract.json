@@ -1,0 +1,169 @@
+{
+  "project_id": "P",
+  "proposal_id": "04145836bed117eef2859e9372285a0d43286dc9e3a792544eda11598f3400a0",
+  "building_id": "3claU1zjr3LuLqNB2a2JTW",
+  "floor_id": "F1",
+  "member_id": "B1",
+  "dimension": 3,
+  "ownership_view": "current",
+  "financial_permission": false,
+  "geometry": {
+    "policy": "ifc_display_geometry_v1",
+    "source_path": "/tmp/p6-geometry-sample/source.ifc",
+    "source_sha256": "c8b329dab29cfc664d6d088ff8cc53f115573070aca7585d31ea403a0a50a46d",
+    "revision": "R1",
+    "schema": "IFC4",
+    "parser": "IfcOpenShell 0.9.0.post1",
+    "dimension": 3,
+    "coordinate_system": "IFC world coordinates in metres",
+    "quantity_authority": false,
+    "elements": [
+      {
+        "global_id": "0N5QrM13P3yeSlBqDFSY80",
+        "ifc_type": "IfcBeam",
+        "building_id": "3claU1zjr3LuLqNB2a2JTW",
+        "storey_id": "0BvJVdUcH8yuN$PfedrJgU",
+        "origin_m": [
+          "1000000.00",
+          "7.00",
+          "0.00"
+        ],
+        "placement_matrix_si": [
+          [
+            "0.0",
+            "-1.0",
+            "0.0",
+            "1000000.00"
+          ],
+          [
+            "1.0",
+            "0.0",
+            "0.0",
+            "7.00"
+          ],
+          [
+            "0.0",
+            "0.0",
+            "1.0",
+            "0.00"
+          ],
+          [
+            "0.0",
+            "0.0",
+            "0.0",
+            "1.00"
+          ]
+        ],
+        "vertices_m": [
+          [
+            1000000.1,
+            5.0,
+            0.0
+          ],
+          [
+            1000000.1,
+            5.0,
+            3.0
+          ],
+          [
+            1000000.1,
+            9.0,
+            3.0
+          ],
+          [
+            1000000.1,
+            9.0,
+            0.0
+          ],
+          [
+            999999.9,
+            9.0,
+            3.0
+          ],
+          [
+            999999.9,
+            9.0,
+            0.0
+          ],
+          [
+            999999.9,
+            5.0,
+            3.0
+          ],
+          [
+            999999.9,
+            5.0,
+            0.0
+          ]
+        ],
+        "triangles": [
+          [
+            1,
+            0,
+            3
+          ],
+          [
+            2,
+            1,
+            3
+          ],
+          [
+            2,
+            3,
+            5
+          ],
+          [
+            4,
+            2,
+            5
+          ],
+          [
+            4,
+            5,
+            7
+          ],
+          [
+            6,
+            4,
+            7
+          ],
+          [
+            6,
+            7,
+            0
+          ],
+          [
+            1,
+            6,
+            0
+          ],
+          [
+            3,
+            0,
+            5
+          ],
+          [
+            0,
+            7,
+            5
+          ],
+          [
+            4,
+            1,
+            2
+          ],
+          [
+            4,
+            6,
+            1
+          ]
+        ]
+      }
+    ],
+    "numeric_policy": "Decimal80; exact QTO STEP scalars <=64 significant digits; placement over parser scalars; rigid placements <=1e12m; orthogonality 1e-24; minimum nonzero quantity 1e-24",
+    "map_conversion_present": false,
+    "map_conversion_supported": false,
+    "tessellation_authority": "display only; no engineering error bound",
+    "omitted_ids": []
+  }
+}

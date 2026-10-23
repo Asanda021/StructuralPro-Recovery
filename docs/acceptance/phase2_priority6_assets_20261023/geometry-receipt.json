@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "project_id": "P",
+  "proposal_id": "04145836bed117eef2859e9372285a0d43286dc9e3a792544eda11598f3400a0",
+  "source_sha256": "c8b329dab29cfc664d6d088ff8cc53f115573070aca7585d31ea403a0a50a46d",
+  "digest_unchanged": "78d069139c5e3664322882f3dd68715cfc5c47e786c75eb71072967a4b8f1e37",
+  "display_dimension": 3,
+  "quantity_authority": false,
+  "sqlite_reopened": true
+}

@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "primary_file_id": "id:npSmebsorqwAAAAAAAAAvA",
+  "primary_path": "/StructuralPro/Backups/StructuralPro_P6_72ccee73_20261023.zip",
+  "primary_sha256": "e5fd2b8444377ce84254d7bf1159de83b8bb7b976bf72af653a6db283d0f0581",
+  "primary_bytes": 86110421,
+  "code_head": "72ccee730e46d0de9f311ceddcfc386bafeb3e9e",
+  "code_tree": "a1ca7f457480226945f011004f5bb41bd82066c7",
+  "manifest_files": 1814,
+  "manifest_unchanged": true,
+  "git_fsck_exit": 0,
+  "restored_tests": {
+    "pass": 282,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "exit_code": 0
+  },
+  "sample_paths_read": 23,
+  "unique_sqlite_files": 17,
+  "fresh_dwg_scenarios": 4,
+  "geometry_recovered": true,
+  "reports_reopened": true,
+  "post_refresh_recovery": true
+}
