@@ -62,3 +62,18 @@ def test_workspace_exposes_real_statement_export_and_amendment(tmp_path):
     assert w.findChild(QPushButton,'StatementExport') is not None
     assert w.findChild(QPushButton,'StatementAmendment') is not None
     w.close();a.store.close()
+
+
+def test_financial_workspace_process_exits_without_native_corruption(tmp_path):
+    import subprocess,sys,os
+    from test_phase3_statement_ledger_completion import posted,setup_workflow,issue
+    a,docs,_,_=fixture(tmp_path);setup_workflow(a,docs);issue(a,'S-NATIVE','1');posted(a,'budget','B-NATIVE','1000');a.store.close()
+    code=f'''from core.platform.application import StructuralProApp
+from PySide6.QtWidgets import QApplication
+from app.financial_workspace import FinancialWorkspace
+qt=QApplication([])
+a=StructuralProApp({str(tmp_path/'db')!r})
+w=FinancialWorkspace(a,'P');w.show();qt.processEvents();w.grab().save({str(tmp_path/'native.png')!r});w.close();del w;qt.processEvents();a.store.close()
+'''
+    p=subprocess.run([sys.executable,'-X','faulthandler','-c',code],capture_output=True,text=True,env={**os.environ,'QT_QPA_PLATFORM':'offscreen'},timeout=30)
+    assert p.returncode==0,p.stderr

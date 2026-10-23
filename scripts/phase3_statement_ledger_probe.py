@@ -8,6 +8,9 @@ from core.platform.application import StructuralProApp
 
 
 def run(root):
+    # Keep one QApplication alive across both engineering and financial views.
+    from PySide6.QtWidgets import QApplication
+    qt=QApplication.instance() or QApplication([])
     root=Path(root).resolve();root.mkdir(parents=True,exist_ok=True)
     prepare(root/'engineering')
     a=StructuralProApp(root/'engineering'/'db')
@@ -72,7 +75,7 @@ def run(root):
             with fitz.open(path) as pdf:assert len(pdf)>0 and pdf[0].get_text()
     from PySide6.QtWidgets import QApplication,QTabWidget
     from app.financial_workspace import FinancialWorkspace
-    qt=QApplication.instance() or QApplication([]);w=FinancialWorkspace(a,'P');w.show();w.findChild(QTabWidget).setCurrentIndex(2);qt.processEvents();w.grab().save(str(root/'finance-qt.png'));w.close()
+    qt=QApplication.instance() or QApplication([]);w=FinancialWorkspace(a,'P');w.show();w.findChild(QTabWidget).setCurrentIndex(2);qt.processEvents();w.grab().save(str(root/'finance-qt.png'));w.close();qt.processEvents()
     before=a.open_project('P');a.store.close();a=StructuralProApp(root/'engineering'/'db')
     assert a.open_project('P')==before and a.verified_financial_snapshot('P')==snap
     assert a.store.integrity_check()['ok']

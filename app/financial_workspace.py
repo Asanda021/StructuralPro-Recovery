@@ -11,6 +11,7 @@ KINDS={'budget':'بودجه','commitment':'تعهد','cost':'هزینه واقع
 class FinancialWorkspace(QDialog):
     def __init__(self,service,project_id,parent=None):
         super().__init__(parent);self.service=service;self.pid=project_id
+        self.setAttribute(Qt.WA_DeleteOnClose)
         if parent is None:
             from app.theme import APP_STYLESHEET
             self.setStyleSheet(APP_STYLESHEET)
