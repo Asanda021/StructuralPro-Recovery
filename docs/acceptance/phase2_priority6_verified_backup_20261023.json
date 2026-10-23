@@ -1,0 +1,107 @@
+{
+  "status": "PARTIAL",
+  "mode": "full",
+  "archive_from_dropbox": true,
+  "archive_sha256": "10d09f3168e67a6d95ae867bfe7ff3e166125d8adacc8640ee41782d4ab58995",
+  "archive_bytes": 41865320,
+  "manifest_files": 142,
+  "code_sha": "1bff974083cdfaff892c037139191fc31c35b65d",
+  "code_tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc",
+  "git_fsck": true,
+  "sqlite": [
+    {
+      "sample": "sample",
+      "digest": "4f61df9f8fd955a03a93154fbc1e5fb652acfe5581038a15bcd030833892731a",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    },
+    {
+      "sample": "attempt2/sample",
+      "digest": "bcb7f7f8543264e5e9e225ac6855ffdfed7855fb8abe147324454d57574f400d",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    },
+    {
+      "sample": "report-sample",
+      "digest": "e7737ee26b6a2d39e4fdec64a9fa50d3da4e198b4b34117472bb0b5d67967d7f",
+      "boq_rows": 1,
+      "ifc_display_checked": 3
+    }
+  ],
+  "actual_inference": [
+    {
+      "edition": "standard",
+      "seconds": 8.025920118000613,
+      "response": {
+        "text": "For a slab without dimensions or thickness, you would typically need the following documents:\n\n1. **Design Specifications**: This is the primary document that outlines the design requirements and specifications for the slab. It includes the dimensions, thickness, and any other relevant dimensions and measurements.\n\n2. **Construction Specifications**: This document provides detailed instructions on how to construct the slab, including the dimensions and thickness. It includes measurements for the slab's length, width, and thickness.\n\n3. **Construction Plan**: This document outlines the construction plan for the slab, including the sequence of operations and the materials and tools needed for each step.\n\n4. **Labor Cost Estimate**: This document estimates the cost of labor required to construct the slab, including the labor for the slab's construction and any other labor required.\n\n5. **Material List**: This document lists all the materials needed for the slab, including the dimensions and thickness of each material.\n\n6. **Construction Permit**: This document is required for construction projects and provides the necessary permits and approvals for the construction of the slab.\n\n7. **Construction Schedule**: This document outlines the schedule for the construction of the slab, including the start and end dates and the sequence of operations.\n\n8. **Construction Documents**: This document includes any additional documents or drawings that are necessary for the construction of the slab, such as elevation drawings or structural diagrams.\n\nThese documents are essential for a comprehensive understanding of the construction requirements and for ensuring that the construction project is completed according to the design specifications and the construction plan. [end of text]",
+        "source": "local-gguf",
+        "confidence": 0.85,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "p6-delete-verified.gguf",
+          "model_sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b"
+        }
+      }
+    },
+    {
+      "edition": "pro",
+      "seconds": 27.97698727399984,
+      "response": {
+        "text": "The image shows a synthetic plan with no scale or dimensions, indicating that it is a conceptual or illustrative drawing rather than a detailed architectural plan. The plan includes a rectangular area with a red border, labeled \"OPENING?\" This suggests that the plan is focusing on a specific area or feature that needs further clarification or explanation. The boundaries of the plan are defined by black lines, and the text at the top indicates that this is a synthetic plan with no scale or dimensions provided.",
+        "source": "local-gguf-vision",
+        "confidence": 0.8,
+        "requires_user_confirmation": true,
+        "quantity_authority": false,
+        "provenance": {
+          "mode": "local_gguf_advisory",
+          "model_id": "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+          "model_sha256": "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+          "data_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+          "source_path": "/workspace/scratch/61dce18379e6/p6-verified-close/full/evidence/attempt2/plan.png",
+          "source_sha256": "b5fd49646399be72992a6d43daab41d5da2e108a635d09961a7254dd90372a73",
+          "projector_sha256": "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904"
+        }
+      }
+    }
+  ],
+  "runtime": "restored from archive",
+  "gguf_assets": "External pinned prerequisites, SHA verified by previous download and actual response provenance; Standard bytes freshly downloaded from Dropbox before authorized deletion.",
+  "full_archive_restore_status": "PASS",
+  "compact_archive_status": "BLOCKED",
+  "compact_error": "RESOURCE_EXHAUSTED / INSUFFICIENT_SPACE",
+  "audit_upload_status": "BLOCKED: INSUFFICIENT_SPACE",
+  "deleted_file": {
+    "id": "id:npSmebsorqwAAAAAAAAAwA",
+    "path": "/StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf",
+    "bytes": 491400032,
+    "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+    "verified_before_deletion": true
+  },
+  "restored_tests": {
+    "passed": 195,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 64.88
+  },
+  "code_changed": false,
+  "prior_full_regression": {
+    "passed": 7701,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 0,
+    "rerun_in_this_followup": false
+  },
+  "initial_delivery_head": "d0fbb7ead50d320f4785ffb10789f825b44107a9",
+  "full_dropbox_file_id": "id:npSmebsorqwAAAAAAAAAwQ",
+  "compact_dropbox_file_id": null,
+  "only_authorized_file_deleted": true,
+  "previous_backups_untouched": true,
+  "space_check": "No remaining-quota API exposed. Full archive upload succeeded; compact and small audit uploads rejected for insufficient space.",
+  "cad_100000_restore_max_gap_s": 0.2597815499993885
+}

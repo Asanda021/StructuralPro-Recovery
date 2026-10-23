@@ -1,0 +1,76 @@
+{
+  "authorized_deleted_file": {
+    "id": "id:npSmebsorqwAAAAAAAAAwA",
+    "path": "/StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf",
+    "bytes": 491400032,
+    "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db"
+  },
+  "delete_result": {
+    "delete_result": {
+      "entries": [
+        {
+          "entry_index": 0,
+          "entry_status": "success",
+          "object": {
+            "file": {
+              "size": 491400032
+            },
+            "file_id": "id:npSmebsorqwAAAAAAAAAwA",
+            "modified_time": "2026-10-23T13:17:25Z",
+            "name": "StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf",
+            "object_type": "file",
+            "path": "ns:15287390003//StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf",
+            "path_display": "/StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.standard.gguf"
+          }
+        }
+      ]
+    },
+    "result_type": "delete",
+    "status": "completed"
+  },
+  "full_upload": {
+    "file": {
+      "file": {
+        "size": 41865320
+      },
+      "file_id": "id:npSmebsorqwAAAAAAAAAwQ",
+      "modified_time": "2026-10-23T14:11:19Z",
+      "name": "StructuralPro_P6_RealAI_1bff9740_20261023.zip",
+      "object_type": "file",
+      "path": "ns:15287390003//StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.zip",
+      "path_display": "/StructuralPro/Backups/StructuralPro_P6_RealAI_1bff9740_20261023.zip"
+    },
+    "status": "completed"
+  },
+  "compact_upload_error": "[RESOURCE_EXHAUSTED] Insufficient space (reason: INSUFFICIENT_SPACE)",
+  "historical_backups": [
+    {
+      "id": "id:npSmebsorqwAAAAAAAAAvA",
+      "path": "/StructuralPro/Backups/StructuralPro_P6_72ccee73_20261023.zip",
+      "bytes": 86110421
+    },
+    {
+      "id": "id:npSmebsorqwAAAAAAAAAvw",
+      "path": "/StructuralPro/Backups/StructuralPro_P6_72ccee73_20261023.delivery.restore.json",
+      "bytes": 1058
+    }
+  ],
+  "full_restored_tests": {
+    "passed": 195,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0
+  },
+  "prior_full_regression": {
+    "passed": 7701,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 5,
+    "exit_code": 0,
+    "code_sha": "1bff974083cdfaff892c037139191fc31c35b65d",
+    "tree": "a16fa8f5f61bb4b5f7953488a8468e32bd4221cc"
+  },
+  "status": "PARTIAL",
+  "blocker": "Compact archive still rejected for INSUFFICIENT_SPACE after authorized deletion; no other file deletion authorized or attempted."
+}
