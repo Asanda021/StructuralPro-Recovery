@@ -13,9 +13,8 @@ import base64
 import hashlib
 import json
 from uuid import uuid4
-from core.takeoff.units import normalize_unit
 
-MONEY_KEYS=("gross_current","retention","advance_recovery","taxable_current","tax","insurance","payable_current")
+MONEY_KEYS=("gross_current","retention","advance_recovery","other_deductions","taxable_current","tax","insurance","payable_current")
 RATE_KEYS=("retention_rate","advance_recovery_rate","tax_rate","insurance_rate")
 ROUNDINGS={"ROUND_HALF_UP","ROUND_HALF_EVEN","ROUND_DOWN"}
 SUBJECT_KEYS=("amendment_id","project_id","issued_period_no","sequence","created_by",
@@ -134,15 +133,19 @@ def cumulative_quantities(project):
                 code=line['price_code'];result[code]=result.get(code,Decimal(0))+number(line['delta_quantity'],'مابه‌التفاوت',True)
         return result
 
-def _money(quantities,prices,rates,m):
+def _money(quantities,prices,rates,m,*,advance_cap=None,other_deduction_rate=0):
     import decimal
     # Currency rounding is explicit and recorded; intermediate arithmetic is exact.
     gross=sum((q*prices[code] for code,q in quantities.items()),Decimal(0))
     raw={'gross_current':gross,'retention':gross*rates['retention_rate'],
          'advance_recovery':gross*rates['advance_recovery_rate']}
-    raw['taxable_current']=max(gross-raw['retention']-raw['advance_recovery'],Decimal(0))
+    if advance_cap is not None:raw['advance_recovery']=min(raw['advance_recovery'],number(advance_cap,'مانده پیش‌پرداخت'))
+    raw['other_deductions']=gross*number(other_deduction_rate,'سایر کسورات')
+    raw['taxable_current']=gross-raw['retention']-raw['advance_recovery']-raw['other_deductions']
+    if raw['taxable_current']<0:raise ValueError('جمع کسورات بیشتر از ناخالص است')
     raw['tax']=raw['taxable_current']*rates['tax_rate'];raw['insurance']=raw['taxable_current']*rates['insurance_rate']
-    raw['payable_current']=max(raw['taxable_current']+raw['tax']-raw['insurance'],Decimal(0))
+    raw['payable_current']=raw['taxable_current']+raw['tax']-raw['insurance']
+    if raw['payable_current']<0:raise ValueError('خالص منفی بدون اصلاحیه معتبر مجاز نیست')
     if m is None:return {k:format(v,'f') for k,v in raw.items()}
     quantum=Decimal(1).scaleb(-m['decimal_places'])
     with localcontext() as ctx:
@@ -150,12 +153,14 @@ def _money(quantities,prices,rates,m):
         return {k:format(v.quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k,v in raw.items()}
 
 def _preview(project,no,raw_lines,docs):
+    from core.takeoff.units import normalize_unit
     from core.reports.aec_office_package import audit_boq
     audit_boq(project,require_pricebook=True)
     issued=_period(project,no);p=policy(project);rates={k:number(issued['rates'][k],k) for k in RATE_KEYS}
     if any(v>1 for v in rates.values()):raise ValueError("نرخ صادرشده نامعتبر است")
     originals={};prices={};boq={}
-    for row in project.get('boq',[]):
+    from core.commercial.statement import statement_rows
+    for row in statement_rows(project):
         code=row['price_code']
         if code in boq:raise ValueError("کد قیمت میان چند گروه BOQ مبهم است")
         boq[code]=row
@@ -163,7 +168,7 @@ def _preview(project,no,raw_lines,docs):
         code=row['code']
         if code in originals or code not in boq:raise ValueError("هویت ردیف صادرشده مبهم است")
         b=boq[code]
-        if normalize_unit(row['unit'])!=normalize_unit(b['unit']) or number(row['unit_price'],'قیمت')!=number(b['unit_price'],'قیمت'):
+        if normalize_unit(row['unit'])!=normalize_unit(b['unit']) or number(row['unit_price'],'قیمت')!=number(b['unit_price'],'قیمت')*number(issued.get('statement_multiplier',1),'ضریب قرارداد'):
             raise ValueError("تغییر نرخ یا واحد قرارداد نیازمند الحاقیه معتبر است")
         originals[code]=number(row['current_quantity'],'کارکرد اصل');prices[code]=number(row['unit_price'],'قیمت تأییدشده')
     before=dict(originals)
@@ -192,7 +197,15 @@ def _preview(project,no,raw_lines,docs):
                       'delta_gross':quantity_text(delta*prices[code]),
                       'reviewed_unit_price':quantity_text(prices[code]),'pricebook_sha256':project['user_pricebook_review']['sha256'],
                       'reason':_text(raw['reason'],'علت ردیف'),'detail_source_ref':ref})
-    money_before=_money(before,prices,rates,p['money']);money_after=_money(after,prices,rates,p['money'])
+    cap=None;other=0
+    if issued.get('reference') and project.get('statement_workflow_terms'):
+        terms=project['statement_workflow_terms']['terms'];other=terms['other_deduction_rate']
+        used=sum((number(x['advance_recovery'],'استهلاک') for x in project.get('statement_periods',[]) if x['number']!=no),Decimal(0))
+        for change in _posted(project):
+            if change['issued_period_no']!=no:used+=number(change['deltas']['advance_recovery'],'اصلاح استهلاک',True)
+        cap=max(number(terms['advance_paid'],'پیش‌پرداخت')-used,Decimal(0))
+    money_before=_money(before,prices,rates,p['money'],advance_cap=cap,other_deduction_rate=other)
+    money_after=_money(after,prices,rates,p['money'],advance_cap=cap,other_deduction_rate=other)
     return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS}
 
 def dispatch(previous,command):
@@ -297,7 +310,7 @@ def summary(project,no):
         ctx.prec=512
         issued=_period(project,no);p=policy(project);m=p['money'];quantum=Decimal(1).scaleb(-m['decimal_places'])
         import decimal
-        original={k:format(number(issued[k],k).quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k in MONEY_KEYS}
+        original={k:format(number(issued.get(k,0),k).quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k in MONEY_KEYS}
         changes={k:Decimal(0).quantize(quantum) for k in MONEY_KEYS};q={line['code']:number(line['current_quantity'],'کارکرد') for line in issued['lines']}
         posted=[]
         for d in _posted(project):

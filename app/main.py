@@ -770,6 +770,14 @@ def main()->int:
             if not stid.text().strip(): raise ValueError("شناسه پروژه را وارد کنید")
             StatementAmendmentDialog(service, stid.text().strip(), w).exec()
         except Exception as e: QMessageBox.critical(w,"خطای اصلاحیه",str(e))
+    def open_financial_workspace():
+        try:
+            from app.financial_workspace import FinancialWorkspace
+            if not stid.text().strip():raise ValueError("شناسه پروژه را وارد کنید")
+            FinancialWorkspace(service,stid.text().strip(),w).exec()
+        except Exception as exc:QMessageBox.critical(w,"خطای دفتر مالی",str(exc))
+    finance_open=QPushButton("گردش رسمی صورت‌وضعیت و دفتر مالی");finance_open.setObjectName("FinancialWorkspaceOpen")
+    finance_open.clicked.connect(open_financial_workspace);v.addWidget(finance_open)
     stamend.clicked.connect(open_statement_amendments)
     stgo.clicked.connect(statement_shortcut)
     stsave.clicked.connect(save_statement_period)
@@ -1079,6 +1087,7 @@ def main()->int:
         elif index == idx_statement:
             add_command("🧮 محاسبه دوره", statement_shortcut, True)
             add_command("💾 ذخیره دوره", save_statement_period)
+            add_command("دفتر مالی و گردش رسمی", open_financial_workspace)
             add_command("📋 برآورد", lambda: pages.setCurrentIndex(idx_boq))
             add_command("📊 گزارش", lambda: pages.setCurrentIndex(idx_reports))
         elif index == idx_reports:

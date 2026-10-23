@@ -265,8 +265,10 @@ class FinancePaymentControl:
 
         for x in receipts:
             bucket(x.get("date"))["cash_in"] += _money(x.get("amount", 0), "receipt amount")
+        # Accrued costs are not bank movements. Only explicit cash records count.
         for x in costs:
-            bucket(x.get("date"))["cash_out"] += _money(x.get("amount", 0), "cost amount")
+            if x.get("cash_paid") is True:
+                bucket(x.get("date"))["cash_out"] += _money(x.get("amount"), "cost amount")
         for x in payments:
             bucket(x.get("date"))["cash_out"] += _money(x.get("amount", 0), "payment amount")
         for x in commitments:

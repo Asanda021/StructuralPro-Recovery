@@ -36,7 +36,7 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -64,6 +64,8 @@ class ProjectStore:
             if row is not None:
                 previous = json.loads(row["payload"])
                 issued = previous.get("statement_periods") or []
+                if issued and previous.get('statement_workflow_terms') and previous.get('factor_review')!=clean_project.get('factor_review'):
+                    raise ValueError('تغییر ضرایب پس از صدور رسمی نیازمند الحاقیه مستقل است')
                 if issued:
                     next_periods = clean_project.get("statement_periods") or []
                     if not isinstance(next_periods, list) or next_periods[:len(issued)] != issued:
@@ -79,6 +81,10 @@ class ProjectStore:
                     # quantity, approved pricebook or payable-unit change.
                     clean_project.pop("estimate", None)
                     payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.commercial.financial_ledger import ledger_guard
+            ledger_guard(json.loads(row["payload"]) if row else {}, clean_project, phase3_command)
+            from core.commercial.statement import workflow_guard
+            workflow_guard(json.loads(row['payload']) if row else {}, clean_project, phase3_command)
             from core.drawings.ifc_pipeline import identity_guard
             identity_guard(json.loads(row['payload']) if row else {},clean_project,ifc_command)
             from core.takeoff.structural_handoff_work import guard as handoff_guard
@@ -89,6 +95,8 @@ class ProjectStore:
             guard_change(json.loads(row["payload"]) if row else {}, clean_project, amendment_command)
             from core.commercial.contract_requests import guard
             guard(json.loads(row["payload"]) if row else {}, clean_project, financial_request_command)
+            from core.commercial.financial_ledger import settlement_guard
+            settlement_guard(clean_project)
             version=int(row["version"])+1 if row else 1
             self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
                             (pid,str(clean_project.get("name","")),version,now,payload))

@@ -23,7 +23,7 @@ FA_LABELS = {
  'amendments':'اصلاحیه‌ها','references':'منابع','location':'موقعیت','building_id':'ساختمان',
 }
 FA_UNITS={'m':'متر','m2':'متر مربع','m3':'متر مکعب','kg':'کیلوگرم','ton':'تن',
- 'mm':'میلی‌متر','cm':'سانتی‌متر','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب','IRR':'ریال'}
+ 'mm':'میلی‌متر','cm':'سانتی‌متر','kg/m':'کیلوگرم بر متر','kg/m3':'کیلوگرم بر متر مکعب','IRR':'ریال','IRT':'تومان'}
 NUMBER_KEYS={'item_no','quantity','unit_price','total','amount','مقدار','مبلغ','بهای واحد','count','revision','مقدار دقیق','جمع دقیق','جمع','پیش از کسر','خالص','کسر مؤثر','مقدار پیشنهادی','نسخه مبنا'}
 
 def report_date(on=None):
@@ -40,6 +40,7 @@ def _label(key):
 def _report_metadata(title,metadata,columns=None):
     result={'نام گزارش':title,'تاریخ صدور شمسی':report_date()}
     for key,value in (metadata or {}).items():
+        if key=='currency':value=FA_UNITS.get(str(value),value)
         label=_label(key)
         # Unknown user-defined metadata is retained verbatim as a value, never lost.
         if label=='اطلاعات تکمیلی':value=str(key)+' : '+str(value)
@@ -209,7 +210,7 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     cols = _columns(rows, columns)
     wb = Workbook()
     detail = wb.active
-    detail.title = "ریز متره"
+    detail.title = "دفتر مالی" if (metadata or {}).get("عنوان بخش") else "ریز متره"
     detail.sheet_view.rightToLeft = True
     summary_ws = wb.create_sheet("خلاصه")
     summary_ws.sheet_view.rightToLeft = True
@@ -235,7 +236,7 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
         write_excel_cell(detail.cell(i,value_col),value,numeric=True)
     header_row = max(6, 4 + len(summary_items))
     detail.merge_cells(start_row=header_row,start_column=1,end_row=header_row,end_column=max(1,len(cols)))
-    detail.cell(header_row, 1, "ریز متره و برآورد")
+    detail.cell(header_row, 1, (metadata or {}).get("عنوان بخش","ریز متره و برآورد"))
     detail.cell(header_row, 1).font = Font(bold=True)
     header_row += 1
     for col,(_,label) in enumerate(cols,1):write_excel_cell(detail.cell(header_row,col),label)
@@ -367,7 +368,7 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
     summary_rows=_summary_items(summary)
     if summary_rows:table(['شرح','مقدار'],summary_rows)
     else:write(d.add_paragraph(),'تعداد ردیف‌های گزارش: '+str(len(rows)))
-    d.add_page_break();heading('ریزمتره و محاسبات')
+    d.add_page_break();heading((metadata or {}).get('عنوان بخش','ریزمتره و محاسبات'))
     detail_rows,detail_cols=_pdf_identity(rows,cols)
     available=(section.page_width-section.left_margin-section.right_margin)/12700
     plan=_pdf_column_plan(detail_cols,detail_rows,font=_pdf_font(),usable_width=available)
@@ -614,8 +615,8 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
     for panel_no, panel in enumerate(plan, 1):
         if panel_no > 1:
             story.append(PageBreak())
-        caption = "ریز متره و برآورد" if len(plan) == 1 else (
-            f"ریز متره و برآورد — بخش {panel_no} از {len(plan)}")
+        section_title=(metadata or {}).get("عنوان بخش","ریز متره و برآورد")
+        caption = section_title if len(plan) == 1 else f"{section_title} — بخش {panel_no} از {len(plan)}"
         story.append(Paragraph(_pdf_text(caption), heading))
         # Reverse visual order in ReportLab's left-to-right table coordinates.
         panel = list(reversed(panel))
