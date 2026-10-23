@@ -1,0 +1,27 @@
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+This plugin does not support propagateSizeHints()
+{
+  "synthetic": true,
+  "floors": 5,
+  "active_floors": [
+    "L1",
+    "L2"
+  ],
+  "oracle_quantities": {
+    "concrete": "4",
+    "formwork": "16",
+    "rebar": "71.04",
+    "wall": "13"
+  },
+  "base": "2080.40",
+  "total": "2402.86200",
+  "sqlite_integrity": "ok",
+  "reopen_equal": true,
+  "amendment_id": "BA-7ded62de9f2841d49d7157a1543c9d62",
+  "exports": [
+    "estimate.pdf",
+    "estimate.xlsx",
+    "estimate.docx",
+    "estimate.csv"
+  ]
+}

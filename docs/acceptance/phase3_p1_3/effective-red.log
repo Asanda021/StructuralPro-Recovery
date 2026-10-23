@@ -1,0 +1,93 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_effective_amendment_prices_and_reports_survive_reopen __________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-19/test_effective_amendment_price0')
+
+    def test_effective_amendment_prices_and_reports_survive_reopen(tmp_path):
+>       result=run(tmp_path/'synthetic')
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase3_five_floor_finance.py:5: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase3_financial_probe.py:35: in run
+    app.review_boq_price_mapping('P',mapping,reviewer='fixture-reviewer',expected_digest=app.store.current_digest('P'))
+core/platform/application.py:1282: in review_boq_price_mapping
+    audit_boq(project)
+core/commercial/exact_values.py:22: in run
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+project = {'beam_amendment_applied': {'["solid_slab","l1","s1"]': 'BA-9a73a13fd7cb4ec0ac9457eed1cd6ed1'}, 'beam_amendments': {'B...ot/pytest-19/test_effective_amendment_price0/synthetic/plan.pdf', 'id': '4e12b4105a3544ef9bf2bf5c0a1a0c09', ...}}, ...}
+require_pricebook = False
+
+    @exact
+    def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
+        """Reconcile every BOQ source-group quantity to its original takeoff rows."""
+        details = flatten_takeoffs(project)
+        boq = project.get("boq") or []
+        result = validate_boq_structure(boq)
+        if not result["valid"]:
+            raise ValueError("ساختار ردیف‌های برآورد نامعتبر است")
+        pricebook = None
+        price_rows = {}
+        if require_pricebook:
+            pricebook = project.get("user_pricebook_review")
+            if not isinstance(pricebook, dict) or pricebook.get("status") != "approved":
+                raise ValueError("فهرست‌بهای واردشده توسط کاربر باید بازبینی و تأیید شده باشد")
+            _required_text(pricebook.get("approved_by"), "تأییدکننده فهرست‌بها")
+            raw_path = Path(_required_text(pricebook.get("path"), "مسیر فایل واردشده"))
+            if not raw_path.is_file():
+                raise ValueError("فایل مبنای فهرست‌بها در دسترس نیست")
+            digest = _required_text(pricebook.get("sha256"), "اثر انگشت فهرست‌بها")
+            if len(digest) != 64 or any(c not in "0123456789abcdefABCDEF" for c in digest):
+                raise ValueError("SHA-256 فهرست‌بها معتبر نیست")
+            actual_hash = hashlib.sha256()
+            with raw_path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    actual_hash.update(chunk)
+            if actual_hash.hexdigest() != digest.lower():
+                raise ValueError("محتوای فایل فهرست‌بها تغییر کرده است")
+            price_rows = pricebook.get("rows_by_code")
+            if not isinstance(price_rows, dict) or not price_rows:
+                raise ValueError("ردیف‌های قیمت تأییدشده در فهرست‌بها موجود نیستند")
+        exact_source=False
+        if require_pricebook:
+            from core.pricing.import_service import verify_reviewed_rates
+            exact_source=verify_reviewed_rates(raw_path,pricebook)
+        payable_sources = {(r["source_id"],q["code"],normalize_unit(q["unit"])) for r in project.get("takeoffs", []) for q in r.get("quantities", []) if _is_payable_quantity(r,q)}
+        expected = {}
+        for row in details:
+            if (row["source_id"],row["item_code"],row["unit"]) not in payable_sources: continue
+            key = (row["source_id"], row["item_code"], row["unit"])
+            expected[key] = expected.get(key, 0.0) + row["quantity"]
+        actual = {}
+        unpriced = []
+        for n, row in enumerate(boq, 1):
+            if not isinstance(row, dict):
+                raise ValueError("ردیف برآورد نامعتبر است")
+            code = _required_text(row.get("item_code"), "کد عملیات برآورد")
+            unit = normalize_unit(_required_text(row.get("unit"), "واحد برآورد"))
+            amount = finite_quantity(row.get("quantity"), "کمیت برآورد", zero=True)
+            source_ids = row.get("source_ids")
+            if not isinstance(source_ids, list) or not source_ids:
+                raw = row.get("source_id")
+                source_ids = [raw] if raw else []
+            if not source_ids:
+                raise ValueError("منابع ردیف برآورد ثبت نشده‌اند")
+            if len(set(source_ids)) != len(source_ids):
+                raise ValueError("منابع تکراری در یک ردیف برآورد")
+            matching = [key for key in expected if key[0] in source_ids
+                        and key[1] == code and key[2] == unit]
+            if not matching:
+                raise ValueError("کد، واحد یا منبع ردیف برآورد با ریزمتره تطبیق ندارد")
+            expected_total = math.fsum(expected[k] for k in matching)
+            if not math.isclose(expected_total, amount, rel_tol=1e-9, abs_tol=1e-8):
+>               raise ValueError("جمع کمیت ردیف BOQ با ریزمتره اصلی یکسان نیست")
+E               ValueError: جمع کمیت ردیف BOQ با ریزمتره اصلی یکسان نیست
+
+core/reports/aec_office_package.py:152: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_five_floor_finance.py::test_effective_amendment_prices_and_reports_survive_reopen
+1 failed in 0.56s

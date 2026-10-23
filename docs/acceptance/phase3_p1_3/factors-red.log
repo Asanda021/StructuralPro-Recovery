@@ -1,0 +1,25 @@
+........F                                                                [100%]
+=================================== FAILURES ===================================
+______________ test_reviewed_factor_document_and_estimate_history ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-6/test_reviewed_factor_document_0')
+
+    def test_reviewed_factor_document_and_estimate_history(tmp_path):
+        import json,hashlib
+        from core.platform.application import StructuralProApp
+        app=StructuralProApp(tmp_path/'app');app.create_project('synthetic','P')
+        app.add_takeoff('P','building','wall',source_id='fixture:phase3:wall',length=3,height=2,openings=0,count=1,price_code='A',unit_price=100)
+        p=tmp_path/'prices.csv';p.write_text('code,description,unit,unit_price\nA,fixture,m2,100\n')
+        app.import_project_pricebook('P',p,year=1405,approved_by='reviewer',currency='IRR',source_version='R1')
+        doc=tmp_path/'factors.json'
+        data={'version':'R1','year':1405,'currency':'IRR','effective_date':'2026-10-23','basis':'sequential_compound','factors':[{'name':'overhead','rate':'0.1234567890123456789'}]}
+        doc.write_text(json.dumps(data))
+        sha=hashlib.sha256(doc.read_bytes()).hexdigest();digest=app.store.current_digest('P')
+>       reviewed=app.review_project_factors('P',doc,sha256=sha,author='author',reviewer='reviewer',expected_digest=digest)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'StructuralProApp' object has no attribute 'review_project_factors'
+
+tests/test_phase3_financial_precision.py:83: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_financial_precision.py::test_reviewed_factor_document_and_estimate_history
+1 failed, 8 passed in 0.40s

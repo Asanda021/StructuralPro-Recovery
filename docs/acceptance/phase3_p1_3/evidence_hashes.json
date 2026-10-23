@@ -1,0 +1,214 @@
+{
+  "docs/acceptance/phase3_p1_3/diff-check.exit": {
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "docs/acceptance/phase3_p1_3/mapping-red.log": {
+    "size": 1600,
+    "sha256": "7ce6c942af3c4e616a8aaf6b90a77878ff34defc495eafe7760c3f6ae565b967"
+  },
+  "docs/acceptance/phase3_p1_3/pricebook-red.log": {
+    "size": 2366,
+    "sha256": "b0c40735d405b55a27ae7d8ee4cfe46ce64aacfb8eb99aaef707aecc961e34ee"
+  },
+  "docs/acceptance/phase3_p1_3/diagnostic-full.xml": {
+    "size": 5293142,
+    "sha256": "b75f0298d7ea392e14b3d5b21c42b5145026685412548ba8a455f68ac79c33fb"
+  },
+  "docs/acceptance/phase3_p1_3/effective-red.log": {
+    "size": 5943,
+    "sha256": "b5fa74a3da9bb43d064b3bc7a597db5d32b4a66f146a62ba99aee5b650cc69ff"
+  },
+  "docs/acceptance/phase3_p1_3/diagnostic-full.xml.gz": {
+    "size": 116659,
+    "sha256": "a4b59ec1edb333627fcf3b98cee238c8e9c7d533353b6d3816ce53d787a26b71"
+  },
+  "docs/acceptance/phase3_p1_3/five-floor.log": {
+    "size": 601,
+    "sha256": "429d62f1bfe297a20bbdc09fe16111736e6cde41520741630a39207bc1f0eaae"
+  },
+  "docs/acceptance/phase3_p1_3/cad-100000.json": {
+    "size": 18698,
+    "sha256": "cebd4a9f792cc4052ee17a5480672ebf77ed6ff982268eed258a5ebfab44f1a6"
+  },
+  "docs/acceptance/phase3_p1_3/focused-final.xml": {
+    "size": 4475,
+    "sha256": "431fe0f540e7fb03adda1e7bb5de136200476f6f4e2f0fcdcfec4b5b10696be9"
+  },
+  "docs/acceptance/phase3_p1_3/compile.log": {
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "docs/acceptance/phase3_p1_3/red.log": {
+    "size": 4704,
+    "sha256": "52f5e0bfbb988a2915576d7351b08748f04c61e04fefa57b53b463d6a8c18142"
+  },
+  "docs/acceptance/phase3_p1_3/effective-green.log": {
+    "size": 98,
+    "sha256": "51618742eeb866d8fc291a2afa8556ab2397c1e4d001580e539b09705b91792c"
+  },
+  "docs/acceptance/phase3_p1_3/mapping-qt-red.log": {
+    "size": 873,
+    "sha256": "3e24137a84146d804b2a0e56b0be414a1c5c1f79e9d031ae4915241aebe3795f"
+  },
+  "docs/acceptance/phase3_p1_3/order-red.log": {
+    "size": 1955,
+    "sha256": "e8c197776e319b8d0a2c2d58b75af04e1b99d56853153e207fc74fc7b8ef87d2"
+  },
+  "docs/acceptance/phase3_p1_3/final.xml": {
+    "size": 5290005,
+    "sha256": "b3d9148a495f3c25b3131c4684cd9de307c34762af5016e5af05081bb55b2fac"
+  },
+  "docs/acceptance/phase3_p1_3/recovery.xml.gz": {
+    "size": 1884,
+    "sha256": "f75e9ac4c250dba101f7ba0f4afd6e2da42ce2ef25f66f9b3d227fb1f9539107"
+  },
+  "docs/acceptance/phase3_p1_3/recovery.json": {
+    "size": 1152,
+    "sha256": "09ddc17335ecf338ae0b598d72094f6147afcdeba1cc2b5153c94b09274ced7e"
+  },
+  "docs/acceptance/phase3_p1_3/ui.xml": {
+    "size": 3381,
+    "sha256": "377e59353c945995de93beb7c00b58090c7614cd21bb60b6b4827c98e5c98f94"
+  },
+  "docs/acceptance/phase3_p1_3/factors-red.log": {
+    "size": 1812,
+    "sha256": "c1a7c444f7dbdbdbf1954efeadfab02b80bdf749b4676cc794bfa3648cf55694"
+  },
+  "docs/acceptance/phase3_p1_3/qt-red.log": {
+    "size": 794,
+    "sha256": "3d540c2cd29e97192a1522e19fb6278b25343d206724e62ad8d596d2556d7bd2"
+  },
+  "docs/acceptance/phase3_p1_3/targeted.xml": {
+    "size": 10847,
+    "sha256": "eea073063a0a6dadb2d059dbdcea701c9713c70203935649d61cd096e4689844"
+  },
+  "docs/acceptance/phase3_p1_3/pip-check.log": {
+    "size": 30,
+    "sha256": "9261363b733079a641c2e4cc9bc46ffa1d8336945a87f807b6cf68847dbc9b09"
+  },
+  "docs/acceptance/phase3_p1_3/green.log": {
+    "size": 179,
+    "sha256": "e601558811dec58384c0151ce258615fa89638dab8be5d1278e8a54ff1fe231f"
+  },
+  "docs/acceptance/phase3_p1_3/diff-check.log": {
+    "size": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "docs/acceptance/phase3_p1_3/focused-final.xml.gz": {
+    "size": 981,
+    "sha256": "9a7f4962d32bfa13209c714d669ca17d3b7b5b232f1a8d64de2658b852ba9af5"
+  },
+  "docs/acceptance/phase3_p1_3/pip-check.exit": {
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "docs/acceptance/phase3_p1_3/final.exit": {
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "docs/acceptance/phase3_p1_3/cad-10000.json": {
+    "size": 2051,
+    "sha256": "8fd875f037df958c505d555b632c00161cdf513d4a34bf7c99d1cb6968e989d1"
+  },
+  "docs/acceptance/phase3_p1_3/ui.log": {
+    "size": 99,
+    "sha256": "e19b92c907e99cf051d85695aea6f5745c1ec4f936ed530f54976605859e8a35"
+  },
+  "docs/acceptance/phase3_p1_3/ambiguity-red.log": {
+    "size": 1853,
+    "sha256": "569121b2b05e616a50d9b34f5d51a1e86cc61f952c278c3e73b59c37b8cfca04"
+  },
+  "docs/acceptance/phase3_p1_3/recovery.log": {
+    "size": 179,
+    "sha256": "d3f68503585fe05246faa9fd5ecf8d4671838b47284d5811951bd6809679c40d"
+  },
+  "docs/acceptance/phase3_p1_3/final.xml.gz": {
+    "size": 115193,
+    "sha256": "16ea1b876fb2dd5c35a78f4c22f5d379e2a11c52f2b9ab257c810b08e61227a2"
+  },
+  "docs/acceptance/phase3_p1_3/contracts.md": {
+    "size": 4813,
+    "sha256": "1d8ba489003de91c8fb20280d26e8827a54da1fcf1d706a8c7e213760fa3719c"
+  },
+  "docs/acceptance/phase3_p1_3/diagnostic-full.exit": {
+    "size": 2,
+    "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+  },
+  "docs/acceptance/phase3_p1_3/targeted.xml.gz": {
+    "size": 1878,
+    "sha256": "2e0272981260c43736bb9c4205e561539be3058da61e54e92fd5584d68e7faa4"
+  },
+  "docs/acceptance/phase3_p1_3/large_decimal_oracle.json": {
+    "size": 462,
+    "sha256": "1020092bc099ff3e0c0df75aa12f7bf53041513fedb1d2586b810dc5099ff93e"
+  },
+  "docs/acceptance/phase3_p1_3/final.log": {
+    "size": 9399,
+    "sha256": "0ef58948246a3b40fcdc7be722013b73f478c1d6a5145fb85a4bde06a3160ffb"
+  },
+  "docs/acceptance/phase3_p1_3/compile.exit": {
+    "size": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "docs/acceptance/phase3_p1_3/cad-50000.json": {
+    "size": 8318,
+    "sha256": "787d41e5b76abd5871dce55149d2786a29fb34e52565128127700e7cea5afcdf"
+  },
+  "docs/acceptance/phase3_p1_3/focused-final.log": {
+    "size": 99,
+    "sha256": "748c88a037ce1cd3b51f049854770a685f374cd84ea3c0e28e92c48cf5e01653"
+  },
+  "docs/acceptance/phase3_p1_3/diagnostic-full.log": {
+    "size": 13267,
+    "sha256": "061236ca3afaf014af8fb182ac0b596a470a0130a923d803de7076979ad93e7a"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/plan.pdf": {
+    "size": 908,
+    "sha256": "2e24cd5a9895debddd4a489adba44b27615b4a7b9c8e8ce8d5d9039483b5137b"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/schedule.json": {
+    "size": 3610,
+    "sha256": "0622f11920f6dc956ae96f838fa4ada55f0fb31fcf6824f08cba538f44586974"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/revision.json": {
+    "size": 6151,
+    "sha256": "f63f1cd2bf70991e7220ee1c91ed9e38f00e9bfd96539447730a9bd6815f7a55"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/estimate.xlsx": {
+    "size": 8217,
+    "sha256": "25d92295458733d1ee7699c07634bd108f536e081e822931c4c630f4e4a5c963"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/financial-qt.png": {
+    "size": 22268,
+    "sha256": "755bbe1d5222b309dcac588f07a4e66489dbc515ad9c0b5a2d6d4d280d3b5977"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/estimate.csv": {
+    "size": 797,
+    "sha256": "e30512c78083d68d31c76720d2baac682f6c9db846d6b5eed9fa83ef7bbef949"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/estimate.pdf": {
+    "size": 30269,
+    "sha256": "45cf591eb44c6254d3313a397572196f8901e5b19c54389a9c8ca554004e882d"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/receipt.json": {
+    "size": 451,
+    "sha256": "8a6fadb81db82563de86e99008757538f9bad39ee754aac50dc33da924e200af"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/synthetic-prices.csv": {
+    "size": 218,
+    "sha256": "b4ea8b1516ff2c77b6c849d47e319e0c3f9f42691d126b8936e4084b8d48bb7b"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/estimate.docx": {
+    "size": 39252,
+    "sha256": "7cdaf44bdf3e88aad900e53931d3904f8ebbf23ac97cf02f0a81864438e00966"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/factors.json": {
+    "size": 210,
+    "sha256": "c62e322cdf400d65d87f51f3eace4e4fa73e65cb69adb91545d180d2996f582f"
+  },
+  "docs/acceptance/phase3_p1_3/accepted_five_floor/db/projects.db": {
+    "size": 528384,
+    "sha256": "e930b1c0ee0d43963397e9f0a31e68f87e59fde6cd372113d1fc286c05c00650"
+  }
+}

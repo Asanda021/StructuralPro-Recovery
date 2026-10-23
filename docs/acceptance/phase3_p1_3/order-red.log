@@ -1,0 +1,28 @@
+.................F                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_reviewed_factors_use_document_order_after_sqlite_reopen _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-9/test_reviewed_factors_use_docu0')
+
+    def test_reviewed_factors_use_document_order_after_sqlite_reopen(tmp_path):
+        import json,hashlib
+        from core.platform.application import StructuralProApp
+        app=StructuralProApp(tmp_path/'app');app.create_project('fixture','P')
+        app.add_takeoff('P','building','wall',source_id='fixture:order:wall',length=3,height=2,openings=0,count=1,price_code='A',unit_price=100)
+        p=tmp_path/'p.csv';p.write_text('code,description,unit,unit_price\nA,test,m2,100\n')
+        app.import_project_pricebook('P',p,year=1405,approved_by='reviewer',currency='IRR')
+        data={'version':'R1','year':1405,'currency':'IRR','effective_date':'2026-10-23','basis':'sequential_compound','factors':[{'name':'z','rate':'0.1'},{'name':'a','rate':'0.2'}]}
+        doc=tmp_path/'f.json';doc.write_text(json.dumps(data));sha=hashlib.sha256(doc.read_bytes()).hexdigest()
+        app.review_project_factors('P',doc,sha256=sha,author='author',reviewer='reviewer',expected_digest=app.store.current_digest('P'))
+        app.store.close();app=StructuralProApp(tmp_path/'app')
+        estimate=app.recalculate_estimate('P')
+>       assert [x['name'] for x in estimate['cost']['factor_sequence']]==['z','a']
+E       AssertionError: assert ['a', 'z'] == ['z', 'a']
+E         
+E         At index 0 diff: 'a' != 'z'
+E         Use -v to get more diff
+
+tests/test_phase3_financial_precision.py:130: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase3_financial_precision.py::test_reviewed_factors_use_document_order_after_sqlite_reopen
+1 failed, 17 passed in 0.48s
