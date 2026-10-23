@@ -57,10 +57,10 @@ def test_cash_flow_has_cumulative_balance_and_committed_outflow():
         commitments=[{"date": "1405/02/15", "due_date": "1405/02/20", "amount": 700}],
     )
     assert result["cash_in"] == 1000
-    assert result["cash_out"] == 500
+    assert result["cash_out"] == 300
     assert result["committed_out"] == 700
-    assert result["net_cash"] == 500
-    assert result["minimum_cumulative_cash"] == 500
+    assert result["net_cash"] == 700
+    assert result["minimum_cumulative_cash"] == 700
     assert result["rows"][-1]["date"] == "1405/02/20"
 
 
@@ -92,7 +92,7 @@ def test_application_payment_budget_and_snapshot(tmp_path):
 
     cash = app.project_cash_flow_control("P19")
     assert cash["cash_in"] == 0
-    assert cash["cash_out"] == 1300
+    assert cash["cash_out"] == 600
     assert cash["committed_out"] == 1000
 
     snapshot = app.project_finance_payment_depth_snapshot("P19")

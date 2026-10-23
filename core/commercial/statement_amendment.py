@@ -13,9 +13,8 @@ import base64
 import hashlib
 import json
 from uuid import uuid4
-from core.takeoff.units import normalize_unit
 
-MONEY_KEYS=("gross_current","retention","advance_recovery","taxable_current","tax","insurance","payable_current")
+MONEY_KEYS=("gross_current","retention","advance_recovery","other_deductions","taxable_current","tax","insurance","payable_current")
 RATE_KEYS=("retention_rate","advance_recovery_rate","tax_rate","insurance_rate")
 ROUNDINGS={"ROUND_HALF_UP","ROUND_HALF_EVEN","ROUND_DOWN"}
 SUBJECT_KEYS=("amendment_id","project_id","issued_period_no","sequence","created_by",
@@ -103,12 +102,18 @@ def _basis(project):
 
 def _posted(project):return [d for d in project.get('statement_amendments',[]) if d.get('status')=='POSTED']
 def _posted_digest(project):return digest([(d['amendment_id'],d['audit_hash']) for d in _posted(project)])
+def _subject(doc):
+    result={k:doc[k] for k in SUBJECT_KEYS}
+    for k in ('effective_rates_before','effective_rates_after'):
+        if k in doc:result[k]=doc[k]
+    return result
+
 def _seal(doc):
-    doc['content_digest']=digest({k:doc[k] for k in SUBJECT_KEYS})
+    doc['content_digest']=digest(_subject(doc))
     doc['audit_hash']=digest({k:v for k,v in doc.items() if k!='audit_hash'})
     return doc
 def _verify(doc):
-    if doc.get('content_digest')!=digest({k:doc[k] for k in SUBJECT_KEYS}):raise ValueError("اثر انگشت محتوای اصلاحیه نامعتبر است")
+    if doc.get('content_digest')!=digest(_subject(doc)):raise ValueError("اثر انگشت محتوای اصلاحیه نامعتبر است")
     if doc.get('audit_hash')!=digest({k:v for k,v in doc.items() if k!='audit_hash'}):raise ValueError("زنجیره ممیزی اصلاحیه نامعتبر است")
 
 def _snapshot(project,doc):
@@ -134,28 +139,34 @@ def cumulative_quantities(project):
                 code=line['price_code'];result[code]=result.get(code,Decimal(0))+number(line['delta_quantity'],'مابه‌التفاوت',True)
         return result
 
-def _money(quantities,prices,rates,m):
+def _money(quantities,prices,rates,m,*,advance_cap=None,other_deduction_rate=0):
     import decimal
     # Currency rounding is explicit and recorded; intermediate arithmetic is exact.
     gross=sum((q*prices[code] for code,q in quantities.items()),Decimal(0))
     raw={'gross_current':gross,'retention':gross*rates['retention_rate'],
          'advance_recovery':gross*rates['advance_recovery_rate']}
-    raw['taxable_current']=max(gross-raw['retention']-raw['advance_recovery'],Decimal(0))
+    if advance_cap is not None:raw['advance_recovery']=min(raw['advance_recovery'],number(advance_cap,'مانده پیش‌پرداخت'))
+    raw['other_deductions']=gross*number(other_deduction_rate,'سایر کسورات')
+    raw['taxable_current']=gross-raw['retention']-raw['advance_recovery']-raw['other_deductions']
+    if raw['taxable_current']<0:raise ValueError('جمع کسورات بیشتر از ناخالص است')
     raw['tax']=raw['taxable_current']*rates['tax_rate'];raw['insurance']=raw['taxable_current']*rates['insurance_rate']
-    raw['payable_current']=max(raw['taxable_current']+raw['tax']-raw['insurance'],Decimal(0))
+    raw['payable_current']=raw['taxable_current']+raw['tax']-raw['insurance']
+    if raw['payable_current']<0:raise ValueError('خالص منفی بدون اصلاحیه معتبر مجاز نیست')
     if m is None:return {k:format(v,'f') for k,v in raw.items()}
     quantum=Decimal(1).scaleb(-m['decimal_places'])
     with localcontext() as ctx:
         ctx.traps[Inexact]=False;ctx.traps[Rounded]=False
         return {k:format(v.quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k,v in raw.items()}
 
-def _preview(project,no,raw_lines,docs):
+def _preview(project,no,raw_lines,docs,corrected_rates=None):
+    from core.takeoff.units import normalize_unit
     from core.reports.aec_office_package import audit_boq
     audit_boq(project,require_pricebook=True)
     issued=_period(project,no);p=policy(project);rates={k:number(issued['rates'][k],k) for k in RATE_KEYS}
     if any(v>1 for v in rates.values()):raise ValueError("نرخ صادرشده نامعتبر است")
     originals={};prices={};boq={}
-    for row in project.get('boq',[]):
+    from core.commercial.statement import statement_rows
+    for row in statement_rows(project):
         code=row['price_code']
         if code in boq:raise ValueError("کد قیمت میان چند گروه BOQ مبهم است")
         boq[code]=row
@@ -163,7 +174,7 @@ def _preview(project,no,raw_lines,docs):
         code=row['code']
         if code in originals or code not in boq:raise ValueError("هویت ردیف صادرشده مبهم است")
         b=boq[code]
-        if normalize_unit(row['unit'])!=normalize_unit(b['unit']) or number(row['unit_price'],'قیمت')!=number(b['unit_price'],'قیمت'):
+        if normalize_unit(row['unit'])!=normalize_unit(b['unit']) or number(row['unit_price'],'قیمت')!=number(b['unit_price'],'قیمت')*number(issued.get('statement_multiplier',1),'ضریب قرارداد'):
             raise ValueError("تغییر نرخ یا واحد قرارداد نیازمند الحاقیه معتبر است")
         originals[code]=number(row['current_quantity'],'کارکرد اصل');prices[code]=number(row['unit_price'],'قیمت تأییدشده')
     before=dict(originals)
@@ -192,8 +203,31 @@ def _preview(project,no,raw_lines,docs):
                       'delta_gross':quantity_text(delta*prices[code]),
                       'reviewed_unit_price':quantity_text(prices[code]),'pricebook_sha256':project['user_pricebook_review']['sha256'],
                       'reason':_text(raw['reason'],'علت ردیف'),'detail_source_ref':ref})
-    money_before=_money(before,prices,rates,p['money']);money_after=_money(after,prices,rates,p['money'])
-    return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS}
+    cap=None;other=0
+    if project.get('statement_workflow_terms'):
+        terms=project['statement_workflow_terms']['terms'];other=terms['other_deduction_rate']
+        used=sum((number(x['advance_recovery'],'استهلاک') for x in project.get('statement_periods',[]) if x['number']!=no),Decimal(0))
+        for change in _posted(project):
+            if change['issued_period_no']!=no:used+=number(change['deltas']['advance_recovery'],'اصلاح استهلاک',True)
+        cap=max(number(terms['advance_paid'],'پیش‌پرداخت')-used,Decimal(0))
+    # The historical effective money is authoritative; freed advance capacity
+    # may change the new result, but must never rewrite the comparison baseline.
+    money_before=summary(project,no)['net']
+    effective_rates={**rates,'other_deduction_rate':number(other,'سایر کسورات')}
+    for change in _posted(project):
+        if change['issued_period_no']==no and change.get('effective_rates_after'):
+            effective_rates={k:number(v,k) for k,v in change['effective_rates_after'].items()}
+    next_rates=dict(effective_rates)
+    if corrected_rates is not None:
+        if not project.get('statement_workflow_terms'):raise ValueError('اصلاح نرخ کسورات نیازمند شرایط صریح قرارداد است')
+        if not isinstance(corrected_rates,dict) or set(corrected_rates)!=set(effective_rates):
+            raise ValueError('هر پنج نرخ اصلاحی باید صریح و کامل باشند')
+        next_rates={k:number(v,'نرخ اصلاحی '+k) for k,v in corrected_rates.items()}
+        if any(v>1 for v in next_rates.values()):raise ValueError('نرخ اصلاحی باید بین صفر و یک باشد')
+    money_after=_money(after,prices,next_rates,p['money'],advance_cap=cap,other_deduction_rate=next_rates['other_deduction_rate'])
+    rate_evidence={'effective_rates_before':{k:quantity_text(v) for k,v in effective_rates.items()},
+                   'effective_rates_after':{k:quantity_text(v) for k,v in next_rates.items()}}
+    return lines,money_before,money_after,{k:format(Decimal(money_after[k])-Decimal(money_before[k]),'f') for k in MONEY_KEYS},rate_evidence
 
 def dispatch(previous,command):
     project=deepcopy(previous);project.pop('_meta',None)
@@ -202,6 +236,8 @@ def dispatch(previous,command):
         op=command['op'];actor=_text(command['actor'],'مسئول');at=command['at']
         if op=='configure':
             if project.get('statement_amendment_policy'):raise ValueError("سیاست مالی ثبت‌شده قابل جایگزینی مستقیم نیست")
+            if not (project.get('metadata') or {}).get('financial_owner_id') and command.get('establish_owner') is True:
+                project.setdefault('metadata',{})['financial_owner_id']=actor
             if actor!=(project.get('metadata') or {}).get('financial_owner_id'):
                 raise ValueError("مالک مالی پروژه صریح تعیین نشده یا مسئول مجاز نیست")
             raw=command['policy'];m=raw.get('money',{});authorities=raw.get('authorities')
@@ -220,10 +256,10 @@ def dispatch(previous,command):
         docs=project.setdefault('statement_amendments',[])
         if op=='create':
             actor=authorize(project,actor,'create');no=_int(command['period_no'],'شماره دوره')
-            source_docs=documents(command['source_documents']);lines,before,after,deltas=_preview(project,no,command['lines'],source_docs)
+            source_docs=documents(command['source_documents']);lines,before,after,deltas,rate_evidence=_preview(project,no,command['lines'],source_docs,command.get('corrected_rates'))
             if any(d['amendment_id']==command['id'] for d in docs):raise ValueError("شناسه اصلاحیه تکراری است")
             d={'amendment_id':command['id'],'project_id':project['id'],'issued_period_no':no,'sequence':len(docs)+1,
-               'revision':1,'status':'DRAFT','created_by':actor,'created_at':at,'reason':_text(command['reason'],'علت اصلاحیه'),
+               **rate_evidence,'revision':1,'status':'DRAFT','created_by':actor,'created_at':at,'reason':_text(command['reason'],'علت اصلاحیه'),
                'source_documents':source_docs,'lines':lines,'deltas':deltas,'effective_before':before,'effective_after':after,
                'issued_statement_digest':digest(_period(project,no)),'contract_basis_digest':_basis(project),
                'issued_history_digest':digest(project.get('statement_periods',[])),'posted_state_digest':_posted_digest(project),
@@ -237,8 +273,8 @@ def dispatch(previous,command):
             actor=authorize(project,actor,'create')
             if d['status']!='DRAFT' or actor!=d['created_by']:raise ValueError("فقط نویسنده می‌تواند پیش‌نویس را ویرایش کند")
             source_docs=documents(command['source_documents'])
-            lines,before,after,deltas=_preview(project,d['issued_period_no'],command['lines'],source_docs)
-            d.update(reason=_text(command['reason'],'علت اصلاحیه'),source_documents=source_docs,
+            lines,before,after,deltas,rate_evidence=_preview(project,d['issued_period_no'],command['lines'],source_docs,command.get('corrected_rates'))
+            d.update(**rate_evidence,reason=_text(command['reason'],'علت اصلاحیه'),source_documents=source_docs,
                      lines=lines,effective_before=before,effective_after=after,deltas=deltas,
                      issued_statement_digest=digest(_period(project,d['issued_period_no'])),
                      contract_basis_digest=_basis(project),issued_history_digest=digest(project.get('statement_periods',[])),
@@ -297,7 +333,7 @@ def summary(project,no):
         ctx.prec=512
         issued=_period(project,no);p=policy(project);m=p['money'];quantum=Decimal(1).scaleb(-m['decimal_places'])
         import decimal
-        original={k:format(number(issued[k],k).quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k in MONEY_KEYS}
+        original={k:format(number(issued.get(k,0),k).quantize(quantum,rounding=getattr(decimal,m['rounding'])),'f') for k in MONEY_KEYS}
         changes={k:Decimal(0).quantize(quantum) for k in MONEY_KEYS};q={line['code']:number(line['current_quantity'],'کارکرد') for line in issued['lines']}
         posted=[]
         for d in _posted(project):
@@ -305,7 +341,7 @@ def summary(project,no):
             if d['issued_period_no']==no:
                 if d['issued_statement_digest']!=digest(issued):raise ValueError("اصل صورت‌وضعیت تغییر کرده است")
                 posted.append(d['amendment_id'])
-                for k in MONEY_KEYS:changes[k]+=number(d['deltas'][k],k,True)
+                for k in MONEY_KEYS:changes[k]+=number(d['deltas'].get(k,0) if k=='other_deductions' else d['deltas'][k],k,True)
                 for line in d['lines']:q[line['price_code']]+=number(line['delta_quantity'],'مابه‌التفاوت',True)
         return {'issued_period_no':no,'original':original,'amendment_deltas':{k:format(v,'f') for k,v in changes.items()},
                 'net':{k:format(Decimal(original[k])+changes[k],'f') for k in MONEY_KEYS},'posted_amendment_ids':posted,

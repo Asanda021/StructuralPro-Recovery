@@ -1,0 +1,289 @@
+{
+  "synthetic": true,
+  "floors": 5,
+  "periods": 2,
+  "issued_first_preserved": true,
+  "sqlite_integrity": "ok",
+  "reopen_equal": true,
+  "oracle_period1_after_amendment": {
+    "gross_current": "1143.68",
+    "retention": "114.37",
+    "advance_recovery": "100.00",
+    "other_deductions": "22.87",
+    "payable_current": "906.44"
+  },
+  "oracle_period2": {
+    "gross_current": "600.72",
+    "retention": "60.07",
+    "advance_recovery": "0.00",
+    "other_deductions": "12.01",
+    "payable_current": "528.63"
+  },
+  "snapshot": {
+    "project_id": "P",
+    "currency": "IRR",
+    "estimate": 2402.862,
+    "budget": 1300,
+    "commitments": 1500,
+    "actual_cost": 1400,
+    "paid": 300,
+    "received": 500,
+    "debt": 1100,
+    "unpaid_commitments": 1200,
+    "budget_variance": -100,
+    "over_budget": true,
+    "estimate_variance": 1002.862,
+    "statement_net": 1435.07,
+    "receivable": 935.07,
+    "cash_net": 200,
+    "documents": [
+      {
+        "amount": 1300,
+        "approved_by": "approver",
+        "counterparty": "طرف حساب آزمایشی",
+        "created_by": "writer",
+        "currency": "IRR",
+        "date": "2026-10-23",
+        "description": "سند مصنوعی؛ پرداخت واقعی نیست",
+        "events": [
+          {
+            "actor": "writer",
+            "at": "2026-10-23T19:07:45.822507+00:00",
+            "op": "create"
+          },
+          {
+            "actor": "reviewer",
+            "at": "2026-10-23T19:07:45.853174+00:00",
+            "op": "review"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:45.949462+00:00",
+            "op": "approve"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:45.993588+00:00",
+            "op": "post"
+          }
+        ],
+        "id": 1,
+        "kind": "budget",
+        "posted_by": "approver",
+        "project_id": "P",
+        "reference": "BUDGET",
+        "reviewed_by": "reviewer",
+        "source_documents": [
+          {
+            "path": "/workspace/scratch/61dce18379e6/p346-evidence/final-delivery/explicit-contract.txt",
+            "ref": "TEST-CONTRACT",
+            "sha256": "ba1e2892cd7c151a8ef57ae9784b1d0f572efe8b45538d5103ac967cfea0b875",
+            "snapshot_base64": "U1lOVEhFVElDIFRFU1QgT05MWS4gU2VxdWVudGlhbCBlc3RpbWF0ZSBmYWN0b3JzLiBSZXRlbnRpb24gLjEwLCBhZHZhbmNlIHJlY292ZXJ5IC4xMCBjYXBwZWQgYXQgMTAwIElSUiwgb3RoZXIgZGVkdWN0aW9ucyAuMDIsIHRheC9pbnN1cmFuY2UgemVyby4gTG9jYWwgYXR0cmlidXRlZCByb2xlczsgbm8gYXV0aGVudGljYXRpb24u"
+          }
+        ],
+        "status": "POSTED"
+      },
+      {
+        "amount": 1500,
+        "approved_by": "approver",
+        "counterparty": "طرف حساب آزمایشی",
+        "created_by": "writer",
+        "currency": "IRR",
+        "date": "2026-10-23",
+        "description": "سند مصنوعی؛ پرداخت واقعی نیست",
+        "events": [
+          {
+            "actor": "writer",
+            "at": "2026-10-23T19:07:46.030494+00:00",
+            "op": "create"
+          },
+          {
+            "actor": "reviewer",
+            "at": "2026-10-23T19:07:46.060041+00:00",
+            "op": "review"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.093254+00:00",
+            "op": "approve"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.123084+00:00",
+            "op": "post"
+          }
+        ],
+        "id": 2,
+        "kind": "commitment",
+        "posted_by": "approver",
+        "project_id": "P",
+        "reference": "CONTRACT",
+        "reviewed_by": "reviewer",
+        "source_documents": [
+          {
+            "path": "/workspace/scratch/61dce18379e6/p346-evidence/final-delivery/explicit-contract.txt",
+            "ref": "TEST-CONTRACT",
+            "sha256": "ba1e2892cd7c151a8ef57ae9784b1d0f572efe8b45538d5103ac967cfea0b875",
+            "snapshot_base64": "U1lOVEhFVElDIFRFU1QgT05MWS4gU2VxdWVudGlhbCBlc3RpbWF0ZSBmYWN0b3JzLiBSZXRlbnRpb24gLjEwLCBhZHZhbmNlIHJlY292ZXJ5IC4xMCBjYXBwZWQgYXQgMTAwIElSUiwgb3RoZXIgZGVkdWN0aW9ucyAuMDIsIHRheC9pbnN1cmFuY2UgemVyby4gTG9jYWwgYXR0cmlidXRlZCByb2xlczsgbm8gYXV0aGVudGljYXRpb24u"
+          }
+        ],
+        "status": "POSTED"
+      },
+      {
+        "amount": 1400,
+        "approved_by": "approver",
+        "commitment_id": 2,
+        "counterparty": "طرف حساب آزمایشی",
+        "created_by": "writer",
+        "currency": "IRR",
+        "date": "2026-10-23",
+        "description": "سند مصنوعی؛ پرداخت واقعی نیست",
+        "events": [
+          {
+            "actor": "writer",
+            "at": "2026-10-23T19:07:46.179211+00:00",
+            "op": "create"
+          },
+          {
+            "actor": "reviewer",
+            "at": "2026-10-23T19:07:46.211739+00:00",
+            "op": "review"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.243294+00:00",
+            "op": "approve"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.273965+00:00",
+            "op": "post"
+          }
+        ],
+        "id": 3,
+        "kind": "cost",
+        "posted_by": "approver",
+        "project_id": "P",
+        "reference": "INVOICE",
+        "reviewed_by": "reviewer",
+        "source_documents": [
+          {
+            "path": "/workspace/scratch/61dce18379e6/p346-evidence/final-delivery/explicit-contract.txt",
+            "ref": "TEST-CONTRACT",
+            "sha256": "ba1e2892cd7c151a8ef57ae9784b1d0f572efe8b45538d5103ac967cfea0b875",
+            "snapshot_base64": "U1lOVEhFVElDIFRFU1QgT05MWS4gU2VxdWVudGlhbCBlc3RpbWF0ZSBmYWN0b3JzLiBSZXRlbnRpb24gLjEwLCBhZHZhbmNlIHJlY292ZXJ5IC4xMCBjYXBwZWQgYXQgMTAwIElSUiwgb3RoZXIgZGVkdWN0aW9ucyAuMDIsIHRheC9pbnN1cmFuY2UgemVyby4gTG9jYWwgYXR0cmlidXRlZCByb2xlczsgbm8gYXV0aGVudGljYXRpb24u"
+          }
+        ],
+        "status": "POSTED"
+      },
+      {
+        "amount": 300,
+        "approved_by": "approver",
+        "commitment_id": 2,
+        "cost_id": 3,
+        "counterparty": "طرف حساب آزمایشی",
+        "created_by": "writer",
+        "currency": "IRR",
+        "date": "2026-10-23",
+        "description": "سند مصنوعی؛ پرداخت واقعی نیست",
+        "events": [
+          {
+            "actor": "writer",
+            "at": "2026-10-23T19:07:46.311311+00:00",
+            "op": "create"
+          },
+          {
+            "actor": "reviewer",
+            "at": "2026-10-23T19:07:46.351554+00:00",
+            "op": "review"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.394972+00:00",
+            "op": "approve"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.432603+00:00",
+            "op": "post"
+          }
+        ],
+        "id": 4,
+        "kind": "payment",
+        "posted_by": "approver",
+        "project_id": "P",
+        "reference": "BANK-TEST",
+        "reviewed_by": "reviewer",
+        "source_documents": [
+          {
+            "path": "/workspace/scratch/61dce18379e6/p346-evidence/final-delivery/explicit-contract.txt",
+            "ref": "TEST-CONTRACT",
+            "sha256": "ba1e2892cd7c151a8ef57ae9784b1d0f572efe8b45538d5103ac967cfea0b875",
+            "snapshot_base64": "U1lOVEhFVElDIFRFU1QgT05MWS4gU2VxdWVudGlhbCBlc3RpbWF0ZSBmYWN0b3JzLiBSZXRlbnRpb24gLjEwLCBhZHZhbmNlIHJlY292ZXJ5IC4xMCBjYXBwZWQgYXQgMTAwIElSUiwgb3RoZXIgZGVkdWN0aW9ucyAuMDIsIHRheC9pbnN1cmFuY2UgemVyby4gTG9jYWwgYXR0cmlidXRlZCByb2xlczsgbm8gYXV0aGVudGljYXRpb24u"
+          }
+        ],
+        "status": "POSTED"
+      },
+      {
+        "amount": 500,
+        "approved_by": "approver",
+        "counterparty": "طرف حساب آزمایشی",
+        "created_by": "writer",
+        "currency": "IRR",
+        "date": "2026-10-23",
+        "description": "سند مصنوعی؛ پرداخت واقعی نیست",
+        "events": [
+          {
+            "actor": "writer",
+            "at": "2026-10-23T19:07:46.467163+00:00",
+            "op": "create"
+          },
+          {
+            "actor": "reviewer",
+            "at": "2026-10-23T19:07:46.498142+00:00",
+            "op": "review"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.534762+00:00",
+            "op": "approve"
+          },
+          {
+            "actor": "approver",
+            "at": "2026-10-23T19:07:46.571929+00:00",
+            "op": "post"
+          }
+        ],
+        "id": 5,
+        "kind": "receipt",
+        "posted_by": "approver",
+        "project_id": "P",
+        "reference": "RECEIPT-TEST",
+        "reviewed_by": "reviewer",
+        "source_documents": [
+          {
+            "path": "/workspace/scratch/61dce18379e6/p346-evidence/final-delivery/explicit-contract.txt",
+            "ref": "TEST-CONTRACT",
+            "sha256": "ba1e2892cd7c151a8ef57ae9784b1d0f572efe8b45538d5103ac967cfea0b875",
+            "snapshot_base64": "U1lOVEhFVElDIFRFU1QgT05MWS4gU2VxdWVudGlhbCBlc3RpbWF0ZSBmYWN0b3JzLiBSZXRlbnRpb24gLjEwLCBhZHZhbmNlIHJlY292ZXJ5IC4xMCBjYXBwZWQgYXQgMTAwIElSUiwgb3RoZXIgZGVkdWN0aW9ucyAuMDIsIHRheC9pbnN1cmFuY2UgemVyby4gTG9jYWwgYXR0cmlidXRlZCByb2xlczsgbm8gYXV0aGVudGljYXRpb24u"
+          }
+        ],
+        "statement_no": 1,
+        "status": "POSTED"
+      }
+    ],
+    "reversals": [],
+    "authority_status": "LOCAL_OWNER_DOCUMENT_ATTRIBUTION_NOT_AUTHENTICATION",
+    "missing_message": "اطلاعات کافی ثبت نشده است"
+  },
+  "exports": [
+    "financial.pdf",
+    "statement-1.pdf",
+    "financial.xlsx",
+    "statement-1.xlsx",
+    "financial.docx",
+    "statement-1.docx",
+    "financial.csv",
+    "statement-1.csv"
+  ]
+}

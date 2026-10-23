@@ -1500,8 +1500,8 @@ class StructuralProApp:
         from core.commercial.statement_amendment import StatementAmendmentService
         return StatementAmendmentService(self.store).execute(project_id, op, actor, expected_project_version, **data)
 
-    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version):
-        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents)
+    def configure_statement_amendments(self, project_id, *, owner_id, policy, source_documents, expected_project_version, establish_owner=False):
+        return self._amendment(project_id, 'configure', owner_id, expected_project_version, policy=policy, source_documents=source_documents, establish_owner=establish_owner)
 
     def create_statement_amendment(self, project_id, period_no, *, created_by, expected_project_version, **data):
         return self._amendment(project_id, 'create', created_by, expected_project_version, period_no=period_no, **data)
@@ -1607,6 +1607,98 @@ class StructuralProApp:
             self.store.save(project_id, p)
         return period
 
+
+    def financial_command(self, project_id, op, *, actor, expected_version, **data):
+        from core.commercial.financial_ledger import ledger_dispatch
+        from datetime import datetime, timezone
+        from uuid import uuid4
+        p=self.open_project(project_id)
+        if isinstance(expected_version,bool) or expected_version!=p['_meta']['version']:
+            raise RuntimeError('نسخه پروژه تغییر کرده است')
+        command={**data,'domain':'ledger','op':op,'actor':actor,'at':datetime.now(timezone.utc).isoformat()}
+        if op=='create':
+            from core.commercial.financial_ledger import COLLECTIONS
+            ids=[int(r['id']) for key in COLLECTIONS.values() for r in p.get(key,[]) if str(r.get('id','')).isdigit()]
+            ids += [int(r['id']) for r in p.get('financial_records',[]) if str(r['id']).isdigit()]
+            command['id']=max(ids,default=0)+1
+        if op=='reverse':command['reversal_id']=uuid4().hex
+        result=ledger_dispatch(p,command)
+        self.store.save(project_id,result,expected_digest=__import__('core.platform.concurrency',fromlist=['begin_write']).begin_write({k:v for k,v in p.items() if k!='_meta'}),phase3_command=command)
+        if op=='reverse':return result['financial_reversals'][-1]
+        return next(r for r in result['financial_records'] if r['id']==command['id'])
+
+    def verified_financial_snapshot(self, project_id):
+        from core.commercial.financial_ledger import verified_snapshot
+        return verified_snapshot(self.open_project(project_id))
+
+    def verified_financial_report(self, project_id, fmt, path):
+        from core.reports.project_report import build_report
+        from core.reports.exporters import report_date
+        from datetime import date
+        p=self.open_project(project_id);snap=self.verified_financial_snapshot(project_id)
+        labels={'estimate':'برآورد پایه','budget':'بودجه مصوب','commitments':'تعهدات','actual_cost':'هزینه واقعی','paid':'پرداخت واقعی',
+                'received':'دریافت واقعی','debt':'مانده بدهی','unpaid_commitments':'مانده تعهدات','budget_variance':'بودجه منهای هزینه',
+                'statement_net':'خالص صورت‌وضعیت‌ها','receivable':'مطالبات','cash_net':'خالص جریان نقد'}
+        rows=[{'field':label,'value':snap[k] if snap[k] is not None else snap['missing_message']} for k,label in labels.items()]
+        kinds={'budget':'بودجه','commitment':'تعهد','cost':'هزینه','payment':'پرداخت','receipt':'دریافت'}
+        for r in snap['documents']:
+            rows.extend([{'field':'مرجع سند '+r['reference'],'value':kinds[r['kind']]+' / '+r['counterparty']+' / '+report_date(date.fromisoformat(r['date']))},
+                         {'field':'مبلغ سند '+r['reference'],'value':r['amount']},
+                         {'field':'منبع سند '+r['reference'],'value':', '.join(d['sha256'] for d in r['source_documents'])}])
+        for r in snap['reversals']:rows.append({'field':'مرجع برگشت '+r['reference'],'value':str(r['target_id'])+' / '+r['reason']})
+        return build_report(p['name']+' — دفتر مالی و کنترل هزینه',rows,metadata={'project_id':project_id,'currency':snap['currency'],'عنوان بخش':'ریز دفتر مالی و اسناد پشتیبان'}).export(path,fmt)
+
+    @exact
+    def verified_statement_report(self, project_id, period_no, fmt, path):
+        from core.reports.project_report import build_report
+        from core.commercial.statement_amendment import summary
+        from core.reports.exporters import report_date
+        from datetime import date
+        p=self.open_project(project_id);period=self.project_statement_period(project_id,period_no)
+        net=summary(p,period_no)
+        previous_effective={}
+        for prior in p.get('statement_periods',[]):
+            if prior['number']<period_no:
+                for r in summary(p,prior['number'])['lines']:
+                    code=r['price_code'];previous_effective[code]=previous_effective.get(code,number(0,'صفر'))+number(r['net_quantity'],'کارکرد قبلی')
+        rows=[]
+        for line in period['lines']:
+            code=line['code'];effective=next(x['net_quantity'] for x in net['lines'] if x['price_code']==code)
+            rows.extend([{'field':'شرح ردیف '+code,'value':line['description']},
+                         {'field':'واحد ردیف '+code,'value':__import__('core.reports.exporters',fromlist=['FA_UNITS']).FA_UNITS.get(line['unit'],line['unit'])},
+                         {'field':'مقدار قبلی '+code,'value':wire(previous_effective.get(code,number(0,'صفر')))},
+                         {'field':'مقدار این دوره '+code,'value':effective},
+                         {'field':'مقدار تجمعی مؤثر '+code,'value':wire(previous_effective.get(code,number(0,'صفر'))+number(effective,'کارکرد مؤثر'))},
+                         {'field':'مقدار تجمعی اصل سند '+code,'value':line['cumulative_quantity']},
+                         {'field':'بهای واحد '+code,'value':line['unit_price']},
+                         {'field':'منبع ردیف '+code,'value':', '.join(line.get('source_ids',[])) or 'اصل BOQ محفوظ پروژه'}])
+        labels={'gross_current':'ناخالص','retention':'سپرده حسن انجام کار','advance_recovery':'استهلاک پیش‌پرداخت','other_deductions':'سایر کسورات','tax':'مالیات','insurance':'بیمه','payable_current':'خالص قابل پرداخت'}
+        for key,label in labels.items():
+            rows.append({'field':'مبلغ اصل '+label,'value':net['original'][key]})
+            rows.append({'field':'مبلغ اصلاح '+label,'value':net['amendment_deltas'][key]})
+            rows.append({'field':'مبلغ مؤثر '+label,'value':net['net'][key]})
+        metadata={'project_id':project_id,'currency':p['statement_amendment_policy']['money']['currency'],'شماره دوره':period_no,
+                  'شماره قرارداد':period.get('contract_id','در سند اولیه ثبت نشده'),
+                  'شماره سند':period.get('reference',str(period_no)),'عنوان بخش':'ریز کارکرد و کسورات صورت‌وضعیت'}
+        if period.get('date'):metadata['تاریخ شمسی سند']=report_date(date.fromisoformat(period['date']))
+        return build_report(p['name']+' — صورت‌وضعیت دوره '+str(period_no),rows,metadata=metadata).export(path,fmt)
+
+    def configure_statement_workflow(self, project_id, *, actor, expected_version, terms, source_documents):
+        return self.statement_workflow(project_id, 'configure', actor=actor, expected_version=expected_version, terms=terms, source_documents=source_documents)
+
+    def statement_workflow(self, project_id, op, *, actor, expected_version, **data):
+        from core.commercial.statement import statement_dispatch
+        from datetime import datetime, timezone
+        from uuid import uuid4
+        p=self.open_project(project_id)
+        if isinstance(expected_version,bool) or p['_meta']['version']!=expected_version:
+            raise RuntimeError('نسخه پروژه تغییر کرده است')
+        command={**data,'domain':'statement','op':op,'actor':actor,'at':datetime.now(timezone.utc).isoformat()}
+        if op=='create':command['id']=uuid4().hex
+        result=statement_dispatch(p,command)
+        self.store.save(project_id,result,expected_digest=__import__('core.platform.concurrency',fromlist=['begin_write']).begin_write({k:v for k,v in p.items() if k!='_meta'}),phase3_command=command)
+        if op=='configure':return result['statement_workflow_terms']
+        return next(d for d in result['statement_workflow'] if d['id']==command['id'])
 
     def statement_periods(self, project_id: str) -> list[dict[str, Any]]:
         p = self.store.get(project_id)
@@ -1732,6 +1824,8 @@ class StructuralProApp:
     def project_financial_integrity_audit(self, project_id: str) -> dict[str, Any]:
         """Detect broken references, invalid amounts and malformed financial rows."""
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         issues = []
@@ -1760,17 +1854,23 @@ class StructuralProApp:
                 issues.append({"type": "negative_amount", "source": "سند مالی", "id": doc.get("id", "")})
         return {"project_id": project_id, "issue_count": len(issues), "issues": issues, "healthy": not issues}
 
+    @exact
     def project_statement_summary(self, project_id: str) -> dict[str, Any]:
         """Summarize persisted statement periods."""
         periods = self.statement_periods(project_id)
+        p=self.open_project(project_id)
+        if any(d.get('status')=='POSTED' for d in p.get('statement_amendments',[])):
+            from core.commercial.statement_amendment import summary
+            money_rows=[summary(p,x['number'])['net'] for x in periods]
+        else:money_rows=periods
         return {
             "project_id": project_id,
             "period_count": len(periods),
             "latest_period": periods[-1] if periods else None,
-            "gross_total": sum(float(x.get("gross_current", 0) or 0) for x in periods),
-            "payable_total": sum(float(x.get("payable_current", 0) or 0) for x in periods),
-            "retention_total": sum(float(x.get("retention", 0) or 0) for x in periods),
-            "tax_total": sum(float(x.get("tax", 0) or 0) for x in periods),
+            "gross_total": wire(sum(number(x["gross_current"],"ناخالص") for x in money_rows)),
+            "payable_total": wire(sum(number(x["payable_current"],"خالص") for x in money_rows)),
+            "retention_total": wire(sum(number(x["retention"],"سپرده") for x in money_rows)),
+            "tax_total": wire(sum(number(x["tax"],"مالیات") for x in money_rows)),
         }
 
     def project_statement_period(self, project_id: str, period_no: int) -> dict[str, Any]:
@@ -1817,6 +1917,8 @@ class StructuralProApp:
     def project_activity_summary(self, project_id: str) -> dict[str, Any]:
         """Provide a compact project activity inventory for dashboards."""
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         return {
@@ -1893,6 +1995,8 @@ class StructuralProApp:
     def project_financial_reconciliation(self, project_id: str) -> dict[str, Any]:
         """Audit financial-document links against linked settlement records without mutating data."""
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         commitments = {int(x.get("id", 0)): x for x in p.get("commitment_entries", [])}
@@ -2034,7 +2138,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        return list(p.get("cost_entries", []))
+        from core.commercial.financial_ledger import financial_projection
+        return list(financial_projection(p).get("cost_entries", []))
 
     @exact
     def project_cost_summary(self, project_id: str) -> dict[str, Any]:
@@ -2155,6 +2260,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        p=financial_projection(p)
         payments = [
             PaymentRecord(
                 id=str(x.get("id")),
@@ -2247,7 +2354,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        return list(p.get("payment_entries", []))
+        from core.commercial.financial_ledger import financial_projection
+        return list(financial_projection(p).get("payment_entries", []))
 
     def project_payment_summary(self, project_id: str) -> dict[str, Any]:
         return self._finance_depth_control(project_id).payment_summary()
@@ -2274,6 +2382,8 @@ class StructuralProApp:
 
     def project_budget_control(self, project_id: str) -> dict[str, Any]:
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         return self._finance_depth_control(project_id).budget_control(
@@ -2283,6 +2393,8 @@ class StructuralProApp:
 
     def project_cash_flow_control(self, project_id: str) -> dict[str, Any]:
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         return self._finance_depth_control(project_id).cash_flow(
@@ -2294,6 +2406,8 @@ class StructuralProApp:
 
     def project_finance_payment_depth_snapshot(self, project_id: str) -> dict[str, Any]:
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:p=financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         control = self._finance_depth_control(project_id)
@@ -2348,13 +2462,18 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        return list(p.get("commitment_entries", []))
+        from core.commercial.financial_ledger import financial_projection
+        return list(financial_projection(p).get("commitment_entries", []))
 
     @exact
     def project_commitment_summary(self, project_id: str) -> dict[str, Any]:
         entries = self.project_commitments(project_id)
         total = sum(number(x.get('amount'), 'مبلغ') for x in entries)
         paid = sum(number(x.get('paid_amount'), 'پرداخت تعهد') for x in entries)
+        p=self.open_project(project_id)
+        if p.get('financial_records'):
+            from core.commercial.financial_ledger import active_records
+            paid+=sum((number(r['amount'],'پرداخت تعهد') for r in active_records(p) if r['kind']=='payment' and r.get('commitment_id')),number(0,'صفر'))
         return wire({"project_id": project_id, "entry_count": len(entries), "committed_total": total, "paid_total": paid, "unpaid_total": max(total - paid, 0)})
 
     def add_project_receipt(self, project_id: str, amount: float, *, description: str = "", date: str = "", reference: str = "", document_id: int | None = None, counterparty: str = "") -> dict[str, Any]:
@@ -2377,7 +2496,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        return list(p.get("receipt_entries", []))
+        from core.commercial.financial_ledger import financial_projection
+        return list(financial_projection(p).get("receipt_entries", []))
 
     @exact
     def project_receipt_summary(self, project_id: str) -> dict[str, Any]:
@@ -2543,67 +2663,78 @@ class StructuralProApp:
         return target
 
 
+    @exact
     def project_counterparty_financial_rollup(self, project_id: str) -> list[dict[str, Any]]:
         """Aggregate financial activity by stable counterparty ID, including legacy name-only records."""
-        p=self.store.get(project_id)
-        if p is None: raise KeyError(project_id)
-        parties=self.project_counterparties(project_id)
-        rows={x["id"]: {"counterparty_id":x["id"],"name":x.get("name",""),"role":x.get("role",""),
-                        "active":x.get("active",True),"documents":0,"document_amount":0.0,
-                        "commitments":0,"commitment_amount":0.0,"paid_commitments":0.0,
-                        "costs":0,"cost_amount":0.0,"receipts":0,"receipt_amount":0.0} for x in parties}
-        for coll,key,count,amount in [
-            ("financial_documents","documents","document_amount","amount"),
-            ("commitment_entries","commitments","commitment_amount","amount"),
-            ("cost_entries","costs","cost_amount","amount"),
-            ("receipt_entries","receipts","receipt_amount","amount")]:
-            for item in p.get(coll,[]):
-                cid=item.get("counterparty_id") or self._counterparty_id_for_name(p,item.get("counterparty",""))
-                if cid not in rows: continue
-                rows[cid][key]+=1
-                target_key = {"amount":"document_amount"}.get(amount, amount)
-                if coll == "commitment_entries": target_key = "commitment_amount"
-                elif coll == "cost_entries": target_key = "cost_amount"
-                elif coll == "receipt_entries": target_key = "receipt_amount"
-                rows[cid][target_key]+=float(item.get("amount",0) or 0)
-                if coll=="commitment_entries":
-                    rows[cid]["paid_commitments"]+=float(item.get("paid_amount",0) or 0)
-        return sorted(rows.values(),key=lambda x:(not bool(x["active"]),str(x["name"]).casefold()))
-
-    def project_counterparty_summary(self, project_id: str) -> dict[str, Any]:
-        """Aggregate project financial exposure by counterparty."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        p = financial_projection(p)
+        parties = self.project_counterparties(project_id)
+        rows = {x['id']: {'counterparty_id': x['id'], 'name': x.get('name', ''), 'role': x.get('role', ''), 'active': x.get('active', True), 'documents': 0, 'document_amount': 0, 'commitments': 0, 'commitment_amount': 0, 'paid_commitments': 0, 'costs': 0, 'cost_amount': 0, 'receipts': 0, 'receipt_amount': 0} for x in parties}
+        for coll, key, count, amount in [('financial_documents', 'documents', 'document_amount', 'amount'), ('commitment_entries', 'commitments', 'commitment_amount', 'amount'), ('cost_entries', 'costs', 'cost_amount', 'amount'), ('receipt_entries', 'receipts', 'receipt_amount', 'amount')]:
+            for item in p.get(coll, []):
+                cid = item.get('counterparty_id') or self._counterparty_id_for_name(p, item.get('counterparty', ''))
+                if cid not in rows:
+                    continue
+                rows[cid][key] += 1
+                target_key = {'amount': 'document_amount'}.get(amount, amount)
+                if coll == 'commitment_entries':
+                    target_key = 'commitment_amount'
+                elif coll == 'cost_entries':
+                    target_key = 'cost_amount'
+                elif coll == 'receipt_entries':
+                    target_key = 'receipt_amount'
+                rows[cid][target_key] += number(item.get('amount', 0) or 0, 'مبلغ', True)
+                if coll == 'commitment_entries':
+                    rows[cid]['paid_commitments'] += number(item.get('paid_amount', 0) or 0, 'مبلغ', True)
+        for payment in p.get('payment_entries', []):
+            if payment.get('commitment_id') is None:
+                continue
+            cid = payment.get('counterparty_id') or self._counterparty_id_for_name(p, payment.get('counterparty', ''))
+            if cid in rows:
+                rows[cid]['paid_commitments'] += number(payment['amount'], 'پرداخت')
+        return wire(sorted(rows.values(), key=lambda x: (not bool(x['active']), str(x['name']).casefold())))
+
+    @exact
+    def project_counterparty_summary(self, project_id: str) -> dict[str, Any]:
+        """Aggregate project financial exposure by counterparty."""
+        p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:
+            p = financial_projection(p)
+        if p is None:
+            raise KeyError(project_id)
         result: dict[str, dict[str, Any]] = {}
+
         def bucket(name: str) -> dict[str, Any]:
-            key = str(name or "").strip() or "نامشخص"
-            return result.setdefault(key, {"counterparty": key, "documents": 0, "document_amount": 0.0,
-                                           "commitments": 0, "committed_amount": 0.0, "paid_commitments": 0.0,
-                                           "cost_entries": 0, "actual_cost": 0.0, "receipts": 0, "received": 0.0})
-        for d in p.get("financial_documents", []):
-            b = bucket(d.get("counterparty", ""))
-            b["documents"] += 1
-            b["document_amount"] += float(d.get("amount", 0) or 0)
-        for c in p.get("commitment_entries", []):
-            # Commitment records predate counterparty support; use their optional field when available.
-            b = bucket(c.get("counterparty", ""))
-            b["commitments"] += 1
-            b["committed_amount"] += float(c.get("amount", 0) or 0)
-            b["paid_commitments"] += float(c.get("paid_amount", 0) or 0)
-        for c in p.get("cost_entries", []):
-            b = bucket(c.get("counterparty", ""))
-            b["cost_entries"] += 1
-            b["actual_cost"] += float(c.get("amount", 0) or 0)
-        for r in p.get("receipt_entries", []):
-            b = bucket(r.get("counterparty", ""))
-            b["receipts"] += 1
-            b["received"] += float(r.get("amount", 0) or 0)
+            key = str(name or '').strip() or 'نامشخص'
+            return result.setdefault(key, {'counterparty': key, 'documents': 0, 'document_amount': 0, 'commitments': 0, 'committed_amount': 0, 'paid_commitments': 0, 'cost_entries': 0, 'actual_cost': 0, 'receipts': 0, 'received': 0})
+        for d in p.get('financial_documents', []):
+            b = bucket(d.get('counterparty', ''))
+            b['documents'] += 1
+            b['document_amount'] += number(d.get('amount', 0) or 0, 'مبلغ', True)
+        for c in p.get('commitment_entries', []):
+            b = bucket(c.get('counterparty', ''))
+            b['commitments'] += 1
+            b['committed_amount'] += number(c.get('amount', 0) or 0, 'مبلغ', True)
+            b['paid_commitments'] += number(c.get('paid_amount', 0) or 0, 'مبلغ', True)
+        for c in p.get('cost_entries', []):
+            b = bucket(c.get('counterparty', ''))
+            b['cost_entries'] += 1
+            b['actual_cost'] += number(c.get('amount', 0) or 0, 'مبلغ', True)
+        for r in p.get('receipt_entries', []):
+            b = bucket(r.get('counterparty', ''))
+            b['receipts'] += 1
+            b['received'] += number(r.get('amount', 0) or 0, 'مبلغ', True)
+        for payment in p.get('payment_entries', []):
+            if payment.get('commitment_id') is not None:
+                bucket(payment.get('counterparty', ''))['paid_commitments'] += number(payment['amount'], 'پرداخت')
         for b in result.values():
-            b["unpaid_commitments"] = max(b["committed_amount"] - b["paid_commitments"], 0.0)
-            b["net_cash"] = b["received"] - b["paid_commitments"]
-        return {"project_id": project_id, "counterparties": list(result.values()),
-                "counterparty_count": len(result)}
+            b['unpaid_commitments'] = max(b['committed_amount'] - b['paid_commitments'], 0)
+            b['net_cash'] = b['received'] - b['paid_commitments']
+        return wire({'project_id': project_id, 'counterparties': list(result.values()), 'counterparty_count': len(result)})
 
     def project_counterparty_ledger_by_id(self, project_id: str, counterparty_id: str) -> dict[str, Any]:
         """Return a detailed ledger using the stable counterparty ID."""
@@ -2612,44 +2743,43 @@ class StructuralProApp:
             raise KeyError(counterparty_id)
         return self.project_counterparty_ledger(project_id, party["name"])
 
+    @exact
     def project_counterparty_ledger(self, project_id: str, counterparty: str) -> dict[str, Any]:
         """Return chronological financial activity for one project counterparty."""
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:
+            p = financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         name = str(counterparty).strip()
         if not name:
-            raise ValueError("counterparty cannot be empty")
+            raise ValueError('counterparty cannot be empty')
         rows = []
+
         def add(source: str, entry: dict[str, Any], amount: float, direction: str):
-            rows.append({
-                "source": source, "id": entry.get("id", ""), "date": entry.get("date", ""),
-                "reference": entry.get("reference", ""), "description": entry.get("description", ""),
-                "amount": float(amount), "direction": direction,
-                "cash_in": float(amount) if direction == "in" else 0.0,
-                "cash_out": float(amount) if direction == "out" else 0.0,
-                "document_id": entry.get("document_id"),
-            })
-        for entry in p.get("financial_documents", []):
-            if str(entry.get("counterparty", "")).strip() == name:
-                add("سند مالی", entry, entry.get("amount", 0), "info")
-        for entry in p.get("commitment_entries", []):
-            if str(entry.get("counterparty", "")).strip() == name:
-                add("تعهد", entry, entry.get("amount", 0), "out")
-        for entry in p.get("cost_entries", []):
-            if str(entry.get("counterparty", "")).strip() == name:
-                add("هزینه", entry, entry.get("amount", 0), "out")
-        for entry in p.get("receipt_entries", []):
-            if str(entry.get("counterparty", "")).strip() == name:
-                add("دریافتی", entry, entry.get("amount", 0), "in")
-        rows.sort(key=lambda x: (str(x.get("date", "")), str(x.get("source", "")), int(x.get("id", 0) or 0)))
-        cash_in = sum(x["cash_in"] for x in rows)
-        cash_out = sum(x["cash_out"] for x in rows)
-        return {
-            "project_id": project_id, "counterparty": name, "rows": rows,
-            "row_count": len(rows), "cash_in": cash_in, "cash_out": cash_out,
-            "net_cash": cash_in - cash_out,
-        }
+            rows.append({'source': source, 'id': entry.get('id', ''), 'date': entry.get('date', ''), 'reference': entry.get('reference', ''), 'description': entry.get('description', ''), 'amount': number(amount, 'مبلغ', True), 'direction': direction, 'cash_in': number(amount, 'مبلغ', True) if direction == 'in' else 0, 'cash_out': number(amount, 'مبلغ', True) if direction == 'out' else 0, 'document_id': entry.get('document_id')})
+        for entry in p.get('financial_documents', []):
+            if str(entry.get('counterparty', '')).strip() == name:
+                add('سند مالی', entry, entry.get('amount', 0), 'info')
+        for entry in p.get('commitment_entries', []):
+            if str(entry.get('counterparty', '')).strip() == name:
+                add('تعهد', entry, entry.get('amount', 0), 'info')
+                if number(entry.get('paid_amount',0),'پرداخت قدیمی'):
+                    add('پرداخت تعهد قدیمی',entry,entry['paid_amount'],'out')
+        for entry in p.get('cost_entries', []):
+            if str(entry.get('counterparty', '')).strip() == name:
+                add('هزینه', entry, entry.get('amount', 0), 'info')
+        for entry in p.get('payment_entries', []):
+            if str(entry.get('counterparty', '')).strip() == name:
+                add('پرداخت', entry, entry.get('amount', 0), 'out')
+        for entry in p.get('receipt_entries', []):
+            if str(entry.get('counterparty', '')).strip() == name:
+                add('دریافتی', entry, entry.get('amount', 0), 'in')
+        rows.sort(key=lambda x: (str(x.get('date', '')), str(x.get('source', '')), str(x.get('id', ''))))
+        cash_in = sum((x['cash_in'] for x in rows))
+        cash_out = sum((x['cash_out'] for x in rows))
+        return wire({'project_id': project_id, 'counterparty': name, 'rows': rows, 'row_count': len(rows), 'cash_in': cash_in, 'cash_out': cash_out, 'net_cash': cash_in - cash_out})
 
     def project_counterparty_ledger_report(self, project_id: str, counterparty: str, fmt: str, path):
         """Export a detailed counterparty transaction ledger."""
@@ -2718,6 +2848,7 @@ class StructuralProApp:
             })
         return result
 
+    @exact
     def project_financial_due_summary(self, project_id: str, as_of: str) -> dict[str, Any]:
         """Compact due-date control summary suitable for dashboard cards."""
         aging=self.project_financial_aging(project_id,as_of)
@@ -2726,79 +2857,60 @@ class StructuralProApp:
             "overdue_count":aging["overdue_count"], "overdue_amount":aging["overdue_amount"],
             "due_today_count":aging["due_today_count"], "upcoming_count":aging["upcoming_count"],
             "no_due_date_count":aging["no_due_date_count"],
-            "total_open_amount":sum(float(x.get("outstanding",0) or 0) for x in aging["rows"]),
+            "total_open_amount":wire(sum(number(x.get("outstanding",0) or 0,"مانده") for x in aging["rows"])),
             "highest_risk":aging["rows"][0] if aging["rows"] else None,
         }
 
+    @exact
     def project_financial_aging(self, project_id: str, as_of: str) -> dict[str, Any]:
         """Return deterministic due-date aging for unpaid project financial items.
 
-        The caller supplies the reporting date explicitly. This avoids mixing the
-        project's Jalali date strings with the machine's Gregorian clock.
-        """
+            The caller supplies the reporting date explicitly. This avoids mixing the
+            project's Jalali date strings with the machine's Gregorian clock.
+            """
         p = self.store.get(project_id)
+        from core.commercial.financial_ledger import financial_projection
+        if p is not None:
+            p = financial_projection(p)
         if p is None:
             raise KeyError(project_id)
         as_of_key = _normalize_date_key(as_of)
         if as_of_key is None:
-            raise ValueError("invalid aging date; expected YYYY/MM/DD")
+            raise ValueError('invalid aging date; expected YYYY/MM/DD')
         rows = []
 
         def classify(due_date: str) -> str:
             due_key = _normalize_date_key(due_date)
             if due_key is None:
-                return "بدون سررسید"
+                return 'بدون سررسید'
             if due_key < as_of_key:
-                return "معوق"
+                return 'معوق'
             if due_key == as_of_key:
-                return "سررسید امروز"
-            return "آتی"
-
-        for entry in p.get("commitment_entries", []):
-            amount = float(entry.get("amount", 0) or 0)
-            paid = float(entry.get("paid_amount", 0) or 0)
-            outstanding = max(amount - paid, 0.0)
+                return 'سررسید امروز'
+            return 'آتی'
+        for entry in p.get('commitment_entries', []):
+            amount = number(entry.get('amount', 0) or 0, 'مبلغ', True)
+            paid = number(entry.get('paid_amount', 0) or 0, 'مبلغ', True)
+            paid+=sum((number(r['amount'],'پرداخت') for r in p.get('payment_entries',[]) if r.get('commitment_id')==entry['id']),number(0,'صفر'))
+            outstanding = max(amount - paid, 0)
             if outstanding <= 0:
                 continue
-            due_date = str(entry.get("due_date", "")).strip()
+            due_date = str(entry.get('due_date', '')).strip()
             status = classify(due_date)
-            rows.append({
-                "source": "تعهد", "id": entry.get("id", ""), "counterparty": entry.get("counterparty", ""),
-                "reference": entry.get("reference", ""), "due_date": due_date, "status": status,
-                "amount": amount, "paid_amount": paid, "outstanding": outstanding,
-            })
-
-        for entry in p.get("financial_documents", []):
-            payment_status = str(entry.get("payment_status", "unpaid")).strip().lower()
-            if payment_status == "paid":
+            rows.append({'source': 'تعهد', 'id': entry.get('id', ''), 'counterparty': entry.get('counterparty', ''), 'reference': entry.get('reference', ''), 'due_date': due_date, 'status': status, 'amount': amount, 'paid_amount': paid, 'outstanding': outstanding})
+        for entry in p.get('financial_documents', []):
+            payment_status = str(entry.get('payment_status', 'unpaid')).strip().lower()
+            if payment_status == 'paid':
                 continue
-            amount = float(entry.get("amount", 0) or 0)
-            due_date = str(entry.get("due_date", "")).strip()
+            amount = number(entry.get('amount', 0) or 0, 'مبلغ', True)
+            due_date = str(entry.get('due_date', '')).strip()
             status = classify(due_date)
-            rows.append({
-                "source": "سند مالی", "id": entry.get("id", ""), "counterparty": entry.get("counterparty", ""),
-                "reference": entry.get("document_number", ""), "due_date": due_date, "status": status,
-                "amount": amount, "paid_amount": None, "outstanding": amount if payment_status == "unpaid" else None,
-            })
-
-        order = {"معوق": 0, "سررسید امروز": 1, "آتی": 2, "بدون سررسید": 3}
-        rows.sort(key=lambda x: (order.get(x["status"], 9), _normalize_date_key(x["due_date"]) or "9999/99/99",
-                                str(x["source"]), int(x.get("id", 0) or 0)))
-        overdue_commitments = sum(x["outstanding"] for x in rows if x["source"] == "تعهد" and x["status"] == "معوق")
-        overdue_unpaid_documents = sum(x["outstanding"] or 0 for x in rows if x["source"] == "سند مالی" and x["status"] == "معوق")
-        return {
-            "project_id": project_id,
-            "as_of": as_of_key,
-            "rows": rows,
-            "row_count": len(rows),
-            "overdue_count": sum(1 for x in rows if x["status"] == "معوق"),
-            "due_today_count": sum(1 for x in rows if x["status"] == "سررسید امروز"),
-            "upcoming_count": sum(1 for x in rows if x["status"] == "آتی"),
-            "no_due_date_count": sum(1 for x in rows if x["status"] == "بدون سررسید"),
-            "overdue_commitments": overdue_commitments,
-            "overdue_unpaid_documents": overdue_unpaid_documents,
-            "overdue_amount": overdue_commitments + overdue_unpaid_documents,
-        }
+            rows.append({'source': 'سند مالی', 'id': entry.get('id', ''), 'counterparty': entry.get('counterparty', ''), 'reference': entry.get('document_number', ''), 'due_date': due_date, 'status': status, 'amount': amount, 'paid_amount': None, 'outstanding': amount if payment_status == 'unpaid' else None})
+        order = {'معوق': 0, 'سررسید امروز': 1, 'آتی': 2, 'بدون سررسید': 3}
+        rows.sort(key=lambda x: (order.get(x['status'], 9), _normalize_date_key(x['due_date']) or '9999/99/99', str(x['source']), int(x.get('id', 0) or 0)))
+        overdue_commitments = sum((x['outstanding'] for x in rows if x['source'] == 'تعهد' and x['status'] == 'معوق'))
+        overdue_unpaid_documents = sum((x['outstanding'] or 0 for x in rows if x['source'] == 'سند مالی' and x['status'] == 'معوق'))
+        return wire({'project_id': project_id, 'as_of': as_of_key, 'rows': rows, 'row_count': len(rows), 'overdue_count': sum((1 for x in rows if x['status'] == 'معوق')), 'due_today_count': sum((1 for x in rows if x['status'] == 'سررسید امروز')), 'upcoming_count': sum((1 for x in rows if x['status'] == 'آتی')), 'no_due_date_count': sum((1 for x in rows if x['status'] == 'بدون سررسید')), 'overdue_commitments': overdue_commitments, 'overdue_unpaid_documents': overdue_unpaid_documents, 'overdue_amount': overdue_commitments + overdue_unpaid_documents})
 
     def project_financial_alerts(self, project_id: str, as_of: str) -> dict[str, Any]:
         """Summarize actionable financial warnings for the dashboard."""
