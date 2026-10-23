@@ -649,14 +649,13 @@ def main()->int:
     if current_edition == "light":
         ago.setEnabled(False)
         aout.setPlainText("این نسخه فاقد هوش مصنوعی است؛ از نسخه استاندارد، حرفه‌ای یا سازمانی استفاده کنید.")
-    else:
-        v.addWidget(aout)
+    v.addWidget(aout)
     def review():
         if current_edition == "light": return
         project=service.open_project(apid.text().strip())
         if not project: QMessageBox.warning(w,"AI","پروژه پیدا نشد."); return
         r=assistant.review(project)
-        text=r["text"]+"\n\n"+"\n".join(f'{x["severity"]}: {x["code"]}' for x in r["issues"]) if r["issues"] else r["text"]+"\n\nایراد داده‌ای پیدا نشد."
+        text=r["text"]+"\n\n"+"\n".join(f'{x["severity"]}: {x["code"]}' for x in r["issues"]) if r["issues"] else r["text"]
         aout.setPlainText(text)
     ago.clicked.connect(review)
     if current_edition in ("pro","enterprise"):

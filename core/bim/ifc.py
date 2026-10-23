@@ -102,6 +102,50 @@ class DeepIFCAdapter:
             raise ValueError("مدل فاقد هندسه قابل نمایش است.")
         return IFCDisplayDocument(str(p), hashlib.sha256(raw).hexdigest(), tuple(meshes), tuple(omitted))
 
+    def read_display_contract(self, path, *, revision, max_triangles=100_000):
+        """Recoverable SI geometry with validated IFC provenance, never quantity rights.
+
+        Mesh tessellation is display-only. Original placement/QTO validation is
+        delegated to the existing BIM adapter, not inferred from mesh bounds.
+        """
+        from core.drawings.bim_adapter import BIMAdapter
+        import json
+        if not isinstance(revision, str) or not revision.strip():
+            raise ValueError("نسخه منبع هندسه باید صریح باشد.")
+        p = Path(path)
+        document = BIMAdapter().read_document(p, revision=revision)
+        display = self.read_display_meshes(p, max_triangles=max_triangles)
+        digest = document['source_sha256']
+        if display.source_sha256 != digest or hashlib.sha256(p.read_bytes()).hexdigest() != digest:
+            raise ValueError("منبع IFC هنگام آماده‌سازی هندسه تغییر کرده است.")
+        elements = {item['global_id']: item for item in document['elements']}
+        records = []
+        for mesh in display.meshes:
+            if mesh.global_id not in elements:
+                raise ValueError("هندسه فاقد عضو معتبر در قرارداد IFC است.")
+            item = elements[mesh.global_id]
+            records.append({
+                'global_id': mesh.global_id, 'ifc_type': item['ifc_type'],
+                'building_id': item['building_id'], 'storey_id': item['storey_id'],
+                'origin_m': item['origin_m'], 'placement_matrix_si': item['placement_matrix_si'],
+                'vertices_m': [list(v) for v in mesh.vertices],
+                'triangles': [list(t) for t in mesh.triangles],
+            })
+        result = {
+            'policy': 'ifc_display_geometry_v1', 'source_path': str(p),
+            'source_sha256': digest, 'revision': revision, 'schema': document['schema'],
+            'parser': document['parser'], 'dimension': 3,
+            'coordinate_system': 'IFC world coordinates in metres',
+            'quantity_authority': False, 'elements': records,
+            'numeric_policy': document['numeric_policy'],
+            'map_conversion_present': document['map_conversion_present'],
+            'map_conversion_supported': document['map_conversion_supported'],
+            'tessellation_authority': 'display only; no engineering error bound',
+            'omitted_ids': list(display.omitted_ids),
+        }
+        # JSON interchange is the existing project persistence boundary.
+        return json.loads(json.dumps(result, allow_nan=False))
+
     def read(self,path):
         p=Path(path)
         if not p.exists() or not p.is_file(): raise FileNotFoundError(p)

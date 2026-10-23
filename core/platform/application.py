@@ -85,6 +85,39 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+    def ifc_display_geometry(self, project_id, proposal_id):
+        """Rebuild read-only display data from persisted reviewed source identity.
+
+        No geometry cache or new ledger is written. Lineage is inspectable,
+        including historical owners, but this method grants no quantity rights.
+        """
+        from core.drawings.ifc_pipeline import lineage_view_binding
+        from core.bim.ifc import DeepIFCAdapter
+        self.store._cache.pop(project_id, None)
+        project = self.store.get(project_id)
+        if project is None:
+            raise KeyError(project_id)
+        decision, element = lineage_view_binding(project, proposal_id)
+        source = decision['document']
+        geometry = DeepIFCAdapter().read_display_contract(
+            source['source_path'], revision=source['revision'])
+        if geometry['source_sha256'] != source['source_sha256']:
+            raise ValueError("منبع هندسه با تطبیق پروژه ناسازگار است.")
+        selected = [item for item in geometry['elements']
+                    if item['global_id'] == element['global_id']]
+        if len(selected) != 1:
+            raise ValueError("عضو فاقد هندسه سه‌بعدی معتبر است؛ هندسه حدس زده نمی‌شود.")
+        geometry['elements'] = selected
+        previous = any(proposal_id in event.get('previous_proposal_ids', [])
+                       for event in project.get('ifc_identity_lineages', []))
+        return {
+            'project_id': project_id, 'proposal_id': proposal_id,
+            'building_id': element['building_id'], 'floor_id': decision['floor_id'],
+            'member_id': decision['member_id'], 'dimension': 3,
+            'ownership_view': 'historical' if previous else 'current',
+            'financial_permission': False, 'geometry': geometry,
+        }
+
     def save_ifc_identity_proposal(self, project_id, path, *, revision, global_id,
                                    floor_id, member_id, author, reference, expected_digest, source_sha256):
         """Persist an explicit identity proposal, never an approval or BOQ receipt.

@@ -6,11 +6,13 @@ the same installation; there is no separate user-facing AI application.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import os
 import re
 import subprocess
+import hashlib
+import json
 
 from core.ai.edition_models import AITier, ai_model_spec_for_edition
 from core.platform.product import packaged_edition
@@ -21,6 +23,10 @@ class AIResponse:
     text: str
     source: str = "local-rule-engine"
     confidence: float = 1.0
+    requires_user_confirmation: bool = True
+    quantity_authority: bool = False
+    provenance: dict = field(default_factory=lambda: {
+        "model_id": "local-rule-engine-v1", "mode": "deterministic_offline_qa"})
 
 
 class LocalAIEngine:
@@ -65,7 +71,8 @@ class LocalAIEngine:
 
     @property
     def has_llm_model(self):
-        return self.model_path is not None and self.model_path.exists()
+        return (self.tier is not AITier.NONE and self.model_path is not None
+                and self.model_path.is_file())
 
     @property
     def has_vision_model(self):
@@ -81,6 +88,9 @@ class LocalAIEngine:
         return self._binary("llama-cli") is not None
 
     def inspect_project(self, project):
+        if self.edition == "light":
+            return AIResponse("نسخه سبک فاقد هوش مصنوعی محلی است.",
+                              source="fail-closed", confidence=0.0)
         project = project if isinstance(project, dict) else {}
         missing = []
         takeoffs = project.get("takeoffs", []) or []
@@ -93,9 +103,16 @@ class LocalAIEngine:
                 missing.append(f"کد عضو متره {i}")
             if not item.get("quantities"):
                 missing.append(f"خروجی متره عضو {i}")
-        return AIResponse(self._format_check(missing, len(takeoffs)), confidence=0.99)
+        return AIResponse(self._format_check(missing, len(takeoffs)), confidence=0.99,
+                          provenance={"model_id": "local-rule-engine-v1",
+                                      "mode": "deterministic_offline_qa",
+                                      "data_sha256": hashlib.sha256(json.dumps(
+                                          project, sort_keys=True, ensure_ascii=False).encode()).hexdigest()})
 
     def answer(self, prompt, project=None):
+        if self.edition == "light":
+            return AIResponse("نسخه سبک فاقد هوش مصنوعی محلی است.",
+                              source="fail-closed", confidence=0.0)
         p = (prompt or "").strip()
         if project is not None and any(k in p for k in ("بررسی", "کنترل", "جا افتاده", "نقص", "متره")):
             return self.inspect_project(project)
@@ -151,7 +168,8 @@ class LocalAIEngine:
                     source="fail-closed",
                     confidence=0.0,
                 )
-            return AIResponse(text, source="local-gguf-vision", confidence=0.80)
+            return AIResponse(text, source="local-gguf-vision", confidence=0.80,
+                              provenance=self._model_provenance(project, image))
         except Exception as exc:
             self._load_error = str(exc)
             return AIResponse(
@@ -186,7 +204,8 @@ class LocalAIEngine:
             text = (result.stdout or "").strip()
             if result.returncode != 0 or not text:
                 raise RuntimeError((result.stderr or "llama.cpp failed").strip())
-            return AIResponse(text, source="local-gguf", confidence=0.85)
+            return AIResponse(text, source="local-gguf", confidence=0.85,
+                              provenance=self._model_provenance(project))
         except Exception as exc:
             self._load_error = str(exc)
             return AIResponse(
@@ -194,6 +213,25 @@ class LocalAIEngine:
                 source="local-rule-engine",
                 confidence=0.70,
             )
+
+    def _model_provenance(self, project, image=None):
+        """Record actual loaded assets; never claim a configured model was run."""
+        def digest(path):
+            result = hashlib.sha256()
+            with Path(path).open('rb') as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                    result.update(chunk)
+            return result.hexdigest()
+        result = {
+            "mode": "local_gguf_advisory", "model_id": self.model_path.name,
+            "model_sha256": digest(self.model_path),
+            "data_sha256": hashlib.sha256(json.dumps(
+                project, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
+        }
+        if image is not None:
+            result.update(source_path=str(image), source_sha256=digest(image),
+                          projector_sha256=digest(self.mmproj_path))
+        return result
 
     def _format_check(self, missing, count):
         if not missing:

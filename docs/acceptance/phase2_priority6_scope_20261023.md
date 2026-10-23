@@ -1,0 +1,4 @@
+Scope: official master roadmap phase2 only. No independent priority6 definition found in docs/history or issue/PR/commit searches. Preserve previous milestones.
+Implementation: extend DeepIFCAdapter with a JSON display contract validated through BIMAdapter; no quantities/material calculation. Read-only service binds this contract to existing approved project identities, including lineage state, never payment rights. Reject source changes and ambiguous/unmapped members.
+AI: reproduce boolean numeric acceptance; reject it at existing proposal guard. Persist truthful proposal provenance using existing row params without inferring unavailable model identity. Existing runtime availability and edition tests only, no new AI engine.
+Validation: red/green new tests, existing Qt/SQLite/CAS/PDF/DWG/IFC/AI/report suites, then compileall/pip check/full pytest/diff check. Final evidence and independent Dropbox roundtrip. Report unexecuted model inference honestly.

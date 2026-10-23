@@ -10,7 +10,9 @@ class ProjectAssistant:
               for t in project.get("takeoffs",[]) for q in t.get("quantities",[])]
         issues=self.takeoff.qa(rows)
         return {"text":response.text,"source":response.source,"confidence":response.confidence,
-                "issues":issues,"offline":True}
+                "issues":issues,"offline":True,"provenance":response.provenance,
+                "requires_user_confirmation":response.requires_user_confirmation,
+                "quantity_authority":response.quantity_authority}
     def compare_rows(self,old,new):
         def key(r): return str(r.get("price_code") or r.get("description") or "").strip()
         a={key(x):x for x in old}; b={key(x):x for x in new}; out=[]
