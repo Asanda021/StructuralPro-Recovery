@@ -1,0 +1,126 @@
+{
+  "samples": [
+    {
+      "fixture": "samples/targeted/test_group_ownership_and_cross0",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_crosswalk_group_migration3",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_split_and_merge_in_one_pr0",
+      "effective_m": "12",
+      "groups": 2,
+      "crosswalks": 6,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_documented_delta_an0",
+      "effective_m": "7",
+      "groups": 1,
+      "crosswalks": 0,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_ownership_and_cross2",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_crosswalk_group_migration2",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_ownership_and_cross1",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_transfer_changes_on1",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 0,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_crosswalk_group_migration1",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_crosswalk_group_migration0",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_transfer_changes_on0",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 0,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_group_ownership_and_cross3",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/targeted/test_existing_reports_read_gro0",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 0,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/dwg/merge",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/dwg/split",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/dwg/qt-merge",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    },
+    {
+      "fixture": "samples/dwg/qt-split",
+      "effective_m": "6",
+      "groups": 1,
+      "crosswalks": 3,
+      "integrity": true
+    }
+  ],
+  "manifest_files": 558,
+  "source_bytes_from_restored_archive_only": true,
+  "signed_records_rewritten": false
+}

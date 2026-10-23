@@ -1,0 +1,84 @@
+﻿متره دستی مستند — identity
+CSV داده متنی است؛ چیدمان، فونت و راست‌به‌چپ دیداری در این قالب ذخیره نمی‌شود.
+نام گزارش,متره دستی مستند — identity
+تاریخ صدور شمسی,۱۴۰۵/۰۸/۰۱
+
+گزارش,ردیف,عنوان,مقدار
+ریز متره,old-B1-0,شناسه,old-B1-0
+ریز متره,old-B1-0,طبقه,F1
+ریز متره,old-B1-0,عضو,B1
+ریز متره,old-B1-0,خانواده,متره دستی
+ریز متره,old-B1-0,شرح,کمیت عمومی IFC — Length
+ریز متره,old-B1-0,مقدار دقیق,6
+ریز متره,old-B1-0,واحد,متر
+ریز متره,old-B1-0,فرمول,Q
+ریز متره,old-B1-0,مبنا و واحد ورودی,IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation
+ریز متره,old-B1-0,منبع,ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0
+ریز متره,old-B1-0,نسخه,1
+ریز متره,old-B1-0,وضعیت,قطعی
+ریز متره,old-B1-0,بلوک,
+ریز متره,old-B1-0,محل اجرا,
+ورودی‌ها,old-B1-0,شناسه,old-B1-0
+ورودی‌ها,old-B1-0,پارامتر,Q
+ورودی‌ها,old-B1-0,مقدار دقیق,6
+ورودی‌ها,old-B1-0,مبنا,IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation
+ورودی‌ها,old-B1-0,واحد ساختاریافته,متر
+ورودی‌ها,old-B1-0,قرارداد واحد,dimensional_decimal_v1
+منابع و مدارک,old-B1-0,شناسه,old-B1-0
+منابع و مدارک,old-B1-0,منبع,ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0
+منابع و مدارک,old-B1-0,مبنا,IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation
+منابع و مدارک,old-B1-0,وابستگی,
+منابع و مدارک,old-B1-0,بازبین,reviewer
+تاریخچه,old-B1-0,شناسه,old-B1-0
+تاریخچه,old-B1-0,نسخه,1
+تاریخچه,old-B1-0,علت,Explicit original QTO
+تاریخچه,old-B1-0,زمان ثبت UTC,2026-10-23T07:11:24.420887+00:00
+ارتباط BOQ,old-B1-0,شناسه,old-B1-0
+ارتباط BOQ,old-B1-0,منبع,ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0
+ارتباط BOQ,old-B1-0,وضعیت,قطعی
+ارتباط BOQ,old-B1-0,ردیف مرتبط,0
+ارتباط BOQ,old-B1-0,مقدار,6
+ارتباط BOQ,old-B1-0,واحد,متر
+خلاصه متره,پروژه,گروه,پروژه
+خلاصه متره,پروژه,واحد,متر
+خلاصه متره,پروژه,وضعیت,قطعی
+خلاصه متره,پروژه,جمع دقیق,6
+هر طبقه,F1,گروه,F1
+هر طبقه,F1,واحد,متر
+هر طبقه,F1,وضعیت,قطعی
+هر طبقه,F1,جمع دقیق,6
+هر آیتم,متره دستی,گروه,متره دستی
+هر آیتم,متره دستی,واحد,متر
+هر آیتم,متره دستی,وضعیت,قطعی
+هر آیتم,متره دستی,جمع دقیق,6
+هر عضو,B1,گروه,B1
+هر عضو,B1,واحد,متر
+هر عضو,B1,وضعیت,قطعی
+هر عضو,B1,جمع دقیق,6
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,دفتر تغییر هویت,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,وضعیت مالکیت,تاریخی؛ مصرف‌شده
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,عضو,B1
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,منبع مقدار,ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,مقدار,6
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,واحد,m
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,اختلاف گروه,0
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,SHA مدرک,ae58e5e6c907a33620f8970095376c1620d64c8764d3d429524feea8e0edbcaf
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,بازبین,reviewer
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,دفتر تغییر هویت,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,وضعیت مالکیت,جاری؛ مؤثر
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,عضو,B2
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,منبع مقدار,ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,مقدار,2
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,واحد,m
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,اختلاف گروه,0
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,SHA مدرک,ae58e5e6c907a33620f8970095376c1620d64c8764d3d429524feea8e0edbcaf
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,بازبین,reviewer
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,دفتر تغییر هویت,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,وضعیت مالکیت,جاری؛ مؤثر
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,عضو,B3
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,منبع مقدار,ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,مقدار,4
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,واحد,m
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,اختلاف گروه,0
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,SHA مدرک,ae58e5e6c907a33620f8970095376c1620d64c8764d3d429524feea8e0edbcaf
+انتقال مالکیت IFC,IFC-LINEAGE-09e88b9e1fb5770f388ba0dc3f1df2aa5012569a0b14ec1052e3628a7fdbdfa6,بازبین,reviewer

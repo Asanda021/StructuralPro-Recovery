@@ -1,0 +1,1095 @@
+{
+  "real_dwg_version": "AC1032",
+  "decoder": "ACadSharp 3.8.0.0 MIT",
+  "scenarios": [
+    {
+      "mode": "split",
+      "boq": [
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "کمیت عمومی IFC — Length",
+          "effective_quantity": 6,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "manual_workbench",
+          "item_no": 1,
+          "notes": "",
+          "price_code": null,
+          "quantity": 6,
+          "source": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+          "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+          "source_ids": [
+            "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+            "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "m",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        }
+      ],
+      "crosswalks": [
+        {
+          "author": "author",
+          "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "8421f893d5cc1f6e8150f0a7a26307de18d80707427004109e84da5183fa2dc9",
+            "ifc_origin_m": [
+              "1000000",
+              "7",
+              "0"
+            ],
+            "ifc_sha256": "8a84b888b17a8ee656332b64abb5177763582d6ec4ca2285903e3fed2f595187",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-7"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "85801b0f3e09f7d34455fb4b3625af33c1afa2921306452556fe66793018be9a",
+            "session_id": "541aa1c9d2974649bca10e10a9423685",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:20.016225+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "86f4f8299c4ac28c853c0e526113053a7a3f412dbc82f808cd66e8035f7cbfc0",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "8421f893d5cc1f6e8150f0a7a26307de18d80707427004109e84da5183fa2dc9"
+            },
+            "geometry_identity": "845c52be76451d37c2fc03f1202f75ba538e918765aac3cf2e829606621cf027",
+            "handle": "2F",
+            "item_digest": "d2af11142a6f32d7a0ecad3c816ab6b0c4931e7434961d6d216edf4610ce1d7a",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/split/plan-old-0.dwg",
+            "session_revision": 1,
+            "source_sha256": "8421f893d5cc1f6e8150f0a7a26307de18d80707427004109e84da5183fa2dc9"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/split/crosswalk-old-0.json",
+          "evidence_sha256": "f5c7ab0bf1e738d8122cac4275bfd88f0ec3da17e9cd017faadf07dfdbe0b4d3",
+          "floor_id": "F1",
+          "global_id": "3CIyLYKSH2Y82vG161aZnC",
+          "id": "6fda3872299e5554ca5f6f5da5f0352eb1926a2a10e60e8bb7e6b723943b12fb",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R1",
+            "schema": "IFC4",
+            "source_id": "ifc:8a84b888b17a8ee656332b64abb5177763582d6ec4ca2285903e3fed2f595187",
+            "source_path": "/tmp/p5-final-dwg/split/beams-R1.ifc",
+            "source_sha256": "8a84b888b17a8ee656332b64abb5177763582d6ec4ca2285903e3fed2f595187",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "member_id": "B1",
+          "payable_rows": [],
+          "project_id": "P",
+          "proposal_id": "85801b0f3e09f7d34455fb4b3625af33c1afa2921306452556fe66793018be9a",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 1,
+          "session_id": "541aa1c9d2974649bca10e10a9423685",
+          "status": "approved"
+        },
+        {
+          "author": "author",
+          "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "6bcd47323776956f3e8f98791a3f6be4d0878879d4988667872a0ed264c49282",
+            "ifc_origin_m": [
+              "1000000",
+              "7",
+              "0"
+            ],
+            "ifc_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-7"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+            "session_id": "ff5799d678174ee992a6ac8d2ef69183",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:22.940999+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "1683cb04542688001042398915b4ec80742173898b4746f332eae533f003db7e",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "6bcd47323776956f3e8f98791a3f6be4d0878879d4988667872a0ed264c49282"
+            },
+            "geometry_identity": "48bd5cf86eaec0679a5adebed53f7494bd027c96bc1a8717f664e9c0482bfacf",
+            "handle": "2F",
+            "item_digest": "4fa05fcdc06f5baffe3563861509499f26dc32e7ed18842eed4a2f2ac58e9f45",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/split/plan-new-0.dwg",
+            "session_revision": 1,
+            "source_sha256": "6bcd47323776956f3e8f98791a3f6be4d0878879d4988667872a0ed264c49282"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/split/crosswalk-new-0.json",
+          "evidence_sha256": "688ac5b8148fee80d83ad6c55df9b83f441bfffbb25f14a70b227b8a993bc5a7",
+          "floor_id": "F1",
+          "global_id": "1Ad4kgoT94d9Lfj4cZCutf",
+          "group_evidence_path": "/tmp/p5-final-dwg/split/crosswalk-group.json",
+          "group_evidence_sha256": "d59cdc1b640f58812bc7431c68a7a41cfb5b8c824a80f2e14ec62f215b0fbe72",
+          "id": "232a83ea90b377acc4b4573e02b0ed8ae8d58b4c5e56edadfc921da544d69104",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R2",
+            "schema": "IFC4",
+            "source_id": "ifc:024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "source_path": "/tmp/p5-final-dwg/split/beams-R2.ifc",
+            "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "lineage_id": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a",
+          "member_id": "B2",
+          "payable_rows": [],
+          "previous_crosswalk_ids": [
+            "6fda3872299e5554ca5f6f5da5f0352eb1926a2a10e60e8bb7e6b723943b12fb"
+          ],
+          "project_id": "P",
+          "proposal_id": "31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 2,
+          "session_id": "ff5799d678174ee992a6ac8d2ef69183",
+          "status": "approved"
+        },
+        {
+          "author": "author",
+          "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "c90f34705141c8661ebddddf351e2718041e1b7ac206f7f1faaec186b16d2569",
+            "ifc_origin_m": [
+              "1000000",
+              "9",
+              "0"
+            ],
+            "ifc_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-9"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+            "session_id": "2c5e8131c5f4425fa96b4983c7a28187",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:23.385695+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "a5ed91d9c43733e5f94d2f3f21ad081c9e2c28b6c093ad4b6a64cc7bc7de1299",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "c90f34705141c8661ebddddf351e2718041e1b7ac206f7f1faaec186b16d2569"
+            },
+            "geometry_identity": "52633e0f0b16d183bd156f879130a38d8af8f88fae7a7fb22fc4faba8a3ae7b2",
+            "handle": "2F",
+            "item_digest": "ec31783f52af3ee3f1a96425fe7396023a9c78b3add8600aa9189c0b3f85ce9a",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/split/plan-new-1.dwg",
+            "session_revision": 1,
+            "source_sha256": "c90f34705141c8661ebddddf351e2718041e1b7ac206f7f1faaec186b16d2569"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/split/crosswalk-new-1.json",
+          "evidence_sha256": "8863837a06a0bb6937756ade6e2325e424f7b015ef500fb92a44bbacfab570a8",
+          "floor_id": "F1",
+          "global_id": "172wGKcrb2GvcrIj3kPy8z",
+          "group_evidence_path": "/tmp/p5-final-dwg/split/crosswalk-group.json",
+          "group_evidence_sha256": "d59cdc1b640f58812bc7431c68a7a41cfb5b8c824a80f2e14ec62f215b0fbe72",
+          "id": "b6bb8d6a6711aa0a9f864188483fed12d4974e2c5122319e0c3dcf0d17576a94",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R2",
+            "schema": "IFC4",
+            "source_id": "ifc:024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "source_path": "/tmp/p5-final-dwg/split/beams-R2.ifc",
+            "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "lineage_id": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a",
+          "member_id": "B3",
+          "payable_rows": [],
+          "previous_crosswalk_ids": [
+            "6fda3872299e5554ca5f6f5da5f0352eb1926a2a10e60e8bb7e6b723943b12fb"
+          ],
+          "project_id": "P",
+          "proposal_id": "5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 2,
+          "session_id": "2c5e8131c5f4425fa96b4983c7a28187",
+          "status": "approved"
+        }
+      ],
+      "amendments": {
+        "MA-da2fd7cc791c4f91bc7234946d0900de": {
+          "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+          "classification": "unspecified",
+          "consumed_rows": [
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:old-B1-0",
+              "item": "manual_workbench",
+              "member_code": "B1",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "85801b0f3e09f7d34455fb4b3625af33c1afa2921306452556fe66793018be9a",
+                  "qto_step_id": 34,
+                  "quantity_name": "Length",
+                  "revision": "R1",
+                  "source_sha256": "8a84b888b17a8ee656332b64abb5177763582d6ec4ca2285903e3fed2f595187"
+                },
+                "intersections": [],
+                "member": "B1",
+                "references": {},
+                "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "6"
+                }
+              },
+              "provenance": {
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "old-B1-0",
+                "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0"
+              },
+              "quantities": [
+                {
+                  "amount": 6,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "at": "2026-10-23T07:13:18.119955+00:00",
+                "digest": "b15f6a2ba39dbfc02cdd912613ce3e17048336014169493405eab9fbc98e8018",
+                "note": "Independent synthetic review",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+              "system": "F1"
+            }
+          ],
+          "created_at": "2026-10-23T07:13:24.294463+00:00",
+          "created_by": "author",
+          "current": [
+            {
+              "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "1Ad4kgoT94d9Lfj4cZCutf",
+              "member_id": "B2",
+              "proposal_id": "31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+              "qto_step_id": 34,
+              "quantity": "2",
+              "revision": "R2",
+              "scope_reference": "Explicit current segment",
+              "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+              "unit": "m"
+            },
+            {
+              "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "172wGKcrb2GvcrIj3kPy8z",
+              "member_id": "B3",
+              "proposal_id": "5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+              "qto_step_id": 244,
+              "quantity": "4",
+              "revision": "R2",
+              "scope_reference": "Explicit current segment",
+              "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4",
+              "unit": "m"
+            }
+          ],
+          "current_total": "6",
+          "delta": "0",
+          "evidence_path": "/tmp/p5-final-dwg/split/allocation.json",
+          "evidence_sha256": "288d71ee3af685db8448f949bf195167a6bbe81b9278decbcac56c110fff28a6",
+          "expected_project_digest": "d8093d1ded671897aabf2104c5fabf6f3bef26dc60907da0f94362c7814d2a55",
+          "group_revision": 1,
+          "id": "MA-da2fd7cc791c4f91bc7234946d0900de",
+          "kind": "reviewed_ifc_quantity_transfer_v1",
+          "lineage_id": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a",
+          "operation": "split",
+          "previous": [
+            {
+              "building_id": "1dIbAFfrb4Q9V4Uatq9_JC",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "3CIyLYKSH2Y82vG161aZnC",
+              "member_id": "B1",
+              "proposal_id": "85801b0f3e09f7d34455fb4b3625af33c1afa2921306452556fe66793018be9a",
+              "qto_step_id": 34,
+              "quantity": "6",
+              "revision": "R1",
+              "scope_reference": "Explicit old member",
+              "source_sha256": "8a84b888b17a8ee656332b64abb5177763582d6ec4ca2285903e3fed2f595187",
+              "unit": "m"
+            }
+          ],
+          "previous_total": "6",
+          "project_id": "P",
+          "quantity_change_document": null,
+          "quantity_name": "Length",
+          "review": {
+            "digest": "ec059a6b6e560b496b602fddc3714897466fc45429847d96ae18d0ce750bf9c0",
+            "reviewer": "reviewer",
+            "role": "reviewer"
+          },
+          "reviewer": "reviewer",
+          "revision": 1,
+          "rows": [
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a:31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+              "item": "manual_workbench",
+              "member_code": "B2",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+                  "qto_step_id": 34,
+                  "quantity_name": "Length",
+                  "revision": "R2",
+                  "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4"
+                },
+                "intersections": [],
+                "member": "B2",
+                "references": {},
+                "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "2"
+                }
+              },
+              "provenance": {
+                "ifc_transfer": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a",
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a:31b120ff119a2cc1ef08d756ee2cf4b7193d2caef239b0e51afc4061545f5361",
+                "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414"
+              },
+              "quantities": [
+                {
+                  "amount": 2,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "digest": "288d71ee3af685db8448f949bf195167a6bbe81b9278decbcac56c110fff28a6",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+              "system": "F1"
+            },
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a:5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+              "item": "manual_workbench",
+              "member_code": "B3",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; Explicit synthetic segment schedule; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+                  "qto_step_id": 244,
+                  "quantity_name": "Length",
+                  "revision": "R2",
+                  "source_sha256": "024457d7a6d340e36eb3974161380a7e9621e0459035761e8b872b3ffb16dde4"
+                },
+                "intersections": [],
+                "member": "B3",
+                "references": {},
+                "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "4"
+                }
+              },
+              "provenance": {
+                "ifc_transfer": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a",
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "IFC-LINEAGE-789bd052ded543421bcf2f7c45cf0e9dbc917480e810d80e56dbee9d40b8582a:5cb7e188435ff97bc2c1bd9d7a340df4884c7f5769c7ce67493b69139ae1edf3",
+                "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d"
+              },
+              "quantities": [
+                {
+                  "amount": 4,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "digest": "288d71ee3af685db8448f949bf195167a6bbe81b9278decbcac56c110fff28a6",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+              "system": "F1"
+            }
+          ],
+          "status": "applied",
+          "unit": "m"
+        }
+      },
+      "integrity": true
+    },
+    {
+      "mode": "merge",
+      "boq": [
+        {
+          "allowance_quantity": 0,
+          "category": "building",
+          "chapter": "",
+          "description": "کمیت عمومی IFC — Length",
+          "effective_quantity": 6,
+          "factor": 1,
+          "group": "F1",
+          "item_code": "manual_workbench",
+          "item_no": 1,
+          "notes": "",
+          "price_code": null,
+          "quantity": 6,
+          "source": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+          "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+          "source_ids": [
+            "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d"
+          ],
+          "source_type": "takeoff",
+          "status": "active",
+          "total": null,
+          "unit": "m",
+          "unit_price": null,
+          "warning": "",
+          "waste_percent": 0
+        }
+      ],
+      "crosswalks": [
+        {
+          "author": "author",
+          "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "9bdcbd7c31608e56683b52bdb8342d4a85be274fe561641f0034529e9d2567fd",
+            "ifc_origin_m": [
+              "1000000",
+              "7",
+              "0"
+            ],
+            "ifc_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-7"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "5c79e50c404cbe915d915f5c41922bbd0fc3578762ca6c74d6fe433462d2c37e",
+            "session_id": "0f3f2f530d5e4e7880f9ab7b3e5eec72",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:26.211326+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "ef5ffc1c283911bf5fee0fc54f2f335e25ab6ed41b272bfadce7f183433b54f6",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "9bdcbd7c31608e56683b52bdb8342d4a85be274fe561641f0034529e9d2567fd"
+            },
+            "geometry_identity": "af9eb7323165a481c3fb503c530d5715420a95256e2ad708a20623b8210f99e7",
+            "handle": "2F",
+            "item_digest": "3756fccb2fdf7127c9ebcfeb13a5bcfbf52942634aa8d0a19b15df3ae5afaf05",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/merge/plan-old-0.dwg",
+            "session_revision": 1,
+            "source_sha256": "9bdcbd7c31608e56683b52bdb8342d4a85be274fe561641f0034529e9d2567fd"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/merge/crosswalk-old-0.json",
+          "evidence_sha256": "1ed353749e218101455ee906da50d6041b5c0dccf4f4973473d21923c22530e9",
+          "floor_id": "F1",
+          "global_id": "3_n0bXIOj2vhcHU9YLatKs",
+          "id": "d56a8a3557286a9fa12da586abb1711455bd6c3dd8eb4d3d5e997331aebf8e6a",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R1",
+            "schema": "IFC4",
+            "source_id": "ifc:a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "source_path": "/tmp/p5-final-dwg/merge/beams-R1.ifc",
+            "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "member_id": "B1",
+          "payable_rows": [],
+          "project_id": "P",
+          "proposal_id": "5c79e50c404cbe915d915f5c41922bbd0fc3578762ca6c74d6fe433462d2c37e",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 1,
+          "session_id": "0f3f2f530d5e4e7880f9ab7b3e5eec72",
+          "status": "approved"
+        },
+        {
+          "author": "author",
+          "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "b3237a709ad0064eabdbf3b6244f990807c21bb450433a6f8c4f66743462c6fd",
+            "ifc_origin_m": [
+              "1000000",
+              "9",
+              "0"
+            ],
+            "ifc_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-9"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "63cc2113be69676dc3f67b6f84e37c096da7b502fc61d4e9ed16eedf6b329f91",
+            "session_id": "955825a449644962af4ca99e02af729e",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:27.904342+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "d6710cbf7e1718b1344d068ff00f975b4246173d444d0ede893da659a48657e0",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "b3237a709ad0064eabdbf3b6244f990807c21bb450433a6f8c4f66743462c6fd"
+            },
+            "geometry_identity": "c510fb6fa49eb7350db1015d56085c1b6c4fc59945771243aa7f5469195b7fbf",
+            "handle": "2F",
+            "item_digest": "66f84bb07de6c7d0821e2ab82e976ba169ca8afa0b7a0afd8af3a439b0b7da17",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/merge/plan-old-1.dwg",
+            "session_revision": 1,
+            "source_sha256": "b3237a709ad0064eabdbf3b6244f990807c21bb450433a6f8c4f66743462c6fd"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/merge/crosswalk-old-1.json",
+          "evidence_sha256": "e84252cec3f5d50ba9370854a37cc9f331ce3e1174c8571a11ec2693c00cdc96",
+          "floor_id": "F1",
+          "global_id": "1_hi1skPP8SxcZ9nFrQc6F",
+          "id": "14f22f004912b9d385ae7c630df4899249af806b1df08b2cdaddcca1e1a4d775",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R1",
+            "schema": "IFC4",
+            "source_id": "ifc:a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "source_path": "/tmp/p5-final-dwg/merge/beams-R1.ifc",
+            "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "member_id": "B2",
+          "payable_rows": [],
+          "project_id": "P",
+          "proposal_id": "63cc2113be69676dc3f67b6f84e37c096da7b502fc61d4e9ed16eedf6b329f91",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 1,
+          "session_id": "955825a449644962af4ca99e02af729e",
+          "status": "approved"
+        },
+        {
+          "author": "author",
+          "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+          "commit_allowed": false,
+          "coordinate_evidence": {
+            "drawing_anchor_xy": [
+              "0",
+              "0"
+            ],
+            "drawing_sha256": "ea6a4b9c8a20903e05b77cbf96cce902494dc62193f1ea5e1d1c1fac700560b6",
+            "ifc_origin_m": [
+              "1000000",
+              "7",
+              "0"
+            ],
+            "ifc_sha256": "d7da35e669bfdae008042f8340bc0d081c9ff86f22b809ba7beb6167b306898a",
+            "ifc_to_drawing_si": [
+              "1",
+              "0",
+              "0",
+              "1",
+              "-1000000",
+              "-7"
+            ],
+            "item_id": "TO-00001",
+            "physical_identity_reference": "Explicit synthetic ownership schedule",
+            "policy": "reviewed_reference_point_v1",
+            "project_id": "P",
+            "proposal_id": "60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+            "session_id": "326e08f8cb434d3c8d74258af6e880b8",
+            "unit_evidence_reference": "Documented SI mapping"
+          },
+          "created_at": "2026-10-23T07:13:29.551086+00:00",
+          "drawing": {
+            "conversion": {
+              "decoder_version": "3.8.0.0",
+              "exit_code": 0,
+              "output_sha256": "95dd3cb572b364ee5369f4da2d7edc41b9499e693111cdf9eea5f383f028cf06",
+              "provider": "ACadSharp bridge",
+              "source_sha256": "ea6a4b9c8a20903e05b77cbf96cce902494dc62193f1ea5e1d1c1fac700560b6"
+            },
+            "geometry_identity": "0232bebb5730285c6a7142c5c43018d2ae52b67acf4b7ac18f0f4a5172502a8a",
+            "handle": "2F",
+            "item_digest": "b078feba2e41635d687c7f94d9d8d78a09395eddd5b8cc9a2cb14f324baf080f",
+            "page": 1,
+            "path": "/tmp/p5-final-dwg/merge/plan-new-0.dwg",
+            "session_revision": 1,
+            "source_sha256": "ea6a4b9c8a20903e05b77cbf96cce902494dc62193f1ea5e1d1c1fac700560b6"
+          },
+          "evidence_path": "/tmp/p5-final-dwg/merge/crosswalk-new-0.json",
+          "evidence_sha256": "39fb13782dac5b10f67b1dd83ca7cbd13404fb920a7fb38a55b590ae65498e69",
+          "floor_id": "F1",
+          "global_id": "31ath2idLBYgcv8kNcGPWe",
+          "group_evidence_path": "/tmp/p5-final-dwg/merge/crosswalk-group.json",
+          "group_evidence_sha256": "e3312c79fd9885036e41ff024ed0d76e204c0a4054c6247f24ced996a811cb21",
+          "id": "fbf702f4fdf1f4760e893e005088fa16db0a5140a0eea0f76154ae6580b6eed8",
+          "ifc_document": {
+            "parser": "IfcOpenShell 0.9.0.post1",
+            "revision": "R2",
+            "schema": "IFC4",
+            "source_id": "ifc:d7da35e669bfdae008042f8340bc0d081c9ff86f22b809ba7beb6167b306898a",
+            "source_path": "/tmp/p5-final-dwg/merge/beams-R2.ifc",
+            "source_sha256": "d7da35e669bfdae008042f8340bc0d081c9ff86f22b809ba7beb6167b306898a",
+            "unit_factors_si": {
+              "AREAUNIT": "1",
+              "LENGTHUNIT": "1",
+              "VOLUMEUNIT": "1"
+            }
+          },
+          "item_id": "TO-00001",
+          "lineage_id": "IFC-LINEAGE-b0f298e1cc85eabb2e052d2845c494ce423f98a7d7c9cdbdb7ea60ca4ec801f5",
+          "member_id": "B3",
+          "payable_rows": [],
+          "previous_crosswalk_ids": [
+            "d56a8a3557286a9fa12da586abb1711455bd6c3dd8eb4d3d5e997331aebf8e6a",
+            "14f22f004912b9d385ae7c630df4899249af806b1df08b2cdaddcca1e1a4d775"
+          ],
+          "project_id": "P",
+          "proposal_id": "60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+          "reviewer": "reviewer",
+          "reviewer_role": "reviewer",
+          "revision": 2,
+          "session_id": "326e08f8cb434d3c8d74258af6e880b8",
+          "status": "approved"
+        }
+      ],
+      "amendments": {
+        "MA-64ffaccabc404c1dbddb62b2844e14db": {
+          "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+          "classification": "unspecified",
+          "consumed_rows": [
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:old-B1-0",
+              "item": "manual_workbench",
+              "member_code": "B1",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "5c79e50c404cbe915d915f5c41922bbd0fc3578762ca6c74d6fe433462d2c37e",
+                  "qto_step_id": 34,
+                  "quantity_name": "Length",
+                  "revision": "R1",
+                  "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006"
+                },
+                "intersections": [],
+                "member": "B1",
+                "references": {},
+                "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "2"
+                }
+              },
+              "provenance": {
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "old-B1-0",
+                "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0"
+              },
+              "quantities": [
+                {
+                  "amount": 2,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "at": "2026-10-23T07:13:24.415144+00:00",
+                "digest": "07731f2ab4a277a4eefe026fc0c26c99c14ce47ef4cf297b644cf004274bb178",
+                "note": "Independent synthetic review",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:299fb3d54db2fa6ff100c4d523b216ab3ea5ab8500c83d96653c36ad71b049b0",
+              "system": "F1"
+            },
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:old-B1-1",
+              "item": "manual_workbench",
+              "member_code": "B2",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; Explicit synthetic segment schedule; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "63cc2113be69676dc3f67b6f84e37c096da7b502fc61d4e9ed16eedf6b329f91",
+                  "qto_step_id": 244,
+                  "quantity_name": "Length",
+                  "revision": "R1",
+                  "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006"
+                },
+                "intersections": [],
+                "member": "B2",
+                "references": {},
+                "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "4"
+                }
+              },
+              "provenance": {
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "old-B1-1",
+                "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414"
+              },
+              "quantities": [
+                {
+                  "amount": 4,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "at": "2026-10-23T07:13:24.455058+00:00",
+                "digest": "055e48b6b36075d4e3836c33f0410708f62a6faa7a6bdc363759736c89714a62",
+                "note": "Independent synthetic review",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:eeed372d7f58a2f18d4d3283b33b561721e5f3c25409c5bb5013bcfddb14d414",
+              "system": "F1"
+            }
+          ],
+          "created_at": "2026-10-23T07:13:29.986992+00:00",
+          "created_by": "author",
+          "current": [
+            {
+              "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "31ath2idLBYgcv8kNcGPWe",
+              "member_id": "B3",
+              "proposal_id": "60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+              "qto_step_id": 34,
+              "quantity": "6",
+              "revision": "R2",
+              "scope_reference": "Explicit current segment",
+              "source_sha256": "d7da35e669bfdae008042f8340bc0d081c9ff86f22b809ba7beb6167b306898a",
+              "unit": "m"
+            }
+          ],
+          "current_total": "6",
+          "delta": "0",
+          "evidence_path": "/tmp/p5-final-dwg/merge/allocation.json",
+          "evidence_sha256": "545336f64af3ea244b5b8eec08939d854115113cfa127ac28f80e391ac0ffc47",
+          "expected_project_digest": "3905d17b688e72cc932e61295040a7e09333c89bcae2ab68cf8f979466da760a",
+          "group_revision": 1,
+          "id": "MA-64ffaccabc404c1dbddb62b2844e14db",
+          "kind": "reviewed_ifc_quantity_transfer_v1",
+          "lineage_id": "IFC-LINEAGE-b0f298e1cc85eabb2e052d2845c494ce423f98a7d7c9cdbdb7ea60ca4ec801f5",
+          "operation": "merge",
+          "previous": [
+            {
+              "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "3_n0bXIOj2vhcHU9YLatKs",
+              "member_id": "B1",
+              "proposal_id": "5c79e50c404cbe915d915f5c41922bbd0fc3578762ca6c74d6fe433462d2c37e",
+              "qto_step_id": 34,
+              "quantity": "2",
+              "revision": "R1",
+              "scope_reference": "Explicit old member",
+              "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+              "unit": "m"
+            },
+            {
+              "building_id": "2TJy7_Hrj3juR21TqEMdpF",
+              "classification": "unspecified",
+              "floor_id": "F1",
+              "global_id": "1_hi1skPP8SxcZ9nFrQc6F",
+              "member_id": "B2",
+              "proposal_id": "63cc2113be69676dc3f67b6f84e37c096da7b502fc61d4e9ed16eedf6b329f91",
+              "qto_step_id": 244,
+              "quantity": "4",
+              "revision": "R1",
+              "scope_reference": "Explicit old member",
+              "source_sha256": "a7c1c1be16f7642e2ea74926f4fcec0a11d4bf925f8f341082c9f4e663c82006",
+              "unit": "m"
+            }
+          ],
+          "previous_total": "6",
+          "project_id": "P",
+          "quantity_change_document": null,
+          "quantity_name": "Length",
+          "review": {
+            "digest": "8b88c93f8a75b3dd5818fcde8af737f713c82332cc2002286bfc7da12370045e",
+            "reviewer": "reviewer",
+            "role": "reviewer"
+          },
+          "reviewer": "reviewer",
+          "revision": 1,
+          "rows": [
+            {
+              "description": "کمیت عمومی IFC — Length",
+              "domain": "building",
+              "id": "manual-formula:IFC-LINEAGE-b0f298e1cc85eabb2e052d2845c494ce423f98a7d7c9cdbdb7ea60ca4ec801f5:60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+              "item": "manual_workbench",
+              "member_code": "B3",
+              "params": {
+                "basis": "IFC explicit QTO; unspecified; synthetic explicit dimensions; not a material calculation",
+                "deductions": [],
+                "expression": "Q",
+                "family": "manual_workbench",
+                "floor": "F1",
+                "ifc_evidence": {
+                  "author": "author",
+                  "proposal_id": "60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+                  "qto_step_id": 34,
+                  "quantity_name": "Length",
+                  "revision": "R2",
+                  "source_sha256": "d7da35e669bfdae008042f8340bc0d081c9ff86f22b809ba7beb6167b306898a"
+                },
+                "intersections": [],
+                "member": "B3",
+                "references": {},
+                "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+                "title": "کمیت عمومی IFC — Length",
+                "unit": "m",
+                "unit_policy": "dimensional_decimal_v1",
+                "variable_units": {
+                  "Q": "m"
+                },
+                "variables": {
+                  "Q": "6"
+                }
+              },
+              "provenance": {
+                "ifc_transfer": "IFC-LINEAGE-b0f298e1cc85eabb2e052d2845c494ce423f98a7d7c9cdbdb7ea60ca4ec801f5",
+                "mode": "manual_formula",
+                "numeric_policy": "decimal512_exact_no_rounding_v1",
+                "row_id": "IFC-LINEAGE-b0f298e1cc85eabb2e052d2845c494ce423f98a7d7c9cdbdb7ea60ca4ec801f5:60565cab96fe6df4e5fc5f813e570c08dde3a77f4d80a4dd6e5a790b3762f49f",
+                "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d"
+              },
+              "quantities": [
+                {
+                  "amount": 6,
+                  "code": "manual_workbench",
+                  "formula": "Q",
+                  "price_code": null,
+                  "role": "work",
+                  "title": "کمیت عمومی IFC — Length",
+                  "unit": "m",
+                  "unit_price": null
+                }
+              ],
+              "review": {
+                "digest": "545336f64af3ea244b5b8eec08939d854115113cfa127ac28f80e391ac0ffc47",
+                "reviewer": "reviewer"
+              },
+              "revision": 1,
+              "source_id": "ifc-owner:a1d929ea0d8e76a964e27186024c81bf2f92f2a637953b2d7af8364bb631ec5d",
+              "system": "F1"
+            }
+          ],
+          "status": "applied",
+          "unit": "m"
+        }
+      },
+      "integrity": true
+    }
+  ],
+  "qt_split": true,
+  "qt_merge": true
+}

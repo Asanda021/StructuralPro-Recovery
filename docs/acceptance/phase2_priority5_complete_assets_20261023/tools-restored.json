@@ -1,0 +1,16 @@
+{
+  "tools/dotnet-runtime-8.0.21.tar.gz": "1d7a338cada885183b54d43247604e05b8719a08861e47dd032e2a3b8171b3ce",
+  "tools/ACADSHARP_LICENSE.txt": "7a286f4e448b0b5d5f18407747fea125d0219df8d6dbdd81033b734f3c31f93c",
+  "tools/converter/acadsharp.nuspec": "2f474f0ec6841f5d0b7e3585d7cfbb74ba0dcb3f3200ee3b951df75470135122",
+  "tools/converter/bridge": "5522aedb9b9c6f69ca0f3f4593e50f14dcc2888b851d7a2b5d7e98aa802f31ae",
+  "tools/converter/StructuralPro.DwgBridge.deps.json": "748576260eca116b2d27562741b68239f28fac9c1e014290fa9c646630061f2f",
+  "tools/converter/bridge-current": "8eb50d531f1e6f75cb738b58430416e8b3372f13887c7289a2daae0c7b14bb71",
+  "tools/converter/ACadSharp.dll": "13544512673b3124a8d6452ab02a3a8e11d40da05a1c6a8b586c14da3b322d22",
+  "tools/converter/StructuralPro.DwgBridge.dll": "097884ce2bdde8a74d4e650787a96efe8303302de6133bad61c25d94ceea0ba7",
+  "tools/converter/StructuralPro.DwgBridge.runtimeconfig.json": "088bcc1a867d80d3923a812855f7ae9297fc8ac3d844cf9a83510bd8d1352af8",
+  "writer-bin/Writer.pdb": "a8097ac37bd2a65086fbed2938197a49f9d0663a5029bd4ebb92b0577409f496",
+  "writer-bin/Writer.deps.json": "bf47076e53c954316d0b6a478e24510c24244ecc738e7bf7ace42c0ad90f38b1",
+  "writer-bin/Writer.runtimeconfig.json": "088bcc1a867d80d3923a812855f7ae9297fc8ac3d844cf9a83510bd8d1352af8",
+  "writer-bin/Writer.dll": "e9097626c41c2691eec215ae2c0771b36a92f5fec84684d09aa8e35146aad5e8",
+  "writer-bin/ACadSharp.dll": "13544512673b3124a8d6452ab02a3a8e11d40da05a1c6a8b586c14da3b322d22"
+}

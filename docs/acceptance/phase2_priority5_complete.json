@@ -1,0 +1,210 @@
+{
+  "date": "2026-10-23",
+  "initial_head": "d526dc179477e2d2bf77e50a607a2e2ef2916456",
+  "code_head": "f290451b94c0ca7e8df4b7831eaa1bbd99028222",
+  "tested_tree": "ac30960e6719649ceb3c8769ed95caf454ac576a",
+  "commits": [
+    "260bd78557ab4a23b295c277dc4cd19df4937387",
+    "f290451b94c0ca7e8df4b7831eaa1bbd99028222"
+  ],
+  "changed_files": [
+    "app/graphical_takeoff.py",
+    "app/ifc_amendment_controls.py",
+    "app/ifc_lineage_controls.py",
+    "core/drawings/ifc_lineage.py",
+    "core/drawings/ifc_pipeline.py",
+    "core/platform/application.py",
+    "core/reports/manual_formula_report.py",
+    "core/takeoff/commit_guards.py",
+    "core/takeoff/manual_formula_amendments.py",
+    "core/takeoff/manual_formula_register.py",
+    "tests/test_phase2_priority5_complete.py"
+  ],
+  "criteria": {
+    "A": "COMPLETE",
+    "B": "COMPLETE",
+    "C": "COMPLETE",
+    "D": "COMPLETE",
+    "E": "COMPLETE",
+    "F": "COMPLETE",
+    "G": "PASS"
+  },
+  "targeted": {
+    "pass_count": 40,
+    "fail": 0,
+    "errors": 0,
+    "skip": 0,
+    "seconds": 13.716,
+    "exit_code": 0
+  },
+  "full": {
+    "pass_count": 7672,
+    "fail": 0,
+    "errors": 0,
+    "skip": 5,
+    "seconds": 387.878,
+    "exit_code": 0
+  },
+  "restored_targeted": {
+    "pass_count": 203,
+    "fail": 0,
+    "errors": 0,
+    "skip": 0,
+    "seconds": 52.29,
+    "exit_code": 0
+  },
+  "dwg_before_and_after_restore": {
+    "scenarios_per_run": 4,
+    "schema": "AC1032",
+    "decoder": "ACadSharp 3.8.0.0",
+    "license": "MIT",
+    "exit_code": 0
+  },
+  "oracle": [
+    {
+      "mode": "split",
+      "original_m": [
+        "6"
+      ],
+      "new_m": [
+        "2",
+        "4"
+      ],
+      "effective_m": "6",
+      "delta_m": "0"
+    },
+    {
+      "mode": "merge",
+      "original_m": [
+        "2",
+        "4"
+      ],
+      "new_m": [
+        "6"
+      ],
+      "effective_m": "6",
+      "delta_m": "0"
+    },
+    {
+      "mode": "split_documented_delta",
+      "original_m": [
+        "6"
+      ],
+      "new_m": [
+        "2",
+        "5"
+      ],
+      "effective_m": "7",
+      "delta_m": "1"
+    },
+    {
+      "mode": "two_groups_one_project",
+      "original_m": [
+        "6",
+        "2",
+        "4"
+      ],
+      "effective_m": "12",
+      "delta_m": "0"
+    }
+  ],
+  "cad_metrics": [
+    {
+      "entities": 10000,
+      "elapsed_s": 0.7799322199999779,
+      "max_event_gap_s": 0.017155306000006476,
+      "threshold_s": 0.5,
+      "threshold_reason": "Coarse interactive 500ms upper bound on this shared Linux host; 10ms timer. Not a cross-machine SLA.",
+      "peak_rss_kib": 1103296,
+      "oracle_m": 50000,
+      "all_retained": true
+    },
+    {
+      "entities": 50000,
+      "elapsed_s": 4.153592768999999,
+      "max_event_gap_s": 0.10308916100001397,
+      "threshold_s": 0.5,
+      "threshold_reason": "Coarse interactive 500ms upper bound on this shared Linux host; 10ms timer. Not a cross-machine SLA.",
+      "peak_rss_kib": 1129512,
+      "oracle_m": 250000,
+      "all_retained": true
+    },
+    {
+      "entities": 100000,
+      "elapsed_s": 13.69522252899992,
+      "max_event_gap_s": 0.18956683900000826,
+      "threshold_s": 0.5,
+      "threshold_reason": "Coarse interactive 500ms upper bound on this shared Linux host; 10ms timer. Not a cross-machine SLA.",
+      "peak_rss_kib": 1368236,
+      "oracle_m": 500000,
+      "all_retained": true
+    }
+  ],
+  "restore": {
+    "archive_path": "/StructuralPro/Backups/StructuralPro_P5_Complete_f290451b_20261023.zip",
+    "file_id": "id:npSmebsorqwAAAAAAAAAuQ",
+    "archive_sha256": "ea447598327b9789cc59612a175cc61b7d9c672b4c7287fb4a1a0c80de275de4",
+    "manifest_files": 558,
+    "independent_samples": 17,
+    "fsck_exit_code": 0,
+    "historical_records_rewritten": false,
+    "corrected_readback_helper": "verified-readback.py",
+    "helper_fix": "Normalize paths only in an ephemeral comparison projection; all restored bytes and signed payloads remain unchanged. Original first-failure log retained."
+  },
+  "delivery": "Final documentation commit is resolved by this file Git history and the external Dropbox delivery manifest/receipt. Executable app/core/tests remain identical to code_head.",
+  "limitations": [
+    "IFC4 and DWG AC1032 only in this acceptance contract",
+    "Crosswalk uses the existing reviewed_reference_point_v1 policy, not automatic full geometry equivalence",
+    "General explicit QTO is not material detail or a price book",
+    "Windows, native PowerShell, Microsoft Office and customer-approved drawings were not accepted here"
+  ],
+  "phase6_started": false,
+  "assets_sha256": {
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/0-group-linked-qt.png": "ad4911b037c110d234c79cff5415b389b1f4abbb2eaf244ae42826959f84793c",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/0-group-ownership-qt.png": "1b04913fdcd218e5ac4661d7121d8264b63385020feba822e411a3f9a10756e4",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/1-group-linked-qt.png": "08819f0154057b80dda97ff99db728822ddf813552bd9247127443dc10ca367d",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/1-group-ownership-qt.png": "023f45c07d6996e791cd3a40501c5c7cd32e313ddcc69163c8ace8a604254dc8",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/2-group-linked-qt.png": "390ade854a070d8bca602f3b1fe110da912b8d22671a3c9cf95506af6a2ddfaf",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/2-group-ownership-qt.png": "1c882d21a3fdab9f443fa563d53b8f3ff42a0fbaeaa6e0839ace696515d986ec",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/3-group-linked-qt.png": "8c7357a9627fbbe6462b5c36222162ab3ac63f73acda1bf443f01d674c465399",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/3-group-ownership-qt.png": "794a2b85ed8be0cce692f1798c797b1914546eae97f4c8df282e4f04c1ac7868",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/compileall.log.gz": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/diff-check.log.gz": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/dwg.log.gz": "f9430c182e23bc118eca7c5bd5f18c6beaa9ea7592f3f23270869a18784d2a7a",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/dwg_probe.py": "2a459c953083cc7260feab871c387338fa93d1d1a8d69bc7f17a332063d8fd4a",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/full.log.gz": "4d24d65a2a18d2bc88a4300455505a072a3b115bbddaa6dfa511a5631065cba8",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/git-fsck.log.gz": "f61f27bd17de546264aa58f40f3aafaac7021e0ef69c17f6b1b4cd7664a037ec",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/lossless-logs.json": "fbe5f5689b660440bc99817b715a6ef8d71c7616df6b53039376c663df5d4b0d",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/parent-red.log.gz": "924e96d18c9eeee5426e9c3b0bc26130ee34400188b6acc2cd9b51afc63636d1",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/parent-red.xml.gz": "ba20e66d5d5cdc354f1b2a8ed4dc5773d8018d8246cd73647aaed4c219b8d896",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/phase2_priority5_complete.xml.gz": "96c2a3a7269e638d40e7d762cc5d2c6fc735820a90abdd4265cb2cdeaedb2814",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/pip-check.log.gz": "19331bf55e9bdcae3bc4f121388ff289d6083fc54f6766dfde9259f47e5f1c8f",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/qt-merge-group-linked-qt.png": "dd2402c69859661de487475c0d694917619812bda3ee100d5312c8fafdda6d30",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/qt-merge-group-ownership-qt.png": "a46577f7155ffd936a9a82976ddb535faa3b6bc4914db885b596f4afe4a567d8",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/qt-split-group-linked-qt.png": "09c345245d237eab83a91021414f6023d7a33a891d88f1fda23d85f7035a6d0b",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/qt-split-group-ownership-qt.png": "9879153140a058e1a79c01db0463948a755a373532935acf762c968532cce8e7",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/readback-first-failure.log.gz": "1a5f25ee1947b10232854b4d07ec6cfe4a1600ee50ce0b3b2d3ae77ba3917809",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/readback-receipt.json": "8ad8e329946d99003b181f1cb45b5d49697f3ddce09d2bd7f7a4e389df76f2e4",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/readback-verified.log.gz": "e28727971981e20567ee587773ffb41e02d8e2e3914475b47f3efa69537908d0",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/real-dwg-receipt.json": "d52792d2b932bbb5900c3f6c5cdf750846f0491f2b99d87f554b6dea4d7348ce",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/report-first.png": "c8342e8418664429c41ccdf1bf143d512854df814e6dc84900af8d0ec678c108",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/report-last.png": "79d70782578cf2aab969712da1d2d97f3546abeca6c23a9e370f9293f9b04890",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/report-readback.json": "d16e6d771897943ed07b9aa7489ef0cd4fde5c37f72d02bda89d73a3a73c2dde",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/restored-dwg.log.gz": "f9430c182e23bc118eca7c5bd5f18c6beaa9ea7592f3f23270869a18784d2a7a",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/restored-targeted.log.gz": "ce24faf8dac0a240b17e7a7678bdf9ecd994d4472c0addc1f73416e8c3f8ba2f",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/restored-targeted.xml.gz": "c9e68cb429107c489548bc04033fa8aa94d1b3cd1571c0b38931cc91a73cf6d2",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/sample-report.csv": "71ca28053c6bfb19543faca9ac23141691143b0ad81113d9e0911e53bb9055de",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/sample-report.docx": "93fca528e3f1abfbe409553c771058fa9642f0a7c4d61596a2eb42fd6ada00a3",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/sample-report.pdf": "c8c029805a9d884cf79ac675832c2c0c5ddb0cd4dd53e57699b1a7f10e3e65e7",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/sample-report.xlsx": "85fe40fbece1cd8eb0bb71886a5eac8a55129461446c87c078ff7d6854bcd93d",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/targeted.log.gz": "a7c59ecb83dacaaa5d10e82cfad7656a7ec96a7323e23b376d0db77dc130a7b9",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/targeted.xml.gz": "0822f77310e19d9c4807070249f08bfecaa4d03dc8224952240c511961998bff",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/test_async_responsiveness_and_0-responsiveness.json": "12ee07f62b9b88338a222996c85b28c634c2a7eea39cd3a64c6fc5f523eb5aa0",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/test_async_responsiveness_and_1-responsiveness.json": "30b91e7128301a684750ea01b967be1264e6bb5174d8dbe41ed748782897fd00",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/test_async_responsiveness_and_2-responsiveness.json": "99cbe6f2ac4da543b014f6eb22e4d1b48aae409eabde2ede1dd0c854890a9cde",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/test_async_responsiveness_and_current-responsiveness.json": "99cbe6f2ac4da543b014f6eb22e4d1b48aae409eabde2ede1dd0c854890a9cde",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/tools-restored.json": "7e18666f68d803de7165a18a3636e262d38d5468e5991ccdd650c60ca69d87d5",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/verification.json": "cbbe519e0b0f8f7fb9863fbd7921d01a7d45d59a631a576b551b03b7190ef7a9",
+    "docs/acceptance/phase2_priority5_complete_assets_20261023/verified-readback.py": "2e16aa40d96b7ad027dae20a7052320ba3d46cdd6cbf7f022e868c328e1e1bbd"
+  }
+}
