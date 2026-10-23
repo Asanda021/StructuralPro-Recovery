@@ -28,8 +28,10 @@ class AIModelSpec:
 
 # Official/open model artifacts selected for the Windows-first package.
 # Qwen2.5-0.5B-Instruct-GGUF is Apache-2.0 and is used for the lighter tier.
-# Qwen2.5-VL-3B-Instruct-GGUF is Apache-2.0 and provides the multimodal
-# foundation for AI Takeoff in Pro/Enterprise.
+# The 3B vision base is under the Qwen Research License, not Apache-2.0.
+# These pinned assets may be evaluated non-commercially; commercial use
+# requires the upstream permission described in its LICENSE. No release is
+# authorized by this model selection contract.
 MODEL_SPECS = {
     AITier.BASE: AIModelSpec(
         tier=AITier.BASE,

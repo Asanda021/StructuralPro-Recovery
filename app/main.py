@@ -658,6 +658,29 @@ def main()->int:
         text=r["text"]+"\n\n"+"\n".join(f'{x["severity"]}: {x["code"]}' for x in r["issues"]) if r["issues"] else r["text"]
         aout.setPlainText(text)
     ago.clicked.connect(review)
+    # Free-text model output remains an advisory, never a financial row.
+    ai_question=QLineEdit(); ai_question.setObjectName("LocalAIQuestion")
+    ai_question.setPlaceholderText("پرسش از مدل محلی؛ بدون حدس مقدار و قیمت")
+    ai_run=QPushButton("پرسش از مدل محلی"); ai_run.setObjectName("LocalAIRun")
+    ai_discard=QPushButton("رد پیشنهاد"); ai_discard.setObjectName("LocalAIDiscard")
+    v.addWidget(ai_question); v.addWidget(ai_run); v.addWidget(ai_discard)
+    ai_run.setEnabled(current_edition != "light")
+    def run_ai_text():
+        if current_edition == "light": return
+        if not assistant.engine.has_llm_model or not assistant.engine.runtime_available:
+            aout.setPlainText("مدل متنی یا موتور محلی موجود نیست؛ هیچ مقداری ثبت نشد.")
+            return
+        if not ai_question.text().strip():
+            aout.setPlainText("ابتدا پرسش خود را وارد کنید.")
+            return
+        project=service.open_project(apid.text().strip()) if apid.text().strip() else None
+        result=assistant.engine.answer(ai_question.text(),project)
+        aout.setPlainText("پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\n"
+                          +result.text+"\n\nمنشأ: "+result.source)
+    def discard_ai_suggestion():
+        aout.setPlainText("پیشنهاد رد شد؛ اطلاعات قطعی و BOQ تغییر نکردند.")
+    ai_run.clicked.connect(run_ai_text)
+    ai_discard.clicked.connect(discard_ai_suggestion)
     if current_edition in ("pro","enterprise"):
         image_path=QLineEdit(); image_btn=QPushButton("🖼️ متره هوشمند از تصویر")
         image_run=QPushButton("تحلیل تصویر")
@@ -667,7 +690,7 @@ def main()->int:
         def run_ai_image():
             if not image_path.text().strip(): return
             result=assistant.engine.answer_with_image(image_path.text().strip(),"این تصویر نقشه را برای آیتم‌های قابل متره بررسی کن؛ مقادیر قطعی را فقط در صورت وجود شواهد کافی اعلام کن.")
-            aout.setPlainText(result.text)
+            aout.setPlainText("پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\n"+result.text+"\n\nمنشأ: "+result.source)
         image_btn.clicked.connect(choose_ai_image)
         image_run.clicked.connect(run_ai_image)
     pages.addWidget(p); idx_ai=pages.count()-1

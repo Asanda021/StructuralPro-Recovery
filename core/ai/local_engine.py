@@ -36,8 +36,8 @@ class LocalAIEngine:
         if not self.edition:
             packaged = packaged_edition(self.bundle_dir, fail_closed=False)
             self.edition = packaged.value if packaged else ""
-        self.model_dir = Path(model_dir or self.bundle_dir / "models")
-        self.runtime_dir = self.bundle_dir / "ai_runtime"
+        self.model_dir = Path(model_dir or os.getenv("STRUCTURALPRO_AI_MODEL_DIR") or self.bundle_dir / "models")
+        self.runtime_dir = Path(os.getenv("STRUCTURALPRO_AI_RUNTIME_DIR") or self.bundle_dir / "ai_runtime")
         self.model_dir.mkdir(parents=True, exist_ok=True)
         self.n_ctx = n_ctx
         self._load_error = None
@@ -61,9 +61,9 @@ class LocalAIEngine:
         return candidate if candidate.exists() else None
 
     def _binary(self, name):
-        exe = name if name.lower().endswith(".exe") else f"{name}.exe"
+        exe = (name if name.lower().endswith(".exe") else f"{name}.exe") if os.name == "nt" else name.removesuffix(".exe")
         candidate = self.runtime_dir / exe
-        return candidate if candidate.exists() else None
+        return candidate if candidate.is_file() and (os.name == "nt" or os.access(candidate, os.X_OK)) else None
 
     @property
     def is_local(self):
@@ -114,11 +114,11 @@ class LocalAIEngine:
             return AIResponse("نسخه سبک فاقد هوش مصنوعی محلی است.",
                               source="fail-closed", confidence=0.0)
         p = (prompt or "").strip()
-        if project is not None and any(k in p for k in ("بررسی", "کنترل", "جا افتاده", "نقص", "متره")):
-            return self.inspect_project(project)
-
         if self.has_llm_model and self.runtime_available and p:
             return self._llama_text_answer(p, project)
+
+        if project is not None and any(k in p for k in ("بررسی", "کنترل", "جا افتاده", "نقص", "متره")):
+            return self.inspect_project(project)
 
         if re.search(r"آفلاین|اینترنت|آنلاین", p):
             return AIResponse(
@@ -134,7 +134,9 @@ class LocalAIEngine:
     def answer_with_image(self, image_path, prompt, project=None):
         """Run the bundled multimodal model for Pro/Enterprise."""
         image = Path(image_path)
-        p = (prompt or "این نقشه را از نظر آیتم‌های قابل متره بررسی کن. موارد قطعی و موارد نیازمند تأیید را جدا کن.").strip()
+        p = ("Advisory suggestions only. Never infer undocumented dimensions, scale, thickness, "
+             "materials, reinforcement or prices. State missing evidence and require human review.\n"
+             + (prompt or "این نقشه را برای بازبینی انسانی توصیف کن.").strip())
         binary = self._binary("llama-mtmd-cli")
         if not self.has_vision_model or binary is None:
             return AIResponse(
@@ -150,8 +152,7 @@ class LocalAIEngine:
                     "--mmproj", str(self.mmproj_path),
                     "--image", str(image),
                     "-p", p,
-                    "-n", "768",
-                    "-st",
+                    "-n", "768", "-c", str(self.n_ctx), "-t", "4",
                     "--temp", "0.1",
                 ],
                 cwd=str(self.runtime_dir),
@@ -181,19 +182,21 @@ class LocalAIEngine:
     def _llama_text_answer(self, prompt, project=None):
         context = ""
         if project:
-            context = f"Project summary: name={project.get('name', '')}, takeoffs={len(project.get('takeoffs', []) or [])}"
+            context = "Read-only project evidence: " + json.dumps({"name": project.get("name"), "takeoffs": project.get("takeoffs", [])}, ensure_ascii=False, sort_keys=True)
         system = (
             "You are StructuralPro Local AI, an offline construction quantity-takeoff assistant. "
-            "Do not invent engineering values. If required inputs are missing, say so. "
+            "Never invent numeric measurements, example dimensions, prices or material details. "
+            "If required inputs are missing, request verified documents and human review; do not calculate. "
             "Never claim that an AI answer replaces a deterministic engineering calculation."
         )
-        user = f"{system}\n{context}\nUser: {prompt}".strip()
-        binary = self._binary("llama-cli")
+        user = f"{context}\nUser: {prompt}".strip()
+        binary = self._binary("llama-completion") or self._binary("llama-cli")
         try:
             result = subprocess.run(
                 [
                     str(binary), "-m", str(self.model_path),
-                    "-p", user, "-n", "768", "--temp", "0.1", "-st",
+                    "-sys", system, "-p", user, "-n", "768", "-c", str(self.n_ctx),
+                    "-t", "4", "--temp", "0.1", "-st", "--no-display-prompt",
                 ],
                 cwd=str(self.runtime_dir),
                 capture_output=True,
