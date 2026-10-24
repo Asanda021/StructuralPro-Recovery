@@ -53,7 +53,7 @@ try:
         assert conn.execute('pragma foreign_key_check').fetchall()==[]
         revision_count=conn.execute('select count(*) from revisions').fetchone()[0]
     env={**os.environ,'QT_QPA_PLATFORM':'offscreen','PYTHONPATH':str(repo)}
-    tests=['tests/test_phase4_site_resources.py','tests/test_phase4_site_materials.py','tests/test_phase4_site_office.py','tests/test_phase4_site_workspace.py','tests/test_phase4_site_finance.py','tests/test_phase4_site_report_localization.py']
+    tests=['tests/test_phase4_site_resources.py','tests/test_phase4_site_materials.py','tests/test_phase4_site_office.py','tests/test_phase4_site_workspace.py','tests/test_phase4_site_finance.py','tests/test_phase4_site_report_localization.py','tests/test_phase4_report_chart_print.py']
     with (dest/'restored-tests.log').open('w') as log:
         command([sys.executable,'scripts/run_offline_tests.py','-q',*tests,'--junitxml='+str(dest/'restored-tests.xml')],cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT)
 finally:

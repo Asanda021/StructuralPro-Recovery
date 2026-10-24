@@ -1,0 +1,49 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________________ test_persistent_site_probe __________________________
+
+    def test_persistent_site_probe():
+        from scripts.phase4_site_operations_probe import run
+        root=Path(os.environ['STRUCTURALPRO_QA_SCENARIO'])
+>       result=run(root)
+               ^^^^^^^^^
+
+docs/acceptance/phase4_p4_6/verification-20261024/probe_export.py:8: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase4_site_operations_probe.py:117: in run
+    assert a.open_project('P')==before and a.site_dashboard('P',as_of='2026-05-02')==dash
+           ^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:86: in open_project
+    def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <core.projects.store.ProjectStore object at 0x7f7b84870ef0>
+project_id = 'P'
+
+    def get(self, project_id: str) -> dict[str,Any] | None:
+        pid=str(project_id)
+        # Check the small SQLite version column before fetching a large payload.
+        # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
+        version_row=self.db.execute("SELECT version FROM projects WHERE id=?",(pid,)).fetchone()
+        if not version_row:
+            self._cache.pop(pid,None)
+            return None
+        cached=self._cache.get(pid)
+        if cached is not None and cached[0] == int(version_row["version"]):
+            return deepcopy(cached[1])
+>       row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       sqlite3.OperationalError: Could not decode to UTF-8 column 'payload' with text '{"activity_resource_requirements": [{"activity_basis": "3e69b5515ad3da0351239755bbdddee0c0ec59760626a985fc4d20b7deb064e2", "activity_id": "S1",
+
+core/projects/store.py:138: OperationalError
+----------------------------- Captured stdout call -----------------------------
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED docs/acceptance/phase4_p4_6/verification-20261024/probe_export.py::test_persistent_site_probe
+1 failed in 30.25s
