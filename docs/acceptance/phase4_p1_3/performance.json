@@ -1,0 +1,10 @@
+{
+  "activities": 1000,
+  "cpm_elapsed_s": 0.010135425000044052,
+  "ui_render_s": 0.1494803350001348,
+  "max_event_gap_s": 0.11403907000021718,
+  "event_gap_limit_s": 0.5,
+  "cpm_limit_s": 5,
+  "oracle_duration": 1000,
+  "all_retained": true
+}

@@ -1,0 +1,9 @@
+{
+  "baseline": "c657f85ccf927d1f027d9f09aceef9590891329c",
+  "branch": "feature/phase4-priorities1-3-project-controls-20261024",
+  "draft_pr": 23,
+  "local_test_commit": "020f5b3c2f4ff77c4f3622708068eb2a4706ada8",
+  "online_code_commit": "64d73d73499c34e5efdb629d9d0b0b2efa96cbd8",
+  "tested_tree": "5e4247bd4062c47a081b73fba24455ba49e0b042",
+  "test_network": "Linux inherited seccomp: connect/send blocked before pytest/native imports"
+}

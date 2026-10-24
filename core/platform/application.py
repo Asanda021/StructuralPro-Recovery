@@ -1878,13 +1878,58 @@ class StructuralProApp:
         period_no = int(period_no)
         return next((x for x in self.statement_periods(project_id) if int(x.get("number", 0)) == period_no), None) or (_ for _ in ()).throw(KeyError(period_no))
 
+    def project_control_command(self, project_id, op, *, actor, reason, expected_version, **data):
+        from copy import deepcopy
+        from core.projects.controls import apply
+        from core.platform.concurrency import begin_write
+        p=self.store.get(project_id)
+        if p is None: raise KeyError(project_id)
+        if p['_meta']['version'] != expected_version: raise RuntimeError('نسخه پروژه تغییر کرده است')
+        clean=deepcopy(p);clean.pop('_meta',None)
+        command={'op':op,'actor':actor,'reason':reason,'data':data,'at':datetime.now(timezone.utc).isoformat()}
+        updated,result=apply(p,command)
+        self.store.save(project_id,updated,expected_digest=begin_write(clean),project_control_command=command)
+        return result
+
+    def activity_locations(self, project_id, activity_id):
+        from core.projects.locations import targets
+        return targets(self,project_id,activity_id)
+
+    def project_controls_report(self, project_id, kind, fmt, path, *, as_of=None):
+        from core.reports.project_controls import export
+        return export(self,project_id,kind,fmt,path,as_of=as_of)
+
+    def project_progress(self, project_id, *, as_of):
+        from core.projects.physical_progress import calculate
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return calculate(p,as_of=as_of)
+
+    def project_progress_curve(self, project_id, *, frequency='daily'):
+        from core.projects.physical_progress import curve
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return curve(p,frequency)
+
+    def project_schedule(self, project_id):
+        from core.projects.scheduling import current
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return current(p)
+
+    def project_controls(self, project_id):
+        from core.projects.controls import snapshot
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return snapshot(p)
+
     def project_management_snapshot(self, project_id: str, *, as_of: str | None = None) -> dict[str, Any]:
         """Return a read-only operational management dashboard for a project."""
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
         def _load(cls, key):
-            return [cls(**row) for row in p.get(key, [])]
+            return [cls(**{k:v for k,v in row.items() if k in cls.__dataclass_fields__}) for row in p.get(key, [])]
         manager = ProjectManagement(
             tasks=_load(ScheduleTask, "project_schedule_tasks"),
             daily_reports=_load(DailyReport, "project_daily_reports"),
