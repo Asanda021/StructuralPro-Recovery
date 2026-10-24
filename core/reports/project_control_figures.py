@@ -1,7 +1,7 @@
 """Deterministic report figures from computed dates and recorded observations."""
 from datetime import date
 from pathlib import Path
-from PIL import Image,ImageDraw,ImageFont
+from PIL import Image,ImageDraw,ImageFont,features
 from arabic_reshaper import reshape
 from bidi.algorithm import get_display
 from core.reports.exporters import report_date
@@ -11,8 +11,11 @@ def canvas(title,height):
     candidates=[Path('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'),Path('C:/Windows/Fonts/tahoma.ttf')]
     font=next((p for p in candidates if p.exists()),None)
     if font is None:raise RuntimeError('فونت فارسی دارای دسترسی برای نمودار موجود نیست')
-    image=Image.new('RGB',(1300,height),'white');draw=ImageDraw.Draw(image);f=ImageFont.truetype(str(font),18)
-    def label(pos,value,fill='#203044'):draw.text(pos,get_display(reshape(str(value))),font=f,fill=fill)
+    image=Image.new('RGB',(1300,height),'white');draw=ImageDraw.Draw(image);native=features.check_feature('raqm')
+    f=ImageFont.truetype(str(font),18,layout_engine=ImageFont.Layout.RAQM if native else ImageFont.Layout.BASIC)
+    def label(pos,value,fill='#203044'):
+        if native:draw.text(pos,str(value),font=f,fill=fill,direction='rtl')
+        else:draw.text(pos,get_display(reshape(str(value))),font=f,fill=fill)
     label((700,18),title);return image,draw,label
 
 
