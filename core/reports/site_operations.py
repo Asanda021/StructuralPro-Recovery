@@ -15,6 +15,8 @@ def stamp(raw):
     except (ValueError,TypeError):return str(raw)
 
 WORDS.update(IRR='ریال',IRT='تومان',awaiting_response='در انتظار پاسخ',responded='پاسخ مستند ثبت‌شده',not_issued='صادر نشده',response_status='وضعیت پاسخ',response_event='سند پاسخ',overdue_correspondence='مکاتبات معوق',daily='گزارش روزانه',meeting='صورت‌جلسه',obstacle='مانع',statement='صورت‌وضعیت',amendment='اصلاحیه',stopped='متوقف',released='رفع توقف',absent='عدم حضور',present='حاضر',unknown='نامشخص',cancelled='لغوشده')
+WORDS.update(open='باز',resolved='رفع‌شده',opening='افتتاحیه',receipt='رسید',consume='مصرف',reserve='رزرو',correct='اصلاح',machine='دستگاه')
+WORDS.update({'return':'برگشت','True':'بله','False':'خیر'})
 
 def compact_rows(kind,data,p):
     """Engineering summaries plus explicit source references, never a payload dump."""

@@ -5,9 +5,12 @@ import fitz,openpyxl
 from docx import Document
 from docx.oxml.ns import qn
 root=Path(sys.argv[1]);results=[]
-for kind in ['lookahead','resources','materials','purchases','daily','obstacles','meetings','correspondence','package','dashboard']:
-    for fmt in ['pdf','xlsx','docx','csv']:
-        p=root/(kind+'.'+fmt);row={'name':p.name,'size':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
+for p in sorted(root.rglob('*')):
+    if p.suffix not in ('.pdf','.xlsx','.docx','.csv'):continue
+    if p.relative_to(root).as_posix() in ('prior/engineering/plan.pdf','prior/engineering/synthetic-prices.csv'):continue # explicit fixture inputs, not reports
+    kind=p.stem
+    for fmt in [p.suffix[1:]]:
+        row={'name':str(p.relative_to(root)),'size':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
         assert row['size']>100
         if fmt=='pdf':
             with fitz.open(p) as d:
