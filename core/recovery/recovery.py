@@ -19,6 +19,50 @@ def _require_database_integrity(connection: sqlite3.Connection, *, label: str) -
         raise RecoveryError(f"{label} database integrity check failed: corrupt SQLite data")
 
 
+def require_project_history_consistency(connection: sqlite3.Connection, *, allow_empty_schema: bool = False) -> None:
+    """Reject a sound SQLite page tree with invalid JSON or torn project revisions."""
+    try:
+        names={row[0] for row in connection.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name IN ('projects','revisions')")}
+        if not names and allow_empty_schema:
+            return
+        if names != {'projects','revisions'}:
+            raise RecoveryError('project database schema and revision history are incomplete')
+        projects=connection.execute(
+            'SELECT id,name,version,CAST(payload AS BLOB) FROM projects').fetchall()
+        for pid,name,version,raw in projects:
+            if not isinstance(pid,str) or not pid or type(version) is not int or version < 1 or not isinstance(raw,bytes):
+                raise RecoveryError('project identity, version or payload is invalid')
+            try:
+                def reject_nonfinite(value):
+                    raise ValueError('non-finite JSON token '+value)
+                active=json.loads(raw.decode('utf-8',errors='strict'),parse_constant=reject_nonfinite)
+            except (UnicodeError,ValueError,TypeError) as exc:
+                raise RecoveryError('active project JSON is unreadable or invalid') from exc
+            if not isinstance(active,dict) or str(active.get('name',''))!=name:
+                raise RecoveryError('active project JSON conflicts with its project metadata')
+            if active.get('id') not in (None,pid) or active.get('project_id') not in (None,pid):
+                raise RecoveryError('active project belongs to a different identity')
+            tail=connection.execute(
+                'SELECT CAST(payload AS BLOB) FROM revisions WHERE project_id=? AND version=?',
+                (pid,version)).fetchone()
+            if tail is None or tail[0]!=raw:
+                raise RecoveryError('active project differs from its committed revision')
+            lo,hi,count=connection.execute(
+                'SELECT MIN(version),MAX(version),COUNT(*) FROM revisions WHERE project_id=?',
+                (pid,)).fetchone()
+            if (lo,hi,count)!=(1,version,version):
+                raise RecoveryError('project revision chain is missing or inconsistent')
+        orphan=connection.execute(
+            'SELECT 1 FROM revisions AS r LEFT JOIN projects AS p ON r.project_id=p.id '
+            'WHERE p.id IS NULL LIMIT 1').fetchone()
+        if orphan is not None:
+            raise RecoveryError('orphan revision history exists')
+    except sqlite3.DatabaseError as exc:
+        raise RecoveryError('project/revision history could not be verified') from exc
+
+
 def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, Any]:
     source_path=Path(db_path)
     if not source_path.is_file(): raise RecoveryError("source database does not exist")
@@ -33,6 +77,7 @@ def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, A
     try:
         source=sqlite3.connect(source_path.resolve().as_uri()+"?mode=ro", uri=True)
         _require_database_integrity(source, label="source")
+        require_project_history_consistency(source)
         with tempfile.NamedTemporaryFile(prefix=".db-backup-",suffix=".tmp",
                                      dir=target_path.parent,delete=False) as temporary:
             temp_path=Path(temporary.name)
@@ -41,6 +86,7 @@ def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, A
             source.backup(target)
             target.commit()
             _require_database_integrity(target, label="backup")
+            require_project_history_consistency(target)
         finally:
             target.close()
         # Atomic no-replace publication. os.replace() can overwrite a competing

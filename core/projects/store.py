@@ -38,6 +38,9 @@ class ProjectStore:
                 result = self.db.execute("PRAGMA quick_check").fetchall()
                 if len(result) != 1 or result[0][0] != "ok":
                     raise RuntimeError("SQLite integrity check failed: project database is corrupt; restore only from verified evidence")
+                # Before schema writes, detect malformed JSON/torn last revision.
+                from core.recovery.recovery import require_project_history_consistency
+                require_project_history_consistency(self.db,allow_empty_schema=True)
         except sqlite3.DatabaseError as exc:
             self.db.close()
             raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
