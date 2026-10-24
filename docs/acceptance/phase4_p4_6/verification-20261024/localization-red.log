@@ -1,0 +1,161 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+FFFFFFFFFF                                                               [100%]
+=================================== FAILURES ===================================
+_ test_office_report_localizes_status_without_rewriting_record[open-\u0628\u0627\u0632] _
+
+status = 'open', label = 'باز'
+
+    @pytest.mark.parametrize('status,label',[('open','باز'),('resolved','رفع‌شده')])
+    def test_office_report_localizes_status_without_rewriting_record(status,label):
+        records=[{'id':'OBS-open-1','title':'مانع آزمایشی','status':status,'date':'2026-03-16','owner':'planner','activity_id':'S1'}]
+        before=deepcopy(records)
+        rows=compact_rows('obstacles',records,{})
+>       assert 'وضعیت: '+label in rows[0]['مقدار و وضعیت']
+E       AssertionError: assert ('وضعیت: ' + 'باز') in 'تاریخ: ۱۴۰۴/۱۲/۲۵ | وضعیت: open | موعد: نامشخص'
+
+tests/test_phase4_site_report_localization.py:11: AssertionError
+_ test_office_report_localizes_status_without_rewriting_record[resolved-\u0631\u0641\u0639\u200c\u0634\u062f\u0647] _
+
+status = 'resolved', label = 'رفع\u200cشده'
+
+    @pytest.mark.parametrize('status,label',[('open','باز'),('resolved','رفع‌شده')])
+    def test_office_report_localizes_status_without_rewriting_record(status,label):
+        records=[{'id':'OBS-open-1','title':'مانع آزمایشی','status':status,'date':'2026-03-16','owner':'planner','activity_id':'S1'}]
+        before=deepcopy(records)
+        rows=compact_rows('obstacles',records,{})
+>       assert 'وضعیت: '+label in rows[0]['مقدار و وضعیت']
+E       AssertionError: assert ('وضعیت: ' + 'رفع\u200cشده') in 'تاریخ: ۱۴۰۴/۱۲/۲۵ | وضعیت: resolved | موعد: نامشخص'
+
+tests/test_phase4_site_report_localization.py:11: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[opening-\u0627\u0641\u062a\u062a\u0627\u062d\u06cc\u0647] _
+
+kind = 'opening', label = 'افتتاحیه'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | opening' == 'CON | افتتاحیه'
+E         
+E         - CON | افتتاحیه
+E         + CON | opening
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[receipt-\u0631\u0633\u06cc\u062f] _
+
+kind = 'receipt', label = 'رسید'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | receipt' == 'CON | رسید'
+E         
+E         - CON | رسید
+E         + CON | receipt
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[consume-\u0645\u0635\u0631\u0641] _
+
+kind = 'consume', label = 'مصرف'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | consume' == 'CON | مصرف'
+E         
+E         - CON | مصرف
+E         + CON | consume
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[reserve-\u0631\u0632\u0631\u0648] _
+
+kind = 'reserve', label = 'رزرو'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | reserve' == 'CON | رزرو'
+E         
+E         - CON | رزرو
+E         + CON | reserve
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[return-\u0628\u0631\u06af\u0634\u062a] _
+
+kind = 'return', label = 'برگشت'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | return' == 'CON | برگشت'
+E         
+E         - CON | برگشت
+E         + CON | return
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+_ test_inventory_report_localizes_operation_without_rewriting_identity[correct-\u0627\u0635\u0644\u0627\u062d] _
+
+kind = 'correct', label = 'اصلاح'
+
+    @pytest.mark.parametrize('kind,label',[('opening','افتتاحیه'),('receipt','رسید'),('consume','مصرف'),('reserve','رزرو'),('return','برگشت'),('correct','اصلاح')])
+    def test_inventory_report_localizes_operation_without_rewriting_identity(kind,label):
+        project={'project_materials':[{'schema':'site_material_v1','id':'receipt-1','material_code':'CON','kind':kind,'date':'2026-03-16','quantity':'1','unit':'m3'}]}
+        before=deepcopy(project)
+        rows=compact_rows('materials',{'requirements':[]},project)
+>       assert rows[0]['شرح و محل']=='CON | '+label
+E       AssertionError: assert 'CON | correct' == 'CON | اصلاح'
+E         
+E         - CON | اصلاح
+E         + CON | correct
+
+tests/test_phase4_site_report_localization.py:20: AssertionError
+__ test_package_report_localizes_current_basis_flag[True-\u0628\u0644\u0647] ___
+
+current = True, label = 'بله'
+
+    @pytest.mark.parametrize('current,label',[(True,'بله'),(False,'خیر')])
+    def test_package_report_localizes_current_basis_flag(current,label):
+        packages=[{'id':'W4','title':'بسته آزمایشی','date':'2026-03-16','status':'issued','current':current,'reference':'PKG-1','template':'site-office','template_version':'1','documents':[]}]
+        rows=compact_rows('package',packages,{})
+>       assert 'مبنای جاری: '+label in rows[0]['مقدار و وضعیت']
+E       AssertionError: assert ('مبنای جاری: ' + 'بله') in '۱۴۰۴/۱۲/۲۵ | صادرشده | مبنای جاری: True | نامشخص'
+
+tests/test_phase4_site_report_localization.py:27: AssertionError
+__ test_package_report_localizes_current_basis_flag[False-\u062e\u06cc\u0631] __
+
+current = False, label = 'خیر'
+
+    @pytest.mark.parametrize('current,label',[(True,'بله'),(False,'خیر')])
+    def test_package_report_localizes_current_basis_flag(current,label):
+        packages=[{'id':'W4','title':'بسته آزمایشی','date':'2026-03-16','status':'issued','current':current,'reference':'PKG-1','template':'site-office','template_version':'1','documents':[]}]
+        rows=compact_rows('package',packages,{})
+>       assert 'مبنای جاری: '+label in rows[0]['مقدار و وضعیت']
+E       AssertionError: assert ('مبنای جاری: ' + 'خیر') in '۱۴۰۴/۱۲/۲۵ | صادرشده | مبنای جاری: False | نامشخص'
+
+tests/test_phase4_site_report_localization.py:27: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase4_site_report_localization.py::test_office_report_localizes_status_without_rewriting_record[open-\u0628\u0627\u0632]
+FAILED tests/test_phase4_site_report_localization.py::test_office_report_localizes_status_without_rewriting_record[resolved-\u0631\u0641\u0639\u200c\u0634\u062f\u0647]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[opening-\u0627\u0641\u062a\u062a\u0627\u062d\u06cc\u0647]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[receipt-\u0631\u0633\u06cc\u062f]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[consume-\u0645\u0635\u0631\u0641]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[reserve-\u0631\u0632\u0631\u0648]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[return-\u0628\u0631\u06af\u0634\u062a]
+FAILED tests/test_phase4_site_report_localization.py::test_inventory_report_localizes_operation_without_rewriting_identity[correct-\u0627\u0635\u0644\u0627\u062d]
+FAILED tests/test_phase4_site_report_localization.py::test_package_report_localizes_current_basis_flag[True-\u0628\u0644\u0647]
+FAILED tests/test_phase4_site_report_localization.py::test_package_report_localizes_current_basis_flag[False-\u062e\u06cc\u0631]
+10 failed in 0.19s

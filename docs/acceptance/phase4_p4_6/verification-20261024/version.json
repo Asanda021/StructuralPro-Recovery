@@ -1,0 +1,23 @@
+{
+  "checkout_head": "7696ec60c13abcc4d4a36effe71a6ce2476bbaf0",
+  "checkout_tree": "67af7268c6dff686295fd831b7200177981544f3",
+  "executable_code_head": "738221881a3180a7aa1f5ec163691c953b4a29a6",
+  "executable_code_tree": "77b256c5ec1d5fed49237d63ad48f9f5d735d2d4",
+  "code_diff_after_tested_commit": "only eight evidence files; product code unchanged",
+  "qt_platform": "offscreen",
+  "full_result": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "5",
+    "tests": "7950",
+    "time": "463.242",
+    "timestamp": "2026-10-24T12:39:34.789316-04:00",
+    "hostname": "741d9188185f"
+  },
+  "full_command": "QT_QPA_PLATFORM=offscreen qa-venv/bin/python scripts/run_offline_tests.py -q --junitxml=docs/acceptance/phase4_p4_6/verification-20261024/full.xml",
+  "sha256": {
+    "full.xml": "a435bf4edf7d16c8ff7b1af77b76078c610bc0b2d12f0cd9db75b7e619acbc53",
+    "full.log": "c64fe4bf233a4a938a42cbb8b10be303a79029fb8600a8e5cffeb0ad209005bf"
+  }
+}

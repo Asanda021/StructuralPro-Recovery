@@ -297,13 +297,22 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     info_ws.column_dimensions["A"].width = 28
     info_ws.column_dimensions["B"].width = 48
     detail.print_title_rows=f"{header_row}:{header_row}"
-    style_workbook(wb,title)
+    figure_sheets=[]
     for figure in (metadata or {}).get('_figures',[]):
         from openpyxl.drawing.image import Image as ExcelImage
         sheet=wb.create_sheet('نمودار '+str(len(wb.worksheets)))
         sheet.sheet_view.rightToLeft=True;sheet.cell(1,1,figure['caption'])
         image=ExcelImage(figure['path']);ratio=1000/image.width;image.width=1000;image.height=image.height*ratio
         sheet.add_image(image,'A3')
+        figure_sheets.append((sheet,image))
+    style_workbook(wb,title)
+    for sheet,image in figure_sheets:
+        # Image anchors do not contribute to worksheet dimensions. Include the
+        # complete figure explicitly, then scale the chart sheet to one page.
+        last_col=get_column_letter(math.ceil(image.width/64))
+        sheet.merge_cells(f'A1:{last_col}1')
+        sheet.print_area=f'A1:{last_col}{3+math.ceil(image.height/20)}'
+        sheet.page_setup.fitToHeight=1
     wb.save(path)
     return path
 

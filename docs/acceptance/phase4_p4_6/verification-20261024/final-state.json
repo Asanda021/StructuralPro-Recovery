@@ -1,0 +1,46 @@
+{
+  "tested_head": "b07d74b6676f883a6d1294ff60fe84d9824e2114",
+  "tested_tree": "d18ad78287fe8a209d4ba4676274f02279aac273",
+  "full": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "5",
+    "tests": "7962",
+    "time": "456.792",
+    "timestamp": "2026-10-24T13:04:30.703793-04:00",
+    "hostname": "741d9188185f"
+  },
+  "full_exit_code": 0,
+  "full_pass": 7957,
+  "junit_sha256": "558bc417b507a30a8231f85ec8b84efdb5514a2007a93c6b8fe8e7c31323eb51",
+  "raw_stdout_log": "final-regression.log; unexpectedly ends after976dots; preserved without reconstruction",
+  "standalone_probe": "FAIL on SQLite reopen; sqlite-failure.json",
+  "priorities_4_5_6": "PARTIAL due standalone persistence failure; backup of separately validated scenario may proceed",
+  "windows": "NOT VERIFIED",
+  "office": "NOT VERIFIED",
+  "engineering_owner": "NOT GIVEN",
+  "audited_sequential_probe": "PASS; diagnostic instrumentation, NOT proof of original failure resolved",
+  "persistence_observations": 378,
+  "sqlite_root_cause": "UNRESOLVED; minimal replay323versions PASS; audited sequential original scenario PASS",
+  "backup": {
+    "drive_id": "1BQz7I2fTaaKa-JNNdpWtyy8TDbbBNFQJ",
+    "url": "https://drive.google.com/file/d/1BQz7I2fTaaKa-JNNdpWtyy8TDbbBNFQJ/view?usp=drivesdk",
+    "bytes": 29996271,
+    "sha256": "95bea8a0cb29bf3da11dea5e7b6bcbdd7228398746e9d67ba33cf28e9838ca19",
+    "snapshot_head": "c40c55e705bf43cbfd7cfdf7ee9ac5eb04675784",
+    "snapshot_tree": "b04351fa7831b4c5d83f926eb7fec1759ef09a92",
+    "manifest_files": 142,
+    "restore": "PASS",
+    "tests_pass": 109,
+    "sqlite_revisions": 326,
+    "source_proofs": 270,
+    "known_corrupted_db": "diagnostics/FAILED-projects.db; investigation only, never restoration source",
+    "pr_acceptance": "PARTIAL, cause unresolved"
+  },
+  "remaining": [
+    "Root-cause independent original-probe SQLite corruption; successful full/diagnostic/restore do not erase it",
+    "Presentation limits: hash-heavy rows and header-only summary in some spreadsheets",
+    "Windows, PowerShell, real Microsoft Office, real-project engineering and owner approval"
+  ]
+}
