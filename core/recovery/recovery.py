@@ -29,6 +29,24 @@ def require_project_history_consistency(connection: sqlite3.Connection, *, allow
             return
         if names != {'projects','revisions'}:
             raise RecoveryError('project database schema and revision history are incomplete')
+        # Older revisions are forensic recovery evidence; the latest row
+        # alone does not prove that the historical recovery chain is intact.
+        # Validate in SQLite to avoid pulling all large payloads into Python.
+        # CASE prevents JSON extraction from malformed historical records.
+        invalid_history=connection.execute('''
+            SELECT project_id,version FROM revisions
+            WHERE CASE
+                WHEN json_valid(payload) != 1 THEN 1
+                WHEN json_type(payload) != 'object' THEN 1
+                WHEN json_extract(payload,'$.id') IS NOT NULL
+                     AND json_extract(payload,'$.id') != project_id THEN 1
+                WHEN json_extract(payload,'$.project_id') IS NOT NULL
+                     AND json_extract(payload,'$.project_id') != project_id THEN 1
+                ELSE 0 END = 1
+            LIMIT 1
+        ''').fetchone()
+        if invalid_history is not None:
+            raise RecoveryError('invalid historical revision payload or project identity')
         projects=connection.execute(
             'SELECT id,name,version,CAST(payload AS BLOB) FROM projects').fetchall()
         for pid,name,version,raw in projects:
