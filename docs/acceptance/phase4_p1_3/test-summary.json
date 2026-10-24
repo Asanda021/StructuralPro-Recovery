@@ -1,0 +1,33 @@
+{
+  "full_pass": 7847,
+  "fail": 0,
+  "error": 0,
+  "skip": 5,
+  "unique_full": 7852,
+  "targeted_pass": 86,
+  "targeted_overlap": 86,
+  "full_seconds": 412.07,
+  "targeted_seconds": 34.96,
+  "skips": [
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+      "reason": "PowerShell runtime unavailable"
+    }
+  ]
+}

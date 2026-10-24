@@ -1,0 +1,30 @@
+From /workspace/scratch/61dce18379e6/p4-restored/code.bundle
+ * remote-tracking branch origin/feature/phase4-priorities1-3-project-controls-20261024 -> FETCH_HEAD
+HEAD is now at 64d73d7 fix: render Persian report figures with one bidi shaping pass [skip ci]
+dangling commit 020f5b3c2f4ff77c4f3622708068eb2a4706ada8
+/workspace/scratch/61dce18379e6/p4-venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+  warnings.warn(
+{
+  "zip_sha256": "0fa98b06a835b7df03544678804225dce098805708a44a65420d95ed8c73bbaf",
+  "manifest_files_verified": 63,
+  "git_head": "64d73d73499c34e5efdb629d9d0b0b2efa96cbd8",
+  "git_tree": "5e4247bd4062c47a081b73fba24455ba49e0b042",
+  "git_fsck": "PASS",
+  "sqlite_integrity": "ok",
+  "activities": 15,
+  "floors": 5,
+  "baseline_duration": 18,
+  "current_duration": 20,
+  "actual_periods": [
+    "12.500000",
+    "45.000000",
+    "75.000000"
+  ],
+  "planned_final": "100.000000",
+  "planned_current": "92.500000",
+  "original_files_quarantined_during_readback": true,
+  "historical_paths_mapped_to_verified_restored_copies": true,
+  "embedded_source_hashes_resolved_without_rewriting": true,
+  "reports_regenerated": 12,
+  "project_unchanged_after_readback": true
+}

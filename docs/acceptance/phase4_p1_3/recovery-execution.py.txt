@@ -1,0 +1,48 @@
+# Offline recovery boundary includes native dependencies and child Git tools.
+import ctypes,errno,os
+os.environ['DOTNET_CLI_TELEMETRY_OPTOUT']='1';os.environ['OTEL_SDK_DISABLED']='true';os.environ['QT_QPA_PLATFORM']='offscreen'
+_lib=ctypes.CDLL('libseccomp.so.2',use_errno=True)
+_lib.seccomp_init.argtypes=[ctypes.c_uint32];_lib.seccomp_init.restype=ctypes.c_void_p
+_lib.seccomp_syscall_resolve_name.argtypes=[ctypes.c_char_p];_lib.seccomp_syscall_resolve_name.restype=ctypes.c_int
+_lib.seccomp_rule_add.argtypes=[ctypes.c_void_p,ctypes.c_uint32,ctypes.c_int,ctypes.c_uint];_lib.seccomp_load.argtypes=[ctypes.c_void_p]
+_ctx=_lib.seccomp_init(0x7fff0000);assert _ctx
+for _name in [b'connect',b'sendto',b'sendmsg',b'sendmmsg']:
+ _call=_lib.seccomp_syscall_resolve_name(_name)
+ if _call>=0:assert _lib.seccomp_rule_add(_ctx,0x00050000|errno.EPERM,_call,0)==0
+assert _lib.seccomp_load(_ctx)==0
+import hashlib,json,pathlib,subprocess,sys,zipfile
+zip_path=pathlib.Path(sys.argv[1]);root=pathlib.Path('/workspace/scratch/61dce18379e6/p4-restored');root.mkdir(exist_ok=True)
+with zipfile.ZipFile(zip_path) as z:
+ assert z.testzip() is None
+ z.extractall(root)
+manifest=json.loads((root/'manifest.json').read_text())
+for name,sha in manifest.items():assert hashlib.sha256((root/name).read_bytes()).hexdigest()==sha,name
+repo=root/'recovered-code';subprocess.run(['git','init','-q',str(repo)],check=True)
+subprocess.run(['git','-C',str(repo),'fetch',str(root/'code.bundle'),'refs/remotes/origin/feature/phase4-priorities1-3-project-controls-20261024'],check=True)
+subprocess.run(['git','-C',str(repo),'checkout','--detach','FETCH_HEAD'],check=True);subprocess.run(['git','-C',str(repo),'fsck','--full'],check=True)
+head=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip();tree=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD^{tree}'],text=True).strip()
+assert head=='64d73d73499c34e5efdb629d9d0b0b2efa96cbd8';assert tree=='5e4247bd4062c47a081b73fba24455ba49e0b042'
+sys.path.insert(0,str(repo));from core.platform.application import StructuralProApp
+scenario=root/'evidence/five-floor';expected=json.loads((scenario/'receipt.json').read_text());original=pathlib.Path('/workspace/scratch/61dce18379e6/p4-evidence/scenario-run/test_five_floor_control_accept0');held=original.with_name('held_original_during_restore')
+original.rename(held)
+original.symlink_to(scenario,target_is_directory=True)
+try:
+ a=StructuralProApp(scenario/'engineering/db');assert a.store.integrity_check()['ok']
+ p=a.open_project('P');assert len(p['project_schedule_tasks'])==15 and len(p['schedule_baselines'])==1
+ assert a.project_schedule('P')['duration']==20 and p['schedule_baselines'][0]['result']['duration']==18
+ assert [r['actual'] for r in p['progress_reports']]==expected['actual_periods']
+ r=a.project_progress('P',as_of=expected['report_dates'][-1]);assert r['actual']=='75.000000' and r['planned']=='100.000000' and r['planned_current']=='92.500000'
+ assert all(row['source_document'] for row in r['activities'])
+ # Map original evidence hashes to recovered files without rewriting provenance.
+ hashes={hashlib.sha256(x.read_bytes()).hexdigest() for x in scenario.rglob('*') if x.is_file()}
+ sources=[d['source'] for d in p['progress_documents']]+[d['source'] for d in p['progress_weight_sets']]
+ assert all(d['sha256'] in hashes for d in sources)
+ out=root/'recovered-reports';out.mkdir(exist_ok=True)
+ for kind in ['schedule','progress','curve']:
+  for fmt in ['pdf','xlsx','docx','csv']:a.project_controls_report('P',kind,fmt,out/(kind+'.'+fmt),as_of=expected['report_dates'][-1])
+ assert a.open_project('P')==p;a.store.close()
+finally:
+ original.unlink()
+ held.rename(original)
+receipt={'zip_sha256':hashlib.sha256(zip_path.read_bytes()).hexdigest(),'manifest_files_verified':len(manifest),'git_head':head,'git_tree':tree,'git_fsck':'PASS','sqlite_integrity':'ok','activities':15,'floors':5,'baseline_duration':18,'current_duration':20,'actual_periods':expected['actual_periods'],'planned_final':'100.000000','planned_current':'92.500000','original_files_quarantined_during_readback':True,'historical_paths_mapped_to_verified_restored_copies':True,'embedded_source_hashes_resolved_without_rewriting':True,'reports_regenerated':12,'project_unchanged_after_readback':True}
+(root/'recovery-receipt.json').write_text(json.dumps(receipt,indent=2));print(json.dumps(receipt,indent=2))
