@@ -26,7 +26,22 @@ def _contract_basis(project: dict[str, Any]) -> str:
 class ProjectStore:
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
+        existing = self.path.is_file() and self.path.stat().st_size > 0
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
+        # Fail closed on a damaged existing database, before any schema write.
+        # A cached version number/JSON can conceal damaged overflow pages until
+        # a future reopen; do not let startup silently accept that state.
+        try:
+            if existing:
+                result = self.db.execute("PRAGMA quick_check").fetchall()
+                if len(result) != 1 or result[0][0] != "ok":
+                    raise RuntimeError("SQLite integrity check failed: project database is corrupt; restore only from verified evidence")
+        except sqlite3.DatabaseError as exc:
+            self.db.close()
+            raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
+        except Exception:
+            self.db.close()
+            raise
         self._cache: dict[str, tuple[int, dict[str, Any]]] = {}
         self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
             id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
