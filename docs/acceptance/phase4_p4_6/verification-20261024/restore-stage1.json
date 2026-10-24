@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "archive_sha256": "ac72b7d5652ee78c6c06fbf143fe9e62be0ff01cc7ff39f1b420354607a26a87",
+  "manifest_files": 134,
+  "head": "65927e4580b142a8d306626e3e5362ceb6278339",
+  "tree": "e3aae5c4aebbbcd3f35c7c608d0435ec46a769c6",
+  "git_fsck": true,
+  "sqlite_integrity": "ok",
+  "sqlite_foreign_key_check": true,
+  "revision_count": 326,
+  "source_proofs_checked": 270,
+  "source_paths_recreated_only_from_downloaded_archive": true,
+  "restored_tests": "restored-tests.xml",
+  "original_source_hidden_during_check": true,
+  "windows_office": "NOT VERIFIED"
+}

@@ -1,5 +1,5 @@
 """Verify a Drive-redownloaded archive, Git, SQLite and restored-source tests."""
-import hashlib,json,os,sqlite3,subprocess,sys,zipfile
+import hashlib,json,os,shutil,sqlite3,subprocess,sys,zipfile
 from pathlib import Path
 archive=Path(sys.argv[1]).resolve();dest=Path(sys.argv[2]).resolve()
 expected=sys.argv[3]
@@ -19,12 +19,14 @@ command(['git','clone',str(dest/'code.bundle'),str(repo)])
 command(['git','checkout','--detach',m['head']],cwd=repo)
 command(['git','fsck','--full'],cwd=repo)
 assert subprocess.check_output(['git','rev-parse','HEAD^{tree}'],cwd=repo,text=True).strip()==m['tree']
-original=Path(m['scenario_original_path']);held=original.with_name(original.name+'-held-during-restore')
+original=Path(m['scenario_original_path']);held=original.with_name(original.name+'-held-'+dest.name)
 assert not held.exists()
 original.rename(held)
 checked=[]
 try:
-    original.symlink_to(dest/'scenario',target_is_directory=True)
+    # Recreate original evidence paths using only downloaded archive bytes.
+    # Do not depend on symlink preservation across subprocess environments.
+    shutil.copytree(dest/'scenario',original)
     sys.path.insert(0,str(repo))
     from core.platform.application import StructuralProApp
     app=StructuralProApp(dest/'scenario/prior/engineering/db')
@@ -39,7 +41,8 @@ try:
             if isinstance(v.get('path'),str) and isinstance(v.get('sha256'),str):
                 p=Path(v['path'])
                 assert p.is_file() and hashlib.sha256(p.read_bytes()).hexdigest()==v['sha256'],str(p)
-                assert p.resolve().is_relative_to(dest/'scenario'),str(p)
+                restored=dest/'scenario'/p.relative_to(original)
+                assert hashlib.sha256(restored.read_bytes()).hexdigest()==v['sha256'],str(p)
                 checked.append(str(p))
             for x in v.values():walk(x)
         elif isinstance(v,list):
@@ -57,8 +60,8 @@ try:
     with (dest/'restored-tests.log').open('w') as log:
         command([sys.executable,'scripts/run_offline_tests.py','-q',*tests,'--junitxml='+str(dest/'restored-tests.xml')],cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT)
 finally:
-    if original.is_symlink():original.unlink()
+    if original.exists():original.rename(dest/'source-path-replay')
     held.rename(original)
-receipt={'status':'PASS','archive_sha256':expected,'manifest_files':len(m['files']),'head':m['head'],'tree':m['tree'],'git_fsck':True,'sqlite_integrity':'ok','sqlite_foreign_key_check':True,'revision_count':revision_count,'source_proofs_checked':len(checked),'source_paths_resolve_only_to_restored_scenario':True,'restored_tests':'restored-tests.xml','original_source_hidden_during_check':True,'windows_office':'NOT VERIFIED'}
+receipt={'status':'PASS','archive_sha256':expected,'manifest_files':len(m['files']),'head':m['head'],'tree':m['tree'],'git_fsck':True,'sqlite_integrity':'ok','sqlite_foreign_key_check':True,'revision_count':revision_count,'source_proofs_checked':len(checked),'source_paths_recreated_only_from_downloaded_archive':True,'restored_tests':'restored-tests.xml','original_source_hidden_during_check':True,'windows_office':'NOT VERIFIED'}
 (dest/'restore-receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2))
 print(json.dumps(receipt))
