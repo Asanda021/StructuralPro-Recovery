@@ -40,6 +40,7 @@ def _label(key):
 def _report_metadata(title,metadata,columns=None):
     result={'نام گزارش':title,'تاریخ صدور شمسی':report_date()}
     for key,value in (metadata or {}).items():
+        if key=='_figures':continue
         if key=='currency':value=FA_UNITS.get(str(value),value)
         label=_label(key)
         # Unknown user-defined metadata is retained verbatim as a value, never lost.
@@ -297,6 +298,12 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     info_ws.column_dimensions["B"].width = 48
     detail.print_title_rows=f"{header_row}:{header_row}"
     style_workbook(wb,title)
+    for figure in (metadata or {}).get('_figures',[]):
+        from openpyxl.drawing.image import Image as ExcelImage
+        sheet=wb.create_sheet('نمودار '+str(len(wb.worksheets)))
+        sheet.sheet_view.rightToLeft=True;sheet.cell(1,1,figure['caption'])
+        image=ExcelImage(figure['path']);ratio=1000/image.width;image.width=1000;image.height=image.height*ratio
+        sheet.add_image(image,'A3')
     wb.save(path)
     return path
 
@@ -384,6 +391,8 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
             provenance.append((_cell(row.get('field','عنوان')),_cell(row.get('value',''))))
     if provenance:
         heading('منابع و اصلاحیه‌ها');table(['عنوان','مدرک و توضیح'],provenance)
+    for figure in (metadata or {}).get('_figures',[]):
+        heading(figure['caption']);d.add_picture(figure['path'],width=section.page_width-section.left_margin-section.right_margin)
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);d.save(path);return path
 
 
@@ -638,6 +647,12 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
                                    ("LEFTPADDING", (0,0), (-1,-1), 5),
                                    ("RIGHTPADDING", (0,0), (-1,-1), 5)]))
         story.append(table)
+    for figure in (metadata or {}).get('_figures',[]):
+        from reportlab.platypus import Image as ReportImage
+        from PIL import Image as PillowImage
+        with PillowImage.open(figure['path']) as im:w,h=im.size
+        story.append(PageBreak());story.append(Paragraph(_pdf_text(figure['caption']),heading))
+        scale=min(doc.width/w,(doc.height-60)/h);story.append(ReportImage(figure['path'],width=w*scale,height=h*scale))
     footer = lambda canvas, current_doc: _pdf_page_footer(canvas, current_doc, font,title)
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return path

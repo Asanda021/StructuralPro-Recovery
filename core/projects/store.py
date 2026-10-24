@@ -36,7 +36,7 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -81,6 +81,8 @@ class ProjectStore:
                     # quantity, approved pricebook or payable-unit change.
                     clean_project.pop("estimate", None)
                     payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.projects.controls import guard as project_control_guard
+            project_control_guard(json.loads(row['payload']) if row else {},clean_project,project_control_command)
             from core.commercial.financial_ledger import ledger_guard
             ledger_guard(json.loads(row["payload"]) if row else {}, clean_project, phase3_command)
             from core.commercial.statement import workflow_guard

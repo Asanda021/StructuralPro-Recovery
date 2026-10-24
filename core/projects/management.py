@@ -97,6 +97,11 @@ class MeetingRecord:
 
 
 class ProjectManagement:
+    @staticmethod
+    def calculate_cpm(tasks, relationships, *, start, calendar):
+        from core.projects.scheduling import cpm
+        return cpm(tasks,relationships,start=start,calendar=calendar)
+
     def __init__(self, *, tasks: Iterable[ScheduleTask] = (),
                  daily_reports: Iterable[DailyReport] = (),
                  resources: Iterable[ResourceRecord] = (),
