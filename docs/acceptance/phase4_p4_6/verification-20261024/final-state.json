@@ -22,5 +22,25 @@
   "engineering_owner": "NOT GIVEN",
   "audited_sequential_probe": "PASS; diagnostic instrumentation, NOT proof of original failure resolved",
   "persistence_observations": 378,
-  "sqlite_root_cause": "UNRESOLVED; minimal replay323versions PASS; audited sequential original scenario PASS"
+  "sqlite_root_cause": "UNRESOLVED; minimal replay323versions PASS; audited sequential original scenario PASS",
+  "backup": {
+    "drive_id": "1BQz7I2fTaaKa-JNNdpWtyy8TDbbBNFQJ",
+    "url": "https://drive.google.com/file/d/1BQz7I2fTaaKa-JNNdpWtyy8TDbbBNFQJ/view?usp=drivesdk",
+    "bytes": 29996271,
+    "sha256": "95bea8a0cb29bf3da11dea5e7b6bcbdd7228398746e9d67ba33cf28e9838ca19",
+    "snapshot_head": "c40c55e705bf43cbfd7cfdf7ee9ac5eb04675784",
+    "snapshot_tree": "b04351fa7831b4c5d83f926eb7fec1759ef09a92",
+    "manifest_files": 142,
+    "restore": "PASS",
+    "tests_pass": 109,
+    "sqlite_revisions": 326,
+    "source_proofs": 270,
+    "known_corrupted_db": "diagnostics/FAILED-projects.db; investigation only, never restoration source",
+    "pr_acceptance": "PARTIAL, cause unresolved"
+  },
+  "remaining": [
+    "Root-cause independent original-probe SQLite corruption; successful full/diagnostic/restore do not erase it",
+    "Presentation limits: hash-heavy rows and header-only summary in some spreadsheets",
+    "Windows, PowerShell, real Microsoft Office, real-project engineering and owner approval"
+  ]
 }
