@@ -131,11 +131,15 @@ def rescue(source: str | Path, destination: str | Path) -> dict[str, Any]:
             out.close()
         if _digest(source.read_bytes()) != source_hash:
             raise RescueError('Source changed during examination; no result may be trusted')
-        if dest.exists():
-            raise RescueError('Output appeared while recovering; refusing overwrite')
-        fd=os.open(dest, os.O_CREAT|os.O_EXCL|os.O_WRONLY, 0o600)
-        os.close(fd)
-        os.replace(temp_path,dest)
+        # Atomic no-replace publication. An exclusive placeholder followed by
+        # os.replace() may overwrite another writer that raced into that path.
+        try:
+            os.link(temp_path, dest)
+        except FileExistsError as exc:
+            raise RescueError('Output appeared while recovering; refusing overwrite') from exc
+        except OSError as exc:
+            raise RescueError('Cannot atomically publish rescue without overwrite') from exc
+        temp_path.unlink()
         temp_path=None
         with sqlite3.connect(dest.as_uri()+'?mode=ro&immutable=1',uri=True) as reread:
             if reread.execute('PRAGMA integrity_check').fetchone()[0] != 'ok':

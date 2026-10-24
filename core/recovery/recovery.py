@@ -43,9 +43,16 @@ def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, A
             _require_database_integrity(target, label="backup")
         finally:
             target.close()
-        if target_path.exists():
-            raise RecoveryError("backup destination appeared during backup")
-        os.replace(temp_path,target_path)
+        # Atomic no-replace publication. os.replace() can overwrite a competing
+        # backup between the exists() check and the rename. Fail closed on
+        # filesystems that do not permit a same-directory hard link.
+        try:
+            os.link(temp_path, target_path)
+        except FileExistsError as exc:
+            raise RecoveryError("backup destination appeared during backup") from exc
+        except OSError as exc:
+            raise RecoveryError("cannot atomically publish backup without overwrite") from exc
+        temp_path.unlink()
         temp_path=None
         return {"path":str(target_path),"size":target_path.stat().st_size,
                 "created_at":time.time()}

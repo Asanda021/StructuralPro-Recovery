@@ -26,7 +26,9 @@ def _contract_basis(project: dict[str, Any]) -> str:
 class ProjectStore:
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
-        existing = self.path.is_file() and self.path.stat().st_size > 0
+        existing = self.path.exists()
+        if existing and (not self.path.is_file() or self.path.stat().st_size == 0):
+            raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
         # Fail closed on a damaged existing database, before any schema write.
         # A cached version number/JSON can conceal damaged overflow pages until
