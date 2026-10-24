@@ -5,6 +5,11 @@ import fitz,openpyxl
 from docx import Document
 from docx.oxml.ns import qn
 root=Path(sys.argv[1]);results=[]
+site=['lookahead','resources','materials','purchases','daily','obstacles','meetings','correspondence','package','dashboard']
+prior=['wbs','activities','schedule','progress','curve']
+expected={kind+'.'+fmt for kind in site for fmt in ['pdf','xlsx','docx','csv']}
+expected|={'prior/'+kind+'.'+fmt for kind in prior for fmt in ['pdf','xlsx','docx','csv']}
+expected|={'prior/engineering/estimate.'+fmt for fmt in ['pdf','xlsx','docx','csv']}
 for p in sorted(root.rglob('*')):
     if p.suffix not in ('.pdf','.xlsx','.docx','.csv'):continue
     if p.relative_to(root).as_posix() in ('prior/engineering/plan.pdf','prior/engineering/synthetic-prices.csv'):continue # explicit fixture inputs, not reports
@@ -37,6 +42,7 @@ for p in sorted(root.rglob('*')):
         row['jalali_dates']=sorted(set(re.findall('[۱۲12][۰-۹0-9]{3}/[۰-۹0-9]{2}/[۰-۹0-9]{2}',text)))[:8]
         assert row['persian_characters']>0
         results.append(row)
-out={'files':results,'count':len(results),'scope':'structural readback only; visual inspection and Microsoft Office are separate gates'}
+assert {r['name'] for r in results}==expected, 'Missing or unexpected report export'
+out={'files':results,'count':len(results),'exact_expected_set':True,'scope':'structural readback only; visual inspection and Microsoft Office are separate gates'}
 Path(sys.argv[2]).write_text(json.dumps(out,ensure_ascii=False,indent=2))
 print(json.dumps({'count':len(results),'pdf_pages':{x['name']:x['pages'] for x in results if 'pages'in x}},ensure_ascii=False))

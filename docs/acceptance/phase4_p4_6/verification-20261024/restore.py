@@ -22,9 +22,10 @@ assert subprocess.check_output(['git','rev-parse','HEAD^{tree}'],cwd=repo,text=T
 original=Path(m['scenario_original_path']);held=original.with_name(original.name+'-held-during-restore')
 assert not held.exists()
 original.rename(held)
-original.symlink_to(dest/'scenario',target_is_directory=True)
-sys.path.insert(0,str(repo));checked=[]
+checked=[]
 try:
+    original.symlink_to(dest/'scenario',target_is_directory=True)
+    sys.path.insert(0,str(repo))
     from core.platform.application import StructuralProApp
     app=StructuralProApp(dest/'scenario/prior/engineering/db')
     before=app.open_project('P');before_digest=app.store.current_digest('P')
@@ -52,11 +53,12 @@ try:
         assert conn.execute('pragma foreign_key_check').fetchall()==[]
         revision_count=conn.execute('select count(*) from revisions').fetchone()[0]
     env={**os.environ,'QT_QPA_PLATFORM':'offscreen','PYTHONPATH':str(repo)}
-    tests=['tests/test_phase4_site_resources.py','tests/test_phase4_site_materials.py','tests/test_phase4_site_office.py','tests/test_phase4_site_workspace.py','tests/test_phase4_site_finance.py']
+    tests=['tests/test_phase4_site_resources.py','tests/test_phase4_site_materials.py','tests/test_phase4_site_office.py','tests/test_phase4_site_workspace.py','tests/test_phase4_site_finance.py','tests/test_phase4_site_report_localization.py']
     with (dest/'restored-tests.log').open('w') as log:
         command([sys.executable,'scripts/run_offline_tests.py','-q',*tests,'--junitxml='+str(dest/'restored-tests.xml')],cwd=repo,env=env,stdout=log,stderr=subprocess.STDOUT)
 finally:
-    original.unlink();held.rename(original)
+    if original.is_symlink():original.unlink()
+    held.rename(original)
 receipt={'status':'PASS','archive_sha256':expected,'manifest_files':len(m['files']),'head':m['head'],'tree':m['tree'],'git_fsck':True,'sqlite_integrity':'ok','sqlite_foreign_key_check':True,'revision_count':revision_count,'source_proofs_checked':len(checked),'source_paths_resolve_only_to_restored_scenario':True,'restored_tests':'restored-tests.xml','original_source_hidden_during_check':True,'windows_office':'NOT VERIFIED'}
 (dest/'restore-receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2))
 print(json.dumps(receipt))

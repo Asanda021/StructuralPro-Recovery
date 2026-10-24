@@ -1,0 +1,15 @@
+{
+  "tested_head": "c0f9832598113463b5470eae218d0c3a0d1b6245",
+  "tested_tree": "4b198936888732327370067926858e5e5e619488",
+  "result": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "5",
+    "tests": "7960",
+    "time": "457.256",
+    "timestamp": "2026-10-24T12:53:46.408115-04:00",
+    "hostname": "741d9188185f"
+  },
+  "superseded_by_print_fix": true
+}

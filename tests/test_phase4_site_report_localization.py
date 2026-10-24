@@ -25,3 +25,11 @@ def test_package_report_localizes_current_basis_flag(current,label):
     packages=[{'id':'W4','title':'بسته آزمایشی','date':'2026-03-16','status':'issued','current':current,'reference':'PKG-1','template':'site-office','template_version':'1','documents':[]}]
     rows=compact_rows('package',packages,{})
     assert 'مبنای جاری: '+label in rows[0]['مقدار و وضعیت']
+
+def test_package_localizes_applied_amendment_status():
+    record={'id':'BA-1','status':'applied','reason':'اصلاح ضخامت','base_revision':1,'delta':{'concrete':'0.8'}}
+    packages=[{'id':'W4','title':'بسته آزمایشی','date':'2026-03-16','status':'issued','current':True,'reference':'PKG-1','template':'site-office','template_version':'1','documents':[{'collection':'beam_amendments','id':'BA-1','version':1,'sha256':'a'*64,'record':record}]}]
+    before=deepcopy(packages)
+    rows=compact_rows('package',packages,{})
+    assert any('وضعیت: اعمال‌شده' in r['مقدار و وضعیت'] for r in rows)
+    assert packages==before
