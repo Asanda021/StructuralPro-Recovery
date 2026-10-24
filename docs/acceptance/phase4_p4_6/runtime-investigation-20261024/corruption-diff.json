@@ -1,0 +1,14 @@
+{
+  "file_sha256": "561550b8d0bb42fb5bb3ec002222894414d2740c19f66d2cbb815728945793f6",
+  "project_bytes": 374519,
+  "revision_bytes": 374519,
+  "first_difference": 313139,
+  "different_bytes": 34866,
+  "page_size": 4096,
+  "page_count": 14268,
+  "freelist_count": 0,
+  "same_prefix": true,
+  "project_hex": "3564383535366333646266613361656537623565303066363438633966306235",
+  "revision_hex": "726f6f663a646236393963396161636663623838616166616533353131663564",
+  "project_chunk_found_in_expected": 9061
+}

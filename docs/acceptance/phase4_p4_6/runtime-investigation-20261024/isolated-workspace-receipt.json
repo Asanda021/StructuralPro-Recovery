@@ -1,0 +1,172 @@
+{
+  "synthetic": true,
+  "prior": {
+    "synthetic": true,
+    "floors": 5,
+    "activities": 15,
+    "critical_ids": [
+      "S1",
+      "S2",
+      "S3",
+      "S4",
+      "S5",
+      "A5",
+      "M5"
+    ],
+    "duration_baseline": 18,
+    "duration_current": 20,
+    "actual_periods": [
+      "12.500000",
+      "45.000000",
+      "75.000000"
+    ],
+    "planned_final": "100.000000",
+    "variance_final": "-25.000000",
+    "baseline_preserved": true,
+    "boq_preserved": true,
+    "reopen_equal": true,
+    "sqlite_integrity": "ok",
+    "exports": [
+      "wbs.pdf",
+      "wbs.xlsx",
+      "wbs.docx",
+      "wbs.csv",
+      "activities.pdf",
+      "activities.xlsx",
+      "activities.docx",
+      "activities.csv",
+      "schedule.pdf",
+      "schedule.xlsx",
+      "schedule.docx",
+      "schedule.csv",
+      "progress.pdf",
+      "progress.xlsx",
+      "progress.docx",
+      "progress.csv",
+      "curve.pdf",
+      "curve.xlsx",
+      "curve.docx",
+      "curve.csv"
+    ],
+    "date_contract": "ISO storage; Jalali display; start-of-day planned boundary",
+    "report_dates": [
+      "2026-03-24",
+      "2026-03-31",
+      "2026-04-10"
+    ]
+  },
+  "three_crews": true,
+  "equipment": true,
+  "parallel_floors": true,
+  "overbook_blocked": true,
+  "weekly_end": "2026-03-22",
+  "fortnight_end": "2026-03-29",
+  "material_oracle": [
+    {
+      "material": "CON",
+      "need": "4.100",
+      "shortage": "0.000"
+    },
+    {
+      "material": "BLK",
+      "need": "156",
+      "shortage": "150"
+    },
+    {
+      "material": "TIL",
+      "need": "13.91",
+      "shortage": "7.91"
+    },
+    {
+      "material": "PIP",
+      "need": "6.5",
+      "shortage": null
+    }
+  ],
+  "purchase_no_financial_effect": true,
+  "daily_transfer_draft_then_reviewed": true,
+  "daily_correction_supersedes": "WORK-47",
+  "package_sources": [
+    {
+      "collection": "project_daily_reports",
+      "id": "DAILY-2",
+      "version": 2,
+      "sha256": "b69460f45482e97ad3a49c73ca4d69272d1ae5ae645280cc193f42253bb703ec"
+    },
+    {
+      "collection": "project_meetings",
+      "id": "MEETING-1",
+      "version": 1,
+      "sha256": "83756ba16b658fc4e75ac5a1fa05412349738b4a1ba3d3968f8002c33dc7cfe9"
+    },
+    {
+      "collection": "site_correspondence",
+      "id": "CORRESPONDENCE-1",
+      "version": 1,
+      "sha256": "99a4b0d68d2ddfcca327f6870933f1839a1990e2191dfbdce2768e69a5392799"
+    },
+    {
+      "collection": "beam_amendments",
+      "id": "BA-466d4e2826c24253a5dc622c9089bc67",
+      "version": 1,
+      "sha256": "8e038e3201782d3ea908d1120ebbd93de7b2361b857e6e3cebcdb314e511727b"
+    },
+    {
+      "collection": "progress_reports",
+      "id": "PROGRESS-3",
+      "version": 3,
+      "sha256": "a028a746c28ec15f12eda6524f5068bcd75c50d068059676a74297ec8fdb0a4e"
+    },
+    {
+      "collection": "statement_periods",
+      "id": "1",
+      "version": 1,
+      "sha256": "8b58e0d32b5c14d0abe5ab19910be336c62dfc85fa5bd833693c6e6cefb9285f"
+    }
+  ],
+  "immutable_originals": true,
+  "reopen_equal": true,
+  "sqlite_integrity": "ok",
+  "exports": [
+    "lookahead.pdf",
+    "lookahead.xlsx",
+    "lookahead.docx",
+    "lookahead.csv",
+    "resources.pdf",
+    "resources.xlsx",
+    "resources.docx",
+    "resources.csv",
+    "materials.pdf",
+    "materials.xlsx",
+    "materials.docx",
+    "materials.csv",
+    "purchases.pdf",
+    "purchases.xlsx",
+    "purchases.docx",
+    "purchases.csv",
+    "daily.pdf",
+    "daily.xlsx",
+    "daily.docx",
+    "daily.csv",
+    "obstacles.pdf",
+    "obstacles.xlsx",
+    "obstacles.docx",
+    "obstacles.csv",
+    "meetings.pdf",
+    "meetings.xlsx",
+    "meetings.docx",
+    "meetings.csv",
+    "correspondence.pdf",
+    "correspondence.xlsx",
+    "correspondence.docx",
+    "correspondence.csv",
+    "package.pdf",
+    "package.xlsx",
+    "package.docx",
+    "package.csv",
+    "dashboard.pdf",
+    "dashboard.xlsx",
+    "dashboard.docx",
+    "dashboard.csv"
+  ]
+}

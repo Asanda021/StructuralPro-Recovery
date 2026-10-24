@@ -1,0 +1,59 @@
+{
+  "captured_utc": "2026-10-24T17:51:12.094650+00:00",
+  "base_head": "45ecb6cea88fd5bad54d2d69c05c955fa70922ae",
+  "tested_product_head": "b07d74b6676f883a6d1294ff60fe84d9824e2114",
+  "tested_product_tree": "d18ad78287fe8a209d4ba4676274f02279aac273",
+  "product_code_changed": false,
+  "original_failure_source_sha256": "561550b8d0bb42fb5bb3ec002222894414d2740c19f66d2cbb815728945793f6",
+  "failed_source_current_path": "/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db",
+  "original_unobserved_probes": {
+    "isolated-tmp": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "1",
+      "time": "28.178",
+      "timestamp": "2026-10-24T13:37:53.588872-04:00",
+      "hostname": "741d9188185f"
+    },
+    "isolated-workspace": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "1",
+      "time": "28.475",
+      "timestamp": "2026-10-24T13:39:37.200146-04:00",
+      "hostname": "741d9188185f"
+    },
+    "lifecycle": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "5",
+      "time": "138.019",
+      "timestamp": "2026-10-24T13:42:45.094404-04:00",
+      "hostname": "741d9188185f"
+    }
+  },
+  "replay_cases": 4,
+  "replay_transaction_versions_each": 323,
+  "observer_checks_between_replay_commits": false,
+  "physical_corruption": {
+    "duplicate_overflow_page": 15,
+    "first_payload_difference": 313139,
+    "different_bytes": 34866,
+    "manual_page_decoder_matches_sqlite_blob": true
+  },
+  "ptrace": "BLOCKED by runtime; native syscall trace not captured",
+  "cause": "UNRESOLVED; no causal attribution to host, concurrency, native libraries or SQLite itself",
+  "decision": {
+    "priority4": "PARTIAL",
+    "priority5": "PARTIAL",
+    "priority6": "PARTIAL"
+  },
+  "full_regression": "Existing valid7957PASS/0FAIL/0ERROR/5PowerShellSKIP retained; not repeated",
+  "backup": "Existing verified Drive archive95bea8a0... retained; not repeated"
+}
