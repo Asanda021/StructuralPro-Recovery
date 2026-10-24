@@ -1,6 +1,6 @@
 """Reliability and recovery primitives for StructuralPro persistence."""
 from __future__ import annotations
-import hashlib, json, sqlite3, time
+import hashlib, json, os, sqlite3, tempfile, time
 from pathlib import Path
 from typing import Any
 
@@ -9,20 +9,49 @@ class RecoveryError(RuntimeError): pass
 def payload_checksum(payload: str) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
+def _require_database_integrity(connection: sqlite3.Connection, *, label: str) -> None:
+    """Do not accept a structurally damaged SQLite database as a valid backup."""
+    try:
+        results=connection.execute("PRAGMA integrity_check").fetchall()
+    except sqlite3.DatabaseError as exc:
+        raise RecoveryError(f"{label} database integrity check could not run") from exc
+    if len(results) != 1 or results[0][0] != "ok":
+        raise RecoveryError(f"{label} database integrity check failed: corrupt SQLite data")
+
+
 def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, Any]:
     source_path=Path(db_path)
     if not source_path.is_file(): raise RecoveryError("source database does not exist")
-    if source_path.resolve() == Path(backup_path).resolve():
+    target_path=Path(backup_path)
+    if source_path.resolve() == target_path.resolve():
         raise RecoveryError("backup must not overwrite its source database")
-    source=sqlite3.connect(source_path.resolve().as_uri()+"?mode=ro", uri=True)
-    target_path=Path(backup_path); target_path.parent.mkdir(parents=True,exist_ok=True)
-    target=sqlite3.connect(str(target_path))
+    if target_path.exists():
+        raise RecoveryError("backup destination already exists; use a new path")
+    target_path.parent.mkdir(parents=True,exist_ok=True)
+    temp_path=None
+    source=None
     try:
-        source.backup(target)
-        target.commit()
+        source=sqlite3.connect(source_path.resolve().as_uri()+"?mode=ro", uri=True)
+        _require_database_integrity(source, label="source")
+        with tempfile.NamedTemporaryFile(prefix=".db-backup-",suffix=".tmp",
+                                     dir=target_path.parent,delete=False) as temporary:
+            temp_path=Path(temporary.name)
+        target=sqlite3.connect(temp_path)
+        try:
+            source.backup(target)
+            target.commit()
+            _require_database_integrity(target, label="backup")
+        finally:
+            target.close()
+        if target_path.exists():
+            raise RecoveryError("backup destination appeared during backup")
+        os.replace(temp_path,target_path)
+        temp_path=None
+        return {"path":str(target_path),"size":target_path.stat().st_size,
+                "created_at":time.time()}
     finally:
-        target.close(); source.close()
-    return {"path":str(target_path),"size":target_path.stat().st_size,"created_at":time.time()}
+        if source is not None: source.close()
+        if temp_path is not None: temp_path.unlink(missing_ok=True)
 
 def verify_database(db_path: str | Path) -> dict[str, Any]:
     source_path=Path(db_path)
