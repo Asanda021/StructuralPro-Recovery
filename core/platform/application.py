@@ -1895,6 +1895,53 @@ class StructuralProApp:
         from core.projects.locations import targets
         return targets(self,project_id,activity_id)
 
+    def site_command(self, project_id, op, *, actor, reason, expected_version, **data):
+        if isinstance(expected_version,bool) or not isinstance(expected_version,int):
+            raise ValueError('شماره نسخه معتبر لازم است')
+        if op=='purchase_commit':
+            from core.projects.controls import apply
+            from core.commercial.financial_ledger import ledger_dispatch,COLLECTIONS
+            from core.platform.concurrency import begin_write
+            p=self.store.get(project_id)
+            if p is None:raise KeyError(project_id)
+            if p['_meta']['version']!=expected_version:raise RuntimeError('نسخه پروژه تغییر کرده است')
+            ids=[int(r['id']) for key in tuple(COLLECTIONS.values())+('financial_records',) for r in p.get(key,[]) if str(r.get('id','')).isdigit()]
+            site={'op':'site_purchase_commit','actor':actor,'reason':reason,'data':{**data,'ledger_id':max(ids,default=0)+1},'at':datetime.now(timezone.utc).isoformat()}
+            _,link=apply(p,site)
+            finance={**{k:link[k] for k in ('amount','currency','counterparty','date','reference','description','source_documents')},'domain':'ledger','op':'create','kind':'commitment','id':link['ledger_id'],'actor':actor,'at':site['at'],'site_purchase':site}
+            result=ledger_dispatch(p,finance)
+            self.store.save(project_id,result,expected_digest=begin_write({k:v for k,v in p.items() if k!='_meta'}),project_control_command=site,phase3_command=finance)
+            return link
+        return self.project_control_command(project_id,'site_'+op,actor=actor,reason=reason,expected_version=expected_version,**data)
+
+    def site_lookahead(self, project_id, *, start, days=None, end=None):
+        from core.projects.site_resources import lookahead
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return lookahead(p,start=start,days=days,end=end)
+
+    def site_materials(self, project_id, *, as_of, activity_id=None):
+        from core.projects.site_materials import snapshot
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return snapshot(p,as_of=as_of,activity_id=activity_id)
+
+    def site_dashboard(self, project_id, *, as_of, days=7, end=None):
+        from core.projects.site_dashboard import snapshot
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return snapshot(p,as_of=as_of,days=days,end=end)
+
+    def site_report(self, project_id, kind, fmt, path, *, as_of, days=7, end=None, document_id=None):
+        from core.reports.site_operations import export
+        return export(self,project_id,kind,fmt,path,as_of=as_of,days=days,end=end,document_id=document_id)
+
+    def site_package_candidates(self, project_id):
+        from core.projects.site_office import package_candidates
+        p=self.store.get(project_id)
+        if p is None:raise KeyError(project_id)
+        return package_candidates(p)
+
     def project_controls_report(self, project_id, kind, fmt, path, *, as_of=None):
         from core.reports.project_controls import export
         return export(self,project_id,kind,fmt,path,as_of=as_of)

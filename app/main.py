@@ -167,6 +167,15 @@ def main()->int:
         except Exception as e:pout.setText('خطا: '+str(e))
     controls_open=QPushButton('ساختار، زمان‌بندی و پیشرفت پروژه');controls_open.setObjectName('ProjectControlsOpen')
     controls_open.clicked.connect(open_project_controls);v.addWidget(controls_open)
+    def open_site_operations():
+        try:
+            from app.site_operations_workspace import SiteOperationsWorkspace
+            project_id=pid.text().strip()
+            if not service.open_project(project_id):raise ValueError('ابتدا پروژه معتبر را انتخاب کنید')
+            SiteOperationsWorkspace(service,project_id,w).exec()
+        except Exception as e:pout.setText('خطا: '+str(e))
+    site_open=QPushButton('منابع، عملیات کارگاه و داشبورد');site_open.setObjectName('SiteOperationsOpen')
+    site_open.clicked.connect(open_site_operations);v.addWidget(site_open)
     pages.addWidget(p); idx_projects=pages.count()-1
 
     # Real AEC discipline workspaces: each area is separate and wired to the production takeoff service.
@@ -1069,6 +1078,7 @@ def main()->int:
             add_command("➕ ایجاد پروژه", create.click, True)
             add_command("📂 بازکردن پروژه", openb.click)
             add_command("ساختار، زمان‌بندی و پیشرفت", open_project_controls)
+            add_command('منابع و دفتر کارگاه',open_site_operations)
         elif index in discipline_pages.values():
             add_command("📐 متره واقعی", pages.widget(index).findChild(QPushButton, "PrimaryAction").click, True)
             add_command("🗺 متره از نقشه", lambda: pages.setCurrentIndex(idx_drawing))
