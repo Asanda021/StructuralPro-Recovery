@@ -8,7 +8,7 @@ KEYS = ('project_daily_reports', 'project_meetings', 'site_obstacles',
         'site_correspondence', 'site_document_packages', 'site_action_events')
 _COLLECTIONS = {'daily':'project_daily_reports', 'meeting':'project_meetings',
                 'correspondence':'site_correspondence', 'package':'site_document_packages'}
-OPS = {f'{kind}_{action}' for kind in _COLLECTIONS for action in ('create','review','approve','issue','amend')} | {'daily_transfer','obstacle_create','obstacle_resolve','action_resolve'}
+OPS = {f'{kind}_{action}' for kind in _COLLECTIONS for action in ('create','review','approve','issue','amend')} | {'daily_transfer','obstacle_create','obstacle_resolve','action_resolve','correspondence_response'}
 _PACKAGE_SOURCES = set(_COLLECTIONS.values()) - {'site_document_packages'} | {'progress_documents','progress_reports','statement_periods','manual_formula_amendments','beam_amendments'}
 
 
@@ -142,10 +142,13 @@ def dispatch(p,op,data,actor,reason):
         result['daily_report_id']=row['id']
         p.setdefault('site_action_events',[]).append({'id':f"OFFICE-EVENT-{len(p.get('site_action_events',[]))+1}",'project_id':p['id'],'kind':'daily_transfer','target_id':row['id'],'activity_id':row['activity_id'],'progress_document_id':result['id'],'actor':actor,'reason':reason,'source':deepcopy(result['source']),'quantity_semantics':'cumulative','previous_cumulative_quantity':str(before),'previous_progress_id':data.get('previous_progress_id'),'initial_observation':data.get('initial_observation') is True,'supersedes':supersedes})
         return result
-    if op in {'obstacle_resolve','action_resolve'}:
-        key='site_obstacles' if op=='obstacle_resolve' else 'project_meetings'
-        rows=p.get(key,[]) if key=='site_obstacles' else [a for m in p.get(key,[]) for a in m.get('action_items',[])]
+    if op in {'obstacle_resolve','action_resolve','correspondence_response'}:
+        key='site_obstacles' if op=='obstacle_resolve' else 'site_correspondence' if op=='correspondence_response' else 'project_meetings'
+        rows=p.get(key,[]) if key!='project_meetings' else [a for m in p.get(key,[]) for a in m.get('action_items',[])]
         row=find(rows,data.get('id'),'پیگیری')
+        if op=='correspondence_response':
+            _verify(row)
+            if row['status']!='issued':raise ValueError('پاسخ باید به مکاتبه صادرشده متصل باشد')
         if any(e['kind']==op and e['target_id']==row['id'] for e in p.get('site_action_events',[])):raise ValueError('پیگیری قبلاً بسته شده است')
         if _date(data.get('date'))<row.get('date','0001-01-01'):raise ValueError('تاریخ اقدام پیش از ثبت است')
         return _event(p,op,row['id'],data,actor,reason)
@@ -200,7 +203,10 @@ def dispatch(p,op,data,actor,reason):
         row.update(title=text(data.get('title'),'عنوان'),participants=', '.join(text(x,'حاضر') for x in participants),participant_names=participants[:],decisions=text(data.get('decisions'),'تصمیم‌ها'),actions='; '.join(a['title'] for a in items),action_items=items,follow_up_date=min((a['due_date'] for a in items),default=''))
     if kind=='correspondence':
         if data.get('kind') not in {'rfi','material_approval','drawing_review','instruction','letter'}:raise ValueError('نوع مکاتبه نامعتبر است')
-        row.update(kind=data['kind'],title=text(data.get('title'),'عنوان'),recipient=text(data.get('recipient'),'مخاطب'),technical_notes=text(data.get('technical_notes'),'شرح'),delivery_status='not_sent')
+        activity=_activity(p,data.get('activity_id')) if data.get('activity_id') is not None or data['kind'] in {'rfi','drawing_review','instruction'} else None
+        due=_date(data['due_date']) if data.get('due_date') is not None else None
+        if due is not None and due<row['date']:raise ValueError('موعد پیگیری پیش از تاریخ نامه است')
+        row.update(kind=data['kind'],activity_id=activity,due_date=due,title=text(data.get('title'),'عنوان'),recipient=text(data.get('recipient'),'مخاطب'),technical_notes=text(data.get('technical_notes'),'شرح'),delivery_status='not_sent')
     _seal(row);rows.append(row);return row
 
 
@@ -228,6 +234,11 @@ def snapshot(p,*,as_of):
     meetings=rows('project_meetings');actions=[a for m in meetings for a in m.get('action_items',[])]
     for a in actions:a['status']='resolved' if a['id'] in resolved else 'open'
     packages=rows('site_document_packages')
+    correspondence=rows('site_correspondence')
+    responses={e['target_id']:e for e in events if e['kind']=='correspondence_response' and e['date']<=day}
+    for r in correspondence:
+        r['response_status']='responded' if r['id'] in responses else 'awaiting_response' if r['status']=='issued' else 'not_issued'
+        r['response_event']=deepcopy(responses.get(r['id']))
     for package in packages:
         try:
             _verify(package);_package_documents(p,package['sources'])
@@ -235,6 +246,6 @@ def snapshot(p,*,as_of):
         except (ValueError,KeyError,TypeError) as error:
             package.update(current=False,source_error=str(error))
     return {'project_id':p['id'],'date':day,'daily_reports':rows('project_daily_reports'),'meetings':meetings,'obstacles':obstacles,
-            'correspondence':rows('site_correspondence'),'packages':packages,'overdue_actions':[a for a in actions if a['status']=='open' and a['due_date']<day],
+            'correspondence':correspondence,'packages':packages,'overdue_correspondence':[r for r in correspondence if r['response_status']=='awaiting_response' and r.get('due_date') is not None and r['due_date']<day],'overdue_actions':[a for a in actions if a['status']=='open' and a['due_date']<day],
             'overdue_obstacles':[a for a in obstacles if a['status']=='open' and a['due_date']<day],
             'packaged_documents':[{**deepcopy(d),'package_id':pkg['id'],'current':pkg['current'],'source_error':pkg['source_error']} for pkg in packages for d in pkg['documents']]}

@@ -64,8 +64,9 @@ def test_obstacles_meetings_correspondence_and_overdue(env):
     cmd(p,'obstacle_resolve',dict(id=obstacle['id'],date='2026-10-26',resolution='Access restored',source=source))
     assert meeting==original
     assert office.snapshot(p,as_of='2026-10-26')['overdue_actions']==[]
-    c=cmd(p,'correspondence_create',dict(title='RFI',kind='rfi',recipient='Engineer',technical_notes='Clarification',date=data['date'],reference='R1',source=source,attachments=[]));issue(p,c,'correspondence')
+    c=cmd(p,'correspondence_create',dict(title='RFI',kind='rfi',activity_id='A',due_date='2026-10-25',recipient='Engineer',technical_notes='Clarification',date=data['date'],reference='R1',source=source,attachments=[]));issue(p,c,'correspondence')
     assert c['delivery_status']=='not_sent'
+    assert c['activity_id']=='A' and c['due_date']=='2026-10-25'
 
 @pytest.mark.parametrize('change',[{'quantity_semantics':'incremental'},{'cumulative_quantity':None},{'source':{}},{'project_id':'foreign'}])
 def test_transfer_fails_closed(env,change):
@@ -97,8 +98,25 @@ def test_package_rechecks_source_before_issue_and_reads_are_detached(env):
 
 def test_correspondence_cannot_assert_external_delivery(env):
     p,data,source=env
-    c=cmd(p,'correspondence_create',dict(title='Instruction',kind='instruction',recipient='Engineer',technical_notes='Review',date=data['date'],reference='C1',source=source,attachments=[],delivery_status='sent'))
+    c=cmd(p,'correspondence_create',dict(title='Instruction',kind='instruction',activity_id='A',recipient='Engineer',technical_notes='Review',date=data['date'],reference='C1',source=source,attachments=[],delivery_status='sent'))
     assert c['delivery_status']=='not_sent'
+
+def test_correspondence_rejects_foreign_activity_or_early_followup(env):
+    p,data,source=env
+    base=dict(title='RFI',kind='rfi',activity_id='A',recipient='Engineer',technical_notes='Review',date=data['date'],reference='R',source=source,attachments=[])
+    for change in [{'activity_id':'foreign'},{'activity_id':None},{'due_date':'2026-10-23'}]:
+        with pytest.raises(ValueError):cmd(p,'correspondence_create',{**base,**change})
+
+def test_rfi_response_is_documented_event_not_external_send(env):
+    p,data,source=env
+    c=cmd(p,'correspondence_create',dict(title='RFI',kind='rfi',activity_id='A',due_date='2026-10-25',recipient='Engineer',technical_notes='Question',date=data['date'],reference='R',source=source,attachments=[]));issue(p,c,'correspondence')
+    assert office.snapshot(p,as_of='2026-10-26')['overdue_correspondence'][0]['id']==c['id']
+    original=deepcopy(c)
+    cmd(p,'correspondence_response',dict(id=c['id'],date='2026-10-26',resolution='Explicit user-recorded reply',source=source))
+    assert c==original
+    assert office.snapshot(p,as_of='2026-10-26')['overdue_correspondence']==[]
+    assert office.snapshot(p,as_of='2026-10-26')['correspondence'][0]['response_status']=='responded'
+    with pytest.raises(ValueError):cmd(p,'correspondence_response',dict(id=c['id'],date='2026-10-26',resolution='Duplicate',source=source))
 
 @pytest.mark.parametrize('extra',[{}, {'initial_observation':True,'previous_cumulative_quantity':'0','cumulative_quantity':'90'}, {'initial_observation':True,'previous_cumulative_quantity':'1'}])
 def test_transfer_reconciles_signed_daily_quantity(env,extra):

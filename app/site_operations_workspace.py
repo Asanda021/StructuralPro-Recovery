@@ -27,7 +27,7 @@ def schema(op):
     if op=='daily_transfer':return ['id','cumulative_quantity','previous_cumulative_quantity','previous_progress_id','initial_observation','supersedes']
     if op=='purchase_commit':return ['id','date','confirmed']
     if op=='obstacle_create':return ['id','activity_id','date','title','owner','location','due_date','attachments']
-    if op=='obstacle_resolve':return ['id','date','resolution']
+    if op in {'obstacle_resolve','correspondence_response'}:return ['id','date','resolution']
     if op.startswith('meeting_') and op.endswith(('create','amend')):return ['id','date','title','participants','decisions','actions','attachments']
     if op=='action_resolve':return ['id','date','resolution']
     if op.startswith('correspondence_') and op.endswith(('create','amend')):return ['id','activity_id','kind','date','title','recipient','technical_notes','due_date','attachments']
@@ -57,6 +57,8 @@ class SiteOperationsWorkspace(QDialog):
         view=QWidget();dv=QVBoxLayout(view);self.horizon=QComboBox();self.horizon.addItem('هفت روز',7);self.horizon.addItem('چهارده روز',14);self.horizon.addItem('بازه سفارشی',None);dv.addWidget(self.horizon)
         self.custom_end=JalaliField();self.custom_end.setPlaceholderText('پایان بازه سفارشی؛ تاریخ شمسی');dv.addWidget(self.custom_end)
         self.button(dv,'بازخوانی داشبورد و ریزمنابع','SiteDashboardRefresh',self.show_dashboard)
+        self.metrics=QTableWidget(0,3);self.metrics.setHorizontalHeaderLabels(['شاخص مدیریتی','مقدار ثبت‌شده','مرجع پشتیبان']);self.metrics.setEditTriggers(QTableWidget.NoEditTriggers);self.metrics.setMaximumHeight(260);dv.addWidget(self.metrics)
+        self.button(dv,'زمان‌بندی و نمودار پیشرفت موجود','SiteControlsOpen',self.open_controls)
         self.search=QLineEdit();self.search.setPlaceholderText('جست‌وجو در شاخص و سند');dv.addWidget(self.search)
         self.dashboard=QTableWidget(0,2);self.dashboard.setHorizontalHeaderLabels(['شاخص / شناسه منبع','مقدار و وضعیت']);self.dashboard.setEditTriggers(QTableWidget.NoEditTriggers);dv.addWidget(self.dashboard,1);self.search.textChanged.connect(self.filter)
         self.tabs.addTab(view,'داشبورد عملیاتی و ریزاسناد')
@@ -66,6 +68,7 @@ class SiteOperationsWorkspace(QDialog):
         self.report_format=QComboBox();self.report_format.addItems(['pdf','xlsx','docx','csv']);rv.addWidget(self.report_kind);rv.addWidget(self.report_format);self.button(rv,'تولید خروجی قابل بازخوانی','SiteReportExport',self.export);rv.addStretch();self.tabs.addTab(report,'گزارش‌های فارسی')
         self.status=QLabel();self.status.setWordWrap(True);outer.addWidget(self.status)
         self.operation.addItem('تبدیل مجاز به پیش‌نویس تعهد مالی','purchase_commit');self.operation.addItem('لغو مستند درخواست خرید','purchase_cancel')
+        self.operation.addItem('ثبت پاسخ مستند مکاتبه؛ بدون ارسال خارجی','correspondence_response')
         self.operation.currentIndexChanged.connect(self.build_form);self.build_form();self.refresh()
     def button(self,layout,title,name,fn):
         b=QPushButton(title);b.setObjectName(name);b.clicked.connect(lambda:self.run(fn));layout.addWidget(b)
@@ -121,8 +124,23 @@ class SiteOperationsWorkspace(QDialog):
         result=self.service.site_command(self.pid,op,actor=self.fields['actor'].text().strip(),reason=self.fields['reason'].text().strip(),expected_version=self.version,**data)
         return 'عملیات ثبت و بازخوانی شد؛ شناسه: '+str(result.get('id',result.get('version','')))
     def show_dashboard(self):
-        from core.reports.site_operations import WORDS
+        from core.reports.site_operations import WORDS,stamp
         data=self.service.site_dashboard(self.pid,as_of=iso(self.fields['as_of'].text()),days=self.horizon.currentData(),end=iso(self.custom_end.text()) if self.horizon.currentData() is None else None);rows=[]
+        metrics=[];progress=data.get('progress') or {};finance=data.get('finance') or {};sources=data['source_collections']
+        def add(label,value,refs):metrics.append((label,'نامشخص؛ اطلاعات کافی ثبت نشده است' if value is None else str(value),refs))
+        for key,label in [('actual','پیشرفت واقعی درصد'),('planned','پیشرفت مبنا درصد'),('planned_current','پیشرفت برنامه جاری درصد'),('variance','انحراف واقعی از مبنا')]:add(label,progress.get(key),', '.join(str(r['id']) for r in sources['progress_reports']))
+        for key,label in [('estimate','برآورد پایه'),('budget','بودجه ثبت‌شده'),('commitments','تعهدات قطعی'),('actual_cost','هزینه واقعی'),('paid','پرداخت واقعی'),('debt','مانده بدهی'),('unpaid_commitments','مانده تعهدات'),('budget_variance','انحراف بودجه'),('statement_net','خالص صورت‌وضعیت')]:add(label,finance.get(key),', '.join(str(r['id']) for r in sources['financial_records']))
+        currency=WORDS.get(finance.get('currency'),finance.get('currency'))
+        if currency:
+            metrics=[(label,value+' '+currency if 4<=i<13 and finance.get(('estimate','budget','commitments','actual_cost','paid','debt','unpaid_commitments','budget_variance','statement_net')[i-4]) is not None else value,refs) for i,(label,value,refs) in enumerate(metrics)]
+        add('فعالیت‌های بحرانی',', '.join(data['schedule']['critical_ids']) if data.get('schedule') else None,', '.join(r['id'] for r in sources['schedule_baselines']))
+        add('اقدامات معوق ثبت‌شده',len(data['office']['overdue_actions']),', '.join(r['id'] for r in data['office']['overdue_actions']))
+        add('مکاتبات معوق ثبت‌شده',len(data['office']['overdue_correspondence']),', '.join(r['id'] for r in data['office']['overdue_correspondence']))
+        for r in (data.get('materials') or {}).get('requirements',[]):add('کسری '+r['specification'],(r['shortage']+' '+r['unit']) if r['shortage'] is not None else None,r['id'])
+        self.metrics.setRowCount(len(metrics))
+        for i,row in enumerate(metrics):
+            for j,value in enumerate(row):self.metrics.setItem(i,j,QTableWidgetItem(value))
+        self.metrics.resizeColumnsToContents()
         def flatten(x,key):
             if isinstance(x,dict):
                 for k,v in x.items():
@@ -131,11 +149,16 @@ class SiteOperationsWorkspace(QDialog):
             elif isinstance(x,list):
                 if not x:rows.append((key,'رکوردی ثبت نشده است'))
                 for i,v in enumerate(x):flatten(v,key+' / '+str(v.get('id',i+1) if isinstance(v,dict) else i+1))
-            else:rows.append((key,'نامشخص' if x is None else WORDS.get(str(x),str(x))))
+            else:
+                shown='نامشخص' if x is None else 'بله' if x is True else 'خیر' if x is False else stamp(x) if isinstance(x,str) and len(x)==10 else WORDS.get(str(x),str(x))
+                rows.append((key,shown))
         flatten(data,'پروژه '+self.pid);self.dashboard.setRowCount(len(rows))
         for i,row in enumerate(rows):
             for j,v in enumerate(row):self.dashboard.setItem(i,j,QTableWidgetItem(v))
         self.dashboard.resizeColumnsToContents();return 'داشبورد از منابع پروژه بازخوانی شد'
+    def open_controls(self):
+        from app.project_controls_workspace import ProjectControlsWorkspace
+        ProjectControlsWorkspace(self.service,self.pid,self).exec();return 'بازگشت از کنترل پروژه'
     def filter(self,value):
         for i in range(self.dashboard.rowCount()):self.dashboard.setRowHidden(i,not any(value in self.dashboard.item(i,j).text() for j in range(2)))
     def show_sources(self):

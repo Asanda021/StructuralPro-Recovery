@@ -25,6 +25,8 @@ def test_resource_real_buttons_dashboard_and_error(setup):
         w.fields['as_of'].setText('2026-10-26')
         QTest.mouseClick(w.findChild(QPushButton,'SiteDashboardRefresh'),Qt.LeftButton)
         assert w.dashboard.rowCount()>0
+        assert w.metrics.rowCount()>=10
+        assert any('۱۴۰۵' in w.dashboard.item(i,1).text() for i in range(w.dashboard.rowCount()))
         assert w.layoutDirection()==Qt.RightToLeft
     finally:w.close();QT.processEvents()
 
