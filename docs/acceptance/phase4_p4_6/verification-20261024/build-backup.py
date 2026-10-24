@@ -10,6 +10,10 @@ with tempfile.TemporaryDirectory(prefix='phase4-backup-') as tmp:
     subprocess.run(['git','bundle','create',str(root/'code.bundle'),'HEAD',git('symbolic-ref','HEAD')],cwd=repo,check=True)
     shutil.copytree(scenario,root/'scenario')
     shutil.copytree(repo/'docs/acceptance/phase4_p4_6/verification-20261024',root/'evidence')
+    if len(sys.argv)>4:
+        diagnostic=root/'diagnostics';diagnostic.mkdir()
+        shutil.copy2(Path(sys.argv[4]),diagnostic/'FAILED-projects.db')
+        (diagnostic/'README.txt').write_text('Known corrupted standalone-probe database, preserved only for investigation. NOT the restoration source. The valid scenario database is in scenario/.')
     m={'scope':'Phase4 priorities4-6 only; synthetic fixture; not Windows/Office or engineering acceptance',
        'head':git('rev-parse','HEAD'),'tree':git('rev-parse','HEAD^{tree}'),
        'executable_head':qa['tested_head'],

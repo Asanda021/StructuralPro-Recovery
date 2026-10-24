@@ -16,8 +16,11 @@
   "junit_sha256": "558bc417b507a30a8231f85ec8b84efdb5514a2007a93c6b8fe8e7c31323eb51",
   "raw_stdout_log": "final-regression.log; unexpectedly ends after976dots; preserved without reconstruction",
   "standalone_probe": "FAIL on SQLite reopen; sqlite-failure.json",
-  "priorities_4_5_6": "PARTIAL; SQLite cause under investigation",
+  "priorities_4_5_6": "PARTIAL due standalone persistence failure; backup of separately validated scenario may proceed",
   "windows": "NOT VERIFIED",
   "office": "NOT VERIFIED",
-  "engineering_owner": "NOT GIVEN"
+  "engineering_owner": "NOT GIVEN",
+  "audited_sequential_probe": "PASS; diagnostic instrumentation, NOT proof of original failure resolved",
+  "persistence_observations": 378,
+  "sqlite_root_cause": "UNRESOLVED; minimal replay323versions PASS; audited sequential original scenario PASS"
 }
