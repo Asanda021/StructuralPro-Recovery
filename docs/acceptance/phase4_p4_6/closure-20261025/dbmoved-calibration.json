@@ -1,0 +1,35 @@
+{
+  "scope": "Intentional synthetic rename only; NOT historical root-cause proof",
+  "sqlite_errorcode": 1032,
+  "sqlite_errorname": "SQLITE_READONLY_DBMOVED",
+  "message": "attempt to write a readonly database",
+  "opened_identity": [
+    27,
+    262337
+  ],
+  "live_fds_before": [
+    {
+      "fd": "11",
+      "device": 27,
+      "inode": 262337,
+      "target": "/tmp/pytest-of-root/pytest-7/test_native_dbmoved_code_and_p0/calibration.db"
+    }
+  ],
+  "journal_mode": "delete",
+  "path_exists_at_error": false,
+  "moved_identity": [
+    27,
+    262337
+  ],
+  "companion_files": [
+    "/tmp/pytest-of-root/pytest-7/test_native_dbmoved_code_and_p0/calibration-moved.db"
+  ],
+  "live_fds_at_error": [
+    {
+      "fd": "11",
+      "target": "/tmp/pytest-of-root/pytest-7/test_native_dbmoved_code_and_p0/calibration-moved.db",
+      "device": 27,
+      "inode": 262337
+    }
+  ]
+}

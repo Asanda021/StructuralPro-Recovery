@@ -113,5 +113,5 @@ def export(service,pid,kind,fmt,path,*,as_of,days=7,end=None,document_id=None):
             data=[x for x in data if x['id']==document_id]
             if not data:raise ValueError('سند انتخاب‌شده موجود نیست')
     rows=compact_rows(kind,data,p)
-    metadata={'project_id':pid,'عنوان بخش':LABELS[kind],'تاریخ شمسی':report_date(date.fromisoformat(as_of)),'نسخه پروژه':p['_meta']['version'],'نسخه قالب':'site-operations-1','SHA-256 داده گزارش':digest(data),'محدودیت هویت':'اظهار مستند محلی؛ بدون امضای احراز‌شده'}
+    metadata={'_phase4_presentation':True,'project_id':pid,'عنوان بخش':LABELS[kind],'تاریخ شمسی':report_date(date.fromisoformat(as_of)),'نسخه پروژه':p['_meta']['version'],'نسخه قالب':'site-operations-1','SHA-256 داده گزارش':digest(data),'محدودیت هویت':'اظهار مستند محلی؛ بدون امضای احراز‌شده'}
     return build_report(p['name']+' — '+LABELS[kind],rows,metadata=metadata).export(path,fmt)

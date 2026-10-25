@@ -1,0 +1,22 @@
+[
+  {
+    "name": "original-tmp",
+    "exit_code": 0,
+    "root": "/tmp/sp-sqlite-closure-20261025/original-tmp-scenario"
+  },
+  {
+    "name": "original-workspace",
+    "exit_code": 0,
+    "root": "/workspace/scratch/5ff2acae0199/sqlite-closure-original-workspace"
+  },
+  {
+    "name": "audited-tmp",
+    "exit_code": 1,
+    "root": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario"
+  },
+  {
+    "name": "audited-workspace",
+    "exit_code": 1,
+    "root": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace"
+  }
+]
