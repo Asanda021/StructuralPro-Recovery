@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="21.746" timestamp="2026-10-25T08:08:14.885458+03:30" hostname="cd559c0349f6"><testcase classname="docs.acceptance.phase4_p4_6.closure-20261025.sqlite_worker" name="test_independent_original_scenario" time="21.607"><failure message="sqlite3.OperationalError: attempt to write a readonly database">def test_independent_original_scenario():
+     from scripts.phase4_site_operations_probe import run
+     emit('ENV',python=sys.version,sqlite=sqlite3.sqlite_version,mode=MODE,root=str(ROOT),gc_enabled=gc.isenabled(),gc_threshold=gc.get_threshold(),pid=os.getpid())
+     if MODE=='audited':
+      def connect(*args,**kw):
+       kw.setdefault('factory',Observed);return CONNECT(*args,**kw)
+      sqlite3.connect=connect
+     try:
+&gt;     result=run(ROOT);r={'status':'PASS','receipt':result,'fresh':fresh(ROOT/'prior/engineering/db/projects.db')}
+             ^^^^^^^^^
+
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:74: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase4_site_operations_probe.py:72: in run
+    cmd('inventory_consume',id='USE-'+code,reference='USE-'+code,quantity='2',requirement_id=nid,**stock_args)
+scripts/phase4_site_operations_probe.py:30: in cmd
+    def cmd(op,actor='planner',**data):return a.site_command('P',op,actor=actor,reason='داده آزمایشی صریح؛ پروژه واقعی نیست',expected_version=a.open_project('P')['_meta']['version'],**data)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:1915: in site_command
+    return self.project_control_command(project_id,'site_'+op,actor=actor,reason=reason,expected_version=expected_version,**data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:1891: in project_control_command
+    self.store.save(project_id,updated,expected_digest=begin_write(clean),project_control_command=command)
+core/projects/store.py:123: in save
+    self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;sqlite_worker.Observed object at 0x7f961590d250&gt;
+args = ('INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)', ('P', 'آزمون مصنوعی نقشه', 2...516ff2c77b6c849d47e319e0c3f9f42691d126b8936e4084b8d48bb7b", "source_version": "synthetic-R1", "status": "approved"}}'))
+kw = {}
+
+    def execute(self,*args,**kw):
+&gt;    try:return super().execute(*args,**kw)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    sqlite3.OperationalError: attempt to write a readonly database
+
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:55: OperationalError</failure></testcase></testsuite></testsuites>

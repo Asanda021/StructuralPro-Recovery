@@ -1,0 +1,42 @@
+{
+  "stage": "execute-before-ProjectStore-rollback",
+  "sqlite_errorcode": 1032,
+  "sqlite_errorname": "SQLITE_READONLY_DBMOVED",
+  "exception": "OperationalError('attempt to write a readonly database')",
+  "identity": {
+    "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 266211,
+      "bytes": 43864064
+    },
+    "fds": [
+      {
+        "fd": "16",
+        "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db (deleted)",
+        "device": 27,
+        "inode": 266155,
+        "bytes": 46194688,
+        "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\nlock:\t1: POSIX  ADVISORY  WRITE 8428 00:1b:266155 1073741825 1073741825\nlock:\t2: POSIX  ADVISORY  READ 8428 00:1b:266155 1073741826 1073742335\n"
+      }
+    ],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+      }
+    },
+    "moved": true
+  },
+  "files": {
+    "": {
+      "sha256": "b5b0e48414dee5205de34a0cd6403fd5d8f9cd819a9a8b87c3e2f7c73eb57e00",
+      "bytes": 43864064
+    }
+  }
+}

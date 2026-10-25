@@ -1,0 +1,22 @@
+[
+  {
+    "name": "original-tmp",
+    "exit_code": 0,
+    "root": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario"
+  },
+  {
+    "name": "original-workspace",
+    "exit_code": 0,
+    "root": "/workspace/scratch/5ff2acae0199/sqlite-closure-original-workspace-frozen"
+  },
+  {
+    "name": "audited-tmp",
+    "exit_code": 0,
+    "root": "/tmp/sp-sqlite-closure-20261025-frozen/audited-tmp-scenario"
+  },
+  {
+    "name": "audited-workspace",
+    "exit_code": 1,
+    "root": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen"
+  }
+]
