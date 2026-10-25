@@ -1,0 +1,18 @@
+{
+  "tested_head": "a1538284bc9322450923ef6778b4ee542000732c",
+  "tested_tree": "1e9af37bdbc14af3d7dfb0291c8ae1272e3946ba",
+  "full_passed": 7994,
+  "full_failed": 0,
+  "full_errors": 0,
+  "full_skipped": 5,
+  "sqlite_new_readonly_mechanism": "PROVEN_DBMOVED_live_inode_replaced",
+  "replacement_actor": "UNRESOLVED",
+  "historical_corruption_251_323": "UNRESOLVED",
+  "priorities": {
+    "4": "PARTIAL",
+    "5": "PARTIAL",
+    "6": "PARTIAL"
+  },
+  "new_backup": "PENDING",
+  "old_verified_backup_preserved": "14Y_0KLncL_8AdpqdkuLu1g84_7V1kIRK"
+}
