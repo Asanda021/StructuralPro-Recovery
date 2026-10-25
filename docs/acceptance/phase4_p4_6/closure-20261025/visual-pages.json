@@ -1,0 +1,52 @@
+[
+  {
+    "source": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario/dashboard.pdf",
+    "pages": 3,
+    "contact": "original-tmp-scenario-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario/package.pdf",
+    "pages": 5,
+    "contact": "original-tmp-scenario-package.png"
+  },
+  {
+    "source": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario/materials.pdf",
+    "pages": 4,
+    "contact": "original-tmp-scenario-materials.png"
+  },
+  {
+    "source": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario/prior/progress.pdf",
+    "pages": 13,
+    "contact": "prior-progress.png"
+  },
+  {
+    "source": "/tmp/sp-sqlite-closure-20261025-frozen/original-tmp-scenario/prior/curve.pdf",
+    "pages": 4,
+    "contact": "prior-curve.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-20261025/docx/dashboard.pdf",
+    "pages": 4,
+    "contact": "docx-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-20261025/docx/package.pdf",
+    "pages": 6,
+    "contact": "docx-package.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-20261025/xlsx/dashboard.pdf",
+    "pages": 5,
+    "contact": "xlsx-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-20261025/xlsx/package.pdf",
+    "pages": 6,
+    "contact": "xlsx-package.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-20261025/xlsx/curve.pdf",
+    "pages": 6,
+    "contact": "xlsx-curve.png"
+  }
+]

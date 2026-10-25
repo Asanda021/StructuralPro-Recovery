@@ -1,0 +1,276 @@
+{
+  "reports_checked": 45,
+  "checks": [
+    {
+      "report": "correspondence.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "correspondence.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "correspondence.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "daily.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "daily.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "daily.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "dashboard.pdf",
+      "full_hashes": 4,
+      "long_decimal_tokens": 6,
+      "missing": []
+    },
+    {
+      "report": "dashboard.docx",
+      "full_hashes": 4,
+      "long_decimal_tokens": 6,
+      "missing": []
+    },
+    {
+      "report": "dashboard.xlsx",
+      "full_hashes": 4,
+      "long_decimal_tokens": 6,
+      "missing": []
+    },
+    {
+      "report": "lookahead.pdf",
+      "full_hashes": 1,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "lookahead.docx",
+      "full_hashes": 1,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "lookahead.xlsx",
+      "full_hashes": 1,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "materials.pdf",
+      "full_hashes": 4,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "materials.docx",
+      "full_hashes": 4,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "materials.xlsx",
+      "full_hashes": 4,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "meetings.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "meetings.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "meetings.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "obstacles.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "obstacles.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "obstacles.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "package.pdf",
+      "full_hashes": 14,
+      "long_decimal_tokens": 4,
+      "missing": []
+    },
+    {
+      "report": "package.docx",
+      "full_hashes": 14,
+      "long_decimal_tokens": 4,
+      "missing": []
+    },
+    {
+      "report": "package.xlsx",
+      "full_hashes": 14,
+      "long_decimal_tokens": 4,
+      "missing": []
+    },
+    {
+      "report": "prior/activities.pdf",
+      "full_hashes": 3,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/activities.docx",
+      "full_hashes": 3,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/activities.xlsx",
+      "full_hashes": 3,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/curve.pdf",
+      "full_hashes": 3,
+      "long_decimal_tokens": 10,
+      "missing": []
+    },
+    {
+      "report": "prior/curve.docx",
+      "full_hashes": 3,
+      "long_decimal_tokens": 10,
+      "missing": []
+    },
+    {
+      "report": "prior/curve.xlsx",
+      "full_hashes": 3,
+      "long_decimal_tokens": 10,
+      "missing": []
+    },
+    {
+      "report": "prior/progress.pdf",
+      "full_hashes": 0,
+      "long_decimal_tokens": 14,
+      "missing": []
+    },
+    {
+      "report": "prior/progress.docx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 14,
+      "missing": []
+    },
+    {
+      "report": "prior/progress.xlsx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 14,
+      "missing": []
+    },
+    {
+      "report": "prior/schedule.pdf",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/schedule.docx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/schedule.xlsx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/wbs.pdf",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/wbs.docx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "prior/wbs.xlsx",
+      "full_hashes": 0,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "purchases.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "purchases.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "purchases.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "resources.pdf",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "resources.docx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    },
+    {
+      "report": "resources.xlsx",
+      "full_hashes": 2,
+      "long_decimal_tokens": 0,
+      "missing": []
+    }
+  ],
+  "missing": []
+}

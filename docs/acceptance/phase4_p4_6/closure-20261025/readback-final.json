@@ -1,0 +1,1536 @@
+{
+  "files": [
+    {
+      "name": "correspondence.csv",
+      "size": 1400,
+      "sha256": "499faf68a651518e2829363d397834182b866442a6cdaeeff8ea3f5c8d650c0c",
+      "rows": 15,
+      "utf8_bom": true,
+      "persian_characters": 444,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "correspondence.docx",
+      "size": 39749,
+      "sha256": "b0d9667f7667f3e909413d3899d6ae5784640fe9eea42fb1e36213fe2018d0b2",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 49,
+      "persian_characters": 626,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "correspondence.pdf",
+      "size": 33498,
+      "sha256": "89b1cd1bf0f97c0fc06261ea662c93aae0b32c35a69acf7aa6cd09ea1efec7d6",
+      "pages": 2,
+      "text_characters": 1191,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 44,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "correspondence.xlsx",
+      "size": 9599,
+      "sha256": "5a1f8a6dccccd9b31eab62f12491a034948db8a2a3236f4f535d9aeaf9b77b3a",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 9,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 698,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "daily.csv",
+      "size": 2231,
+      "sha256": "b651fdc8de58ae412fa75cda62f38531dfe0c6e808b3f4f1251794fe5189ef6c",
+      "rows": 18,
+      "utf8_bom": true,
+      "persian_characters": 664,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "daily.docx",
+      "size": 39894,
+      "sha256": "1c2e72b4f690ea1bc0ba085af046c2029e471352550513f88656df84e789d399",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 67,
+      "persian_characters": 888,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "daily.pdf",
+      "size": 35273,
+      "sha256": "c3a4fd0b17e08bff665f9f3ea2c8bb04bb1ce1a90cf658470a0f61e9f1c479a4",
+      "pages": 3,
+      "text_characters": 1840,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 63,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "daily.xlsx",
+      "size": 9789,
+      "sha256": "dcd48381f479328ba3776035821b502d7515c5efae78c8168e4548eebba1222e",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 12,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 978,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "dashboard.csv",
+      "size": 4059,
+      "sha256": "717226b94e179db9d818e9fbe9d3c1b1b7771ca4eb69ea766a4461d5c51661ed",
+      "rows": 36,
+      "utf8_bom": true,
+      "persian_characters": 942,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "dashboard.docx",
+      "size": 41022,
+      "sha256": "e93149eaf5e1d3b903d3765ff69a9d38ff55c9167cf003a5116e87e8fa814284",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 191,
+      "persian_characters": 1535,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "dashboard.pdf",
+      "size": 37485,
+      "sha256": "4c540adfe9fe5ccc704aafac668fe5c49eeecb209f0cba518c65b9ddc3fea140",
+      "pages": 3,
+      "text_characters": 3363,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 67,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "dashboard.xlsx",
+      "size": 10930,
+      "sha256": "a4d566d5c21e344c80dbca680a60337462b0e05c8024f124a7bfa896efd02edc",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 30,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 1625,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "lookahead.csv",
+      "size": 944,
+      "sha256": "1aa0c3552099a36c0b353b4e0ba96c92193fb43f9dd680ee423993d5e8027a67",
+      "rows": 14,
+      "utf8_bom": true,
+      "persian_characters": 360,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "lookahead.docx",
+      "size": 39115,
+      "sha256": "bd93b5592f1929757796a33bda1c688f5c4675a680a2f02ecf656b9be76cd0b4",
+      "editable_tables": 2,
+      "table_rtl": [
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 37,
+      "persian_characters": 370,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "lookahead.pdf",
+      "size": 30622,
+      "sha256": "ac9f6ba647db45846a2d57580e3203ae9d5cdf027fb064bf0b8706bebed476a6",
+      "pages": 1,
+      "text_characters": 566,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 26,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "lookahead.xlsx",
+      "size": 8238,
+      "sha256": "38d009dcbc8661d81150c753b14fafeb4213559b7fc333e372f40be19b75aa1c",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 8,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 504,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "materials.csv",
+      "size": 4837,
+      "sha256": "71b5ced431968b6cc367951c445e93c0a368082760a856b4304cfc7d63ed1f2c",
+      "rows": 29,
+      "utf8_bom": true,
+      "persian_characters": 1148,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "materials.docx",
+      "size": 41100,
+      "sha256": "d7b30f71ddf7154bbb024a1a465459886d3064a718282681e59d11bff5bcb293",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 137,
+      "persian_characters": 1501,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "materials.pdf",
+      "size": 38539,
+      "sha256": "dca6eca1bc79b2fd996f20e0f1f90c8de0d7a16ac80d2298e5399bbe638fb9d3",
+      "pages": 4,
+      "text_characters": 3956,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 158,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "materials.xlsx",
+      "size": 10674,
+      "sha256": "c24ad913653b1e2df25059cb33f25899b8d25c9a8036d76636bf33b1eb607bd8",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 23,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 1599,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "meetings.csv",
+      "size": 1535,
+      "sha256": "9efe739c58f88d44ed7bab7bc07cc10567a3e06877f55264036e59fc527694b1",
+      "rows": 16,
+      "utf8_bom": true,
+      "persian_characters": 465,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "meetings.docx",
+      "size": 39772,
+      "sha256": "ec3710b815f243e3d480c7bfccada1bd3df093cfececfa2bfee4c8f615427eeb",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 55,
+      "persian_characters": 667,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "meetings.pdf",
+      "size": 33502,
+      "sha256": "9e283ab72451b1effa5f6310fdda18531028ff2fe4b0ababb2a43bbebc002e6f",
+      "pages": 2,
+      "text_characters": 1280,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 52,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "meetings.xlsx",
+      "size": 9664,
+      "sha256": "a977e83a1d47fe05799ee615339e40715bfd277ded2c9df02dc7dd84b82d25e2",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 10,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 757,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "obstacles.csv",
+      "size": 1119,
+      "sha256": "319a3bb1c06cd632c0fc464bdcc681fbeeb5f0ed852a814f38599e9c4b4d2426",
+      "rows": 14,
+      "utf8_bom": true,
+      "persian_characters": 379,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "obstacles.docx",
+      "size": 39551,
+      "sha256": "d9123527a1a63cd5cbef8c8b045829a08d86fc03c0c3fbaf58824b4ad31b90d1",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 43,
+      "persian_characters": 554,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "obstacles.pdf",
+      "size": 33211,
+      "sha256": "e26dea04f95961ea2945d57e62cb8a00c5b1e3dc89cc585c3829cf320fa9b5f2",
+      "pages": 2,
+      "text_characters": 1007,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 52,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "obstacles.xlsx",
+      "size": 9431,
+      "sha256": "f02ee008c34028f1a7827f7d36c5fbaa6505f9669cdfc979c746048874b7f85e",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 8,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 634,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "package.csv",
+      "size": 7982,
+      "sha256": "74145268f1e780f42f9e8ed2acdcbaaf6305f20038f1c7f3f544462316f1d098",
+      "rows": 51,
+      "utf8_bom": true,
+      "persian_characters": 2040,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "package.docx",
+      "size": 43358,
+      "sha256": "b31100bfb2f093fb2d1a809e34617094822c00995438e3d5e505f4f0b0690d30",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 297,
+      "persian_characters": 2684,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "package.pdf",
+      "size": 45045,
+      "sha256": "480125acf2731d8e63c6959a1807928e46980ea43c92ba226229e454d5d0bddd",
+      "pages": 5,
+      "text_characters": 7156,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 123,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "package.xlsx",
+      "size": 13275,
+      "sha256": "deb3a37b6265a6bc9b23923f1df13a8c318ff0d7bc9d6a4707f9f051c42be775",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 45,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 19,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 2772,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۰",
+        "۱۴۰۵/۰۲/۱۱",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/activities.csv",
+      "size": 7723,
+      "sha256": "cb58abc7fd071f09e0783ebb2ed114da8b5605a53c1a8f6bd883e5da07bf3011",
+      "rows": 147,
+      "utf8_bom": true,
+      "persian_characters": 1215,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/activities.docx",
+      "size": 43014,
+      "sha256": "809ba2f62f7cbcd8bc6c9b055c09e097156bddc1ad7f4cd9cf0bfc692394ee62",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 577,
+      "persian_characters": 1564,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/activities.pdf",
+      "size": 52244,
+      "sha256": "6b7f021abcea668e105e02603297d7ab1dc45ad2060be535e67294571a477b4d",
+      "pages": 10,
+      "text_characters": 7260,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 110,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/activities.xlsx",
+      "size": 12985,
+      "sha256": "18c9e32c029def907ffb242e29971ecafc20fcacabd51c062d51d94659c79182",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 142,
+          "cols": 4,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 10,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 1646,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/curve.csv",
+      "size": 2160,
+      "sha256": "4b34f4cb2356b73bc2213894aa6a2f51fd0e5950a7493d7103b3d3d52f11ebce",
+      "rows": 36,
+      "utf8_bom": true,
+      "persian_characters": 737,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۱۱",
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/curve.docx",
+      "size": 58979,
+      "sha256": "16e6dd677032e34ca5b9a02ba2e686563675cdd201c0b7e36d86c39aa1258ef7",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 1,
+      "bidi_elements": 154,
+      "persian_characters": 1165,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۱۱",
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/curve.pdf",
+      "size": 57035,
+      "sha256": "9f6c11277e3ee1617080fdf419686dda70ddc57b170bafb1a0dc7836c1dcd851",
+      "pages": 4,
+      "text_characters": 2362,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 1,
+      "persian_characters": 260,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۱۱",
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/curve.xlsx",
+      "size": 30578,
+      "sha256": "214b4c131d0995fafbb93e196b4b8e1b68179f1b8dfc789470ab91dacc91a3c0",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 31,
+          "cols": 4,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 10,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 15,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "نمودار 4",
+          "rows": 1,
+          "cols": 16,
+          "rtl": true,
+          "images": 1,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 1259,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۱۱",
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/engineering/estimate.csv",
+      "size": 797,
+      "sha256": "69865d7253859accb325596c3004839641b43f6c3cb204951d8129b154e9ec0d",
+      "rows": 11,
+      "utf8_bom": true,
+      "persian_characters": 228,
+      "jalali_dates": [
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/engineering/estimate.docx",
+      "size": 39253,
+      "sha256": "7f1eaa5f7e802440f4ab93f33af55b89bc2f2f552b4ba5f83f54f1d152d9dca7",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 68,
+      "persian_characters": 293,
+      "jalali_dates": [
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/engineering/estimate.pdf",
+      "size": 30402,
+      "sha256": "66c3c07110dd3a66954ac90366705b004c157ac86f6139c3fb6dda9b7d2f4cdd",
+      "pages": 1,
+      "text_characters": 669,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 17,
+      "jalali_dates": [
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/engineering/estimate.xlsx",
+      "size": 8219,
+      "sha256": "3e8f700df64722e4eb6bbadbdfa7cd8319715d893c01a212142a449a397f5eb0",
+      "sheets": [
+        {
+          "name": "ریز متره",
+          "rows": 14,
+          "cols": 7,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 7,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 4,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 283,
+      "jalali_dates": [
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/progress.csv",
+      "size": 9016,
+      "sha256": "f56e334f8ec3c03f0d4b146029c9cc1bbc321fb3ab56221f5f08f2da9fbbbe7f",
+      "rows": 255,
+      "utf8_bom": true,
+      "persian_characters": 2790,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/progress.docx",
+      "size": 44004,
+      "sha256": "fa3387cecefdd85cde7d2da5a8a84adb38acf5cb4189904c639a8b0a62b7ab84",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 1031,
+      "persian_characters": 4355,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/progress.pdf",
+      "size": 58888,
+      "sha256": "63ed997ca2b67d377413854a6a4246267000f97169429c95ef4a7670aaf71764",
+      "pages": 13,
+      "text_characters": 9410,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 262,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/progress.xlsx",
+      "size": 15725,
+      "sha256": "9382f4b6254ff677098f3791d076a7eb6c277aca25356fa25dd121399bf7cda2",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 250,
+          "cols": 4,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 10,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 16,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 4445,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/schedule.csv",
+      "size": 6365,
+      "sha256": "5d1a750222aed25ef8411fcb4c626b811fc2d99604be5ee73d29c47c65817b71",
+      "rows": 176,
+      "utf8_bom": true,
+      "persian_characters": 2334,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۰۵",
+        "۱۴۰۵/۰۱/۰۶",
+        "۱۴۰۵/۰۱/۰۷"
+      ]
+    },
+    {
+      "name": "prior/schedule.docx",
+      "size": 83692,
+      "sha256": "ac9dd1d02a2b2899f81aaecaa555a0837ba7e428fc65c8a02b606e564ebf875a",
+      "editable_tables": 2,
+      "table_rtl": [
+        true,
+        true
+      ],
+      "images": 1,
+      "bidi_elements": 684,
+      "persian_characters": 2363,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۰۵",
+        "۱۴۰۵/۰۱/۰۶",
+        "۱۴۰۵/۰۱/۰۷"
+      ]
+    },
+    {
+      "name": "prior/schedule.pdf",
+      "size": 100575,
+      "sha256": "4865d8e52e68ef1a409ae3f8b239429c0c0100eee366af186414423de5af9db7",
+      "pages": 9,
+      "text_characters": 4763,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 1,
+      "persian_characters": 339,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۰۵",
+        "۱۴۰۵/۰۱/۰۶",
+        "۱۴۰۵/۰۱/۰۷"
+      ]
+    },
+    {
+      "name": "prior/schedule.xlsx",
+      "size": 55599,
+      "sha256": "f2e537c5dc8b462ee41ad371b4003323fa6d98673a0cf854ddca8b34cca1a1b9",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 171,
+          "cols": 4,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 10,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "نمودار 3",
+          "rows": 1,
+          "cols": 16,
+          "rtl": true,
+          "images": 1,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 2509,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۱/۰۵",
+        "۱۴۰۵/۰۱/۰۶",
+        "۱۴۰۵/۰۱/۰۷"
+      ]
+    },
+    {
+      "name": "prior/wbs.csv",
+      "size": 1298,
+      "sha256": "92e31bba4138c1820d31b382aa73643e45d1e1cd6ee292544a37613bac8d4fde",
+      "rows": 36,
+      "utf8_bom": true,
+      "persian_characters": 449,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/wbs.docx",
+      "size": 39370,
+      "sha256": "c0a783bafefc8dbb86c50bf0dbab980b4c74470efbe7f39494aba11bed25be86",
+      "editable_tables": 2,
+      "table_rtl": [
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 123,
+      "persian_characters": 459,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/wbs.pdf",
+      "size": 31716,
+      "sha256": "22cf174592560e6a35f4f8703db4f81d63c3685b0ab9d1e5caf0f12f84bd4de7",
+      "pages": 2,
+      "text_characters": 922,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 36,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "prior/wbs.xlsx",
+      "size": 8623,
+      "sha256": "9f5e242ca966ebb034fb1ba7074b570eac841323f9ce0baeaaa958e4d0a47a25",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 31,
+          "cols": 4,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 10,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 593,
+      "jalali_dates": [
+        "۱۴۰۵/۰۱/۲۱",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "purchases.csv",
+      "size": 1156,
+      "sha256": "579b5b7b51bb297ed81cfb106f7336dd996e02ef81a2dff6f3f817ed9cf77eb5",
+      "rows": 14,
+      "utf8_bom": true,
+      "persian_characters": 395,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "purchases.docx",
+      "size": 39553,
+      "sha256": "52128a7fb878d62365656048f4c72f03bc411163292f5c99fc704c5b37e10480",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 43,
+      "persian_characters": 576,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "purchases.pdf",
+      "size": 33283,
+      "sha256": "2c282bf3034669f11279f5b1f04906d72b97e6098f327d5e82b07894daf0bb8f",
+      "pages": 2,
+      "text_characters": 1033,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 36,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "purchases.xlsx",
+      "size": 9485,
+      "sha256": "7bb4077ad52eecb10b5466d12ef75c0e3baeb46b1a8068f097740c8adc73d1ca",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 8,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 668,
+      "jalali_dates": [
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "resources.csv",
+      "size": 3016,
+      "sha256": "20b2889f370b69b0a333ad7912ff3226fe0b5fdbe97cfd7fc1781020b1171075",
+      "rows": 24,
+      "utf8_bom": true,
+      "persian_characters": 745,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "resources.docx",
+      "size": 40421,
+      "sha256": "5bfa8909fc101259aad88d4c28a6803622ad085722572d8d11d4b90dccecb713",
+      "editable_tables": 3,
+      "table_rtl": [
+        true,
+        true,
+        true
+      ],
+      "images": 0,
+      "bidi_elements": 103,
+      "persian_characters": 1032,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "resources.pdf",
+      "size": 36105,
+      "sha256": "1550c54a8792617ad22179b62c41e6462cc4a3f541adfa8c3f4a58e8268ef319",
+      "pages": 3,
+      "text_characters": 2357,
+      "fonts": [
+        "AAAAAA+DejaVuSans",
+        "Helvetica"
+      ],
+      "images": 0,
+      "persian_characters": 157,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    },
+    {
+      "name": "resources.xlsx",
+      "size": 10028,
+      "sha256": "cd9d4eccc4543310686b1ba13c70c36ea4c98b91cc8c99122132c68b56a3754d",
+      "sheets": [
+        {
+          "name": "دفتر مالی",
+          "rows": 18,
+          "cols": 6,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "خلاصه",
+          "rows": 5,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "اطلاعات",
+          "rows": 11,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        },
+        {
+          "name": "ممیزی مقادیر",
+          "rows": 3,
+          "cols": 2,
+          "rtl": true,
+          "images": 0,
+          "charts": 0
+        }
+      ],
+      "persian_characters": 1116,
+      "jalali_dates": [
+        "۱۴۰۴/۱۲/۲۵",
+        "۱۴۰۴/۱۲/۲۶",
+        "۱۴۰۴/۱۲/۲۷",
+        "۱۴۰۴/۱۲/۲۸",
+        "۱۴۰۴/۱۲/۲۹",
+        "۱۴۰۵/۰۱/۰۴",
+        "۱۴۰۵/۰۲/۱۲",
+        "۱۴۰۵/۰۸/۰۳"
+      ]
+    }
+  ],
+  "count": 64,
+  "exact_expected_set": true,
+  "scope": "structural readback only; visual inspection and Microsoft Office are separate gates"
+}

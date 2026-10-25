@@ -1,0 +1,194 @@
+[
+  {
+    "file": "correspondence.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/correspondence.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "daily.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/daily.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "dashboard.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/dashboard.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "lookahead.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/lookahead.pdf",
+    "pages": 2,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "materials.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/materials.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "meetings.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/meetings.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "obstacles.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/obstacles.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "package.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/package.pdf",
+    "pages": 6,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/activities.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/activities.pdf",
+    "pages": 9,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/curve.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/curve.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/engineering/estimate.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/estimate.pdf",
+    "pages": 2,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/progress.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/progress.pdf",
+    "pages": 10,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/schedule.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/schedule.pdf",
+    "pages": 6,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/wbs.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/wbs.pdf",
+    "pages": 2,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "purchases.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/purchases.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "resources.docx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/docx/resources.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "correspondence.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/correspondence.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "daily.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/daily.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "dashboard.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/dashboard.pdf",
+    "pages": 5,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "lookahead.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/lookahead.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "materials.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/materials.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "meetings.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/meetings.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "obstacles.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/obstacles.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "package.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/package.pdf",
+    "pages": 6,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/activities.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/activities.pdf",
+    "pages": 11,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/curve.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/curve.pdf",
+    "pages": 6,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/engineering/estimate.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/estimate.pdf",
+    "pages": 3,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/progress.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/progress.pdf",
+    "pages": 13,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/schedule.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/schedule.pdf",
+    "pages": 9,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "prior/wbs.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/wbs.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "purchases.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/purchases.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  },
+  {
+    "file": "resources.xlsx",
+    "rendered_pdf": "/tmp/sp-closure-render-20261025/xlsx/resources.pdf",
+    "pages": 4,
+    "engine": "LibreOffice offline; NOT Microsoft Office"
+  }
+]

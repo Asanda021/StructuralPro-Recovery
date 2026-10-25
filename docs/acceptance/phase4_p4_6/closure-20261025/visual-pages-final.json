@@ -1,0 +1,52 @@
+[
+  {
+    "source": "/tmp/sp-closure-scenario-final/dashboard.pdf",
+    "pages": 3,
+    "contact": "sp-closure-scenario-final-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-closure-scenario-final/package.pdf",
+    "pages": 5,
+    "contact": "sp-closure-scenario-final-package.png"
+  },
+  {
+    "source": "/tmp/sp-closure-scenario-final/materials.pdf",
+    "pages": 4,
+    "contact": "sp-closure-scenario-final-materials.png"
+  },
+  {
+    "source": "/tmp/sp-closure-scenario-final/prior/progress.pdf",
+    "pages": 13,
+    "contact": "prior-progress.png"
+  },
+  {
+    "source": "/tmp/sp-closure-scenario-final/prior/curve.pdf",
+    "pages": 4,
+    "contact": "prior-curve.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-final-20261025/docx/dashboard.pdf",
+    "pages": 4,
+    "contact": "docx-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-final-20261025/docx/package.pdf",
+    "pages": 6,
+    "contact": "docx-package.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-final-20261025/xlsx/dashboard.pdf",
+    "pages": 5,
+    "contact": "xlsx-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-final-20261025/xlsx/package.pdf",
+    "pages": 6,
+    "contact": "xlsx-package.png"
+  },
+  {
+    "source": "/tmp/sp-closure-render-final-20261025/xlsx/curve.pdf",
+    "pages": 6,
+    "contact": "xlsx-curve.png"
+  }
+]
