@@ -1,0 +1,32 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "executable": "/workspace/scratch/5ff2acae0199/work-venv-20261025/bin/python",
+  "sqlite": "3.53.1",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "cpu_count": 9,
+  "cpu": "\t: AMD EPYC 9V74 80-Core Processor",
+  "memory": "MemTotal:       10206484 kB\nMemFree:         4049428 kB\nMemAvailable:    9386920 kB\nBuffers:           44612 kB\nCached:          5337740 kB\nSwapCached:            0 kB\nActive:           234020 kB\nInactive:        5274644 kB\nActive(anon):         64 kB\nInactive(anon):   156168 kB\nActive(file):     233956 kB\nInactive(file):  5118476 kB\nUnevictable:       29924 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nDirty:            115176 kB\nWriteback:             0 kB\nAnonPages:        156204 kB\nMapped:            70836 kB\nShmem:                12 kB\nKReclaimable:     298760 kB\nSlab:             366520 kB\nSReclaimable:     298760 kB\nSUnreclaim:        67760 kB\nKernelStack:        3308 kB\nPageTables:         4052 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     5103240 kB\nCommitted_AS:     463124 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:        4616 kB\nVmallocChunk:          0 kB\nPercpu:             2592 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:     75776 kB\nFilePmdMapped:         0 kB\nBalloon:               0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       51200 kB\nDirectMap2M:     4816896 kB\nDirectMap1G:    16777216 kB\n",
+  "disk": [
+    33770192896,
+    5395148800,
+    26640281600
+  ],
+  "packages": {
+    "PySide6": "6.12.0",
+    "ifcopenshell": "0.9.0.post1",
+    "PyMuPDF": "2.0",
+    "arabic-reshaper": "3.0.1",
+    "python-bidi": "0.6.12",
+    "reportlab": "5.1.0",
+    "openpyxl": "3.1.5",
+    "python-docx": "1.2.0",
+    "ezdxf": "1.4.5",
+    "pytest": "9.1.1"
+  },
+  "head": "c261a79fc4e8e54f085858b095161999bb308069",
+  "tree": "7c13c4a3ffd815de7dac6a721c8c856004ea78c7",
+  "qt": {
+    "platform": "offscreen",
+    "QTest_click": true
+  }
+}
