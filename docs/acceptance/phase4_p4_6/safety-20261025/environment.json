@@ -1,0 +1,21 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "sqlite": "3.53.1",
+  "observed_tools": {
+    "strace": "/usr/bin/strace",
+    "inotifywait": "/usr/bin/inotifywait",
+    "auditctl": null,
+    "bpftrace": null
+  },
+  "process_status": [
+    "CapEff:\t0000000000000000",
+    "NoNewPrivs:\t1",
+    "Seccomp:\t2",
+    "Seccomp_filters:\t1"
+  ],
+  "ptrace_used": false,
+  "alternate_execution_host": "No separately exposed host with process attribution capability found; not a claim about all possible external systems",
+  "historical_actor": "UNRESOLVED",
+  "fault_injection_actor": "Known test process, real rename of dedicated synthetic SQLite files",
+  "baseline_product": "74da21c9242b448a928764add9a32b5252b11658"
+}

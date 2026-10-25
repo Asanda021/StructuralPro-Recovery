@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.131" timestamp="2026-10-25T07:57:54.207146+01:00" hostname="081a421ee837"><testcase classname="tests.test_phase4_sqlite_backup_snapshot_pin" name="test_backup_validation_holds_one_read_snapshot" time="0.042"><failure message="AssertionError: writer committed between backup validation reads; snapshot not pinned&#10;assert []">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_backup_validation_holds_o0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fac17457530&gt;
+
+    def test_backup_validation_holds_one_read_snapshot(tmp_path,monkeypatch):
+        path=tmp_path/'source.db';writer=ProjectStore(path);writer.save('P',{'name':'synthetic'})
+        writer.db.execute('pragma busy_timeout=0');original=recovery._require_database_integrity;blocked=[]
+        def integrity(c,*,label):
+            original(c,label=label)
+            if label=='source':
+                try:writer.save('P',writer.get('P'))
+                except sqlite3.OperationalError as e:
+                    assert e.sqlite_errorcode==sqlite3.SQLITE_BUSY;blocked.append(True)
+        monkeypatch.setattr(recovery,'_require_database_integrity',integrity)
+        try:
+            backup=tmp_path/'backup.db';recovery.backup_database(path,backup)
+&gt;           assert blocked, 'writer committed between backup validation reads; snapshot not pinned'
+E           AssertionError: writer committed between backup validation reads; snapshot not pinned
+E           assert []
+
+tests/test_phase4_sqlite_backup_snapshot_pin.py:19: AssertionError</failure></testcase></testsuite></testsuites>

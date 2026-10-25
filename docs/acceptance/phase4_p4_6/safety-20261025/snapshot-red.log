@@ -1,0 +1,28 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________ test_backup_validation_holds_one_read_snapshot ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-7/test_backup_validation_holds_o0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fac17457530>
+
+    def test_backup_validation_holds_one_read_snapshot(tmp_path,monkeypatch):
+        path=tmp_path/'source.db';writer=ProjectStore(path);writer.save('P',{'name':'synthetic'})
+        writer.db.execute('pragma busy_timeout=0');original=recovery._require_database_integrity;blocked=[]
+        def integrity(c,*,label):
+            original(c,label=label)
+            if label=='source':
+                try:writer.save('P',writer.get('P'))
+                except sqlite3.OperationalError as e:
+                    assert e.sqlite_errorcode==sqlite3.SQLITE_BUSY;blocked.append(True)
+        monkeypatch.setattr(recovery,'_require_database_integrity',integrity)
+        try:
+            backup=tmp_path/'backup.db';recovery.backup_database(path,backup)
+>           assert blocked, 'writer committed between backup validation reads; snapshot not pinned'
+E           AssertionError: writer committed between backup validation reads; snapshot not pinned
+E           assert []
+
+tests/test_phase4_sqlite_backup_snapshot_pin.py:19: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase4_sqlite_backup_snapshot_pin.py::test_backup_validation_holds_one_read_snapshot
+1 failed in 0.15s

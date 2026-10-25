@@ -1,0 +1,11 @@
+{
+  "archive_sha256": "1262a4e5febb6c9cafec0e7bbbe8ddc84147275fabeb779be88a90179a4da49f",
+  "head": "6fa14a88513a6493bde3c1b121abbfb72d4914bf",
+  "tree": "51a6aa1e3815d0d3cd6cb4b6b2e13a2ceffd7ccb",
+  "manifest_files": 108,
+  "git_fsck": true,
+  "tests_exit": 0,
+  "scenario_exit": 0,
+  "source_hidden_and_recreated_from_download": true,
+  "status": "RESTORED SAFETY CHECKPOINT; PHASE4 PARTIAL"
+}

@@ -1,0 +1,26 @@
+{
+  "boundaries.xml": {
+    "tests": 16,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "scenario.xml": {
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "green.xml": {
+    "tests": 34,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "red.xml": {
+    "tests": 9,
+    "failures": 8,
+    "errors": 0,
+    "skipped": 0
+  }
+}
