@@ -97,8 +97,8 @@ class ProjectStore:
         clean_project=deepcopy(project)
         clean_project.pop("_meta",None)
         payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
-        self.db.execute("BEGIN IMMEDIATE")
         try:
+            self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
             incoming_version=(project.get("_meta") or {}).get("version")
             if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
@@ -157,8 +157,22 @@ class ProjectStore:
             self._assert_database_identity()
             self.db.commit()
             self._assert_database_identity()
-        except Exception:
-            self.db.rollback()
+        except Exception as exc:
+            # SQLite can report an observed DBMOVED even when the pathname was
+            # immediately restored to its former inode. An inode-only recheck
+            # would then incorrectly re-enable this uncertain connection.
+            if (isinstance(exc, sqlite3.DatabaseError)
+                    and getattr(exc, "sqlite_errorcode", None) == sqlite3.SQLITE_READONLY_DBMOVED):
+                self._identity_failed=True
+                self._cache.clear()
+            try:
+                self.db.rollback()
+            except sqlite3.DatabaseError as rollback_exc:
+                if getattr(rollback_exc, "sqlite_errorcode", None) == sqlite3.SQLITE_READONLY_DBMOVED:
+                    self._identity_failed=True
+                    self._cache.clear()
+                if not self._identity_failed:
+                    raise
             raise
         # Cache the same JSON representation committed to SQLite. Coordinates
         # may arrive as tuples; a cache hit must equal a reopened snapshot.
