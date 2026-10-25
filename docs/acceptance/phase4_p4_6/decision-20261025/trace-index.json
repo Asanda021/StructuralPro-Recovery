@@ -1,0 +1,34 @@
+[
+  {
+    "round": 1,
+    "raw_bytes": 2200825,
+    "raw_sha256": "3b3344cfb687d36f879769512b0641ab238cfcea31b783283602cbbd86fde54b",
+    "gzip_sha256": "09d5744bb00548d6cb65e14526bd0885a7a12a50fa473674716eeb2b73ed66b1",
+    "database_delete_or_move_events": [],
+    "path_fd_mismatches": 0,
+    "sql_counts": {
+      "SQL_BEGIN": 326,
+      "SQL_INSERT": 652,
+      "SQL_COMMIT": 326,
+      "CLOSE_BEGIN": 9,
+      "CLOSE_RETURN": 9,
+      "CONNECT_OR_REOPEN": 9
+    }
+  },
+  {
+    "round": 2,
+    "raw_bytes": 2024111,
+    "raw_sha256": "b42ad4e266be7b0a2053ba290c756cb678912b86622bc006dc71fe0262461d09",
+    "gzip_sha256": "6fddbe4e8e287d474f2746bba542228196aa5c6a5fa2da4e273d4f0f469459d4",
+    "database_delete_or_move_events": [],
+    "path_fd_mismatches": 0,
+    "sql_counts": {
+      "SQL_BEGIN": 326,
+      "SQL_INSERT": 652,
+      "SQL_COMMIT": 326,
+      "CLOSE_BEGIN": 9,
+      "CLOSE_RETURN": 9,
+      "CONNECT_OR_REOPEN": 9
+    }
+  }
+]

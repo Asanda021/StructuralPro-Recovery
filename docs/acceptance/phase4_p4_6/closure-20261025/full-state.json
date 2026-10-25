@@ -1,0 +1,21 @@
+{
+  "head": "7ff1fab0d3698ba7220a627d8a9bf8aa9134e570",
+  "tree": "85b5d49120855c18b7e92588880808086e81b3d0",
+  "exit_code": 1,
+  "wall_seconds": 471.4244728088379,
+  "suites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "1",
+      "skipped": "5",
+      "tests": "7999",
+      "time": "468.918",
+      "timestamp": "2026-10-25T08:08:37.452991+03:30",
+      "hostname": "cd559c0349f6"
+    }
+  ],
+  "testcases": 7999,
+  "raw_junit_sha256": "ef01c0833b22d1763d43b0a8acdf26fb7df0948845b91f8d33503f1abbf5d2d8",
+  "GC_or_threshold_changed": false
+}

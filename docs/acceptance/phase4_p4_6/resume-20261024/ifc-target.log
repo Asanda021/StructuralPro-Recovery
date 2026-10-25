@@ -1,0 +1,3 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+.                                                                        [100%]
+1 passed in 2.54s

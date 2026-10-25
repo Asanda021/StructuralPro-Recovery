@@ -1,0 +1,20 @@
+{
+  "sqlite": "3.53.1",
+  "original_probe": "FAIL after final reopen; known corrupted DB preserved separately",
+  "minimal_replay": {
+    "versions": 323,
+    "sqlite_integrity": "ok",
+    "same_sql_schema_and_insert_or_replace": "yes",
+    "result": "does not reproduce; no SQL replacement proposed"
+  },
+  "audited_probe": {
+    "pass": 1,
+    "seconds": 34.57,
+    "observations": 378,
+    "all_integrity_ok": true,
+    "version": 326,
+    "instrumentation": "fresh readonly SQLite connection after original saves, reports and close; checks persisted JSON against original cache; assertions and GC policy unchanged"
+  },
+  "cause": "UNRESOLVED; concurrency observation is not a causal conclusion",
+  "decision": "all three priorities PARTIAL; successful diagnostic run does not erase failure"
+}

@@ -1,0 +1,200 @@
+[
+  {
+    "run": "sqlite-runs/audited-workspace",
+    "events": {
+      "ENV": 1,
+      "CONNECT_OR_REOPEN": 2,
+      "COMMIT_RETURN": 22,
+      "SQL_BEGIN": 20,
+      "SQL_INSERT": 40,
+      "SQL_COMMIT": 20,
+      "CLOSE_BEGIN": 1,
+      "CLOSE_RETURN": 1,
+      "ERROR_FROZEN": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 40,
+    "wal_observations": 0,
+    "errors": [
+      {
+        "event": "ERROR_FROZEN",
+        "wall_ns": 1792902517188441628,
+        "monotonic_ns": 4001520758703,
+        "stage": "outer-probe-after-normal-product-error-handling",
+        "sqlite_errorcode": null,
+        "sqlite_errorname": null,
+        "exception": "FileNotFoundError(2, 'No such file or directory')",
+        "identity": {
+          "device": 27,
+          "inode": 265568,
+          "bytes": 524288
+        },
+        "files": {
+          "": {
+            "sha256": "ce0e48fe964ddb7fe1abdd910bda5fafa08b66407b5b36bf25d3d3d66da6c007",
+            "bytes": 524288
+          }
+        },
+        "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+        "fds": [
+          {
+            "fd": "16",
+            "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+            "device": 27,
+            "inode": 265568,
+            "bytes": 524288,
+            "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t265568\n"
+          },
+          {
+            "fd": "18",
+            "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+            "device": 27,
+            "inode": 265568,
+            "bytes": 524288,
+            "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265568\n"
+          }
+        ],
+        "companions": {
+          "-journal": {
+            "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-journal'"
+          },
+          "-wal": {
+            "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-wal'"
+          },
+          "-shm": {
+            "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-shm'"
+          }
+        },
+        "moved": false
+      }
+    ]
+  },
+  {
+    "run": "sqlite-runs/original-tmp",
+    "events": {
+      "ENV": 1,
+      "END": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 0,
+    "wal_observations": 0,
+    "errors": []
+  },
+  {
+    "run": "sqlite-runs/original-workspace",
+    "events": {
+      "ENV": 1,
+      "END": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 0,
+    "wal_observations": 0,
+    "errors": []
+  },
+  {
+    "run": "sqlite-runs/audited-tmp",
+    "events": {
+      "ENV": 1,
+      "CONNECT_OR_REOPEN": 2,
+      "COMMIT_RETURN": 22,
+      "SQL_BEGIN": 20,
+      "SQL_INSERT": 40,
+      "SQL_COMMIT": 20,
+      "CLOSE_BEGIN": 1,
+      "CLOSE_RETURN": 1,
+      "ERROR_FROZEN": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 40,
+    "wal_observations": 0,
+    "errors": [
+      {
+        "event": "ERROR_FROZEN",
+        "wall_ns": 1792902515197444785,
+        "monotonic_ns": 3999529762081,
+        "stage": "outer-probe-after-normal-product-error-handling",
+        "sqlite_errorcode": null,
+        "sqlite_errorname": null,
+        "exception": "FileNotFoundError(2, 'No such file or directory')",
+        "identity": {
+          "device": 27,
+          "inode": 265545,
+          "bytes": 520192
+        },
+        "files": {
+          "": {
+            "sha256": "c053ee2cd281d9ffd18e20b8e94c05a00cabd93e67e4ded4b0887effe8c7da97",
+            "bytes": 520192
+          }
+        },
+        "path": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+        "fds": [
+          {
+            "fd": "16",
+            "target": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+            "device": 27,
+            "inode": 265545,
+            "bytes": 520192,
+            "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t265545\n"
+          },
+          {
+            "fd": "18",
+            "target": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+            "device": 27,
+            "inode": 265545,
+            "bytes": 520192,
+            "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265545\n"
+          }
+        ],
+        "companions": {
+          "-journal": {
+            "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-journal'"
+          },
+          "-wal": {
+            "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-wal'"
+          },
+          "-shm": {
+            "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-shm'"
+          }
+        },
+        "moved": false
+      }
+    ]
+  },
+  {
+    "run": "sqlite-runs-audited-v2/audited-workspace",
+    "events": {
+      "ENV": 1,
+      "CONNECT_OR_REOPEN": 9,
+      "COMMIT_RETURN": 332,
+      "SQL_BEGIN": 326,
+      "SQL_INSERT": 652,
+      "SQL_COMMIT": 326,
+      "CLOSE_BEGIN": 9,
+      "CLOSE_RETURN": 9,
+      "END": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 652,
+    "wal_observations": 0,
+    "errors": []
+  },
+  {
+    "run": "sqlite-runs-audited-v2/audited-tmp",
+    "events": {
+      "ENV": 1,
+      "CONNECT_OR_REOPEN": 9,
+      "COMMIT_RETURN": 332,
+      "SQL_BEGIN": 326,
+      "SQL_INSERT": 652,
+      "SQL_COMMIT": 326,
+      "CLOSE_BEGIN": 9,
+      "CLOSE_RETURN": 9,
+      "END": 1
+    },
+    "moved_observations": 0,
+    "journal_observations": 652,
+    "wal_observations": 0,
+    "errors": []
+  }
+]

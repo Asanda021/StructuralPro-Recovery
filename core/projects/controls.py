@@ -172,19 +172,37 @@ def apply(project,command):
         elif op.startswith('progress_') or op.startswith('weight_'):
             from core.projects.physical_progress import progress_command
             result=progress_command(p,op,data,actor,reason)
+        elif op.startswith('site_'):
+            from core.projects.site_operations import dispatch
+            result=dispatch(p,op[5:],data,actor,reason)
         else:raise ValueError('عملیات کنترل پروژه ناشناخته است')
     history.append({'sequence':len(history)+1,'op':op,'actor':actor,'reason':reason,'at':command['at'],'data':data,'result_digest':digest(result)})
     return p,deepcopy(result)
 
 
 def guard(before,after,command):
+    from core.projects.site_operations import keys
+    site_keys=keys()
+    protected=KEYS+site_keys
     official=('project_control_config','project_control_history','project_wbs','schedule_baselines','progress_documents','progress_weight_sets','progress_reports')
-    if not before.get('project_control_config') and not after.get('project_control_config') and all(before.get(k)==after.get(k) for k in official):return
+    new_keys=tuple(k for k in site_keys if k not in {'project_resources','project_materials','project_daily_reports','project_meetings'})
+    if not before.get('project_control_config') and not after.get('project_control_config') and all(before.get(k)==after.get(k) for k in official+new_keys):return
     if command is None:
-        if any(before.get(k)!=after.get(k) for k in KEYS):raise ValueError('تغییر کنترل پروژه فقط از گردش ثبت‌شده مجاز است')
+        if any(before.get(k)!=after.get(k) for k in protected):raise ValueError('تغییر کنترل پروژه فقط از گردش ثبت‌شده مجاز است')
         return
     expected,_=apply(before,command)
-    if any(expected.get(k)!=after.get(k) for k in KEYS):raise ValueError('ثبت کنترل پروژه با فرمان معتبر تطبیق ندارد')
+    if any(expected.get(k)!=after.get(k) for k in protected):raise ValueError('ثبت کنترل پروژه با فرمان معتبر تطبیق ندارد')
+    if command['op']=='site_purchase_commit':
+        link=expected['site_purchase_handoffs'][-1]
+        if any(r['id']==link['ledger_id'] or r['reference']==link['reference'] for r in before.get('financial_records',[])):raise ValueError('پیوند خرید فقط با سند مالی جدید مجاز است')
+        rows=[r for r in after.get('financial_records',[]) if r['id']==link['ledger_id'] and r['reference']==link['reference'] and r['kind']=='commitment']
+        if len(rows)!=1:raise ValueError('پیوند خرید باید همراه سند مالی و در یک تراکنش ثبت شود')
+        row=rows[0]
+        from core.commercial.statement_amendment import documents
+        if row.get('source_documents')!=documents(link['source_documents']):raise ValueError('مدارک سند مالی خرید تطبیق ندارند')
+        for field in ('currency','counterparty','date','reference','description'):
+            if row.get(field)!=link[field]:raise ValueError('پیوند خرید و سند مالی تطبیق ندارند')
+        if num(row.get('amount'),'مبلغ')!=num(link['amount'],'مبلغ') or row.get('status')!='DRAFT' or row.get('created_by')!=command['actor']:raise ValueError('مبلغ یا وضعیت سند مالی خرید معتبر نیست')
 
 
 def snapshot(project):

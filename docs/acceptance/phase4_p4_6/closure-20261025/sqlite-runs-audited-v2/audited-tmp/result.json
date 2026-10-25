@@ -1,0 +1,237 @@
+{
+  "status": "PASS",
+  "receipt": {
+    "synthetic": true,
+    "prior": {
+      "synthetic": true,
+      "floors": 5,
+      "activities": 15,
+      "critical_ids": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "A5",
+        "M5"
+      ],
+      "duration_baseline": 18,
+      "duration_current": 20,
+      "actual_periods": [
+        "12.500000",
+        "45.000000",
+        "75.000000"
+      ],
+      "planned_final": "100.000000",
+      "variance_final": "-25.000000",
+      "baseline_preserved": true,
+      "boq_preserved": true,
+      "reopen_equal": true,
+      "sqlite_integrity": "ok",
+      "exports": [
+        "wbs.pdf",
+        "wbs.xlsx",
+        "wbs.docx",
+        "wbs.csv",
+        "activities.pdf",
+        "activities.xlsx",
+        "activities.docx",
+        "activities.csv",
+        "schedule.pdf",
+        "schedule.xlsx",
+        "schedule.docx",
+        "schedule.csv",
+        "progress.pdf",
+        "progress.xlsx",
+        "progress.docx",
+        "progress.csv",
+        "curve.pdf",
+        "curve.xlsx",
+        "curve.docx",
+        "curve.csv"
+      ],
+      "date_contract": "ISO storage; Jalali display; start-of-day planned boundary",
+      "report_dates": [
+        "2026-03-24",
+        "2026-03-31",
+        "2026-04-10"
+      ]
+    },
+    "three_crews": true,
+    "equipment": true,
+    "parallel_floors": true,
+    "overbook_blocked": true,
+    "weekly_end": "2026-03-22",
+    "fortnight_end": "2026-03-29",
+    "material_oracle": [
+      {
+        "material": "CON",
+        "need": "4.100",
+        "shortage": "0.000"
+      },
+      {
+        "material": "BLK",
+        "need": "156",
+        "shortage": "150"
+      },
+      {
+        "material": "TIL",
+        "need": "13.91",
+        "shortage": "7.91"
+      },
+      {
+        "material": "PIP",
+        "need": "6.5",
+        "shortage": null
+      }
+    ],
+    "purchase_no_financial_effect": true,
+    "daily_transfer_draft_then_reviewed": true,
+    "daily_correction_supersedes": "WORK-47",
+    "package_sources": [
+      {
+        "collection": "project_daily_reports",
+        "id": "DAILY-2",
+        "version": 2,
+        "sha256": "232c52c4cbff11404b13a3d3dd0142d811743ab043250dc92cf557c1f86c661e"
+      },
+      {
+        "collection": "project_meetings",
+        "id": "MEETING-1",
+        "version": 1,
+        "sha256": "2544a7979619bc6d33c848263e37d4bb6b535acf1707f825951a959c7500f43b"
+      },
+      {
+        "collection": "site_correspondence",
+        "id": "CORRESPONDENCE-1",
+        "version": 1,
+        "sha256": "9980bb8c0c1911226e081829138244b16570820450c7860bff2134057912c01b"
+      },
+      {
+        "collection": "beam_amendments",
+        "id": "BA-2f8859405398418db25be5a1c30b2264",
+        "version": 1,
+        "sha256": "5d437fd4359df6383304dd23adb47000398c03bed67969132ccedbbc0735eda0"
+      },
+      {
+        "collection": "progress_reports",
+        "id": "PROGRESS-3",
+        "version": 3,
+        "sha256": "c45ebf4420e58e2ff55c23a15d2a115199fe97e65b6a5f50cfb68aaaeb122202"
+      },
+      {
+        "collection": "statement_periods",
+        "id": "1",
+        "version": 1,
+        "sha256": "8b58e0d32b5c14d0abe5ab19910be336c62dfc85fa5bd833693c6e6cefb9285f"
+      }
+    ],
+    "immutable_originals": true,
+    "reopen_equal": true,
+    "sqlite_integrity": "ok",
+    "exports": [
+      "lookahead.pdf",
+      "lookahead.xlsx",
+      "lookahead.docx",
+      "lookahead.csv",
+      "resources.pdf",
+      "resources.xlsx",
+      "resources.docx",
+      "resources.csv",
+      "materials.pdf",
+      "materials.xlsx",
+      "materials.docx",
+      "materials.csv",
+      "purchases.pdf",
+      "purchases.xlsx",
+      "purchases.docx",
+      "purchases.csv",
+      "daily.pdf",
+      "daily.xlsx",
+      "daily.docx",
+      "daily.csv",
+      "obstacles.pdf",
+      "obstacles.xlsx",
+      "obstacles.docx",
+      "obstacles.csv",
+      "meetings.pdf",
+      "meetings.xlsx",
+      "meetings.docx",
+      "meetings.csv",
+      "correspondence.pdf",
+      "correspondence.xlsx",
+      "correspondence.docx",
+      "correspondence.csv",
+      "package.pdf",
+      "package.xlsx",
+      "package.docx",
+      "package.csv",
+      "dashboard.pdf",
+      "dashboard.xlsx",
+      "dashboard.docx",
+      "dashboard.csv"
+    ]
+  },
+  "fresh": {
+    "identity": {
+      "path": "/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 265636,
+        "bytes": 60493824
+      },
+      "fds": [
+        {
+          "fd": "21",
+          "target": "/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 265636,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265636\n"
+        },
+        {
+          "fd": "22",
+          "target": "/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 265636,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265636\n"
+        },
+        {
+          "fd": "23",
+          "target": "/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 265636,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265636\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025-audited-v2/audited-tmp-scenario/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": false
+    },
+    "journal_mode": "delete",
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "active_tail": [
+      [
+        "P",
+        326,
+        1
+      ]
+    ],
+    "revision_count": 326
+  }
+}

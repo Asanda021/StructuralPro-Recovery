@@ -1,0 +1,237 @@
+{
+  "status": "PASS",
+  "receipt": {
+    "synthetic": true,
+    "prior": {
+      "synthetic": true,
+      "floors": 5,
+      "activities": 15,
+      "critical_ids": [
+        "S1",
+        "S2",
+        "S3",
+        "S4",
+        "S5",
+        "A5",
+        "M5"
+      ],
+      "duration_baseline": 18,
+      "duration_current": 20,
+      "actual_periods": [
+        "12.500000",
+        "45.000000",
+        "75.000000"
+      ],
+      "planned_final": "100.000000",
+      "variance_final": "-25.000000",
+      "baseline_preserved": true,
+      "boq_preserved": true,
+      "reopen_equal": true,
+      "sqlite_integrity": "ok",
+      "exports": [
+        "wbs.pdf",
+        "wbs.xlsx",
+        "wbs.docx",
+        "wbs.csv",
+        "activities.pdf",
+        "activities.xlsx",
+        "activities.docx",
+        "activities.csv",
+        "schedule.pdf",
+        "schedule.xlsx",
+        "schedule.docx",
+        "schedule.csv",
+        "progress.pdf",
+        "progress.xlsx",
+        "progress.docx",
+        "progress.csv",
+        "curve.pdf",
+        "curve.xlsx",
+        "curve.docx",
+        "curve.csv"
+      ],
+      "date_contract": "ISO storage; Jalali display; start-of-day planned boundary",
+      "report_dates": [
+        "2026-03-24",
+        "2026-03-31",
+        "2026-04-10"
+      ]
+    },
+    "three_crews": true,
+    "equipment": true,
+    "parallel_floors": true,
+    "overbook_blocked": true,
+    "weekly_end": "2026-03-22",
+    "fortnight_end": "2026-03-29",
+    "material_oracle": [
+      {
+        "material": "CON",
+        "need": "4.100",
+        "shortage": "0.000"
+      },
+      {
+        "material": "BLK",
+        "need": "156",
+        "shortage": "150"
+      },
+      {
+        "material": "TIL",
+        "need": "13.91",
+        "shortage": "7.91"
+      },
+      {
+        "material": "PIP",
+        "need": "6.5",
+        "shortage": null
+      }
+    ],
+    "purchase_no_financial_effect": true,
+    "daily_transfer_draft_then_reviewed": true,
+    "daily_correction_supersedes": "WORK-47",
+    "package_sources": [
+      {
+        "collection": "project_daily_reports",
+        "id": "DAILY-2",
+        "version": 2,
+        "sha256": "8e731ebc7f0da9be87d3c5f5691854f628764965cdd2dc037e07eb4c42a34231"
+      },
+      {
+        "collection": "project_meetings",
+        "id": "MEETING-1",
+        "version": 1,
+        "sha256": "f4ec616c156214bbeb3213404227cb12a56aaeaefec5d365df5a376886008a6e"
+      },
+      {
+        "collection": "site_correspondence",
+        "id": "CORRESPONDENCE-1",
+        "version": 1,
+        "sha256": "89050a730bf97ed7d5842f89eb0311a6dafd83533535c195fa8d7a6175a6fe44"
+      },
+      {
+        "collection": "beam_amendments",
+        "id": "BA-0c9ed0afd3ab4e65a59fafef1af6ffed",
+        "version": 1,
+        "sha256": "822fa0f67c2b0db1e0016ad0f3d438b07faca4d1c8c25ca79b0817f89d0d8443"
+      },
+      {
+        "collection": "progress_reports",
+        "id": "PROGRESS-3",
+        "version": 3,
+        "sha256": "c07195576f1319164a0d12f27d661d20d60d5f3d2e7b6740af2a79afec8b9c95"
+      },
+      {
+        "collection": "statement_periods",
+        "id": "1",
+        "version": 1,
+        "sha256": "8b58e0d32b5c14d0abe5ab19910be336c62dfc85fa5bd833693c6e6cefb9285f"
+      }
+    ],
+    "immutable_originals": true,
+    "reopen_equal": true,
+    "sqlite_integrity": "ok",
+    "exports": [
+      "lookahead.pdf",
+      "lookahead.xlsx",
+      "lookahead.docx",
+      "lookahead.csv",
+      "resources.pdf",
+      "resources.xlsx",
+      "resources.docx",
+      "resources.csv",
+      "materials.pdf",
+      "materials.xlsx",
+      "materials.docx",
+      "materials.csv",
+      "purchases.pdf",
+      "purchases.xlsx",
+      "purchases.docx",
+      "purchases.csv",
+      "daily.pdf",
+      "daily.xlsx",
+      "daily.docx",
+      "daily.csv",
+      "obstacles.pdf",
+      "obstacles.xlsx",
+      "obstacles.docx",
+      "obstacles.csv",
+      "meetings.pdf",
+      "meetings.xlsx",
+      "meetings.docx",
+      "meetings.csv",
+      "correspondence.pdf",
+      "correspondence.xlsx",
+      "correspondence.docx",
+      "correspondence.csv",
+      "package.pdf",
+      "package.xlsx",
+      "package.docx",
+      "package.csv",
+      "dashboard.pdf",
+      "dashboard.xlsx",
+      "dashboard.docx",
+      "dashboard.csv"
+    ]
+  },
+  "fresh": {
+    "identity": {
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 1715019,
+        "bytes": 60493824
+      },
+      "fds": [
+        {
+          "fd": "14",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 1715019,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t1715019\n"
+        },
+        {
+          "fd": "17",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 1715019,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t1715019\n"
+        },
+        {
+          "fd": "22",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 1715019,
+          "bytes": 60493824,
+          "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t1715019\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": false
+    },
+    "journal_mode": "delete",
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "active_tail": [
+      [
+        "P",
+        326,
+        1
+      ]
+    ],
+    "revision_count": 326
+  }
+}

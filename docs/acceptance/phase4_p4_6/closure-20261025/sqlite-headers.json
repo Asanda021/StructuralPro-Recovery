@@ -1,0 +1,62 @@
+{
+  "historical323": {
+    "path": "/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db",
+    "header_hex": "53514c69746520666f726d6174203300100001010040202000000145000037bc00000000000000000000000200000004000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000145002e95c9",
+    "signature": "SQLite format 3\u0000",
+    "page_size": 4096,
+    "write_version": 1,
+    "read_version": 1,
+    "change_counter": 325,
+    "header_page_count": 14268,
+    "file_bytes": 58441728,
+    "schema_cookie": 2,
+    "text_encoding": 1,
+    "version_valid_for": 325,
+    "sqlite_version_number": 3053001
+  },
+  "historical251": {
+    "path": "/workspace/scratch/5ff2acae0199/site-final-20261025/prior/engineering/db/projects.db",
+    "header_hex": "53514c69746520666f726d61742033001000010100402020000000fd00002374000000000000000000000002000000040000000000000000000000010000000000000000000000000000000000000000000000000000000000000000000000fd002e95c9",
+    "signature": "SQLite format 3\u0000",
+    "page_size": 4096,
+    "write_version": 1,
+    "read_version": 1,
+    "change_counter": 253,
+    "header_page_count": 9076,
+    "file_bytes": 37175296,
+    "schema_cookie": 2,
+    "text_encoding": 1,
+    "version_valid_for": 253,
+    "sqlite_version_number": 3053001
+  },
+  "captured273": {
+    "path": "docs/acceptance/phase4_p4_6/closure-20261025/sqlite-runs-frozen/audited-workspace/failure-1792903116210965117/projects.db",
+    "header_hex": "53514c69746520666f726d6174203300100001010040202000000113000029d500000000000000000000000200000004000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000113002e95c9",
+    "signature": "SQLite format 3\u0000",
+    "page_size": 4096,
+    "write_version": 1,
+    "read_version": 1,
+    "change_counter": 275,
+    "header_page_count": 10709,
+    "file_bytes": 43864064,
+    "schema_cookie": 2,
+    "text_encoding": 1,
+    "version_valid_for": 275,
+    "sqlite_version_number": 3053001
+  },
+  "restored_healthy326": {
+    "path": "/tmp/sp-restored-closure-final-20261025/scenario/prior/engineering/db/projects.db",
+    "header_hex": "53514c69746520666f726d61742033001000010100402020000001480000380c00000000000000000000000200000004000000000000000000000001000000000000000000000000000000000000000000000000000000000000000000000148002e95c9",
+    "signature": "SQLite format 3\u0000",
+    "page_size": 4096,
+    "write_version": 1,
+    "read_version": 1,
+    "change_counter": 328,
+    "header_page_count": 14348,
+    "file_bytes": 58769408,
+    "schema_cookie": 2,
+    "text_encoding": 1,
+    "version_valid_for": 328,
+    "sqlite_version_number": 3053001
+  }
+}

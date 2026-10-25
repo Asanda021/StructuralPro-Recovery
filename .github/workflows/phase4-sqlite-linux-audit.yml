@@ -1,0 +1,53 @@
+name: Phase 4 SQLite Linux file actor attribution
+
+on:
+  push:
+    branches:
+      - feature/phase4-priorities4-6-site-operations-20261024
+    paths:
+      - .github/workflows/phase4-sqlite-linux-audit.yml
+      - tests/diagnostics/phase4_linux_sqlite_audit.py
+      - tests/diagnostics/phase4_linux_fanotify_actor.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-audit-attribution:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact branch state
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python details
+        run: python3 --version
+      - name: Install Linux audit userspace
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq auditd
+          sudo systemctl start auditd || true
+          sudo auditctl -s || true
+      - name: Try auditd PID attribution on disposable SQLite fixture
+        continue-on-error: true
+        run: |
+          python3 tests/diagnostics/phase4_linux_sqlite_audit.py --outdir sqlite-audit-evidence
+      - name: Prove file actor attribution with fanotify on disposable SQLite fixture
+        run: |
+          sudo -n python3 tests/diagnostics/phase4_linux_fanotify_actor.py --outdir sqlite-audit-evidence
+      - name: Explain attribution result in job logs
+        if: always()
+        run: |
+          if [ -f sqlite-audit-evidence/result.json ]; then cat sqlite-audit-evidence/result.json; fi
+          if [ -f sqlite-audit-evidence/fanotify-result.json ]; then cat sqlite-audit-evidence/fanotify-result.json; fi
+          if [ -f sqlite-audit-evidence/audit-events.txt ]; then head -c 14000 sqlite-audit-evidence/audit-events.txt; fi
+      - name: Preserve diagnostic result even when kernel auditing is unavailable
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: sqlite-linux-audit-attribution
+          path: sqlite-audit-evidence/
+          if-no-files-found: warn
+          retention-days: 14

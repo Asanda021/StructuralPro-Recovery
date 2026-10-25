@@ -1,0 +1,28 @@
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:10: shutil.copytree(scenario,root/'scenario');shutil.copytree(qa,root/'evidence',ignore=shutil.ignore_patterns('__pycache__','full.xml','full-final.xml'))
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:15:  shutil.copytree(origin,root/'renders'/label)
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:29: os.link(stage,out) # Publish only closed, verified bytes; never replace.
+docs/acceptance/phase4_p4_6/work-20261025/scenario_audit.py:18:assert a.store.integrity_check()['ok'];r={'synthetic_origin':'Fresh unchanged repository fixture; none of the four absent old files replaced','version':p['_meta']['version'],'proof_occurrences':len(proofs),'distinct_proofs':sorted({x['path'] for x in proofs}),'historical_progress':{k:last[k] for k in ('planned','planned_current','actual','variance')},'history_guard':'PASS','sqlite_integrity':'ok','schedule_duration':a.project_schedule('P')['duration'],'activities':15,'receipt':json.loads((root/'receipt.json').read_text())};a.store.close()
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:64:    held.rename(original)
+docs/acceptance/phase4_p4_6/verification-20261024/build-backup.py:11:    shutil.copytree(scenario,root/'scenario')
+docs/acceptance/phase4_p4_6/verification-20261024/build-backup.py:12:    shutil.copytree(repo/'docs/acceptance/phase4_p4_6/verification-20261024',root/'evidence')
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:64:    held.rename(original)
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:10: shutil.copytree(scenario,root/'scenario');shutil.copytree(qa,root/'evidence',ignore=shutil.ignore_patterns('__pycache__','full.xml','full-final.xml','*.db','*-journal','*-wal','*-shm','events.jsonl'))
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:15:  shutil.copytree(origin,root/'renders'/label)
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:29: os.link(stage,out) # Publish only closed, verified bytes; never replace.
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:64:    held.rename(original)
+docs/acceptance/phase4_p4_6/closure-20261025/run_sqlite.py:25:(base/'historical.json').write_text(json.dumps(proof,indent=2));(base/'runs.json').write_text(json.dumps(results,indent=2));shutil.copytree(base,qa/('sqlite-runs'+tag),ignore=shutil.ignore_patterns('*-scenario'))
+docs/acceptance/phase4_p4_6/closure-20261025/test_dbmoved_calibration.py:17:    path.rename(moved)
+docs/acceptance/phase4_p4_6/closure-20261025/test_dbmoved_calibration.py:21:        r={'scope':'Intentional synthetic rename only; NOT historical root-cause proof','sqlite_errorcode':e.sqlite_errorcode,'sqlite_errorname':e.sqlite_errorname,'message':str(e),'opened_identity':[opened.st_dev,opened.st_ino],'live_fds_before':fd,'journal_mode':journal,'path_exists_at_error':path.exists(),'moved_identity':[moved.stat().st_dev,moved.stat().st_ino],'companion_files':[str(p) for p in tmp_path.glob('*')],'live_fds_at_error':[]}
+docs/acceptance/phase4_p4_6/closure-20261025/scenario_audit.py:18:assert a.store.integrity_check()['ok'];r={'synthetic_origin':'Fresh unchanged repository fixture; none of the four absent old files replaced','version':p['_meta']['version'],'proof_occurrences':len(proofs),'distinct_proofs':sorted({x['path'] for x in proofs}),'historical_progress':{k:last[k] for k in ('planned','planned_current','actual','variance')},'history_guard':'PASS','sqlite_integrity':'ok','schedule_duration':a.project_schedule('P')['duration'],'activities':15,'receipt':json.loads((root/'receipt.json').read_text())};a.store.close()
+docs/acceptance/phase4_p4_6/closure-20261025/run_full.py:21:for name in ('full.log','full.xml.gz','full-state.json','host.jsonl'):shutil.copy2(tmp/name,qa/('full-final-'+name if name=='host.jsonl' else name.replace('full','full-final',1)))
+docs/acceptance/phase4_p4_6/closure-20261025/scenario_audit_final.py:18:assert a.store.integrity_check()['ok'];r={'synthetic_origin':'Fresh unchanged repository fixture; none of the four absent old files replaced','version':p['_meta']['version'],'proof_occurrences':len(proofs),'distinct_proofs':sorted({x['path'] for x in proofs}),'historical_progress':{k:last[k] for k in ('planned','planned_current','actual','variance')},'history_guard':'PASS','sqlite_integrity':'ok','schedule_duration':a.project_schedule('P')['duration'],'activities':15,'receipt':json.loads((root/'receipt.json').read_text())};a.store.close()
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:33:   name=raw[offset:offset+length].split(b'\0',1)[0].decode(errors='replace');offset+=length

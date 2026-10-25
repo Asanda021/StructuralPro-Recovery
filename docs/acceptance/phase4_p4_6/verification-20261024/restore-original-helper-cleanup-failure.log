@@ -1,0 +1,9 @@
+Cloning into '/workspace/scratch/5ff2acae0199/restored-phase4/repo'...
+HEAD is now at 65927e4 test: preserve SQLite diagnostic trace and output QA limits before backup [skip ci]
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+Traceback (most recent call last):
+  File "/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/verification-20261024/restore.py", line 61, in <module>
+    held.rename(original)
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1363, in rename
+    os.rename(self, target)
+OSError: [Errno 39] Directory not empty: '/workspace/scratch/5ff2acae0199/site-scenario-sequential-held-during-restore' -> '/workspace/scratch/5ff2acae0199/site-scenario-sequential'

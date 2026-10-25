@@ -1,0 +1,59 @@
+{
+  "source_sha256": "561550b8d0bb42fb5bb3ec002222894414d2740c19f66d2cbb815728945793f6",
+  "sqlite": "3.53.1",
+  "mode": "BEGIN IMMEDIATE + original SELECT + original two INSERT OR REPLACE statements + commit; no integrity checks between commits",
+  "results": [
+    {
+      "path": "/tmp/structuralpro-runtime-20261024/replay-tmp/replay-0.db",
+      "cycles": 323,
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "version": 323,
+      "revisions": 323,
+      "payload_matches_source": true,
+      "sha256": "01eb5c42cd0b1716798dad6bd62b4ef26a779de3ea327b21047ecc6e4bf1cee4"
+    },
+    {
+      "path": "/tmp/structuralpro-runtime-20261024/replay-tmp/replay-1.db",
+      "cycles": 323,
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "version": 323,
+      "revisions": 323,
+      "payload_matches_source": true,
+      "sha256": "01eb5c42cd0b1716798dad6bd62b4ef26a779de3ea327b21047ecc6e4bf1cee4"
+    },
+    {
+      "path": "/workspace/scratch/5ff2acae0199/replay-workspace-no-observer/replay-0.db",
+      "cycles": 323,
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "version": 323,
+      "revisions": 323,
+      "payload_matches_source": true,
+      "sha256": "01eb5c42cd0b1716798dad6bd62b4ef26a779de3ea327b21047ecc6e4bf1cee4"
+    },
+    {
+      "path": "/workspace/scratch/5ff2acae0199/replay-workspace-no-observer/replay-1.db",
+      "cycles": 323,
+      "integrity": [
+        [
+          "ok"
+        ]
+      ],
+      "version": 323,
+      "revisions": 323,
+      "payload_matches_source": true,
+      "sha256": "01eb5c42cd0b1716798dad6bd62b4ef26a779de3ea327b21047ecc6e4bf1cee4"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-24",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "pr": 25,
+  "branch": "feature/phase4-priorities4-6-site-operations-20261024",
+  "tested_code_head": "738221881a3180a7aa1f5ec163691c953b4a29a6",
+  "tested_tree": "77b256c5ec1d5fed49237d63ad48f9f5d735d2d4",
+  "targeted": {
+    "pass": 97,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "seconds": 5.41
+  },
+  "ifc_isolated": {
+    "pass": 1,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "seconds": 2.537
+  },
+  "sha256": {
+    "targeted.log": "3013511f0f38a5d9eb22b043ff4264fdf667af89c2dfa2d29fdb46fceea5b694",
+    "targeted.xml": "e239e302ceccedca7a1cf58ad4e3f2422a3103c59b504d056967535ff94bfcb1",
+    "ifc-target.log": "7a70d4bf60bce832c95abf6ac96298f0825c85a8674c87d9bd6248c188840aa8",
+    "ifc-target.xml": "30660dbf9613d8655803f48cad54fbb3eb5bdd306aa709f4eecfdcd9a5b86751"
+  },
+  "full_latest": "NOT RECOVERED / NOT VERIFIED",
+  "priorities_4_5_6": "PARTIAL",
+  "windows": "NOT VERIFIED",
+  "office": "NOT VERIFIED",
+  "new_backup_restore": "NOT VERIFIED",
+  "owner_acceptance": "NOT GIVEN"
+}

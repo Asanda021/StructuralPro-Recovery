@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image,ImageDraw,ImageFont,features
 from arabic_reshaper import reshape
 from bidi.algorithm import get_display
-from core.reports.exporters import report_date
+from core.reports.exporters import report_date,_percentage_display
 
 
 def canvas(title,height):
@@ -55,6 +55,6 @@ def curve_figure(points,path):
         label((x-40,470),report_date(day))
         for key,color in [('planned','#347eaf'),('planned_current','#d18a26'),('actual','#26976b')]:
             if p.get(key) is not None:
-                y=450-float(p[key])*3.6;draw.ellipse((x-5,y-5,x+5,y+5),fill=color);label((x+7,y-12),p[key],color)
+                y=450-float(p[key])*3.6;draw.ellipse((x-5,y-5,x+5,y+5),fill=color);label((x+7,y-12),_percentage_display(p[key]),color)
     file=Path(str(path)+'-curve.png');file.parent.mkdir(parents=True,exist_ok=True);image.save(file)
     return [{'path':str(file),'caption':'نقاط واقعی گزارش‌های ثبت‌شده؛ بدون میان‌یابی دوره مفقود'}]

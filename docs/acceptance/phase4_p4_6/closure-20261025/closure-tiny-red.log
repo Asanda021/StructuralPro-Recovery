@@ -1,0 +1,17 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________ test_tiny_number_does_not_print_as_zero ____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-10/test_tiny_number_does_not_prin0')
+
+    def test_tiny_number_does_not_print_as_zero(tmp_path):
+     p=export_xlsx([{'quantity':Decimal('0.00000000000000000001')}],tmp_path/'tiny.xlsx',columns=[('quantity','مقدار')]);w=load_workbook(p);s=w['ریز متره'];cell=next(c for row in s for c in row if c.data_type=='n' and c.value is not None)
+>    assert cell.value==1e-20 and 'E' in cell.number_format.upper()
+E    AssertionError: assert (1 == 1e-20)
+E     +  where 1 = <Cell 'ریز متره'.B4>.value
+
+tests/test_shared_report_persian.py:72: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_shared_report_persian.py::test_tiny_number_does_not_print_as_zero
+1 failed in 0.39s

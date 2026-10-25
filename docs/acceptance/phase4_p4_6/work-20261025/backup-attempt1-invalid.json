@@ -1,0 +1,24 @@
+{
+  "build_receipt": {
+    "file": "/workspace/scratch/5ff2acae0199/StructuralPro_Phase4_Work_20261025_PARTIAL.zip",
+    "bytes": 42933513,
+    "sha256": "5a53b9dfa3597ec67b7fcca8cf76bfbc56a382bb3ea90c0ec5a515c09ec06fde",
+    "snapshot_head": "eeecd302e227374f8d9ffc65dfc646442715e783",
+    "snapshot_tree": "557f4a9fadbf2d5e0f9b8e61334eeefbf0ba896b",
+    "tested_head": "58a160815eaa6fa34aaf05557ed2386ead72341c",
+    "tested_tree": "e3a12ea3ad1d8261a030f0763f475be39181b728",
+    "manifest_files": 253,
+    "status": "PARTIAL CHECKPOINT; NOT ACCEPTANCE"
+  },
+  "readback": {
+    "bytes": 39473247,
+    "sha256": "c471be2091ea43c35af0a00e911d30c19d8024ca64168f7c0c75d7011a8de5e5",
+    "inode": 1854775,
+    "head_hex": "504b03041400000008006b3a595dab0c",
+    "tail_hex": "38e5321a34791ae4f2b5ef40188058ad3b709a1e173d458f8b769ae734d9e8ff",
+    "error": "BadZipFile('File is not a zip file')"
+  },
+  "drive_id": "1dQOiKf56WuEBK9RdMyLCwr588Z5iPZmp",
+  "status": "INVALID; NEVER RESTORE",
+  "cause": "UNRESOLVED; published bytes differ from builder receipt"
+}

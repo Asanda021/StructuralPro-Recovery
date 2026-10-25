@@ -1,0 +1,37 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F..........F                                                             [100%]
+=================================== FAILURES ===================================
+_________ test_report_figure_sheet_has_complete_single_page_print_area _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_report_figure_sheet_has_c0')
+
+    def test_report_figure_sheet_has_complete_single_page_print_area(tmp_path):
+        image=tmp_path/'curve.png';Image.new('RGB',(1200,400),'white').save(image)
+        output=tmp_path/'curve.xlsx'
+        export_xlsx([{'عنوان':'پیشرفت','مقدار':'75'}],output,metadata={'_figures':[{'caption':'نمودار پیشرفت','path':str(image)}]})
+        book=load_workbook(output);sheet=book.worksheets[-1]
+        assert len(sheet._images)==1
+        assert sheet.sheet_view.rightToLeft
+>       assert sheet.sheet_properties.pageSetUpPr.fitToPage
+E       assert None
+E        +  where None = <openpyxl.worksheet.properties.PageSetupProperties object>\nParameters:\nautoPageBreaks=None, fitToPage=None.fitToPage
+E        +    where <openpyxl.worksheet.properties.PageSetupProperties object>\nParameters:\nautoPageBreaks=None, fitToPage=None = <openpyxl.worksheet.properties.WorksheetProperties object>\nParameters:\ncodeName=None, enableFormatConditionsCalculatio... pageSetUpPr=<openpyxl.worksheet.properties.PageSetupProperties object>\nParameters:\nautoPageBreaks=None, fitToPage=None.pageSetUpPr
+E        +      where <openpyxl.worksheet.properties.WorksheetProperties object>\nParameters:\ncodeName=None, enableFormatConditionsCalculatio... pageSetUpPr=<openpyxl.worksheet.properties.PageSetupProperties object>\nParameters:\nautoPageBreaks=None, fitToPage=None = <Worksheet "نمودار 3">.sheet_properties
+
+tests/test_phase4_report_chart_print.py:13: AssertionError
+_______________ test_package_localizes_applied_amendment_status ________________
+
+    def test_package_localizes_applied_amendment_status():
+        record={'id':'BA-1','status':'applied','reason':'اصلاح ضخامت','base_revision':1,'delta':{'concrete':'0.8'}}
+        packages=[{'id':'W4','title':'بسته آزمایشی','date':'2026-03-16','status':'issued','current':True,'reference':'PKG-1','template':'site-office','template_version':'1','documents':[{'collection':'beam_amendments','id':'BA-1','version':1,'sha256':'a'*64,'record':record}]}]
+        before=deepcopy(packages)
+        rows=compact_rows('package',packages,{})
+>       assert any('وضعیت: اعمال‌شده' in r['مقدار و وضعیت'] for r in rows)
+E       assert False
+E        +  where False = any(<generator object test_package_localizes_applied_amendment_status.<locals>.<genexpr> at 0x7f63c678a740>)
+
+tests/test_phase4_site_report_localization.py:34: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase4_report_chart_print.py::test_report_figure_sheet_has_complete_single_page_print_area
+FAILED tests/test_phase4_site_report_localization.py::test_package_localizes_applied_amendment_status
+2 failed, 10 passed in 0.65s

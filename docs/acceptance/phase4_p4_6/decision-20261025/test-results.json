@@ -1,0 +1,42 @@
+[
+  {
+    "run": "decision-round1",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 35.668
+  },
+  {
+    "run": "decision-round2",
+    "tests": 1,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 35.937
+  },
+  {
+    "run": "observer-red",
+    "tests": 1,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 0.053
+  },
+  {
+    "run": "observer-green",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 0.043
+  },
+  {
+    "run": "closed-publication",
+    "tests": 1,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 0.901
+  }
+]

@@ -1,0 +1,34 @@
+{
+  "base_head": "958273c36ad6f90dee41e2616aadad7613fbac25",
+  "base_tree": "9b19457d34c5e0eb2f2ebcce3f1d6f283254ca76",
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "sqlite": "3.53.1",
+  "source_sha256": {
+    "core/projects/store.py": "0e6962bba9bcaffc2055944bd948fb87e56127cf3d81988c1ecbfed7ad89e792",
+    "core/recovery/recovery.py": "f12085df85e5bb482ce29a9429bccfb2dabaa9bd4f5b059a1c4a0e8f8979bb57",
+    "scripts/run_offline_tests.py": "d054db6e272fb527573426d18cef763a577fdf17353136827bb521f2dccda2e8",
+    "scripts/phase4_site_operations_probe.py": "ce67b43e84b08e6c7e74502fc96cc0a9e6f5b777e1d5351974445ddb5e75a53a",
+    "core/reports/exporters.py": "8a84b39932603c6343c1002366aff7119e108e571c77f6d66420ad58956ddddb",
+    "core/reports/project_controls.py": "dd6f221237153bf7fd85d8abb89131aa098dcdc7167d731e8a748519b8ed67f9",
+    "core/reports/site_operations.py": "2ed039d0199f22023eab861d30d31984a2eaee94ff5cb0496fb377d37603b8dd",
+    "core/reports/project_control_figures.py": "4fcaca93869a5f822cd3dd331a767951df824816d7d8a8fc66323a1f957ec709"
+  },
+  "product_diff_from_tested_a153": "",
+  "capability_lines": [
+    "CapEff:\t0000000000000000",
+    "NoNewPrivs:\t1",
+    "Seccomp:\t2"
+  ],
+  "ptrace_used": false,
+  "full_regression_repeated": false,
+  "new_drive_backup_created": false,
+  "decision": "B",
+  "actor": "UNRESOLVED",
+  "historical_corruption": "UNRESOLVED",
+  "priorities": {
+    "4": "PARTIAL",
+    "5": "PARTIAL",
+    "6": "PARTIAL"
+  },
+  "owner_risk_acceptance": false
+}

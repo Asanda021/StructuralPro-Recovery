@@ -1,0 +1,207 @@
+{
+  "direct_readonly_cause": "PROVEN: the live database inode was unlinked/replaced at its pathname",
+  "sqlite_errorcode": 1032,
+  "sqlite_errorname": "SQLITE_READONLY_DBMOVED",
+  "error_captured_before_product_rollback": true,
+  "last_successful_data_commits": 281,
+  "pathname_snapshot_version": 273,
+  "events": {
+    "COMMIT_RETURN": {
+      "event": "COMMIT_RETURN",
+      "wall_ns": 1792903116047790391,
+      "monotonic_ns": 4600380107647,
+      "initial": [
+        27,
+        266155
+      ],
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 266155,
+        "bytes": 46194688
+      },
+      "fds": [
+        {
+          "fd": "16",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 266155,
+          "bytes": 46194688,
+          "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": false
+    },
+    "SQL_BEGIN": {
+      "event": "SQL_BEGIN",
+      "wall_ns": 1792903116164693587,
+      "monotonic_ns": 4600497011364,
+      "initial": [
+        27,
+        266155
+      ],
+      "statement": "BEGIN IMMEDIATE",
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 266155,
+        "bytes": 46194688
+      },
+      "fds": [
+        {
+          "fd": "16",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+          "device": 27,
+          "inode": 266155,
+          "bytes": 46194688,
+          "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": false
+    },
+    "first_moved_INSERT": {
+      "event": "SQL_INSERT",
+      "wall_ns": 1792903116210506997,
+      "monotonic_ns": 4600542824443,
+      "initial": [
+        27,
+        266155
+      ],
+      "statement": "INSERT projects",
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 266211,
+        "bytes": 43864064
+      },
+      "fds": [
+        {
+          "fd": "16",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db (deleted)",
+          "device": 27,
+          "inode": 266155,
+          "bytes": 46194688,
+          "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\nlock:\t1: POSIX  ADVISORY  WRITE 8428 00:1b:266155 1073741825 1073741825\nlock:\t2: POSIX  ADVISORY  READ 8428 00:1b:266155 1073741826 1073742335\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": true
+    },
+    "ROLLBACK": {
+      "event": "SQL_ROLLBACK",
+      "wall_ns": 1792903116469120680,
+      "monotonic_ns": 4600801437596,
+      "initial": [
+        27,
+        266155
+      ],
+      "statement": "ROLLBACK",
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 266211,
+        "bytes": 43864064
+      },
+      "fds": [
+        {
+          "fd": "16",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db (deleted)",
+          "device": 27,
+          "inode": 266155,
+          "bytes": 46194688,
+          "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\nlock:\t1: POSIX  ADVISORY  WRITE 8428 00:1b:266155 1073741825 1073741825\nlock:\t2: POSIX  ADVISORY  READ 8428 00:1b:266155 1073741826 1073742335\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": true
+    }
+  },
+  "failure_state": {
+    "stage": "execute-before-ProjectStore-rollback",
+    "sqlite_errorcode": 1032,
+    "sqlite_errorname": "SQLITE_READONLY_DBMOVED",
+    "exception": "OperationalError('attempt to write a readonly database')",
+    "identity": {
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 266211,
+        "bytes": 43864064
+      },
+      "fds": [
+        {
+          "fd": "16",
+          "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db (deleted)",
+          "device": 27,
+          "inode": 266155,
+          "bytes": 46194688,
+          "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t266155\nlock:\t1: POSIX  ADVISORY  WRITE 8428 00:1b:266155 1073741825 1073741825\nlock:\t2: POSIX  ADVISORY  READ 8428 00:1b:266155 1073741826 1073742335\n"
+        }
+      ],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace-frozen/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": true
+    },
+    "files": {
+      "": {
+        "sha256": "b5b0e48414dee5205de34a0cd6403fd5d8f9cd819a9a8b87c3e2f7c73eb57e00",
+        "bytes": 43864064
+      }
+    }
+  },
+  "replacement_actor": "UNRESOLVED",
+  "historical_251_323_physical_corruption_cause": "UNRESOLVED",
+  "engine_or_GC_or_threshold_changes": false,
+  "runtime_mitigation": "Keep live QA DB outside the synchronized workspace; publish only closed verified snapshots; not a Windows product-path change"
+}

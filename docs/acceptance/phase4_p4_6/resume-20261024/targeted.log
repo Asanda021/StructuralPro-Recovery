@@ -1,0 +1,10 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+........................................................................ [ 74%]
+.........................                                                [100%]
+=============================== warnings summary ===============================
+tests/test_phase4_site_workspace.py::test_site_reports_readback_no_mutation[pdf]
+  /workspace/scratch/61dce18379e6/p4-venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+97 passed, 1 warning in 5.41s

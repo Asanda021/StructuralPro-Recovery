@@ -1,0 +1,50 @@
+{
+  "stage": "outer-probe-after-normal-product-error-handling",
+  "sqlite_errorcode": null,
+  "sqlite_errorname": null,
+  "exception": "FileNotFoundError(2, 'No such file or directory')",
+  "identity": {
+    "path": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 265568,
+      "bytes": 524288
+    },
+    "fds": [
+      {
+        "fd": "16",
+        "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+        "device": 27,
+        "inode": 265568,
+        "bytes": 524288,
+        "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t265568\n"
+      },
+      {
+        "fd": "18",
+        "target": "/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db",
+        "device": 27,
+        "inode": 265568,
+        "bytes": 524288,
+        "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265568\n"
+      }
+    ],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db-shm'"
+      }
+    },
+    "moved": false
+  },
+  "files": {
+    "": {
+      "sha256": "ce0e48fe964ddb7fe1abdd910bda5fafa08b66407b5b36bf25d3d3d66da6c007",
+      "bytes": 524288
+    }
+  }
+}

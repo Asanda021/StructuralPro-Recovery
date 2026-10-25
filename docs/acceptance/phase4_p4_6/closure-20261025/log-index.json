@@ -1,0 +1,57 @@
+{
+  "notify-probe/events.jsonl.gz": {
+    "raw_bytes": 2196675,
+    "raw_sha256": "17cd0479a95e637929fb25f2cc2bf6dcb85cd141e515ac512defe7e4022a020a",
+    "gzip_sha256": "bbc7ad413ea40739b654aa76e2a3c5bc951a1d2fb70fef770e883def94503bdb"
+  },
+  "sqlite-runs-audited-v2/audited-workspace/events.jsonl.gz": {
+    "raw_bytes": 2007186,
+    "raw_sha256": "2561aca952a386de53c7c769bb5e0a4e46e94eba0df2a85657a5ce66ab268a7c",
+    "gzip_sha256": "036298f5de12ae4ae1dc791b0f331ffe1ff3c39046d9244442299e459e77dc0e"
+  },
+  "sqlite-runs-audited-v2/audited-tmp/events.jsonl.gz": {
+    "raw_bytes": 1913248,
+    "raw_sha256": "646a5247639131cc2d65c469c78ed2a0db56ec347ecf360cf5c91714108c96fe",
+    "gzip_sha256": "1d88c345f98aad6f7839ed8841c43b9ade8945913d0f4368bd0bdc1a637bffd2"
+  },
+  "sqlite-runs/audited-workspace/events.jsonl.gz": {
+    "raw_bytes": 126291,
+    "raw_sha256": "9aafb6dd3e861be18a97abead4970e2f0078eb355beee39d395d7ad465c396f3",
+    "gzip_sha256": "ba580e18c96b65bc221ecfd29f711faf48c95643e97a034d6f5d39ac907e0f4e"
+  },
+  "sqlite-runs/original-tmp/events.jsonl.gz": {
+    "raw_bytes": 411,
+    "raw_sha256": "e98698a1ea04e3adc22bdac66aaa320295e92e18f9cb691d5be51f82e891ec16",
+    "gzip_sha256": "f8adb335f4974b90b122bca47625a40ef59905ad91d99f90521d20590f6ca2c4"
+  },
+  "sqlite-runs/original-workspace/events.jsonl.gz": {
+    "raw_bytes": 424,
+    "raw_sha256": "3d62f433b55bdea452c56b18661f463ac67ea70420f5b9aa961905581632c468",
+    "gzip_sha256": "0792bfd794c3424f6f511f81c888baf76d4f3f0fb5b76074d1b962a0d7acee8c"
+  },
+  "sqlite-runs/audited-tmp/events.jsonl.gz": {
+    "raw_bytes": 120050,
+    "raw_sha256": "589c0b6d23b6a6caa6afd25df9bab9c2cd57026c100061e6ba29314d2de525ae",
+    "gzip_sha256": "7900743a41f56153d87ed39c275b916ce0ac19d077fb77e7796842a5200d3f20"
+  },
+  "sqlite-runs-frozen/audited-workspace/events.jsonl.gz": {
+    "raw_bytes": 1698924,
+    "raw_sha256": "893d4544a566b5806fb1437fbba89498e69096cda7853b4899e454e8056599aa",
+    "gzip_sha256": "337dcf5562dfbce6786c9e57143c4196f98b79c9be9fce118b1ea7be1ac18e5d"
+  },
+  "sqlite-runs-frozen/original-tmp/events.jsonl.gz": {
+    "raw_bytes": 419,
+    "raw_sha256": "afcc0293297e148d9200bf0b191f36eb896a70411337df4a27dd58bbd022cfd3",
+    "gzip_sha256": "8ad6da4425aba503363df0528c14171c1b69c28e809771e610bf42d3fe0371fe"
+  },
+  "sqlite-runs-frozen/original-workspace/events.jsonl.gz": {
+    "raw_bytes": 431,
+    "raw_sha256": "b79db8027c2afe0247205fb65bb5488b3218ee07a33ec186fa189b5ff7c3392b",
+    "gzip_sha256": "d0f050948506370c2b02f8c5428dfb7db67294563cd3dc8d37f7fed175c30978"
+  },
+  "sqlite-runs-frozen/audited-tmp/events.jsonl.gz": {
+    "raw_bytes": 1881941,
+    "raw_sha256": "fc4ad4bd1154a518cb9c3c099fce8cf91c5e5a790a3f3aab93be2ebeb368dc45",
+    "gzip_sha256": "7ee98bf629159ca2df0860b9b4dd2a277925c18f311ae76d03806f7f3b1bf40c"
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "docs/acceptance/phase4_p4_6/CONTINUE_WORK.fa.md": {
+    "bytes": 8504,
+    "sha256": "d8ffa2abd09375d29866e41efd88fd38a6f9e7db7d0d666eeff8246978fc201a"
+  },
+  "docs/acceptance/phase4_p4_6/closure-20261025/CONTINUE.fa.md": {
+    "bytes": 6257,
+    "sha256": "37b707a1081c6db8cfa9e00143672b821ffa536d130be525f4060a80ee6031ec"
+  },
+  "docs/acceptance/phase4_p4_6/closure-20261025/current-state.json": {
+    "bytes": 1005,
+    "sha256": "496c049575e51f01410282f1de45639e9b6f32b9ee65465ad74b10b80ffeb061"
+  },
+  "docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py": {
+    "bytes": 6848,
+    "sha256": "533a1615d3d757754d1288ebae077e916794341379f79e7c6bb121b6a0e2fb27"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/DECISION.fa.md": {
+    "bytes": 11569,
+    "sha256": "45818867f5ae80a0893d3b1b7510fd74e15686483eb2981a677ff5543e053685"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/closed-publication.json": {
+    "bytes": 3422,
+    "sha256": "c0e0b5dd2be2b9179c422215bbf73d49420d2a6e025520d5dbdbd9a5cc74a60e"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/closed-publication.log": {
+    "bytes": 178,
+    "sha256": "db7493313997e4f958645a5f6dc4eb2ee6183ffb5a2726cda1e25a0cdb0bea6c"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/closed-publication.xml": {
+    "bytes": 396,
+    "sha256": "8901974e698bbfe50e1122e9975c8aa004d6c8c95b39c8d9444c5bfe41996206"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/decision-round1.log": {
+    "bytes": 179,
+    "sha256": "77385c17417c2cb641cb91ff400c5828f2940fa1717c973a61c4d793fcd35680"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/decision-round1.xml": {
+    "bytes": 375,
+    "sha256": "051086a6d945ac3d1a8c7049b901eb013296dc05e28306d9fc27d4ffbabf72d9"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/decision-round2.log": {
+    "bytes": 2988,
+    "sha256": "c185e2b8a1f6c2304c22f98efada557fa0b4a3da2cd0b4e2a4c982df957cfe60"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/decision-round2.xml": {
+    "bytes": 2784,
+    "sha256": "85064cc441b8b55d0d983a3f40dc66b1d76e907f98d78397e4dd0be53bd0ca37"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/decision-state.json": {
+    "bytes": 1525,
+    "sha256": "923012fca1dcf9642795354369ab2ce92d76be37498d906d8eabecbcf5de8be3"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/expanded-file-operations.txt": {
+    "bytes": 19037,
+    "sha256": "1972beee01acbb62058f413b80056040e51fa3ee749b8328bbf96e7b1fe8d9c3"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/observer-green.log": {
+    "bytes": 178,
+    "sha256": "0b817ad0ae62c56376df3b1fc7f013a1e8dd964dc972e440828180a833b59300"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/observer-green.xml": {
+    "bytes": 408,
+    "sha256": "89e13f2037734ef48b1e83430007eea44283647c75105c979f90a8620d7c62dc"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/observer-red.log": {
+    "bytes": 2319,
+    "sha256": "cc626c01259c9472525e70799b9e9e79519c40d15a3c6ce781c2a1b3a2da1a7c"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/observer-red.xml": {
+    "bytes": 2619,
+    "sha256": "19d1b0c8f96d8c5985bfeb61551abe689651de32204905e0de3168d0e9644e9b"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/product-file-operations.txt": {
+    "bytes": 8542,
+    "sha256": "ada0b96f614b50ca43bac909a04beabc71ec7a5533fb364a6feea64b733d7a06"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/qa-file-operations.txt": {
+    "bytes": 5638,
+    "sha256": "73f043b5fb58f8b1efa45843fbac7269bdfcfdadb0ae99a3825c54a15a8b73b2"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round1/events.jsonl.gz": {
+    "bytes": 43931,
+    "sha256": "09d5744bb00548d6cb65e14526bd0885a7a12a50fa473674716eeb2b73ed66b1"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round1/python-mutations.json": {
+    "bytes": 2,
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round1/result.json": {
+    "bytes": 6368,
+    "sha256": "1567a647cd756287e15924ec459758f8196e7d40d773c498f1befd5e29bf1442"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round1/round-result.json": {
+    "bytes": 1548,
+    "sha256": "64fcee7b66f59d94bc0841270923207dc963128352d9a3ba7a6d2cd8dc9b6b82"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round2/events.jsonl.gz": {
+    "bytes": 43326,
+    "sha256": "6fddbe4e8e287d474f2746bba542228196aa5c6a5fa2da4e273d4f0f469459d4"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round2/python-mutations.json": {
+    "bytes": 2,
+    "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/round2/result.json": {
+    "bytes": 6214,
+    "sha256": "8bac39431d1932b7585b36309bd2d6c36fd582b6ba88be8b0f52a77b3c642f67"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/static-review.fa.md": {
+    "bytes": 4160,
+    "sha256": "df1884c01fcd9cf272fdeb9a1463312c645dad4c3784645fb11b4150e6336e3c"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py": {
+    "bytes": 4495,
+    "sha256": "3bb101950067dbcd49b8fac4c1b9edeb288d6c19fac97b25e568ecddb58ad83b"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/test-results.json": {
+    "bytes": 653,
+    "sha256": "3065369060330a3a4986ab8a84d1fd7b54700cba743f132d8c2cf9031e776200"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/test_closed_publication.py": {
+    "bytes": 4275,
+    "sha256": "aafaaa80397b9fa25b6b2aa8afa7231e93be260d3464cd5c69d68c0e1e59debe"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/test_observer_closes.py": {
+    "bytes": 1304,
+    "sha256": "404050b0249d4cc9d7097dd8607651a750cf9d2dcbb28127d891c18d68273aa7"
+  },
+  "docs/acceptance/phase4_p4_6/decision-20261025/trace-index.json": {
+    "bytes": 948,
+    "sha256": "816f8918501043e208a65fd743d8832a144cbcf1d83c24f54c59639be0f86f52"
+  },
+  "docs/acceptance/phase4_p4_6/ledger.md": {
+    "bytes": 11525,
+    "sha256": "8643d6d6eb8dfd70270ef06cc74e86125779ae2f32a830b18c04af22a7592425"
+  }
+}

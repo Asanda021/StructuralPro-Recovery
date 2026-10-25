@@ -42,7 +42,7 @@ def export(service,pid,kind,fmt,path,*,as_of=None):
         from core.reports.project_control_figures import curve_figure
         figures=curve_figure(points,Path(path).with_suffix(''))
     baselines=p.get('schedule_baselines',[])
-    metadata={'project_id':pid,'عنوان بخش':LABELS[kind],'نسخه پروژه':p['_meta']['version'],'نسخه مبنا':baselines[-1]['id'] if baselines else 'ثبت نشده',
+    metadata={'_phase4_presentation':True,'project_id':pid,'عنوان بخش':LABELS[kind],'نسخه پروژه':p['_meta']['version'],'نسخه مبنا':baselines[-1]['id'] if baselines else 'ثبت نشده',
               'تاریخ گزارش شمسی':report_date(date.fromisoformat(as_of)) if as_of else report_date(),
               'قرارداد مدت':'روز کاری؛ پایان انحصاری در محاسبه؛ آخرین روز اشغال در نمایش','_figures':figures}
     return build_report(p['name']+' — '+LABELS[kind],rows,metadata=metadata).export(path,fmt)

@@ -1,0 +1,63 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______________________ test_independent_original_scenario ______________________
+
+    def test_independent_original_scenario():
+     from scripts.phase4_site_operations_probe import run
+     emit('ENV',python=sys.version,sqlite=sqlite3.sqlite_version,mode=MODE,root=str(ROOT),gc_enabled=gc.isenabled(),gc_threshold=gc.get_threshold(),pid=os.getpid())
+     if MODE=='audited':
+      def connect(*args,**kw):
+       kw.setdefault('factory',Observed);return CONNECT(*args,**kw)
+      sqlite3.connect=connect
+     try:
+>     result=run(ROOT);r={'status':'PASS','receipt':result,'fresh':fresh(ROOT/'prior/engineering/db/projects.db')}
+             ^^^^^^^^^
+
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase4_site_operations_probe.py:14: in run
+    prior=previous(root/'prior');a=StructuralProApp(root/'prior'/'engineering'/'db')
+          ^^^^^^^^^^^^^^^^^^^^^^
+scripts/phase4_project_controls_probe.py:15: in run
+    root=Path(root).resolve();root.mkdir(parents=True,exist_ok=True);prepare(root/'engineering')
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/phase3_financial_probe.py:62: in run
+    assert app.store.integrity_check()['ok']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/projects/store.py:191: in integrity_check
+    return verify_database(self.path)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/recovery/recovery.py:130: in verify_database
+    con=sqlite3.connect(source_path.resolve().as_uri()+"?mode=ro", uri=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:70: in connect
+    kw.setdefault('factory',Observed);return CONNECT(*args,**kw)
+                                             ^^^^^^^^^^^^^^^^^^^
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:46: in __init__
+    super().__init__(*args,**kw);self.audit_path=Path(args[0]).resolve();s=self.audit_path.stat();self.initial=(s.st_dev,s.st_ino)
+                                                                           ^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/file:/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db?mode=ro')
+follow_symlinks = True
+
+    def stat(self, *, follow_symlinks=True):
+        """
+        Return the result of the stat() system call on this path, like
+        os.stat() does.
+        """
+>       return os.stat(self, follow_symlinks=follow_symlinks)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/file:/workspace/scratch/5ff2acae0199/sqlite-closure-audited-workspace/prior/engineering/db/projects.db?mode=ro'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:840: FileNotFoundError
+=============================== warnings summary ===============================
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py::test_independent_original_scenario
+  /workspace/scratch/5ff2acae0199/work-venv-20261025/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py::test_independent_original_scenario
+1 failed, 1 warning in 1.51s

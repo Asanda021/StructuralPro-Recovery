@@ -1,0 +1,54 @@
+{
+  "round": 1,
+  "start_ns": 1792909173501121435,
+  "end_ns": 1792909209120541747,
+  "root": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025",
+  "path_fd_mismatches": 0,
+  "python_file_mutations": [],
+  "fresh": {
+    "identity": {
+      "path": "/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db",
+      "identity": {
+        "device": 27,
+        "inode": 1715019,
+        "bytes": 60493824
+      },
+      "fds": [],
+      "companions": {
+        "-journal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-journal'"
+        },
+        "-wal": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-wal'"
+        },
+        "-shm": {
+          "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/sqlite-decision-round1-20261025/prior/engineering/db/projects.db-shm'"
+        }
+      },
+      "moved": false
+    },
+    "journal_mode": "delete",
+    "integrity": [
+      [
+        "ok"
+      ]
+    ],
+    "active_tail": [
+      [
+        "P",
+        326,
+        1
+      ]
+    ],
+    "revision_count": 326
+  },
+  "sql_counts": {
+    "SQL_BEGIN": 326,
+    "SQL_INSERT": 652,
+    "SQL_COMMIT": 326,
+    "CLOSE_BEGIN": 9,
+    "CLOSE_RETURN": 9,
+    "CONNECT_OR_REOPEN": 9
+  },
+  "scope": "QA only; no causal attribution from a successful rerun"
+}

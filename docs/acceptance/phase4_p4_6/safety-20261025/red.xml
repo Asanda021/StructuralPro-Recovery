@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="9" time="0.284" timestamp="2026-10-25T07:47:57.945832+01:00" hostname="081a421ee837"><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_native_dbmoved_code" time="0.065" /><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[get]" time="0.008"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu0')
+operation = 'get'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[list]" time="0.008"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu1')
+operation = 'list'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[revisions]" time="0.008"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu2')
+operation = 'revisions'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[save]" time="0.008"><failure message="sqlite3.OperationalError: attempt to write a readonly database">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu3')
+operation = 'save'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                                                                       ^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_phase4_sqlite_dbmoved_safety.py:33: in &lt;lambda&gt;
+    actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+                                                                                                     ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;core.projects.store.ProjectStore object at 0x7fe972da29c0&gt;
+project_id = 'P'
+project = {'baseline': 18, 'current': 20, 'exact': '0.000000000000000001', 'history': ['12.5', '45', '75'], ...}
+expected_digest = None, amendment_command = None
+financial_request_command = None, manual_formula_command = None
+structural_handoff_command = None, ifc_command = None, phase3_command = None
+project_control_command = None
+
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -&gt; dict[str,Any]:
+        """Version-check and write project + revision in one SQLite transaction.
+    
+        BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
+        A competing connection cannot validate against a stale version and then
+        overwrite the current row.
+        """
+        pid=str(project_id); now=time.time()
+        clean_project=deepcopy(project)
+        clean_project.pop("_meta",None)
+        payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            incoming_version=(project.get("_meta") or {}).get("version")
+            if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
+                raise RuntimeError("project changed since write began")
+            if row is not None and expected_digest is None and pid in self._cache:
+                cached=deepcopy(self._cache[pid][1]);cached.pop("_meta",None)
+                assert_unchanged(json.loads(row["payload"]), begin_write(cached))
+            if expected_digest is not None:
+                if row is None:
+                    raise RuntimeError("project changed since write began")
+                current=json.loads(row["payload"])
+                assert_unchanged(current, expected_digest)
+            if row is not None:
+                previous = json.loads(row["payload"])
+                issued = previous.get("statement_periods") or []
+                if issued and previous.get('statement_workflow_terms') and previous.get('factor_review')!=clean_project.get('factor_review'):
+                    raise ValueError('تغییر ضرایب پس از صدور رسمی نیازمند الحاقیه مستقل است')
+                if issued:
+                    next_periods = clean_project.get("statement_periods") or []
+                    if not isinstance(next_periods, list) or next_periods[:len(issued)] != issued:
+                        raise ValueError("تغییر یا حذف صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                    for family in ("takeoffs", "takeoff_assemblies"):
+                        if (previous.get(family) or []) != (clean_project.get(family) or []):
+                            raise ValueError("تغییر مبنای متره صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                if (previous.get("estimate") or previous.get("statement_periods")) and \
+                        _contract_basis(previous) != _contract_basis(clean_project):
+                    if previous.get("statement_periods"):
+                        raise ValueError("پس از صدور صورت‌وضعیت، تغییر مبنای BOQ یا فهرست‌بها نیازمند گردش اصلاحیه رسمی است")
+                    # An old estimate must never masquerade as current after a
+                    # quantity, approved pricebook or payable-unit change.
+                    clean_project.pop("estimate", None)
+                    payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.projects.controls import guard as project_control_guard
+            project_control_guard(json.loads(row['payload']) if row else {},clean_project,project_control_command)
+            from core.commercial.financial_ledger import ledger_guard
+            ledger_guard(json.loads(row["payload"]) if row else {}, clean_project, phase3_command)
+            from core.commercial.statement import workflow_guard
+            workflow_guard(json.loads(row['payload']) if row else {}, clean_project, phase3_command)
+            from core.drawings.ifc_pipeline import identity_guard
+            identity_guard(json.loads(row['payload']) if row else {},clean_project,ifc_command)
+            from core.takeoff.structural_handoff_work import guard as handoff_guard
+            handoff_guard(json.loads(row["payload"]) if row else {},clean_project,structural_handoff_command)
+            from core.takeoff.manual_formula_amendments import guard as manual_guard
+            manual_guard(json.loads(row['payload']) if row else {},clean_project,manual_formula_command)
+            from core.commercial.statement_amendment import guard_change
+            guard_change(json.loads(row["payload"]) if row else {}, clean_project, amendment_command)
+            from core.commercial.contract_requests import guard
+            guard(json.loads(row["payload"]) if row else {}, clean_project, financial_request_command)
+            from core.commercial.financial_ledger import settlement_guard
+            settlement_guard(clean_project)
+            version=int(row["version"])+1 if row else 1
+&gt;           self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+                            (pid,str(clean_project.get("name","")),version,now,payload))
+E                           sqlite3.OperationalError: attempt to write a readonly database
+
+core/projects/store.py:123: OperationalError</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[backup]" time="0.009"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu4')
+operation = 'backup'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displaced_connection_refuses_success[integrity]" time="0.007"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displaced_connection_refu5')
+operation = 'integrity'
+
+    @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
+    def test_displaced_connection_refuses_success(tmp_path,operation):
+        path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+        actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:35: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displacement_at_commit_never_acknowledged[before_commit]" time="0.010"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displacement_at_commit_ne0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe972deafc0&gt;
+stage = 'before_commit'
+
+    @pytest.mark.parametrize('stage',['before_commit','after_commit'])
+    def test_displacement_at_commit_never_acknowledged(tmp_path,monkeypatch,stage):
+        path=prepare(tmp_path);connect=sqlite3.connect;trigger={'on':False};evidence={}
+        class Connection(sqlite3.Connection):
+            def commit(self):
+                if trigger['on'] and stage=='before_commit':evidence['held'],evidence['hash']=displace(path)
+                result=super().commit()
+                if trigger['on'] and stage=='after_commit':evidence['held'],evidence['hash']=displace(path)
+                return result
+        def factory(*a,**k):k['factory']=Connection;return connect(*a,**k)
+        monkeypatch.setattr(sqlite3,'connect',factory);s=ProjectStore(path);monkeypatch.setattr(sqlite3,'connect',connect)
+        p=s.get('P');p['unacknowledged']='new';trigger['on']=True
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):s.save('P',p)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:55: Failed</failure></testcase><testcase classname="tests.test_phase4_sqlite_dbmoved_safety" name="test_displacement_at_commit_never_acknowledged[after_commit]" time="0.012"><failure message="Failed: DID NOT RAISE RuntimeError">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_displacement_at_commit_ne1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fe972de9a60&gt;
+stage = 'after_commit'
+
+    @pytest.mark.parametrize('stage',['before_commit','after_commit'])
+    def test_displacement_at_commit_never_acknowledged(tmp_path,monkeypatch,stage):
+        path=prepare(tmp_path);connect=sqlite3.connect;trigger={'on':False};evidence={}
+        class Connection(sqlite3.Connection):
+            def commit(self):
+                if trigger['on'] and stage=='before_commit':evidence['held'],evidence['hash']=displace(path)
+                result=super().commit()
+                if trigger['on'] and stage=='after_commit':evidence['held'],evidence['hash']=displace(path)
+                return result
+        def factory(*a,**k):k['factory']=Connection;return connect(*a,**k)
+        monkeypatch.setattr(sqlite3,'connect',factory);s=ProjectStore(path);monkeypatch.setattr(sqlite3,'connect',connect)
+        p=s.get('P');p['unacknowledged']='new';trigger['on']=True
+        try:
+&gt;           with pytest.raises(RuntimeError,match='database identity'):s.save('P',p)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_phase4_sqlite_dbmoved_safety.py:55: Failed</failure></testcase></testsuite></testsuites>

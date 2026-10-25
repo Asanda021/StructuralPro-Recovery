@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="27" time="50.599" timestamp="2026-10-25T06:59:46.381501+03:30" hostname="cd559c0349f6"><testcase classname="tests.test_phase4_site_acceptance" name="test_extended_five_floor_site_operations" time="28.612" /><testcase classname="docs.acceptance.phase4_p4_6.verification-20261024.probe_export" name="test_persistent_site_probe" time="17.429"><failure message="sqlite3.OperationalError: attempt to write a readonly database">def test_persistent_site_probe():
+        from scripts.phase4_site_operations_probe import run
+        root=Path(os.environ['STRUCTURALPRO_QA_SCENARIO'])
+&gt;       result=run(root)
+               ^^^^^^^^^
+
+docs/acceptance/phase4_p4_6/verification-20261024/probe_export.py:8: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase4_site_operations_probe.py:41: in run
+    cmd('assign',id=id,activity_id=activity,resource_id=resource,start=row['start'],end=row['finish'],allocation='1',source=proof)
+scripts/phase4_site_operations_probe.py:30: in cmd
+    def cmd(op,actor='planner',**data):return a.site_command('P',op,actor=actor,reason='داده آزمایشی صریح؛ پروژه واقعی نیست',expected_version=a.open_project('P')['_meta']['version'],**data)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:1915: in site_command
+    return self.project_control_command(project_id,'site_'+op,actor=actor,reason=reason,expected_version=expected_version,**data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:1891: in project_control_command
+    self.store.save(project_id,updated,expected_digest=begin_write(clean),project_control_command=command)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;core.projects.store.ProjectStore object at 0x7f13d8324710&gt;
+project_id = 'P'
+project = {'activity_resource_requirements': [{'activity_basis': 'f98f7bf58d2ab2690792cd507928a195905ce20568d00bea8c7e3865f1e7f3...بندی سقف S1', ...}, {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'wall', ...}], ...}
+expected_digest = '46727273468cc31d21208dee966d2227c482e5b312cb7e1fed7b39e9d85c8a62'
+amendment_command = None, financial_request_command = None
+manual_formula_command = None, structural_handoff_command = None
+ifc_command = None, phase3_command = None
+project_control_command = {'op': 'site_assign', 'actor': 'planner', 'reason': 'داده آزمایشی صریح؛ پروژه واقعی نیست', 'data': {'id': 'AS-M1', 'activity_id': 'M1', 'resource_id': 'CM', 'start': '2026-03-24', ...}, ...}
+
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -&gt; dict[str,Any]:
+        """Version-check and write project + revision in one SQLite transaction.
+    
+        BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
+        A competing connection cannot validate against a stale version and then
+        overwrite the current row.
+        """
+        pid=str(project_id); now=time.time()
+        clean_project=deepcopy(project)
+        clean_project.pop("_meta",None)
+        payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+        self.db.execute("BEGIN IMMEDIATE")
+        try:
+            row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            incoming_version=(project.get("_meta") or {}).get("version")
+            if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
+                raise RuntimeError("project changed since write began")
+            if row is not None and expected_digest is None and pid in self._cache:
+                cached=deepcopy(self._cache[pid][1]);cached.pop("_meta",None)
+                assert_unchanged(json.loads(row["payload"]), begin_write(cached))
+            if expected_digest is not None:
+                if row is None:
+                    raise RuntimeError("project changed since write began")
+                current=json.loads(row["payload"])
+                assert_unchanged(current, expected_digest)
+            if row is not None:
+                previous = json.loads(row["payload"])
+                issued = previous.get("statement_periods") or []
+                if issued and previous.get('statement_workflow_terms') and previous.get('factor_review')!=clean_project.get('factor_review'):
+                    raise ValueError('تغییر ضرایب پس از صدور رسمی نیازمند الحاقیه مستقل است')
+                if issued:
+                    next_periods = clean_project.get("statement_periods") or []
+                    if not isinstance(next_periods, list) or next_periods[:len(issued)] != issued:
+                        raise ValueError("تغییر یا حذف صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                    for family in ("takeoffs", "takeoff_assemblies"):
+                        if (previous.get(family) or []) != (clean_project.get(family) or []):
+                            raise ValueError("تغییر مبنای متره صورت‌وضعیت صادرشده نیازمند اصلاحیه رسمی است")
+                if (previous.get("estimate") or previous.get("statement_periods")) and \
+                        _contract_basis(previous) != _contract_basis(clean_project):
+                    if previous.get("statement_periods"):
+                        raise ValueError("پس از صدور صورت‌وضعیت، تغییر مبنای BOQ یا فهرست‌بها نیازمند گردش اصلاحیه رسمی است")
+                    # An old estimate must never masquerade as current after a
+                    # quantity, approved pricebook or payable-unit change.
+                    clean_project.pop("estimate", None)
+                    payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
+            from core.projects.controls import guard as project_control_guard
+            project_control_guard(json.loads(row['payload']) if row else {},clean_project,project_control_command)
+            from core.commercial.financial_ledger import ledger_guard
+            ledger_guard(json.loads(row["payload"]) if row else {}, clean_project, phase3_command)
+            from core.commercial.statement import workflow_guard
+            workflow_guard(json.loads(row['payload']) if row else {}, clean_project, phase3_command)
+            from core.drawings.ifc_pipeline import identity_guard
+            identity_guard(json.loads(row['payload']) if row else {},clean_project,ifc_command)
+            from core.takeoff.structural_handoff_work import guard as handoff_guard
+            handoff_guard(json.loads(row["payload"]) if row else {},clean_project,structural_handoff_command)
+            from core.takeoff.manual_formula_amendments import guard as manual_guard
+            manual_guard(json.loads(row['payload']) if row else {},clean_project,manual_formula_command)
+            from core.commercial.statement_amendment import guard_change
+            guard_change(json.loads(row["payload"]) if row else {}, clean_project, amendment_command)
+            from core.commercial.contract_requests import guard
+            guard(json.loads(row["payload"]) if row else {}, clean_project, financial_request_command)
+            from core.commercial.financial_ledger import settlement_guard
+            settlement_guard(clean_project)
+            version=int(row["version"])+1 if row else 1
+&gt;           self.db.execute("INSERT OR REPLACE INTO projects(id,name,version,updated_at,payload) VALUES(?,?,?,?,?)",
+                            (pid,str(clean_project.get("name","")),version,now,payload))
+E                           sqlite3.OperationalError: attempt to write a readonly database
+
+core/projects/store.py:123: OperationalError</failure></testcase><testcase classname="tests.test_phase4_sqlite_atomic_publication" name="test_backup_publish_race_must_not_overwrite_other_writer" time="0.012" /><testcase classname="tests.test_phase4_sqlite_atomic_publication" name="test_rescue_publish_race_never_overwrites_existing_path" time="0.011" /><testcase classname="tests.test_phase4_sqlite_atomic_publication" name="test_existing_truncated_zero_length_store_refused_without_initializing" time="0.001" /><testcase classname="tests.test_phase4_sqlite_atomic_publication" name="test_legitimate_new_database_still_initializes" time="0.007" /><testcase classname="tests.test_phase4_sqlite_backup_during_writes" name="test_backup_under_active_projectstore_writer_has_whole_revision_snapshot" time="0.167" /><testcase classname="tests.test_phase4_sqlite_backup_failclosed" name="test_corrupt_input_refused_and_no_backup_created" time="0.007" /><testcase classname="tests.test_phase4_sqlite_backup_failclosed" name="test_healthy_backup_is_verified_and_readable" time="0.013" /><testcase classname="tests.test_phase4_sqlite_full_history_integrity" name="test_invalid_old_revision_refused_at_open_and_backup[INVALID_JSON]" time="0.011" /><testcase classname="tests.test_phase4_sqlite_full_history_integrity" name="test_invalid_old_revision_refused_at_open_and_backup[[1,2,3]]" time="0.013" /><testcase classname="tests.test_phase4_sqlite_full_history_integrity" name="test_invalid_old_revision_refused_at_open_and_backup[{&quot;name&quot;:&quot;SYNTHETIC&quot;,&quot;project_id&quot;:&quot;OTHER&quot;}]" time="0.011" /><testcase classname="tests.test_phase4_sqlite_full_history_integrity" name="test_invalid_old_revision_refused_at_open_and_backup[{&quot;name&quot;:&quot;SYNTHETIC&quot;,&quot;marker&quot;:NaN}]" time="0.008" /><testcase classname="tests.test_phase4_sqlite_full_history_integrity" name="test_healthy_old_history_backups_still_work" time="0.010" /><testcase classname="tests.test_phase4_sqlite_open_integrity" name="test_corrupted_existing_database_refused_without_writes" time="0.007" /><testcase classname="tests.test_phase4_sqlite_open_integrity" name="test_healthy_existing_database_and_new_database_open" time="0.011" /><testcase classname="tests.test_phase4_sqlite_persistence_323" name="test_323_full_project_store_transactions_persist_and_reopen" time="3.297" /><testcase classname="tests.test_phase4_sqlite_rescue" name="test_corrupt_project_rescued_without_touching_source" time="0.013" /><testcase classname="tests.test_phase4_sqlite_rescue" name="test_fail_closed_if_unrecoverable_revision" time="0.007" /><testcase classname="tests.test_phase4_sqlite_rescue" name="test_never_touches_healthy_source_or_overwrites_output" time="0.006" /><testcase classname="tests.test_phase4_sqlite_rescue" name="test_mismatch_project_version_or_identity_blocks_recovery" time="0.007" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_invalid_history_refused_on_open_and_backup[UPDATE projects SET payload='{broken' WHERE id='P']" time="0.008" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_invalid_history_refused_on_open_and_backup[UPDATE projects SET version=77 WHERE id='P']" time="0.009" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_invalid_history_refused_on_open_and_backup[UPDATE projects SET payload='{}' WHERE id='P']" time="0.010" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_invalid_history_refused_on_open_and_backup[DELETE FROM revisions WHERE project_id='P' AND version=2]" time="0.008" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_invalid_history_refused_on_open_and_backup[INSERT INTO revisions(project_id,version,created_at,payload) VALUES('ORPHAN',1,0,'{}')]" time="0.010" /><testcase classname="tests.test_phase4_sqlite_semantic_integrity" name="test_healthy_history_still_opens_and_backs_up" time="0.012" /></testsuite></testsuites>

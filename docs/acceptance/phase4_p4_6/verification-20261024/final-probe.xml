@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="30.230" timestamp="2026-10-24T13:06:28.816121-04:00" hostname="741d9188185f"><testcase classname="docs.acceptance.phase4_p4_6.verification-20261024.probe_export" name="test_persistent_site_probe" time="30.115"><failure message="sqlite3.OperationalError: Could not decode to UTF-8 column 'payload' with text '{&quot;activity_resource_requirements&quot;: [{&quot;activity_basis&quot;: &quot;3e69b5515ad3da0351239755bbdddee0c0ec59760626a985fc4d20b7deb064e2&quot;, &quot;activity_id&quot;: &quot;S1&quot;,">def test_persistent_site_probe():
+        from scripts.phase4_site_operations_probe import run
+        root=Path(os.environ['STRUCTURALPRO_QA_SCENARIO'])
+&gt;       result=run(root)
+               ^^^^^^^^^
+
+docs/acceptance/phase4_p4_6/verification-20261024/probe_export.py:8: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/phase4_site_operations_probe.py:117: in run
+    assert a.open_project('P')==before and a.site_dashboard('P',as_of='2026-05-02')==dash
+           ^^^^^^^^^^^^^^^^^^^
+core/platform/application.py:86: in open_project
+    def open_project(self,project_id:str)-&gt;dict[str,Any]|None: return self.store.get(project_id)
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;core.projects.store.ProjectStore object at 0x7f7b84870ef0&gt;
+project_id = 'P'
+
+    def get(self, project_id: str) -&gt; dict[str,Any] | None:
+        pid=str(project_id)
+        # Check the small SQLite version column before fetching a large payload.
+        # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
+        version_row=self.db.execute("SELECT version FROM projects WHERE id=?",(pid,)).fetchone()
+        if not version_row:
+            self._cache.pop(pid,None)
+            return None
+        cached=self._cache.get(pid)
+        if cached is not None and cached[0] == int(version_row["version"]):
+            return deepcopy(cached[1])
+&gt;       row=self.db.execute("SELECT * FROM projects WHERE id=?",(pid,)).fetchone()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       sqlite3.OperationalError: Could not decode to UTF-8 column 'payload' with text '{"activity_resource_requirements": [{"activity_basis": "3e69b5515ad3da0351239755bbdddee0c0ec59760626a985fc4d20b7deb064e2", "activity_id": "S1",
+
+core/projects/store.py:138: OperationalError</failure></testcase></testsuite></testsuites>

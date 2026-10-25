@@ -1,0 +1,50 @@
+{
+  "stage": "outer-probe-after-normal-product-error-handling",
+  "sqlite_errorcode": null,
+  "sqlite_errorname": null,
+  "exception": "FileNotFoundError(2, 'No such file or directory')",
+  "identity": {
+    "path": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 265545,
+      "bytes": 520192
+    },
+    "fds": [
+      {
+        "fd": "16",
+        "target": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+        "device": 27,
+        "inode": 265545,
+        "bytes": 520192,
+        "fdinfo": "pos:\t0\nflags:\t02500002\nmnt_id:\t93\nino:\t265545\n"
+      },
+      {
+        "fd": "18",
+        "target": "/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db",
+        "device": 27,
+        "inode": 265545,
+        "bytes": 520192,
+        "fdinfo": "pos:\t0\nflags:\t02500000\nmnt_id:\t93\nino:\t265545\n"
+      }
+    ],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-sqlite-closure-20261025/audited-tmp-scenario/prior/engineering/db/projects.db-shm'"
+      }
+    },
+    "moved": false
+  },
+  "files": {
+    "": {
+      "sha256": "c053ee2cd281d9ffd18e20b8e94c05a00cabd93e67e4ded4b0887effe8c7da97",
+      "bytes": 520192
+    }
+  }
+}

@@ -40,7 +40,7 @@ def _label(key):
 def _report_metadata(title,metadata,columns=None):
     result={'نام گزارش':title,'تاریخ صدور شمسی':report_date()}
     for key,value in (metadata or {}).items():
-        if key=='_figures':continue
+        if key in ('_figures','_phase4_presentation'):continue
         if key=='currency':value=FA_UNITS.get(str(value),value)
         label=_label(key)
         # Unknown user-defined metadata is retained verbatim as a value, never lost.
@@ -201,6 +201,59 @@ def export_csv(rows, path, title="گزارش استراکچرال پرو", summa
     return path
 
 
+def _percentage_display(raw):
+    """A labelled display approximation; callers must retain the exact token."""
+    number=Decimal(raw)
+    if not number.is_finite():raise ValueError('درصد گزارش باید متناهی باشد')
+    with localcontext() as context:
+        context.prec=max(64,len(number.as_tuple().digits)+max(0,number.adjusted())+4)
+        rounded=number.quantize(Decimal('.01'),rounding='ROUND_HALF_UP')
+    short=format(rounded,'f').rstrip('0').rstrip('.')
+    if short in ('','-0'):short='0'
+    return ('≈' if rounded!=number else '')+short+'٪'
+
+
+def _phase4_presentation(rows, cols, metadata):
+    """Display copies only; each shortened token retains its exact audit value."""
+    if not (metadata or {}).get('_phase4_presentation'):
+        return rows,cols,[]
+    percentage_labels={'پیشرفت واقعی','پیشرفت مبنا','پیشرفت برنامه جاری',
+        'انحراف از برنامه جاری','انحراف','واقعی درصد','برنامه مبنا درصد',
+        'برنامه جاری درصد','انحراف درصد','وزن نرمال درصد','واقعی','برنامه‌ای'}
+    audit={};display=[]
+    def remember(kind,original,row,key):
+        token=(kind,original)
+        if token not in audit:
+            number=1+sum(k[0]==kind for k in audit)
+            audit[token]={'id':kind+' '+str(number),'value':original,'locations':[]}
+        entry=audit[token];entry['locations'].append(str(row)+' / '+key)
+        return entry['id']
+    for index,row in enumerate(rows,1):
+        shown=dict(row)
+        for key,value in row.items():
+            if not isinstance(value,str):continue
+            def percent(match):
+                raw=match.group(1);number=Decimal(raw)
+                if not number.is_finite():return match.group(0)
+                # Numeric equality alone does not retain the original decimal spelling.
+                remember('درصد',raw,index,key)
+                return _percentage_display(raw)
+            if key=='مقدار و مرجع' and row.get('عنوان') in percentage_labels and re.fullmatch(r'[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?',value):
+                text=percent(re.match(r'(.*)',value))
+            else:
+                text=re.sub(r'(?<![\w.])([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?)\s*٪',percent,value)
+            def hash_token(match):
+                raw=match.group(0);reference=remember('هش',raw,index,key)
+                return raw[:12]+'… ['+reference+']'
+            shown[key]=re.sub(r'(?<![0-9a-fA-F])[0-9a-fA-F]{64}(?![0-9a-fA-F])',hash_token,text)
+        shown['ردیف']=index;display.append(shown)
+    return display,[('ردیف','ردیف')]+[(k,v) for k,v in cols if k!='ردیف'],list(audit.values())
+
+
+def _audit_rows(audit):
+    return [(entry['id']+' | '+', '.join(entry['locations']),entry['value']) for entry in audit]
+
+
 def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summary=None, metadata=None, columns=None):
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -209,6 +262,11 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     cols = _columns(rows, columns)
+    rows,cols,audit=_phase4_presentation(rows,cols,metadata)
+    summary_items = _summary_items(summary)
+    has_numeric_summary=bool(summary_items)
+    if not summary_items:
+        summary_items=[('تعداد ردیف‌های گزارش',len(rows)),('وضعیت خلاصه','خلاصه عددی ثبت نشده است')]
     wb = Workbook()
     detail = wb.active
     detail.title = "دفتر مالی" if (metadata or {}).get("عنوان بخش") else "ریز متره"
@@ -224,17 +282,19 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     detail.cell(1, 1).alignment = Alignment(horizontal="right", readingOrder=2)
     detail.append([])
     detail.merge_cells(start_row=3,start_column=1,end_row=3,end_column=max(1,len(cols)))
-    detail.cell(3, 1, "خلاصه تجاری")
+    detail.cell(3, 1, "خلاصه تجاری" if has_numeric_summary else "جمع‌بندی گزارش")
     detail.cell(3, 1).font = Font(bold=True)
     detail.cell(3, 1).alignment = Alignment(horizontal="right", readingOrder=2)
-    summary_items = _summary_items(summary)
     for i, (label, value) in enumerate(summary_items, 4):
         # Ordinal/code columns can be very narrow. Give summary prose the
         # combined label span and leave the last column for exact quantities.
         value_col=max(2,len(cols))
         if value_col>2:detail.merge_cells(start_row=i,start_column=1,end_row=i,end_column=value_col-1)
         write_excel_cell(detail.cell(i,1),label)
-        write_excel_cell(detail.cell(i,value_col),value,numeric=True)
+        # Fallback row counts are report metadata, not an engineering amount.
+        # Keep them textual in the detail panel; the summary sheet retains the
+        # actual numeric count without preceding the first measured quantity.
+        write_excel_cell(detail.cell(i,value_col),value,numeric=has_numeric_summary)
     header_row = max(6, 4 + len(summary_items))
     detail.merge_cells(start_row=header_row,start_column=1,end_row=header_row,end_column=max(1,len(cols)))
     detail.cell(header_row, 1, (metadata or {}).get("عنوان بخش","ریز متره و برآورد"))
@@ -272,7 +332,7 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     write_excel_cell(summary_ws["A1"],title)
     summary_ws["A1"].font = Font(bold=True, size=16)
     summary_ws["A3"], summary_ws["B3"] = "شرح", "مقدار"
-    for i, (label, value) in enumerate(_summary_items(summary), 4):
+    for i, (label, value) in enumerate(summary_items, 4):
         write_excel_cell(summary_ws.cell(i,1),label)
         write_excel_cell(summary_ws.cell(i,2),value,numeric=True)
     for cell in summary_ws[3]:
@@ -297,13 +357,30 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
     info_ws.column_dimensions["A"].width = 28
     info_ws.column_dimensions["B"].width = 48
     detail.print_title_rows=f"{header_row}:{header_row}"
-    style_workbook(wb,title)
+    if audit:
+        sheet=wb.create_sheet('ممیزی مقادیر')
+        sheet.append(['مرجع و سطر / ستون','مقدار دقیق یا هش کامل'])
+        sheet.append(['قاعده نمایش','درصدها تا دو رقم اعشار؛ ≈ یعنی تقریب. مقدار اصلی و هش کامل در همین برگه محفوظ است.'])
+        for location,value in _audit_rows(audit):sheet.append([location,value])
+        sheet.column_dimensions['A'].width=60;sheet.column_dimensions['B'].width=96
+        for index,row in enumerate(sheet.iter_rows(min_row=2),2):
+            sheet.row_dimensions[index].height=max(30,14*math.ceil(len(str(row[0].value))/55))
+    figure_sheets=[]
     for figure in (metadata or {}).get('_figures',[]):
         from openpyxl.drawing.image import Image as ExcelImage
         sheet=wb.create_sheet('نمودار '+str(len(wb.worksheets)))
         sheet.sheet_view.rightToLeft=True;sheet.cell(1,1,figure['caption'])
         image=ExcelImage(figure['path']);ratio=1000/image.width;image.width=1000;image.height=image.height*ratio
         sheet.add_image(image,'A3')
+        figure_sheets.append((sheet,image))
+    style_workbook(wb,title)
+    for sheet,image in figure_sheets:
+        # Image anchors do not contribute to worksheet dimensions. Include the
+        # complete figure explicitly, then scale the chart sheet to one page.
+        last_col=get_column_letter(math.ceil(image.width/64))
+        sheet.merge_cells(f'A1:{last_col}1')
+        sheet.print_area=f'A1:{last_col}{3+math.ceil(image.height/20)}'
+        sheet.page_setup.fitToHeight=1
     wb.save(path)
     return path
 
@@ -316,7 +393,9 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
     from docx.shared import Inches,Pt,RGBColor
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
-    rows=list(rows);cols=_columns(rows,columns);d=Document()
+    rows=list(rows);cols=_columns(rows,columns)
+    rows,cols,audit=_phase4_presentation(rows,cols,metadata)
+    d=Document()
     normal=d.styles['Normal'];normal.font.name=REPORT_FONT;normal.font.size=Pt(10)
     for name in ('Normal','Title','Heading 1','Heading 2'):
         style=d.styles[name];style.font.name=REPORT_FONT;style.font.color.rgb=RGBColor(0,0,0)
@@ -391,6 +470,10 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
             provenance.append((_cell(row.get('field','عنوان')),_cell(row.get('value',''))))
     if provenance:
         heading('منابع و اصلاحیه‌ها');table(['عنوان','مدرک و توضیح'],provenance)
+    if audit:
+        d.add_page_break();heading('ممیزی مقادیر و هش‌های کامل')
+        write(d.add_paragraph(),'درصدها تا دو رقم اعشار نمایش داده می‌شوند؛ ≈ نشان‌دهنده تقریب است. مقدار اصلی و هش کامل با ارجاع به ردیف گزارش در جدول زیر حفظ شده‌اند.')
+        table(['مرجع و سطر / ستون','مقدار دقیق یا هش کامل'],_audit_rows(audit))
     for figure in (metadata or {}).get('_figures',[]):
         heading(figure['caption']);d.add_picture(figure['path'],width=section.page_width-section.left_margin-section.right_margin)
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True);d.save(path);return path
@@ -579,6 +662,7 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     cols = _columns(rows, columns)
+    rows,cols,audit=_phase4_presentation(rows,cols,metadata)
     rows, cols = _pdf_identity(rows, cols)
     font = _pdf_font()
     styles = getSampleStyleSheet()
@@ -646,6 +730,15 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
                                    ("VALIGN", (0,0), (-1,-1), "TOP"),
                                    ("LEFTPADDING", (0,0), (-1,-1), 5),
                                    ("RIGHTPADDING", (0,0), (-1,-1), 5)]))
+        story.append(table)
+    if audit:
+        story.extend([PageBreak(),Paragraph(_pdf_text('ممیزی مقادیر و هش‌های کامل'),heading),
+            _pdf_paragraph('درصدها تا دو رقم اعشار نمایش داده می‌شوند؛ ≈ یعنی تقریب. مقدار اصلی و هش کامل با ارجاع به ردیف گزارش در این بخش حفظ شده‌اند.',body,doc.width),Spacer(1,12)])
+        data=[[_pdf_paragraph('مقدار دقیق یا هش کامل',body,doc.width*.6-10),_pdf_paragraph('مرجع و سطر / ستون',body,doc.width*.4-10)]]
+        for location,value in _audit_rows(audit):
+            data.append([_pdf_paragraph(value,body,doc.width*.6-10),_pdf_paragraph(location,body,doc.width*.4-10)])
+        table=LongTable(data,colWidths=[doc.width*.6,doc.width*.4],repeatRows=1,hAlign='RIGHT')
+        table.setStyle(TableStyle([('GRID',(0,0),(-1,-1),.35,colors.grey),('VALIGN',(0,0),(-1,-1),'TOP')]))
         story.append(table)
     for figure in (metadata or {}).get('_figures',[]):
         from reportlab.platypus import Image as ReportImage

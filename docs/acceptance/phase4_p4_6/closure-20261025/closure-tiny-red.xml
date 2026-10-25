@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.363" timestamp="2026-10-25T08:17:51.127996+03:30" hostname="cd559c0349f6"><testcase classname="tests.test_shared_report_persian" name="test_tiny_number_does_not_print_as_zero" time="0.061"><failure message="AssertionError: assert (1 == 1e-20)&#10; +  where 1 = &lt;Cell 'ریز متره'.B4&gt;.value">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-10/test_tiny_number_does_not_prin0')
+
+    def test_tiny_number_does_not_print_as_zero(tmp_path):
+     p=export_xlsx([{'quantity':Decimal('0.00000000000000000001')}],tmp_path/'tiny.xlsx',columns=[('quantity','مقدار')]);w=load_workbook(p);s=w['ریز متره'];cell=next(c for row in s for c in row if c.data_type=='n' and c.value is not None)
+&gt;    assert cell.value==1e-20 and 'E' in cell.number_format.upper()
+E    AssertionError: assert (1 == 1e-20)
+E     +  where 1 = &lt;Cell 'ریز متره'.B4&gt;.value
+
+tests/test_shared_report_persian.py:72: AssertionError</failure></testcase></testsuite></testsuites>

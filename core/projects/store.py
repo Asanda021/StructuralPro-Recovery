@@ -24,17 +24,90 @@ def _contract_basis(project: dict[str, Any]) -> str:
 
 
 class ProjectStore:
+    @staticmethod
+    def _parent_identities(path: Path) -> tuple[tuple[int, int], ...]:
+        """Snapshot every parent directory from db/ through the filesystem root.
+
+        A replacement directory may expose a *hardlink to the same DB inode*.
+        Checking the database file alone cannot detect that the SQLite journal
+        and sidecar paths have been moved to a different directory.
+        """
+        identities = []
+        parent = path.parent
+        while True:
+            info = parent.stat()
+            identities.append((info.st_dev, info.st_ino))
+            if parent == parent.parent:
+                break
+            parent = parent.parent
+        return tuple(identities)
+
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
+        existing = self.path.exists()
+        before_open = self.path.stat() if existing else None
+        # Pin the directory chain *before* opening SQLite. A directory may be
+        # replaced while connect() is returning without changing the file inode.
+        self._directory_identities = self._parent_identities(self.path)
+        if before_open is not None and (not self.path.is_file() or before_open.st_size == 0):
+            raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
+        self._identity_failed=False
         self._cache: dict[str, tuple[int, dict[str, Any]]] = {}
-        self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
-            id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
-            updated_at REAL NOT NULL, payload TEXT NOT NULL)""")
-        self.db.execute("""CREATE TABLE IF NOT EXISTS revisions(
-            project_id TEXT NOT NULL, version INTEGER NOT NULL, created_at REAL NOT NULL,
-            payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
-        self.db.commit()
+        try:
+            # A pathname may be replaced during sqlite3.connect(). Never
+            # pin the *replacement* inode to an older live connection.
+            try:
+                opened=self.path.stat()
+            except OSError as exc:
+                raise RuntimeError("database identity changed during open; recover only from verified evidence") from exc
+            self._file_identity=(opened.st_dev, opened.st_ino)
+            if before_open is not None and self._file_identity != (before_open.st_dev, before_open.st_ino):
+                self._identity_failed=True
+            self._assert_database_identity()
+            # Fail closed on a damaged existing database before any schema write.
+            if existing:
+                try:
+                    result = self.db.execute("PRAGMA quick_check").fetchall()
+                    if len(result) != 1 or result[0][0] != "ok":
+                        raise RuntimeError("SQLite integrity check failed: project database is corrupt; restore only from verified evidence")
+                    from core.recovery.recovery import require_project_history_consistency
+                    require_project_history_consistency(self.db,allow_empty_schema=True)
+                except sqlite3.DatabaseError as exc:
+                    raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
+            # The file can also change during integrity/schema initialization.
+            self._assert_database_identity()
+            self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
+                updated_at REAL NOT NULL, payload TEXT NOT NULL)""")
+            self.db.execute("""CREATE TABLE IF NOT EXISTS revisions(
+                project_id TEXT NOT NULL, version INTEGER NOT NULL, created_at REAL NOT NULL,
+                payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
+            self._assert_database_identity()
+            self.db.commit()
+            self._assert_database_identity()
+        except Exception:
+            self.db.close()
+            raise
+
+    def _assert_database_identity(self):
+        """Fail closed if the pathname no longer denotes this store's file.
+
+        Never reconnect implicitly: the displaced connection may contain a newer
+        committed revision than the replacement. Preserve both for recovery.
+        """
+        try:
+            current=self.path.stat()
+            matches=(
+                (current.st_dev,current.st_ino)==self._file_identity
+                and self._parent_identities(self.path)==self._directory_identities
+            )
+        except OSError:
+            matches=False
+        if self._identity_failed or not matches:
+            self._identity_failed=True
+            self._cache.clear()
+            raise RuntimeError("database identity changed; save outcome may be uncertain; close and recover only from verified evidence")
 
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
@@ -43,12 +116,13 @@ class ProjectStore:
         A competing connection cannot validate against a stale version and then
         overwrite the current row.
         """
+        self._assert_database_identity()
         pid=str(project_id); now=time.time()
         clean_project=deepcopy(project)
         clean_project.pop("_meta",None)
         payload=json.dumps(clean_project,ensure_ascii=False,sort_keys=True,allow_nan=False)
-        self.db.execute("BEGIN IMMEDIATE")
         try:
+            self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
             incoming_version=(project.get("_meta") or {}).get("version")
             if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
@@ -104,9 +178,25 @@ class ProjectStore:
                             (pid,str(clean_project.get("name","")),version,now,payload))
             self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
                             (pid,version,now,payload))
+            self._assert_database_identity()
             self.db.commit()
-        except Exception:
-            self.db.rollback()
+            self._assert_database_identity()
+        except Exception as exc:
+            # SQLite can report an observed DBMOVED even when the pathname was
+            # immediately restored to its former inode. An inode-only recheck
+            # would then incorrectly re-enable this uncertain connection.
+            if (isinstance(exc, sqlite3.DatabaseError)
+                    and getattr(exc, "sqlite_errorcode", None) == sqlite3.SQLITE_READONLY_DBMOVED):
+                self._identity_failed=True
+                self._cache.clear()
+            try:
+                self.db.rollback()
+            except sqlite3.DatabaseError as rollback_exc:
+                if getattr(rollback_exc, "sqlite_errorcode", None) == sqlite3.SQLITE_READONLY_DBMOVED:
+                    self._identity_failed=True
+                    self._cache.clear()
+                if not self._identity_failed:
+                    raise
             raise
         # Cache the same JSON representation committed to SQLite. Coordinates
         # may arrive as tuples; a cache hit must equal a reopened snapshot.
@@ -116,6 +206,7 @@ class ProjectStore:
         return {"id":pid,"version":version,"updated_at":now}
 
     def begin_write(self, project_id: str) -> str:
+        self._assert_database_identity()
         row = self.db.execute("SELECT payload FROM projects WHERE id=?", (str(project_id),)).fetchone()
         if row is None:
             raise KeyError(project_id)
@@ -125,6 +216,7 @@ class ProjectStore:
         return self.begin_write(project_id)
 
     def get(self, project_id: str) -> dict[str,Any] | None:
+        self._assert_database_identity()
         pid=str(project_id)
         # Check the small SQLite version column before fetching a large payload.
         # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
@@ -145,6 +237,7 @@ class ProjectStore:
         return deepcopy(data)
 
     def list(self, *, limit: int | None = None, offset: int = 0) -> list[dict[str,Any]]:
+        self._assert_database_identity()
         offset=int(offset)
         if offset < 0: raise ValueError("offset must be non-negative")
         params: list[Any]=[]
@@ -163,14 +256,17 @@ class ProjectStore:
         return [project for pid in project_ids if (project:=self.get(pid)) is not None]
 
     def revisions(self, project_id: str) -> list[dict[str,Any]]:
+        self._assert_database_identity()
         return [{"version":r["version"],"created_at":r["created_at"],"payload":json.loads(r["payload"])}
                 for r in self.db.execute("SELECT version,created_at,payload FROM revisions WHERE project_id=? ORDER BY version",(str(project_id),))]
 
     def integrity_check(self) -> dict[str, Any]:
+        self._assert_database_identity()
         from core.recovery.recovery import verify_database
         return verify_database(self.path)
 
     def backup(self, backup_path: str | Path) -> dict[str, Any]:
+        self._assert_database_identity()
         from core.recovery.recovery import backup_database
         return backup_database(self.path, backup_path)
 

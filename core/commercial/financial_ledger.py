@@ -73,6 +73,14 @@ def _lookup(project,id,kind):
 
 @exact
 def ledger_dispatch(previous,command):
+    if command.get('site_purchase'):
+        from core.projects.controls import apply
+        site=command['site_purchase']
+        if command.get('op')!='create' or command.get('kind')!='commitment' or site.get('op')!='site_purchase_commit' or site.get('actor')!=command.get('actor'):raise ValueError('فرمان ترکیبی خرید معتبر نیست')
+        previous,link=apply(previous,site)
+        for field in ('amount','currency','counterparty','date','reference','description','source_documents'):
+            if command.get(field)!=link[field]:raise ValueError('اطلاعات سند مالی با درخواست خرید تطبیق ندارد')
+        if command.get('id')!=link['ledger_id']:raise ValueError('شناسه پیوند مالی نامعتبر است')
     p=deepcopy(previous);p.pop('_meta',None);actor=command['actor'];op=command['op'];at=command['at']
     records=p.setdefault('financial_records',[])
     if op=='create':

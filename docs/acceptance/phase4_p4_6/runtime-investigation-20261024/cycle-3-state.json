@@ -1,0 +1,59 @@
+{
+  "pid": 6,
+  "root": "/tmp/structuralpro-lifecycle-20261024/cycle-3",
+  "sqlite": "3.53.1",
+  "file": {
+    "inode": 1970370,
+    "size": 59572224,
+    "sha256": "f4f0a4e82a64030881b364fd081f1ef7d0953868c6cb44adbf02b7fcf09a803e"
+  },
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "versions": [
+    [
+      326,
+      375507
+    ]
+  ],
+  "last_revision": 326,
+  "fds": {
+    "0": "/dev/null",
+    "1": "/tmp/#1573344 (deleted)",
+    "2": "/tmp/#1574078 (deleted)",
+    "3": "/dev/null",
+    "4": "/dev/null",
+    "5": "/tmp/structuralpro-lifecycle-20261024/lifecycle.log",
+    "6": "/tmp/#1573344 (deleted)",
+    "7": "/tmp/structuralpro-lifecycle-20261024/lifecycle.log",
+    "8": "/tmp/#1574078 (deleted)",
+    "9": "/tmp/structuralpro-lifecycle-20261024/lifecycle.log",
+    "10": "/dev/null",
+    "11": "anon_inode:[eventfd]",
+    "12": "/tmp/structuralpro-lifecycle-20261024/cycle-3/prior/engineering/db/projects.db",
+    "13": "anon_inode:[eventfd]",
+    "14": "anon_inode:[eventfd]",
+    "15": "anon_inode:[eventfd]",
+    "16": "anon_inode:[eventfd]"
+  },
+  "native_maps": [
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libQt6Core.so.6",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libQt6DBus.so.6",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libQt6Gui.so.6",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libQt6Widgets.so.6",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libicudata.so.73",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libicui18n.so.73",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/lib/libicuuc.so.73",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/Qt/plugins/platforms/libqoffscreen.so",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/QtCore.abi3.so",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/QtGui.abi3.so",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/QtWidgets.abi3.so",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/PySide6/libpyside6.abi3.so.6.12",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/pymupdf/libmupdf.so.28.2",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/pymupdf/libmupdfcpp.so.28.2",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/shiboken6/Shiboken.abi3.so",
+    "/workspace/scratch/5ff2acae0199/qa-venv/lib/python3.12/site-packages/shiboken6/libshiboken6.abi3.so.6.12"
+  ]
+}

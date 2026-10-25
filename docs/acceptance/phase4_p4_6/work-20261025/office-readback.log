@@ -1,0 +1,2 @@
+/workspace/scratch/5ff2acae0199/work-venv-20261025/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+  warnings.warn(

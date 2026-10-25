@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="1.042" timestamp="2026-10-25T07:59:35.116609+03:30" hostname="cd559c0349f6"><testcase classname="tests.test_phase4_report_presentation_audit" name="test_missing_summary_is_explicit_and_reports_real_row_count" time="0.059"><failure message="AssertionError: assert ('تعداد ردیف\u200cهای گزارش' in ['گزارش استراکچرال پرو', None, None, None, 'شرح', 'مقدار'])">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_missing_summary_is_explic0')
+
+    def test_missing_summary_is_explicit_and_reports_real_row_count(tmp_path):
+        path=export_xlsx([{'شرح':'رکورد واقعی آزمایش'}],tmp_path/'report.xlsx')
+        sheet=load_workbook(path)['خلاصه']
+        values=[cell.value for row in sheet for cell in row]
+&gt;       assert 'تعداد ردیف‌های گزارش' in values and 1 in values
+E       AssertionError: assert ('تعداد ردیف\u200cهای گزارش' in ['گزارش استراکچرال پرو', None, None, None, 'شرح', 'مقدار'])
+
+tests/test_phase4_report_presentation_audit.py:15: AssertionError</failure></testcase><testcase classname="tests.test_phase4_report_presentation_audit" name="test_compact_phase4_has_full_hash_and_exact_percentage_in_audit[xlsx]" time="0.015"><failure message="AssertionError: assert ('24.66666666...666666666667' not in 'گزارش آزمای...66666666667٪'&#10;  &#10;  '24.66666666666666666666666667' is contained here:&#10;    ef&#10;    واقعی: 24.66666666666666666666666667٪)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_compact_phase4_has_full_h0')
+fmt = 'xlsx'
+
+    @pytest.mark.parametrize('fmt',['xlsx','docx','pdf'])
+    def test_compact_phase4_has_full_hash_and_exact_percentage_in_audit(tmp_path,fmt):
+        rows=[{'بخش':'پیشرفت','مقدار و وضعیت':'واقعی: '+EXACT+'٪','مرجع و نسخه':HASH}]
+        before=deepcopy(rows)
+        report=build_report('گزارش آزمایشی',rows,metadata={'_phase4_presentation':True})
+        path=report.export(tmp_path/('report.'+fmt),fmt)
+        assert rows==before and report.as_rows()==before
+        if fmt=='xlsx':
+            book=load_workbook(path)
+            detail='\n'.join(str(c.value) for r in book.worksheets[0] for c in r if c.value is not None)
+&gt;           assert EXACT not in detail and HASH not in detail
+E           AssertionError: assert ('24.66666666...666666666667' not in 'گزارش آزمای...66666666667٪'
+E             
+E             '24.66666666666666666666666667' is contained here:
+E               ef
+E               واقعی: 24.66666666666666666666666667٪)
+
+tests/test_phase4_report_presentation_audit.py:28: AssertionError</failure></testcase><testcase classname="tests.test_phase4_report_presentation_audit" name="test_compact_phase4_has_full_hash_and_exact_percentage_in_audit[docx]" time="0.122"><failure message="AssertionError: assert '≈24.67٪' in 'گزارش آزمایشی\nمشخصات پروژه و گزارش\nجمع\u200cبندی\nتعداد ردیف\u200cهای گزارش: 1\n\nریزمتره و محاسبات\nعنوان\nمقدار\n...یت\n1\nپیشرفت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\nواقعی: 24.66666666666666666666666667٪'">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_compact_phase4_has_full_h1')
+fmt = 'docx'
+
+    @pytest.mark.parametrize('fmt',['xlsx','docx','pdf'])
+    def test_compact_phase4_has_full_hash_and_exact_percentage_in_audit(tmp_path,fmt):
+        rows=[{'بخش':'پیشرفت','مقدار و وضعیت':'واقعی: '+EXACT+'٪','مرجع و نسخه':HASH}]
+        before=deepcopy(rows)
+        report=build_report('گزارش آزمایشی',rows,metadata={'_phase4_presentation':True})
+        path=report.export(tmp_path/('report.'+fmt),fmt)
+        assert rows==before and report.as_rows()==before
+        if fmt=='xlsx':
+            book=load_workbook(path)
+            detail='\n'.join(str(c.value) for r in book.worksheets[0] for c in r if c.value is not None)
+            assert EXACT not in detail and HASH not in detail
+            assert '≈24.67٪' in detail and '[هش 1]' in detail
+            assert 'ممیزی مقادیر' in book.sheetnames
+            text='\n'.join(str(c.value) for s in book for r in s for c in r if c.value is not None)
+        elif fmt=='docx':
+            from docx import Document
+            d=Document(path);text='\n'.join([p.text for p in d.paragraphs]+[c.text for t in d.tables for r in t.rows for c in r.cells])
+&gt;           assert '≈24.67٪' in text
+E           AssertionError: assert '≈24.67٪' in 'گزارش آزمایشی\nمشخصات پروژه و گزارش\nجمع\u200cبندی\nتعداد ردیف\u200cهای گزارش: 1\n\nریزمتره و محاسبات\nعنوان\nمقدار\n...یت\n1\nپیشرفت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\nواقعی: 24.66666666666666666666666667٪'
+
+tests/test_phase4_report_presentation_audit.py:35: AssertionError</failure></testcase><testcase classname="tests.test_phase4_report_presentation_audit" name="test_compact_phase4_has_full_hash_and_exact_percentage_in_audit[pdf]" time="0.590"><failure message="AssertionError: assert '_phase4_presentation' not in '۱ ﺻﻔﺤﻪ۱۴۰۵/...f\nﭘﯿﺸﺮﻓﺖ1\n'&#10;  &#10;  '_phase4_presentation' is contained here:&#10;    ﺻﺪﻭﺭ ﺷﻤﺴﯽ&#10;    _phase4_presentation : Trueﺍﻃﻼﻋﺎﺕ ﺗﮑﻤﯿﻠﯽ&#10;    ﺟﻤﻊﺑﻨﺪﯼ&#10;    ﺭﯾﺰ ﻣﺘﺮﻩ ﻭ ﺑﺮﺁﻭﺭﺩ&#10;    ﻣﻘﺪﺍﺭ ﻭ ﻭﺿﻌﯿﺖ...&#10;  &#10;  ...Full output truncated (6 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_compact_phase4_has_full_h2')
+fmt = 'pdf'
+
+    @pytest.mark.parametrize('fmt',['xlsx','docx','pdf'])
+    def test_compact_phase4_has_full_hash_and_exact_percentage_in_audit(tmp_path,fmt):
+        rows=[{'بخش':'پیشرفت','مقدار و وضعیت':'واقعی: '+EXACT+'٪','مرجع و نسخه':HASH}]
+        before=deepcopy(rows)
+        report=build_report('گزارش آزمایشی',rows,metadata={'_phase4_presentation':True})
+        path=report.export(tmp_path/('report.'+fmt),fmt)
+        assert rows==before and report.as_rows()==before
+        if fmt=='xlsx':
+            book=load_workbook(path)
+            detail='\n'.join(str(c.value) for r in book.worksheets[0] for c in r if c.value is not None)
+            assert EXACT not in detail and HASH not in detail
+            assert '≈24.67٪' in detail and '[هش 1]' in detail
+            assert 'ممیزی مقادیر' in book.sheetnames
+            text='\n'.join(str(c.value) for s in book for r in s for c in r if c.value is not None)
+        elif fmt=='docx':
+            from docx import Document
+            d=Document(path);text='\n'.join([p.text for p in d.paragraphs]+[c.text for t in d.tables for r in t.rows for c in r.cells])
+            assert '≈24.67٪' in text
+        else:
+            import fitz
+            with fitz.open(path) as d:text='\n'.join(p.get_text() for p in d)
+        assert HASH in ''.join(text.split())
+        assert EXACT in ''.join(text.split())
+&gt;       assert '_phase4_presentation' not in text
+E       AssertionError: assert '_phase4_presentation' not in '۱ ﺻﻔﺤﻪ۱۴۰۵/...f\nﭘﯿﺸﺮﻓﺖ1\n'
+E         
+E         '_phase4_presentation' is contained here:
+E           ﺻﺪﻭﺭ ﺷﻤﺴﯽ
+E           _phase4_presentation : Trueﺍﻃﻼﻋﺎﺕ ﺗﮑﻤﯿﻠﯽ
+E           ﺟﻤﻊﺑﻨﺪﯼ
+E           ﺭﯾﺰ ﻣﺘﺮﻩ ﻭ ﺑﺮﺁﻭﺭﺩ
+E           ﻣﻘﺪﺍﺭ ﻭ ﻭﺿﻌﯿﺖ...
+E         
+E         ...Full output truncated (6 lines hidden), use '-vv' to show
+
+tests/test_phase4_report_presentation_audit.py:41: AssertionError</failure></testcase><testcase classname="tests.test_phase4_report_presentation_audit" name="test_phase4_csv_remains_exact_and_logical" time="0.002"><failure message="AssertionError: assert ('24.66666666666666666666666667' in 'آزمایش\nCSV داده متنی است؛ چیدمان، فونت و راست\u200cبه\u200cچپ دیداری در این قالب ذخیره نمی\u200cشود.\nنام گزارش,آزما... نسخه,مقدار و وضعیت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪\n' and '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' in 'آزمایش\nCSV داده متنی است؛ چیدمان، فونت و راست\u200cبه\u200cچپ دیداری در این قالب ذخیره نمی\u200cشود.\nنام گزارش,آزما... نسخه,مقدار و وضعیت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪\n' and '_phase4_presentation' not in 'آزمایش\nCSV...666666667٪\n'&#10;  &#10;  '_phase4_presentation' is contained here:&#10;    ات تکمیلی,_phase4_presentation : True&#10;    &#10;    مرجع و نسخه,مقدار و وضعیت&#10;    0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-5/test_phase4_csv_remains_exact_0')
+
+    def test_phase4_csv_remains_exact_and_logical(tmp_path):
+        rows=[{'مقدار و وضعیت':EXACT+'٪','مرجع و نسخه':HASH}]
+        path=build_report('آزمایش',rows,metadata={'_phase4_presentation':True}).export(tmp_path/'raw.csv','csv')
+        text=path.read_text(encoding='utf-8-sig')
+&gt;       assert EXACT in text and HASH in text and '_phase4_presentation' not in text
+E       AssertionError: assert ('24.66666666666666666666666667' in 'آزمایش\nCSV داده متنی است؛ چیدمان، فونت و راست\u200cبه\u200cچپ دیداری در این قالب ذخیره نمی\u200cشود.\nنام گزارش,آزما... نسخه,مقدار و وضعیت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪\n' and '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef' in 'آزمایش\nCSV داده متنی است؛ چیدمان، فونت و راست\u200cبه\u200cچپ دیداری در این قالب ذخیره نمی\u200cشود.\nنام گزارش,آزما... نسخه,مقدار و وضعیت\n0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪\n' and '_phase4_presentation' not in 'آزمایش\nCSV...666666667٪\n'
+E         
+E         '_phase4_presentation' is contained here:
+E           ات تکمیلی,_phase4_presentation : True
+E           
+E           مرجع و نسخه,مقدار و وضعیت
+E           0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef,24.66666666666666666666666667٪)
+
+tests/test_phase4_report_presentation_audit.py:47: AssertionError</failure></testcase></testsuite></testsuites>

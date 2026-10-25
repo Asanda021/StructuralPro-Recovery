@@ -1,0 +1,23 @@
+{
+  "head": "58a160815eaa6fa34aaf05557ed2386ead72341c",
+  "tree": "e3a12ea3ad1d8261a030f0763f475be39181b728",
+  "exit_code": 0,
+  "wall_seconds": 460.34160017967224,
+  "command": "python scripts/run_offline_tests.py -q --junitxml=full.xml",
+  "qt_platform": "offscreen",
+  "threshold_or_gc_changes": false,
+  "suites": [
+    {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "5",
+      "tests": "7987",
+      "time": "457.589",
+      "timestamp": "2026-10-25T07:10:51.551067+03:30",
+      "hostname": "cd559c0349f6"
+    }
+  ],
+  "testcases": 7987,
+  "junit_sha256": "c5b381ad4e0440b743b2a0e388913ac1bbcd0a4c01148bd164970df1ed29327b"
+}
