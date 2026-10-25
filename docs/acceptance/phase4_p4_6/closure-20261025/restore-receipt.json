@@ -1,0 +1,16 @@
+{
+  "status": "RESTORE PASS; PHASE4 PARTIAL",
+  "archive_sha256": "30bffdbc590b7847f5f9a01cb50dca3ee37a9795d5480adc3ff343a084fe7e8b",
+  "manifest_files": 310,
+  "head": "0c32a890205f24fe654930fafe5eff4aec13f0a0",
+  "tree": "ee6527a80f84d3e2fd908ee22cf35f303b9c38b3",
+  "git_fsck": true,
+  "sqlite_integrity": "ok",
+  "sqlite_foreign_key_check": true,
+  "revision_count": 326,
+  "source_proofs_checked": 270,
+  "source_paths_recreated_only_from_downloaded_archive": true,
+  "restored_tests": "restored-tests.xml",
+  "original_source_hidden_during_check": true,
+  "windows_office": "NOT VERIFIED"
+}

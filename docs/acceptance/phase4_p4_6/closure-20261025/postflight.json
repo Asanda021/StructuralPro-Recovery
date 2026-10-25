@@ -1,0 +1,12 @@
+{
+  "full_tested_head": "a1538284bc9322450923ef6778b4ee542000732c",
+  "product_and_test_diff_after_full": "empty",
+  "restored_tests": 165,
+  "historical251_323_sha_unchanged": true,
+  "readonly_new_mechanism": "PROVEN_DBMOVED",
+  "replacement_actor": "UNRESOLVED",
+  "historical_corruption": "UNRESOLVED",
+  "priorities_4_5_6": "PARTIAL",
+  "windows_office": "NOT VERIFIED",
+  "owner_risk_acceptance": "NOT GIVEN"
+}

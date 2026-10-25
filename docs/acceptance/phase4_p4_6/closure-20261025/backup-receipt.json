@@ -1,0 +1,18 @@
+{
+  "stage_path": "/tmp/sp-completed-20261025-plytrqc2.zip",
+  "file": "/workspace/scratch/5ff2acae0199/StructuralPro_Phase4_Closure_20261025_PARTIAL.zip",
+  "bytes": 54681523,
+  "sha256": "30bffdbc590b7847f5f9a01cb50dca3ee37a9795d5480adc3ff343a084fe7e8b",
+  "snapshot_head": "0c32a890205f24fe654930fafe5eff4aec13f0a0",
+  "snapshot_tree": "ee6527a80f84d3e2fd908ee22cf35f303b9c38b3",
+  "tested_head": "a1538284bc9322450923ef6778b4ee542000732c",
+  "tested_tree": "1e9af37bdbc14af3d7dfb0291c8ae1272e3946ba",
+  "manifest_files": 310,
+  "status": "PARTIAL CHECKPOINT; NOT ACCEPTANCE",
+  "drive_id": "1lsD8T4KweVj1CUO1vnwQAWMWnoD1k3-7",
+  "drive_url": "https://drive.google.com/file/d/1lsD8T4KweVj1CUO1vnwQAWMWnoD1k3-7/view?usp=drivesdk",
+  "redownload_sha256": "30bffdbc590b7847f5f9a01cb50dca3ee37a9795d5480adc3ff343a084fe7e8b",
+  "restored_tests_passed": 165,
+  "manifest_verified": 310,
+  "restore_receipt": "restore-receipt.json"
+}

@@ -13,6 +13,8 @@
     "5": "PARTIAL",
     "6": "PARTIAL"
   },
-  "new_backup": "PENDING",
-  "old_verified_backup_preserved": "14Y_0KLncL_8AdpqdkuLu1g84_7V1kIRK"
+  "new_backup": "RESTORE PASS; PHASE4 PARTIAL",
+  "old_verified_backup_preserved": "14Y_0KLncL_8AdpqdkuLu1g84_7V1kIRK",
+  "new_backup_id": "1lsD8T4KweVj1CUO1vnwQAWMWnoD1k3-7",
+  "restored_tests": 165
 }
