@@ -1,0 +1,21 @@
+{
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "journal_mode": "delete",
+  "active": [
+    [
+      "P",
+      326
+    ]
+  ],
+  "revisions": 326,
+  "identical": 1,
+  "path": "/tmp/structuralpro-final-20261025/prior/engineering/db/projects.db",
+  "inode": 270763,
+  "device": 27,
+  "sha256": "b633366a5beaf3cc39b8733b45579b25acfdbb7e837b1a45d3e52df2e119c23b",
+  "synthetic_origin": "Fresh run of unchanged repository probes; not prior missing documents"
+}

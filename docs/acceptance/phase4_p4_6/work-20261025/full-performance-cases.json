@@ -1,0 +1,32 @@
+[
+  {
+    "class": "tests.test_phase2_priority4_closure",
+    "name": "test_async_cancel_error_replace",
+    "time": "0.841",
+    "passed": true
+  },
+  {
+    "class": "tests.test_phase2_priority4_closure",
+    "name": "test_async_responsiveness_and_oracle[10000]",
+    "time": "1.175",
+    "passed": true
+  },
+  {
+    "class": "tests.test_phase2_priority4_closure",
+    "name": "test_async_responsiveness_and_oracle[50000]",
+    "time": "6.202",
+    "passed": true
+  },
+  {
+    "class": "tests.test_phase2_priority4_closure",
+    "name": "test_async_responsiveness_and_oracle[100000]",
+    "time": "16.341",
+    "passed": true
+  },
+  {
+    "class": "tests.test_phase2_priority5_ifc",
+    "name": "test_async_ifc_load_cancel_replace_and_responsive_event_loop",
+    "time": "1.535",
+    "passed": true
+  }
+]
