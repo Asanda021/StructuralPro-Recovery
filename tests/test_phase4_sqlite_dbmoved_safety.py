@@ -87,3 +87,57 @@ def test_displacement_inside_real_transaction(tmp_path,monkeypatch,boundary):
         with pytest.raises(RuntimeError,match='database identity'):s.backup(tmp_path/'unsafe.db')
         assert not (tmp_path/'unsafe.db').exists() and sha(path)==evidence['hash']
     finally:s.close()
+
+
+def test_native_dbmoved_latches_failure_even_if_path_is_restored(tmp_path, monkeypatch):
+    """A real SQLite 1032 must quarantine its connection despite rename-back.
+
+    The path identity may match again before the application next calls stat().
+    A SQLite 1032 is sufficient evidence that this connection must not resume.
+    """
+    path = prepare(tmp_path)
+    real_connect = sqlite3.connect
+    state = {"armed": False, "swapped": False}
+    held = tmp_path / "original-held.db"
+    swapped = tmp_path / "replacement-held.db"
+
+    class RaceConnection(sqlite3.Connection):
+        def execute(self, sql, *args, **kwargs):
+            if state["armed"] and sql.startswith("INSERT OR REPLACE INTO projects("):
+                state["armed"] = False
+                new = tmp_path / "replacement-candidate.db"
+                new.write_bytes((tmp_path / "last-ack.db").read_bytes())
+                path.rename(held)
+                new.rename(path)
+                try:
+                    return super().execute(sql, *args, **kwargs)
+                finally:
+                    path.rename(swapped)
+                    held.rename(path)
+                    state["swapped"] = True
+            return super().execute(sql, *args, **kwargs)
+
+    def connect(*args, **kwargs):
+        kwargs["factory"] = RaceConnection
+        return real_connect(*args, **kwargs)
+
+    monkeypatch.setattr(sqlite3, "connect", connect)
+    store = ProjectStore(path)
+    monkeypatch.setattr(sqlite3, "connect", real_connect)
+    old = store.get("P")
+    old["unacknowledged"] = "never-publish"
+    before = sha(path)
+    state["armed"] = True
+    try:
+        with pytest.raises(sqlite3.OperationalError) as error:
+            store.save("P", old)
+        assert error.value.sqlite_errorcode == sqlite3.SQLITE_READONLY_DBMOVED
+        assert state["swapped"] and sha(path) == before
+        # Must remain blocked *even though the previous inode is restored*.
+        with pytest.raises(RuntimeError, match="database identity"):
+            store.get("P")
+        with pytest.raises(RuntimeError, match="database identity"):
+            store.backup(tmp_path / "forbidden.db")
+        assert not (tmp_path / "forbidden.db").exists()
+    finally:
+        store.close()
