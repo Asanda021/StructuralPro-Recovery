@@ -88,17 +88,14 @@ def main() -> int:
 
             # Host-level auditing is needed to attribute an unrelated process.
             # Restrict the rule to the disposable directory and relevant syscalls.
-            rule_args = [
-                "-F", "arch=b64", "-S", "rename", "-S", "renameat",
-                "-S", "renameat2", "-S", "unlink", "-S", "unlinkat",
-                "-F", f"dir={directory}", "-k", key,
-            ]
-            add = run("sudo", "-n", "auditctl", "-a", "always,exit", *rule_args)
+            rule_args = ["-w", str(directory), "-p", "wa", "-k", key]
+            add = run("sudo", "-n", "auditctl", *rule_args)
             evidence["rule_install"] = {"exit": add.returncode, "stdout": add.stdout, "stderr": add.stderr}
             if add.returncode:
                 evidence["status"] = "UNAVAILABLE_AUDIT_RULE"
                 return 2
             rule = rule_args
+            evidence["installed_rules"] = run("sudo", "-n", "auditctl", "-l").stdout
 
             # Keep SQLite's old inode open while an independent child replaces
             # the directory entry, mirroring only the DBMOVED file-identity fact.
@@ -150,7 +147,7 @@ def main() -> int:
         return 1
     finally:
         if rule is not None:
-            deletion = run("sudo", "-n", "auditctl", "-d", "always,exit", *rule)
+            deletion = run("sudo", "-n", "auditctl", "-W", rule[1])
             evidence["rule_cleanup_exit"] = deletion.returncode
             evidence["rule_cleanup_stderr"] = deletion.stderr
         (outdir / "audit-events.txt").write_text(audit_output, encoding="utf-8")
