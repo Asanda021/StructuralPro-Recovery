@@ -32,7 +32,12 @@ jobs:
       - name: Attribute controlled SQLite file replacement to Linux PID
         run: |
           python3 tests/diagnostics/phase4_linux_sqlite_audit.py --outdir sqlite-audit-evidence
-      - name: Explain attribution result in job logs\n        if: always()\n        run: |\n          if [ -f sqlite-audit-evidence/result.json ]; then cat sqlite-audit-evidence/result.json; fi\n          if [ -f sqlite-audit-evidence/audit-events.txt ]; then head -c 14000 sqlite-audit-evidence/audit-events.txt; fi\n      - name: Preserve diagnostic result even when kernel auditing is unavailable
+      - name: Explain attribution result in job logs
+        if: always()
+        run: |
+          if [ -f sqlite-audit-evidence/result.json ]; then cat sqlite-audit-evidence/result.json; fi
+          if [ -f sqlite-audit-evidence/audit-events.txt ]; then head -c 14000 sqlite-audit-evidence/audit-events.txt; fi
+      - name: Preserve diagnostic result even when kernel auditing is unavailable
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
