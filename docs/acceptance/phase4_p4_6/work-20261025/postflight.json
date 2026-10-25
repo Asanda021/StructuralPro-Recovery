@@ -1,0 +1,8 @@
+{
+  "full_junit_raw_sha256": "c5b381ad4e0440b743b2a0e388913ac1bbcd0a4c01148bd164970df1ed29327b",
+  "restored_testcases": 135,
+  "product_and_test_diff_from_full_tested_commit": "empty",
+  "phase4_status": "PARTIAL",
+  "owner_risk_acceptance": "NOT GIVEN",
+  "windows_office": "NOT VERIFIED"
+}
