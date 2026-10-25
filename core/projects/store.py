@@ -27,37 +27,47 @@ class ProjectStore:
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
         existing = self.path.exists()
-        if existing and (not self.path.is_file() or self.path.stat().st_size == 0):
+        before_open = self.path.stat() if existing else None
+        if before_open is not None and (not self.path.is_file() or before_open.st_size == 0):
             raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
-        opened=self.path.stat()
-        self._file_identity=(opened.st_dev, opened.st_ino)
         self._identity_failed=False
-        # Fail closed on a damaged existing database, before any schema write.
-        # A cached version number/JSON can conceal damaged overflow pages until
-        # a future reopen; do not let startup silently accept that state.
+        self._cache: dict[str, tuple[int, dict[str, Any]]] = {}
         try:
+            # A pathname may be replaced during sqlite3.connect(). Never
+            # pin the *replacement* inode to an older live connection.
+            try:
+                opened=self.path.stat()
+            except OSError as exc:
+                raise RuntimeError("database identity changed during open; recover only from verified evidence") from exc
+            self._file_identity=(opened.st_dev, opened.st_ino)
+            if before_open is not None and self._file_identity != (before_open.st_dev, before_open.st_ino):
+                self._identity_failed=True
+            self._assert_database_identity()
+            # Fail closed on a damaged existing database before any schema write.
             if existing:
-                result = self.db.execute("PRAGMA quick_check").fetchall()
-                if len(result) != 1 or result[0][0] != "ok":
-                    raise RuntimeError("SQLite integrity check failed: project database is corrupt; restore only from verified evidence")
-                # Before schema writes, detect malformed JSON/torn last revision.
-                from core.recovery.recovery import require_project_history_consistency
-                require_project_history_consistency(self.db,allow_empty_schema=True)
-        except sqlite3.DatabaseError as exc:
-            self.db.close()
-            raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
+                try:
+                    result = self.db.execute("PRAGMA quick_check").fetchall()
+                    if len(result) != 1 or result[0][0] != "ok":
+                        raise RuntimeError("SQLite integrity check failed: project database is corrupt; restore only from verified evidence")
+                    from core.recovery.recovery import require_project_history_consistency
+                    require_project_history_consistency(self.db,allow_empty_schema=True)
+                except sqlite3.DatabaseError as exc:
+                    raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
+            # The file can also change during integrity/schema initialization.
+            self._assert_database_identity()
+            self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
+                id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
+                updated_at REAL NOT NULL, payload TEXT NOT NULL)""")
+            self.db.execute("""CREATE TABLE IF NOT EXISTS revisions(
+                project_id TEXT NOT NULL, version INTEGER NOT NULL, created_at REAL NOT NULL,
+                payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
+            self._assert_database_identity()
+            self.db.commit()
+            self._assert_database_identity()
         except Exception:
             self.db.close()
             raise
-        self._cache: dict[str, tuple[int, dict[str, Any]]] = {}
-        self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
-            id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
-            updated_at REAL NOT NULL, payload TEXT NOT NULL)""")
-        self.db.execute("""CREATE TABLE IF NOT EXISTS revisions(
-            project_id TEXT NOT NULL, version INTEGER NOT NULL, created_at REAL NOT NULL,
-            payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
-        self.db.commit()
 
     def _assert_database_identity(self):
         """Fail closed if the pathname no longer denotes this store's file.
