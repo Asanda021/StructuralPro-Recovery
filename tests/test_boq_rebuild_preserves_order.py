@@ -37,7 +37,14 @@ def test_reopen_multiple_amendments_then_save_draft_preserves_boq(tmp_path):
  # Simulate canonical JSON map ordering differing from amendment application order.
  p['beam_amendment_applied']=dict(reversed(list(p['beam_amendment_applied'].items())))
  encoded=json.dumps(p,ensure_ascii=False)
- a.store.db.execute('update projects set payload=? where id=?',(encoded,'P'));a.store.db.commit();a.store.close();a=StructuralProApp(tmp_path/'db')
+ # Reorder a committed fixture snapshot consistently in both representations.
+ # Leaving only projects changed would model a torn write, now rejected at startup.
+ a.store.db.execute('update projects set payload=? where id=?',(encoded,'P'))
+ a.store.db.execute('update revisions set payload=? where project_id=? and version=?',(encoded,'P',p['_meta']['version']))
+ a.store.db.commit()
+ from core.recovery.recovery import require_project_history_consistency
+ require_project_history_consistency(a.store.db)
+ a.store.close();a=StructuralProApp(tmp_path/'db')
  d=sample(tmp_path);d['system_id']='NEW';d['source']['source_id']='NEW';g=d['architecture_detail']['geometry'];g['physical_region_id']='NEW'
  for name in ('zones','openings'):
   for v in d['architecture_detail'][name]:v['physical_key']='NEW'+v['physical_key']

@@ -182,6 +182,21 @@ def test_invalid_registry_and_corrupt_project_are_rejected_without_write(tmp_pat
                          (json.dumps(p, ensure_ascii=False), "P-IDENTITY"))
     app.store.db.commit()
     app.store.close()
+    # A torn active/latest pair is rejected before the identity reader runs.
+    from hashlib import sha256
+    database = tmp_path / "projects.db"
+    before_bytes = sha256(database.read_bytes()).hexdigest()
+    with pytest.raises(RuntimeError, match="committed revision"):
+        StructuralProApp(tmp_path)
+    assert sha256(database.read_bytes()).hexdigest() == before_bytes
+    # Separately model a self-consistent legacy snapshot containing an invalid
+    # registry, so the original identity-validation/no-write assertion still runs.
+    import sqlite3
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            "UPDATE revisions SET payload=(SELECT payload FROM projects WHERE id=?) "
+            "WHERE project_id=? AND version=(SELECT version FROM projects WHERE id=?)",
+            ("P-IDENTITY", "P-IDENTITY", "P-IDENTITY"))
     app = StructuralProApp(tmp_path)
     digest = app.store.current_digest("P-IDENTITY")
     with pytest.raises(ValueError, match="ساختار دفتر"):
