@@ -1,0 +1,107 @@
+[
+  {
+    "source": "/tmp/structuralpro-final-20261025/daily.pdf",
+    "pages": 2,
+    "contact": "structuralpro-final-20261025-daily.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/package.pdf",
+    "pages": 5,
+    "contact": "structuralpro-final-20261025-package.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/materials.pdf",
+    "pages": 4,
+    "contact": "structuralpro-final-20261025-materials.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/meetings.pdf",
+    "pages": 2,
+    "contact": "structuralpro-final-20261025-meetings.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/resources.pdf",
+    "pages": 3,
+    "contact": "structuralpro-final-20261025-resources.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/lookahead.pdf",
+    "pages": 1,
+    "contact": "structuralpro-final-20261025-lookahead.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/obstacles.pdf",
+    "pages": 1,
+    "contact": "structuralpro-final-20261025-obstacles.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/purchases.pdf",
+    "pages": 1,
+    "contact": "structuralpro-final-20261025-purchases.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/dashboard.pdf",
+    "pages": 4,
+    "contact": "structuralpro-final-20261025-dashboard.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/correspondence.pdf",
+    "pages": 2,
+    "contact": "structuralpro-final-20261025-correspondence.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/wbs.pdf",
+    "pages": 2,
+    "contact": "prior-wbs.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/schedule.pdf",
+    "pages": 9,
+    "contact": "prior-schedule.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/progress.pdf",
+    "pages": 11,
+    "contact": "prior-progress.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/activities.pdf",
+    "pages": 9,
+    "contact": "prior-activities.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/curve.pdf",
+    "pages": 3,
+    "contact": "prior-curve.png"
+  },
+  {
+    "source": "/tmp/structuralpro-final-20261025/prior/engineering/estimate.pdf",
+    "pages": 1,
+    "contact": "engineering-estimate.png"
+  },
+  {
+    "source": "/tmp/sp-docx-dashboard-20261025/dashboard.pdf",
+    "pages": 4,
+    "contact": "sp-docx-dashboard-20261025-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-docx-package-20261025/package.pdf",
+    "pages": 7,
+    "contact": "sp-docx-package-20261025-package.png"
+  },
+  {
+    "source": "/tmp/sp-report-render-20261025/package.pdf",
+    "pages": 7,
+    "contact": "sp-report-render-20261025-package.png"
+  },
+  {
+    "source": "/tmp/sp-report-render-20261025/dashboard.pdf",
+    "pages": 4,
+    "contact": "sp-report-render-20261025-dashboard.png"
+  },
+  {
+    "source": "/tmp/sp-report-render-20261025/curve.pdf",
+    "pages": 5,
+    "contact": "sp-report-render-20261025-curve.png"
+  }
+]

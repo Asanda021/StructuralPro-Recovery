@@ -1,0 +1,258 @@
+[
+  {
+    "source": "correspondence.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/correspondence.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "daily.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/daily.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "dashboard.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/dashboard.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "lookahead.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/lookahead.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "materials.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/materials.pdf",
+    "pages": 5,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "meetings.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/meetings.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "obstacles.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/obstacles.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "package.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/package.pdf",
+    "pages": 7,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/activities.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/activities.pdf",
+    "pages": 9,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/curve.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/curve.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/engineering/estimate.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/estimate.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/progress.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/progress.pdf",
+    "pages": 7,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/schedule.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/schedule.pdf",
+    "pages": 6,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/wbs.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/wbs.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "purchases.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/purchases.pdf",
+    "pages": 2,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "resources.docx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/docx/resources.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "correspondence.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/correspondence.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "daily.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/daily.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "dashboard.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/dashboard.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "lookahead.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/lookahead.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "materials.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/materials.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "meetings.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/meetings.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "obstacles.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/obstacles.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "package.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/package.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/activities.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/activities.pdf",
+    "pages": 10,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/curve.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/curve.pdf",
+    "pages": 5,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/engineering/estimate.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/estimate.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/progress.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/progress.pdf",
+    "pages": 11,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/schedule.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/schedule.pdf",
+    "pages": 9,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "prior/wbs.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/wbs.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "purchases.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/purchases.pdf",
+    "pages": 3,
+    "nonempty": true,
+    "formula_error_text": []
+  },
+  {
+    "source": "resources.xlsx",
+    "engine": "LibreOffice offline; NOT Microsoft Office",
+    "pdf": "/tmp/sp-office-offline-20261025/xlsx/resources.pdf",
+    "pages": 4,
+    "nonempty": true,
+    "formula_error_text": []
+  }
+]
