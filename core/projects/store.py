@@ -53,6 +53,7 @@ class ProjectStore:
             raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
         self._identity_failed=False
+        self._transaction_uncertain=False
         self._cache: dict[str, tuple[int, dict[str, Any]]] = {}
         try:
             # A pathname may be replaced during sqlite3.connect(). Never
@@ -96,6 +97,12 @@ class ProjectStore:
         Never reconnect implicitly: the displaced connection may contain a newer
         committed revision than the replacement. Preserve both for recovery.
         """
+        if self._transaction_uncertain:
+            self._cache.clear()
+            raise RuntimeError(
+                "database connection quarantined; save outcome may be uncertain; "
+                "close and reconcile only from verified evidence"
+            )
         try:
             current=self.path.stat()
             matches=(
@@ -179,7 +186,15 @@ class ProjectStore:
             self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
                             (pid,version,now,payload))
             self._assert_database_identity()
-            self.db.commit()
+            try:
+                self.db.commit()
+            except Exception:
+                # Once COMMIT has been attempted, an exception cannot prove
+                # whether SQLite durably committed before acknowledgement was
+                # lost. Never reuse this connection or claim a later save.
+                self._transaction_uncertain=True
+                self._cache.clear()
+                raise
             self._assert_database_identity()
         except Exception as exc:
             # SQLite can report an observed DBMOVED even when the pathname was
@@ -192,6 +207,8 @@ class ProjectStore:
             try:
                 self.db.rollback()
             except sqlite3.DatabaseError as rollback_exc:
+                self._transaction_uncertain=True
+                self._cache.clear()
                 if getattr(rollback_exc, "sqlite_errorcode", None) == sqlite3.SQLITE_READONLY_DBMOVED:
                     self._identity_failed=True
                     self._cache.clear()

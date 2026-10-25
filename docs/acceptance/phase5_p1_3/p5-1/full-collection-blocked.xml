@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="17" failures="0" skipped="2" tests="19" time="9.297" timestamp="2026-10-25T22:49:20.543743+03:00" hostname="446ab0150b86"><testcase classname="" name="tests.test_binary_build_security_contract" time="0.000"><error message="collection failure">tests/test_binary_build_security_contract.py:8: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_ifc_mesh_viewer" time="0.000"><skipped message="collection skipped">('/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/tests/test_ifc_mesh_viewer.py', 5, "Skipped: could not import 'ifcopenshell': No module named 'ifcopenshell'")</skipped></testcase><testcase classname="" name="tests.test_owner_approved_binary_build_workflows" time="0.000"><error message="collection failure">tests/test_owner_approved_binary_build_workflows.py:8: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_p37_real_product_deployment" time="0.000"><error message="collection failure">tests/test_p37_real_product_deployment.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_p37_release_gate_separation" time="0.000"><error message="collection failure">tests/test_p37_release_gate_separation.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_p61_p70_release_delivery" time="0.000"><error message="collection failure">tests/test_p61_p70_release_delivery.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_phase22_ifc_bim" time="0.000"><skipped message="collection skipped">('/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/tests/test_phase22_ifc_bim.py', 5, "Skipped: could not import 'ifcopenshell': No module named 'ifcopenshell'")</skipped></testcase><testcase classname="" name="tests.test_phase2_priority5_ifc" time="0.000"><error message="collection failure">ImportError while importing test module '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/tests/test_phase2_priority5_ifc.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_phase2_priority5_ifc.py:6: in &lt;module&gt;
+    import ifcopenshell as ifc
+E   ModuleNotFoundError: No module named 'ifcopenshell'</error></testcase><testcase classname="" name="tests.test_phase2_priority6" time="0.000"><error message="collection failure">ImportError while importing test module '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/tests/test_phase2_priority6.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_phase2_priority6.py:9: in &lt;module&gt;
+    from test_phase2_priority5_ifc import model_file
+tests/test_phase2_priority5_ifc.py:6: in &lt;module&gt;
+    import ifcopenshell as ifc
+E   ModuleNotFoundError: No module named 'ifcopenshell'</error></testcase><testcase classname="" name="tests.test_priority_10_compliance" time="0.000"><error message="collection failure">tests/test_priority_10_compliance.py:4: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_10_release" time="0.000"><error message="collection failure">tests/test_priority_10_release.py:4: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_10_release_integrity" time="0.000"><error message="collection failure">tests/test_priority_10_release_integrity.py:4: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_17_reports_excel_pdf" time="0.000"><error message="collection failure">tests/test_priority_17_reports_excel_pdf.py:4: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_38_pre_release_freeze" time="0.000"><error message="collection failure">tests/test_priority_38_pre_release_freeze.py:6: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_41_ci_dependency_parity" time="0.000"><error message="collection failure">tests/test_priority_41_ci_dependency_parity.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_42_windows_runtime_smoke" time="0.000"><error message="collection failure">tests/test_priority_42_windows_runtime_smoke.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_43_release_artifact_integrity" time="0.000"><error message="collection failure">tests/test_priority_43_release_artifact_integrity.py:5: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_49_windows_installer_acceptance" time="0.000"><error message="collection failure">tests/test_priority_49_windows_installer_acceptance.py:6: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase><testcase classname="" name="tests.test_priority_9_qa" time="0.000"><error message="collection failure">tests/test_priority_9_qa.py:7: in &lt;module&gt;
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout</error></testcase></testsuite></testsuites>
