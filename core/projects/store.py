@@ -30,6 +30,9 @@ class ProjectStore:
         if existing and (not self.path.is_file() or self.path.stat().st_size == 0):
             raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
+        opened=self.path.stat()
+        self._file_identity=(opened.st_dev, opened.st_ino)
+        self._identity_failed=False
         # Fail closed on a damaged existing database, before any schema write.
         # A cached version number/JSON can conceal damaged overflow pages until
         # a future reopen; do not let startup silently accept that state.
@@ -56,6 +59,22 @@ class ProjectStore:
             payload TEXT NOT NULL, PRIMARY KEY(project_id,version))""")
         self.db.commit()
 
+    def _assert_database_identity(self):
+        """Fail closed if the pathname no longer denotes this store's file.
+
+        Never reconnect implicitly: the displaced connection may contain a newer
+        committed revision than the replacement. Preserve both for recovery.
+        """
+        try:
+            current=self.path.stat()
+            matches=(current.st_dev,current.st_ino)==self._file_identity
+        except OSError:
+            matches=False
+        if self._identity_failed or not matches:
+            self._identity_failed=True
+            self._cache.clear()
+            raise RuntimeError("database identity changed; save outcome may be uncertain; close and recover only from verified evidence")
+
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
@@ -63,6 +82,7 @@ class ProjectStore:
         A competing connection cannot validate against a stale version and then
         overwrite the current row.
         """
+        self._assert_database_identity()
         pid=str(project_id); now=time.time()
         clean_project=deepcopy(project)
         clean_project.pop("_meta",None)
@@ -124,7 +144,9 @@ class ProjectStore:
                             (pid,str(clean_project.get("name","")),version,now,payload))
             self.db.execute("INSERT OR REPLACE INTO revisions(project_id,version,created_at,payload) VALUES(?,?,?,?)",
                             (pid,version,now,payload))
+            self._assert_database_identity()
             self.db.commit()
+            self._assert_database_identity()
         except Exception:
             self.db.rollback()
             raise
@@ -136,6 +158,7 @@ class ProjectStore:
         return {"id":pid,"version":version,"updated_at":now}
 
     def begin_write(self, project_id: str) -> str:
+        self._assert_database_identity()
         row = self.db.execute("SELECT payload FROM projects WHERE id=?", (str(project_id),)).fetchone()
         if row is None:
             raise KeyError(project_id)
@@ -145,6 +168,7 @@ class ProjectStore:
         return self.begin_write(project_id)
 
     def get(self, project_id: str) -> dict[str,Any] | None:
+        self._assert_database_identity()
         pid=str(project_id)
         # Check the small SQLite version column before fetching a large payload.
         # This prevents stale reads without deserializing drawings/BOQ on every UI hit.
@@ -165,6 +189,7 @@ class ProjectStore:
         return deepcopy(data)
 
     def list(self, *, limit: int | None = None, offset: int = 0) -> list[dict[str,Any]]:
+        self._assert_database_identity()
         offset=int(offset)
         if offset < 0: raise ValueError("offset must be non-negative")
         params: list[Any]=[]
@@ -183,14 +208,17 @@ class ProjectStore:
         return [project for pid in project_ids if (project:=self.get(pid)) is not None]
 
     def revisions(self, project_id: str) -> list[dict[str,Any]]:
+        self._assert_database_identity()
         return [{"version":r["version"],"created_at":r["created_at"],"payload":json.loads(r["payload"])}
                 for r in self.db.execute("SELECT version,created_at,payload FROM revisions WHERE project_id=? ORDER BY version",(str(project_id),))]
 
     def integrity_check(self) -> dict[str, Any]:
+        self._assert_database_identity()
         from core.recovery.recovery import verify_database
         return verify_database(self.path)
 
     def backup(self, backup_path: str | Path) -> dict[str, Any]:
+        self._assert_database_identity()
         from core.recovery.recovery import backup_database
         return backup_database(self.path, backup_path)
 
