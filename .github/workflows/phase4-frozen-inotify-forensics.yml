@@ -1,0 +1,32 @@
+name: Phase 4 frozen inotify evidence only
+
+on:
+  push:
+    branches:
+      - feature/phase4-priorities4-6-site-operations-20261024
+    paths:
+      - .github/workflows/phase4-frozen-inotify-forensics.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-preserved-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Checkout frozen evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify hashes and decode historical event masks only
+        run: python3 tests/diagnostics/phase4_frozen_event_forensics.py
+      - name: Save immutable-source interpretation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: phase4-frozen-inotify-forensics
+          path: phase4-frozen-event-forensics.json
+          if-no-files-found: warn
+          retention-days: 14
