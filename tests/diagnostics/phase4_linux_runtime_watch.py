@@ -32,6 +32,7 @@ FAN_CREATE = 0x100
 FAN_DELETE = 0x200
 FAN_RENAME = 0x10000000
 FAN_EVENT_ON_CHILD = 0x08000000
+FAN_ONDIR = 0x40000000  # Required: renaming an ancestor directory is a directory event.
 FAN_Q_OVERFLOW = 0x4000
 INTEREST = FAN_RENAME | FAN_MOVED_FROM | FAN_MOVED_TO | FAN_DELETE | FAN_CREATE
 HEADER = struct.Struct("=IBBHQii")
@@ -66,19 +67,41 @@ def proc_info(pid: int) -> dict:
 
 
 class Watch:
-    def __init__(self, directory: Path):
+    def __init__(self, directory: Path, scope_root: Path | None = None):
         self.directory = directory
         flags = FAN_CLOEXEC | FAN_NONBLOCK | FAN_REPORT_DIR_FID | FAN_REPORT_NAME
         self.fd = libc.fanotify_init(flags, os.O_RDONLY | os.O_CLOEXEC)
         if self.fd < 0:
             err = ctypes.get_errno()
             raise OSError(err, os.strerror(err))
-        mask = INTEREST | FAN_EVENT_ON_CHILD
-        rc = libc.fanotify_mark(self.fd, FAN_MARK_ADD | FAN_MARK_ONLYDIR, mask, -100, os.fsencode(directory))
-        if rc < 0:
-            err = ctypes.get_errno()
+        # Watching db/ alone misses rename/unlink of db/, engineering/, etc.
+        # Mark each existing ancestor up to the isolated fixture parent.
+        stop = (scope_root or directory).resolve()
+        cur = directory.resolve()
+        watch_paths = []
+        while True:
+            watch_paths.append(cur)
+            if cur == stop:
+                break
+            if cur == cur.parent or stop not in cur.parents:
+                os.close(self.fd)
+                raise ValueError("scope_root must be this directory or an ancestor")
+            cur = cur.parent
+        mask = INTEREST | FAN_EVENT_ON_CHILD | FAN_ONDIR
+        try:
+            for watched in watch_paths:
+                rc = libc.fanotify_mark(
+                    self.fd, FAN_MARK_ADD | FAN_MARK_ONLYDIR, mask, -100,
+                    os.fsencode(watched))
+                if rc < 0:
+                    err = ctypes.get_errno()
+                    raise OSError(err, os.strerror(err), str(watched))
+        except Exception:
             os.close(self.fd)
-            raise OSError(err, os.strerror(err))
+            raise
+        self.watch_paths = watch_paths
+        self.last_topology = {str(p): stat(p) for p in watch_paths}
+        self.topology_changes = []
         self.events = []
         self.overflow = False
 
@@ -86,6 +109,12 @@ class Watch:
         os.close(self.fd)
 
     def drain(self):
+        current = {str(p): stat(p) for p in self.watch_paths}
+        if current != self.last_topology:
+            self.topology_changes.append({
+                "wall_ns": time.time_ns(), "before": self.last_topology,
+                "after": current})
+            self.last_topology = current
         while select.select([self.fd], [], [], 0)[0]:
             try:
                 data = os.read(self.fd, 131072)
@@ -184,17 +213,95 @@ def pilot(watch: Watch, dbdir: Path, out: Path):
     return result
 
 
+
+def pilot_parent_directory(watch: Watch, dbdir: Path, out: Path) -> dict:
+    """Reproduce real SQLite 1032 via replacing a parent *directory*.
+
+    Directory events may have kernel pid=0. Never infer actor attribution
+    from the subprocess we deliberately created or from timing alone.
+    """
+    parent = dbdir.parent
+    source = dbdir / "projects.db"
+    candidate = parent / "db-candidate"
+    displaced = parent / "db-held"
+    replacement_held = parent / "db-swap-inspection"
+    candidate.mkdir()
+    for filename, value in ((source, "original"), (candidate / "projects.db", "replacement")):
+        with sqlite3.connect(filename) as connection:
+            connection.execute("CREATE TABLE marker(value TEXT)")
+            connection.execute("INSERT INTO marker VALUES(?)", (value,))
+    live = sqlite3.connect(source)
+    result = {"pass": False, "native_code": None, "event_pids": []}
+    try:
+        assert live.execute("SELECT value FROM marker").fetchone()[0] == "original"
+        old = stat(source)
+        code = "import os,sys;os.rename(sys.argv[1],sys.argv[2]);os.rename(sys.argv[3],sys.argv[1])"
+        child = subprocess.Popen(
+            [sys.executable, "-c", code, str(dbdir), str(displaced), str(candidate)],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        while child.poll() is None:
+            watch.drain()
+            time.sleep(0.005)
+        _, stderr = child.communicate(timeout=5)
+        watch.drain()
+        now = stat(source)
+        error_name, error_code = None, None
+        try:
+            live.execute("INSERT INTO marker VALUES ('unacknowledged')")
+            live.commit()
+        except sqlite3.DatabaseError as exc:
+            error_name = getattr(exc, "sqlite_errorname", None)
+            error_code = getattr(exc, "sqlite_errorcode", None)
+        # A directory rename is named db in the *engineering/* watch,
+        # not projects.db in the old db/* watch.
+        named = [e for e in watch.events
+                 if e["mask"] & (FAN_RENAME | FAN_MOVED_FROM | FAN_MOVED_TO)
+                 and any(n["name"] == "db" for n in e["names"])]
+        result = {
+            "pass": (child.returncode == 0 and old["inode"] != now.get("inode")
+                     and error_code == 1032 and bool(named) and not watch.overflow),
+            "child_exit": child.returncode, "child_stderr": stderr[:300],
+            "old_db_inode": old.get("inode"), "new_db_inode": now.get("inode"),
+            "native_code": error_code, "native_name": error_name,
+            "parent_events": named, "event_pids": [e["pid"] for e in named],
+            "historical_actor_identified": False,
+            "attribution_note": ("pid=0 is NOT an attributable process; "
+                                 "a deliberately created pilot child is NOT the historical actor"),
+        }
+    finally:
+        live.close()
+        # Restore only the disposable pilot. Do not touch a real project file.
+        if displaced.exists():
+            if dbdir.exists():
+                dbdir.rename(replacement_held)
+            displaced.rename(dbdir)
+        if replacement_held.exists():
+            shutil.rmtree(replacement_held)
+        if candidate.exists():
+            shutil.rmtree(candidate)
+        for suffix in ("", "-journal", "-wal", "-shm"):
+            (dbdir / ("projects.db" + suffix)).unlink(missing_ok=True)
+        watch.drain()
+        watch.events.clear()
+        watch.topology_changes.clear()
+        watch.last_topology = {str(p): stat(p) for p in watch.watch_paths}
+    (out / "parent-pilot.json").write_text(json.dumps(result, indent=2))
+    return result
+
+
 def observe(round_no: int, base: Path, dest: Path, timeout: int) -> dict:
     root = base / "scenario"
     dbdir = root / "prior" / "engineering" / "db"
     dbdir.mkdir(parents=True, exist_ok=False)
     out = dest / f"round-{round_no}"
     out.mkdir(parents=True, exist_ok=False)
-    watcher = Watch(dbdir)
+    watcher = Watch(dbdir, root.parent)
     try:
         proof = pilot(watcher, dbdir, out)
-        if not proof["pass"] or watcher.overflow:
-            return {"round": round_no, "status": "WATCHER_PILOT_FAILED", "pilot": proof,
+        parent_proof = pilot_parent_directory(watcher, dbdir, out) if proof["pass"] else {"pass": False}
+        if not proof["pass"] or not parent_proof["pass"] or watcher.overflow:
+            return {"round": round_no, "status": "WATCHER_PILOT_FAILED",
+                    "pilot": proof, "parent_pilot": parent_proof,
                     "overflow": watcher.overflow}
         worker_out = out / "worker"
         env = dict(os.environ)
@@ -214,6 +321,9 @@ def observe(round_no: int, base: Path, dest: Path, timeout: int) -> dict:
                          and any(n["name"] == "projects.db" for n in e["names"])]
         all_move_events = [e for e in watcher.events
                            if e["mask"] & (FAN_RENAME | FAN_MOVED_FROM | FAN_MOVED_TO | FAN_DELETE)]
+        ancestor_names = {p.name for p in watcher.watch_paths if p != dbdir}
+        ancestor_events = [e for e in all_move_events
+                           if any(n["name"] in ancestor_names for n in e["names"])]
         worker_result = worker_out / "result.json"
         worker_data = json.loads(worker_result.read_text()) if worker_result.exists() else {}
         sqlite_file = dbdir / "projects.db"
@@ -249,13 +359,17 @@ def observe(round_no: int, base: Path, dest: Path, timeout: int) -> dict:
                 integrity = [{"error": str(e)}]
         result = {
             "round": round_no,
-            "root": str(root), "pilot": proof, "worker": child_result,
+            "root": str(root), "pilot": proof, "parent_pilot": parent_proof,
+            "worker": child_result,
             "worker_status": worker_data.get("status", "NO_RESULT"),
             "sqlite_errors": sqlite_errors, "dbmoved_detected": dbmoved,
             "db_identity": stat_result, "integrity": integrity,
             "kernel_events_count": len(watcher.events),
             "kernel_move_delete_count": len(all_move_events),
             "projects_db_rename_delete": target_events,
+            "ancestor_directory_rename_delete": ancestor_events,
+            "ancestor_topology_changes": watcher.topology_changes,
+            "watched_ancestor_paths": [str(p) for p in watcher.watch_paths],
             "events_sha256": event_sha,
             "lost_kernel_events": watcher.overflow,
             "scope": "isolated synthetic workload; a fresh run cannot identify the historical actor"
@@ -265,8 +379,11 @@ def observe(round_no: int, base: Path, dest: Path, timeout: int) -> dict:
         # Do not turn a successful rerun into a claim of historical resolution.
         result["status"] = ("WORKLOAD_FAILURE_OBSERVED" if child_result["exit"]
                             else "WORKLOAD_PASS_NO_HISTORICAL_ATTRIBUTION")
-        if target_events and dbmoved:
-            result["status"] = "FRESH_DBMOVED_WITH_KERNEL_PID_EVIDENCE"
+        if (target_events or ancestor_events) and dbmoved:
+            result["status"] = "FRESH_DBMOVED_KERNEL_EVENT_NEEDS_PID_REVIEW"
+            # With directory FAN_RENAME the kernel may return pid=0.
+            # Do not claim a perpetrator unless an event has a real PID and
+            # that process can be independently tied to the target operation.
         (out / "result.json").write_text(json.dumps(result, indent=2, ensure_ascii=False))
         return result
     finally:
@@ -296,18 +413,20 @@ def main():
                 k: result.get(k) for k in ("round", "status", "worker", "worker_status",
                                          "sqlite_errors", "dbmoved_detected",
                                          "kernel_move_delete_count", "projects_db_rename_delete",
+                                         "ancestor_directory_rename_delete", "ancestor_topology_changes",
+                                         "watched_ancestor_paths", "parent_pilot",
                                          "lost_kernel_events", "integrity", "pilot", "db_identity")
             })
             print(json.dumps(outcome["rounds"][-1], ensure_ascii=False), flush=True)
-            if result.get("status") in ("FRESH_DBMOVED_WITH_KERNEL_PID_EVIDENCE",
+            if result.get("status") in ("FRESH_DBMOVED_KERNEL_EVENT_NEEDS_PID_REVIEW",
                                         "WATCHER_PILOT_FAILED", "WORKLOAD_FAILURE_OBSERVED"):
                 break
         if outcome["rounds"] and all(r.get("worker", {}).get("exit") == 0
                                       and r.get("pilot", {}).get("pass")
                                       for r in outcome["rounds"]):
             outcome["final"] = "TWO_FRESH_RUNS_HEALTHY_ROOT_CAUSE_STILL_UNRESOLVED"
-        elif outcome["rounds"][-1].get("status") == "FRESH_DBMOVED_WITH_KERNEL_PID_EVIDENCE":
-            outcome["final"] = "FRESH_ACTOR_OBSERVED_NEEDS_CAUSAL_REVIEW"
+        elif outcome["rounds"][-1].get("status") == "FRESH_DBMOVED_KERNEL_EVENT_NEEDS_PID_REVIEW":
+            outcome["final"] = "FRESH_DBMOVED_KERNEL_EVENT_ACTOR_NOT_PROVEN"
         else:
             outcome["final"] = "INVESTIGATION_BLOCKED_OR_FAILURE_NEEDS_REVIEW"
     except Exception as e:
@@ -319,7 +438,7 @@ def main():
         print("FINAL " + json.dumps(outcome, ensure_ascii=False), flush=True)
     return 0 if outcome["final"] in (
         "TWO_FRESH_RUNS_HEALTHY_ROOT_CAUSE_STILL_UNRESOLVED",
-        "FRESH_ACTOR_OBSERVED_NEEDS_CAUSAL_REVIEW") else 1
+        "FRESH_DBMOVED_KERNEL_EVENT_ACTOR_NOT_PROVEN") else 1
 
 
 if __name__ == "__main__":
