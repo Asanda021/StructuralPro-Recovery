@@ -178,6 +178,7 @@ def pilot(watch: Watch, dbdir: Path, out: Path):
         path.unlink(missing_ok=True)
     for suffix in ("-journal", "-wal", "-shm"):
         (dbdir / ("projects.db" + suffix)).unlink(missing_ok=True)
+    watch.drain()
     watch.events.clear()
     (out / "pilot.json").write_text(json.dumps(result, indent=2))
     return result
