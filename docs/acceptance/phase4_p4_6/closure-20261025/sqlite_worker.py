@@ -1,5 +1,5 @@
 """QA-only tracing; no engine, GC, timer or transaction policy changes."""
-import os,sys,json,time,sqlite3,hashlib,gc,shutil,traceback
+import os,sys,json,time,sqlite3,hashlib,gc,shutil,traceback,ctypes,struct
 from pathlib import Path
 from urllib.parse import urlparse,unquote
 OUT=Path(os.environ['SP_SQLITE_OUT']);OUT.mkdir(parents=True,exist_ok=False)
@@ -23,13 +23,35 @@ def emit(event,path=None,**extra):
  r={'event':event,'wall_ns':time.time_ns(),'monotonic_ns':time.monotonic_ns(),**extra}
  if path:r.update(identity(path,extra.pop('initial',None)))
  log.write(json.dumps(r)+'\n')
-def freeze(path,error,stage):
+def drain(fd):
+ events=[]
+ if fd is None:return events
+ try:
+  raw=os.read(fd,1048576);offset=0
+  while offset<len(raw):
+   wd,mask,cookie,length=struct.unpack_from('iIII',raw,offset);offset+=16
+   name=raw[offset:offset+length].split(b'\0',1)[0].decode(errors='replace');offset+=length
+   events.append({'mask':hex(mask),'cookie':cookie,'name':name})
+ except BlockingIOError:pass
+ return events
+
+def freeze(path,error,stage,initial=None,watch=None):
  dest=OUT/('failure-'+str(time.time_ns()));dest.mkdir()
- r={'stage':stage,'sqlite_errorcode':getattr(error,'sqlite_errorcode',None),'sqlite_errorname':getattr(error,'sqlite_errorname',None),'exception':repr(error),'identity':identity(path),'files':{}}
+ r={'stage':stage,'sqlite_errorcode':getattr(error,'sqlite_errorcode',None),'sqlite_errorname':getattr(error,'sqlite_errorname',None),'exception':repr(error),'identity':identity(path,initial),'filesystem_events':drain(watch),'files':{}}
  for suffix in ('','-journal','-wal','-shm'):
   source=Path(str(path)+suffix)
   if source.is_file():
    raw=source.read_bytes();(dest/('projects.db'+suffix)).write_bytes(raw);r['files'][suffix]={'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)}
+ # Read the live descriptor with pread: no seek, transaction, or source write.
+ for fd in r['identity']['fds']:
+  if fd['target'].endswith(' (deleted)'):
+   n=int(fd['fd']);before=os.fstat(n);target=dest/('LIVE-fd-'+str(n)+'.db');offset=0
+   with target.open('wb') as stream:
+    while True:
+     chunk=os.pread(n,1048576,offset)
+     if not chunk:break
+     stream.write(chunk);offset+=len(chunk)
+   after=os.fstat(n);r['files'][target.name]={'bytes':offset,'sha256':hashlib.sha256(target.read_bytes()).hexdigest(),'stat_before':[before.st_dev,before.st_ino,before.st_size],'stat_after':[after.st_dev,after.st_ino,after.st_size]}
  (dest/'state.json').write_text(json.dumps(r,indent=2));emit('ERROR_FROZEN',path,**r)
 def fresh(path):
  r={'identity':identity(path)}
@@ -46,22 +68,26 @@ class Observed(sqlite3.Connection):
  def __init__(self,*args,**kw):
   super().__init__(*args,**kw);self.audit_path=Path(unquote(urlparse(str(args[0])).path) if str(args[0]).startswith('file:') else args[0]).resolve();s=self.audit_path.stat();self.initial=(s.st_dev,s.st_ino)
   emit('CONNECT_OR_REOPEN',self.audit_path,initial=self.initial,fresh=fresh(self.audit_path))
+  lib=ctypes.CDLL(None,use_errno=True);self.watch=lib.inotify_init1(os.O_NONBLOCK|os.O_CLOEXEC)
+  if self.watch>=0:lib.inotify_add_watch(self.watch,os.fsencode(self.audit_path.parent),0x00000fff)
+  else:self.watch=None
   self.set_trace_callback(self.trace)
  def trace(self,sql):
   op=sql.split(None,1)[0].upper() if sql.strip() else ''
   if op in ('BEGIN','INSERT','COMMIT','ROLLBACK'):
-   emit('SQL_'+op,self.audit_path,initial=self.initial,statement=' '.join(sql.split()[:5]) if op!='INSERT' else 'INSERT '+('projects' if 'INTO projects' in sql else 'revisions' if 'INTO revisions' in sql else 'other'))
+   emit('SQL_'+op,self.audit_path,initial=self.initial,filesystem_events=drain(self.watch),statement=' '.join(sql.split()[:5]) if op!='INSERT' else 'INSERT '+('projects' if 'INTO projects' in sql else 'revisions' if 'INTO revisions' in sql else 'other'))
  def execute(self,*args,**kw):
   try:return super().execute(*args,**kw)
-  except sqlite3.Error as e:freeze(self.audit_path,e,'execute-before-ProjectStore-rollback');raise
+  except sqlite3.Error as e:freeze(self.audit_path,e,'execute-before-ProjectStore-rollback',self.initial,self.watch);raise
  def commit(self):
   try:result=super().commit()
-  except sqlite3.Error as e:freeze(self.audit_path,e,'commit-before-ProjectStore-rollback');raise
+  except sqlite3.Error as e:freeze(self.audit_path,e,'commit-before-ProjectStore-rollback',self.initial,self.watch);raise
   emit('COMMIT_RETURN',self.audit_path,initial=self.initial);return result
  def close(self):
   if hasattr(self,'audit_path'):
    emit('CLOSE_BEGIN',self.audit_path,initial=self.initial,in_transaction=self.in_transaction,fresh=fresh(self.audit_path))
    super().close();emit('CLOSE_RETURN',self.audit_path)
+   if self.watch is not None:os.close(self.watch);self.watch=None
   else:super().close()
 def test_independent_original_scenario():
  from scripts.phase4_site_operations_probe import run

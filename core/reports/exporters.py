@@ -291,7 +291,10 @@ def export_xlsx(rows, path, title="گزارش استراکچرال پرو", summ
         value_col=max(2,len(cols))
         if value_col>2:detail.merge_cells(start_row=i,start_column=1,end_row=i,end_column=value_col-1)
         write_excel_cell(detail.cell(i,1),label)
-        write_excel_cell(detail.cell(i,value_col),value,numeric=True)
+        # Fallback row counts are report metadata, not an engineering amount.
+        # Keep them textual in the detail panel; the summary sheet retains the
+        # actual numeric count without preceding the first measured quantity.
+        write_excel_cell(detail.cell(i,value_col),value,numeric=has_numeric_summary)
     header_row = max(6, 4 + len(summary_items))
     detail.merge_cells(start_row=header_row,start_column=1,end_row=header_row,end_column=max(1,len(cols)))
     detail.cell(header_row, 1, (metadata or {}).get("عنوان بخش","ریز متره و برآورد"))
