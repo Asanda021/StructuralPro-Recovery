@@ -147,9 +147,18 @@ def main() -> int:
         return 1
     finally:
         if rule is not None:
-            deletion = run("sudo", "-n", "auditctl", "-W", rule[1])
-            evidence["rule_cleanup_exit"] = deletion.returncode
-            evidence["rule_cleanup_stderr"] = deletion.stderr
+            # TempDirectory already closed above; Linux automatically removes
+            # watches for paths that no longer exist. Verify no lingering rule.
+            check_rules = run("sudo", "-n", "auditctl", "-l")
+            still_watched = f"-w {rule[1]} " in check_rules.stdout
+            evidence["rule_remains_after_fixture_cleanup"] = still_watched
+            if still_watched:
+                deletion = run("sudo", "-n", "auditctl", "-W", rule[1])
+                evidence["rule_cleanup_exit"] = deletion.returncode
+                evidence["rule_cleanup_stderr"] = deletion.stderr
+            else:
+                evidence["rule_cleanup_exit"] = 0
+                evidence["rule_cleanup_note"] = "kernel automatically removed watch with temporary directory"
         (outdir / "audit-events.txt").write_text(audit_output, encoding="utf-8")
         (outdir / "result.json").write_text(
             json.dumps(evidence, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
