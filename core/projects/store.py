@@ -24,10 +24,31 @@ def _contract_basis(project: dict[str, Any]) -> str:
 
 
 class ProjectStore:
+    @staticmethod
+    def _parent_identities(path: Path) -> tuple[tuple[int, int], ...]:
+        """Snapshot every parent directory from db/ through the filesystem root.
+
+        A replacement directory may expose a *hardlink to the same DB inode*.
+        Checking the database file alone cannot detect that the SQLite journal
+        and sidecar paths have been moved to a different directory.
+        """
+        identities = []
+        parent = path.parent
+        while True:
+            info = parent.stat()
+            identities.append((info.st_dev, info.st_ino))
+            if parent == parent.parent:
+                break
+            parent = parent.parent
+        return tuple(identities)
+
     def __init__(self, path: str | Path):
         self.path=Path(path); self.path.parent.mkdir(parents=True,exist_ok=True)
         existing = self.path.exists()
         before_open = self.path.stat() if existing else None
+        # Pin the directory chain *before* opening SQLite. A directory may be
+        # replaced while connect() is returning without changing the file inode.
+        self._directory_identities = self._parent_identities(self.path)
         if before_open is not None and (not self.path.is_file() or before_open.st_size == 0):
             raise RuntimeError("SQLite integrity check failed: existing project database is empty or not a regular file")
         self.db=sqlite3.connect(self.path); self.db.row_factory=sqlite3.Row
@@ -77,7 +98,10 @@ class ProjectStore:
         """
         try:
             current=self.path.stat()
-            matches=(current.st_dev,current.st_ino)==self._file_identity
+            matches=(
+                (current.st_dev,current.st_ino)==self._file_identity
+                and self._parent_identities(self.path)==self._directory_identities
+            )
         except OSError:
             matches=False
         if self._identity_failed or not matches:
