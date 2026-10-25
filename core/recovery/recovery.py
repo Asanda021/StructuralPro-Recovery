@@ -94,6 +94,9 @@ def backup_database(db_path: str | Path, backup_path: str | Path) -> dict[str, A
     source=None
     try:
         source=sqlite3.connect(source_path.resolve().as_uri()+"?mode=ro", uri=True)
+        # Pin one read snapshot across validation and backup. Without BEGIN,
+        # a concurrent writer can advance the revision chain between SELECTs.
+        source.execute("BEGIN")
         _require_database_integrity(source, label="source")
         require_project_history_consistency(source)
         with tempfile.NamedTemporaryFile(prefix=".db-backup-",suffix=".tmp",
