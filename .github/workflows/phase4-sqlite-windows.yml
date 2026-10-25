@@ -10,6 +10,7 @@ on:
       - core/recovery/recovery.py
       - core/platform/**
       - tests/test_phase4_sqlite_dbmoved_safety.py
+      - tests/test_phase4_sqlite_windows_native.py
       - tests/test_phase4_sqlite_backup_snapshot_pin.py
       - tests/test_phase4_sqlite_backup_during_writes.py
       - tests/test_phase4_sqlite_full_history_integrity.py
@@ -43,10 +44,12 @@ jobs:
         shell: pwsh
         run: |
           python -m pytest -q --maxfail=1 --junitxml=sqlite-windows-backup.xml tests/test_phase4_sqlite_backup_snapshot_pin.py tests/test_phase4_sqlite_backup_during_writes.py tests/test_phase4_sqlite_full_history_integrity.py
-      - name: Native file displacement behavior (do not mask differences)
+      # POSIX DBMOVED rename tests cannot be transplanted unchanged: Windows
+      # denies rename of a live SQLite handle (WinError 32), verified in run 40173196953.
+      - name: Native Windows file sharing and verified persistence
         shell: pwsh
         run: |
-          python -m pytest -q --maxfail=1 --junitxml=sqlite-windows-displacement.xml tests/test_phase4_sqlite_dbmoved_safety.py
+          python -m pytest -q --maxfail=1 --junitxml=sqlite-windows-native.xml tests/test_phase4_sqlite_windows_native.py
       - name: Preserve machine-readable test evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
