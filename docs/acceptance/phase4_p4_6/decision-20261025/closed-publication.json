@@ -1,0 +1,88 @@
+{
+  "status": "CLOSED PUBLICATION PASS; NOT ROOT CAUSE FIX",
+  "source": "/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db",
+  "destination": "/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/decision-20261025/closed-snapshot/projects.db",
+  "sha256_source_and_destination": "a2d15527bd33ab53a8cb94008210a6eb80b3b132b97ccd68134c0915b9b59aa8",
+  "source_identity_before": {
+    "path": "/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 1715134,
+      "bytes": 59363328
+    },
+    "fds": [],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-shm'"
+      }
+    },
+    "moved": false
+  },
+  "source_identity_after": {
+    "path": "/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 1715134,
+      "bytes": 59363328
+    },
+    "fds": [],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db-shm'"
+      }
+    },
+    "moved": false
+  },
+  "published_identity": {
+    "path": "/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/decision-20261025/closed-snapshot/projects.db",
+    "identity": {
+      "device": 27,
+      "inode": 1715255,
+      "bytes": 59363328
+    },
+    "fds": [],
+    "companions": {
+      "-journal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/decision-20261025/closed-snapshot/projects.db-journal'"
+      },
+      "-wal": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/decision-20261025/closed-snapshot/projects.db-wal'"
+      },
+      "-shm": {
+        "error": "[Errno 2] No such file or directory: '/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/decision-20261025/closed-snapshot/projects.db-shm'"
+      }
+    },
+    "moved": false
+  },
+  "revisions": 326,
+  "proof_occurrences": 270,
+  "distinct_proofs": 4,
+  "active_tail_equal": true,
+  "all_history_valid": true,
+  "integrity": "ok",
+  "foreign_key_check": [],
+  "scenario_reexecuted": false,
+  "round2_sql_counts": {
+    "SQL_BEGIN": 326,
+    "SQL_INSERT": 652,
+    "SQL_COMMIT": 326,
+    "CLOSE_BEGIN": 9,
+    "CLOSE_RETURN": 9,
+    "CONNECT_OR_REOPEN": 9
+  },
+  "round2_path_fd_mismatches": 0,
+  "replacement_actor": "UNRESOLVED",
+  "historical_corruption": "UNRESOLVED"
+}

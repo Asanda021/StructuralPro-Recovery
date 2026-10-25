@@ -35,3 +35,7 @@ Real Python3.12/Qt environment; full regression 7982 PASS/0 FAIL/0 ERROR/5 Power
 
 ## 2026-10-25 — DBMOVED witness and exact report audit
 Continued from af474e8; product a153828 / tree1e9af37b. Full7994 PASS/0 FAIL/0 ERROR/5 PowerShell SKIP, JUnit467.666s. A separate frozen workspace probe failed with native1032 SQLITE_READONLY_DBMOVED: live inode266155 deleted, pathname inode266211; corrupt replacement snapshot273 preserved before rollback. Direct readonly mechanism proven; replacement actor and historical251/323 causes unresolved. No Store/Recovery/GC/threshold changes. Reports retain exact percentages/full hashes in audit, meaningful summaries;64fresh readbacks,32offline Office-format prints and45audit-recovery checks. New Drive1lsD8T4KweVj1CUO1vnwQAWMWnoD1k3-7, SHA30bffdbc590b7847f5f9a01cb50dca3ee37a9795d5480adc3ff343a084fe7e8b;310manifestfiles, independent165PASS restore,326revisions/270sourceproofs. Old backup preserved. All P4/P5/P6 priorities remain PARTIAL; see closure-20261025/REPORT.fa.md and CONTINUE.fa.md. No Windows/Office/engineering/owner acceptance, merge/release or Phase5.
+
+
+## تصمیم محدود نهایی 2026-10-25
+حالت B؛ دو دور تشخیصی پایان یافت. عامل DBMOVED و فساد تاریخی نامعلوم. نقص close اتصال فقط‌خواندنی QA با RED→GREEN اصلاح شد؛ انتشار بسته همان داده دور۲ با SHA/326Revision/270منشأ موفق بود؛ علت/مهار کامل اثبات نشد. جامع7994 و بکاپ165آزمون معتبر قبلی تکرار نشدند. مرجع: decision-20261025/DECISION.fa.md. هر سه اولویت PARTIAL؛ بدون شاهد انتساب عامل، retry بیشتر انجام نشود.

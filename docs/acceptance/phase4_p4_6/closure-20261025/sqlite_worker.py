@@ -1,6 +1,7 @@
 """QA-only tracing; no engine, GC, timer or transaction policy changes."""
 import os,sys,json,time,sqlite3,hashlib,gc,shutil,traceback,ctypes,struct
 from pathlib import Path
+from contextlib import closing
 from urllib.parse import urlparse,unquote
 OUT=Path(os.environ['SP_SQLITE_OUT']);OUT.mkdir(parents=True,exist_ok=False)
 ROOT=Path(os.environ['SP_SQLITE_ROOT']);MODE=os.environ['SP_SQLITE_MODE'];CONNECT=sqlite3.connect
@@ -56,7 +57,7 @@ def freeze(path,error,stage,initial=None,watch=None):
 def fresh(path):
  r={'identity':identity(path)}
  try:
-  with CONNECT(Path(path).resolve().as_uri()+'?mode=ro',uri=True) as c:
+  with closing(CONNECT(Path(path).resolve().as_uri()+'?mode=ro',uri=True)) as c:
    r['journal_mode']=c.execute('pragma journal_mode').fetchone()[0];r['integrity']=c.execute('pragma integrity_check').fetchall()
    names={x[0] for x in c.execute('select name from sqlite_master where type="table"')}
    if {'projects','revisions'}<=names:

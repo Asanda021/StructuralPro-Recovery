@@ -1,0 +1,80 @@
+scripts/verify_shear_wall_work.py:12: reference=Path(reference).resolve();out=Path(out).resolve();out.mkdir(exist_ok=False);shutil.copytree(reference,out/'previous')
+scripts/verify_shear_wall_work.py:13: db=out/'previous/previous/previous/package2/package1/db';assert (db/'projects.db').is_file()
+scripts/verify_insulation_step6_package3.py:18: out.mkdir();shutil.copytree(reference,out/'package2');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'package2/package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={}
+scripts/verify_slope_aec_integration.py:15: out.mkdir(parents=True);shutil.copytree(reference,out/'previous');docs=out/'documents';docs.mkdir()
+scripts/phase4_sqlite_rescue.py:135:        # os.replace() may overwrite another writer that raced into that path.
+scripts/phase4_sqlite_rescue.py:137:            os.link(temp_path, dest)
+scripts/phase4_sqlite_rescue.py:142:        temp_path.unlink()
+scripts/phase4_sqlite_rescue.py:155:        if temp_path is not None: temp_path.unlink(missing_ok=True)
+scripts/run_quarantined_workflow_qa.py:72:    shutil.copytree(root, checkout, ignore=lambda folder,names: [x for x in names if x in _IGNORED], symlinks=False)
+scripts/run_quarantined_workflow_qa.py:78:        shutil.copy2(source, fake / source.name)
+scripts/verify_interior_cover_step6_package2.py:20: out.mkdir();shutil.copytree(reference,out/'previous');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'previous/package2/package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={};families={}
+scripts/verify_eight_roofs_step5.py:46:        (out / previous).unlink(missing_ok=True)
+scripts/verify_floor_step6_package2.py:18: out.mkdir();shutil.copytree(reference,out/'package1');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={}
+scripts/verify_stair_stage3.py:20:  reference=Path(reference).resolve();assert (reference/'projects.db').is_file()
+scripts/verify_stair_stage3.py:21:  shutil.copytree(reference,out/'historical-db');h=StructuralProApp(out/'historical-db');historical=deepcopy(h.open_project('ARCH-5'));assert len(historical['boq'])==83 and len(historical['beam_amendments'])==6
+core/projects/backup.py:67:        for p in files[keep:]: p.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:88:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:91:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:95:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:100:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:105:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:114:            converted.unlink(missing_ok=True)
+core/platform/application.py:68:        self.store=ProjectStore(self.data_dir/"projects.db")
+core/recovery/recovery.py:110:        # Atomic no-replace publication. os.replace() can overwrite a competing
+core/recovery/recovery.py:114:            os.link(temp_path, target_path)
+core/recovery/recovery.py:119:        temp_path.unlink()
+core/recovery/recovery.py:125:        if temp_path is not None: temp_path.unlink(missing_ok=True)
+core/drawings/dwg_takeoff.py:326:                converted.unlink(missing_ok=True)
+core/drawings/dwg_takeoff.py:339:            result.output.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:117:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:135:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:161:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:167:            target.unlink(missing_ok=True)
+core/estimate/pricebook_archive_audit_v1.py:44:                tmp.unlink(missing_ok=True)
+core/estimate/pricebook_ingestion_v1.py:74:                tmp.unlink(missing_ok=True)
+tests/test_bored_pile_starter_source_v2.py:90:    elif fault=='missing_source_file':path.unlink()
+tests/test_column_joint_starter_development_phase1.py:127:    elif fault=='missing_sheet':sheet_path.unlink()
+tests/test_recovery_live_policy.py:46:    (root / "recovery/workflow_sha256.json").unlink()
+tests/test_product_editions_runtime.py:11:            if path.exists(): path.unlink()
+tests/test_stair_work_core.py:32: if bad=='file':Path(dt['input_document']['path']).unlink()
+tests/test_phase1_work_six_family_service.py:67:        if bad=='missing':__import__('pathlib').Path(next(iter(args['evidence_files'].values()))).unlink()
+tests/test_column_joint_footing_tie_phase1.py:211:    path.unlink()
+tests/test_phase1_live_floor_events_chat.py:179:    database = tmp_path / "projects.db"
+tests/test_bored_pile_work_core.py:32: elif bad=='file':Path(dt['input_document']['path']).unlink()
+tests/test_phase4_sqlite_persistence_323.py:11:    path = tmp_path / "projects.db"
+tests/test_priority_23_reliability_recovery.py:7:    db=tmp_path/"projects.db"; store=ProjectStore(db)
+tests/test_beam_rebar_hints.py:116:    path = tmp_path / "projects.db"
+tests/test_windows_build_native_failures.py:17:    shutil.copyfile(ROOT / "packaging/build_windows.ps1", packaging / "build_windows.ps1")
+tests/test_priority_34_windows_validation.py:36:    assert (data_dir / "projects.db").is_file()
+tests/test_reviewed_aec_priorities_6_9.py:224:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_reviewed_aec_priorities_6_9.py:236:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_beam_detail_workflow.py:40:    db = tmp_path / "projects.db"
+tests/test_stirrup_zones.py:112:    path = tmp_path/"projects.db"
+tests/test_stirrup_zones.py:153:    path = tmp_path / "projects.db"
+tests/test_roadmap_phase11.py:6:    database = tmp_path / "projects.db"
+tests/test_phase1_persisted_identity_reconciliation_chat.py:187:    database = tmp_path / "projects.db"
+tests/test_priority_68_store_concurrency.py:7:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_priority_68_store_concurrency.py:22:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_priority_68_store_concurrency.py:34:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_windows_acceptance_gate.py:48:    (repo/"recovery/disabled_workflows/workflow-000.yml").unlink()
+tests/test_phase4_sqlite_semantic_integrity.py:8:    path=tmp_path/'projects.db'
+tests/test_phase2_priority4_closure.py:130: if fault=='missing':f.unlink()
+tests/test_phase1_multi_member_overlap.py:155:    elif mode=='missing_prism_file': (tmp_path/'column.json').unlink()
+tests/test_shear_wall_work.py:43: a=StructuralProApp(tmp_path/'db');a.create_project('مصنوعی','P');d=sample(tmp_path);r=preview(d,a.takeoff);assert r['ready'];assert [v['quantity'] for v in r['rows'] if v['item_code']=='shear_wall_concrete']==['3.5'];Path(d['shear_wall_detail']['ownership_document']['path']).unlink();assert not preview(d,a.takeoff)['ready'];a.store.close()
+tests/test_shear_wall_work.py:49: if bad=='missing_input':Path(detail['input_document']['path']).unlink()
+tests/test_external_dwg_provider.py:42:    converted.unlink(missing_ok=True)
+tests/test_column_joint_beam_panel_phase1.py:132:    lambda d,p,t:t.joinpath('counterpart.json').unlink(),
+tests/test_phase1_blinding_concrete_independent_oracle_chat.py:148:    path = tmp_path / "projects.db"
+tests/test_phase4_sqlite_atomic_publication.py:13:    original_link=recovery.os.link
+tests/test_phase4_sqlite_atomic_publication.py:28:    original_link=rescue_module.os.link
+tests/test_phase4_sqlite_atomic_publication.py:40:    path=tmp_path/'projects.db'
+tests/test_phase4_sqlite_atomic_publication.py:45:    assert not (tmp_path/'projects.db-journal').exists()
+tests/test_p13_p15_reviewed_engineering.py:226:    store=ProjectStore(tmp_path/"projects.db")
+tests/test_reviewed_structural_five_priorities.py:134:    p = tmp_path / "projects.db"
+tests/test_reviewed_structural_five_priorities.py:153:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_reviewed_structural_five_priorities.py:167:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_reviewed_structural_five_priorities.py:178:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_reviewed_structural_five_priorities.py:194:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_reviewed_structural_five_priorities.py:207:    store = ProjectStore(tmp_path / "projects.db")
+tests/test_stair_work_stage2.py:58: if bad=='file':Path(dt['ownership_document']['path']).unlink()

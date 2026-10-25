@@ -1,0 +1,38 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________________ test_targeted_round ______________________________
+
+    def test_targeted_round():
+        started=time.time_ns()
+        try:
+            worker.test_independent_original_scenario()
+            events=[json.loads(x) for x in (OUT/'events.jsonl').read_text().splitlines()]
+            relevant=[x for x in events if x.get('path','').endswith('/projects.db')]
+            moved=[x for x in relevant if x.get('moved')]
+            checks=[x['fresh'] for x in events if 'fresh' in x and 'revision_count' in x['fresh']]
+            assert not moved
+            assert checks and all(x.get('integrity')==[['ok']] and all(y[2]==1 for y in x['active_tail']) for x in checks)
+            db=ROOT/'prior/engineering/db/projects.db'
+            current=worker.fresh(db)
+            assert current['revision_count']==326 and current['integrity']==[('ok',)]
+            from core.recovery.recovery import require_project_history_consistency
+            with worker.CONNECT(db.as_uri()+'?mode=ro',uri=True) as c:require_project_history_consistency(c)
+            result={'round':ROUND,'start_ns':started,'end_ns':time.time_ns(),'root':str(ROOT),'path_fd_mismatches':len(moved),'python_file_mutations':mutations,'fresh':current,'sql_counts':{name:sum(x['event']==name for x in events) for name in ['SQL_BEGIN','SQL_INSERT','SQL_COMMIT','CLOSE_BEGIN','CLOSE_RETURN','CONNECT_OR_REOPEN']},'scope':'QA only; no causal attribution from a successful rerun'}
+            if ROUND==2:
+                # Prove no source SQLite descriptor is live BEFORE copying closed bytes.
+>               live=worker.identity(db)['fds'];assert not live,live
+                                                ^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: [{'fd': '13', 'target': '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db', 'device': 27, 'inode': 1715134, ...}]
+E               assert not [{'fd': '13', 'target': '/tmp/sp-decision-round2-scenario-20261025/prior/engineering/db/projects.db', 'device': 27, 'inode': 1715134, ...}]
+
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:36: AssertionError
+----------------------------- Captured stdout call -----------------------------
+warning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py::test_targeted_round
+1 failed in 35.95s

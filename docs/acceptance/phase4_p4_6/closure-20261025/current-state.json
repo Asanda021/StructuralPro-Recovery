@@ -16,5 +16,10 @@
   "new_backup": "RESTORE PASS; PHASE4 PARTIAL",
   "old_verified_backup_preserved": "14Y_0KLncL_8AdpqdkuLu1g84_7V1kIRK",
   "new_backup_id": "1lsD8T4KweVj1CUO1vnwQAWMWnoD1k3-7",
-  "restored_tests": 165
+  "restored_tests": 165,
+  "final_decision": "B",
+  "final_decision_document": "../decision-20261025/DECISION.fa.md",
+  "qa_observer_connection_lifetime": "FIXED_RED_GREEN; NOT_A_DBMOVED_CAUSE",
+  "closed_snapshot_publication": "PASS; insufficient causal separation for acceptance",
+  "investigation_cycle": "CLOSED; two rounds completed; no further retry without new evidence"
 }

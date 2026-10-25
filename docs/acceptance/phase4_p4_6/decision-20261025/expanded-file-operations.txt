@@ -1,0 +1,150 @@
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:10: shutil.copytree(scenario,root/'scenario');shutil.copytree(qa,root/'evidence',ignore=shutil.ignore_patterns('__pycache__','full.xml','full-final.xml'))
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:11: for origin,label in [('/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db','FAILED-historical-323.db'),('/workspace/scratch/5ff2acae0199/site-final-20261025/prior/engineering/db/projects.db','FAILED-work-251.db')]:
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:13: (root/'diagnostics/README.txt').write_text('CORRUPTED FORENSIC EVIDENCE ONLY. NEVER restore these as the scenario. Source database: scenario/prior/engineering/db/projects.db. Root cause UNRESOLVED; Phase4 PARTIAL.')
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:15:  shutil.copytree(origin,root/'renders'/label)
+docs/acceptance/phase4_p4_6/work-20261025/build_backup.py:29: os.link(stage,out) # Publish only closed, verified bytes; never replace.
+docs/acceptance/phase4_p4_6/work-20261025/historical.py:6:p=Path('/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db');h=lambda:hashlib.sha256(p.read_bytes()).hexdigest()
+docs/acceptance/phase4_p4_6/work-20261025/test_rescue_new_failure.py:7: source=Path('/workspace/scratch/5ff2acae0199/site-final-20261025/prior/engineering/db/projects.db');before=hashlib.sha256(source.read_bytes()).hexdigest()
+docs/acceptance/phase4_p4_6/work-20261025/test_probe_tmp.py:8:    p=root/'prior/engineering/db/projects.db'
+scripts/phase1_real_building_gate.py:21:            .replace("ي", "ی").replace("ك", "ک").strip().casefold())
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:53:    db=dest/'scenario/prior/engineering/db/projects.db'
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/work-20261025/restore_backup.py:64:    held.rename(original)
+scripts/verify_shear_wall_work.py:12: reference=Path(reference).resolve();out=Path(out).resolve();out.mkdir(exist_ok=False);shutil.copytree(reference,out/'previous')
+scripts/verify_shear_wall_work.py:13: db=out/'previous/previous/previous/package2/package1/db';assert (db/'projects.db').is_file()
+app/project_controls_workspace.py:14:    y,m,d=map(int,raw.replace('-','/').split('/'))
+scripts/verify_insulation_step6_package3.py:18: out.mkdir();shutil.copytree(reference,out/'package2');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'package2/package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={}
+scripts/sync_pricebooks_24.py:20:    return re.sub(r"\s+"," ",v.replace("ي","ی").replace("ك","ک").replace("\u200c"," ")).strip()
+scripts/verify_slope_aec_integration.py:15: out.mkdir(parents=True);shutil.copytree(reference,out/'previous');docs=out/'documents';docs.mkdir()
+scripts/phase2_priority3_closure_probe.py:89: def numeric(v):return Decimal(text(v).translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789')).replace('٫','.').replace('٬',''))
+docs/acceptance/phase4_p4_6/verification-20261024/build-backup.py:11:    shutil.copytree(scenario,root/'scenario')
+docs/acceptance/phase4_p4_6/verification-20261024/build-backup.py:12:    shutil.copytree(repo/'docs/acceptance/phase4_p4_6/verification-20261024',root/'evidence')
+docs/acceptance/phase4_p4_6/verification-20261024/build-backup.py:15:        shutil.copy2(Path(sys.argv[4]),diagnostic/'FAILED-projects.db')
+scripts/windows_acceptance_gate.py:47:    tmp.replace(path)
+app/financial_workspace.py:175:            year,month,day=map(int,raw.replace('-','/').split('/'))
+scripts/verify_stair_stage3.py:20:  reference=Path(reference).resolve();assert (reference/'projects.db').is_file()
+scripts/verify_stair_stage3.py:21:  shutil.copytree(reference,out/'historical-db');h=StructuralProApp(out/'historical-db');historical=deepcopy(h.open_project('ARCH-5'));assert len(historical['boq'])==83 and len(historical['beam_amendments'])==6
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:53:    db=dest/'scenario/prior/engineering/db/projects.db'
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/verification-20261024/restore.py:64:    held.rename(original)
+scripts/verify_eight_roofs_step5.py:46:        (out / previous).unlink(missing_ok=True)
+scripts/phase4_sqlite_rescue.py:135:        # os.replace() may overwrite another writer that raced into that path.
+scripts/phase4_sqlite_rescue.py:137:            os.link(temp_path, dest)
+scripts/phase4_sqlite_rescue.py:142:        temp_path.unlink()
+scripts/phase4_sqlite_rescue.py:155:        if temp_path is not None: temp_path.unlink(missing_ok=True)
+scripts/run_quarantined_workflow_qa.py:72:    shutil.copytree(root, checkout, ignore=lambda folder,names: [x for x in names if x in _IGNORED], symlinks=False)
+scripts/verify_floor_step6_package2.py:18: out.mkdir();shutil.copytree(reference,out/'package1');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={}
+scripts/verify_interior_cover_step6_package2.py:20: out.mkdir();shutil.copytree(reference,out/'previous');docs=out/'documents';docs.mkdir();app=StructuralProApp(out/'previous/package2/package1/db');pid='ARCH-5';previous=deepcopy(app.open_project(pid));inputs={};documents={};families={}
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:10:    if event in {'os.remove','os.rename','os.rmdir','shutil.rmtree','shutil.move','shutil.copyfile','os.link','os.symlink'}:
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:23:        relevant=[x for x in events if x.get('path','').endswith('/projects.db')]
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:28:        db=ROOT/'prior/engineering/db/projects.db'
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:40:            stage=publish/'.projects.db.part';dest=publish/'projects.db'
+docs/acceptance/phase4_p4_6/decision-20261025/targeted_round.py:43:            os.link(stage,dest);stage.unlink()
+app/main.py:595:            raw = assembly_inputs.text().translate(PERSIAN_DIGITS).replace("٫", ".").replace("٬", ",")
+app/manual_table_sort.py:15:            raw=str(value).translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩','01234567890123456789')).replace('٫','.')
+app/manual_table_sort.py:22:            d=datetime.fromisoformat(str(value).replace('Z','+00:00'))
+docs/acceptance/phase4_p4_6/runtime-investigation-20261024/test_lifecycle_probe.py:7:    db=root/'prior/engineering/db/projects.db'
+core/sync_store.py:48:        temp.replace(self.path)
+core/recovery/recovery.py:110:        # Atomic no-replace publication. os.replace() can overwrite a competing
+core/recovery/recovery.py:114:            os.link(temp_path, target_path)
+core/recovery/recovery.py:119:        temp_path.unlink()
+core/recovery/recovery.py:125:        if temp_path is not None: temp_path.unlink(missing_ok=True)
+core/platform/support_diagnostics_v1.py:12:    normalized = key.lower().replace("-", "_")
+core/platform/p124_security.py:12:    p = PurePosixPath(value.replace("\\", "/"))
+core/takeoff/manual_input.py:42:    raw=value.translate(PERSIAN_DIGITS).replace(',', '').strip()
+core/takeoff/manual_input.py:48:    return (text.translate(PERSIAN_DIGITS).replace("×","x").replace("✕","x")
+core/takeoff/manual_input.py:49:            .replace("٬",",").replace("٫",".").strip())
+core/acceptance/p121_p130.py:52:    if ".." in str(request.get("path","")).replace(chr(92), "/").split("/"): errors.append("path traversal")
+core/platform/parity.py:48:        title=x.replace("-"," ").title(),
+core/takeoff/shared_rebar_ownership_chat.py:266:            alias = lambda value: unicodedata.normalize("NFKC", value).replace("ي", "ی").replace("ك", "ک").casefold()
+core/takeoff/structural_four_package_preflight_chat.py:47:    rows=[]; seen=set(); physical_ops=set(); quantities={}; unlinked=[]
+core/takeoff/structural_four_package_preflight_chat.py:93:                unlinked.append({"source_id":sid,"component":kind,
+core/takeoff/structural_four_package_preflight_chat.py:107:    missing_bar_link=sorted(r["source_id"] for r in unlinked if not isinstance(r["physical_bar_id"],str) or r["physical_bar_id"] not in bar_ids)
+core/takeoff/structural_four_package_preflight_chat.py:125:            "kg_rows":len(unlinked),"unlinked_rebar_candidate_source_ids":missing_bar_link,
+core/platform/application.py:40:    raw = raw.translate(trans).replace("-", "/").replace(".", "/")
+core/platform/application.py:68:        self.store=ProjectStore(self.data_dir/"projects.db")
+core/platform/application.py:2137:            "unlinked_count": sum(1 for x in rows if x["linkage_state"] == "بدون اتصال"),
+core/platform/application.py:2175:            "unlinked_count": reconciliation["unlinked_count"],
+core/reports/column_detail_report.py:39:   for key in ('longitudinal','stirrups','bottom_x','bottom_y','top_x','top_y','additional','crossties','starters'):description=description.replace(key,LABELS[key])
+core/ai/takeoff_ai_v2.py:113:            text = normalize_drawing_text(raw).replace(",", ".")
+core/takeoff/assembly.py:99:    k = code.strip().casefold().replace(" ", "_")
+core/ai/takeoff_intelligence_v1.py:38:    text = text.replace("ي", "ی").replace("ى", "ی").replace("ك", "ک")
+core/ai/takeoff_intelligence_v1.py:39:    text = text.replace("\u200c", " ").replace("\u200f", " ").replace("\u200e", " ")
+core/reports/exporters.py:38:    return FA_LABELS.get(value, FA_LABELS.get(value.casefold().replace(' ','_'), 'اطلاعات تکمیلی' if re.search('[A-Za-z]',value) else value))
+core/reports/exporters.py:115:        sheet.oddHeader.right.text=str(title).replace('&','&&');sheet.oddHeader.right.font=REPORT_FONT
+core/takeoff/modules/advanced.py:50:    k=item.strip().casefold().replace(" ","_")
+core/reports/project_report.py:32:    columns.extend((key, key.replace("_", " ")) for key in extras)
+core/takeoff/modules/mechanical.py:44:    k=item.casefold().replace(" ","_")
+core/takeoff/modules/civil.py:54:    k=item.casefold().replace(" ","_")
+core/takeoff/building_six_family_ownership_chat.py:52:    return unicodedata.normalize('NFKC', value).replace('ي', 'ی').replace('ك', 'ک').translate(str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')).casefold()
+core/takeoff/modules/electrical.py:44:    k=item.casefold().replace(" ","_")
+core/takeoff/explicit_inputs.py:51:    i=str(item).strip().casefold().replace(" ", "_")
+core/takeoff/modules/building.py:66:    k=item.strip().casefold().replace(" ","_")
+core/takeoff/bored_pile_ownership_preflight.py:39:    return " ".join(text.replace("ي", "ی").replace("ك", "ک").translate(str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")).casefold().split())
+core/reports/rtl_export_contract_v1.py:22:    value = unicodedata.normalize("NFC", value).replace("\u200e", "").replace("\u200f", "")
+core/takeoff/price_mapping.py:24:    s = s.replace("ي", "ی").replace("ك", "ک")
+docs/acceptance/phase4_p4_6/closure-20261025/test_failed_snapshot_guards.py:7: p=Path('docs/acceptance/phase4_p4_6/closure-20261025/sqlite-runs-frozen/audited-workspace/failure-1792903116210965117/projects.db')
+core/cad/persian_text_v1.py:21:    text = text.replace(r"\P", "\n").replace(r"\p", "\n")
+core/cad/persian_text_v1.py:22:    text = text.replace(r"\~", "\u00a0")
+core/cad/persian_text_v1.py:23:    text = text.replace(r"\{", "{").replace(r"\}", "}")
+core/cad/persian_text_v1.py:27:    text = text.replace("}", "")
+core/cad/persian_text_v1.py:28:    text = text.replace("%%d", "°").replace("%%D", "°")
+core/cad/persian_text_v1.py:29:    text = text.replace("%%p", "±").replace("%%P", "±")
+core/cad/persian_text_v1.py:30:    text = text.replace("%%c", "Ø").replace("%%C", "Ø")
+core/estimate/pricebook_row_extraction_v2.py:36:    s=s.replace("ي","ی").replace("ك","ک").replace("\u200c","")
+core/estimate/pricebook_row_extraction_v2.py:38:    s=s.replace("(","").replace(")","")
+core/estimate/pricebook_row_extraction_v2.py:44:    s=_text(v).replace(",","").replace("٬","").replace("،","").replace(" ","")
+core/cad/external_dwg_provider_v1.py:88:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:91:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:95:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:100:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:105:            output.unlink(missing_ok=True)
+core/cad/external_dwg_provider_v1.py:114:            converted.unlink(missing_ok=True)
+core/estimate/item_code_normalization_v1.py:8:    for i,c in enumerate(pers): s=s.replace(c,str(i))
+core/estimate/item_code_normalization_v1.py:9:    for i,c in enumerate(arb): s=s.replace(c,str(i))
+core/estimate/item_code_normalization_v1.py:10:    s=s.replace("–","-").replace("—","-").replace("−","-")
+core/projects/project_model.py:12:            .translate(_ID_DIGITS).replace("ي", "ی").replace("ك", "ک")
+core/projects/management.py:35:        return date.fromisoformat(raw.replace("/", "-"))
+core/estimate/pricebook_archive_audit_v1.py:44:                tmp.unlink(missing_ok=True)
+core/estimate/pricebook_row_extraction_v1.py:21:    s=_text(v).replace(",","").replace("٬","")
+core/estimate/pricebook_ingestion_v1.py:18:    s=str(v or "").strip().replace("٬","").replace(",","").replace("،","")
+core/estimate/pricebook_ingestion_v1.py:74:                tmp.unlink(missing_ok=True)
+core/projects/integrity.py:63:                        datetime.fromisoformat(str(row[field]).replace("Z","+00:00"))
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:44:   raw=source.read_bytes();(dest/('projects.db'+suffix)).write_bytes(raw);r['files'][suffix]={'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)}
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:100:  result=run(ROOT);r={'status':'PASS','receipt':result,'fresh':fresh(ROOT/'prior/engineering/db/projects.db')}
+docs/acceptance/phase4_p4_6/closure-20261025/sqlite_worker.py:102:  db=ROOT/'prior/engineering/db/projects.db'
+core/projects/backup.py:23:        tmp.replace(path)
+core/projects/backup.py:47:        tmp.replace(path)
+core/projects/backup.py:67:        for p in files[keep:]: p.unlink(missing_ok=True)
+docs/acceptance/phase4_p4_6/closure-20261025/run_sqlite.py:5:old=[Path('/workspace/scratch/5ff2acae0199/site-final-20261025/prior/engineering/db/projects.db'),Path('/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db')]
+docs/acceptance/phase4_p4_6/closure-20261025/run_sqlite.py:25:(base/'historical.json').write_text(json.dumps(proof,indent=2));(base/'runs.json').write_text(json.dumps(results,indent=2));shutil.copytree(base,qa/('sqlite-runs'+tag),ignore=shutil.ignore_patterns('*-scenario'))
+docs/acceptance/phase4_p4_6/closure-20261025/run_full.py:21:for name in ('full.log','full.xml.gz','full-state.json','host.jsonl'):shutil.copy2(tmp/name,qa/('full-final-'+name if name=='host.jsonl' else name.replace('full','full-final',1)))
+docs/acceptance/phase4_p4_6/closure-20261025/test_dbmoved_calibration.py:17:    path.rename(moved)
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:10: shutil.copytree(scenario,root/'scenario');shutil.copytree(qa,root/'evidence',ignore=shutil.ignore_patterns('__pycache__','full.xml','full-final.xml','*.db','*-journal','*-wal','*-shm','events.jsonl'))
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:11: for origin,label in [('/workspace/scratch/5ff2acae0199/site-scenario-original-corrupt/prior/engineering/db/projects.db','FAILED-historical-323.db'),('/workspace/scratch/5ff2acae0199/site-final-20261025/prior/engineering/db/projects.db','FAILED-work-251.db'),('/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase4_p4_6/closure-20261025/sqlite-runs-frozen/audited-workspace/failure-1792903116210965117/projects.db','FAILED-work-273-DBMOVED.db')]:
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:13: (root/'diagnostics/README.txt').write_text('CORRUPTED FORENSIC EVIDENCE ONLY. NEVER restore these as the scenario. Source database: scenario/prior/engineering/db/projects.db. Root cause UNRESOLVED; Phase4 PARTIAL.')
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:15:  shutil.copytree(origin,root/'renders'/label)
+docs/acceptance/phase4_p4_6/closure-20261025/build_backup.py:29: os.link(stage,out) # Publish only closed, verified bytes; never replace.
+core/pricing/validation.py:13:    return normalize_digits(value).strip().replace(" ", "")
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:24:original.rename(held)
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:29:    shutil.copytree(dest/'scenario',original)
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:53:    db=dest/'scenario/prior/engineering/db/projects.db'
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:63:    if original.exists():original.rename(dest/'source-path-replay')
+docs/acceptance/phase4_p4_6/closure-20261025/restore_backup.py:64:    held.rename(original)
+core/sync_engine.py:18:        parsed=datetime.fromisoformat(self.timestamp.replace("Z","+00:00"))
+core/pricing/import_service.py:60:        return " ".join(str(value or "").strip().replace("‌", " ").split()).casefold()
+core/pricing/import_service.py:79:        raw=raw.replace('٫','.')
+core/pricing/import_service.py:85:            raw=raw.replace(next(iter(separators)),'')
+core/pricing/catalog.py:28:        self.replace(items)
+core/drawings/dwg_converter.py:117:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:135:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:161:            target.unlink(missing_ok=True)
+core/drawings/dwg_converter.py:167:            target.unlink(missing_ok=True)
+core/drawings/dwg_takeoff.py:326:                converted.unlink(missing_ok=True)
+core/drawings/dwg_takeoff.py:339:            result.output.unlink(missing_ok=True)
+core/commercial/finance_depth.py:32:    raw = raw.translate(trans).replace("-", "/").replace(".", "/")
+core/drawings/pdf_takeoff.py:110:                value=float(m.group("value").replace(",",".")); u=m.group("unit").lower()
