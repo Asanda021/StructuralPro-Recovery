@@ -1,6 +1,6 @@
 """Non-release Phase4 checkpoint, including separately labelled failed evidence."""
 from pathlib import Path
-import sys,subprocess,json,tempfile,shutil,zipfile,hashlib
+import sys,subprocess,json,tempfile,shutil,zipfile,hashlib,os
 repo=Path.cwd();qa=repo/'docs/acceptance/phase4_p4_6/work-20261025';scenario=Path('/tmp/structuralpro-final-20261025');out=Path(sys.argv[1]).resolve()
 def git(*args):return subprocess.check_output(['git',*args],text=True).strip()
 assert not git('status','--porcelain'),'Freeze all intended evidence first'
@@ -17,8 +17,18 @@ with tempfile.TemporaryDirectory(prefix='sp-backup-20261025-') as tmp:
  for p in sorted(root.rglob('*')):
   if p.is_file():manifest['files'][str(p.relative_to(root))]={'bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()}
  (root/'MANIFEST.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2))
- with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
+ with tempfile.NamedTemporaryFile(prefix='sp-completed-20261025-',suffix='.zip',dir='/tmp',delete=False) as f:stage=Path(f.name)
+ with zipfile.ZipFile(stage,'w',zipfile.ZIP_DEFLATED) as z:
   for p in sorted(root.rglob('*')):
    if p.is_file():z.write(p,p.relative_to(root))
- receipt={'file':str(out),'bytes':out.stat().st_size,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'snapshot_head':manifest['head'],'snapshot_tree':manifest['tree'],'tested_head':state['head'],'tested_tree':state['tree'],'manifest_files':len(manifest['files']),'status':'PARTIAL CHECKPOINT; NOT ACCEPTANCE'}
+ with stage.open('rb') as f:os.fsync(f.fileno())
+ with zipfile.ZipFile(stage) as z:
+  assert z.testzip() is None
+  for name,entry in manifest['files'].items():
+   raw=z.read(name);assert len(raw)==entry['bytes'] and hashlib.sha256(raw).hexdigest()==entry['sha256'],name
+ os.link(stage,out) # Publish only closed, verified bytes; never replace.
+ directory_fd=os.open(out.parent,os.O_RDONLY)
+ try:os.fsync(directory_fd)
+ finally:os.close(directory_fd)
+ receipt={'stage_path':str(stage),'file':str(out),'bytes':out.stat().st_size,'sha256':hashlib.sha256(out.read_bytes()).hexdigest(),'snapshot_head':manifest['head'],'snapshot_tree':manifest['tree'],'tested_head':state['head'],'tested_tree':state['tree'],'manifest_files':len(manifest['files']),'status':'PARTIAL CHECKPOINT; NOT ACCEPTANCE'}
  out.with_suffix('.json').write_text(json.dumps(receipt,indent=2));print(json.dumps(receipt))
