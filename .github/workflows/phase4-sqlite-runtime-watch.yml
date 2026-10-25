@@ -1,0 +1,53 @@
+name: Phase 4 SQLite native five-floor actor trace
+
+on:
+  push:
+    branches:
+      - feature/phase4-priorities4-6-site-operations-20261024
+    paths:
+      - tests/diagnostics/phase4_linux_runtime_watch.py
+      - .github/workflows/phase4-sqlite-runtime-watch.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-workload-kernel-pid:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact diagnostic commit
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python and targeted test dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python -m pip install -q --upgrade pip
+          .venv/bin/python -m pip install -q -r requirements.txt
+      - name: Run existing synthetic five-floor workload with fanotify PID watcher
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONUNBUFFERED: "1"
+        run: |
+          sudo -n env QT_QPA_PLATFORM=offscreen PYTHONUNBUFFERED=1 \
+            .venv/bin/python tests/diagnostics/phase4_linux_runtime_watch.py \
+            --outdir sqlite-runtime-evidence \
+            --workspace "${GITHUB_WORKSPACE}" \
+            --timeout 190
+      - name: Preserve scoped diagnostic results, never overwrite historical evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: phase4-native-sqlite-actor-evidence
+          path: |
+            sqlite-runtime-evidence/summary.json
+            sqlite-runtime-evidence/round-*/pilot.json
+            sqlite-runtime-evidence/round-*/result.json
+            sqlite-runtime-evidence/round-*/pytest.log
+            sqlite-runtime-evidence/round-*/fanotify-events.json
+            sqlite-runtime-evidence/round-*/worker/result.json
+            sqlite-runtime-evidence/round-*/worker/failure-*/state.json
+          if-no-files-found: warn
+          retention-days: 14
