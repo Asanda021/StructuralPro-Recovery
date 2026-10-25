@@ -73,7 +73,7 @@ class Watch:
         if self.fd < 0:
             err = ctypes.get_errno()
             raise OSError(err, os.strerror(err))
-        mask = INTEREST | FAN_EVENT_ON_CHILD | FAN_Q_OVERFLOW
+        mask = INTEREST | FAN_EVENT_ON_CHILD
         rc = libc.fanotify_mark(self.fd, FAN_MARK_ADD | FAN_MARK_ONLYDIR, mask, -100, os.fsencode(directory))
         if rc < 0:
             err = ctypes.get_errno()
