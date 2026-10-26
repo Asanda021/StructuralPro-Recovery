@@ -1174,9 +1174,12 @@ class GraphicalTakeoffDialog(QDialog):
             dialog.setWindowTitle('ارتباط چهارطرفه مستند | فقط نمایش')
             dialog.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
             layout=QVBoxLayout(dialog)
-            panel=VerifiedSelectionPanel(current.index,dialog,verified_project=current)
+            panel=VerifiedSelectionPanel(
+                current.index,dialog,verified_project=current,
+                context_guard=lambda:self._check_live_four_way_context(current))
             layout.addWidget(panel)
             panel.oneGlobalIdSelected.connect(self._select_from_verified_project)
+            panel.selectionCleared.connect(lambda:self.highlight_ifc_member(''))
             panel.selectionUnresolved.connect(self.status.setText)
             dialog.resize(1050,560)
             self._verified_project_selection=current
@@ -1195,6 +1198,21 @@ class GraphicalTakeoffDialog(QDialog):
             self.status.setText('پیوند چهارطرفه فعال نشد: '+str(exc))
             return None
 
+    def _check_live_four_way_context(self,current):
+        doc=self.viewer.ifc_document
+        if (self.viewer.kind!='ifc' or doc is None or
+            self.project_id_input.text().strip()!=current.project_id or
+            doc.source_sha256!=current.source_sha256 or
+            self.ifc_revision.text().strip()!=current.revision):
+            raise RuntimeError('پروژه یا سند IFC فعال تغییر کرده است.')
+        if current.document_paths:
+            opened=Path(self.viewer.path).resolve()
+            approved={Path(item).resolve() for item in current.document_paths}
+            if opened not in approved:
+                raise RuntimeError('فایل IFC نمایش‌داده‌شده با منبع بازبینی یکسان نیست.')
+        current.assert_current(source_sha256=doc.source_sha256,revision=current.revision)
+        return True
+
     def _select_from_verified_project(self, gid):
         """Guard persisted revision again before navigating any 2D/3D widget."""
         try:
@@ -1202,8 +1220,7 @@ class GraphicalTakeoffDialog(QDialog):
             doc=self.viewer.ifc_document
             if current is None or self.viewer.kind!='ifc' or doc is None:
                 raise ValueError('مدل IFC دیگر فعال نیست.')
-            current.assert_current(source_sha256=doc.source_sha256,
-                                   revision=self.ifc_revision.text().strip())
+            self._check_live_four_way_context(current)
             if gid not in getattr(self,'_ifc_handle_items',{}):
                 raise ValueError('عضو در نمای دوبعدی وجود ندارد.')
             self.highlight_ifc_member(gid,origin='tree')
@@ -1214,6 +1231,7 @@ class GraphicalTakeoffDialog(QDialog):
         if self.viewer.kind!='ifc':return
         selected=self.canvas.scene.selectedItems()
         if selected:self.highlight_ifc_member(selected[0].data(0))
+        else:self.highlight_ifc_member('')
 
     def highlight_ifc_member(self,gid,*,origin='2d'):
         if self.viewer.kind!='ifc':return
@@ -1221,13 +1239,12 @@ class GraphicalTakeoffDialog(QDialog):
         panel=getattr(self,'_verified_selection_panel',None)
         holder=getattr(self,'_verified_selection_dialog',None)
         bridge=getattr(self,'_verified_project_selection',None)
-        if panel is not None and holder is not None and isValid(holder) and bridge is not None:
+        if panel is not None and holder is not None and isValid(holder) and bridge is not None and gid:
             doc=self.viewer.ifc_document
             try:
                 if doc is None:
                     raise ValueError('مدل IFC در دسترس نیست.')
-                bridge.assert_current(source_sha256=doc.source_sha256,
-                        revision=self.ifc_revision.text().strip())
+                self._check_live_four_way_context(bridge)
                 if gid not in bridge.index.allowed['global_id']:
                     raise ValueError('شناسه IFC در منبع مستند وجود ندارد.')
             except (RuntimeError,ValueError,PermissionError) as exc:
@@ -1244,10 +1261,13 @@ class GraphicalTakeoffDialog(QDialog):
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
         if panel is not None and holder is not None and isValid(holder):
-            panel.select_from_geometry(gid,origin='3d' if origin=='3d' else '2d')
+            if gid:
+                panel.select_from_geometry(gid,origin='3d' if origin=='3d' else '2d')
+            else:
+                panel.clear_selection(notify=False)
         view3d=getattr(self,'_ifc_3d_dialog',None)
         if view3d is not None and isValid(view3d):
-            view3d.canvas.choose_member(gid)
+            view3d.canvas.choose_member(gid or None)
         dialog=getattr(self,'_ifc_inspector',None)
         if dialog is not None and isValid(dialog) and not getattr(self,'_ifc_tree_syncing',False):
             self._ifc_tree_syncing=True
