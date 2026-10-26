@@ -88,11 +88,13 @@ def main()->int:
     root=QWidget(); layout=QVBoxLayout(root); layout.setContentsMargins(0,0,0,0); layout.setSpacing(0)
     header=QFrame(); header.setObjectName("TopShell"); hv=QVBoxLayout(header); hv.setContentsMargins(18,12,18,8); hv.setSpacing(8)
     header_row=QHBoxLayout(); header_row.setSpacing(14)
-    title=QLabel("StructuralPro"); title.setObjectName("BrandTitle"); header_row.addWidget(title)
+    title=QLabel("StructuralPro"); title.setObjectName("BrandTitle"); title.setMinimumWidth(185); header_row.addWidget(title)
     edition_label=QLabel(f"نسخه {edition_title}"); edition_label.setObjectName("EditionBadge"); header_row.addWidget(edition_label)
     from app.desktop_preferences import DesktopPreferences
     desktop_preferences=DesktopPreferences(app,Path.home()/'.structuralpro/ui.ini')
-    desktop_preferences.add_controls(header_row)
+    presentation_row=QHBoxLayout(); presentation_row.setSpacing(8)
+    desktop_preferences.add_controls(presentation_row)
+    presentation_row.addStretch()
     header_row.addStretch()
     persian_locale=QLocale(QLocale.Language.Persian, QLocale.Country.Iran)
     persian_calendar=QCalendar(QCalendar.System.Jalali)
@@ -122,6 +124,7 @@ def main()->int:
     header_row.addWidget(date_button)
     status=QLabel("🟢 آفلاین فعال | داده‌ها روی سیستم ذخیره می‌شوند"); status.setObjectName("ShellStatus"); header_row.addWidget(status)
     hv.addLayout(header_row)
+    hv.addLayout(presentation_row)
     pages=QStackedWidget()
 
     def page(name,desc):
@@ -1176,7 +1179,7 @@ def main()->int:
     w.setCentralWidget(root)
     from app.desktop_shell import ContextRibbonController
     ribbon_controller=ContextRibbonController(ribbon_scroll, desktop_preferences, w)
-    header_row.insertWidget(5, ribbon_controller.toggle_button)
+    presentation_row.insertWidget(3, ribbon_controller.toggle_button)
     QShortcut(QKeySequence('Ctrl+Shift+R'), w).activated.connect(ribbon_controller.toggle)
     pages.currentChanged.connect(lambda _index: ribbon_controller.refresh_after_command_change())
     w.setStatusBar(QStatusBar()); w.statusBar().showMessage("StructuralPro آماده است — هسته آفلاین")
