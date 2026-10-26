@@ -121,10 +121,17 @@ class VerifiedProjectSelection:
             params=t.get("params") or {}
             if not isinstance(provenance,dict) or not isinstance(params,dict):
                 raise ValueError("منشأ متره نامعتبر است.")
-            meta = provenance.get("ifc_identity") or params.get("ifc_identity")
+            # A takeoff's writable parameters are NOT a trusted identity
+            # receipt. Only the canonical committed provenance can carry a
+            # reviewed IFC source into BOQ navigation.
+            meta = provenance.get("ifc_identity")
             if meta is not None and not isinstance(meta,dict):
                 raise ValueError("هویت IFC در رسید BOQ نامعتبر است.")
-            proposal_id = meta.get("proposal_id") if meta else None
+            if params.get("ifc_identity") and not meta:
+                # Unreviewed manual metadata must never establish a link.
+                proposal_id = None
+            else:
+                proposal_id = meta.get("proposal_id") if meta else None
             source_receipts[sid] = proposal_id
         boq_labels = {}
         for pos, row in enumerate(all_boq):
