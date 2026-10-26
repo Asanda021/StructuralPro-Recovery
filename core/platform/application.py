@@ -63,9 +63,9 @@ def _statement_rate(value: Any, name: str):
     return rate
 
 class StructuralProApp:
-    def __init__(self,data_dir: str|Path):
+    def __init__(self,data_dir: str|Path, *, identity_provider=None):
         self.data_dir=Path(data_dir); self.data_dir.mkdir(parents=True,exist_ok=True)
-        self.store=ProjectStore(self.data_dir/"projects.db")
+        self.store=ProjectStore(self.data_dir/"projects.db", identity_provider=identity_provider)
         self.takeoff=TakeoffEngine()
         self.qa=ProjectQA()
         self.ai_assistant = EngineeringAssistant()

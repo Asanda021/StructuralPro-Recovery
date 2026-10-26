@@ -19,7 +19,7 @@ class AuditRecord:
     def to_dict(self): return asdict(self)
 
 class AuditTrail:
-    ACTIONS = {"create","update","delete","restore","import","export"}
+    ACTIONS = {"create","update","delete","restore","import","export","open","authorize"}
     def __init__(self, records=None):
         self._records=[dict(r) for r in (records or [])]
     def record(self, action, entity, entity_id="", before=None, after=None, actor=None, timestamp=None):
