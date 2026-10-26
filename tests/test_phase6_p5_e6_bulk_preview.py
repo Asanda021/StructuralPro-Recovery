@@ -1,5 +1,6 @@
 """E6 preview uses the existing Decimal formula engine and canonical CAS."""
 import pytest
+from decimal import Decimal
 from core.platform.application import StructuralProApp
 from test_manual_formula_persistence import data
 
@@ -25,7 +26,7 @@ def test_twenty_columns_preview_no_write_then_existing_bulk_apply(tmp_path):
     app.bulk_edit_manual_formulas("P",keys,changes={"variables":{"length":"5"}},
                                  expected_revisions=expected,reason="تغییر مستند گروهی")
     updated=app.load_manual_formulas("P")
-    assert all(updated[key]["quantity"]=="3" for key in keys)
+    assert all(Decimal(str(updated[key]["quantity"]))==Decimal("3") for key in keys)
     assert app.open_project("P")["boq"]==[]
     with pytest.raises(RuntimeError):
         app.preview_bulk_edit_manual_formulas("P",keys,changes={"variables":{"length":"1"}},
