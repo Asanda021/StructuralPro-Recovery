@@ -131,5 +131,12 @@ def test_manifest_of_other_valid_files_cannot_authorize_actual_runtime(tmp_path,
     selected=root/MODEL_SPECS[AITier.TAKEOFF].model_filename
     selected.write_bytes(b"different unapproved model")
     engine.model_path=selected
+    engine.mmproj_path=root/MODEL_SPECS[AITier.TAKEOFF].mmproj_filename
+    engine.mmproj_path.write_bytes(b"different projector")
+    engine.runtime_dir=tmp_path
+    for name in ("llama-cli", "llama-mtmd-cli"):
+        runtime=tmp_path/name
+        runtime.write_bytes(b"unapproved runnable")
+        runtime.chmod(0o755)
     assert inspect_ai_release_assets(path,tmp_path).ready
     assert not engine.has_llm_model
