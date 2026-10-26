@@ -10,6 +10,7 @@ on:
       - app/graphical_takeoff.py
       - core/drawings/project_selection_bridge.py
       - tests/test_phase6_p3_real_project_bridge.py
+      - tests/test_phase6_p3_full_verified_boq.py
       - tests/test_phase6_p3_verified_selection.py
       - tests/test_phase6_p3_selection_panel.py
   workflow_dispatch:
@@ -49,7 +50,7 @@ jobs:
       - name: Prove explicit four-way selection and no invented BOQ identity
         run: |
           python -m compileall -q core/drawings/verified_selection.py core/drawings/project_selection_bridge.py app/verified_selection_panel.py app/graphical_takeoff.py
-          python -m pytest -q --maxfail=1 --junitxml=phase6-p3-selection.xml tests/test_phase6_p3_verified_selection.py tests/test_phase6_p3_selection_panel.py tests/test_phase6_p3_real_project_bridge.py tests/test_phase6_p2_real_ifc_3d.py
+          python -m pytest -q --maxfail=1 --junitxml=phase6-p3-selection.xml tests/test_phase6_p3_verified_selection.py tests/test_phase6_p3_selection_panel.py tests/test_phase6_p3_real_project_bridge.py tests/test_phase6_p3_full_verified_boq.py tests/test_phase6_p2_real_ifc_3d.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
