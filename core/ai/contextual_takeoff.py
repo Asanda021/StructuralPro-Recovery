@@ -228,6 +228,33 @@ class ContextualTakeoffGuide:
     def enable(self):
         self.enabled=True
 
+    def answer_contextual_question(self, context: GuidedContext, question: str):
+        """A2 offline fallback: existing EngineeringAssistant plus real live context."""
+        if not self.enabled:
+            raise RuntimeError("دستیار خاموش است.")
+        if not isinstance(question,str) or not question.strip():
+            raise ValueError("پرسش فارسی لازم است.")
+        digest,project=self._project(context)
+        from core.ai.engineering_assistant import EngineeringAssistant
+        response=EngineeringAssistant().respond(question,project=project)
+        # User/file text is treated solely as data; no command is executed.
+        return {
+            "mode":"offline_rules_no_model",
+            "read_only":True,
+            "quantity_authority":False,
+            "cas_digest":digest,
+            "project_id":context.project_id,
+            "member_id":context.member_id,
+            "floor_id":context.floor_id,
+            "source_sha256":context.source_sha256,
+            "revision":context.revision,
+            "requires_confirmation":response.requires_confirmation,
+            "answer":response.text+"\n"+
+                "زمینه فعال: طبقه "+context.floor_id+" | عضو "+
+                (context.member_id or "انتخاب نشده")+" | عملیات "+context.operation+
+                " | مدل محلی: اجرا نشده؛ حالت قواعد آفلاین.",
+        }
+
     def explain_persisted_boq(self, context: GuidedContext, *, index: int):
         digest, p = self._project(context)
         boq=p.get("boq",[])
