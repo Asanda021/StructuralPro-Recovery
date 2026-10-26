@@ -13,6 +13,15 @@ from pathlib import Path
 _LIMIT_TRIANGLES = 40_000
 
 
+def _sha256_source(path):
+    """Read source evidence in bounded chunks even for giant IFC files."""
+    h = hashlib.sha256()
+    with Path(path).open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def _finite_number(value):
     if isinstance(value, bool) or not isinstance(value, (float, int)):
         raise ValueError("مختصات سه‌بعدی باید عدد واقعی باشند.")
@@ -59,7 +68,7 @@ class VerifiedScene3D:
         source_path = contract.get("source_path")
         if not isinstance(source_path, str) or not Path(source_path).is_file():
             raise ValueError("فایل واقعی مدل در دسترس نیست.")
-        if hashlib.sha256(Path(source_path).read_bytes()).hexdigest() != sha:
+        if _sha256_source(source_path) != sha:
             raise ValueError("منبع IFC تغییر کرده و نمایش متوقف شد.")
         if isinstance(max_triangles, bool) or not isinstance(max_triangles, int) or max_triangles < 1:
             raise ValueError("حد نمایش مثلث‌ها نامعتبر است.")
@@ -181,7 +190,7 @@ class VerifiedScene3D:
 
     def validate_source(self):
         try:
-            actual = hashlib.sha256(Path(self.source_path).read_bytes()).hexdigest()
+            actual = _sha256_source(self.source_path)
         except OSError as exc:
             raise ValueError('فایل منبع تغییر کرده یا دیگر در دسترس نیست.') from exc
         if actual != self.source_sha256:
