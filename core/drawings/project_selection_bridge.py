@@ -62,6 +62,7 @@ class VerifiedProjectSelection:
                 raise ValueError("درخت اعضا شناسه تکراری دارد.")
             member_ids.add(m["id"])
         approved, trusted, by_proposal = [], set(), {}
+        self.review_proofs = []
         for review in reviews:
             if not isinstance(review,dict) or review.get("status")!="approved":
                 raise ValueError("دفتر بازبینی هویت IFC نامعتبر است.")
@@ -94,6 +95,8 @@ class VerifiedProjectSelection:
                 raise ValueError("تطبیق IFC دوباره ثبت شده است.")
             by_proposal[review["proposal_id"]] = review
             trusted.add((evidence_ref, reviewer))
+            self.review_proofs.append((
+                proof.get("evidence_path"),proof.get("evidence_sha256"),reviewer))
             approved.append(dict(
                 project_id=project_id,source_sha256=source_sha256,revision=revision,
                 global_id=review["global_id"],member_id=review["member_id"],
@@ -168,6 +171,21 @@ class VerifiedProjectSelection:
         project = self.service.open_project(self.project_id)
         if not isinstance(project,dict) or (project.get("_meta") or {}).get("version") != self.project_version:
             raise RuntimeError("نسخه ثبت‌شده پروژه تغییر کرده است.")
+        for evidence_path, expected_sha, reviewer in self.review_proofs:
+            if not isinstance(evidence_path,str) or not isinstance(expected_sha,str):
+                raise RuntimeError("مدرک بازبینی IFC معتبر نیست.")
+            proof_path=Path(evidence_path)
+            if not proof_path.is_file():
+                raise RuntimeError("مدرک بازبینی IFC مفقود شده است.")
+            digest=sha256()
+            with proof_path.open("rb") as evidence_file:
+                for part in iter(lambda:evidence_file.read(1024*1024),b""):
+                    digest.update(part)
+            if digest.hexdigest()!=expected_sha:
+                raise RuntimeError("مدرک بازبینی IFC پس از تأیید تغییر کرده است.")
+            user=self.service.collaboration.users.get(reviewer)
+            if user is None or not self.service.collaboration.roles[user.role].allows("review"):
+                raise PermissionError("مجوز بازبین IFC باطل شده است.")
         for source in self.document_paths:
             # Any in-place IFC change invalidates a previously reviewed link.
             doc = Path(source)
