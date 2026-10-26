@@ -47,6 +47,15 @@ def test_real_qt_ifc_3d_button_opens_document_and_syncs_selection(tmp_path):
     canvas=view.findChild(IFC3DCanvas,'VerifiedIFC3DCanvas')
     assert canvas is not None
     assert canvas.scene.quantity_authority is False
+    import os
+    from pathlib import Path
+    screenshot_dir=os.environ.get('STRUCTURALPRO_P6_P2_SCREENSHOT_DIR')
+    if screenshot_dir:
+        qt.processEvents()
+        target=Path(screenshot_dir)
+        target.mkdir(parents=True,exist_ok=True)
+        assert canvas.grab().save(str(target/'ifc-3d-native-windows.png'))
+        assert view.grab().save(str(target/'ifc-3d-dialog-native-windows.png'))
     assert view.storey.count()>1
     gid=elements[0].GlobalId
     dialog.highlight_ifc_member(gid)
