@@ -89,3 +89,26 @@ def test_qt_isolated_click_and_invalidated_source(tmp_path):
     finally:
         canvas.close()
         qt.processEvents()
+
+
+def test_source_worker_invalidates_scene_without_ui_thread_hashing(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtTest import QTest
+    from app.ifc_3d_viewport import IFC3DCanvas
+    from pathlib import Path
+    qt = QApplication.instance() or QApplication([])
+    contract = real_contract(tmp_path)
+    canvas = IFC3DCanvas(VerifiedScene3D(contract))
+    Path(contract['source_path']).write_bytes(b'changed')
+    canvas.schedule_source_check()
+    task = canvas._source_check
+    canvas.schedule_source_check()
+    assert canvas._source_check is task
+    for _ in range(100):
+        qt.processEvents()
+        if canvas.source_error:
+            break
+        QTest.qWait(10)
+    assert canvas.source_error
+    assert canvas._faces() == ()
+    canvas.close()

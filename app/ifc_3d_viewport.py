@@ -5,7 +5,7 @@ member selection. It does not generate, calculate, or register takeoff quantitie
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer, QObject, QRunnable, QThreadPool
 from PySide6.QtGui import QColor, QBrush, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton,
@@ -23,6 +23,25 @@ _COLORS = {
     "IFCFLOWTERMINAL": "#c3a7cf", "IFCSTAIR": "#b8a0c3",
     "IFCCOVERING": "#dbc6a1", "IFCROOF": "#b5c9cf",
 }
+
+
+class _SourceCheckSignals(QObject):
+    completed = Signal(str)
+
+
+class _SourceCheck(QRunnable):
+    def __init__(self, scene):
+        super().__init__()
+        self.scene = scene
+        self.signals = _SourceCheckSignals()
+
+    def run(self):
+        error = ''
+        try:
+            self.scene.validate_source()
+        except ValueError as exc:
+            error = str(exc)
+        self.signals.completed.emit(error)
 
 
 class IFC3DCanvas(QWidget):
@@ -44,7 +63,8 @@ class IFC3DCanvas(QWidget):
         self.source_error = None
         self._source_timer = QTimer(self)
         self._source_timer.setInterval(1000)
-        self._source_timer.timeout.connect(self.check_source)
+        self._source_check = None
+        self._source_timer.timeout.connect(self.schedule_source_check)
         self._source_timer.start()
         self.setAccessibleName("نمای سه‌بعدی واقعی IFC با چرخش، جابه‌جایی و بزرگ‌نمایی")
 
@@ -77,6 +97,22 @@ class IFC3DCanvas(QWidget):
             self.scene.validate_source()
         except ValueError as exc:
             self.source_error = str(exc)
+            self.selected_id = None
+            self._source_timer.stop()
+            self.update()
+
+    def schedule_source_check(self):
+        if self._source_check is not None or self.source_error:
+            return
+        task = _SourceCheck(self.scene)
+        self._source_check = task
+        task.signals.completed.connect(self._checked_source)
+        QThreadPool.globalInstance().start(task)
+
+    def _checked_source(self, error):
+        self._source_check = None
+        if error:
+            self.source_error = error
             self.selected_id = None
             self._source_timer.stop()
             self.update()
