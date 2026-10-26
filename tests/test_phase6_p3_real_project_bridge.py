@@ -72,15 +72,23 @@ def test_live_index_fails_closed_on_revision_and_tamper(tmp_path,change):
             VerifiedProjectSelection(app,"P",source_sha256=graph.source_sha256,
                 revision="R1",real_global_ids={"not-the-real-GlobalId"})
         app.store.close();return
-    # After-the-fact evidence mutations must not stay approved in navigation.
-    if change in ("proof","source"):
-        # Rebuild index fails on independently verified evidence, while
-        # 'project' detects CAS at navigation time.
-        with pytest.raises(ValueError):
-            make(app,path)
-    else:
+    # Old navigations always fail after file modification.
+    if change in ("proof", "source"):
         with pytest.raises(RuntimeError):
             graph.assert_current(source_sha256=graph.source_sha256,revision="R1")
+    if change=="proof":
+        # Even if the project snapshot itself is unchanged, invalid
+        # independent review evidence must not build a new index.
+        with pytest.raises(ValueError):
+            make(app,path)
+    if change=="project":
+        with pytest.raises(RuntimeError):
+            graph.assert_current(source_sha256=graph.source_sha256,revision="R1")
+    if change=="source":
+        # Reopening the changed IFC with a *new* SHA must produce zero
+        # approved links; it must not inherit an older revision's review.
+        rebuilt=make(app,path)
+        assert rebuilt.index.links==()
     app.store.close()
 
 
