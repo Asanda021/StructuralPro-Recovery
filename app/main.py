@@ -802,6 +802,8 @@ def main()->int:
     pages.addWidget(p); idx_statement=pages.count()-1
 
     # Project documents — persisted with the selected project.
+    # The canonical payload collection remains "documents"; UI registration is
+    # routed through the provenance-aware service instead of raw list mutation.
     p,v=page("اسناد پروژه","ثبت مسیر فایل‌های واقعی پروژه در داده همان پروژه؛ نه یک لیست موقت.")
     doc_project=QLineEdit(); doc_project.setPlaceholderText("شناسه پروژه")
     docpath=QLineEdit(); docpath.setPlaceholderText("مسیر فایل سند")

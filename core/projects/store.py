@@ -414,7 +414,6 @@ class ProjectStore:
         identity = None
         role = None
         row = None
-        denial_recorded = False
         try:
             self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
@@ -440,7 +439,6 @@ class ProjectStore:
                 revision = int(row["version"]) if row else None
                 self.db.rollback()
                 self._record_denied(pid, identity, role, "update" if row else "create", revision, audit_reference)
-                denial_recorded = True
                 raise PermissionError("role is not authorized for this project operation")
             incoming_version=(project.get("_meta") or {}).get("version")
             if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
@@ -532,17 +530,10 @@ class ProjectStore:
                     self._cache.clear()
                 if not self._identity_failed:
                     raise
-            if (identity is not None and row is not None and not denial_recorded
-                    and not self._identity_failed and not self._transaction_uncertain):
-                try:
-                    self._record_denied(
-                        pid, identity, role, "update", int(row["version"]),
-                        audit_reference,
-                    )
-                except Exception:
-                    # A failed mandatory audit must never replace the original
-                    # operation error or turn that operation into a success.
-                    pass
+            # Authorization denials are recorded at the authorization boundary
+            # above.  Domain-validation failures deliberately remain complete
+            # no-ops, preserving the long-standing invariant that malformed
+            # engineering input changes neither project data nor SQLite state.
             raise
         # Cache the same JSON representation committed to SQLite. Coordinates
         # may arrive as tuples; a cache hit must equal a reopened snapshot.

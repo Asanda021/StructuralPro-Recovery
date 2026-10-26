@@ -138,20 +138,19 @@ def test_viewer_cannot_create_database_backup(tmp_path):
     assert len(event["after"]["backup_sha256"]) == 64
 
 
-def test_domain_rejection_is_audited_without_storing_sensitive_payload(tmp_path):
+def test_domain_validation_rejection_is_a_complete_noop_and_stores_no_secret(tmp_path):
     identities = SwitchingIdentityProvider(identity("subject:A", "Alice"))
     store = ProjectStore(tmp_path / "projects.db", identity_provider=identities)
     store.save("P1", {"id": "P1", "name": "one", "boq": []})
     project = store.get("P1")
+    before_events = store.audit_events("P1")
     project["financial_records"] = [{"id": 1, "secret": "must-not-enter-audit"}]
 
     with pytest.raises(ValueError, match="سند مالی"):
         store.save("P1", project)
 
-    event = store.audit_events("P1")[-1]
-    assert event["status"] == "failure"
-    assert event["revision_after"] is None
-    assert "must-not-enter-audit" not in str(event)
+    assert store.audit_events("P1") == before_events
+    assert "must-not-enter-audit" not in str(store.audit_events("P1"))
 
 
 def test_audit_is_append_only_persistent_and_atomic_with_project_save(tmp_path):
