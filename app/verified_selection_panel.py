@@ -18,9 +18,10 @@ class VerifiedSelectionPanel(QWidget):
     oneGlobalIdSelected = Signal(str)
     selectionUnresolved = Signal(str)
 
-    def __init__(self, index: VerifiedSelectionCrosswalk, parent=None):
+    def __init__(self, index: VerifiedSelectionCrosswalk, parent=None, *, verified_project=None):
         super().__init__(parent)
         self.index = index
+        self.verified_project = verified_project
         self.setObjectName('VerifiedCrossViewSelection')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         main = QVBoxLayout(self)
@@ -46,6 +47,8 @@ class VerifiedSelectionPanel(QWidget):
         self.boq.setRowCount(len(all_boq))
         for row, identifier in enumerate(all_boq):
             self.boq.setItem(row, 0, QTableWidgetItem(identifier))
+            if verified_project is not None:
+                self.boq.item(row,0).setToolTip(verified_project.boq_labels.get(identifier,identifier))
             linked = any(item.boq_row_id == identifier for item in index.links)
             self.boq.setItem(row, 1, QTableWidgetItem('مستند' if linked else 'فاقد ارتباط'))
         self.boq.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -58,12 +61,29 @@ class VerifiedSelectionPanel(QWidget):
         self.members.itemClicked.connect(self._clicked_member)
         self.boq.itemSelectionChanged.connect(self._clicked_boq)
 
-    def _lookup(self, origin, identifier):
-        result = self.index.resolve(
-            origin=origin, identifier=identifier,
-            project_id=self.index.project_id,
-            source_sha256=self.index.source_sha256,
+    def _resolve(self, origin, identifier):
+        if self.verified_project is not None:
+            return self.verified_project.resolve(
+                origin=origin,identifier=identifier,
+                source_sha256=self.index.source_sha256,revision=self.index.revision)
+        return self.index.resolve(origin=origin,identifier=identifier,
+            project_id=self.index.project_id,source_sha256=self.index.source_sha256,
             revision=self.index.revision)
+
+    def _fail_stale(self, error):
+        with QSignalBlocker(self.members), QSignalBlocker(self.boq):
+            self.members.clearSelection()
+            self.boq.clearSelection()
+        message='پیوند نسخه‌ای نامعتبر شد؛ پروژه/IFC را مجدداً باز کنید: '+str(error)
+        self.detail.setText(message)
+        self.selectionUnresolved.emit(message)
+
+    def _lookup(self, origin, identifier):
+        try:
+            result=self._resolve(origin,identifier)
+        except (ValueError, RuntimeError, PermissionError) as exc:
+            self._fail_stale(exc)
+            return None
         if result.status != 'linked':
             message = 'ارتباط تأییدشده با نقشه/BOQ وجود ندارد؛ انتخاب حدسی ممنوع است.'
             self.detail.setText(message)
@@ -95,11 +115,11 @@ class VerifiedSelectionPanel(QWidget):
 
     def select_from_geometry(self, global_id: str, *, origin='2d'):
         """2D or 3D selection highlights existing rows without selection loops."""
-        result = self.index.resolve(
-            origin=origin, identifier=global_id,
-            project_id=self.index.project_id,
-            source_sha256=self.index.source_sha256,
-            revision=self.index.revision)
+        try:
+            result=self._resolve(origin,global_id)
+        except (ValueError, RuntimeError, PermissionError) as exc:
+            self._fail_stale(exc)
+            return None
         with QSignalBlocker(self.members), QSignalBlocker(self.boq):
             self.members.clearSelection()
             self.boq.clearSelection()
