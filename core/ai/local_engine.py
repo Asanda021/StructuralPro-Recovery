@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import os
+import sys
 import re
 import subprocess
 import hashlib
@@ -31,7 +32,8 @@ class AIResponse:
 
 class LocalAIEngine:
     def __init__(self, model_dir=None, model_path=None, n_ctx=4096, edition=None):
-        self.bundle_dir = Path(__file__).resolve().parents[2]
+        self.bundle_dir = (Path(sys.executable).resolve().parent if getattr(sys, "frozen", False)
+                           else Path(__file__).resolve().parents[2])
         packaged = packaged_edition(self.bundle_dir, fail_closed=False)
         if packaged is not None and packaged.value == "unified":
             # Canonical shipping marker cannot be weakened via UI/env strings.
