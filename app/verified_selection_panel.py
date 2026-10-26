@@ -88,6 +88,9 @@ class VerifiedSelectionPanel(QWidget):
             self.boq.clearSelection()
         message='پیوند نسخه‌ای نامعتبر شد؛ پروژه/IFC را مجدداً باز کنید: '+str(error)
         self.detail.setText(message)
+        # Stale project evidence must clear old 2D/3D highlights too. This
+        # only resets Qt selection, never touches a saved quantity or BOQ.
+        self.selectionCleared.emit()
         self.selectionUnresolved.emit(message)
 
     def clear_selection(self, *, notify=True):
