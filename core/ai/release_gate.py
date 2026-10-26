@@ -80,6 +80,25 @@ def inspect_ai_release_assets(manifest_path: str | Path, asset_root: str | Path)
             blockers.append(f"{kind}:unverified_commercial_rights")
         if asset.get("legal_review_approved") is not True:
             blockers.append(f"{kind}:missing_legal_review")
+        license_digest = asset.get("license_evidence_sha256")
+        license_path = asset.get("license_evidence")
+        if not isinstance(license_digest, str) or len(license_digest) != 64 or any(
+            x not in "0123456789abcdef" for x in license_digest.lower()
+        ):
+            blockers.append(f"{kind}:missing_license_evidence_sha256")
+        else:
+            try:
+                if not isinstance(license_path, str) or not license_path:
+                    raise ValueError("missing license evidence path")
+                proof = root.joinpath(license_path)
+                if proof.is_symlink() or not proof.is_file():
+                    raise ValueError("unsafe evidence")
+                proof.resolve(strict=True).relative_to(root.resolve(strict=True))
+                observed = sha256(proof.read_bytes()).hexdigest()
+                if observed != license_digest.lower():
+                    blockers.append(f"{kind}:license_evidence_hash_mismatch")
+            except (OSError, ValueError):
+                blockers.append(f"{kind}:license_evidence_missing_or_unsafe")
         try:
             path = root.joinpath(file_name)
             # All parent directories must be real, not a symlink escape.
