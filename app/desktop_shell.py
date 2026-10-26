@@ -6,7 +6,7 @@ presentation. No project, BOQ, drawing or autosave data is modified here.
 from __future__ import annotations
 
 from PySide6.QtCore import QObject, QPropertyAnimation, QEasingCurve
-from PySide6.QtWidgets import QGraphicsOpacityEffect, QPushButton, QWidget
+from PySide6.QtWidgets import QPushButton, QWidget
 
 
 class ContextRibbonController(QObject):
@@ -24,9 +24,10 @@ class ContextRibbonController(QObject):
         self.toggle_button.setToolTip('نمایش یا جمع‌کردن ابزارهای تب فعال (Ctrl+Shift+R)')
         self.toggle_button.setCheckable(True)
         self.toggle_button.clicked.connect(self.toggle)
-        self.effect = QGraphicsOpacityEffect(self.ribbon)
-        self.ribbon.setGraphicsEffect(self.effect)
-        self.animation = QPropertyAnimation(self.effect, b'opacity', self)
+        # A height animation avoids Qt offscreen graphics-effect lifetime issues.
+        # Presentation only: existing command widgets remain connected.
+        self.expanded_height = 65
+        self.animation = QPropertyAnimation(self.ribbon, b'maximumHeight', self)
         self.animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
         self.animation.finished.connect(self._finish_animation)
         self._set_initial_state()
@@ -37,7 +38,7 @@ class ContextRibbonController(QObject):
 
     def _set_initial_state(self):
         self._label()
-        self.effect.setOpacity(1.0)
+        self.ribbon.setMaximumHeight(self.expanded_height)
         self.ribbon.setVisible(not self.collapsed)
 
     def toggle(self, _checked=False):
@@ -57,18 +58,17 @@ class ContextRibbonController(QObject):
         if animate and self.preferences.animations:
             self.ribbon.show()
             self.animation.setDuration(150)
-            self.animation.setStartValue(1.0 if collapsed else 0.0)
-            self.animation.setEndValue(0.0 if collapsed else 1.0)
-            self.effect.setOpacity(1.0 if collapsed else 0.0)
+            self.animation.setStartValue(self.expanded_height if collapsed else 0)
+            self.animation.setEndValue(0 if collapsed else self.expanded_height)
             self.animation.start()
         else:
-            self.effect.setOpacity(1.0)
             self.ribbon.setVisible(not collapsed)
+            self.ribbon.setMaximumHeight(self.expanded_height)
 
     def _finish_animation(self):
         if self.collapsed:
             self.ribbon.hide()
-        self.effect.setOpacity(1.0)
+        self.ribbon.setMaximumHeight(self.expanded_height)
 
     def refresh_after_command_change(self):
         """Never let a page change reopen a user-collapsed ribbon."""
