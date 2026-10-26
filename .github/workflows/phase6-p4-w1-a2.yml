@@ -32,6 +32,7 @@ jobs:
     env:
       PYTHONUTF8: '1'
       QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      STRUCTURALPRO_P6_P4_SCREENSHOT_DIR: ${{ matrix.qpa == 'windows' && 'phase6-p4-evidence/windows' || '' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -49,12 +50,14 @@ jobs:
       - name: Verify core W1/A2, Qt clicks, existing assembly and IFC 3D integration
         run: |
           python -m compileall -q core/ai/contextual_takeoff_p6.py app/contextual_takeoff_p6.py app/graphical_takeoff.py app/manual_takeoff.py
-          python -m pytest -q --maxfail=1 --junitxml=phase6-p4-${{ matrix.os }}.xml tests/test_phase6_p4_w1_a2_core.py tests/test_phase6_p4_w1_a2_qt.py tests/test_assembly_template_expansion.py tests/test_assembly_takeoff_persistence.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py
+          python -m pytest -q --maxfail=1 --junitxml=phase6-p4-${{ matrix.os }}.xml tests/test_phase6_p4_w1_a2_core.py tests/test_phase6_p4_w1_a2_qt.py tests/test_assembly_template_expansion.py tests/test_assembly_takeoff_persistence.py tests/test_assembly_engine.py tests/test_finish_takeoff_assemblies.py tests/test_ai_takeoff_output_guard.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py
       - name: Save evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: phase6-p4-w1-a2-${{ matrix.os }}
-          path: phase6-p4-${{ matrix.os }}.xml
+          path: |
+            phase6-p4-${{ matrix.os }}.xml
+            phase6-p4-evidence/windows/
           if-no-files-found: warn
           retention-days: 14
