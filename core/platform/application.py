@@ -856,6 +856,11 @@ class StructuralProApp:
         from core.takeoff.manual_formula_register import save
         return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)
 
+    def preview_bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions):
+        from core.takeoff.manual_formula_register import preview_bulk_edit
+        return preview_bulk_edit(self,project_id,row_ids,changes=changes,
+                                 expected_revisions=expected_revisions)
+
     def bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions, reason):
         from core.takeoff.manual_formula_register import bulk_edit
         return bulk_edit(self,project_id,row_ids,changes=changes,expected_revisions=expected_revisions,reason=reason)
