@@ -112,3 +112,33 @@ def test_source_worker_invalidates_scene_without_ui_thread_hashing(tmp_path):
     assert canvas.source_error
     assert canvas._faces() == ()
     canvas.close()
+
+
+def test_floor_visibility_checkbox_tracks_selected_floor_without_changing_other_floors(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.ifc_3d_viewport import IFC3DDialog
+    qt=QApplication.instance() or QApplication([])
+    dialog=IFC3DDialog(VerifiedScene3D(real_contract(tmp_path)))
+    try:
+        assert not dialog.hide_floor.isEnabled()  # All floors cannot be hidden ambiguously.
+        ix1=dialog.storey.findData('Level-01')
+        ix2=dialog.storey.findData('Level-02')
+        dialog.storey.setCurrentIndex(ix1)
+        assert dialog.hide_floor.isEnabled() and not dialog.hide_floor.isChecked()
+        dialog.hide_floor.setChecked(True)
+        assert dialog.scene.hidden_storeys == {'Level-01'}
+        dialog.storey.setCurrentIndex(ix2)
+        assert not dialog.hide_floor.isChecked()
+        assert dialog.scene.hidden_storeys == {'Level-01'}
+        dialog.hide_floor.setChecked(True)
+        assert dialog.scene.hidden_storeys == {'Level-01', 'Level-02'}
+        dialog.storey.setCurrentIndex(ix1)
+        assert dialog.hide_floor.isChecked()
+        dialog.hide_floor.setChecked(False)
+        assert dialog.scene.hidden_storeys == {'Level-02'}
+        dialog.storey.setCurrentIndex(0)
+        assert not dialog.hide_floor.isEnabled() and not dialog.hide_floor.isChecked()
+        assert dialog.scene.hidden_storeys == {'Level-02'}
+    finally:
+        dialog.close()
+        qt.processEvents()
