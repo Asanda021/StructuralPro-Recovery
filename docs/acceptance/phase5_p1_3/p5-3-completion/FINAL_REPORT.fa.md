@@ -54,7 +54,8 @@ Audit می‌شوند، اما خطای صرفاً اعتبارسنجی مهند
 طبق محدودیت مأموریت، رگرسیون جامع دوم اجرا نشد؛ بنابراین آمار ۷۹۰۴ را نتیجه کامل Tree نهایی
 معرفی نمی‌کنیم. JUnitها:
 
-- `full-final.xml`، SHA-256: `1a95c5f69943fc2e3564eb06a33c8e27b2de5e06e4509cc82e19c64c7fcf660f`
+- `full-final.xml.gz`، SHA-256 آرشیو: `aca35e1f35aee1974962844cf22616e8617a7aafeff8fa9faf1abce970676b23`
+  و SHA-256 محتوای XML کامل: `1a95c5f69943fc2e3564eb06a33c8e27b2de5e06e4509cc82e19c64c7fcf660f`
 - `post-regression-fix.xml`، SHA-256: `2a1be58f8d9d401192a980271410d87754374dbeff4de767f7dc4d35e1de06df`
 - `policy-ui-targeted.xml`، SHA-256: `c1b732d96f8e957ee02e6c9c95661f1b2413bce72a74bf0cb507cfe0fa5cbd37`
 

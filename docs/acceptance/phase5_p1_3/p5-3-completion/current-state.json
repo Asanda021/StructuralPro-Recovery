@@ -14,8 +14,9 @@
     "errors": 0,
     "skipped_windows": 8,
     "seconds": 659.64,
-    "junit": "full-final.xml",
-    "sha256": "1a95c5f69943fc2e3564eb06a33c8e27b2de5e06e4509cc82e19c64c7fcf660f"
+    "junit": "full-final.xml.gz",
+    "uncompressed_sha256": "1a95c5f69943fc2e3564eb06a33c8e27b2de5e06e4509cc82e19c64c7fcf660f",
+    "sha256": "aca35e1f35aee1974962844cf22616e8617a7aafeff8fa9faf1abce970676b23"
   },
   "post_fix_affected": {
     "passed": 39,
