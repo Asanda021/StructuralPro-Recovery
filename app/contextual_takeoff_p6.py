@@ -112,6 +112,11 @@ class ContextualTakeoffDialog(QDialog):
         self.open_manual_button=QPushButton("بازکردن فرم متره دستی موجود")
         self.open_manual_button.setObjectName("P6W1OpenManual")
         self.open_manual_button.clicked.connect(self.open_manual)
+        self.specialist_button=QPushButton("بازکردن دیتایل تخصصی سقف موجود")
+        self.specialist_button.setObjectName("P6W1OpenRoofSpecialist")
+        self.specialist_button.clicked.connect(self.open_specialist)
+        self.specialist_button.setEnabled(False)
+        tools.addWidget(self.specialist_button)
         self.cancel_button=QPushButton("لغو / پاک‌کردن پیش‌نمایش")
         self.cancel_button.setObjectName("P6W1Cancel")
         self.cancel_button.clicked.connect(self.cancel_preview)
@@ -203,6 +208,10 @@ class ContextualTakeoffDialog(QDialog):
             if widget is not None:widget.deleteLater()
         self.fields={}
         code=self.code.currentData()
+        if code in ("waffle_one_way","waffle_two_way","hollowcore"):
+            self.specialist_button.setEnabled(True)
+        else:
+            self.specialist_button.setEnabled(False)
         if not code or code in SPECIALIST_ONLY:
             return
         template=self.library.get(code)
@@ -216,8 +225,21 @@ class ContextualTakeoffDialog(QDialog):
             self.fields_form.addRow(label,widget)
 
     def inputs(self):
-        return {name:widget.text().strip() for name,widget in self.fields.items()
-                if widget.text().strip()}
+        import json
+        result={}
+        for name,widget in self.fields.items():
+            value=widget.text().strip()
+            if not value:
+                continue
+            if name=="rebar_schedule":
+                try:
+                    value=json.loads(value)
+                except (ValueError,TypeError) as exc:
+                    raise ValueError("برنامه میلگرد باید JSON معتبر با مرجع صریح باشد.") from exc
+                if not isinstance(value,list):
+                    raise ValueError("برنامه میلگرد باید فهرست JSON باشد.")
+            result[name]=value
+        return result
 
     def invalidate(self,*_):
         self.last_preview=None
@@ -298,6 +320,23 @@ class ContextualTakeoffDialog(QDialog):
         self.invalidate()
         self.preview_text.clear()
         self.answer_text.setText("پیشنهادهای قبلی لغو شدند؛ برای کار جدید دوباره بازبینی کنید.")
+
+    def open_specialist(self):
+        self._guard()
+        code=self.code.currentData()
+        kind={"hollowcore":"hollow_core_detail",
+              "waffle_one_way":"waffle_one_way",
+              "waffle_two_way":"waffle_two_way"}.get(code)
+        if kind is None:
+            self.preview_text.setPlainText(
+                "این مسیر نیازمند فرم تخصصی است؛ تولید عدد یا مدل ساختگی ممنوع.")
+            return None
+        if not self.floor.currentData():
+            self.preview_text.setPlainText("اول طبقه واقعی را انتخاب کنید.")
+            return None
+        from app.roof_detail_editor import open_roof_editor
+        return open_roof_editor(self.service,parent=self,
+            project_id=self.pid,floor_id=self.floor.currentData(),kind=kind)
 
     def open_manual(self):
         self._guard()
