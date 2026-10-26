@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, Signal, QTimer, QObject, QRunnable, QThreadPool, 
 from PySide6.QtGui import QColor, QBrush, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton,
-    QVBoxLayout, QWidget, QDoubleSpinBox,
+    QVBoxLayout, QWidget, QDoubleSpinBox, QLineEdit,
 )
 from PySide6.QtCore import QPointF
 
@@ -189,9 +189,12 @@ class IFC3DCanvas(QWidget):
 class IFC3DDialog(QDialog):
     memberSelected = Signal(str)
 
-    def __init__(self, scene: VerifiedScene3D, parent=None):
+    def __init__(self, scene: VerifiedScene3D, parent=None, *,
+                 app_service=None, project_id=""):
         super().__init__(parent)
         self.scene = scene
+        self.app_service = app_service
+        self.project_id = str(project_id or "").strip()
         self.setObjectName("IFC3DDocumentView")
         self.setWindowTitle("نمای سه‌بعدی واقعی IFC — فقط نمایش، بدون متره")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -245,11 +248,81 @@ class IFC3DDialog(QDialog):
         status.setObjectName("IFC3DProvenance")
         status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         outer.addWidget(status)
+        session_row = QHBoxLayout()
+        self.snapshot_id = QLineEdit()
+        self.snapshot_id.setObjectName('IFC3DSnapshotId')
+        self.snapshot_id.setPlaceholderText('شناسه نشست E2 ثبت‌شده')
+        self.save_view = QPushButton('ذخیره نمای سه‌بعدی در E2')
+        self.save_view.setObjectName('SaveIFC3DView')
+        self.restore_view = QPushButton('بازیابی نمای سه‌بعدی از E2')
+        self.restore_view.setObjectName('RestoreIFC3DView')
+        self.save_view.setEnabled(self.app_service is not None and bool(self.project_id))
+        self.restore_view.setEnabled(self.save_view.isEnabled())
+        self.session_status = QLabel('نشست نمای سه‌بعدی فقط‌خواندنی؛ BOQ تغییر نمی‌کند.')
+        self.session_status.setObjectName('IFC3DSessionStatus')
+        self.session_status.setWordWrap(True)
+        for ctrl in (self.snapshot_id, self.save_view, self.restore_view):
+            session_row.addWidget(ctrl)
+        outer.addLayout(session_row)
+        outer.addWidget(self.session_status)
+        self.save_view.clicked.connect(self.save_e2_view)
+        self.restore_view.clicked.connect(self.restore_e2_view)
         self.storey.currentIndexChanged.connect(self._on_storey_changed)
         self._on_storey_changed()
         self.isolate.toggled.connect(self._isolate)
         reset.clicked.connect(self.canvas.reset_camera)
         self.canvas.memberSelected.connect(self.memberSelected)
+
+    def save_e2_view(self):
+        if not self.app_service or not self.project_id:
+            self.session_status.setText('سرویس و شناسه معتبر پروژه در دسترس نیست.')
+            return False
+        try:
+            from core.drawings.ifc3d_session_state import save_to_e2
+            receipt = save_to_e2(self.app_service, self.project_id, self.scene, self.canvas)
+            self.snapshot_id.setText(receipt['snapshot_id'])
+            self.session_status.setText('نمای سه‌بعدی با تأیید منشأ و نسخه، در نشست E2 ذخیره شد.')
+            return True
+        except Exception as exc:
+            self.session_status.setText('ذخیره نما انجام نشد: ' + str(exc))
+            return False
+
+    def restore_e2_view(self):
+        if not self.app_service or not self.project_id:
+            self.session_status.setText('سرویس و شناسه معتبر پروژه در دسترس نیست.')
+            return False
+        try:
+            from core.drawings.ifc3d_session_state import restore_from_e2
+            state = restore_from_e2(self.app_service, self.project_id,
+                                    self.snapshot_id.text().strip(), self.scene, self.canvas)
+            with QSignalBlocker(self.storey):
+                self.storey.setCurrentIndex(self.storey.findData(state['storey_id']))
+            with QSignalBlocker(self.isolate):
+                self.isolate.setChecked(state['isolate'])
+            with QSignalBlocker(self.transparency):
+                self.transparency.setChecked(state['transparent'])
+            with QSignalBlocker(self.section):
+                self.section.setChecked(state['section_z'] is not None)
+            if state['section_z'] is not None:
+                with QSignalBlocker(self.section_height):
+                    self.section_height.setValue(state['section_z'])
+            visible_types = {m.ifc_type for m in self.scene.meshes} - set(state['hidden_types'])
+            if len(visible_types) == 1:
+                with QSignalBlocker(self.type_filter):
+                    self.type_filter.setCurrentIndex(
+                        self.type_filter.findData(next(iter(visible_types))))
+            elif not state['hidden_types']:
+                with QSignalBlocker(self.type_filter):
+                    self.type_filter.setCurrentIndex(0)
+            with QSignalBlocker(self.hide_floor):
+                floor = state['storey_id']
+                self.hide_floor.setEnabled(floor is not None)
+                self.hide_floor.setChecked(floor in self.scene.hidden_storeys if floor else False)
+            self.session_status.setText('نشست E2 منطبق با منبع و Revision فعلی بازیابی شد.')
+            return True
+        except Exception as exc:
+            self.session_status.setText('بازیابی نما رد شد: ' + str(exc))
+            return False
 
     def _on_storey_changed(self, *_):
         floor = self.storey.currentData()
