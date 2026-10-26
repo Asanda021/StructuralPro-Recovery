@@ -103,6 +103,11 @@ def test_qt_real_boq_row_click_highlights_ifc_member_and_keeps_financial_digest(
     assert window._ifc_selected_global_id==obj.GlobalId
     assert panel.members.selectedItems()[0].text(0)=='C1'
     assert len(panel.boq.selectionModel().selectedRows())==3
+    assert "مقدار ثبت‌شده" in panel.detail.text()
+    assert "SHA-256:" in panel.detail.text()
+    assert "نسخه: R1" in panel.detail.text()
+    assert "طبقه: F1" in panel.detail.text()
+    assert "C1" in panel.detail.text()
     assert all(item.isSelected() for item in window._ifc_handle_items[obj.GlobalId])
     folder=os.environ.get('STRUCTURALPRO_P6_P3_SCREENSHOT_DIR')
     if folder:
