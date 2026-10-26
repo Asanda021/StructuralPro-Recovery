@@ -154,8 +154,6 @@ class ContextualTakeoffGuide:
         digest, _project = self._project(context)
         provided=dict(inputs or {})
         templates = _FAMILY_TEMPLATES[context.operation]
-        if provided and not templates:
-            raise ValueError("برای این خانواده قالب محاسباتی عام تأیید نشده؛ فرم تخصصی را باز کنید.")
         required = _SPECIALIST_REQUIRED.get(context.operation, ())
         allowed=set(required)
         for code in templates:
