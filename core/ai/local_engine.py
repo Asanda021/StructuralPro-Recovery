@@ -80,10 +80,26 @@ class LocalAIEngine:
         if self.edition != "unified":
             return True
         from core.ai.release_gate import inspect_ai_release_assets
-        gate = inspect_ai_release_assets(
-            self.model_dir / "release_manifest.json", self.model_dir
-        )
-        return gate.ready
+        manifest_path = self.bundle_dir / "AI_RELEASE_MANIFEST.json"
+        gate = inspect_ai_release_assets(manifest_path, self.bundle_dir)
+        if not gate.ready:
+            return False
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            verified = {a["kind"]: (self.bundle_dir / a["path"]).resolve(strict=True)
+                        for a in manifest["assets"]}
+            actual = {
+                "model": self.model_path,
+                "mmproj": self.mmproj_path,
+                "runtime_text": self._binary("llama-cli"),
+                "runtime_vision": self._binary("llama-mtmd-cli"),
+            }
+            return all(
+                candidate is not None and candidate.resolve(strict=True) == verified[kind]
+                for kind, candidate in actual.items()
+            )
+        except (OSError, KeyError, ValueError, TypeError):
+            return False
 
     @property
     def has_llm_model(self):
@@ -206,7 +222,8 @@ class LocalAIEngine:
             "Never claim that an AI answer replaces a deterministic engineering calculation."
         )
         user = f"{context}\nUser: {prompt}".strip()
-        binary = self._binary("llama-completion") or self._binary("llama-cli")
+        binary = (self._binary("llama-cli") if self.edition == "unified"
+                  else self._binary("llama-completion") or self._binary("llama-cli"))
         try:
             result = subprocess.run(
                 [
