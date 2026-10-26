@@ -259,7 +259,7 @@ def test_specialist_fields_are_reviewable_not_calculated(tmp_path,family,key):
     proposal=guide.propose(replace(ctx,operation=family),
                            inputs={key:"user-evidence-reference"})
     assert key not in proposal.missing_inputs
-    assert set(proposal.missing_inputs)==set(expected)-{key}
+    assert set(expected)-{key} <= set(proposal.missing_inputs)
     assert proposal.quantity_authority is False
     assert guide.review(proposal,accepted=(proposal.review_questions[0],))["quantity"] is None
     assert app.open_project("P")["boq"]==[]
@@ -297,3 +297,104 @@ def test_live_qt_handoff_to_existing_specialist_without_auto_commit(tmp_path,fam
     assert app.store.current_digest("P")==digest
     assert not app.open_project("P")["boq"]
     guide.close();drawing.close();qt.processEvents();app.store.close()
+
+
+@pytest.mark.parametrize("family,template",[
+    ("joist_block","joist_block_roof_assembly"),
+    ("joist_foam","joist_foam_roof_assembly"),
+    ("solid_slab","concrete_slab"),
+    ("block_wall","block_wall"),
+    ("beam","concrete_beam"),
+    ("column","concrete_column"),
+    ("floor_finish","floor_finish"),
+    ("false_ceiling","false_ceiling"),
+])
+def test_matching_approved_templates_without_invented_values(tmp_path,family,template):
+    app,ctx=base(tmp_path);guide=ContextualTakeoffGuide(app)
+    before=app.store.current_digest("P")
+    p=guide.propose(replace(ctx,operation=family))
+    assert guide.templates.get(template).title_fa in p.components_for_review
+    assert set(guide.templates.get(template).required_inputs)<=set(p.missing_inputs)
+    assert not p.quantity_authority
+    assert not guide.review(p)["boq_write"]
+    assert app.store.current_digest("P")==before
+    app.store.close()
+
+
+def test_text_edit_invalidates_live_preview_immediately(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.contextual_takeoff_panel import ContextualTakeoffDialog, _INPUT_LABELS
+    qt=QApplication.instance() or QApplication([])
+    app,ctx=base(tmp_path)
+    dialog=ContextualTakeoffDialog(app,lambda family:replace(ctx,operation=family))
+    try:
+        dialog.family.setCurrentIndex(dialog.family.findData("joist_block"))
+        assert dialog.inputs_layout.labelForField(dialog.inputs["joist_direction"]).text()==_INPUT_LABELS["joist_direction"]
+        old=dialog.preview()
+        assert old is not None
+        dialog.inputs["joist_direction"].setText("دیتایل شماره ۱")
+        assert dialog.active is None
+        assert not dialog.open_form_button.isEnabled() and not dialog.review_button.isEnabled()
+        with pytest.raises(ValueError):
+            dialog.guide.check_current(old)
+        assert dialog.preview() is not None
+    finally:
+        dialog.close();app.store.close();qt.processEvents()
+
+
+def test_failed_form_handoff_revokes_proposal(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.contextual_takeoff_panel import ContextualTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    app,ctx=base(tmp_path)
+    state=[ctx]
+    dialog=ContextualTakeoffDialog(app,lambda fam:replace(state[0],operation=fam),
+                                   open_real_form=lambda _:True)
+    try:
+        old=dialog.preview()
+        assert old is not None
+        state[0]=replace(ctx,member_id="ANOTHER")
+        assert dialog.open_form() is None
+        assert dialog.active is None
+        assert not dialog.open_form_button.isEnabled() and not dialog.review_button.isEnabled()
+        with pytest.raises(ValueError):
+            dialog.guide.check_current(old)
+        assert not app.open_project("P")["boq"]
+    finally:
+        dialog.close();app.store.close();qt.processEvents()
+
+
+@pytest.mark.parametrize("family,dialog_name",[
+    ("block_wall","ArchitectureDetailEditor"),
+    ("wall_with_opening","ArchitectureDetailEditor"),
+    ("floor_finish","ArchitectureDetailEditor"),
+    ("false_ceiling","ArchitectureDetailEditor"),
+    ("column","ReviewedStructuralManualEditor"),
+])
+def test_existing_architecture_structural_handoffs_are_review_only(tmp_path,family,dialog_name):
+    from PySide6.QtWidgets import QApplication,QDialog
+    from PySide6.QtCore import QTimer
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    app,ctx=base(tmp_path)
+    drawing=GraphicalTakeoffDialog(app_service=app,project_id="P")
+    drawing.polygon_floor.setText("F1")
+    guide=drawing.open_contextual_wizard()
+    try:
+        guide.family.setCurrentIndex(guide.family.findData(family))
+        assert guide.preview() is not None,guide.status.text()
+        seen=[]
+        def close_specialist():
+            dialogs=[w for w in qt.topLevelWidgets()
+                     if isinstance(w,QDialog) and w.objectName()==dialog_name]
+            if dialogs:
+                seen.append(dialogs[0].objectName())
+                dialogs[0].reject()
+        QTimer.singleShot(650,close_specialist)
+        digest=app.store.current_digest("P")
+        assert guide.open_form() is True,guide.status.text()
+        assert seen==[dialog_name]
+        assert digest==app.store.current_digest("P")
+        assert app.open_project("P")["boq"]==[]
+    finally:
+        guide.close();drawing.close();qt.processEvents();app.store.close()

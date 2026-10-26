@@ -1224,6 +1224,21 @@ class GraphicalTakeoffDialog(QDialog):
                 self.app_service,parent=self,project_id=context.project_id,
                 floor_id=context.floor_id,kind=context.operation)
             return True  # Editor opened; commit still needs its own explicit gate.
+        if context.operation in ("block_wall","wall_with_opening","floor_finish","false_ceiling"):
+            # Reuse the original reviewed architectural form and its approval gates.
+            from app.architecture_detail_editor import open_architecture_editor
+            kind={"wall_with_opening":"block_wall",
+                  "false_ceiling":"suspended_ceiling"}.get(context.operation,context.operation)
+            open_architecture_editor(self.app_service,parent=self,
+                                     project_id=context.project_id,
+                                     floor_id=context.floor_id,kind=kind)
+            return True
+        if context.operation=="column":
+            from app.reviewed_structural_manual_editor import open_manual_structural_editor
+            open_manual_structural_editor(self.app_service,parent=self,
+                                          project_id=context.project_id,
+                                          floor_id=context.floor_id)
+            return True
         if context.operation=="mep":
             from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
             open_reviewed_aec_editor(self.app_service,parent=self,

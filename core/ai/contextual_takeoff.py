@@ -18,7 +18,7 @@ from core.takeoff.assembly_templates import AssemblyTemplateLibrary
 # Links below are *review questions*, not automatically activated / payable
 # components. Labels and inputs come from the existing specialist templates.
 _FAMILY_TEMPLATES = {
-    "joist_block": ("joist_foam_roof_assembly",),  # only when actually foam
+    "joist_block": ("joist_block_roof_assembly",),
     "joist_foam": ("joist_foam_roof_assembly",),
     "solid_slab": ("concrete_slab",),
     "block_wall": ("block_wall",),
@@ -28,6 +28,8 @@ _FAMILY_TEMPLATES = {
     "mep": (),
     "floor_finish": ("floor_finish",),
     "false_ceiling": ("false_ceiling",),
+    "beam": ("concrete_beam",),
+    "column": ("concrete_column",),
 }
 _QUESTIONS = {
     "joist_block": ("جهت تیرچه", "نوع بلوک پرکننده", "تعداد و ابعاد تیرچه", "تعداد و ابعاد بلوک", "بتن رویه", "میلگرد حرارتی", "بازشوها و کسورات", "مالکیت اجزای مشترک"),
@@ -40,10 +42,10 @@ _QUESTIONS = {
     "mep": ("رشته و عملیات برق یا مکانیک", "مسیر یا تجهیز با سند", "ابعاد و تعداد مستقل", "مبنای اندازه‌گیری و واحد", "مالکیت اجزای مشترک"),
     "floor_finish": ("ناحیه و کف واقعی", "بازشو و کسورات", "لایه و ضخامت مستند", "مصرف مصالح و پرت فقط با منبع"),
     "false_ceiling": ("سطح و بازشو", "نوع سقف کاذب", "زیرسازی و آویز مستند", "چراغ و تأسیسات مشترک"),
+    "beam": ("ابعاد و تعداد تیر مستند", "وجوه قالب‌بندی واقعی", "دیتایل آرماتور و خاموت", "بازشو و مالکیت اجزای مشترک"),
+    "column": ("ابعاد و تعداد ستون مستند", "هندسه و ارتفاع واقعی", "آرماتور طولی و خاموت از دیتایل", "مالکیت بتن، قالب و اتصالات"),
 }
-# Do not silently treat a joist-block assembly as foam. Ask for the correct
-# specialist tool until a matching reviewed template is provided.
-_FAMILY_TEMPLATES["joist_block"] = ()
+# Joist-block uses its own existing catalog template, never foam.
 
 # Explicit W1-specific fields are review metadata only, not geometry numbers
 # accepted by any secondary calculator. Only the original specialist workflow

@@ -9,6 +9,44 @@ from PySide6.QtWidgets import (
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext, _FAMILY_TEMPLATES, _QUESTIONS, _SPECIALIST_REQUIRED
 
 
+
+# Labels are presentation only; the canonical engine keys stay unchanged.
+_INPUT_LABELS = {
+    "count":"تعداد صریح","length":"طول مستند","width":"عرض مستند",
+    "depth":"عمق مستند","height":"ارتفاع مستند","thickness":"ضخامت مستند",
+    "openings":"بازشوهای مستند","block_length":"طول بلوک",
+    "block_width":"عرض بلوک","block_height":"ارتفاع بلوک",
+    "block_thickness":"ضخامت بلوک","joint_thickness":"ضخامت بند ملات",
+    "cement_parts":"نسبت سیمان دارای مرجع","sand_parts":"نسبت ماسه دارای مرجع",
+    "block_waste_factor":"ضریب پرت بلوک با مرجع",
+    "mortar_waste_factor":"ضریب پرت ملات با مرجع",
+    "topping_thickness":"ضخامت بتن رویه","joist_spacing":"فاصله تیرچه",
+    "joist_width":"عرض تیرچه","joist_depth":"عمق تیرچه",
+    "joist_count":"تعداد تیرچه","foam_length":"طول یونولیت",
+    "foam_width":"عرض یونولیت","foam_height":"ارتفاع یونولیت",
+    "foam_count":"تعداد یونولیت","block_count":"تعداد بلوک",
+    "mesh_unit_weight":"وزن واحد شبکه میلگرد",
+    "mesh_unit_weight_source":"مرجع وزن شبکه میلگرد",
+    "cast_rib_count":"تعداد ریب بتنی","cast_rib_length_m":"طول ریب بتنی",
+    "cast_rib_area_m2":"مساحت ریب بتنی","waste_factor":"ضریب پرت با مرجع",
+    "formwork_sides":"وجوه قالب مستند","rebar_kg_per_m3":"مصرف میلگرد از دیتایل",
+    "rebar_schedule":"جدول میلگرد معتبر","consumption_per_m2":"مصرف در متر مربع",
+    "consumption_unit":"واحد مصرف","openings_scope":"دامنه بازشوها",
+    "layers":"تعداد لایه‌ها","consumption_per_m2_per_layer":"مصرف هر لایه با مرجع",
+    "material_spec_ref":"مرجع مصالح",
+    "joist_direction":"جهت تیرچه","joist_length_ref":"مرجع طول تیرچه",
+    "block_spec_ref":"مشخصات بلوک","topping_thickness_ref":"دیتایل بتن رویه",
+    "thermal_rebar_detail_ref":"دیتایل میلگرد حرارتی",
+    "openings_ref":"مدرک بازشوها","ownership_ref":"مرجع مالکیت",
+    "rib_direction":"جهت ریب","rib_count":"تعداد ریب","rib_detail_ref":"دیتایل ریب",
+    "solid_area_ref":"مدرک ناحیه توپر","opening_ref":"مرجع بازشو",
+    "rib_direction_x":"جهت ریب اول","rib_direction_y":"جهت ریب دوم",
+    "rib_grid_ref":"مدرک شبکه ریب","intersections_ref":"مدرک تقاطع ریب",
+    "discipline":"رشته تأسیسات","operation_ref":"مرجع عملیات",
+    "route_or_equipment_ref":"مرجع مسیر یا تجهیز",
+    "measurement_unit_ref":"مرجع واحد متره",
+}
+
 class ContextualTakeoffDialog(QDialog):
     """Every button changes real state. Nothing can write BOQ from this dialog."""
 
@@ -41,7 +79,8 @@ class ContextualTakeoffDialog(QDialog):
                 "wall_with_opening":"دیوار با بازشو",
                 "waffle_one_way":"وافل یک‌طرفه","waffle_two_way":"وافل دوطرفه",
                 "mep":"تأسیسات برق/مکانیک","floor_finish":"کف‌سازی",
-                "false_ceiling":"سقف کاذب"}.get(code,code),code)
+                "false_ceiling":"سقف کاذب","beam":"تیر بتنی",
+                "column":"ستون بتنی"}.get(code,code),code)
         row.addWidget(self.family)
         self.refresh_button=QPushButton("خواندن دوباره زمینه")
         self.refresh_button.setObjectName("P4RefreshContext")
@@ -130,8 +169,14 @@ class ContextualTakeoffDialog(QDialog):
             field=QLineEdit()
             field.setObjectName("P4Input_"+name)
             field.setPlaceholderText("ورودی صریح از مدرک معتبر؛ خالی یعنی نامشخص")
-            self.inputs_layout.addRow(name,field)
+            self.inputs_layout.addRow(_INPUT_LABELS.get(name,name),field)
+            field.textChanged.connect(self._invalidate_on_edit)
             self.inputs[name]=field
+
+    def _invalidate_on_edit(self, *_):
+        if self.active is not None:
+            self.cancel()
+            self.status.setText("ورودی تغییر کرد؛ پیش‌نمایش تازه لازم است.")
 
     def refresh_context(self):
         self.cancel()
@@ -217,6 +262,7 @@ class ContextualTakeoffDialog(QDialog):
             self.status.setText("فرم اصلی باز شد؛ ثبت مقدار فقط با کنترل و تأیید مستقل همان فرم.")
             return result
         except Exception as exc:
+            self.cancel()
             self.status.setText("انتقال به فرم اصلی انجام نشد: "+str(exc))
             return None
 
