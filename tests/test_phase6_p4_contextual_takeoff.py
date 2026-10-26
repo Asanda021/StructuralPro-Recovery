@@ -237,3 +237,36 @@ def test_specialist_fields_are_reviewable_not_calculated(tmp_path,family,key):
     assert guide.review(proposal,accepted=(proposal.review_questions[0],))["quantity"] is None
     assert app.open_project("P")["boq"]==[]
     app.store.close()
+
+
+@pytest.mark.parametrize("family,real_dialog",[
+    ("waffle_one_way","RoofDetailEditor"),
+    ("joist_block","RoofDetailEditor"),
+    ("mep","ReviewedAECManualEditor"),
+])
+def test_live_qt_handoff_to_existing_specialist_without_auto_commit(tmp_path,family,real_dialog):
+    from PySide6.QtWidgets import QApplication,QDialog
+    from PySide6.QtCore import QTimer
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app,ctx=base(tmp_path)
+    qt=QApplication.instance() or QApplication([])
+    drawing=GraphicalTakeoffDialog(app_service=app,project_id="P")
+    drawing.polygon_floor.setText("F1")
+    guide=drawing.open_contextual_wizard()
+    guide.family.setCurrentIndex(guide.family.findData(family))
+    assert guide.preview() is not None,guide.status.text()
+    seen=[]
+    def close_specialist():
+        dialogs=[w for w in qt.topLevelWidgets() if
+                 isinstance(w,QDialog) and w.objectName()==real_dialog]
+        if dialogs:
+            seen.append(dialogs[0].objectName())
+            dialogs[0].reject()
+    QTimer.singleShot(600,close_specialist)
+    digest=app.store.current_digest("P")
+    result=guide.open_form()
+    assert result is True,guide.status.text()
+    assert seen==[real_dialog]
+    assert app.store.current_digest("P")==digest
+    assert not app.open_project("P")["boq"]
+    guide.close();drawing.close();qt.processEvents();app.store.close()
