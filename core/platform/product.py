@@ -16,6 +16,7 @@ class ProductEdition(str, Enum):
     STANDARD = "standard"
     PRO = "pro"
     ENTERPRISE = "enterprise"
+    UNIFIED = "unified"  # only new product profile; legacy markers remain readable
 
 
 FEATURES = (
@@ -92,6 +93,10 @@ _PRODUCT_PROFILES = {
     ),
     ProductEdition.ENTERPRISE: _profile(
         ProductEdition.ENTERPRISE,
+        *FEATURES,
+    ),
+    ProductEdition.UNIFIED: _profile(
+        ProductEdition.UNIFIED,
         *FEATURES,
     ),
 }
