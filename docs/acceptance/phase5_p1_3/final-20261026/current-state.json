@@ -1,0 +1,28 @@
+{
+  "date_utc": "2026-10-26",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "pull_request": 26,
+  "branch": "feature/phase5-priorities1-3-data-safety-20261025",
+  "tested_commit": "10e81309984a794c5452c8fe2baf255566642769",
+  "tested_tree": "90584b3c2c5643d7b2703770050b8e1b7ff3651f",
+  "product_suite": {
+    "passed": 7900,
+    "failed_product": 0,
+    "blocked_policy": 1,
+    "errors": 0,
+    "skipped_windows": 7,
+    "seconds": 461.42,
+    "junit_sha256": "dd6321fa3ac87d5289947cded61a8a47e5cef445805cc69601dc94f994debb9e",
+    "log_sha256": "1002076ad4b88e860b610d015e4b35784d85009063593cd5e83db3d65229ff0d"
+  },
+  "priorities": {
+    "P5-1": "COMPLETE_NON_WINDOWS",
+    "P5-2": "COMPLETE_NON_WINDOWS",
+    "P5-3": "PARTIAL"
+  },
+  "windows_native": "NOT_VERIFIED",
+  "microsoft_office": "NOT_VERIFIED",
+  "engineering_acceptance": "NOT_RECEIVED",
+  "owner_approval": "NOT_RECEIVED",
+  "phase4_historical_sqlite_actor": "UNRESOLVED"
+}
