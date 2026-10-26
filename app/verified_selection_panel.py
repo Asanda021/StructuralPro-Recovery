@@ -46,9 +46,13 @@ class VerifiedSelectionPanel(QWidget):
         all_boq = sorted(index.allowed['boq_row_id'])
         self.boq.setRowCount(len(all_boq))
         for row, identifier in enumerate(all_boq):
-            self.boq.setItem(row, 0, QTableWidgetItem(identifier))
+            cell = QTableWidgetItem(
+                verified_project.boq_labels.get(identifier,identifier)
+                if verified_project is not None else identifier)
+            cell.setData(0x0100,identifier)  # Qt.UserRole: immutable snapshot row key
+            self.boq.setItem(row, 0, cell)
             if verified_project is not None:
-                self.boq.item(row,0).setToolTip(verified_project.boq_labels.get(identifier,identifier))
+                cell.setToolTip('نمای نسخه‌ای BOQ؛ شناسه پایدار مالی نیست.')
             linked = any(item.boq_row_id == identifier for item in index.links)
             self.boq.setItem(row, 1, QTableWidgetItem('مستند' if linked else 'فاقد ارتباط'))
         self.boq.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -111,7 +115,7 @@ class VerifiedSelectionPanel(QWidget):
         if len(rows) == 1:
             value = self.boq.item(rows[0].row(), 0)
             if value is not None:
-                self._lookup('boq', value.text())
+                self._lookup('boq', value.data(Qt.ItemDataRole.UserRole) or value.text())
 
     def select_from_geometry(self, global_id: str, *, origin='2d'):
         """2D or 3D selection highlights existing rows without selection loops."""
@@ -131,7 +135,8 @@ class VerifiedSelectionPanel(QWidget):
                         item.setSelected(True)
                 boq_set = set(result.boq_row_ids)
                 for row in range(self.boq.rowCount()):
-                    if self.boq.item(row,0).text() in boq_set:
+                    cell=self.boq.item(row,0)
+                    if (cell.data(Qt.ItemDataRole.UserRole) or cell.text()) in boq_set:
                         self.boq.selectionModel().select(
                             self.boq.model().index(row, 0),
                             QItemSelectionModel.SelectionFlag.Select |
