@@ -11,7 +11,7 @@ from core.platform.product import ProductEdition, FEATURES, product_profile, pac
 
 def _manifest(root):
     assets=[]
-    for kind,name in (("model","model.gguf"),("mmproj","projector.gguf"),("runtime","llama.exe")):
+    for kind,name in (("model","model.gguf"),("mmproj","projector.gguf"),("runtime_text","llama-cli.exe"),("runtime_vision","llama-mtmd-cli.exe")):
         raw=("fixture:"+name).encode()
         (root/name).write_bytes(raw)
         license_name=name+".LICENSE.txt"
@@ -58,8 +58,8 @@ def test_rejects_unlicensed_missing_model_corrupt_runtime_and_projector(tmp_path
     assert "missing_owner_release_approval" in inspect_ai_release_assets(path,tmp_path).blockers
     data["owner_release_approval"]=True
     path.write_text(json.dumps(data))
-    (tmp_path/"llama.exe").write_bytes(b"tampered")
-    assert "runtime:sha256_mismatch" in inspect_ai_release_assets(path,tmp_path).blockers
+    (tmp_path/"llama-cli.exe").write_bytes(b"tampered")
+    assert "runtime_text:sha256_mismatch" in inspect_ai_release_assets(path,tmp_path).blockers
     (tmp_path/"model.gguf.LICENSE.txt").write_bytes(b"forged-license-terms")
     assert "model:license_evidence_hash_mismatch" in inspect_ai_release_assets(path,tmp_path).blockers
     (tmp_path/"projector.gguf").unlink()
@@ -115,4 +115,21 @@ def test_single_shipped_edition_ignores_environment_and_legacy_engine_override(t
     monkeypatch.setattr(engine_module,"packaged_edition",lambda *a,**kw:ProductEdition.UNIFIED)
     engine=engine_module.LocalAIEngine(model_dir=tmp_path,edition="pro")
     assert engine.edition=="unified"
+    assert not engine.has_llm_model
+
+
+def test_manifest_of_other_valid_files_cannot_authorize_actual_runtime(tmp_path,monkeypatch):
+    path,_=_manifest(tmp_path)
+    # Manifest contains valid test bytes, but it does not describe the assets
+    # that the AI engine selected for invocation.
+    (tmp_path/"AI_RELEASE_MANIFEST.json").write_bytes(path.read_bytes())
+    root=tmp_path/"models"
+    root.mkdir()
+    engine=LocalAIEngine(model_dir=root,edition="unified")
+    engine.bundle_dir=tmp_path
+    from core.ai.edition_models import AITier,MODEL_SPECS
+    selected=root/MODEL_SPECS[AITier.TAKEOFF].model_filename
+    selected.write_bytes(b"different unapproved model")
+    engine.model_path=selected
+    assert inspect_ai_release_assets(path,tmp_path).ready
     assert not engine.has_llm_model
