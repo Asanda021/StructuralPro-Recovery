@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal, QSignalBlocker, QItemSelectionModel
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget, QAbstractItemView,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QTreeWidget, QAbstractItemView,
     QTreeWidgetItem, QTableWidget, QTableWidgetItem, QHeaderView,
 )
 
@@ -17,11 +17,13 @@ from core.drawings.verified_selection import VerifiedSelectionCrosswalk
 class VerifiedSelectionPanel(QWidget):
     oneGlobalIdSelected = Signal(str)
     selectionUnresolved = Signal(str)
+    selectionCleared = Signal()
 
-    def __init__(self, index: VerifiedSelectionCrosswalk, parent=None, *, verified_project=None):
+    def __init__(self, index: VerifiedSelectionCrosswalk, parent=None, *, verified_project=None, context_guard=None):
         super().__init__(parent)
         self.index = index
         self.verified_project = verified_project
+        self.context_guard = context_guard
         self.setObjectName('VerifiedCrossViewSelection')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         main = QVBoxLayout(self)
@@ -62,10 +64,16 @@ class VerifiedSelectionPanel(QWidget):
         self.detail.setObjectName('VerifiedSelectionStatus')
         self.detail.setWordWrap(True)
         main.addWidget(self.detail)
+        self.clear_button = QPushButton('لغو انتخاب چهارطرفه')
+        self.clear_button.setObjectName('ClearVerifiedFourWaySelection')
+        self.clear_button.clicked.connect(self.clear_selection)
+        main.addWidget(self.clear_button)
         self.members.itemClicked.connect(self._clicked_member)
         self.boq.itemSelectionChanged.connect(self._clicked_boq)
 
     def _resolve(self, origin, identifier):
+        if self.context_guard is not None:
+            self.context_guard()
         if self.verified_project is not None:
             return self.verified_project.resolve(
                 origin=origin,identifier=identifier,
@@ -81,6 +89,14 @@ class VerifiedSelectionPanel(QWidget):
         message='پیوند نسخه‌ای نامعتبر شد؛ پروژه/IFC را مجدداً باز کنید: '+str(error)
         self.detail.setText(message)
         self.selectionUnresolved.emit(message)
+
+    def clear_selection(self, *, notify=True):
+        with QSignalBlocker(self.members), QSignalBlocker(self.boq):
+            self.members.clearSelection()
+            self.boq.clearSelection()
+        self.detail.setText('هیچ عضو یا ردیف BOQ انتخاب نشده است.')
+        if notify:
+            self.selectionCleared.emit()
 
     def _lookup(self, origin, identifier):
         try:
