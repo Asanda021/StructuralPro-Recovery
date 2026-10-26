@@ -153,7 +153,9 @@ def test_verified_file_source_hash_and_revision_guard(tmp_path):
     digest=sha256(source.read_bytes()).hexdigest()
     w=assistant(svc,document_path=str(source),
                 document_sha256=digest,revision="R1",global_id="A-GlobalID")
-    assert w.preview("concrete_slab",SLAB,measurement_source="A").ready_to_review
+    p=w.preview("concrete_slab",SLAB,measurement_source="A")
+    assert not p.ready_to_review and any("IFC" in x for x in p.blockers)
+    assert svc.open_project("P")["boq"]==[]
     source.write_bytes(b"changed")
     with pytest.raises(RuntimeError):
         w.preview("concrete_slab",SLAB,measurement_source="A")
@@ -176,4 +178,21 @@ def test_changed_input_blocks_old_preview_and_duplicate_project_ids_refused(tmp_
         GovernedTakeoffAssistant(svc,"OTHER",floor_id="F1")
     with pytest.raises(ValueError):
         assistant(svc,member="NONEXISTENT")
+    svc.store.close()
+
+
+def test_unapproved_visual_ifc_global_id_must_not_become_financial_owner(tmp_path):
+    svc=case(tmp_path)
+    source=tmp_path/"document.ifc"
+    source.write_bytes(b"synthetic IFC bytes without reviewed mapping")
+    digest=sha256(source.read_bytes()).hexdigest()
+    w=assistant(svc,document_path=str(source),document_sha256=digest,
+                revision="R1",global_id="NOT-REVIEWED")
+    p=w.preview("concrete_slab",SLAB,measurement_source="document:frame01")
+    assert not p.ready_to_review and p.components and p.blockers
+    with pytest.raises(RuntimeError):
+        w.commit(code="concrete_slab",inputs=SLAB,
+                 measurement_source="document:frame01",approver="owner",
+                 expected_digest=p.project_digest)
+    assert svc.open_project("P")["boq"]==[]
     svc.store.close()
