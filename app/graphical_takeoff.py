@@ -429,7 +429,11 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button)
+        self.ifc_3d_button=QPushButton('مدل سه‌بعدی واقعی IFC')
+        self.ifc_3d_button.setObjectName('OpenVerifiedIFC3D')
+        self.ifc_3d_button.setToolTip('نمایش هندسه مستند؛ بدون متره از تصویر سه‌بعدی')
+        self.ifc_3d_button.clicked.connect(self.open_ifc_3d)
+        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.ifc_3d_button)
         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
@@ -1134,8 +1138,11 @@ class GraphicalTakeoffDialog(QDialog):
                     item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
-        dialog=getattr(self,'_ifc_inspector',None)
         from shiboken6 import isValid
+        view3d=getattr(self,'_ifc_3d_dialog',None)
+        if view3d is not None and isValid(view3d):
+            view3d.canvas.choose_member(gid)
+        dialog=getattr(self,'_ifc_inspector',None)
         if dialog is not None and isValid(dialog) and not getattr(self,'_ifc_tree_syncing',False):
             self._ifc_tree_syncing=True
             try:
@@ -1154,6 +1161,42 @@ class GraphicalTakeoffDialog(QDialog):
             finally:self._ifc_tree_syncing=False
         callback=getattr(self,'_ifc_crosswalk_notify',None)
         if callback:callback(gid)
+
+    def open_ifc_3d(self):
+        """Open real 3D geometry from the same verified IFC source and revision."""
+        if self.viewer.kind!='ifc' or self.cad_loading:
+            self.status.setText('نمای IFC معتبر باز نشده است.')
+            return None
+        try:
+            import hashlib
+            from core.bim.ifc import DeepIFCAdapter
+            from core.drawings.source_mesh3d import VerifiedScene3D
+            from app.ifc_3d_viewport import IFC3DDialog
+            source=Path(self.viewer.path)
+            current=self.viewer.ifc_document
+            if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest()!=current.source_sha256:
+                raise ValueError('فایل IFC پس از بارگذاری تغییر کرده است.')
+            contract=DeepIFCAdapter().read_display_contract(source,revision=self.ifc_revision.text())
+            if contract['source_sha256']!=current.source_sha256:
+                raise ValueError('هویت و نسخه IFC برای نمای 2D/3D مطابقت ندارند.')
+            scene=VerifiedScene3D(contract)
+            window=IFC3DDialog(scene,self)
+            window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            def link_back(gid):
+                if (self.viewer.kind!='ifc' or
+                    self.viewer.ifc_document.source_sha256!=scene.source_sha256 or
+                    not source.is_file() or
+                    hashlib.sha256(source.read_bytes()).hexdigest()!=scene.source_sha256):
+                    self.status.setText('نسخه IFC تغییر کرده؛ انتخاب سه‌بعدی اعمال نشد.')
+                    return
+                self.highlight_ifc_member(gid)
+            window.memberSelected.connect(link_back)
+            self._ifc_3d_dialog=window
+            window.show()
+            return window
+        except Exception as exc:
+            self.status.setText('نمای سه‌بعدی باز نشد: '+str(exc))
+            return None
 
     def open_ifc_inspector(self):
         if self.viewer.kind!='ifc' or self.cad_loading:return
