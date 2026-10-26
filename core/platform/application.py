@@ -83,6 +83,28 @@ class StructuralProApp:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
         self.store.save(project_id,project); return self.store.get(project_id)
 
+    def preview_project_start(self, template_code: str, *, project_id: str, name: str,
+                              floor_count: int, floor_names=None, disciplines=None):
+        from core.projects.start_templates import preview_project_start
+        return preview_project_start(template_code, project_id=project_id, name=name,
+                                     floor_count=floor_count, floor_names=floor_names,
+                                     disciplines=disciplines)
+
+    def create_project_from_template(self, template_code: str, *, project_id: str, name: str,
+                                     floor_count: int, floor_names=None, disciplines=None):
+        from core.projects.start_templates import preview_project_start, project_payload
+        preview=self.preview_project_start(template_code, project_id=project_id, name=name,
+                                           floor_count=floor_count, floor_names=floor_names,
+                                           disciplines=disciplines)
+        from core.projects.project_model import _identity
+        for item in self.store.list():
+            if _identity(item.get("id"))==_identity(project_id):
+                raise ValueError("شناسه پروژه مشابه قبلاً وجود دارد.")
+            if _identity(item.get("name"))==_identity(name):
+                raise ValueError("نام پروژه مشابه قبلاً وجود دارد.")
+        self.store.save(project_id, project_payload(preview), create_only=True)
+        return self.store.get(project_id)
+
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
 

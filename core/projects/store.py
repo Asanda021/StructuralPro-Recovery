@@ -392,7 +392,7 @@ class ProjectStore:
         }
         return any(previous.get(key) != current.get(key) for key in keys)
 
-    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -> dict[str,Any]:
+    def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None, create_only: bool = False) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
 
         BEGIN IMMEDIATE acquires the write reservation *before* the comparison.
@@ -417,6 +417,8 @@ class ProjectStore:
         try:
             self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
+            if create_only and row is not None:
+                raise ValueError("شناسه پروژه قبلاً ثبت شده است؛ ایجاد مجدد مجاز نیست.")
             identity = self._identity()
             role = self._role(pid, identity)
             if row is None:
