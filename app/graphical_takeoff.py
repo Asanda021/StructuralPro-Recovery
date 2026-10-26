@@ -1185,8 +1185,31 @@ class GraphicalTakeoffDialog(QDialog):
                         raise RuntimeError('محتوای نقشه تغییر کرده است.')
                     if document['revision'] and self.ifc_revision.text().strip()!=document['revision']:
                         raise RuntimeError('Revision IFC تغییر کرده است.')
-            dialog=ContextualTakeoffDialog(self.app_service,pid,self,
-                                           context_guard=guard,**document)
+            floor=self.polygon_floor.text().strip()
+            member=self.polygon_member.text().strip()
+            floors={x.get("id") for x in project.get("floors",[]) or []}
+            members={x.get("id"):x.get("floor_id") for x in project.get("members",[]) or []}
+            if floor not in floors:floor=""
+            if member not in members or (floor and members[member]!=floor):
+                member=""
+            if document.get("global_id"):
+                verified=getattr(self,"_verified_project_selection",None)
+                if verified is not None:
+                    try:
+                        self._check_live_four_way_context(verified)
+                        result=verified.resolve(origin="2d",identifier=document["global_id"],
+                            source_sha256=document["document_sha256"],revision=document["revision"])
+                        if result.status=="linked" and len(result.member_ids)==1:
+                            candidate=result.member_ids[0]
+                            if candidate in members:
+                                member=candidate
+                                floor=members[candidate] or ""
+                    except (RuntimeError,ValueError,PermissionError):
+                        # Stale review never preselects a different member.
+                        member=""
+            dialog=ContextualTakeoffDialog(
+                self.app_service,pid,self,floor_id=floor,member_id=member,
+                context_guard=guard,**document)
             dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
             self._p6_takeoff_wizard=dialog
             dialog.show()
