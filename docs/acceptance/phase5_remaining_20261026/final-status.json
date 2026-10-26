@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "project": "StructuralPro",
+  "roadmap_version": "1.5",
+  "roadmap_phase_count": 8,
+  "phase": 5,
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "pr_phase5_p1_3": 26,
+  "pr_phase5_remaining": 27,
+  "branch": "feature/phase5-remaining-e2-a1-unified-20261026",
+  "technical_status": "COMPLETE_IN_VERIFIED_SCOPE",
+  "formal_acceptance": "BLOCKED",
+  "code_tested_commit": "960e1ffad2b0ae167b9494bcb93d5b5c80a34882",
+  "regression": {
+    "run_id": 40305809696,
+    "conclusion": "success",
+    "tests_executed": 7935,
+    "passed": 7930,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "duration_seconds": 655.29,
+    "excluded_policy_modules": 16,
+    "excluded_status": "BLOCKED_NOT_TESTED",
+    "excluded_origin": "inherited workflow restrictions from earlier branch"
+  },
+  "windows_targeted": {
+    "run_id": 40305568570,
+    "passed": 20,
+    "failed": 0
+  },
+  "linux_targeted": {
+    "run_id": 40305568570,
+    "passed": 42,
+    "skipped": 1,
+    "failed": 0
+  },
+  "deliverables": {
+    "P5-1": "complete_linux_scope",
+    "P5-2": "complete_linux_scope",
+    "P5-3": "technical_linux_windows_verified_formal_approval_pending",
+    "E2_session": "backend_complete_UI_restore_phase6",
+    "A1_AI_license_integrity": "fail_closed_complete_real_license_evidence_missing",
+    "unified_windows": "canonical_profile_and_offline_installer_path_implemented_not_built"
+  },
+  "backups": {
+    "source_commit": "293bc691c7696f9d3f670657276472b47af89a4f",
+    "github_run_id": 40305857251,
+    "drive_file_id": "1ytLle9DSIw42ODX-iNMv9Z0cKXuTej5f",
+    "source_zip_sha256": "5e6fa89acd50e29b2643feae3710f7e3bbec238402432faa958130fe5878fa85",
+    "data_backup_drive_file_id": "1TMm1YgEfugGXh1Pc0CrwFIrpMcjNAVbu",
+    "data_backup_age": "prior_to_latest_P5-3"
+  },
+  "gates": {
+    "actual_model_license_and_quantizer_redistribution": "BLOCKED_EXTERNAL",
+    "runtime_DLL_legal_review": "BLOCKED_EXTERNAL",
+    "owner_merge_release_permission": "PENDING",
+    "real_installer_and_office_acceptance": "NOT_RUN_OWNER_GATED",
+    "inherited_workflow_policy_conflict": "16_MODULES_BLOCKED"
+  },
+  "prohibitions": {
+    "merge": true,
+    "release": true,
+    "exe_creation": true,
+    "force_push": true,
+    "main_change": true
+  },
+  "phase_status": {
+    "1": "preserved",
+    "2": "preserved",
+    "3": "preserved",
+    "4": "PARTIAL",
+    "5": "technical_complete_acceptance_blocked",
+    "6": "not_started_in_this_mission",
+    "7": "not_started_in_this_mission",
+    "8": "not_started_in_this_mission"
+  }
+}
