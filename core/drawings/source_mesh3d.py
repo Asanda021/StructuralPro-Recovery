@@ -137,6 +137,9 @@ class VerifiedScene3D:
         self.zoom = 1.0
         self.pan_x = 0.0
         self.pan_y = 0.0
+        self.focus_storey_id = None
+        self.focus_center = self.center
+        self.focus_span = self.span
         self.hidden_storeys = set()
         self.hidden_types = set()
         self.section_z = None
@@ -173,6 +176,27 @@ class VerifiedScene3D:
             raise ValueError("ضریب بزرگ‌نمایی باید مثبت باشد.")
         self.zoom = max(0.1, min(40.0, self.zoom*change))
 
+    def fit_storey(self, storey_id=None):
+        """Fit documented vertices only; choosing a floor never moves geometry."""
+        if storey_id is not None and storey_id not in self.storeys:
+            raise ValueError("طبقه انتخابی در IFC موجود نیست.")
+        if storey_id is None:
+            target_center, target_span = self.center, self.span
+        else:
+            vertices = [v for mesh in self.meshes if mesh.storey_id == storey_id
+                        for v in mesh.vertices]
+            if not vertices:
+                raise ValueError("طبقه انتخابی فاقد هندسه معتبر است.")
+            target_center = tuple((min(p[i] for p in vertices) + max(p[i] for p in vertices)) / 2
+                                  for i in range(3))
+            target_span = max(max(p[i] for p in vertices) - min(p[i] for p in vertices)
+                              for i in range(3))
+        self.focus_storey_id = storey_id
+        self.focus_center = target_center
+        self.focus_span = max(target_span, 1e-6)
+        self.zoom = 1.0
+        self.pan_x = self.pan_y = 0.0
+
     def reset_view(self):
         self.yaw = math.radians(35)
         self.pitch = math.radians(24)
@@ -180,12 +204,12 @@ class VerifiedScene3D:
         self.pan_x = self.pan_y = 0.0
 
     def _project(self, xyz, width: int, height: int):
-        x, y, z = (xyz[i]-self.center[i] for i in range(3))
+        x, y, z = (xyz[i]-self.focus_center[i] for i in range(3))
         c, s = math.cos(self.yaw), math.sin(self.yaw)
         u, v = c*x+s*y, -s*x+c*y
         h = math.sin(self.pitch)*v - math.cos(self.pitch)*z
         depth = math.cos(self.pitch)*v + math.sin(self.pitch)*z
-        scale = 0.79*min(width, height)/max(self.span, 1e-6)*self.zoom
+        scale = 0.79*min(width, height)/max(self.focus_span, 1e-6)*self.zoom
         return ((width/2+u*scale+self.pan_x, height/2+h*scale+self.pan_y), depth)
 
     def validate_source(self):
