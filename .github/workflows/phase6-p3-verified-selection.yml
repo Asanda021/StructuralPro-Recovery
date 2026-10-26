@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 12
     env:
       QT_QPA_PLATFORM: ${{ matrix.qpa }}
-      STRUCTURALPRO_P6_P3_SCREENSHOT_DIR: ${{ runner.os == 'Windows' && 'phase6-p3-evidence/windows' || '' }}
+      STRUCTURALPRO_P6_P3_SCREENSHOT_DIR: ${{ matrix.qpa == 'windows' && 'phase6-p3-evidence/windows' || '' }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
