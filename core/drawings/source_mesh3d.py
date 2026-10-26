@@ -128,6 +128,26 @@ class VerifiedScene3D:
         self.zoom = 1.0
         self.pan_x = 0.0
         self.pan_y = 0.0
+        self.hidden_storeys = set()
+        self.hidden_types = set()
+        self.section_z = None
+
+    def set_section(self, z=None):
+        self.section_z = None if z is None else _finite_number(z)
+
+    def _clip_triangle(self, vertices):
+        if self.section_z is None:
+            return [vertices]
+        polygon = []
+        for a, b in zip(vertices, vertices[1:] + vertices[:1]):
+            inside_a, inside_b = a[2] <= self.section_z, b[2] <= self.section_z
+            if inside_a:
+                polygon.append(a)
+            if inside_a != inside_b:
+                t = (self.section_z-a[2])/(b[2]-a[2])
+                polygon.append(tuple(a[i]+t*(b[i]-a[i]) for i in range(3)))
+        return [(polygon[0], polygon[i], polygon[i+1])
+                for i in range(1, len(polygon)-1)]
 
     def orbit(self, delta_yaw: float, delta_pitch: float):
         dy, dp = _finite_number(delta_yaw), _finite_number(delta_pitch)
@@ -159,6 +179,14 @@ class VerifiedScene3D:
         scale = 0.79*min(width, height)/max(self.span, 1e-6)*self.zoom
         return ((width/2+u*scale+self.pan_x, height/2+h*scale+self.pan_y), depth)
 
+    def validate_source(self):
+        try:
+            actual = hashlib.sha256(Path(self.source_path).read_bytes()).hexdigest()
+        except OSError as exc:
+            raise ValueError('فایل منبع تغییر کرده یا دیگر در دسترس نیست.') from exc
+        if actual != self.source_sha256:
+            raise ValueError('منبع IFC تغییر کرده و نمایش متوقف شد.')
+
     def visible_faces(self, width: int, height: int, *,
                       storey_id: str | None = None, selected_id: str | None = None):
         if width < 1 or height < 1:
@@ -169,15 +197,19 @@ class VerifiedScene3D:
             raise ValueError("عضو انتخابی در مدل واقعی وجود ندارد.")
         output = []
         for mesh in self.meshes:
+            if mesh.storey_id in self.hidden_storeys or mesh.ifc_type in self.hidden_types:
+                continue
             if storey_id is not None and mesh.storey_id != storey_id:
                 continue
             if selected_id is not None and mesh.global_id != selected_id:
                 continue
-            transformed = [self._project(p, width, height) for p in mesh.vertices]
             for indexes in mesh.faces:
-                output.append(ProjectedFace(mesh.global_id, mesh.ifc_type, mesh.storey_id,
-                       tuple(transformed[i][0] for i in indexes),
-                       sum(transformed[i][1] for i in indexes)/3))
+                vertices = tuple(mesh.vertices[i] for i in indexes)
+                for triangle in self._clip_triangle(vertices):
+                    transformed = [self._project(p, width, height) for p in triangle]
+                    output.append(ProjectedFace(mesh.global_id, mesh.ifc_type, mesh.storey_id,
+                           tuple(p[0] for p in transformed),
+                           sum(p[1] for p in transformed)/3))
         return tuple(sorted(output, key=lambda face: face.depth))
 
     @staticmethod
@@ -192,9 +224,11 @@ class VerifiedScene3D:
         return not ((one < 0 or two < 0 or three < 0) and
                     (one > 0 or two > 0 or three > 0))
 
-    def pick(self, x: float, y: float, width: int, height: int, *, storey_id=None):
+    def pick(self, x: float, y: float, width: int, height: int, *, storey_id=None,
+             selected_id=None):
         px, py = _finite_number(x), _finite_number(y)
-        for face in reversed(self.visible_faces(width,height,storey_id=storey_id)):
+        for face in reversed(self.visible_faces(width,height,storey_id=storey_id,
+                                               selected_id=selected_id)):
             if self._inside(px,py,face.points):
                 return face.global_id
         return None

@@ -12,6 +12,7 @@ on:
       - tests/test_phase6_p1_shell.py
       - tests/test_phase6_p2_source_mesh3d.py
       - tests/test_phase6_p2_real_ifc_3d.py
+      - tests/test_phase6_p2_visibility_pick.py
   workflow_dispatch:
 concurrency:
   group: phase6-p2-${{ github.ref }}
@@ -42,6 +43,7 @@ jobs:
           python -m compileall -q core/drawings/source_mesh3d.py app/ifc_3d_viewport.py app/graphical_takeoff.py
           python scripts/run_offline_tests.py -q --maxfail=1 --junitxml=phase6-p2-linux.xml \
             tests/test_phase6_p2_source_mesh3d.py \
+            tests/test_phase6_p2_visibility_pick.py \
             tests/test_phase6_p2_real_ifc_3d.py \
             tests/test_ifc_mesh_viewer.py \
             tests/test_phase6_p1_shell.py
@@ -73,7 +75,7 @@ jobs:
         shell: pwsh
         run: |
           python -m compileall -q core/drawings/source_mesh3d.py app/ifc_3d_viewport.py app/graphical_takeoff.py
-          python -m pytest -q --maxfail=1 --junitxml=phase6-p2-windows.xml tests/test_phase6_p2_source_mesh3d.py tests/test_phase6_p2_real_ifc_3d.py tests/test_ifc_mesh_viewer.py tests/test_phase6_p1_shell.py
+          python -m pytest -q --maxfail=1 --junitxml=phase6-p2-windows.xml tests/test_phase6_p2_source_mesh3d.py tests/test_phase6_p2_visibility_pick.py tests/test_phase6_p2_real_ifc_3d.py tests/test_ifc_mesh_viewer.py tests/test_phase6_p1_shell.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

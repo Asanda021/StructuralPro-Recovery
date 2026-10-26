@@ -5,11 +5,11 @@ member selection. It does not generate, calculate, or register takeoff quantitie
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QColor, QBrush, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton,
-    QVBoxLayout, QWidget,
+    QVBoxLayout, QWidget, QDoubleSpinBox,
 )
 from PySide6.QtCore import QPointF
 
@@ -34,12 +34,18 @@ class IFC3DCanvas(QWidget):
         self.storey_id = None
         self.selected_id = None
         self.isolate_selection = False
+        self.transparent = False
         self._drag_origin = None
         self._drag_button = None
         self._dragged = False
         self.setObjectName("VerifiedIFC3DCanvas")
         self.setMinimumSize(460, 320)
         self.setMouseTracking(True)
+        self.source_error = None
+        self._source_timer = QTimer(self)
+        self._source_timer.setInterval(1000)
+        self._source_timer.timeout.connect(self.check_source)
+        self._source_timer.start()
         self.setAccessibleName("نمای سه‌بعدی واقعی IFC با چرخش، جابه‌جایی و بزرگ‌نمایی")
 
     def choose_storey(self, storey_id):
@@ -49,6 +55,7 @@ class IFC3DCanvas(QWidget):
         self.update()
 
     def choose_member(self, global_id):
+        self.scene.validate_source()
         if global_id is not None and global_id not in {m.global_id for m in self.scene.meshes}:
             raise ValueError("عضو انتخابی در IFC موجود نیست.")
         self.selected_id = global_id
@@ -59,18 +66,34 @@ class IFC3DCanvas(QWidget):
         self.update()
 
     def _faces(self):
+        if self.source_error:
+            return ()
         return self.scene.visible_faces(
             self.width(), self.height(), storey_id=self.storey_id,
             selected_id=self.selected_id if self.isolate_selection else None)
+
+    def check_source(self):
+        try:
+            self.scene.validate_source()
+        except ValueError as exc:
+            self.source_error = str(exc)
+            self.selected_id = None
+            self._source_timer.stop()
+            self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.fillRect(self.rect(), QColor("#101f34"))
+        if self.source_error:
+            painter.setPen(QColor('white'))
+            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self.source_error)
         for face in self._faces():
             highlighted = face.global_id == self.selected_id
             fill = QColor("#efa849" if highlighted else
                           _COLORS.get(face.ifc_type.upper(), "#849bb8"))
+            if self.transparent:
+                fill.setAlpha(90)
             points = QPolygonF([QPointF(x, y) for x, y in face.points])
             painter.setPen(QPen(QColor("#f7d1a1" if highlighted else "#223b58"), 1))
             painter.setBrush(QBrush(fill))
@@ -109,9 +132,15 @@ class IFC3DCanvas(QWidget):
         event.accept()
 
     def mouseReleaseEvent(self, event):
+        self.check_source()
+        if self.source_error:
+            self._drag_origin = None
+            event.accept()
+            return
         if self._drag_origin is not None and self._drag_button == Qt.MouseButton.LeftButton and not self._dragged:
             gid = self.scene.pick(event.position().x(), event.position().y(),
-                                  self.width(), self.height(), storey_id=self.storey_id)
+                                  self.width(), self.height(), storey_id=self.storey_id,
+                                  selected_id=self.selected_id if self.isolate_selection else None)
             if gid:
                 self.choose_member(gid)
                 self.memberSelected.emit(gid)
@@ -149,6 +178,30 @@ class IFC3DDialog(QDialog):
         outer.addLayout(bar)
         self.canvas = IFC3DCanvas(scene, self)
         outer.addWidget(self.canvas, 1)
+        tools = QHBoxLayout()
+        self.section = QCheckBox('برش افقی')
+        self.section_height = QDoubleSpinBox()
+        self.section_height.setObjectName('IFC3DSectionHeight')
+        self.section_height.setRange(-1e12, 1e12)
+        self.section_height.setDecimals(4)
+        self.section_height.setValue(scene.center[2])
+        tools.addWidget(self.section)
+        tools.addWidget(self.section_height)
+        self.transparency = QCheckBox('نمای شفاف')
+        tools.addWidget(self.transparency)
+        self.type_filter = QComboBox()
+        self.type_filter.addItem('تمام انواع مستند', None)
+        for kind in sorted({m.ifc_type for m in scene.meshes}):
+            self.type_filter.addItem(kind, kind)
+        tools.addWidget(self.type_filter)
+        self.hide_floor = QCheckBox('پنهان‌کردن طبقه انتخابی')
+        tools.addWidget(self.hide_floor)
+        outer.addLayout(tools)
+        self.section.toggled.connect(self._section)
+        self.section_height.valueChanged.connect(self._section)
+        self.transparency.toggled.connect(self._transparency)
+        self.type_filter.currentIndexChanged.connect(self._type_filter)
+        self.hide_floor.toggled.connect(self._hide_floor)
         status = QLabel(
             f"IFC واقعی | {len(scene.meshes)} عضو | {len(scene.storeys)} طبقه دارای هندسه | "
             f"{len(scene.omitted_ids)} عضو نمایش‌داده‌نشده | Revision: {scene.revision}\n"
@@ -164,4 +217,27 @@ class IFC3DDialog(QDialog):
 
     def _isolate(self, on):
         self.canvas.isolate_selection = bool(on)
+        self.canvas.update()
+
+    def _section(self, *_):
+        self.scene.set_section(self.section_height.value() if self.section.isChecked() else None)
+        self.canvas.update()
+
+    def _transparency(self, on):
+        self.canvas.transparent = bool(on)
+        self.canvas.update()
+
+    def _type_filter(self, *_):
+        selected = self.type_filter.currentData()
+        self.scene.hidden_types = {m.ifc_type for m in self.scene.meshes
+                                   if selected is not None and m.ifc_type != selected}
+        self.canvas.update()
+
+    def _hide_floor(self, on):
+        floor = self.storey.currentData()
+        if floor is not None:
+            if on:
+                self.scene.hidden_storeys.add(floor)
+            else:
+                self.scene.hidden_storeys.discard(floor)
         self.canvas.update()
