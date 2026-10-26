@@ -5,9 +5,9 @@ No BOQ line, member or quantity is created by this widget.
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QSignalBlocker
+from PySide6.QtCore import Qt, Signal, QSignalBlocker, QItemSelectionModel
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTreeWidget, QAbstractItemView,
     QTreeWidgetItem, QTableWidget, QTableWidgetItem, QHeaderView,
 )
 
@@ -28,6 +28,7 @@ class VerifiedSelectionPanel(QWidget):
         views = QHBoxLayout()
         self.members = QTreeWidget()
         self.members.setObjectName('VerifiedMemberTree')
+        self.members.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.members.setHeaderLabels(['عضو موجود در پروژه', 'وضعیت ارتباط'])
         for member in sorted(index.allowed['member_id']):
             linked = any(item.member_id == member for item in index.links)
@@ -37,6 +38,8 @@ class VerifiedSelectionPanel(QWidget):
         views.addWidget(self.members)
         self.boq = QTableWidget()
         self.boq.setObjectName('VerifiedBOQSelection')
+        self.boq.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.boq.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
         self.boq.setColumnCount(2)
         self.boq.setHorizontalHeaderLabels(['ردیف واقعی BOQ', 'وضعیت ارتباط'])
         all_boq = sorted(index.allowed['boq_row_id'])
@@ -108,7 +111,10 @@ class VerifiedSelectionPanel(QWidget):
                 boq_set = set(result.boq_row_ids)
                 for row in range(self.boq.rowCount()):
                     if self.boq.item(row,0).text() in boq_set:
-                        self.boq.selectRow(row)
+                        self.boq.selectionModel().select(
+                            self.boq.model().index(row, 0),
+                            QItemSelectionModel.SelectionFlag.Select |
+                            QItemSelectionModel.SelectionFlag.Rows)
         if result.status != 'linked':
             self.detail.setText('عضو در IFC وجود دارد، اما پیوند تأییدشده به عضو/BOQ یافت نشد.')
         else:
