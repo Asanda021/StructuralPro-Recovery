@@ -23,6 +23,7 @@ def test_shell_source_is_accessible_and_has_no_new_project_data_path():
     assert "QKeySequence('Ctrl+1')" in main
     assert "QKeySequence('Ctrl+2')" in main
     assert 'glass_enabled' in prefs and 'OPAQUE_GLASS_FALLBACK' in prefs
+    assert '_preferred_persian_font' in prefs and 'structuralproFontFamily' in prefs
     assert 'service.store.save' not in shell
 
 
@@ -59,6 +60,7 @@ def inspect(app):
         dest.mkdir(parents=True, exist_ok=True)
         app.processEvents()
         assert window.grab().save(str(dest / ('p6-p1-' + sys.platform + '-light.png')))
+    assert app.property('structuralproFontFamily')
     initial_theme = app.property('structuralproTheme')
     theme.click()
     assert app.property('structuralproTheme') != initial_theme
