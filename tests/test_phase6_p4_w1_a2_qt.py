@@ -28,6 +28,13 @@ def test_real_wizard_all_buttons_missing_inputs_offline_cancel_and_commit(tmp_pa
     QTest.mouseClick(w.preview_button,Qt.MouseButton.LeftButton)
     assert w.commit_button.isEnabled()
     assert svc.store.current_digest("P")==before
+    import os
+    from pathlib import Path
+    folder=os.environ.get("STRUCTURALPRO_P6_P4_SCREENSHOT_DIR")
+    if folder:
+        target=Path(folder);target.mkdir(parents=True,exist_ok=True)
+        app.processEvents()
+        assert w.grab().save(str(target/"p6-p4-w1-ready-preview.png"))
     w.query.setText("برای دال مقدار بتن چقدر است؟")
     QTest.mouseClick(w.answer_button,Qt.MouseButton.LeftButton)
     assert "عدد" in w.answer_text.text()
@@ -46,6 +53,16 @@ def test_real_wizard_all_buttons_missing_inputs_offline_cancel_and_commit(tmp_pa
     QTest.mouseClick(w.commit_button,Qt.MouseButton.LeftButton)
     assert len(svc.open_project("P").get("takeoff_assemblies",[]))==1
     assert not w.commit_button.isEnabled()
+    w.refresh_boq()
+    assert w.boq_select.count()>1
+    w.boq_select.setCurrentIndex(1)
+    w.offline_enabled.setChecked(True)
+    w.query.setText("مقدار ردیف ثبت‌شده چقدر است؟")
+    QTest.mouseClick(w.answer_button,Qt.MouseButton.LeftButton)
+    assert "مقدار دقیق ثبت‌شده" in w.answer_text.text()
+    if folder:
+        app.processEvents()
+        assert w.grab().save(str(target/"p6-p4-a2-authoritative-boq.png"))
     w.close();app.processEvents();svc.store.close()
 
 
