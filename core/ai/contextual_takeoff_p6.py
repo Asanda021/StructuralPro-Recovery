@@ -28,6 +28,31 @@ COMPANIONS = {
     "concrete_column": ("rebar",),
     "false_ceiling": ("ceiling_paint",),
 }
+# Checklist items are explicitly non-numeric suggestions, never components.
+REVIEW_QUESTIONS = {
+    "joist_foam_roof_assembly": (
+        "جهت تیرچه‌ها و نقشه چیدمان معتبر کدام است؟",
+        "تعداد واقعی تیرچه‌ها و یونولیت‌ها در کل گروه ثبت شده است؟",
+        "مش یا میلگرد حرارتی با قطر، طول، وزن و مرجع معتبر موجود است؟",
+        "بتن رویه از بتن کلاف، ناحیه توپر و جان درجا جدا شده است؟",
+        "بازشوها، تکیه‌گاه‌ها و اجزای مشترک دوباره‌شماری نشده‌اند؟"),
+    "joist_block_roof_assembly": (
+        "جهت تیرچه و تعداد واقعی از نقشه اجرایی تأیید شده است؟",
+        "تعداد و ابعاد واقعی بلوک‌های سقف از دیتایل معلوم است؟",
+        "میلگرد حرارتی/مش و کلاف عرضی مرجع جداگانه دارند؟",
+        "بتن رویه با بتن تیرچه‌های پیش‌ساخته یا کلاف جمع نشده است؟"),
+    "block_wall": (
+        "مساحت و محل تک‌تک بازشوها با مدرک قابل ردیابی کسر شده‌اند؟",
+        "ابعاد بلوک، ضخامت بند و نسبت سیمان و ماسه صریح‌اند؟",
+        "پوشش گچ‌وخاک، سفیدکاری، کاشی و رنگ عملیات جداگانه‌اند؟"),
+    "concrete_slab": (
+        "ضخامت دال و کسور بازشوها از منبع معتبر مشخص‌اند؟",
+        "آرماتور و قالب‌بندی از دیتایل مستقل محاسبه می‌شوند؟",
+        "مالکیت مشترک سقف با متره‌های تیرچه و هالوکور کنترل شده است؟"),
+    "floor_tile": ("مدل سرامیک و محدوده خالص کار تأیید شده‌اند؟",
+                   "قرنیز، پرت خرید و ملات نباید خودکار فرض شوند."),
+}
+
 SPECIALIST_ONLY = {
     "waffle_one_way": "دیتایل سقف وافل یک‌طرفه",
     "waffle_two_way": "دیتایل سقف وافل دوطرفه",
@@ -65,6 +90,7 @@ class ContextualPreview:
     project_digest: str
     ready_to_review: bool
     financial_approved: bool = False
+    review_questions: tuple[str,...] = ()
 
 
 class GovernedTakeoffAssistant:
@@ -226,7 +252,8 @@ class GovernedTakeoffAssistant:
         ready=bool(not missing and not blockers and components)
         self._snapshot = (digest, code, deepcopy(values), source) if ready else None
         return ContextualPreview(code,template.title_fa,missing,components,companions,
-                                 tuple(blockers),digest,ready)
+                                 tuple(blockers),digest,ready,
+                                 review_questions=REVIEW_QUESTIONS.get(code,()))
 
     def exact_boq_row(self, row_index, *, expected_digest):
         """Read one persisted, unambiguous row using the existing Decimal boundary."""
@@ -264,6 +291,7 @@ class GovernedTakeoffAssistant:
             items="، ".join(x["title"] for x in p.companions) or "مورد وابسته مشخص نشده است"
             msg=("گام بعدی: بررسی ورودی‌های مفقود: "+missing+
                  ". اقلام مرتبط برای بازبینی مستقل: "+items+
+                 ". چک‌لیست کارگاهی: "+"؛ ".join(p.review_questions)+
                  ". پیشنهادها مقدار یا قیمت ندارند؛ ثبت تنها پس از تأیید مجاز است.")
         else:
             msg="برای پیشنهاد دقیق، خانواده متره و زمینه معتبر عضو و طبقه را انتخاب کنید."
