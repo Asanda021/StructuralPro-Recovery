@@ -47,6 +47,7 @@ def verified_state(scene, state):
 
 def apply_state(scene, canvas, state):
     state = verified_state(scene, state)
+    scene.fit_storey(state['storey_id'])
     scene.yaw, scene.pitch, scene.zoom = state["yaw"], state["pitch"], state["zoom"]
     scene.pan_x, scene.pan_y = state["pan_x"], state["pan_y"]
     scene.set_section(state["section_z"])
