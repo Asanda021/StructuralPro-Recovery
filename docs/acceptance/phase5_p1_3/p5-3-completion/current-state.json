@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-26",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "pull_request": 26,
+  "branch": "feature/phase5-priorities1-3-data-safety-20261025",
+  "tested_product_commit": "93f936577b8dcd315410d8d6b283cb9c7aeede48",
+  "tested_product_tree": "572dd75aa51db405a7e07d595165faa4f65bc473",
+  "comprehensive_pre_fix": {
+    "commit": "a7e432b6cce966b63c498da6a7dfb683cf0fbd64",
+    "tree": "6ccc88fd4340c18798d722466a496896525d44da",
+    "passed": 7904,
+    "failed_product": 7,
+    "blocked_policy": 1,
+    "errors": 0,
+    "skipped_windows": 8,
+    "seconds": 659.64,
+    "junit": "full-final.xml.gz",
+    "uncompressed_sha256": "1a95c5f69943fc2e3564eb06a33c8e27b2de5e06e4509cc82e19c64c7fcf660f",
+    "sha256": "aca35e1f35aee1974962844cf22616e8617a7aafeff8fa9faf1abce970676b23"
+  },
+  "post_fix_affected": {
+    "passed": 39,
+    "failed": 0,
+    "errors": 0,
+    "skipped_windows": 1,
+    "seconds": 2.16,
+    "junit": "post-regression-fix.xml",
+    "sha256": "2a1be58f8d9d401192a980271410d87754374dbeff4de767f7dc4d35e1de06df"
+  },
+  "priorities": {
+    "P5-1": "COMPLETE_NON_WINDOWS",
+    "P5-2": "COMPLETE_NON_WINDOWS",
+    "P5-3": "PARTIAL"
+  },
+  "windows_native": "NOT_VERIFIED",
+  "microsoft_office": "NOT_VERIFIED",
+  "engineering_acceptance": "NOT_RECEIVED",
+  "owner_approval": "NOT_RECEIVED",
+  "phase4_historical_sqlite_actor": "UNRESOLVED",
+  "final_code_backup": "NOT_CREATED; prior verified P5-2 backup predates these P5-3 commits"
+}

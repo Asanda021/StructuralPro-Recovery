@@ -1,0 +1,41 @@
+{
+  "created_at": "2026-10-25T20:03:33.843565Z",
+  "files": [
+    {
+      "path": "project.json",
+      "sha256": "3764447ace74b177c7fbe3fd16465dff7732893b64a3cf87ff4c843d6851f069",
+      "size": 348055
+    },
+    {
+      "path": "sources/01-explicit-site-fixture.txt",
+      "sha256": "3f3456ab3ee0dd6aae074eb02d562c7ebbc0fea3667211b206526392f5acaedf",
+      "size": 341
+    },
+    {
+      "path": "sources/02-factors.json",
+      "sha256": "c62e322cdf400d65d87f51f3eace4e4fa73e65cb69adb91545d180d2996f582f",
+      "size": 210
+    },
+    {
+      "path": "sources/03-synthetic-prices.csv",
+      "sha256": "b4ea8b1516ff2c77b6c849d47e319e0c3f9f42691d126b8936e4084b8d48bb7b",
+      "size": 218
+    },
+    {
+      "path": "sources/04-explicit-planning-fixture.txt",
+      "sha256": "0dd22994baeeee089b949aa8c962ac09bbb6af486058ba2ab075f5417ee60ee6",
+      "size": 397
+    }
+  ],
+  "format": "StructuralProBackup",
+  "health": {
+    "project_validation": "passed"
+  },
+  "producer": "StructuralPro",
+  "project_id": "P",
+  "revision": 326,
+  "revision_status": "committed",
+  "schema_version": 1,
+  "sha256": "3764447ace74b177c7fbe3fd16465dff7732893b64a3cf87ff4c843d6851f069",
+  "version": 2
+}

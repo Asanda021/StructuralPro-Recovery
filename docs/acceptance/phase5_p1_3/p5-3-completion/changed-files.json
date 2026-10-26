@@ -1,0 +1,14 @@
+{
+  "product_commit": "93f936577b8dcd315410d8d6b283cb9c7aeede48",
+  "product_tree": "572dd75aa51db405a7e07d595165faa4f65bc473",
+  "files": {
+    "core/platform/identity.py": "5572c87dbbc2bcaed072e9750c1a26d6da270e7c9cf9260561a1eca13761c6de",
+    "core/projects/store.py": "c71f83b30d14d566d44e84de97a8ff97a02f836b3df323ec31858fe3c3df900e",
+    "core/projects/audit.py": "0012b2a1c5329c57e4c66ce3bf7b7e287ac7a45585ef8ddafeab4af6e52c76d8",
+    "core/platform/application.py": "da36d2aa0d0068d511699b6a43a2f4fc8d62115a2873ae98101c875a0eaa299b",
+    "app/main.py": "f1396e6b5efa0414f97f37d460acd4f5f8b5ac652c23bd50031cdb03a1e67f1c",
+    "tests/test_phase5_p3_trusted_identity_store.py": "bfcf91927b868d155dbab037dad63262c94b68e912eedd4ac675eb6b97e9aa73",
+    "tests/test_phase5_p3_ui_authorization.py": "277ca2357345db7b8bef782ba4495d3e0c1d8ce8ff319fba0da8d99b61210769",
+    "tests/test_phase5_p3_attachment_paths.py": "3d23e1233fbc609fa603416ba060856a0d0d07175060c1aa721c0f2858157e30"
+  }
+}

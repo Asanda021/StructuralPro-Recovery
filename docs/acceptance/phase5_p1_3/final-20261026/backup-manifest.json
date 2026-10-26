@@ -1,0 +1,28 @@
+{
+  "format": "structuralpro-phase5-independent-backup",
+  "version": 1,
+  "created_at_utc": "2026-10-26T03:50:26Z",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "branch": "feature/phase5-priorities1-3-data-safety-20261025",
+  "commit": "7a5175133fda759dd21f48e7b5280c433843e858",
+  "tree": "27076091ae80a825e928fb67e55c0c7128e07866",
+  "tested_product_commit": "10e81309984a794c5452c8fe2baf255566642769",
+  "tested_product_tree": "90584b3c2c5643d7b2703770050b8e1b7ff3651f",
+  "project_id": "P",
+  "schema_version": 1,
+  "active_revision": 326,
+  "revision_rows": 326,
+  "health": "integrity_check_ok_before_packaging",
+  "members": [
+    {
+      "path": "structuralpro-phase5.bundle",
+      "size": 21897722,
+      "sha256": "bb46e0210a12caa7b8e4a0192e09f1630d1e830ebf88968f0973d6d46038b5d3"
+    },
+    {
+      "path": "five-storey.sqlite",
+      "size": 58937344,
+      "sha256": "1712cff0d83d8798ce644e4663ec9464585d47922bba25b6a44abc835a8103cd"
+    }
+  ]
+}

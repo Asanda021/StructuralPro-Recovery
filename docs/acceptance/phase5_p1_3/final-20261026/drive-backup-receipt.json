@@ -1,0 +1,29 @@
+{
+  "status": "VERIFIED",
+  "drive_file_id": "1TMm1YgEfugGXh1Pc0CrwFIrpMcjNAVbu",
+  "drive_url": "https://drive.google.com/file/d/1TMm1YgEfugGXh1Pc0CrwFIrpMcjNAVbu/view?usp=drivesdk",
+  "file_name": "StructuralPro-phase5-p1-3-final-20261026-v2.tar.gz",
+  "size": 28494071,
+  "uploaded_sha256": "43118bb70185dc6b66fc39ae17abd1f78061259fc6f67b434c08f66954559e81",
+  "redownloaded_sha256": "43118bb70185dc6b66fc39ae17abd1f78061259fc6f67b434c08f66954559e81",
+  "bundle_commit": "7a5175133fda759dd21f48e7b5280c433843e858",
+  "bundle_tree": "27076091ae80a825e928fb67e55c0c7128e07866",
+  "git_bundle_verify": "ok",
+  "git_fsck": "ok",
+  "sqlite_integrity": "ok",
+  "project_id": "P",
+  "active_revision": 326,
+  "revision_rows": 326,
+  "restored_tests": {
+    "passed": 19,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_sha256": "0ecf3a3564903f2a63d285ce24548b2cbfba060ef210b83c86717ce2c7946cac",
+    "log_sha256": "475d02ac734095bd429002c77797d143acc887cfe94d33acb9dce1e391b2ad4d"
+  },
+  "superseded_drive_file": {
+    "id": "13Mn1CjnhahHeVC5vJpStIST0cILLD-89",
+    "reason": "Manifest used a display label instead of the actual SQLite project_id; not accepted as a valid backup."
+  }
+}
