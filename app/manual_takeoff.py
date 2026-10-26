@@ -109,13 +109,16 @@ class ManualTakeoffDialog(QDialog):
         self.undo_button = QPushButton("واگرد")
         self.redo_button = QPushButton("تکرار")
         self.beam_detail_button = QPushButton("متره ترکیبی تیر — همراه نقشه")
+        self.contextual_button = QPushButton("دستیار مرحله‌ای متره W1 / A2")
+        self.contextual_button.setObjectName("P6W1ManualGuide")
+        self.contextual_button.setToolTip("پیشنهاد اقلام و ورودی‌های ناقص از قالب موجود، بدون ثبت خودکار")
         self.save_button = QPushButton("ذخیره ردیف‌های محاسبه‌شده در پروژه")
         self.load_saved_button = QPushButton("ویرایش نسخه ذخیره‌شده")
         self.revise_saved_button = QPushButton("ثبت نسخه اصلاح‌شده")
         self.close_button = QPushButton("بستن")
         for index, button in enumerate((self.add_button, self.paste_button, self.edit_button, self.copy_button,
                        self.floor_copy_button, self.delete_button, self.undo_button,
-                       self.redo_button, self.beam_detail_button, self.save_button, self.load_saved_button,
+                       self.redo_button, self.beam_detail_button, self.contextual_button, self.save_button, self.load_saved_button,
                        self.revise_saved_button, self.close_button)):
             actions.addWidget(button,index//4,index%4)
         self.export_xlsx_button = QPushButton('خروجی Excel ریزمتره')
@@ -148,6 +151,7 @@ class ManualTakeoffDialog(QDialog):
         self.undo_button.clicked.connect(self.undo)
         self.redo_button.clicked.connect(self.redo)
         self.beam_detail_button.clicked.connect(self.open_beam_detail)
+        self.contextual_button.clicked.connect(self.open_contextual_takeoff)
         self.save_button.clicked.connect(self.save_pending)
         self.load_saved_button.clicked.connect(self.edit_saved_selected)
         self.revise_saved_button.clicked.connect(self.apply_saved_revision)
@@ -156,6 +160,35 @@ class ManualTakeoffDialog(QDialog):
         self.refresh_saved_rows()
         from app.manual_formula_controls import attach
         attach(self,root)
+
+    def open_contextual_takeoff(self):
+        """Open existing project scope with no fabricated member or dimensions."""
+        try:
+            from app.contextual_takeoff_p6 import ContextualTakeoffDialog
+            pid=self.project_id.text().strip()
+            if not isinstance(self.service.open_project(pid),dict):
+                raise KeyError('پروژه ذخیره‌شده معتبر نیست.')
+            floor=self.floor_id.text().strip()
+            if floor and not any(item.get('id')==floor
+                                 for item in self.service.open_project(pid).get('floors',[])):
+                raise ValueError('طبقه باید در پروژه ثبت شده باشد.')
+            member=self.element_label.text().strip()
+            actual={m.get('id') for m in self.service.open_project(pid).get('members',[])}
+            if member not in actual:
+                member=''  # Unverified free text may never become a MemberID.
+            def guard():
+                if self.project_id.text().strip()!=pid:
+                    raise RuntimeError('شناسه پروژه در فرم دستی تغییر کرده است.')
+            wizard=ContextualTakeoffDialog(
+                self.service,pid,self,floor_id=floor,member_id=member,
+                context_guard=guard)
+            wizard.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            wizard.show()
+            self._p6_wizard=wizard
+            return wizard
+        except (RuntimeError,ValueError,KeyError) as exc:
+            self.status.setText('دستیار باز نشد: '+str(exc))
+            return None
 
     def open_beam_detail(self):
         """The same reviewed beam panel works with and without a drawing."""
