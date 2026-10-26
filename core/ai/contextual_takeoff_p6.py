@@ -127,6 +127,50 @@ class GovernedTakeoffAssistant:
         self.disabled = False
         self._snapshot = None
 
+    def _ifc_identity_blocker(self, project):
+        """A selected GlobalID is visual context, never proof of member ownership."""
+        if not self.global_id:
+            return ()
+        if not self.member_id or not self.revision or not self.document_path:
+            return ("عضو IFC بدون هویت تأییدشده و Revision صریح قابل ثبت نیست.",)
+        from core.drawings.ifc_pipeline import _binding
+        matches = [
+            r for r in (project.get("ifc_identity_reviews") or [])
+            if isinstance(r,dict) and r.get("global_id")==self.global_id
+            and r.get("status")=="approved" and
+            isinstance(r.get("document"),dict)
+            and r["document"].get("source_sha256")==self.document_sha256
+            and r["document"].get("revision")==self.revision
+        ]
+        valid=[]
+        for review in matches:
+            try:
+                if Path(review["document"]["source_path"]).resolve() != Path(self.document_path).resolve():
+                    continue
+                bound, entity = _binding(project, review.get("proposal_id"))
+                if bound!=review or entity.get("global_id")!=self.global_id:
+                    continue
+                if review.get("member_id")!=self.member_id:
+                    continue
+                proof=review.get("review") or {}
+                reviewer=proof.get("user_id")
+                author=next((p.get("author") for p in project.get("ifc_identity_proposals",[])
+                             if p.get("id")==review.get("proposal_id")),None)
+                if not reviewer or reviewer==author:
+                    continue
+                user=self.service.collaboration.users.get(reviewer)
+                if user is None or not self.service.collaboration.roles[user.role].allows("review"):
+                    continue
+                proof_path=proof.get("evidence_path")
+                if not proof_path or _digest_file(proof_path)!=proof.get("evidence_sha256"):
+                    continue
+                valid.append(review)
+            except (KeyError,ValueError,RuntimeError,PermissionError,OSError,TypeError):
+                continue
+        if len(valid)!=1:
+            return ("شناسه IFC باید دقیقاً یک تطبیق مستقل و معتبر با عضو و طبقه انتخابی داشته باشد.",)
+        return ()
+
     def _existing_conflicts(self, project, code, source):
         clashes=[]
         for assembly in project.get("takeoff_assemblies",[]) or []:
@@ -173,6 +217,7 @@ class GovernedTakeoffAssistant:
                         status="پیشنهاد بررسی، بدون مقدار") for c in COMPANIONS.get(code,()))
         source=str(measurement_source or "").strip()
         blockers=list(self._existing_conflicts(project,code,source))
+        blockers.extend(self._ifc_identity_blocker(project))
         if not self.floor_id: blockers.append("طبقه یا ناحیه واقعی هنوز انتخاب نشده است.")
         if not source: blockers.append("شناسه برداشت/محل صریح برای ثبت لازم است.")
         if not self.member_id: blockers.append("عضو واقعی انتخاب نشده؛ مالکیت عضو برای پیشنهاد قطعی نیست.")
@@ -218,6 +263,8 @@ class GovernedTakeoffAssistant:
         user=collab.users.get(reviewer) if collab is not None else None
         if user is None or not collab.roles[user.role].allows("approve"):
             raise PermissionError("تأییدکننده باید کاربر ثبت‌شده با مجوز approve باشد.")
+        if self._ifc_identity_blocker(project):
+            raise PermissionError("تطبیق مستقل IFC با عضو ثبت‌شده معتبر نیست.")
         check=self.preview(code,inputs,measurement_source=measurement_source)
         if not check.ready_to_review:
             raise ValueError("پیشنهاد فاقد قابلیت ثبت امن است.")
