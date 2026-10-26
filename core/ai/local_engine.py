@@ -32,10 +32,14 @@ class AIResponse:
 class LocalAIEngine:
     def __init__(self, model_dir=None, model_path=None, n_ctx=4096, edition=None):
         self.bundle_dir = Path(__file__).resolve().parents[2]
-        self.edition = str(edition or os.getenv("STRUCTURALPRO_EDITION", "")).strip().lower()
-        if not self.edition:
-            packaged = packaged_edition(self.bundle_dir, fail_closed=False)
-            self.edition = packaged.value if packaged else "unified"
+        packaged = packaged_edition(self.bundle_dir, fail_closed=False)
+        if packaged is not None and packaged.value == "unified":
+            # Canonical shipping marker cannot be weakened via UI/env strings.
+            self.edition = "unified"
+        else:
+            self.edition = str(edition or os.getenv("STRUCTURALPRO_EDITION", "")).strip().lower()
+            if not self.edition:
+                self.edition = packaged.value if packaged else "unified"
         self.model_dir = Path(model_dir or os.getenv("STRUCTURALPRO_AI_MODEL_DIR") or self.bundle_dir / "models")
         self.runtime_dir = Path(os.getenv("STRUCTURALPRO_AI_RUNTIME_DIR") or self.bundle_dir / "ai_runtime")
         self.model_dir.mkdir(parents=True, exist_ok=True)
