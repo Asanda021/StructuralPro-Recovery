@@ -214,6 +214,10 @@ class GovernedTakeoffAssistant:
         if not self.member_id or not self.floor_id:
             raise ValueError("مالک و طبقه واقعی برای ثبت الزامی است.")
         reviewer=_text(approver,"تأییدکننده")
+        collab=getattr(self.service,"collaboration",None)
+        user=collab.users.get(reviewer) if collab is not None else None
+        if user is None or not collab.roles[user.role].allows("approve"):
+            raise PermissionError("تأییدکننده باید کاربر ثبت‌شده با مجوز approve باشد.")
         check=self.preview(code,inputs,measurement_source=measurement_source)
         if not check.ready_to_review:
             raise ValueError("پیشنهاد فاقد قابلیت ثبت امن است.")
