@@ -5,6 +5,9 @@ on:
       - feature/phase5-remaining-e2-a1-unified-20261026
     paths:
       - .github/workflows/phase5-remaining-full-regression.yml
+      - core/projects/site_resources.py
+      - tests/test_phase4_site_resources.py
+      - tests/test_phase4_site_office.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -33,6 +36,20 @@ jobs:
       - name: Install offline engineering suite dependencies
         run: |
           python -m pip install -q -r requirements.txt 'ifcopenshell>=0.8'
+      - name: Phase 4 P4-P6 Qt and operational acceptance on current HEAD
+        shell: bash
+        run: |
+          python scripts/run_offline_tests.py -q \
+            tests/test_phase4_site_workspace.py \
+            tests/test_phase4_site_acceptance.py \
+            tests/test_phase4_site_resources.py \
+            tests/test_phase4_site_materials.py \
+            tests/test_phase4_site_office.py \
+            tests/test_phase4_site_finance.py \
+            tests/test_phase4_site_report_localization.py \
+            tests/test_phase4_sqlite_parent_directory_safety.py \
+            tests/test_phase4_sqlite_startup_replacement.py \
+            --junitxml=phase4-p456-current-qt.xml
       - name: Run final product regression after frozen Windows UI and package/A1 code
         shell: bash
         run: |
@@ -89,5 +106,6 @@ jobs:
             phase5-final-suite.log
             phase5-final-suite.exit
             phase5-final-summary.json
+            phase4-p456-current-qt.xml
           if-no-files-found: warn
           retention-days: 14
