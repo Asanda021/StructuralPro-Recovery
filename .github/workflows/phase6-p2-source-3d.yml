@@ -52,6 +52,7 @@ jobs:
     env:
       PYTHONUTF8: '1'
       QT_QPA_PLATFORM: windows
+      STRUCTURALPRO_P6_P2_SCREENSHOT_DIR: phase6-p2-evidence/windows
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -71,6 +72,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: phase6-p2-windows-evidence
-          path: phase6-p2-windows.xml
+          path: |
+            phase6-p2-windows.xml
+            phase6-p2-evidence/windows/
           retention-days: 14
           if-no-files-found: warn
