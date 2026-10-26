@@ -89,6 +89,14 @@ class VerifiedScene3D:
                     any(isinstance(i, bool) or not isinstance(i, int) or i < 0 or
                         i >= len(new_vertices) for i in triangle) or len(set(triangle)) != 3):
                     raise ValueError("مثلث مدل سه‌بعدی ارجاع معتبر ندارد.")
+                a, b, c = (new_vertices[i] for i in triangle)
+                u = tuple(b[i]-a[i] for i in range(3))
+                v = tuple(c[i]-a[i] for i in range(3))
+                cross = (u[1]*v[2]-u[2]*v[1],
+                         u[2]*v[0]-u[0]*v[2],
+                         u[0]*v[1]-u[1]*v[0])
+                if sum(t*t for t in cross) <= 1e-20:
+                    raise ValueError("مثلث مدل سه‌بعدی دارای هندسه صفر یا هم‌خط است.")
                 new_faces.append(tuple(triangle))
             total += len(new_faces)
             if total > max_triangles:
@@ -177,6 +185,9 @@ class VerifiedScene3D:
         a, b, c = points
         def cross(p,q):
             return (p[0]-x)*(q[1]-y)-(p[1]-y)*(q[0]-x)
+        if abs((b[0]-a[0])*(c[1]-a[1]) -
+               (b[1]-a[1])*(c[0]-a[0])) <= 1e-9:
+            return False  # Edge-on/degenerate 2D projection is not selectable.
         one, two, three = cross(a,b), cross(b,c), cross(c,a)
         return not ((one < 0 or two < 0 or three < 0) and
                     (one > 0 or two > 0 or three > 0))
