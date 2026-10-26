@@ -1,5 +1,7 @@
 param([string]$Version="", [switch]$BuildInstaller, [switch]$SmokeTest)
 $ErrorActionPreference="Stop"
+# No direct installer creation outside the owner-gated unified AI/license preflight.
+if ($BuildInstaller) { throw "Installer creation requires the unified owner-approved build_windows_edition.ps1 path" }
 Set-Location (Split-Path -Parent $PSScriptRoot)
 
 $canonicalVersion=(Get-Content VERSION -Raw).Trim()
