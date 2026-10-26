@@ -16,7 +16,7 @@ def main()->int:
             QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,
             QLabel,QPushButton,QListWidget,QStackedWidget,QStatusBar,QLineEdit,
             QComboBox,QFormLayout,QMessageBox,QTextEdit,QFileDialog,QTableWidget,
-            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QCalendarWidget
+            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QCalendarWidget,QScrollArea
         )
         from PySide6.QtCore import Qt, QTimer, QEvent, QCoreApplication, QDate, QCalendar, QLocale
         from PySide6.QtGui import QShortcut, QKeySequence
@@ -81,7 +81,7 @@ def main()->int:
     current_edition=packaged.value if packaged else "unified"
     edition_title={"light":"سبک", "standard":"استاندارد", "pro":"حرفه‌ای", "enterprise":"سازمانی", "unified":"کامل"}.get(current_edition,"نامشخص")
     assistant=ProjectAssistant()
-    w=QMainWindow(); w.setWindowTitle("StructuralPro — مدیریت مهندسی پروژه"); w.resize(1560,960); w.setMinimumSize(1180,760)
+    w=QMainWindow(); w.setWindowTitle("StructuralPro — مدیریت مهندسی پروژه"); w.resize(1560,960); w.setMinimumSize(980,680)
 
     # Professional desktop shell: top-level navigation is a horizontal tab bar.
     # The old right-side navigation made the application hierarchy difficult to scan.
@@ -1038,6 +1038,7 @@ def main()->int:
     # Primary navigation remains horizontal, with every tab targeting a real page.
     navigation_tabs=QTabBar()
     navigation_tabs.setObjectName("MainNavigationTabs")
+    navigation_tabs.setAccessibleName("ناوبری اصلی بخش‌های مهندسی")
     navigation_tabs.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     navigation_tabs.setExpanding(False)
     navigation_tabs.setUsesScrollButtons(True)
@@ -1068,6 +1069,8 @@ def main()->int:
     def add_command(label, callback, primary=False):
         button=QPushButton(label)
         button.setObjectName("RibbonPrimary" if primary else "RibbonAction")
+        button.setToolTip('اجرای «' + label + '» در بخش فعال')
+        button.setAccessibleName(label)
         button.clicked.connect(callback)
         command_layout.addWidget(button)
         command_buttons.append(button)
@@ -1144,6 +1147,7 @@ def main()->int:
             add_command("❔ راهنما", lambda: pages.setCurrentIndex(idx_help), True)
             add_command("📐 آموزش متره", lambda: pages.setCurrentIndex(idx_drawing))
         command_layout.addStretch()
+        command_bar.adjustSize()
 
     def sync_tabs_to_page(index):
         for tab_index in range(navigation_tabs.count()):
@@ -1156,13 +1160,29 @@ def main()->int:
     shell.setContentsMargins(0,0,0,0)
     shell.setSpacing(0)
     content=QWidget(); content_layout=QVBoxLayout(content); content_layout.setContentsMargins(0,0,0,0); content_layout.setSpacing(0)
-    content_layout.addWidget(command_bar)
+    # Keep all real ribbon actions reachable on narrow Windows screens.
+    ribbon_scroll=QScrollArea()
+    ribbon_scroll.setObjectName('CommandRibbonScroll')
+    ribbon_scroll.setFrameShape(QFrame.Shape.NoFrame)
+    ribbon_scroll.setWidgetResizable(False)
+    ribbon_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+    ribbon_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    ribbon_scroll.setFixedHeight(65)
+    ribbon_scroll.setWidget(command_bar)
+    content_layout.addWidget(ribbon_scroll)
     content_layout.addWidget(pages,1)
     shell.addWidget(content,1)
     layout.addLayout(shell,1)
     w.setCentralWidget(root)
+    from app.desktop_shell import ContextRibbonController
+    ribbon_controller=ContextRibbonController(ribbon_scroll, desktop_preferences, w)
+    header_row.insertWidget(5, ribbon_controller.toggle_button)
+    QShortcut(QKeySequence('Ctrl+Shift+R'), w).activated.connect(ribbon_controller.toggle)
+    pages.currentChanged.connect(lambda _index: ribbon_controller.refresh_after_command_change())
     w.setStatusBar(QStatusBar()); w.statusBar().showMessage("StructuralPro آماده است — هسته آفلاین")
 
+    QShortcut(QKeySequence('Ctrl+1'), w).activated.connect(lambda: pages.setCurrentIndex(idx_dash))
+    QShortcut(QKeySequence('Ctrl+2'), w).activated.connect(lambda: pages.setCurrentIndex(idx_projects))
     QShortcut(QKeySequence("Ctrl+N"), w).activated.connect(lambda: (pages.setCurrentIndex(idx_projects), pname.setFocus()))
     QShortcut(QKeySequence("Ctrl+O"), w).activated.connect(lambda: (pages.setCurrentIndex(idx_projects), plist.setFocus()))
     QShortcut(QKeySequence("F1"), w).activated.connect(lambda: pages.setCurrentIndex(idx_help))
