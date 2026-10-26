@@ -100,8 +100,11 @@ class ContextualTakeoffGuide:
         _id(context.floor_id, "طبقه")
         if not isinstance(context.operation, str) or not context.operation.strip():
             raise ValueError("عملیات منتخب مشخص نیست.")
-        digest = self.service.store.current_digest(context.project_id)
-        p = self.service.open_project(context.project_id)
+        try:
+            digest = self.service.store.current_digest(context.project_id)
+            p = self.service.open_project(context.project_id)
+        except KeyError as exc:
+            raise ValueError("پروژه ذخیره‌شده معتبر پیدا نشد.") from exc
         if not isinstance(p, dict) or p.get("id") != context.project_id or not digest:
             raise ValueError("پروژه ذخیره‌شده معتبر پیدا نشد.")
         floors = p.get("floors", [])
