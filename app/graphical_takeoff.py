@@ -1216,6 +1216,7 @@ class GraphicalTakeoffDialog(QDialog):
             self._set_ifc_3d_busy(True)
             self.status.setText('بارگذاری سه‌بعدی در پس‌زمینه آغاز شد؛ متره تغییری نمی‌کند.')
             job.signals.stage.connect(self._ifc_3d_stage)
+            job.signals.progress.connect(self._ifc_3d_progress)
             job.signals.failed.connect(self._ifc_3d_failed)
             job.signals.cancelled.connect(self._ifc_3d_cancelled)
             job.signals.finished.connect(self._ifc_3d_ready)
@@ -1229,6 +1230,11 @@ class GraphicalTakeoffDialog(QDialog):
     def _ifc_3d_stage(self, token, stage):
         if token == self._ifc_3d_token and self._ifc_3d_loader is not None:
             self.status.setText(stage)
+
+    def _ifc_3d_progress(self, token, done, total):
+        if token == self._ifc_3d_token and self._ifc_3d_loader is not None:
+            self.status.setText(
+                f'پردازش واقعی اعضای سه‌بعدی IFC: {done} از {total}؛ لغو فعال است.')
 
     def _ifc_3d_failed(self, token, message):
         if token != self._ifc_3d_token or self._ifc_3d_loader is None:
