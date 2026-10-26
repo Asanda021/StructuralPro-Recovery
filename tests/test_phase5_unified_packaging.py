@@ -10,9 +10,15 @@ import sys
 
 import pytest
 
-from packaging.verify_unified_payload import validate_staged_unified_payload
+import importlib.util
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+MODULE_PATH = REPO_ROOT / "packaging" / "verify_unified_payload.py"
+SPEC = importlib.util.spec_from_file_location("structuralpro_unified_preflight", MODULE_PATH)
+assert SPEC and SPEC.loader
+MODULE = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(MODULE)
+validate_staged_unified_payload = MODULE.validate_staged_unified_payload
 
 
 def staged_unified_assets(tmp_path: Path) -> tuple[Path, dict]:
