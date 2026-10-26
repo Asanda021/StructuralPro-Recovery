@@ -155,4 +155,10 @@ def test_ifc_real_parse_100_floor_scaling_is_measured_without_dropping_members(t
         dst = Path(os.environ['STRUCTURALPRO_P6_P2_SCREENSHOT_DIR'])
         dst.mkdir(parents=True,exist_ok=True)
         assert dialog.grab().save(str(dst / 'synthetic-IFC4-100-floor-all-disciplines.png'))
+        selected_floor = scene.storeys[len(scene.storeys)//2]
+        dialog.storey.setCurrentIndex(dialog.storey.findData(selected_floor))
+        app.processEvents()
+        assert scene.focus_storey_id == selected_floor
+        assert len(dialog.canvas._faces()) == 4*12
+        assert dialog.grab().save(str(dst / 'synthetic-IFC4-100-floor-focused-storey.png'))
         dialog.close()
