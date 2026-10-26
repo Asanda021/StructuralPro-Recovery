@@ -46,7 +46,8 @@ def _level(obj):
 
 class DeepIFCAdapter:
     extensions=(".ifc",)
-    def read_display_meshes(self, path, *, max_triangles=100_000):
+    def read_display_meshes(self, path, *, max_triangles=100_000,
+                            cancel_event=None, on_progress=None, batch_size=64):
         """World-coordinate meshes for display only; never quantity evidence."""
         if type(max_triangles) is not int or max_triangles <= 0:
             raise ValueError("ظرفیت نمایش باید عدد صحیح مثبت باشد.")
@@ -58,8 +59,13 @@ class DeepIFCAdapter:
             import ifcopenshell.geom
         except ImportError as exc:
             raise RuntimeError("برای نمایش مدل، وابستگی محلی ifcopenshell لازم است.") from exc
-        raw = p.read_bytes()
-        model = ifcopenshell.file.from_string(raw.decode("utf-8-sig"))
+        if type(batch_size) is not int or not 1 <= batch_size <= 4096:
+            raise ValueError("ظرفیت بسته‌های هندسی معتبر نیست.")
+        if cancel_event is not None and cancel_event.is_set():
+            raise InterruptedError("پردازش هندسه IFC لغو شد.")
+        # Native file loader avoids duplicating the entire IFC text as a
+        # Python bytes buffer + a second decoded Python unicode string.
+        model = ifcopenshell.open(str(p))
         projects = model.by_type("IfcProject")
         units = getattr(projects[0], "UnitsInContext", None) if len(projects) == 1 else None
         length_units = [u for u in getattr(units, "Units", ()) if getattr(u, "UnitType", None) == "LENGTHUNIT"]
@@ -69,7 +75,12 @@ class DeepIFCAdapter:
         settings.set("use-world-coords", True)
         meshes, omitted, identities = [], [], set()
         triangle_count = 0
-        for obj in model.by_type("IfcProduct"):
+        candidates = [obj for obj in model.by_type("IfcProduct")
+                      if getattr(obj, "Representation", None)]
+        count = len(candidates)
+        for index, obj in enumerate(candidates, 1):
+            if cancel_event is not None and cancel_event.is_set():
+                raise InterruptedError("پردازش هندسه IFC لغو شد.")
             if not getattr(obj, "Representation", None):
                 continue
             identity = str(getattr(obj, "GlobalId", "") or "").strip()
@@ -98,11 +109,20 @@ class DeepIFCAdapter:
             meshes.append(IFCDisplayMesh(identity, str(getattr(obj, "Name", "") or ""),
                                          tuple(zip(verts[::3], verts[1::3], verts[2::3])),
                                          tuple(zip(faces[::3], faces[1::3], faces[2::3]))))
+            if on_progress is not None and (index % batch_size == 0 or index == count):
+                on_progress(index, count)
         if not meshes:
             raise ValueError("مدل فاقد هندسه قابل نمایش است.")
-        return IFCDisplayDocument(str(p), hashlib.sha256(raw).hexdigest(), tuple(meshes), tuple(omitted))
+        digest = hashlib.sha256()
+        with p.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024*1024), b""):
+                if cancel_event is not None and cancel_event.is_set():
+                    raise InterruptedError("بررسی IFC لغو شد.")
+                digest.update(block)
+        return IFCDisplayDocument(str(p), digest.hexdigest(), tuple(meshes), tuple(omitted))
 
-    def read_display_contract(self, path, *, revision, max_triangles=100_000):
+    def read_display_contract(self, path, *, revision, max_triangles=100_000,
+                              cancel_event=None, on_progress=None, batch_size=64):
         """Recoverable SI geometry with validated IFC provenance, never quantity rights.
 
         Mesh tessellation is display-only. Original placement/QTO validation is
@@ -114,7 +134,11 @@ class DeepIFCAdapter:
             raise ValueError("نسخه منبع هندسه باید صریح باشد.")
         p = Path(path)
         document = BIMAdapter().read_document(p, revision=revision)
-        display = self.read_display_meshes(p, max_triangles=max_triangles)
+        if cancel_event is not None and cancel_event.is_set():
+            raise InterruptedError("پردازش IFC لغو شد.")
+        display = self.read_display_meshes(
+            p, max_triangles=max_triangles, cancel_event=cancel_event,
+            on_progress=on_progress, batch_size=batch_size)
         digest = document['source_sha256']
         if display.source_sha256 != digest or hashlib.sha256(p.read_bytes()).hexdigest() != digest:
             raise ValueError("منبع IFC هنگام آماده‌سازی هندسه تغییر کرده است.")

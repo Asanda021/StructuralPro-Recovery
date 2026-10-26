@@ -30,7 +30,7 @@ from pathlib import Path
 
 _VIEW_KEYS = frozenset((
     "document_id", "floor_id", "member_id", "zone_id", "current_tab",
-    "filter", "zoom_2d", "camera_3d", "pending_review_ids",
+    "filter", "zoom_2d", "camera_3d", "ifc3d_state", "pending_review_ids",
 ))
 
 
@@ -65,6 +65,44 @@ def _checked_view(view: Mapping[str, Any]) -> dict[str, Any]:
             "pitch_deg" in camera and not -90 <= camera["pitch_deg"] <= 90
         ):
             raise ValueError("invalid 3D camera bounds")
+    if "ifc3d_state" in result:
+        state = result["ifc3d_state"]
+        allowed = {"source_sha256", "revision", "yaw", "pitch", "zoom",
+                   "pan_x", "pan_y", "storey_id", "global_id",
+                   "isolate", "transparent", "section_z",
+                   "hidden_storeys", "hidden_types"}
+        if not isinstance(state, dict) or set(state) != allowed:
+            raise ValueError("invalid IFC 3D session schema")
+        sha = state["source_sha256"]
+        if not isinstance(sha, str) or len(sha) != 64 or any(c not in "0123456789abcdef" for c in sha):
+            raise ValueError("invalid IFC 3D source digest")
+        if not isinstance(state["revision"], str) or not state["revision"].strip() or len(state["revision"]) > 256:
+            raise ValueError("invalid IFC 3D revision")
+        for field in ("yaw", "pitch", "zoom", "pan_x", "pan_y"):
+            value = state[field]
+            if type(value) not in (int, float) or not math.isfinite(value):
+                raise ValueError("invalid IFC 3D camera coordinates")
+        if not -1e6 <= state["yaw"] <= 1e6 or not -1.58 <= state["pitch"] <= 1.58 or not .1 <= state["zoom"] <= 40:
+            raise ValueError("invalid IFC 3D camera bounds")
+        if max(abs(state["pan_x"]),abs(state["pan_y"])) > 1e7:
+            raise ValueError("invalid IFC 3D pan bounds")
+        for field in ("storey_id", "global_id"):
+            value = state[field]
+            if value is not None and (not isinstance(value, str) or not value.strip() or len(value) > 256):
+                raise ValueError("invalid IFC 3D selection")
+        for field in ("isolate", "transparent"):
+            if type(state[field]) is not bool:
+                raise ValueError("invalid IFC 3D display toggle")
+        section = state["section_z"]
+        if section is not None and (type(section) not in (float, int) or
+                                    not math.isfinite(section) or abs(section) > 1e12):
+            raise ValueError("invalid IFC 3D section")
+        for field in ("hidden_storeys", "hidden_types"):
+            values = state[field]
+            if (not isinstance(values, list) or len(values) > 1024 or
+                len(set(v for v in values if isinstance(v,str))) != len(values) or
+                any(not isinstance(v, str) or not v.strip() or len(v) > 256 for v in values)):
+                raise ValueError("invalid IFC 3D hidden layers")
     encoded = json.dumps(result, ensure_ascii=False, sort_keys=True, allow_nan=False)
     if len(encoded.encode("utf-8")) > 32768:
         raise ValueError("session view too large")

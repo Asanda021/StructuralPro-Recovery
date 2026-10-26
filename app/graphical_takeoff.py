@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 import json
 
-from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve, QProcess, QTimer
+from PySide6.QtCore import Qt, QPoint, QPointF, QRect, QRectF, QByteArray, QVariantAnimation, QEasingCurve, QProcess, QTimer, QThreadPool
 from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QTextOption, QPainterPath, QFontMetricsF, QTransform
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
@@ -429,7 +429,19 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button)
+        self._ifc_3d_loader = None
+        self._ifc_3d_token = 0
+        self._ifc_3d_dialog = None
+        self.ifc_3d_button=QPushButton('مدل سه‌بعدی واقعی IFC')
+        self.ifc_3d_button.setObjectName('OpenVerifiedIFC3D')
+        self.ifc_3d_button.setToolTip('نمایش هندسه مستند؛ بدون متره از تصویر سه‌بعدی')
+        self.ifc_3d_button.clicked.connect(self.open_ifc_3d)
+        self.ifc_3d_cancel = QPushButton('لغو بارگذاری سه‌بعدی')
+        self.ifc_3d_cancel.setObjectName('CancelVerifiedIFC3D')
+        self.ifc_3d_cancel.setToolTip('لغو و کنارگذاشتن نتیجهٔ مدل سه‌بعدی، بدون تغییر نشست و BOQ')
+        self.ifc_3d_cancel.setEnabled(False)
+        self.ifc_3d_cancel.clicked.connect(self.cancel_ifc_3d_loading)
+        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
@@ -561,6 +573,7 @@ class GraphicalTakeoffDialog(QDialog):
 
     def open_cad_async(self,path):
         import tempfile,sys
+        self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         if self.session.items and str(path)!=self.session.drawing_source:
             if QMessageBox.question(self,'تغییر نقشه','نشست دارای متره است؛ پیش از تغییر، ذخیره را بررسی کنید. ادامه؟',QMessageBox.Yes|QMessageBox.No,QMessageBox.No)!=QMessageBox.Yes:return
@@ -638,6 +651,7 @@ class GraphicalTakeoffDialog(QDialog):
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
 
     def closeEvent(self,event):
+        self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         if self.engine is not None:self.engine.close()
         super().closeEvent(event)
@@ -817,6 +831,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.select_drawing()
 
     def open_drawing(self, path):
+        self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         candidate = str(path)
         changed_source = bool(self.session.drawing_source and self.session.drawing_source != candidate)
@@ -1134,8 +1149,11 @@ class GraphicalTakeoffDialog(QDialog):
                     item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
-        dialog=getattr(self,'_ifc_inspector',None)
         from shiboken6 import isValid
+        view3d=getattr(self,'_ifc_3d_dialog',None)
+        if view3d is not None and isValid(view3d):
+            view3d.canvas.choose_member(gid)
+        dialog=getattr(self,'_ifc_inspector',None)
         if dialog is not None and isValid(dialog) and not getattr(self,'_ifc_tree_syncing',False):
             self._ifc_tree_syncing=True
             try:
@@ -1154,6 +1172,118 @@ class GraphicalTakeoffDialog(QDialog):
             finally:self._ifc_tree_syncing=False
         callback=getattr(self,'_ifc_crosswalk_notify',None)
         if callback:callback(gid)
+
+    def _set_ifc_3d_busy(self, busy):
+        self.ifc_3d_button.setEnabled(not busy)
+        self.ifc_3d_cancel.setEnabled(busy)
+
+    def cancel_ifc_3d_loading(self):
+        job = self._ifc_3d_loader
+        if job is None:
+            return False
+        # Invalidate queued callbacks before signalling the worker. The third-party
+        # native IFC parser is not interruptible internally, but stale results never
+        # become visible, approved or saved.
+        self._ifc_3d_token += 1
+        self._ifc_3d_loader = None
+        job.cancel()
+        self._set_ifc_3d_busy(False)
+        self.status.setText('بارگذاری سه‌بعدی لغو شد؛ هندسهٔ نیمه‌کاره ثبت یا نمایش داده نشد.')
+        return True
+
+    def open_ifc_3d(self):
+        """Start the validated 3D IFC conversion without blocking the GUI thread."""
+        if self.viewer.kind != 'ifc' or self.cad_loading:
+            self.status.setText('نمای IFC معتبر باز نشده است.')
+            return None
+        if self._ifc_3d_loader is not None:
+            self.status.setText('بارگذاری سه‌بعدی در جریان است؛ نخست آن را لغو کنید.')
+            return None
+        try:
+            from app.ifc_3d_loader import IFC3DLoadJob
+            source = Path(self.viewer.path)
+            document = self.viewer.ifc_document
+            revision = self.ifc_revision.text().strip()
+            if not revision:
+                raise ValueError('Revision صریح IFC لازم است.')
+            if document is None or not document.source_sha256 or not source.is_file():
+                raise ValueError('منبع IFC معتبر در دسترس نیست.')
+            self._ifc_3d_token += 1
+            token = self._ifc_3d_token
+            job = IFC3DLoadJob(token=token, path=str(source),
+                               revision=revision, expected_sha=document.source_sha256)
+            self._ifc_3d_loader = job
+            self._set_ifc_3d_busy(True)
+            self.status.setText('بارگذاری سه‌بعدی در پس‌زمینه آغاز شد؛ متره تغییری نمی‌کند.')
+            job.signals.stage.connect(self._ifc_3d_stage)
+            job.signals.progress.connect(self._ifc_3d_progress)
+            job.signals.failed.connect(self._ifc_3d_failed)
+            job.signals.cancelled.connect(self._ifc_3d_cancelled)
+            job.signals.finished.connect(self._ifc_3d_ready)
+            QThreadPool.globalInstance().start(job)
+        except Exception as exc:
+            self._ifc_3d_loader = None
+            self._set_ifc_3d_busy(False)
+            self.status.setText('نمای سه‌بعدی باز نشد: ' + str(exc))
+        return None
+
+    def _ifc_3d_stage(self, token, stage):
+        if token == self._ifc_3d_token and self._ifc_3d_loader is not None:
+            self.status.setText(stage)
+
+    def _ifc_3d_progress(self, token, done, total):
+        if token == self._ifc_3d_token and self._ifc_3d_loader is not None:
+            self.status.setText(
+                f'پردازش واقعی اعضای سه‌بعدی IFC: {done} از {total}؛ لغو فعال است.')
+
+    def _ifc_3d_failed(self, token, message):
+        if token != self._ifc_3d_token or self._ifc_3d_loader is None:
+            return
+        self._ifc_3d_loader = None
+        self._set_ifc_3d_busy(False)
+        self.status.setText('نمای سه‌بعدی باز نشد: ' + message)
+
+    def _ifc_3d_cancelled(self, token):
+        if token != self._ifc_3d_token or self._ifc_3d_loader is None:
+            return
+        self._ifc_3d_loader = None
+        self._set_ifc_3d_busy(False)
+        self.status.setText('بارگذاری سه‌بعدی لغو شد؛ داده‌ای ثبت نشد.')
+
+    def _ifc_3d_ready(self, token, scene):
+        if token != self._ifc_3d_token or self._ifc_3d_loader is None:
+            return
+        self._ifc_3d_loader = None
+        self._set_ifc_3d_busy(False)
+        try:
+            from app.ifc_3d_viewport import IFC3DDialog
+            source = Path(scene.source_path)
+            if (self.viewer.kind != 'ifc' or self.viewer.ifc_document is None or
+                str(self.viewer.path) != str(source) or
+                self.viewer.ifc_document.source_sha256 != scene.source_sha256 or
+                self.ifc_revision.text().strip() != scene.revision):
+                raise ValueError('سند IFC هنگام بارگذاری تغییر کرده؛ نتیجه نمایش داده نشد.')
+            scene.validate_source()
+            window = IFC3DDialog(scene, self, app_service=self.app_service,
+                                 project_id=self.project_id_input.text().strip())
+            window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            def link_back(gid):
+                if (self.viewer.kind != 'ifc' or self.viewer.ifc_document is None or
+                    str(self.viewer.path) != str(source) or
+                    self.viewer.ifc_document.source_sha256 != scene.source_sha256):
+                    self.status.setText('نسخه IFC تغییر کرده؛ انتخاب سه‌بعدی اعمال نشد.')
+                    return
+                try:
+                    scene.validate_source()
+                    self.highlight_ifc_member(gid)
+                except ValueError as exc:
+                    self.status.setText('انتخاب سه‌بعدی نامعتبر: '+str(exc))
+            window.memberSelected.connect(link_back)
+            self._ifc_3d_dialog = window
+            window.show()
+            self.status.setText('نمای سه‌بعدی از هندسهٔ معتبر IFC باز شد؛ متره فقط‌خواندنی است.')
+        except Exception as exc:
+            self.status.setText('نمای سه‌بعدی باز نشد: '+str(exc))
 
     def open_ifc_inspector(self):
         if self.viewer.kind!='ifc' or self.cad_loading:return
