@@ -14,6 +14,36 @@ from core.ai.contextual_takeoff_p6 import (
 )
 
 
+# Display labels only. Internal parameter keys remain the approved engine keys.
+INPUT_LABELS = {
+    "count":"تعداد واقعی","length":"طول (متر)","width":"عرض (متر)",
+    "height":"ارتفاع (متر)","depth":"عمق (متر)","thickness":"ضخامت (متر)",
+    "openings":"مساحت بازشو/کسور (مترمربع)","deductions":"طول کسور (متر)",
+    "topping_thickness":"ضخامت بتن رویه","joist_spacing":"فاصله واقعی تیرچه‌ها",
+    "joist_width":"عرض تیرچه","joist_depth":"عمق تیرچه",
+    "joist_count":"تعداد تیرچه طبق چیدمان واقعی",
+    "foam_length":"طول یونولیت","foam_width":"عرض یونولیت",
+    "foam_height":"ارتفاع یونولیت","foam_count":"تعداد واقعی یونولیت",
+    "block_length":"طول بلوک","block_width":"عرض بلوک",
+    "block_height":"ارتفاع بلوک","block_count":"تعداد واقعی بلوک",
+    "block_thickness":"ضخامت بلوک","joint_thickness":"ضخامت بند ملات",
+    "cement_parts":"نسبت سیمان ملات","sand_parts":"نسبت ماسه ملات",
+    "mesh_unit_weight":"وزن واحد مش مستند",
+    "mesh_unit_weight_source":"مرجع دیتایل مش",
+    "cast_rib_count":"تعداد جان بتنی درجا",
+    "cast_rib_length_m":"طول واقعی جان بتنی درجا",
+    "cast_rib_area_m2":"سطح مقطع مستند جان",
+    "formwork_sides":"تعداد وجوه قالب",
+    "rebar_schedule":"برنامه میلگرد با جزئیات مستقل",
+    "unit_weight":"وزن واحد واقعی","waste_factor":"ضریب پرت مستند",
+    "block_waste_factor":"پرت بلوک","mortar_waste_factor":"پرت ملات",
+    "consumption_per_m2":"مصرف در مترمربع",
+    "consumption_per_m2_per_layer":"مصرف در هر لایه/مترمربع",
+    "consumption_per_m":"مصرف در مترطول",
+    "consumption_unit":"واحد مصرف","material_spec_ref":"شماره مرجع مصالح",
+    "layers":"تعداد لایه/دست","openings_scope":"دامنه کسور",
+}
+
 class ContextualTakeoffDialog(QDialog):
     """Model-free local assistance by default, with explicit source/approval gates."""
 
@@ -170,7 +200,7 @@ class ContextualTakeoffDialog(QDialog):
             widget.setPlaceholderText("صریح وارد کنید؛ خالی یعنی نامشخص")
             widget.textChanged.connect(self.invalidate)
             self.fields[name]=widget
-            label=name+(" *" if name in template.required_inputs else " (اختیاری)")
+            label=INPUT_LABELS.get(name,name)+(" *" if name in template.required_inputs else " (اختیاری)")
             self.fields_form.addRow(label,widget)
 
     def inputs(self):
