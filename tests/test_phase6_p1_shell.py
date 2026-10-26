@@ -54,7 +54,7 @@ def inspect(app):
     assert tabs.accessibleName() and toggle.accessibleName()
     assert ribbon.isVisible() and not toggle.isChecked()
     screenshot_dir = os.getenv('STRUCTURALPRO_P6_SCREENSHOT_DIR')
-    if screenshot_dir:
+    if screenshot_dir and sys.platform == 'win32':
         dest = Path(screenshot_dir)
         dest.mkdir(parents=True, exist_ok=True)
         app.processEvents()
@@ -62,7 +62,7 @@ def inspect(app):
     initial_theme = app.property('structuralproTheme')
     theme.click()
     assert app.property('structuralproTheme') != initial_theme
-    if screenshot_dir:
+    if screenshot_dir and sys.platform == 'win32':
         app.processEvents()
         assert window.grab().save(str(dest / ('p6-p1-' + sys.platform + '-dark.png')))
     motion.click()
@@ -87,13 +87,15 @@ def inspect(app):
     assert settings.value('animations', type=bool) is False
     assert settings.value('glass_enabled', type=bool) is False
     assert settings.value('ribbon_collapsed', type=bool) is True
-    QTimer.singleShot(0, window.close)
+    if sys.platform == 'win32':
+        QTimer.singleShot(0, window.close)
     return real_exec()
 
 QApplication.exec = inspect
 raise SystemExit(main())
 '''
-    env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen', 'STRUCTURALPRO_SMOKE': '0'}
+    env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen',
+           'STRUCTURALPRO_SMOKE': '0' if sys.platform == 'win32' else '1'}
     result = subprocess.run([sys.executable, '-c', script, str(tmp_path)], cwd=ROOT,
                             capture_output=True, text=True, env=env, timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr
