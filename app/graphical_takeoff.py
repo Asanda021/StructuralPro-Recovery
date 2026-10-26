@@ -1209,12 +1209,18 @@ class GraphicalTakeoffDialog(QDialog):
     def _open_w1_real_form(self, context):
         """Route to existing live workflows; never create a parallel commit."""
         from app.manual_takeoff import ManualTakeoffDialog
-        if context.operation.startswith("waffle"):
-            # Existing specialist roof editor requires a real selected region.
-            self.open_region_roof()
-            return getattr(self,'_roof_editor',None)
+        from core.takeoff.roof_detail import KINDS
+        if context.operation in KINDS:
+            # The original, fully reviewed specialist roof editor works for
+            # manual-only projects too. No region, width, count or geometry
+            # is fabricated by this handoff. It owns its own approvals/BOQ.
+            from app.roof_detail_editor import open_roof_editor
+            accepted=open_roof_editor(
+                self.app_service,parent=self,project_id=context.project_id,
+                floor_id=context.floor_id,kind=context.operation)
+            return True if accepted else None
         if context.operation=="mep":
-            return None  # no verified generic MEP specialist operation
+            return None  # missing specialist discipline/operation binding
         dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
         dialog.floor_id.setText(context.floor_id)
         dialog.element_label.setText(context.member_id or "")
