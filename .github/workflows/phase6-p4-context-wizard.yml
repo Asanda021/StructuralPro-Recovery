@@ -9,6 +9,8 @@ on:
       - core/ai/gguf_runtime_v1.py
       - tests/test_phase6_p4_model_isolation.py
       - app/contextual_takeoff_panel.py
+      - app/architecture_detail_editor.py
+      - app/reviewed_structural_manual_editor.py
       - app/graphical_takeoff.py
       - tests/test_phase6_p4_contextual_takeoff.py
   workflow_dispatch:
