@@ -55,12 +55,14 @@ class VerifiedProjectSelection:
         if not all(isinstance(x,list) for x in (all_members,all_boq,reviews)):
             raise ValueError("دفتر عضو/BOQ/بازبینی پروژه ساختار نامعتبر دارد.")
         member_ids = set()
+        self.member_floor_ids = {}
         for m in all_members:
             if not isinstance(m,dict) or not isinstance(m.get("id"),str):
                 raise ValueError("شناسه درخت عضو واقعی نامعتبر است.")
             if m["id"] in member_ids:
                 raise ValueError("درخت اعضا شناسه تکراری دارد.")
             member_ids.add(m["id"])
+            self.member_floor_ids[m["id"]] = m.get("floor_id")
         approved, trusted, by_proposal = [], set(), {}
         self.review_proofs = []
         for review in reviews:
@@ -134,6 +136,7 @@ class VerifiedProjectSelection:
                 proposal_id = meta.get("proposal_id") if meta else None
             source_receipts[sid] = proposal_id
         boq_labels = {}
+        self.boq_readback = {}
         for pos, row in enumerate(all_boq):
             if not isinstance(row,dict):
                 raise ValueError("ردیف BOQ واقعی نامعتبر است.")
@@ -147,6 +150,14 @@ class VerifiedProjectSelection:
             if key in boq_labels:
                 raise ValueError("شناسه نسخه‌ای BOQ تکراری است.")
             boq_labels[key] = f"ردیف {pos+1} | {row.get('description','بدون شرح')}"
+            # Only persisted values. This display NEVER recalculates, rounds
+            # or suggests quantities/prices.
+            self.boq_readback[key] = {
+                "label": boq_labels[key],
+                "quantity": row.get("quantity"),
+                "unit": row.get("unit"),
+                "source_ids": tuple(ids),
+            }
             for proposal_id in {source_receipts.get(sid) for sid in ids} - {None}:
                 review = by_proposal.get(proposal_id)
                 if review is None:
@@ -211,3 +222,30 @@ class VerifiedProjectSelection:
         return self.index.resolve(origin=origin,identifier=identifier,
             project_id=self.project_id,source_sha256=self.source_sha256,
             revision=self.revision)
+
+    def inspector_text(self, result):
+        """Persian live inspector from verified, unchanged SQLite BOQ values."""
+        self.assert_current(source_sha256=self.source_sha256,revision=self.revision)
+        if result.status != "linked":
+            return "فاقد پیوند مستند؛ مقدار یا هندسه فرضی ایجاد نشده است."
+        names = ", ".join(result.member_ids) or "فاقد عضو"
+        floors = ", ".join(sorted({str(self.member_floor_ids[m])
+            for m in result.member_ids if self.member_floor_ids.get(m) is not None})) or "نامشخص"
+        lines = [
+            "پروژه: " + self.project_id + " | طبقه: " + floors,
+            "عضو: " + names + " | IFC GlobalId: " + ", ".join(result.global_ids),
+            "نسخه: " + self.revision + " | SHA-256: " + self.source_sha256,
+            "متره و ردیف‌ها فقط از نسخه ذخیره‌شده پروژه؛ بدون محاسبه جدید:",
+        ]
+        for key in result.boq_row_ids[:8]:
+            row = self.boq_readback[key]
+            amount = "نامشخص" if row["quantity"] is None else str(row["quantity"])
+            unit = str(row["unit"]) if row["unit"] else "نامشخص"
+            lines.append(row["label"] + " | مقدار ثبت‌شده: " + amount + " " + unit)
+        if len(result.boq_row_ids)>8:
+            lines.append(str(len(result.boq_row_ids)-8) +
+                         " ردیف دیگر: برای مشاهده به جدول BOQ مراجعه کنید.")
+        if not result.boq_row_ids:
+            lines.append("هیچ ردیف BOQ تأییدشده برای این عضو وجود ندارد.")
+        lines.append("نمای فقط‌خواندنی؛ این پنل تأیید یا انتقال مالی صادر نمی‌کند.")
+        return "\\n".join(lines)
