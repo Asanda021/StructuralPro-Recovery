@@ -2,6 +2,7 @@
 from pathlib import Path
 from PySide6.QtCore import QObject, QSettings
 from PySide6.QtWidgets import QPushButton
+from PySide6.QtGui import QFont, QFontDatabase
 from app.theme import APP_STYLESHEET
 
 # Qt alpha compositing supplies glass-like panels without Windows-only APIs.
@@ -44,6 +45,25 @@ QDockWidget::title { background: #243d59; color: #ecf4ff; padding: 5px; }
 """
 
 
+# Qt stylesheet font-family lists are not reliable platform fallbacks.
+# Prefer an actually installed font with Arabic/Persian glyph coverage.
+def _preferred_persian_font():
+    families = QFontDatabase.families()
+    by_name = {name.casefold(): name for name in families}
+    preferred = ('Vazirmatn', 'Tahoma', 'Segoe UI', 'Noto Sans Arabic',
+                 'Noto Naskh Arabic', 'DejaVu Sans', 'Arial')
+    arabic = QFontDatabase.WritingSystem.Arabic
+    for name in preferred:
+        chosen = by_name.get(name.casefold())
+        if chosen and arabic in QFontDatabase.writingSystems(chosen):
+            return chosen, True
+    for chosen in families:
+        if arabic in QFontDatabase.writingSystems(chosen):
+            return chosen, True
+    fallback = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont).family()
+    return fallback, False
+
+
 class DesktopPreferences(QObject):
     def __init__(self, app, path, parent=None):
         super().__init__(parent or app)
@@ -54,6 +74,7 @@ class DesktopPreferences(QObject):
         if self.theme not in ('light', 'dark'): self.theme = 'light'
         self.animations = self.settings.value('animations', True, type=bool)
         self.glass_enabled = self.settings.value('glass_enabled', True, type=bool)
+        self.font_family, self.arabic_supported = _preferred_persian_font()
         self.apply()
 
     def apply(self):
@@ -61,10 +82,15 @@ class DesktopPreferences(QObject):
         if not self.glass_enabled:
             style += (DARK_OPAQUE_GLASS_FALLBACK if self.theme == 'dark'
                       else OPAQUE_GLASS_FALLBACK)
+        self.app.setFont(QFont(self.font_family))
+        style = style.replace('font-family: "Vazirmatn","Segoe UI",Tahoma,sans-serif;',
+                              'font-family: "' + self.font_family.replace('"', '') + '";')
         self.app.setStyleSheet(style)
         self.app.setProperty('structuralproTheme', self.theme)
         self.app.setProperty('structuralproAnimationsEnabled', self.animations)
         self.app.setProperty('structuralproGlassEnabled', self.glass_enabled)
+        self.app.setProperty('structuralproFontFamily', self.font_family)
+        self.app.setProperty('structuralproFontArabicSupported', self.arabic_supported)
 
     def add_controls(self, layout):
         self.theme_button = QPushButton(); self.theme_button.setObjectName('ThemeToggle')
