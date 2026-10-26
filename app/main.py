@@ -78,8 +78,8 @@ def main()->int:
             logger.warning("User pricebook cache could not be loaded: %s", exc)
     bundle_dir=Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[1]
     packaged=packaged_edition(bundle_dir, fail_closed=False)
-    current_edition=packaged.value if packaged else "pro"
-    edition_title={"light":"سبک", "standard":"استاندارد", "pro":"حرفه‌ای", "enterprise":"سازمانی"}.get(current_edition,"نامشخص")
+    current_edition=packaged.value if packaged else "unified"
+    edition_title={"light":"سبک", "standard":"استاندارد", "pro":"حرفه‌ای", "enterprise":"سازمانی", "unified":"کامل"}.get(current_edition,"نامشخص")
     assistant=ProjectAssistant()
     w=QMainWindow(); w.setWindowTitle("StructuralPro — مدیریت مهندسی پروژه"); w.resize(1560,960); w.setMinimumSize(1180,760)
 
@@ -720,7 +720,7 @@ def main()->int:
         aout.setPlainText("پیشنهاد رد شد؛ اطلاعات قطعی و BOQ تغییر نکردند.")
     ai_run.clicked.connect(run_ai_text)
     ai_discard.clicked.connect(discard_ai_suggestion)
-    if current_edition in ("pro","enterprise"):
+    if current_edition in ("pro","enterprise","unified"):
         image_path=QLineEdit(); image_btn=QPushButton("🖼️ متره هوشمند از تصویر")
         image_run=QPushButton("تحلیل تصویر")
         v.addWidget(image_path); v.addWidget(image_btn); v.addWidget(image_run)
@@ -1125,7 +1125,7 @@ def main()->int:
             add_command("📎 اسناد", lambda: pages.setCurrentIndex(idx_docs))
         elif index == idx_ai:
             if current_edition != "light": add_command("🤖 بازبینی پروژه", review, True)
-            if current_edition in ("pro","enterprise"): add_command("🖼️ متره هوشمند", run_ai_image)
+            if current_edition in ("pro","enterprise","unified"): add_command("🖼️ متره هوشمند", run_ai_image)
         elif index == idx_docs:
             add_command("📎 افزودن سند", add_doc, True)
             add_command("🗺 نقشه‌ها", lambda: pages.setCurrentIndex(idx_drawing))
