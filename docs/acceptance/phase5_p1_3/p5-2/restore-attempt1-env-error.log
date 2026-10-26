@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/workspace/scratch/5ff2acae0199/StructuralPro-Recovery/docs/acceptance/phase5_p1_3/p5-2/verify_five_storey_restore.py", line 10, in <module>
+    from core.platform.application import StructuralProApp
+ModuleNotFoundError: No module named 'core'

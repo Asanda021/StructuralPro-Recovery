@@ -1,0 +1,34 @@
+{
+  "status": "PASS",
+  "synthetic_fixture": true,
+  "original_unavailable_during_restore": true,
+  "project_id": "P",
+  "revision": 326,
+  "revision_rows": 326,
+  "floors": 5,
+  "activities": 15,
+  "baseline_days": 18,
+  "current_days": 20,
+  "progress_actual": [
+    "12.500000",
+    "45.000000",
+    "75.000000"
+  ],
+  "boq_rows": 5,
+  "resources": 4,
+  "daily_reports": 2,
+  "financial_records": 3,
+  "source_documents": 4,
+  "restored_files": 5,
+  "sqlite_integrity": {
+    "ok": true,
+    "integrity_check": "ok",
+    "counts": {
+      "projects": 1,
+      "revisions": 326
+    }
+  },
+  "package_sha256": "5ffa57f58af34f3442e917b0c09623ac89f0b15bf0ac3d748b34291cd9528cf4",
+  "sqlite_sha256": "1712cff0d83d8798ce644e4663ec9464585d47922bba25b6a44abc835a8103cd",
+  "restored_project_sha256": "3764447ace74b177c7fbe3fd16465dff7732893b64a3cf87ff4c843d6851f069"
+}
