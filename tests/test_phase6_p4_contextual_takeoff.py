@@ -217,3 +217,23 @@ def test_real_qt_contextual_question_button_and_no_command_execution(tmp_path):
     assert app.store.current_digest("P")==before
     assert app.open_project("P")["boq"]==[]
     window.close();w.close();qt.processEvents();app.store.close()
+
+
+@pytest.mark.parametrize("family,key",[
+    ("joist_block","joist_direction"),
+    ("waffle_one_way","rib_direction"),
+    ("waffle_two_way","intersections_ref"),
+    ("mep","route_or_equipment_ref"),
+])
+def test_specialist_fields_are_reviewable_not_calculated(tmp_path,family,key):
+    from core.ai.contextual_takeoff import _SPECIALIST_REQUIRED
+    app,ctx=base(tmp_path);guide=ContextualTakeoffGuide(app)
+    expected=_SPECIALIST_REQUIRED[family]
+    proposal=guide.propose(replace(ctx,operation=family),
+                           inputs={key:"user-evidence-reference"})
+    assert key not in proposal.missing_inputs
+    assert set(proposal.missing_inputs)==set(expected)-{key}
+    assert proposal.quantity_authority is False
+    assert guide.review(proposal,accepted=(proposal.review_questions[0],))["quantity"] is None
+    assert app.open_project("P")["boq"]==[]
+    app.store.close()
