@@ -6,6 +6,7 @@ grants a license. Human legal review remains a separate acceptance condition.
 from __future__ import annotations
 
 import argparse
+from hashlib import sha256
 import json
 from pathlib import Path
 import sys
@@ -48,14 +49,58 @@ def validate_staged_unified_payload(root: str | Path) -> tuple[str, ...]:
     if edition.exists():
         if edition.is_symlink() or edition.read_text(encoding="utf-8").strip().lower() != "unified":
             blockers.append("legacy_or_unsafe_EDITION_marker")
-    # Do not allow unlicensed DLL dependencies to enter a signed distribution.
-    # They must have their own separately reviewed manifest/license evidence
-    # before this preflight can be considered a release readiness certificate.
-    if (root / "ai_runtime").is_dir():
-        for dll in (root / "ai_runtime").glob("*.dll"):
-            if dll.is_symlink() or dll.is_file():
-                blockers.append("dll_dependency_not_explicitly_reviewed")
-                break
+    # DLLs are shipped and loaded by the binaries too. Every DLL must have
+    # independently pinned bytes and verifiable on-disk license provenance.
+    deps = data.get("dependencies", [])
+    if not isinstance(deps, list):
+        blockers.append("invalid_runtime_dependencies")
+        deps = []
+    declared: set[str] = set()
+    for dependency in deps:
+        if not isinstance(dependency, dict):
+            blockers.append("invalid_runtime_dependency")
+            continue
+        rel = dependency.get("path")
+        if not isinstance(rel, str) or not rel.startswith("ai_runtime/") or not rel.lower().endswith(".dll"):
+            blockers.append("invalid_runtime_dependency_path")
+            continue
+        if rel in declared:
+            blockers.append("duplicate_runtime_dependency")
+        declared.add(rel)
+        hash_expected = dependency.get("sha256")
+        evidence = dependency.get("license_evidence")
+        evidence_hash = dependency.get("license_evidence_sha256")
+        if not all(isinstance(dependency.get(k), str) and dependency[k].strip()
+                   for k in ("name", "version", "license_id", "license_evidence", "source_url")):
+            blockers.append(f"{rel}:incomplete_dependency_provenance")
+        if dependency.get("redistribution_allowed") is not True or dependency.get("legal_review_approved") is not True:
+            blockers.append(f"{rel}:redistribution_not_verified")
+        try:
+            candidate = root / rel
+            resolved_root = root.resolve(strict=True)
+            candidate.resolve(strict=True).relative_to(resolved_root)
+            if candidate.is_symlink() or not candidate.is_file():
+                raise ValueError("invalid DLL")
+            proof = root / str(evidence)
+            proof.resolve(strict=True).relative_to(resolved_root)
+            if proof.is_symlink() or not proof.is_file():
+                raise ValueError("missing license")
+            digest = sha256(candidate.read_bytes()).hexdigest()
+            license_digest = sha256(proof.read_bytes()).hexdigest()
+            if digest != hash_expected or license_digest != evidence_hash:
+                blockers.append(f"{rel}:integrity_mismatch")
+        except (OSError, ValueError):
+            blockers.append(f"{rel}:missing_or_unsafe")
+    runtime = root / "ai_runtime"
+    observed = set()
+    if runtime.is_dir():
+        observed = {
+            item.relative_to(root).as_posix()
+            for item in runtime.rglob("*.dll")
+            if item.is_file() or item.is_symlink()
+        }
+    if observed != declared:
+        blockers.append("runtime_dll_inventory_mismatch")
     return tuple(sorted(set(blockers)))
 
 
