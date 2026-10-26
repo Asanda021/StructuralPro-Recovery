@@ -271,3 +271,19 @@ def test_real_roof_checklist_requires_joist_direction_and_thermal_rebar_review(t
             measurement_source="real:roof03")["text"]
     assert svc.open_project("P")["boq"]==[]
     svc.store.close()
+
+
+def test_a2_mep_and_specialist_waffle_evidence_without_fictional_quantities(tmp_path):
+    svc=case(tmp_path)
+    w=assistant(svc)
+    for code,needle in (("mep_pipe","لوله"),("mep_electrical","کابل"),
+                        ("waffle_one_way","ریب"),("waffle_two_way","تقاطع"),
+                        ("hollowcore","قطعه")):
+        preview=w.preview(code,measurement_source="source:no-calculation")
+        assert not preview.ready_to_review and preview.components==()
+        assert any(needle in q for q in preview.review_questions)
+        answer=w.advise("چه چیزهایی نیاز است؟",code=code)
+        assert "بدون مقدار" not in answer["text"] or not answer["commit_allowed"]
+        assert answer["member_id"]=="SL1" and answer["project_id"]=="P"
+    assert not svc.open_project("P")["boq"]
+    svc.store.close()
