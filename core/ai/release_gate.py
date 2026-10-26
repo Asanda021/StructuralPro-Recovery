@@ -24,7 +24,7 @@ class AIReleaseCheck:
 
 
 def inspect_ai_release_assets(manifest_path: str | Path, asset_root: str | Path) -> AIReleaseCheck:
-    """Require all 3 assets, independent license evidence and publisher approval.
+    """Require all four core assets, independent license evidence and publisher approval.
 
     A synthetic test fixture may satisfy this data contract; that is NOT a
     review of actual licenses. Real distributions require owner/legal review.
@@ -122,4 +122,50 @@ def inspect_ai_release_assets(manifest_path: str | Path, asset_root: str | Path)
                 blockers.append(f"{kind}:sha256_mismatch")
         except (OSError, ValueError):
             blockers.append(f"{kind}:unsafe_or_missing")
+    # Runtime DLLs can alter the executable behavior after packaging. Verify
+    # their exact inventories, hashes and license receipts on *every* load.
+    dependencies = manifest.get("dependencies", [])
+    if not isinstance(dependencies, list):
+        blockers.append("invalid_runtime_dependencies")
+        dependencies = []
+    declared = set()
+    for dependency in dependencies:
+        if not isinstance(dependency, dict):
+            blockers.append("invalid_runtime_dependency")
+            continue
+        rel = dependency.get("path")
+        if not isinstance(rel, str) or not rel.startswith("ai_runtime/") or not rel.lower().endswith(".dll"):
+            blockers.append("invalid_runtime_dependency_path")
+            continue
+        if rel in declared:
+            blockers.append("duplicate_runtime_dependency")
+        declared.add(rel)
+        if not all(isinstance(dependency.get(k), str) and dependency[k].strip() for k in
+                   ("name", "version", "source_url", "license_id", "license_evidence")):
+            blockers.append(f"{rel}:incomplete_dependency_provenance")
+        if dependency.get("redistribution_allowed") is not True or dependency.get("legal_review_approved") is not True:
+            blockers.append(f"{rel}:redistribution_not_verified")
+        try:
+            candidate = root / rel
+            root_real = root.resolve(strict=True)
+            candidate.resolve(strict=True).relative_to(root_real)
+            if candidate.is_symlink() or not candidate.is_file():
+                raise ValueError("unsafe runtime DLL")
+            evidence = root / str(dependency["license_evidence"])
+            evidence.resolve(strict=True).relative_to(root_real)
+            if evidence.is_symlink() or not evidence.is_file():
+                raise ValueError("unsafe license proof")
+            observed = sha256(candidate.read_bytes()).hexdigest()
+            license_observed = sha256(evidence.read_bytes()).hexdigest()
+            if observed != dependency.get("sha256") or license_observed != dependency.get("license_evidence_sha256"):
+                blockers.append(f"{rel}:integrity_mismatch")
+        except (OSError, ValueError, KeyError):
+            blockers.append(f"{rel}:missing_or_unsafe")
+    directory = root / "ai_runtime"
+    found = set()
+    if directory.is_dir():
+        found = {p.relative_to(root).as_posix() for p in directory.rglob("*.dll")
+                 if p.is_file() or p.is_symlink()}
+    if found != declared:
+        blockers.append("runtime_dll_inventory_mismatch")
     return AIReleaseCheck(not blockers, tuple(sorted(set(blockers))), digests)
