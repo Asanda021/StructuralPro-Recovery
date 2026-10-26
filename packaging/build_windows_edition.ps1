@@ -31,7 +31,7 @@ if ($LASTEXITCODE -ne 0) { throw "Windows payload build failed" }
 $payload = "dist/StructuralPro"
 if (-not (Test-Path "$payload/StructuralPro.exe")) { throw "Windows program missing" }
 # Copy only prevalidated local assets; never fetch/download during build.
-foreach ($directory in @("models", "ai_runtime")) {
+foreach ($directory in @("models", "ai_runtime", "licenses")) {
   $from = Join-Path $source $directory
   if (-not (Test-Path -LiteralPath $from -PathType Container)) {
     throw "Staged assets directory missing: $directory"
