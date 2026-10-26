@@ -376,6 +376,13 @@ class GraphicalTakeoffDialog(QDialog):
         self.geometry_components=QComboBox();self.geometry_components.addItem('تمام اجزای سطح',None)
         self.back_vertex.setToolTip('فقط رأس‌های انتخاب در حال ترسیم را اصلاح می‌کند')
         self.edit_vertices.setToolTip('مختصات مرجع صفحه به صورت JSON؛ تغییر مقدار فقط از هندسه معتبر')
+        self.w1_guide_button=QPushButton("دستیار مرحله‌ای متره و AI آگاه به زمینه")
+        self.w1_guide_button.setObjectName("OpenPhase6P4ContextualWizard")
+        self.w1_guide_button.setToolTip("پیشنهاد فقط‌خواندنی اقلام وابسته؛ ورودی واقعی، تأیید جدا و فرم اصلی")
+        self.w1_guide_button.setEnabled(self.app_service is not None)
+        self.w1_guide_button.clicked.connect(self.open_contextual_wizard)
+        self._w1_dialog=None
+        self._w1_real_form=None
         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
         self.region_to_roof.setEnabled(self.app_service is not None)
         self.region_to_roof.setToolTip("انتخاب صریح نوع سقف؛ دیتایل مصالح از مساحت حدس زده نمی‌شود")
@@ -405,7 +412,7 @@ class GraphicalTakeoffDialog(QDialog):
         for index, x in enumerate([
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
-            self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
+            self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
@@ -1140,6 +1147,93 @@ class GraphicalTakeoffDialog(QDialog):
         margin = max(bounds.width(), bounds.height(), 1.0) * 0.05
         self.canvas.setSceneRect(bounds.adjusted(-margin, -margin, margin, margin))
         self._ifc_status()
+
+    def contextual_w1_context(self, family):
+        """Collect only current, real project/member/source, not AI guesses."""
+        from core.ai.contextual_takeoff import GuidedContext
+        import hashlib
+        if self.app_service is None:
+            raise ValueError("سرویس پروژه متصل نیست.")
+        pid=self.project_id_input.text().strip()
+        project=self.app_service.open_project(pid)
+        if not isinstance(project,dict):
+            raise ValueError("پروژه واقعی انتخاب نشده است.")
+        floor=self.polygon_floor.text().strip()
+        member=self.polygon_member.text().strip() or None
+        rev=None
+        sha=None
+        source=None
+        review="unreviewed"
+        if self.viewer.kind=="ifc":
+            doc=self.viewer.ifc_document
+            if doc is None or not self.viewer.path:
+                raise ValueError("مدل IFC معتبر باز نیست.")
+            source=str(self.viewer.path)
+            sha=doc.source_sha256
+            rev=self.ifc_revision.text().strip()
+            if not rev:
+                raise ValueError("Revision مدل IFC باید صریح باشد.")
+            if not Path(source).is_file() or hashlib.sha256(Path(source).read_bytes()).hexdigest()!=sha:
+                raise ValueError("هش فایل IFC بازشده تغییر کرده است.")
+            global_id=getattr(self,'_ifc_selected_global_id',None)
+            bridge=getattr(self,'_verified_project_selection',None)
+            if global_id and bridge is not None:
+                self._check_live_four_way_context(bridge)
+                link=bridge.resolve(origin="2d",identifier=global_id,
+                    source_sha256=sha,revision=rev)
+                if link.status=="linked" and len(link.member_ids)==1:
+                    linked=link.member_ids[0]
+                    if member and member!=linked:
+                        raise ValueError("هویت عضو واردشده با تأیید IFC مطابقت ندارد.")
+                    member=linked
+                    floors={m.get("floor_id") for m in project.get("members",[])
+                            if m.get("id")==member}
+                    if len(floors)==1:
+                        audited_floor=next(iter(floors))
+                        if floor and floor!=audited_floor:
+                            raise ValueError("طبقه انتخاب‌شده با عضو IFC مطابقت ندارد.")
+                        floor=floor or audited_floor
+                    review="approved"
+                elif member:
+                    raise ValueError("عضو واردشده هنوز به IFC بازبینی‌شده متصل نیست.")
+            elif global_id and member:
+                raise ValueError("تطبیق عضو IFC بدون سند مستقل تأیید نشده است.")
+        if not floor:
+            raise ValueError("شناسه طبقه باید در ابزار نقشه/متره مشخص شود.")
+        return GuidedContext(
+            project_id=pid,floor_id=floor,member_id=member,
+            source_id=source,source_sha256=sha,revision=rev,
+            operation=family,current_tab="نقشه و متره",
+            review_status=review)
+
+    def _open_w1_real_form(self, context):
+        """Route to existing live workflows; never create a parallel commit."""
+        from app.manual_takeoff import ManualTakeoffDialog
+        if context.operation.startswith("waffle"):
+            # Existing specialist roof editor requires a real selected region.
+            self.open_region_roof()
+            return getattr(self,'_roof_editor',None)
+        if context.operation=="mep":
+            return None  # no verified generic MEP specialist operation
+        dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
+        dialog.floor_id.setText(context.floor_id)
+        dialog.element_label.setText(context.member_id or "")
+        self._w1_real_form=dialog
+        dialog.show()
+        return dialog
+
+    def open_contextual_wizard(self):
+        if self.app_service is None:
+            self.status.setText("راهنمای متره به پروژه واقعی نیاز دارد.")
+            return None
+        from app.contextual_takeoff_panel import ContextualTakeoffDialog
+        dialog=ContextualTakeoffDialog(
+            self.app_service,self.contextual_w1_context,parent=self,
+            open_real_form=self._open_w1_real_form)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self._w1_dialog=dialog
+        dialog.show()
+        return dialog
 
     def open_verified_crossview(self):
         """Display *persisted* reviewed identities, never a hand-built demo mapping."""
