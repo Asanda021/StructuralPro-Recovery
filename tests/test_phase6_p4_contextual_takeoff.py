@@ -167,7 +167,7 @@ def test_actual_qt_button_context_preview_reject_cancel_and_open_manual(tmp_path
     QTest.mouseClick(w.w1_guide_button,Qt.MouseButton.LeftButton)
     panel=w._w1_dialog
     assert panel is not None and panel.isVisible()
-    panel.family.setCurrentIndex(panel.family.findData("block_wall"))
+    panel.family.setCurrentIndex(panel.family.findData("beam"))
     assert panel.context_label.text().find("F1")!=-1 or panel.refresh_context() is None
     QTest.mouseClick(panel.preview_button,Qt.MouseButton.LeftButton)
     assert panel.active is not None,panel.status.text()
