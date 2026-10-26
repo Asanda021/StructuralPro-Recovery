@@ -45,6 +45,21 @@ _QUESTIONS = {
 # specialist tool until a matching reviewed template is provided.
 _FAMILY_TEMPLATES["joist_block"] = ()
 
+# Explicit W1-specific fields are review metadata only, not geometry numbers
+# accepted by any secondary calculator. Only the original specialist workflow
+# may measure them after engineering validation.
+_SPECIALIST_REQUIRED = {
+    "joist_block": ("joist_direction", "joist_count", "joist_length_ref",
+                    "block_count", "block_spec_ref", "topping_thickness_ref",
+                    "thermal_rebar_detail_ref", "openings_ref", "ownership_ref"),
+    "waffle_one_way": ("rib_direction", "rib_count", "rib_detail_ref",
+                       "solid_area_ref", "opening_ref", "ownership_ref"),
+    "waffle_two_way": ("rib_direction_x", "rib_direction_y", "rib_grid_ref",
+                       "intersections_ref", "solid_area_ref", "opening_ref", "ownership_ref"),
+    "mep": ("discipline", "operation_ref", "route_or_equipment_ref",
+            "measurement_unit_ref", "ownership_ref"),
+}
+
 
 def _id(value, label):
     if not isinstance(value, str) or not value.strip() or value != value.strip():
@@ -141,13 +156,16 @@ class ContextualTakeoffGuide:
         templates = _FAMILY_TEMPLATES[context.operation]
         if provided and not templates:
             raise ValueError("برای این خانواده قالب محاسباتی عام تأیید نشده؛ فرم تخصصی را باز کنید.")
-        required = ()
+        required = _SPECIALIST_REQUIRED.get(context.operation, ())
+        allowed=set(required)
         for code in templates:
             t=self.templates.get(code)
-            unknown=set(provided)-set(t.required_inputs)-set(t.optional_inputs)
-            if unknown:
-                raise ValueError("ورودی ناشناخته: "+", ".join(sorted(unknown)))
+            allowed.update(t.required_inputs)
+            allowed.update(t.optional_inputs)
             required += t.required_inputs
+        unknown=set(provided)-allowed
+        if unknown:
+            raise ValueError("ورودی ناشناخته: "+", ".join(sorted(unknown)))
         missing=tuple(dict.fromkeys(k for k in required
                           if k not in provided or provided[k] in ("",None)))
         # No numeric preview: the authoritative calculator is the existing
