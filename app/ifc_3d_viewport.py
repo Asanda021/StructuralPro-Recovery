@@ -320,6 +320,10 @@ class IFC3DDialog(QDialog):
                 floor = state['storey_id']
                 self.hide_floor.setEnabled(floor is not None)
                 self.hide_floor.setChecked(floor in self.scene.hidden_storeys if floor else False)
+            # E2 restores the validated 3D selection directly without
+            # mouse events. Publish its exact GlobalID so the existing
+            # checked 3D->2D/tree/BOQ path can synchronize; empty clears all.
+            self.memberSelected.emit(state['global_id'] or '')
             self.session_status.setText('نشست E2 منطبق با منبع و Revision فعلی بازیابی شد.')
             return True
         except Exception as exc:
