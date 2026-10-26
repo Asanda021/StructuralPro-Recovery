@@ -6,6 +6,8 @@ canonical service and an atomic create-only SQLite transaction.
 """
 from __future__ import annotations
 from copy import deepcopy
+from hashlib import sha256
+import json
 from core.projects.project_model import ProjectModel, _identity
 from core.project.domains import DISCIPLINES
 
@@ -70,18 +72,27 @@ def preview_project_start(template_code: str, *, project_id: str, name: str,
     errors=model.validate()
     if errors:
         raise ValueError("؛ ".join(errors))
-    return {
+    preview = {
         "project_id": project_id, "name": name.strip(), "template": template_code,
         "template_title": preset["title"], "template_version": TEMPLATE_VERSION,
         "floors": deepcopy(model.floors), "disciplines": list(selected),
         "checklist": list(preset["checklist"]), "preview_only": True,
         "quantity": None, "price": None, "needs_user_approval": True,
     }
+    preview["preview_digest"]=sha256(json.dumps(
+        preview,sort_keys=True,ensure_ascii=False,allow_nan=False).encode("utf-8")).hexdigest()
+    return preview
 
 
 def project_payload(preview: dict) -> dict:
     if not isinstance(preview,dict) or not preview.get("preview_only"):
         raise ValueError("پیش‌نمایش معتبر پروژه لازم است.")
+    supplied=preview.get("preview_digest")
+    unsigned={k:v for k,v in preview.items() if k!="preview_digest"}
+    actual=sha256(json.dumps(
+        unsigned,sort_keys=True,ensure_ascii=False,allow_nan=False).encode("utf-8")).hexdigest()
+    if supplied!=actual:
+        raise ValueError("پیش‌نمایش از زمان تهیه تغییر کرده است.")
     # Validate the entire preview again; never trust a caller-mutated label.
     verified=preview_project_start(
         preview["template"],project_id=preview["project_id"],name=preview["name"],
