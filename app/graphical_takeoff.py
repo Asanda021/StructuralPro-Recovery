@@ -1155,7 +1155,12 @@ class GraphicalTakeoffDialog(QDialog):
         if self.app_service is None:
             raise ValueError("سرویس پروژه متصل نیست.")
         pid=self.project_id_input.text().strip()
-        project=self.app_service.open_project(pid)
+        if self.persisted_project_id and pid!=self.persisted_project_id:
+            raise ValueError("پروژه فعال تغییر کرده است؛ ابتدا نشست پروژه جدید را مستقل باز کنید.")
+        try:
+            project=self.app_service.open_project(pid)
+        except KeyError as exc:
+            raise ValueError("پروژه واقعی انتخاب نشده است.") from exc
         if not isinstance(project,dict):
             raise ValueError("پروژه واقعی انتخاب نشده است.")
         floor=self.polygon_floor.text().strip()
