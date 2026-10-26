@@ -187,3 +187,21 @@ def test_package_snapshot_marks_current_source_error_without_mutating_original(e
     result=office.snapshot(p,as_of=data['date'])['packages'][0]
     assert result['current'] is False and result['source_error']
     assert pkg==original
+
+
+def test_historical_office_overdue_snapshot_survives_later_resolution(env):
+    """Later, valid site-office resolutions cannot rewrite a prior as-of view."""
+    p, data, source = env
+    meeting = cmd(p, 'meeting_create', dict(
+        title='Safety coordination', date='2026-10-24', reference='MT-NEW',
+        participants=['engineer'], decisions='Inspect', attachments=[],
+        source=source, actions=[dict(title='Verify', owner='engineer',
+            due_date='2026-10-25', activity_id='A', source=source)]))
+    issue(p, meeting, 'meeting')
+    saved = deepcopy(meeting)
+    assert len(office.snapshot(p, as_of='2026-10-26')['overdue_actions']) == 1
+    cmd(p, 'action_resolve', dict(id=meeting['action_items'][0]['id'],
+        date='2026-10-27', resolution='Inspection complete', source=source))
+    assert len(office.snapshot(p, as_of='2026-10-26')['overdue_actions']) == 1
+    assert office.snapshot(p, as_of='2026-10-27')['overdue_actions'] == []
+    assert meeting == saved
