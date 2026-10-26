@@ -1207,9 +1207,12 @@ class GraphicalTakeoffDialog(QDialog):
                     except (RuntimeError,ValueError,PermissionError):
                         # Stale review never preselects a different member.
                         member=""
+            rect=self.canvas._selected_region_rect
+            region_selected=bool(rect is not None and rect.isValid()
+                                 and rect.width()>0 and rect.height()>0)
             dialog=ContextualTakeoffDialog(
                 self.app_service,pid,self,floor_id=floor,member_id=member,
-                context_guard=guard,**document)
+                context_guard=guard,region_selected=region_selected,**document)
             dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
             self._p6_takeoff_wizard=dialog
             dialog.show()
