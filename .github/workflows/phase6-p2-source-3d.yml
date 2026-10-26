@@ -13,6 +13,8 @@ on:
       - core/drawings/ifc3d_session_state.py
       - core/bim/ifc.py
       - tests/test_phase6_p2_member_batches.py
+      - tests/test_phase5_e2_view_session.py
+      - tests/test_phase5_e2_app_integration.py
       - app/main.py
       - tests/test_phase6_p1_shell.py
       - tests/test_phase6_p2_source_mesh3d.py
@@ -57,6 +59,8 @@ jobs:
             tests/test_phase6_p2_e2_restore.py \
             tests/test_phase6_p2_benchmark_ifc100.py \
             tests/test_phase6_p2_member_batches.py \
+            tests/test_phase5_e2_view_session.py \
+            tests/test_phase5_e2_app_integration.py \
             tests/test_phase6_p2_real_ifc_3d.py \
             tests/test_ifc_mesh_viewer.py \
             tests/test_phase6_p1_shell.py
@@ -91,7 +95,7 @@ jobs:
         shell: pwsh
         run: |
           python -m compileall -q core/drawings/source_mesh3d.py app/ifc_3d_viewport.py app/graphical_takeoff.py core/bim/ifc.py core/platform/autosave.py
-          python -m pytest -q --maxfail=1 --junitxml=phase6-p2-windows.xml tests/test_phase6_p2_source_mesh3d.py tests/test_phase6_p2_visibility_pick.py tests/test_phase6_p2_background_loader.py tests/test_phase6_p2_e2_restore.py tests/test_phase6_p2_benchmark_ifc100.py tests/test_phase6_p2_member_batches.py tests/test_phase6_p2_real_ifc_3d.py tests/test_ifc_mesh_viewer.py tests/test_phase6_p1_shell.py
+          python -m pytest -q --maxfail=1 --junitxml=phase6-p2-windows.xml tests/test_phase6_p2_source_mesh3d.py tests/test_phase6_p2_visibility_pick.py tests/test_phase6_p2_background_loader.py tests/test_phase6_p2_e2_restore.py tests/test_phase6_p2_benchmark_ifc100.py tests/test_phase6_p2_member_batches.py tests/test_phase5_e2_view_session.py tests/test_phase5_e2_app_integration.py tests/test_phase6_p2_real_ifc_3d.py tests/test_ifc_mesh_viewer.py tests/test_phase6_p1_shell.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
