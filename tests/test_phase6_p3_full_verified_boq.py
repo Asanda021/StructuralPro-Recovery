@@ -7,7 +7,7 @@ from test_column_stage22 import column
 from core.drawings.project_selection_bridge import VerifiedProjectSelection
 
 
-def test_actual_ifc_specialist_commit_three_boq_rows_navigate_all_four_views(tmp_path):
+def committed_column_case(tmp_path):
     import ifcopenshell
     app, old_path, _proof, _proposal, args = identity_case(tmp_path)
     m = ifcopenshell.open(str(old_path))
@@ -44,6 +44,11 @@ def test_actual_ifc_specialist_commit_three_boq_rows_navigate_all_four_views(tmp
     preview=app.preview_structural_member('P','column','F1','C1')
     assert preview['ready']
     app.commit_structural_member('P','column','F1','C1',expected_revision=1)
+    return app, source, obj
+
+
+def test_actual_ifc_specialist_commit_three_boq_rows_navigate_all_four_views(tmp_path):
+    app,source,obj=committed_column_case(tmp_path)
     snapshot=app.open_project('P')
     assert len(snapshot['boq'])==3
     before=app.store.current_digest('P')
@@ -69,4 +74,44 @@ def test_actual_ifc_specialist_commit_three_boq_rows_navigate_all_four_views(tmp
         assert result.boq_row_ids==by_member.boq_row_ids
     assert app.store.current_digest('P')==before
     assert snapshot==app.open_project('P')
+    app.store.close()
+
+
+def test_qt_real_boq_row_click_highlights_ifc_member_and_keeps_financial_digest(tmp_path):
+    """QTest click on a BOQ row from the committed specialist receipt."""
+    import os
+    from pathlib import Path
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app,source,obj=committed_column_case(tmp_path)
+    qt=QApplication.instance() or QApplication([])
+    window=GraphicalTakeoffDialog(app_service=app,project_id='P')
+    window.show()
+    window.open_drawing(str(source))
+    window.ifc_revision.setText('R1')
+    original=app.store.current_digest('P')
+    boqs=app.open_project('P')['boq']
+    QTest.mouseClick(window.verified_crossview_button,Qt.MouseButton.LeftButton)
+    panel=window._verified_selection_panel
+    assert panel is not None,window.status.text()
+    assert panel.boq.rowCount()==3
+    rectangle=panel.boq.visualRect(panel.boq.model().index(0,0))
+    QTest.mouseClick(panel.boq.viewport(),Qt.MouseButton.LeftButton,
+                     pos=rectangle.center())
+    assert window._ifc_selected_global_id==obj.GlobalId
+    assert panel.members.selectedItems()[0].text(0)=='C1'
+    assert len(panel.boq.selectionModel().selectedRows())==3
+    assert all(item.isSelected() for item in window._ifc_handle_items[obj.GlobalId])
+    folder=os.environ.get('STRUCTURALPRO_P6_P3_SCREENSHOT_DIR')
+    if folder:
+        output=Path(folder);output.mkdir(parents=True,exist_ok=True)
+        qt.processEvents()
+        assert panel.grab().save(str(output/'p6-p3-real-reviewed-boq-click.png'))
+    assert app.store.current_digest('P')==original
+    assert app.open_project('P')['boq']==boqs
+    window._verified_selection_dialog.close()
+    window.close()
+    qt.processEvents()
     app.store.close()
