@@ -125,3 +125,25 @@ def test_zero_area_source_face_and_edge_on_pick_are_rejected(tmp_path):
         VerifiedScene3D(contract)
     assert VerifiedScene3D._inside(
         20.0, 20.0, ((0.0, 0.0), (1.0, 1.0), (2.0, 2.0))) is False
+
+
+def test_fit_selected_floor_changes_only_camera_not_geometry_or_quantity(tmp_path):
+    import copy
+    contract = real_contract(tmp_path)
+    before = copy.deepcopy(contract)
+    scene = VerifiedScene3D(contract)
+    original = scene.visible_faces(1000, 740, storey_id='Level-01')
+    original_bounds = max(p[0] for f in original for p in f.points) - min(
+        p[0] for f in original for p in f.points)
+    scene.fit_storey('Level-01')
+    focused = scene.visible_faces(1000, 740, storey_id='Level-01')
+    focused_bounds = max(p[0] for f in focused for p in f.points) - min(
+        p[0] for f in focused for p in f.points)
+    assert focused_bounds > original_bounds
+    assert scene.focus_storey_id == 'Level-01'
+    assert scene.quantity_authority is False
+    assert contract == before
+    scene.fit_storey(None)
+    assert scene.visible_faces(1000, 740, storey_id='Level-01') == original
+    with pytest.raises(ValueError):
+        scene.fit_storey('Nonexistent floor')
