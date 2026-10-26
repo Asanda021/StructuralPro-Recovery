@@ -104,3 +104,15 @@ def test_unified_engine_blocked_without_license_even_if_model_present(tmp_path):
     engine.model_path=model
     assert not engine.has_llm_model
     assert engine.answer("آفلاین کار می‌کند؟").quantity_authority is False
+
+
+def test_single_shipped_edition_ignores_environment_and_legacy_engine_override(tmp_path,monkeypatch):
+    from core.platform import product
+    import core.ai.local_engine as engine_module
+    (tmp_path/"EDITION").write_text("unified\n")
+    monkeypatch.setenv("STRUCTURALPRO_EDITION","light")
+    assert product.packaged_edition(tmp_path,fail_closed=True) is ProductEdition.UNIFIED
+    monkeypatch.setattr(engine_module,"packaged_edition",lambda *a,**kw:ProductEdition.UNIFIED)
+    engine=engine_module.LocalAIEngine(model_dir=tmp_path,edition="pro")
+    assert engine.edition=="unified"
+    assert not engine.has_llm_model
