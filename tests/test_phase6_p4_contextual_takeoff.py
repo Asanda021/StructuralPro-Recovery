@@ -364,48 +364,41 @@ def test_failed_form_handoff_revokes_proposal(tmp_path):
         dialog.close();app.store.close();qt.processEvents()
 
 
-@pytest.mark.parametrize("family,dialog_name",[
-    ("block_wall","ArchitectureDetailEditor"),
-    ("wall_with_opening","ArchitectureDetailEditor"),
-    ("floor_finish","ArchitectureDetailEditor"),
-    ("false_ceiling","ArchitectureDetailEditor"),
-    ("column","ReviewedStructuralManualEditor"),
+@pytest.mark.parametrize("family,dialog_name,expected_kind",[
+    ("block_wall","ArchitectureDetailEditor","block_wall"),
+    ("wall_with_opening","ArchitectureDetailEditor","block_wall"),
+    ("floor_finish","ArchitectureDetailEditor","floor_finish"),
+    ("false_ceiling","ArchitectureDetailEditor","suspended_ceiling"),
+    ("column","ReviewedStructuralManualEditor","column"),
 ])
-def test_existing_architecture_structural_handoffs_are_review_only(tmp_path,family,dialog_name):
+def test_specialist_qt_dialog_constructed_without_modal_loop(tmp_path,family,dialog_name,expected_kind,monkeypatch):
+    """Instantiate real editors; independent UI acceptance tests modal user actions."""
     from PySide6.QtWidgets import QApplication,QDialog
-    from PySide6.QtCore import QTimer
+    from PySide6.QtCore import Qt
     from app.graphical_takeoff import GraphicalTakeoffDialog
     qt=QApplication.instance() or QApplication([])
     app,ctx=base(tmp_path)
     drawing=GraphicalTakeoffDialog(app_service=app,project_id="P")
     drawing.polygon_floor.setText("F1")
     guide=drawing.open_contextual_wizard()
+    observed=[]
+    original_exec=QDialog.exec
+    def capture_editor(widget):
+        if widget.objectName()!=dialog_name:
+            return original_exec(widget)
+        assert widget.layoutDirection()==Qt.LayoutDirection.RightToLeft
+        assert widget.windowTitle()
+        if dialog_name=="ArchitectureDetailEditor":
+            assert widget.architecture_controls["kind"].currentData()==expected_kind
+        observed.append(widget.objectName())
+        return QDialog.DialogCode.Rejected
+    monkeypatch.setattr(QDialog,"exec",capture_editor)
     try:
         guide.family.setCurrentIndex(guide.family.findData(family))
         assert guide.preview() is not None,guide.status.text()
-        seen=[]
-        def close_specialist():
-            dialogs=[w for w in qt.allWidgets()
-                     if isinstance(w,QDialog) and w.objectName()==dialog_name and w.isVisible()]
-            if dialogs:
-                seen.append(dialogs[0].objectName())
-                dialogs[0].reject()
-        # A mismatched/nested modal must fail the test, not hang the CI runner.
-        fallback=QTimer(guide)
-        fallback.setSingleShot(True)
-        def rescue_modal():
-            modal=qt.activeModalWidget()
-            if isinstance(modal,QDialog):
-                modal.reject()
-        fallback.timeout.connect(rescue_modal)
-        QTimer.singleShot(650,close_specialist)
-        fallback.start(3000)
         digest=app.store.current_digest("P")
-        try:
-            assert guide.open_form() is True,guide.status.text()
-        finally:
-            fallback.stop()
-        assert seen==[dialog_name]
+        assert guide.open_form() is True,guide.status.text()
+        assert observed==[dialog_name]
         assert digest==app.store.current_digest("P")
         assert app.open_project("P")["boq"]==[]
     finally:
