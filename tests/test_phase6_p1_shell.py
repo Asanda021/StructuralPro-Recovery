@@ -33,7 +33,7 @@ def test_phase6_p1_offscreen_real_qt_toggle_nav_ribbon_and_persistence(tmp_path)
 import sys
 import os
 from pathlib import Path
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import Qt, QSettings, QTimer
 from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QScrollArea, QTabBar, QStackedWidget
 Path.home = classmethod(lambda cls: Path(sys.argv[1]))
 from app.main import main
@@ -87,12 +87,13 @@ def inspect(app):
     assert settings.value('animations', type=bool) is False
     assert settings.value('glass_enabled', type=bool) is False
     assert settings.value('ribbon_collapsed', type=bool) is True
+    QTimer.singleShot(0, window.close)
     return real_exec()
 
 QApplication.exec = inspect
 raise SystemExit(main())
 '''
-    env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen', 'STRUCTURALPRO_SMOKE': '1'}
+    env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen', 'STRUCTURALPRO_SMOKE': '0'}
     result = subprocess.run([sys.executable, '-c', script, str(tmp_path)], cwd=ROOT,
                             capture_output=True, text=True, env=env, timeout=90)
     assert result.returncode == 0, result.stdout + result.stderr
