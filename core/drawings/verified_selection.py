@@ -48,6 +48,7 @@ class VerifiedSelectionCrosswalk:
         project_id: str, source_sha256: str, revision: str,
         real_global_ids: set[str], real_member_ids: set[str],
         real_boq_row_ids: set[str], approved_records: list[dict],
+        trusted_review_pairs: frozenset[tuple[str, str]],
     ):
         self.project_id = _ident(project_id, what="پروژه")
         self.revision = _ident(revision, what="نسخه")
@@ -63,6 +64,8 @@ class VerifiedSelectionCrosswalk:
         for category, identifiers in self.allowed.items():
             if not all(isinstance(x, str) and x.strip() == x and x for x in identifiers):
                 raise ValueError(f"شناسه‌های مرجع {category} معتبر نیستند.")
+        if not isinstance(trusted_review_pairs, frozenset) or not trusted_review_pairs:
+            raise ValueError('ثبت مستقل تأیید پیوندها در سرویس معتبر یافت نشد.')
         if not isinstance(approved_records, list):
             raise ValueError("جدول پیوند مستند موجود نیست.")
         keys = set()
@@ -91,6 +94,8 @@ class VerifiedSelectionCrosswalk:
                 raise ValueError("پیوند فاقد هویت مقصد است.")
             evidence = _ident(row.get("evidence_ref"), what="مدرک پیوند")
             reviewer = _ident(row.get("reviewer_id"), what="بازبین")
+            if (evidence, reviewer) not in trusted_review_pairs:
+                raise ValueError('تأیید مستقل مدرک و هویت بازبین معتبر نیست.')
             key = (global_id, member_id, shape_id, boq)
             if key in keys:
                 raise ValueError("پیوند مستند تکراری است.")
