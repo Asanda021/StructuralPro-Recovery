@@ -96,7 +96,7 @@ def inspect(app):
 QApplication.exec = inspect
 raise SystemExit(main())
 '''
-    env = {**os.environ, 'QT_QPA_PLATFORM': 'offscreen',
+    env = {**os.environ, 'QT_QPA_PLATFORM': os.environ.get('STRUCTURALPRO_P6_QPA_PLATFORM', 'offscreen'),
            'STRUCTURALPRO_SMOKE': '0' if sys.platform == 'win32' else '1'}
     result = subprocess.run([sys.executable, '-c', script, str(tmp_path)], cwd=ROOT,
                             capture_output=True, text=True, env=env, timeout=90)
