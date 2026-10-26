@@ -43,6 +43,19 @@ def test_real_qt_ifc_3d_button_opens_document_and_syncs_selection(tmp_path):
     assert dialog.ifc_3d_button.isVisible()
     before=list(dialog.session.items)
     QTest.mouseClick(dialog.ifc_3d_button, Qt.MouseButton.LeftButton)
+    assert not dialog.ifc_3d_button.isEnabled()
+    assert dialog.ifc_3d_cancel.isEnabled()
+    assert dialog._ifc_3d_dialog is None
+    # The IFC parse now runs off the UI thread, so pump events rather than
+    # assuming the viewport exists synchronously after a button click.
+    for _ in range(2000):
+        qt.processEvents()
+        if dialog._ifc_3d_dialog is not None or dialog._ifc_3d_loader is None:
+            break
+        QTest.qWait(10)
+    assert dialog._ifc_3d_dialog is not None, dialog.status.text()
+    assert dialog.ifc_3d_button.isEnabled()
+    assert not dialog.ifc_3d_cancel.isEnabled()
     view=dialog._ifc_3d_dialog
     canvas=view.findChild(IFC3DCanvas,'VerifiedIFC3DCanvas')
     assert canvas is not None
