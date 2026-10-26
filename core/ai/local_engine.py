@@ -35,7 +35,7 @@ class LocalAIEngine:
         self.edition = str(edition or os.getenv("STRUCTURALPRO_EDITION", "")).strip().lower()
         if not self.edition:
             packaged = packaged_edition(self.bundle_dir, fail_closed=False)
-            self.edition = packaged.value if packaged else ""
+            self.edition = packaged.value if packaged else "unified"
         self.model_dir = Path(model_dir or os.getenv("STRUCTURALPRO_AI_MODEL_DIR") or self.bundle_dir / "models")
         self.runtime_dir = Path(os.getenv("STRUCTURALPRO_AI_RUNTIME_DIR") or self.bundle_dir / "ai_runtime")
         self.model_dir.mkdir(parents=True, exist_ok=True)
@@ -70,9 +70,21 @@ class LocalAIEngine:
         return True
 
     @property
+    def _unified_assets_ready(self):
+        # Explicit old-tier fixtures remain compatibility-only. Canonical one-
+        # edition execution must pass the complete offline A1 release gate.
+        if self.edition != "unified":
+            return True
+        from core.ai.release_gate import inspect_ai_release_assets
+        gate = inspect_ai_release_assets(
+            self.model_dir / "release_manifest.json", self.model_dir
+        )
+        return gate.ready
+
+    @property
     def has_llm_model(self):
         return (self.tier is not AITier.NONE and self.model_path is not None
-                and self.model_path.is_file())
+                and self.model_path.is_file() and self._unified_assets_ready)
 
     @property
     def has_vision_model(self):
