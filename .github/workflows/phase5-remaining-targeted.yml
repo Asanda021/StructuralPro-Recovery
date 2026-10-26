@@ -5,6 +5,8 @@ on:
       - feature/phase5-remaining-e2-a1-unified-20261026
     paths:
       - .github/workflows/phase5-remaining-targeted.yml
+      - app/main.py
+      - tests/test_product_packaging.py
       - core/platform/autosave.py
       - core/platform/product.py
       - core/ai/edition_models.py
@@ -31,13 +33,15 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -q -r requirements.txt
+      - name: Validate frozen Windows UI Python syntax
+        run: python -m py_compile app/main.py core/ai/local_engine.py
       - name: E2 A1 unified and backward-compatibility targeted tests
         env:
           PYTHONPATH: .
         run: |
           python -m pytest -q --maxfail=1 --junitxml=phase5-remaining-linux.xml \
             tests/test_phase5_e2_view_session.py tests/test_phase5_e2_app_integration.py tests/test_phase5_a1_unified_release.py \
-            tests/test_phase5_unified_packaging.py tests/test_priority_65_autosave.py tests/test_product_editions_runtime.py \
+            tests/test_phase5_unified_packaging.py tests/test_product_packaging.py tests/test_priority_65_autosave.py tests/test_product_editions_runtime.py \
             tests/test_ai_edition_models.py tests/test_local_ai.py tests/test_local_ai_engine.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -61,7 +65,7 @@ jobs:
       - name: Real Windows session / unified model contract (symlink fixture Linux-only)
         shell: pwsh
         run: |
-          python -m pytest -q --maxfail=1 --junitxml=phase5-remaining-windows.xml tests/test_phase5_unified_packaging.py tests/test_phase5_e2_app_integration.py tests/test_phase5_e2_view_session.py::test_e2_roundtrip_is_view_only_and_deepcopy tests/test_phase5_e2_view_session.py::test_e2_fail_closed_revision_actor_project_document_and_selection tests/test_phase5_e2_view_session.py::test_e2_atomic_no_replace_and_crash_cleanup tests/test_phase5_a1_unified_release.py::test_unified_profile_all_features_but_no_automatic_model tests/test_phase5_a1_unified_release.py::test_rejects_unlicensed_missing_model_corrupt_runtime_and_projector tests/test_phase5_a1_unified_release.py::test_a1_never_uses_network_even_when_manifest_malicious tests/test_phase5_a1_unified_release.py::test_unified_engine_blocked_without_license_even_if_model_present
+          python -m pytest -q --maxfail=1 --junitxml=phase5-remaining-windows.xml tests/test_phase5_unified_packaging.py tests/test_product_packaging.py tests/test_phase5_e2_app_integration.py tests/test_phase5_e2_view_session.py::test_e2_roundtrip_is_view_only_and_deepcopy tests/test_phase5_e2_view_session.py::test_e2_fail_closed_revision_actor_project_document_and_selection tests/test_phase5_e2_view_session.py::test_e2_atomic_no_replace_and_crash_cleanup tests/test_phase5_a1_unified_release.py::test_unified_profile_all_features_but_no_automatic_model tests/test_phase5_a1_unified_release.py::test_rejects_unlicensed_missing_model_corrupt_runtime_and_projector tests/test_phase5_a1_unified_release.py::test_a1_never_uses_network_even_when_manifest_malicious tests/test_phase5_a1_unified_release.py::test_unified_engine_blocked_without_license_even_if_model_present
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
