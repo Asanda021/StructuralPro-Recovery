@@ -20,6 +20,7 @@ class ContextualTakeoffDialog(QDialog):
         self.guide=ContextualTakeoffGuide(service)
         self.active=None
         self._context=None
+        self._input_snapshot=None
         self.setObjectName("Phase6P4ContextualWizard")
         self.setWindowTitle("دستیار گام‌به‌گام متره | W1 / A2")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -146,6 +147,7 @@ class ContextualTakeoffDialog(QDialog):
             inputs={k:f.text().strip() for k,f in self.inputs.items() if f.text().strip()}
             proposal=self.guide.propose(self._context,inputs=inputs)
             self.active=proposal
+            self._input_snapshot=inputs.copy()
             self.review_button.setEnabled(True)
             self.open_form_button.setEnabled(True)
             notes=("ورودی‌های ناقص: "+", ".join(proposal.missing_inputs)
@@ -164,6 +166,9 @@ class ContextualTakeoffDialog(QDialog):
         live=self.context_provider(self.family.currentData())
         if live!=self._context:
             raise RuntimeError("پروژه، عضو یا منبع فعال تغییر کرده است؛ پیشنهاد قبلی معتبر نیست.")
+        if self._input_snapshot!={k:f.text().strip() for k,f in self.inputs.items()
+                                  if f.text().strip()}:
+            raise RuntimeError("ورودی‌های فرم تغییر کرده‌اند؛ پیش‌نمایش را دوباره اجرا کنید.")
         self.guide.check_current(self.active)
 
     def review(self):
@@ -215,6 +220,7 @@ class ContextualTakeoffDialog(QDialog):
         if self.active is not None:
             self.guide.cancel(self.active.id)
         self.active=None
+        self._input_snapshot=None
         self.review_button.setEnabled(False)
         self.open_form_button.setEnabled(False)
         self.status.setText("پیشنهاد لغو شد؛ BOQ و نشست نقشه تغییر نکرده‌اند.")
