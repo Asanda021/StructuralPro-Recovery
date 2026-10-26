@@ -1,4 +1,4 @@
-name: Phase 5 remaining verified final source snapshot
+name: Phase 5 unified latest closure verified source
 on:
   push:
     branches:
