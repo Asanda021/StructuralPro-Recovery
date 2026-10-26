@@ -10,6 +10,7 @@ on:
       - app/desktop_preferences.py
       - app/theme.py
       - tests/test_phase6_p1_shell.py
+      - tests/test_phase6_p1_font_diagnostics.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -72,6 +73,13 @@ jobs:
         run: |
           python -m compileall -q app/main.py app/desktop_shell.py app/desktop_preferences.py
           python -m pytest -q --maxfail=1 --junitxml=phase6-p1-windows.xml tests/test_phase6_p1_shell.py tests/test_master13_desktop_shell_runtime.py tests/test_windows_ui_navigation_dashboard.py
+      - name: Diagnose native Windows font rasterization
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: windows
+          STRUCTURALPRO_P6_FONT_DIR: phase6-p1-evidence/windows-font
+        run: |
+          python -m pytest -q -s --maxfail=1 --junitxml=phase6-p1-windows-font.xml tests/test_phase6_p1_font_diagnostics.py
       - name: Store Windows Qt evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -79,6 +87,8 @@ jobs:
           name: phase6-p1-windows-qt-evidence
           path: |
             phase6-p1-windows.xml
+            phase6-p1-windows-font.xml
+            phase6-p1-evidence/windows-font/
             phase6-p1-evidence/windows/
           if-no-files-found: warn
           retention-days: 14
