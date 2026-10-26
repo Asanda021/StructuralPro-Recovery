@@ -72,6 +72,7 @@ class IFC3DCanvas(QWidget):
         if storey_id is not None and storey_id not in self.scene.storeys:
             raise ValueError("طبقه در مدل مستند وجود ندارد.")
         self.storey_id = storey_id
+        self.scene.fit_storey(storey_id)
         self.update()
 
     def choose_member(self, global_id):
@@ -83,6 +84,7 @@ class IFC3DCanvas(QWidget):
 
     def reset_camera(self):
         self.scene.reset_view()
+        self.scene.fit_storey(self.storey_id)
         self.update()
 
     def _faces(self):
@@ -210,7 +212,7 @@ class IFC3DDialog(QDialog):
         bar.addWidget(self.storey)
         self.isolate = QCheckBox("ایزوله عضو انتخاب‌شده")
         bar.addWidget(self.isolate)
-        reset = QPushButton("بازنشانی نما")
+        reset = QPushButton("بازنشانی نما / نمایش کامل طبقه")
         reset.setObjectName("IFC3DResetCamera")
         bar.addWidget(reset)
         bar.addStretch()
