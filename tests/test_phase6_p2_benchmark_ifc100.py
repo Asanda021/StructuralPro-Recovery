@@ -125,11 +125,11 @@ def test_ifc_real_parse_100_floor_scaling_is_measured_without_dropping_members(t
         'machine':platform.machine(),
         'cpu_count':os.cpu_count(),
         'thresholds':{
-            'total_seconds_lt':180,
-            'peak_rss_growth_bytes_lt':1_500_000_000,
-            'first_frame_seconds_lt':10,
-            'orbit_zoom_seconds_lt':10,
-            'floor_filter_seconds_lt':10,
+            'total_seconds_lt':30,
+            'peak_rss_growth_bytes_lt':256_000_000,
+            'first_frame_seconds_lt':2,
+            'orbit_zoom_seconds_lt':2,
+            'floor_filter_seconds_lt':2,
         },
     }
     directory=Path(os.getenv('STRUCTURALPRO_P6_P2_BENCH_DIR',str(tmp_path)))
@@ -137,8 +137,22 @@ def test_ifc_real_parse_100_floor_scaling_is_measured_without_dropping_members(t
     (directory/('ifc4-%03d-floors.json'%floors)).write_text(
         json.dumps(metrics,ensure_ascii=False,indent=2),encoding='utf-8')
     print('PHASE6_P2_BENCHMARK '+json.dumps(metrics,ensure_ascii=False),flush=True)
-    assert metrics['seconds_total'] < 180
-    assert metrics['rss_growth_peak_bytes'] < 1_500_000_000
-    assert metrics['seconds_first_frame'] < 10
-    assert metrics['seconds_orbit_zoom'] < 10
-    assert metrics['seconds_floor_filter'] < 10
+    assert metrics['seconds_total'] < 30
+    assert metrics['rss_growth_peak_bytes'] < 256_000_000
+    assert metrics['seconds_first_frame'] < 2
+    assert metrics['seconds_orbit_zoom'] < 2
+    assert metrics['seconds_floor_filter'] < 2
+    # Native Windows desktop evidence uses the same parsed IFC geometry.
+    # This screenshot is a 100-storey synthetic IFC4 stress model, not an
+    # approved project or a promise for arbitrary architectural complexity.
+    if floors == 100 and os.getenv('STRUCTURALPRO_P6_P2_SCREENSHOT_DIR'):
+        from PySide6.QtWidgets import QApplication
+        from app.ifc_3d_viewport import IFC3DDialog
+        app = QApplication.instance() or QApplication([])
+        dialog = IFC3DDialog(scene)
+        dialog.show()
+        app.processEvents()
+        dst = Path(os.environ['STRUCTURALPRO_P6_P2_SCREENSHOT_DIR'])
+        dst.mkdir(parents=True,exist_ok=True)
+        assert dialog.grab().save(str(dst / 'synthetic-IFC4-100-floor-all-disciplines.png'))
+        dialog.close()
