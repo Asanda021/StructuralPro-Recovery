@@ -110,3 +110,39 @@ def test_manual_real_w1_launch_and_freetext_member_not_trusted(tmp_path):
     assert wizard.member.currentData() != "invented-member"
     assert svc.open_project("P")["boq"]==[]
     wizard.close();w.close();app.processEvents();svc.store.close()
+
+
+def test_graphical_actual_region_marks_w1_context_without_guessing_dimensions(tmp_path):
+    from PySide6.QtCore import QRectF
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    svc=case(tmp_path);app=qt()
+    w=GraphicalTakeoffDialog(app_service=svc,project_id="P")
+    w.canvas._selected_region_rect=QRectF(10,15,120,85)
+    modal=w.open_guided_takeoff()
+    assert modal is not None
+    assert "ناحیه واقعی" in modal.info.text()
+    assert all(not input_.text() for input_ in modal.fields.values())
+    assert svc.open_project("P")["boq"]==[]
+    modal.close();w.close();app.processEvents();svc.store.close()
+
+
+def test_waffle_and_hollowcore_buttons_call_real_specialist_entry(tmp_path,monkeypatch):
+    from app.contextual_takeoff_p6 import ContextualTakeoffDialog
+    import app.roof_detail_editor as roof
+    svc=case(tmp_path);app=qt()
+    calls=[]
+    def open_existing(service, *, parent=None,project_id='',floor_id='',kind='',drawing_source=None):
+        calls.append((service,project_id,floor_id,kind))
+        return 0
+    monkeypatch.setattr(roof,"open_roof_editor",open_existing)
+    wizard=ContextualTakeoffDialog(svc,"P")
+    wizard.floor.setCurrentIndex(wizard.floor.findData("F1"))
+    for code,kind in (("waffle_one_way","waffle_one_way"),
+                      ("waffle_two_way","waffle_two_way"),
+                      ("hollowcore","hollow_core_detail")):
+        wizard.code.setCurrentIndex(wizard.code.findData(code))
+        assert wizard.specialist_button.isEnabled()
+        QTest.mouseClick(wizard.specialist_button,Qt.MouseButton.LeftButton)
+        assert calls[-1]==(svc,"P","F1",kind)
+    assert not svc.open_project("P")["boq"]
+    wizard.close();app.processEvents();svc.store.close()
