@@ -140,3 +140,36 @@ def test_manifest_of_other_valid_files_cannot_authorize_actual_runtime(tmp_path,
         runtime.chmod(0o755)
     assert inspect_ai_release_assets(path,tmp_path).ready
     assert not engine.has_llm_model
+
+
+def test_a1_rejects_unmanifested_runtime_dll_even_if_four_core_files_valid(tmp_path):
+    source, _ = _manifest(tmp_path)
+    assert inspect_ai_release_assets(source, tmp_path).ready
+    dll = tmp_path / "ai_runtime" / "injected.dll"
+    dll.parent.mkdir()
+    dll.write_bytes(b"untrusted runtime code")
+    result = inspect_ai_release_assets(source, tmp_path)
+    assert not result.ready
+    assert "runtime_dll_inventory_mismatch" in result.blockers
+
+
+def test_a1_revalidates_runtime_dll_license_and_sha_after_tampering(tmp_path):
+    source, manifest = _manifest(tmp_path)
+    dll = tmp_path / "ai_runtime" / "ggml.dll"
+    dll.parent.mkdir()
+    dll.write_bytes(b"reviewed-bytes")
+    proof = tmp_path / "ggml.LICENSE"
+    proof.write_bytes(b"test-only mock permission")
+    from hashlib import sha256 as _sha
+    manifest["dependencies"] = [{
+        "path": "ai_runtime/ggml.dll", "name": "ggml", "version": "test",
+        "source_url": "https://example.invalid/fixture", "license_id": "TEST_ONLY",
+        "license_evidence": "ggml.LICENSE", "sha256": _sha(dll.read_bytes()).hexdigest(),
+        "license_evidence_sha256": _sha(proof.read_bytes()).hexdigest(),
+        "redistribution_allowed": True, "legal_review_approved": True,
+    }]
+    source.write_text(json.dumps(manifest))
+    assert inspect_ai_release_assets(source, tmp_path).ready
+    dll.write_bytes(b"tampered")
+    result = inspect_ai_release_assets(source, tmp_path)
+    assert not result.ready and any("integrity_mismatch" in b for b in result.blockers)
