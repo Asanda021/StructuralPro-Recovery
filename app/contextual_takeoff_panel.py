@@ -63,6 +63,16 @@ class ContextualTakeoffDialog(QDialog):
         self.status.setObjectName("P4ReviewStatus")
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
+        question_row=QHBoxLayout()
+        self.question_input=QLineEdit()
+        self.question_input.setObjectName("P4ContextQuestion")
+        self.question_input.setPlaceholderText("پرسش فارسی درباره عضو، متره یا BOQ فعلی")
+        self.ask_button=QPushButton("پاسخ مستند آفلاین")
+        self.ask_button.setObjectName("P4AskContext")
+        self.ask_button.clicked.connect(self.ask)
+        question_row.addWidget(self.question_input)
+        question_row.addWidget(self.ask_button)
+        layout.addLayout(question_row)
         controls=QHBoxLayout()
         self.preview_button=QPushButton("نمایش پیشنهاد مستند")
         self.preview_button.setObjectName("P4Preview")
@@ -207,6 +217,21 @@ class ContextualTakeoffDialog(QDialog):
             return result
         except Exception as exc:
             self.status.setText("انتقال به فرم اصلی انجام نشد: "+str(exc))
+            return None
+
+    def ask(self):
+        if not self.guide.enabled:
+            self.status.setText("دستیار خاموش است.")
+            return None
+        try:
+            live=self.context_provider(self.family.currentData())
+            if self.active is not None and self._context!=live:
+                raise RuntimeError("زمینه درخواست تغییر کرده؛ پیشنهاد قبلی لغو شود.")
+            result=self.guide.answer_contextual_question(live,self.question_input.text())
+            self.status.setText(result["answer"])
+            return result
+        except Exception as exc:
+            self.status.setText("پاسخ صادر نشد: "+str(exc))
             return None
 
     def toggle_enabled(self):
