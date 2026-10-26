@@ -99,7 +99,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  if slope:geometry_keys=SLOPE_GEOMETRY;table_fields=SLOPE_TABLES;state_groups=[]
  if paint_mode:geometry_keys=PAINT_GEOMETRY;table_fields={'openings':CEILING_BOX,'zones':PAINT_ZONE};state_groups=[]
  if ceiling_mode:geometry_keys=CEILING_GEOMETRY;table_fields={'openings':CEILING_BOX};state_groups=[]
- dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
+ dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setWindowTitle('متره تخصصی شیب‌بندی' if slope else 'متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[kind].title);dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
  def line(layout,key,title,value=''):
   w=QLineEdit(str(value));layout.addRow(title,w);c[key]=w;return w
  def buttons(layout,items):
