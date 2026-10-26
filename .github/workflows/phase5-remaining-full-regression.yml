@@ -1,4 +1,4 @@
-name: Phase 5 unified closure full offline regression
+name: Phase 5 final unified Windows and AI closure regression
 on:
   push:
     branches:
@@ -33,7 +33,7 @@ jobs:
       - name: Install offline engineering suite dependencies
         run: |
           python -m pip install -q -r requirements.txt 'ifcopenshell>=0.8'
-      - name: Run final complete product regression after unified package preflight and A1 hardening
+      - name: Run final product regression after frozen Windows UI and package/A1 code
         shell: bash
         run: |
           set +e
