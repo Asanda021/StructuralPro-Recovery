@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget,
 )
-from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext, _FAMILY_TEMPLATES, _QUESTIONS
+from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext, _FAMILY_TEMPLATES, _QUESTIONS, _SPECIALIST_REQUIRED
 
 
 class ContextualTakeoffDialog(QDialog):
@@ -109,7 +109,7 @@ class ContextualTakeoffDialog(QDialog):
             self.questions_layout.addWidget(check)
             self.question_checks.append(check)
         templates=_FAMILY_TEMPLATES[family]
-        keys=[]
+        keys=list(_SPECIALIST_REQUIRED.get(family, ()))
         for code in templates:
             item=self.guide.templates.get(code)
             keys.extend(item.required_inputs)
