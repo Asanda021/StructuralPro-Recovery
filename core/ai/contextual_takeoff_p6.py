@@ -228,7 +228,33 @@ class GovernedTakeoffAssistant:
         return ContextualPreview(code,template.title_fa,missing,components,companions,
                                  tuple(blockers),digest,ready)
 
-    def advise(self, question, *, code="", inputs=None, measurement_source=""):
+    def exact_boq_row(self, row_index, *, expected_digest):
+        """Read one persisted, unambiguous row using the existing Decimal boundary."""
+        project,digest=self._checked_project()
+        if digest!=expected_digest:
+            raise RuntimeError("نسخه BOQ تغییر کرده؛ ردیف را دوباره انتخاب کنید.")
+        rows=project.get("boq",[])
+        if isinstance(row_index,bool) or not isinstance(row_index,int) or not isinstance(rows,list):
+            raise ValueError("شماره ردیف BOQ معتبر نیست.")
+        if not 0 <= row_index < len(rows):
+            raise ValueError("ردیف BOQ در پروژه واقعی موجود نیست.")
+        row=rows[row_index]
+        if not isinstance(row,dict) or row.get("status")!="active":
+            raise ValueError("ردیف فعال و معتبر برای پاسخ عددی لازم است.")
+        ids=row.get("source_ids")
+        if not isinstance(ids,list) or not ids or not all(isinstance(x,str) and x for x in ids):
+            raise ValueError("منشأ واقعی ردیف BOQ مشخص نیست.")
+        from core.commercial.exact_values import number
+        quantity=number(row.get("quantity"),"quantity")
+        if quantity<0:
+            raise ValueError("مقدار ثبت‌شده معتبر نیست.")
+        unit=_text(row.get("unit"),"واحد BOQ")
+        return {"description":_text(row.get("description"),"شرح BOQ"),
+                "quantity":format(quantity,"f"),"unit":unit,
+                "source_ids":tuple(ids),"digest":digest}
+
+    def advise(self, question, *, code="", inputs=None, measurement_source="",
+               boq_row_index=None, boq_digest=""):
         """A2: deterministic offline recommendations; NEVER invent a numeric answer."""
         project,digest=self._checked_project()
         q=_text(question,"پرسش")
@@ -242,7 +268,14 @@ class GovernedTakeoffAssistant:
         else:
             msg="برای پیشنهاد دقیق، خانواده متره و زمینه معتبر عضو و طبقه را انتخاب کنید."
         if any(x in q.casefold() for x in ("چقدر","مقدار","عدد","قیمت","هزینه","total","sum","quantity")):
-            msg += " پاسخ عددی قطعی صرفاً از ردیف‌های تأییدشده BOQ/Decimal ممکن است؛ در این درخواست عددی استنتاج نمی‌شود."
+            if boq_row_index is not None:
+                row=self.exact_boq_row(boq_row_index,expected_digest=boq_digest)
+                msg += (" مقدار دقیق ثبت‌شده در یک ردیف BOQ با مرجع واقعی: "
+                        +row["description"]+" | "+row["quantity"]+" "+row["unit"]
+                        +" | منبع: "+", ".join(row["source_ids"])
+                        +"؛ این عدد فقط خواندن از منبع است، نه محاسبه جدید.")
+            else:
+                msg += " برای پاسخ عددی، یک ردیف فعالِ دارای منبع از BOQ انتخاب کنید؛ هیچ مقدار استنتاج نمی‌شود."
         return {"text":msg,"offline":True,"deterministic":True,
                 "project_id":self.project_id,"project_digest":digest,
                 "floor_id":self.floor_id,"member_id":self.member_id,
