@@ -5,7 +5,7 @@ member selection. It does not generate, calculate, or register takeoff quantitie
 """
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal, QTimer, QObject, QRunnable, QThreadPool
+from PySide6.QtCore import Qt, Signal, QTimer, QObject, QRunnable, QThreadPool, QSignalBlocker
 from PySide6.QtGui import QColor, QBrush, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton,
@@ -245,11 +245,20 @@ class IFC3DDialog(QDialog):
         status.setObjectName("IFC3DProvenance")
         status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         outer.addWidget(status)
-        self.storey.currentIndexChanged.connect(
-            lambda _index: self.canvas.choose_storey(self.storey.currentData()))
+        self.storey.currentIndexChanged.connect(self._on_storey_changed)
+        self._on_storey_changed()
         self.isolate.toggled.connect(self._isolate)
         reset.clicked.connect(self.canvas.reset_camera)
         self.canvas.memberSelected.connect(self.memberSelected)
+
+    def _on_storey_changed(self, *_):
+        floor = self.storey.currentData()
+        # The checkbox edits only the selected floor; never affect a previous floor
+        # when its checked state is synchronized programmatically.
+        with QSignalBlocker(self.hide_floor):
+            self.hide_floor.setEnabled(floor is not None)
+            self.hide_floor.setChecked(floor in self.scene.hidden_storeys if floor is not None else False)
+        self.canvas.choose_storey(floor)
 
     def _isolate(self, on):
         self.canvas.isolate_selection = bool(on)
