@@ -53,6 +53,13 @@ class GGUFProductionRuntime:
     def verify_artifact(self)->GGUFVerification:
         model=self.load_manifest()
         path=self.model_root/model.path
+        root = self.model_root.resolve(strict=True)
+        try:
+            path.resolve(strict=False).relative_to(root)
+        except ValueError as exc:
+            raise ValueError('model artifact must remain inside model root') from exc
+        if path.is_symlink():
+            raise ValueError('model artifact symlink is not allowed inside model root')
         if not path.is_file(): return GGUFVerification(False,model,None,"model_artifact_missing")
         digest=sha256()
         with path.open("rb") as fh:
