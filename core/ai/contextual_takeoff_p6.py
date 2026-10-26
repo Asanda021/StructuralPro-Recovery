@@ -173,16 +173,18 @@ class GovernedTakeoffAssistant:
 
     def _existing_conflicts(self, project, code, source):
         clashes=[]
+        structural_roofs={"joist_foam_roof_assembly","joist_block_roof_assembly","concrete_slab"}
         for assembly in project.get("takeoff_assemblies",[]) or []:
             if not isinstance(assembly,dict):
                 raise ValueError("دفتر اسمبلی واقعی ساختار معتبر ندارد.")
             same_floor = assembly.get("floor_id") == self.floor_id
-            same_code = assembly.get("assembly_code") == code
-            if same_floor and same_code and (
-                (source and assembly.get("measurement_source")==source)
-                or (self.member_id and assembly.get("location_id")==self.member_id)
+            prior_code = assembly.get("assembly_code")
+            same_owner = ((source and assembly.get("measurement_source")==source)
+                          or (self.member_id and assembly.get("location_id")==self.member_id))
+            if same_floor and same_owner and (
+                prior_code == code or (prior_code in structural_roofs and code in structural_roofs)
             ):
-                clashes.append("عملیات همین اسمبلی برای محل/عضو قبلاً ثبت شده؛ ثبت دوباره ممنوع است.")
+                clashes.append("مالکیت متره همین عملیات یا سقف جایگزین قبلاً ثبت شده؛ دوباره‌شماری ممنوع است.")
         return tuple(sorted(set(clashes)))
 
     def preview(self, code, inputs=None, *, measurement_source=""):
