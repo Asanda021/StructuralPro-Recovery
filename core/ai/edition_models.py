@@ -61,7 +61,7 @@ def ai_tier_for_edition(edition: str) -> AITier:
         return AITier.NONE
     if value == "standard":
         return AITier.BASE
-    if value in {"pro", "enterprise"}:
+    if value in {"pro", "enterprise", "unified"}:
         return AITier.TAKEOFF
     raise ValueError(f"Unsupported edition: {edition!r}")
 
