@@ -84,12 +84,12 @@ class GovernedTakeoffAssistant:
         self.disabled = False
         self.cancelled = False
         self._snapshot = None
-        self._checked_project()
         if self.document_path:
             if not self.document_sha256 or _digest_file(self.document_path) != self.document_sha256:
                 raise ValueError("SHA-256 منبع نقشه معتبر نیست.")
         elif self.document_sha256 or self.global_id or self.revision:
             raise ValueError("سند واقعی برای زمینه IFC/Revision الزامی است.")
+        self._checked_project()
 
     def _checked_project(self):
         if self.disabled or self.cancelled:
