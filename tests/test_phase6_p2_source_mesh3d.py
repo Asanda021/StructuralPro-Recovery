@@ -115,3 +115,13 @@ def test_ifc_types_not_restricted_to_structure(tmp_path):
     scene = VerifiedScene3D(real_contract(tmp_path))
     assert any(m.ifc_type == "IfcDuctSegment" for m in scene.meshes)
     assert scene.source_sha256 and scene.quantity_authority is False
+
+
+def test_zero_area_source_face_and_edge_on_pick_are_rejected(tmp_path):
+    contract = real_contract(tmp_path)
+    contract["elements"][0]["vertices_m"] = [
+        [0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]]
+    with pytest.raises(ValueError, match="هم‌خط"):
+        VerifiedScene3D(contract)
+    assert VerifiedScene3D._inside(
+        20.0, 20.0, ((0.0, 0.0), (1.0, 1.0), (2.0, 2.0))) is False
