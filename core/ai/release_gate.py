@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 import stat
 
-REQUIRED_KINDS = frozenset(("model", "mmproj", "runtime"))
+REQUIRED_KINDS = frozenset(("model", "mmproj", "runtime_text", "runtime_vision"))
 
 
 @dataclass(frozen=True)
@@ -55,8 +55,8 @@ def inspect_ai_release_assets(manifest_path: str | Path, asset_root: str | Path)
     if not isinstance(assets, list):
         return AIReleaseCheck(False, tuple(blockers+["invalid_assets"]), {})
     kinds = [x.get("kind") if isinstance(x, dict) else None for x in assets]
-    if len(assets) != 3 or set(kinds) != REQUIRED_KINDS or len(set(kinds)) != 3:
-        blockers.append("missing_or_duplicate_model_projector_runtime")
+    if len(assets) != 4 or set(kinds) != REQUIRED_KINDS or len(set(kinds)) != 3:
+        blockers.append("missing_or_duplicate_model_projector_text_vision_runtime")
     for asset in assets:
         if not isinstance(asset, dict):
             blockers.append("invalid_asset")
