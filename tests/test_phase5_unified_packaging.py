@@ -31,12 +31,12 @@ def staged_unified_assets(tmp_path: Path) -> tuple[Path, dict]:
     assets = []
     for kind, rel in entries:
         file = tmp_path / rel
-        file.parent.mkdir(exist_ok=True)
+        file.parent.mkdir(parents=True, exist_ok=True)
         data = ("synthetic-non-GGUF-" + kind).encode()
         file.write_bytes(data)
         license_rel = "licenses/" + kind + ".txt"
         license_file = tmp_path / license_rel
-        license_file.parent.mkdir(exist_ok=True)
+        license_file.parent.mkdir(parents=True, exist_ok=True)
         proof = ("SYNTHETIC FIXTURE ONLY " + kind).encode()
         license_file.write_bytes(proof)
         assets.append({
