@@ -25,7 +25,8 @@ def make_index(links=None):
         real_global_ids={'G-1','G-2'},
         real_member_ids={'M-1', 'M-2'},
         real_boq_row_ids={'B-01','B-02'},
-        approved_records=[record()] if links is None else links)
+        approved_records=[record()] if links is None else links,
+        trusted_review_pairs=frozenset({('manual-review-1', 'engineer-1')}))
 
 
 @pytest.mark.parametrize('origin,identifier', [
@@ -121,3 +122,13 @@ def test_ifc_selection_does_not_suggest_unapproved_boq_links():
                            project_id='P-1',source_sha256=SHA, revision='R1')
     assert source.status == 'linked'
     assert source.boq_row_ids == ()
+
+
+def test_self_declared_approved_link_requires_independent_review_registry():
+    from core.drawings.verified_selection import VerifiedSelectionCrosswalk
+    with pytest.raises(ValueError, match='تأیید'):
+        VerifiedSelectionCrosswalk(
+            project_id='P-1', source_sha256=SHA, revision='R1',
+            real_global_ids={'G-1'}, real_member_ids={'M-1'},
+            real_boq_row_ids={'B-01'}, approved_records=[record()],
+            trusted_review_pairs=frozenset({('forged-other-evidence','another-reviewer')}))
