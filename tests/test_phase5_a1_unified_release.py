@@ -14,12 +14,16 @@ def _manifest(root):
     for kind,name in (("model","model.gguf"),("mmproj","projector.gguf"),("runtime","llama.exe")):
         raw=("fixture:"+name).encode()
         (root/name).write_bytes(raw)
+        license_name=name+".LICENSE.txt"
+        license_bytes=("synthetic-licensing-evidence:"+name).encode()
+        (root/license_name).write_bytes(license_bytes)
         assets.append({
             "kind":kind,"name":name,"path":name,"sha256":hashlib.sha256(raw).hexdigest(),
             "version":"test-1","architecture":"x86_64",
             "source_url":"https://example.invalid/test-fixture",
             "license_id":"SYNTHETIC_TEST_LICENSE",
-            "license_evidence":"fixture-review-1",
+            "license_evidence":license_name,
+            "license_evidence_sha256":hashlib.sha256(license_bytes).hexdigest(),
             "commercial_use_allowed":True,"redistribution_allowed":True,
             "legal_review_approved":True,
         })
@@ -56,6 +60,8 @@ def test_rejects_unlicensed_missing_model_corrupt_runtime_and_projector(tmp_path
     path.write_text(json.dumps(data))
     (tmp_path/"llama.exe").write_bytes(b"tampered")
     assert "runtime:sha256_mismatch" in inspect_ai_release_assets(path,tmp_path).blockers
+    (tmp_path/"model.gguf.LICENSE.txt").write_bytes(b"forged-license-terms")
+    assert "model:license_evidence_hash_mismatch" in inspect_ai_release_assets(path,tmp_path).blockers
     (tmp_path/"projector.gguf").unlink()
     assert "mmproj:unsafe_or_missing" in inspect_ai_release_assets(path,tmp_path).blockers
 
