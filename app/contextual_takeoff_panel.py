@@ -158,10 +158,19 @@ class ContextualTakeoffDialog(QDialog):
             self.status.setText("پیشنهاد صادر نشد: "+str(exc))
             return None
 
+    def _assert_live(self):
+        if self._context is None:
+            raise ValueError("زمینه فعال وجود ندارد.")
+        live=self.context_provider(self.family.currentData())
+        if live!=self._context:
+            raise RuntimeError("پروژه، عضو یا منبع فعال تغییر کرده است؛ پیشنهاد قبلی معتبر نیست.")
+        self.guide.check_current(self.active)
+
     def review(self):
         if self.active is None:
             return None
         try:
+            self._assert_live()
             accepted=tuple(x.text() for x in self.question_checks if x.isChecked())
             rejected=tuple(x.text() for x in self.question_checks if not x.isChecked())
             result=self.guide.review(self.active,accepted=accepted,rejected=rejected)
@@ -179,7 +188,7 @@ class ContextualTakeoffDialog(QDialog):
             self.status.setText("فرم عملیاتی معتبر برای این انتخاب وصل نشده است.")
             return None
         try:
-            self.guide.check_current(self.active)
+            self._assert_live()
             result=self.open_real_form(self._context)
             if result is None:
                 raise ValueError("فرم عملیاتی برای این خانواده هنوز در دسترس نیست.")
