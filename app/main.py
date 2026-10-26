@@ -809,32 +809,29 @@ def main()->int:
     v.addWidget(doc_project); v.addWidget(docpath); v.addWidget(docbrowse); v.addWidget(docadd); v.addWidget(doclist)
     def refresh_docs():
         doclist.clear()
-        project=service.open_project(doc_project.text().strip()) if doc_project.text().strip() else None
-        for doc in (project or {}).get("documents",[]):
-            doclist.addItem(f'{doc.get("name","")} | {doc.get("path","")}')
+        documents=service.project_documents(doc_project.text().strip()) if doc_project.text().strip() else []
+        for doc in documents:
+            doclist.addItem(f'{doc.get("name","")} | {doc.get("path","")} | {doc.get("integrity","")}')
     def add_doc():
         project_id=doc_project.text().strip(); path=docpath.text().strip()
         if not project_id or not path:
             QMessageBox.warning(w,"اسناد","شناسه پروژه و مسیر فایل الزامی است."); return
-        project=service.open_project(project_id)
-        if not project: QMessageBox.warning(w,"اسناد","پروژه پیدا نشد."); return
-        docs=list(project.get("documents",[]))
-        if any(str(x.get("path","")) == path for x in docs):
-            QMessageBox.warning(w,"اسناد","این سند قبلاً ثبت شده است."); return
-        docs.append({"id":len(docs)+1,"name":Path(path).name,"path":path})
-        project["documents"]=docs
-        service.store.save(project_id,project)
-        docpath.clear(); refresh_docs()
+        try:
+            service.add_project_document(project_id,path)
+            docpath.clear(); refresh_docs()
+        except Exception as exc:
+            QMessageBox.warning(w,"اسناد",str(exc))
     docbrowse.clicked.connect(lambda: docpath.setText(QFileDialog.getOpenFileName(w,"انتخاب سند پروژه")[0]))
     docadd.clicked.connect(add_doc)
     doc_project.editingFinished.connect(refresh_docs)
     pages.addWidget(p); idx_docs=pages.count()-1
 
-    # Collaboration workspace — uses the existing provider-neutral collaboration core.
-    p,v=page("همکاری پروژه","مدیریت اعضا، تخصیص کار، نظرها و بازبینی‌های پروژه در همان هسته همکاری موجود؛ بدون ایجاد منطق موازی.")
+    # Collaboration workspace: project roles are persisted through the trusted
+    # ProjectStore ACL; the in-memory workspace remains a UI collaboration view.
+    p,v=page("همکاری پروژه","مدیریت عضو و نقش پروژه با شناسه سیستم‌عامل؛ نقش امنیتی فقط پس از کنترل Owner/Admin و ثبت Audit اعمال می‌شود.")
     collaboration=service.collaboration
     cform=QFormLayout(); cuser=QLineEdit(); cname=QLineEdit(); crole=QComboBox(); crole.addItems(["owner","admin","editor","reviewer","viewer"])
-    cform.addRow("شناسه عضو:",cuser); cform.addRow("نام نمایشی:",cname); cform.addRow("نقش:",crole); v.addLayout(cform)
+    cform.addRow("شناسه سیستم‌عامل عضو (SID/uid):",cuser); cform.addRow("نام نمایشی:",cname); cform.addRow("نقش پروژه:",crole); v.addLayout(cform)
     cadd=QPushButton("➕ افزودن عضو"); cadd.setObjectName("PrimaryAction")
     cproject=QLineEdit(); cproject.setPlaceholderText("شناسه پروژه / شیء همکاری")
     ccreate=QPushButton("📁 ایجاد فضای همکاری"); cassign=QPushButton("📌 تخصیص پروژه به عضو")
@@ -853,8 +850,16 @@ def main()->int:
         },ensure_ascii=False,indent=2))
     def add_collaborator():
         try:
-            collaboration.add_user(User(cuser.text().strip(),cname.text().strip(),crole.currentText()))
-            collaboration_status("عضو با موفقیت به فضای همکاری محلی اضافه شد.")
+            project_id=cproject.text().strip()
+            if not project_id: raise ValueError("شناسه پروژه برای انتساب نقش الزامی است.")
+            user=User(cuser.text().strip(),cname.text().strip(),crole.currentText())
+            if user.user_id in collaboration.users: raise ValueError("duplicate user_id")
+            service.store.grant_role(
+                project_id,user.user_id,user.role,
+                reference=f"ui:project-role:{project_id}:{user.user_id}",
+            )
+            collaboration.add_user(user)
+            collaboration_status("عضو و نقش پروژه با principal سیستم‌عامل و Audit ثبت شد.")
         except Exception as e: QMessageBox.critical(w,"همکاری",str(e))
     def create_collaboration_object():
         try:

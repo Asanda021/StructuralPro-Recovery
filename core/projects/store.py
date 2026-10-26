@@ -28,6 +28,13 @@ def _contract_basis(project: dict[str, Any]) -> str:
 
 
 class ProjectStore:
+    _DIRECT_PRIVILEGED_FIELDS = frozenset({
+        "financial_documents", "financial_budget", "commitment_entries",
+        "cost_entries", "payment_entries", "receipt_entries",
+        "payment_allocations", "financial_records", "financial_reversals",
+        "statement_periods", "statement_workflow_terms", "statement_workflow",
+        "statement_amendments", "factor_review", "user_pricebook_review",
+    })
     @staticmethod
     def _parent_identities(path: Path) -> tuple[tuple[int, int], ...]:
         """Snapshot every parent directory from db/ through the filesystem root.
@@ -113,6 +120,7 @@ class ProjectStore:
                 SELECT RAISE(ABORT, 'security audit is append-only'); END""")
             if existing:
                 self._migrate_owned_legacy_projects()
+            self._assert_audit_integrity()
             self._assert_database_identity()
             self.db.commit()
             self._assert_database_identity()
@@ -240,6 +248,43 @@ class ProjectStore:
         event["hash"] = digest
         return event
 
+    def _assert_audit_integrity(self) -> None:
+        project_ids = {str(row["id"]) for row in self.db.execute("SELECT id FROM projects")}
+        audited_ids = {str(row["project_id"]) for row in self.db.execute(
+            "SELECT DISTINCT project_id FROM security_audit"
+        )}
+        head_ids = {str(row["project_id"]) for row in self.db.execute(
+            "SELECT project_id FROM security_audit_heads"
+        )}
+        if audited_ids != project_ids or head_ids != project_ids:
+            raise RuntimeError("security audit integrity check failed: project/audit coverage mismatch")
+        columns = (
+            "timestamp", "action", "entity", "entity_id", "actor", "actor_role",
+            "revision_before", "revision_after", "reference", "status",
+        )
+        for pid in project_ids:
+            rows = self.db.execute(
+                "SELECT * FROM security_audit WHERE project_id=? ORDER BY sequence", (pid,)
+            ).fetchall()
+            events = []
+            for row in rows:
+                event = json.loads(row["event_json"])
+                if any(event.get(key) != row[key] for key in columns):
+                    raise RuntimeError("security audit integrity check failed: event columns diverged")
+                event["previous_hash"] = row["previous_hash"]
+                event["hash"] = row["hash"]
+                events.append(event)
+            head = self.db.execute(
+                "SELECT last_sequence,last_hash,event_count FROM security_audit_heads WHERE project_id=?",
+                (pid,),
+            ).fetchone()
+            if not events or head is None or not verify_chain(events):
+                raise RuntimeError("security audit integrity check failed: hash chain is invalid")
+            if (int(head["event_count"]) != len(events)
+                    or int(head["last_sequence"]) != int(rows[-1]["sequence"])
+                    or str(head["last_hash"]) != str(rows[-1]["hash"])):
+                raise RuntimeError("security audit integrity check failed: chain head mismatch")
+
     def _record_denied(self, project_id: str, identity: OperatingSystemIdentity,
                        role: str | None, action: str, revision: int | None,
                        reference: str) -> None:
@@ -331,11 +376,21 @@ class ProjectStore:
             return {"owner", "admin", "editor"}, "project-store:save"
         operation = str(command.get("op") or command.get("action") or "update").lower()
         reference = f"project-store:{operation}"
-        if any(token in operation for token in ("approve", "review")):
+        if "approve" in operation:
+            return {"owner", "admin"}, reference
+        if "review" in operation:
             return {"owner", "admin", "reviewer"}, reference
         if any(token in operation for token in ("post", "apply", "reverse", "settle", "commit")):
             return {"owner", "admin"}, reference
         return {"owner", "admin", "editor"}, reference
+
+    @classmethod
+    def _direct_privileged_change(cls, previous: dict[str, Any], current: dict[str, Any]) -> bool:
+        keys = cls._DIRECT_PRIVILEGED_FIELDS | {
+            key for key in set(previous) | set(current)
+            if "approved" in key.casefold() or "reviewed" in key.casefold()
+        }
+        return any(previous.get(key) != current.get(key) for key in keys)
 
     def save(self, project_id: str, project: dict[str,Any], *, expected_digest: str | None = None, amendment_command: dict | None = None, financial_request_command: dict | None = None, manual_formula_command: dict | None = None, structural_handoff_command: dict | None = None, ifc_command: dict | None = None, phase3_command: dict | None = None, project_control_command: dict | None = None) -> dict[str,Any]:
         """Version-check and write project + revision in one SQLite transaction.
@@ -356,6 +411,10 @@ class ProjectStore:
             phase3_command=phase3_command,
             project_control_command=project_control_command,
         )
+        identity = None
+        role = None
+        row = None
+        denial_recorded = False
         try:
             self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
@@ -373,10 +432,15 @@ class ProjectStore:
                 self.db.execute("""INSERT INTO project_acl(project_id,subject_id,role,granted_at,granted_by,source)
                     VALUES(?,?,?,?,?,?)""",
                     (pid, identity.subject_id, role, now, identity.subject_id, "legacy-file-owner"))
+            previous_payload = json.loads(row["payload"]) if row else {}
+            if audit_reference == "project-store:save" and self._direct_privileged_change(
+                    previous_payload, clean_project):
+                required_roles = {"owner", "admin"}
             if role not in required_roles:
                 revision = int(row["version"]) if row else None
                 self.db.rollback()
                 self._record_denied(pid, identity, role, "update" if row else "create", revision, audit_reference)
+                denial_recorded = True
                 raise PermissionError("role is not authorized for this project operation")
             incoming_version=(project.get("_meta") or {}).get("version")
             if row is not None and incoming_version is not None and incoming_version != int(row["version"]):
@@ -468,6 +532,17 @@ class ProjectStore:
                     self._cache.clear()
                 if not self._identity_failed:
                     raise
+            if (identity is not None and row is not None and not denial_recorded
+                    and not self._identity_failed and not self._transaction_uncertain):
+                try:
+                    self._record_denied(
+                        pid, identity, role, "update", int(row["version"]),
+                        audit_reference,
+                    )
+                except Exception:
+                    # A failed mandatory audit must never replace the original
+                    # operation error or turn that operation into a success.
+                    pass
             raise
         # Cache the same JSON representation committed to SQLite. Coordinates
         # may arrive as tuples; a cache hit must equal a reopened snapshot.
@@ -550,8 +625,39 @@ class ProjectStore:
 
     def backup(self, backup_path: str | Path) -> dict[str, Any]:
         self._assert_database_identity()
+        identity = self._identity()
+        projects = self.db.execute("SELECT id,version FROM projects ORDER BY id").fetchall()
+        roles = {}
+        for row in projects:
+            role = self._role(str(row["id"]), identity)
+            roles[str(row["id"])] = role
+            if role not in {"owner", "admin"}:
+                self._record_denied(
+                    str(row["id"]), identity, role, "export", int(row["version"]),
+                    "project-store:database-backup",
+                )
+                raise PermissionError("role is not authorized for this project operation")
         from core.recovery.recovery import backup_database
-        return backup_database(self.path, backup_path)
+        result = backup_database(self.path, backup_path)
+        target = Path(result["path"])
+        try:
+            digest = sha256(target.read_bytes()).hexdigest()
+            self.db.execute("BEGIN IMMEDIATE")
+            for row in projects:
+                pid = str(row["id"])
+                self._append_audit(
+                    project_id=pid, identity=identity, role=roles[pid],
+                    action="export", entity="database_backup",
+                    revision_before=int(row["version"]), revision_after=int(row["version"]),
+                    reference="project-store:database-backup", status="success",
+                    after={"backup_sha256": digest, "size": int(result["size"])},
+                )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            target.unlink(missing_ok=True)
+            raise
+        return result
 
     def close(self):
         self.db.close()

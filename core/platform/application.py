@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from copy import deepcopy
 from uuid import uuid4
-import math
+import json, math
 from datetime import datetime, timezone
 from typing import Any
 from core.projects.store import ProjectStore
@@ -84,6 +84,65 @@ class StructuralProApp:
         self.store.save(project_id,project); return self.store.get(project_id)
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
+
+    def add_project_document(self, project_id: str, path: str | Path) -> dict[str, Any]:
+        """Register a regular evidence file with immutable project provenance."""
+        from hashlib import sha256
+
+        candidate = Path(path)
+        if candidate.is_symlink() or not candidate.is_file():
+            raise ValueError("project evidence must be a regular non-symlink file")
+        resolved = candidate.resolve(strict=True)
+        digest = sha256(resolved.read_bytes()).hexdigest()
+        pid = str(project_id)
+        project = self.open_project(pid)
+        if project is None:
+            raise KeyError(pid)
+        for row in self.store.db.execute("SELECT id,payload FROM projects"):
+            for item in json.loads(row["payload"]).get("documents", []):
+                try:
+                    same_path = Path(str(item.get("path", ""))).resolve(strict=False) == resolved
+                except OSError:
+                    same_path = False
+                if same_path and str(row["id"]) != pid:
+                    raise PermissionError("attachment is already bound to another project")
+        documents = list(project.get("documents", []))
+        if any(str(item.get("path", "")) == str(resolved) for item in documents):
+            raise ValueError("attachment is already registered in this project")
+        principal = self.store.current_principal(pid)
+        document = {
+            "id": uuid4().hex,
+            "project_id": pid,
+            "name": resolved.name,
+            "path": str(resolved),
+            "size": resolved.stat().st_size,
+            "sha256": digest,
+            "registered_by": principal.user_id,
+        }
+        documents.append(document)
+        project["documents"] = documents
+        self.store.save(pid, project, expected_digest=self.store.current_digest(pid))
+        return deepcopy(document)
+
+    def project_documents(self, project_id: str) -> list[dict[str, Any]]:
+        """Read attachment metadata and report current integrity without mutation."""
+        from hashlib import sha256
+
+        project = self.open_project(project_id)
+        if project is None:
+            raise KeyError(project_id)
+        result = []
+        for source in project.get("documents", []):
+            item = deepcopy(source)
+            path = Path(str(item.get("path", "")))
+            if path.is_symlink() or not path.is_file():
+                item["integrity"] = "missing-or-unsafe"
+            else:
+                actual = sha256(path.read_bytes()).hexdigest()
+                item["integrity"] = "verified" if actual == item.get("sha256") else "hash-mismatch"
+                item["observed_sha256"] = actual
+            result.append(item)
+        return result
 
     def ifc_display_geometry(self, project_id, proposal_id):
         """Rebuild read-only display data from persisted reviewed source identity.
