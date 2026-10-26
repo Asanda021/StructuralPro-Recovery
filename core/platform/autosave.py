@@ -47,11 +47,24 @@ def _checked_view(view: Mapping[str, Any]) -> dict[str, Any]:
             not isinstance(x, str) or len(x) > 256 for x in ids
         ):
             raise ValueError("invalid pending review identifiers")
-    for key in ("zoom_2d", "camera_3d"):
-        if key in result:
-            value = result[key]
-            if not isinstance(value, (dict, list, int, float, str, type(None))):
-                raise ValueError("invalid visual state")
+    import math
+    if "zoom_2d" in result and (
+        type(result["zoom_2d"]) not in (int, float)
+        or not math.isfinite(result["zoom_2d"])
+        or not 0.01 <= result["zoom_2d"] <= 1000
+    ):
+        raise ValueError("invalid 2D zoom")
+    if "camera_3d" in result:
+        camera = result["camera_3d"]
+        if not isinstance(camera, dict) or set(camera) - {"yaw_deg", "pitch_deg", "distance"}:
+            raise ValueError("invalid 3D camera")
+        if any(type(v) not in (int, float) or not math.isfinite(v)
+               for v in camera.values()):
+            raise ValueError("invalid 3D camera coordinates")
+        if ("distance" in camera and camera["distance"] <= 0) or (
+            "pitch_deg" in camera and not -90 <= camera["pitch_deg"] <= 90
+        ):
+            raise ValueError("invalid 3D camera bounds")
     encoded = json.dumps(result, ensure_ascii=False, sort_keys=True, allow_nan=False)
     if len(encoded.encode("utf-8")) > 32768:
         raise ValueError("session view too large")
