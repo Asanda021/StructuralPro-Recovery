@@ -118,11 +118,14 @@ class VerifiedSelectionPanel(QWidget):
             self.detail.setText(message)
             self.selectionUnresolved.emit(message)
             return result
-        self.detail.setText(
-            'شناسه IFC: ' + result.global_ids[0] +
-            ' | عضو: ' + '، '.join(result.member_ids or ('فاقد پیوند',)) +
-            ' | ردیف BOQ: ' + '، '.join(result.boq_row_ids or ('فاقد پیوند',)) +
-            ' | فقط نمایش')
+        if self.verified_project is not None:
+            self.detail.setText(self.verified_project.inspector_text(result))
+        else:
+            self.detail.setText(
+                'شناسه IFC: ' + result.global_ids[0] +
+                ' | عضو: ' + '، '.join(result.member_ids or ('فاقد پیوند',)) +
+                ' | ردیف BOQ: ' + '، '.join(result.boq_row_ids or ('فاقد پیوند',)) +
+                ' | فقط نمایش')
         self.oneGlobalIdSelected.emit(result.global_ids[0])
         return result
 
@@ -163,6 +166,9 @@ class VerifiedSelectionPanel(QWidget):
         if result.status != 'linked':
             self.detail.setText('عضو در IFC وجود دارد، اما پیوند تأییدشده به عضو/BOQ یافت نشد.')
         else:
-            self.detail.setText('عضو سه‌بعدی/دوبعدی: ' + global_id + ' | پیوند‌های تأییدشده: ' +
-                                str(len(result.boq_row_ids)) + ' ردیف BOQ')
+            if self.verified_project is not None:
+                self.detail.setText(self.verified_project.inspector_text(result))
+            else:
+                self.detail.setText('عضو سه‌بعدی/دوبعدی: ' + global_id + ' | پیوند‌های تأییدشده: ' +
+                                    str(len(result.boq_row_ids)) + ' ردیف BOQ')
         return result
