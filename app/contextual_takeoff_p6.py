@@ -136,6 +136,18 @@ class ContextualTakeoffDialog(QDialog):
         qrow.addWidget(self.query,1)
         qrow.addWidget(self.answer_button)
         root.addLayout(qrow)
+        boqrow=QHBoxLayout()
+        self.boq_select=QComboBox()
+        self.boq_select.setObjectName("P6A2VerifiedBOQRow")
+        self.boq_refresh=QPushButton("بازخوانی BOQ ثبت‌شده")
+        self.boq_refresh.setObjectName("P6A2RefreshBOQ")
+        self.boq_refresh.clicked.connect(self.refresh_boq)
+        self._boq_digest=""
+        boqrow.addWidget(QLabel("ردیف برای پاسخ عددی مستند:"))
+        boqrow.addWidget(self.boq_select,1)
+        boqrow.addWidget(self.boq_refresh)
+        root.addLayout(boqrow)
+        self.refresh_boq()
         self.answer_text=QLabel("پاسخ فقط از داده واقعی و قواعد موجود؛ مدل محلی الزامی نیست.")
         self.answer_text.setWordWrap(True)
         self.answer_text.setObjectName("P6A2AnswerText")
@@ -243,6 +255,24 @@ class ContextualTakeoffDialog(QDialog):
             self.preview_text.setPlainText("بازبینی رد شد: "+str(error))
             return None
 
+    def refresh_boq(self):
+        self.boq_select.clear()
+        self.boq_select.addItem("بدون ردیف — اعداد حدسی ممنوع",None)
+        try:
+            self._guard()
+            project=self.service.open_project(self.pid)
+            self._boq_digest=self.service.store.current_digest(self.pid)
+            for index,row in enumerate(project.get("boq",[]) or []):
+                if not isinstance(row,dict) or row.get("status","active")!="active":
+                    continue
+                if not row.get("source_ids") or row.get("quantity") is None:
+                    continue
+                self.boq_select.addItem(
+                    f"ردیف {index+1} | {row.get('description','بدون شرح')}",index)
+        except (RuntimeError,ValueError,KeyError,PermissionError) as exc:
+            self._boq_digest=""
+            self.answer_text.setText("بازخوانی BOQ رد شد: "+str(exc)) if hasattr(self,"answer_text") else None
+
     def answer(self):
         if not self.offline_enabled.isChecked():
             self.answer_text.setText("A2 غیرفعال است؛ هیچ پرسش یا داده‌ای ارسال نشده است.")
@@ -252,7 +282,9 @@ class ContextualTakeoffDialog(QDialog):
             result=self.assistant.advise(
                 self.query.text() or "چه ورودی‌هایی لازم است؟",
                 code=self.code.currentData() or "",inputs=self.inputs(),
-                measurement_source=self.measurement.text())
+                measurement_source=self.measurement.text(),
+                boq_row_index=self.boq_select.currentData(),
+                boq_digest=self._boq_digest)
             self.answer_text.setText(result["text"])
             return result
         except (ValueError,KeyError,RuntimeError,PermissionError) as error:
