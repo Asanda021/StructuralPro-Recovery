@@ -105,8 +105,9 @@ class ContextualTakeoffDialog(QDialog):
         family=self.family.currentData()
         for question in _QUESTIONS[family]:
             check=QCheckBox(question)
-            check.setChecked(True)
-            check.setToolTip("پیشنهاد برای بازبینی؛ برداشتن تیک یعنی رد همین مورد")
+            check.setTristate(True)
+            check.setCheckState(Qt.CheckState.PartiallyChecked)
+            check.setToolTip("نامشخص = نیازمند مدرک؛ تیک کامل = نگه‌داری برای بررسی؛ بدون تیک = رد")
             self.questions_layout.addWidget(check)
             self.question_checks.append(check)
         templates=_FAMILY_TEMPLATES[family]
@@ -176,12 +177,17 @@ class ContextualTakeoffDialog(QDialog):
             return None
         try:
             self._assert_live()
-            accepted=tuple(x.text() for x in self.question_checks if x.isChecked())
-            rejected=tuple(x.text() for x in self.question_checks if not x.isChecked())
+            accepted=tuple(x.text() for x in self.question_checks
+                           if x.checkState()==Qt.CheckState.Checked)
+            rejected=tuple(x.text() for x in self.question_checks
+                           if x.checkState()==Qt.CheckState.Unchecked)
+            pending=tuple(x.text() for x in self.question_checks
+                          if x.checkState()==Qt.CheckState.PartiallyChecked)
             result=self.guide.review(self.active,accepted=accepted,rejected=rejected)
-            self.status.setText(f"{len(accepted)} پرسش برای بررسی نگه داشته شد؛ "
-                                f"{len(rejected)} پیشنهاد رد شد. "
-                                "تصمیم فقط در این نشست است؛ تأیید مالی/مهندسی یا ثبت BOQ انجام نشد.")
+            self.status.setText(f"{len(accepted)} قلم برای بررسی نگه داشته شد؛ "
+                                f"{len(rejected)} قلم رد شد؛ "
+                                f"{len(pending)} قلم هنوز نیازمند مدرک است. "
+                                "ثبت قطعی و تأیید مهندسی انجام نشد.")
             return result
         except Exception as exc:
             self.cancel()
