@@ -173,3 +173,13 @@ def test_a1_revalidates_runtime_dll_license_and_sha_after_tampering(tmp_path):
     dll.write_bytes(b"tampered")
     result = inspect_ai_release_assets(source, tmp_path)
     assert not result.ready and any("integrity_mismatch" in b for b in result.blockers)
+
+
+def test_frozen_windows_payload_locates_license_gate_beside_executable(tmp_path, monkeypatch):
+    import core.ai.local_engine as module
+    from core.ai.local_engine import LocalAIEngine
+    monkeypatch.setattr(module.sys, "frozen", True, raising=False)
+    monkeypatch.setattr(module.sys, "executable", str(tmp_path / "StructuralPro.exe"))
+    engine = LocalAIEngine(model_dir=tmp_path / "models", edition="unified")
+    assert engine.bundle_dir == tmp_path
+    assert not engine.has_llm_model
