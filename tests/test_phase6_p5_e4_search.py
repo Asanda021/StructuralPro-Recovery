@@ -61,3 +61,13 @@ def test_search_large_member_collection_bounded():
 def test_existing_command_center_uses_same_search():
     hits=command_search(fixture(),"ملات")
     assert hits and hits[0]["project_id"]=="P"
+
+
+def test_equal_price_codes_are_not_unique_boq_identity():
+    p={"id":"P","name":"آزمون",
+       "boq":[{"description":"اجرای کف","price_code":"0101"},
+              {"description":"اجرای کف","price_code":"0101"}]}
+    hits=search_project(p,"اجرای کف")
+    assert len(hits)==2
+    assert all(x["entity_id"] is None and x["link_status"]=="unindexed_record" for x in hits)
+    assert hits[0]["data"] is not hits[1]["data"]

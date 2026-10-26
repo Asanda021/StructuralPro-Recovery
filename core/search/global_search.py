@@ -36,7 +36,7 @@ def search_project(project, query, *, limit=100):
         if not label or q not in normalize(label):return
         # Stable record position is for display only, not a fabricated identity.
         identity=str(entity_id) if entity_id is not None else None
-        key=(kind,identity,label)
+        key=(kind,identity,label,id(data) if identity is None else None)
         if key in seen:return
         seen.add(key)
         results.append({
@@ -48,7 +48,7 @@ def search_project(project, query, *, limit=100):
         })
     def rec(kind,record,*,keys,route):
         if not isinstance(record,dict):return
-        idvalue=next((record[k] for k in ("id","row_id","member_id","system_id","price_code","code")
+        idvalue=next((record[k] for k in ("id","row_id","member_id","system_id")
                       if record.get(k) not in (None,"")),None)
         source=record.get("source_id") or record.get("source_ids")
         rev=record.get("revision")
