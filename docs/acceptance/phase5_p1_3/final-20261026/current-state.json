@@ -22,6 +22,13 @@
     "P5-2": "COMPLETE_NON_WINDOWS",
     "P5-3": "PARTIAL"
   },
+  "verified_drive_backup": {
+    "file_id": "1TMm1YgEfugGXh1Pc0CrwFIrpMcjNAVbu",
+    "sha256": "43118bb70185dc6b66fc39ae17abd1f78061259fc6f67b434c08f66954559e81",
+    "bundle_commit": "7a5175133fda759dd21f48e7b5280c433843e858",
+    "bundle_tree": "27076091ae80a825e928fb67e55c0c7128e07866",
+    "restored_tests_passed": 19
+  },
   "windows_native": "NOT_VERIFIED",
   "microsoft_office": "NOT_VERIFIED",
   "engineering_acceptance": "NOT_RECEIVED",
