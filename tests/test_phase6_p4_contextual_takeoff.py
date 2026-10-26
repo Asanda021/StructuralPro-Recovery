@@ -385,14 +385,26 @@ def test_existing_architecture_structural_handoffs_are_review_only(tmp_path,fami
         assert guide.preview() is not None,guide.status.text()
         seen=[]
         def close_specialist():
-            dialogs=[w for w in qt.topLevelWidgets()
-                     if isinstance(w,QDialog) and w.objectName()==dialog_name]
+            dialogs=[w for w in qt.allWidgets()
+                     if isinstance(w,QDialog) and w.objectName()==dialog_name and w.isVisible()]
             if dialogs:
                 seen.append(dialogs[0].objectName())
                 dialogs[0].reject()
+        # A mismatched/nested modal must fail the test, not hang the CI runner.
+        fallback=QTimer(guide)
+        fallback.setSingleShot(True)
+        def rescue_modal():
+            modal=qt.activeModalWidget()
+            if isinstance(modal,QDialog):
+                modal.reject()
+        fallback.timeout.connect(rescue_modal)
         QTimer.singleShot(650,close_specialist)
+        fallback.start(3000)
         digest=app.store.current_digest("P")
-        assert guide.open_form() is True,guide.status.text()
+        try:
+            assert guide.open_form() is True,guide.status.text()
+        finally:
+            fallback.stop()
         assert seen==[dialog_name]
         assert digest==app.store.current_digest("P")
         assert app.open_project("P")["boq"]==[]
