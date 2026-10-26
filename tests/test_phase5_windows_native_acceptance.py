@@ -33,7 +33,7 @@ def test_current_windows_token_principal_reaches_projectstore_and_real_qt_worksp
     service = StructuralProApp(tmp_path / "workspace")
     service.create_project("پروژه آزمایشی ویندوز", "WINDOWS-NATIVE-P5")
     principal = service.store.current_principal("WINDOWS-NATIVE-P5")
-    assert principal.subject_id == observed.subject_id
+    assert principal.user_id == observed.subject_id
     assert principal.role == "owner"
     assert service.open_project("WINDOWS-NATIVE-P5")["_meta"]["version"] == 1
     assert service.store.verify_audit("WINDOWS-NATIVE-P5") is True
@@ -44,7 +44,7 @@ def test_current_windows_token_principal_reaches_projectstore_and_real_qt_worksp
     app.processEvents()
     try:
         assert window.isVisible()
-        assert service.store.current_principal("WINDOWS-NATIVE-P5").subject_id == observed.subject_id
+        assert service.store.current_principal("WINDOWS-NATIVE-P5").user_id == observed.subject_id
     finally:
         window.close()
         app.processEvents()
