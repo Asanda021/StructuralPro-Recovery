@@ -20,7 +20,7 @@
 
 آزمون‌های حساس داخل همین JUnit موفق‌اند: CAD با ۱۰٬۰۰۰/۵۰٬۰۰۰/۱۰۰٬۰۰۰ عضو، IFC async/Qt با شرط فاصله رویداد کمتر از ۰٫۵ ثانیه، و پذیرش سایت پنج‌طبقه. آستانه، GC و سیاست شبکه تغییر نکرد.
 
-- JUnit: `final-20261026/product-suite.xml`؛ SHA-256 `dd6321fa3ac87d5289947cded61a8a47e5cef445805cc69601dc94f994debb9e`
+- JUnit: `final-20261026/product-suite.xml.gz`؛ SHA-256 فایل XML پس از بازکردن `dd6321fa3ac87d5289947cded61a8a47e5cef445805cc69601dc94f994debb9e` و SHA-256 آرشیو قطعی `19bc04ddafeb6ac776207d1f35957d448c62ab209f388447615058ad25feb7eb`
 - log: `final-20261026/product-suite.log`؛ SHA-256 `1002076ad4b88e860b610d015e4b35784d85009063593cd5e83db3d65229ff0d`
 - محیط: Linux 6.18.55 x86_64، Python 3.12.14، SQLite 3.53.1، PySide6 6.12.0، IfcOpenShell 0.9.0.post1 و pytest 9.1.1.
 

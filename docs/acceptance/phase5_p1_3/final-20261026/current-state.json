@@ -12,7 +12,9 @@
     "errors": 0,
     "skipped_windows": 7,
     "seconds": 461.42,
-    "junit_sha256": "dd6321fa3ac87d5289947cded61a8a47e5cef445805cc69601dc94f994debb9e",
+    "junit_artifact": "product-suite.xml.gz",
+    "junit_uncompressed_sha256": "dd6321fa3ac87d5289947cded61a8a47e5cef445805cc69601dc94f994debb9e",
+    "junit_gzip_sha256": "19bc04ddafeb6ac776207d1f35957d448c62ab209f388447615058ad25feb7eb",
     "log_sha256": "1002076ad4b88e860b610d015e4b35784d85009063593cd5e83db3d65229ff0d"
   },
   "priorities": {
