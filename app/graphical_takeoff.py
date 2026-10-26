@@ -389,6 +389,11 @@ class GraphicalTakeoffDialog(QDialog):
         self.save_session_button = QPushButton("ذخیره نشست متره")
         self.load_session_button = QPushButton("بارگذاری نشست")
         self.commit_boq_button = QPushButton("انتقال انتخاب به BOQ")
+        self.guided_takeoff_button = QPushButton("دستیار مرحله‌ای متره و A2")
+        self.guided_takeoff_button.setObjectName("P6W1OpenGuidedTakeoff")
+        self.guided_takeoff_button.setToolTip("ورودی‌های صریح، اجزای وابسته و پیشنهاد آفلاین؛ بدون ثبت خودکار")
+        self.guided_takeoff_button.setEnabled(self.app_service is not None)
+        self.guided_takeoff_button.clicked.connect(self.open_guided_takeoff)
         self.save_session_button.setToolTip("نشست نقشه، کالیبراسیون‌ها و ریزمتره‌ها را در پروژه ذخیره می‌کند.")
         self.load_session_button.setToolTip("نشست ذخیره‌شده را از پروژه بازیابی می‌کند.")
         self.commit_boq_button.setToolTip("فقط ردیف‌های انتخاب‌شده، پس از تأیید، به BOQ منتقل می‌شوند.")
@@ -407,7 +412,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
-            self.load_session_button, self.commit_boq_button, self.export_boq
+            self.load_session_button, self.commit_boq_button, self.export_boq, self.guided_takeoff_button
         ]):
             actions.addWidget(x, index // 6, index % 6)
         self.cad_layers=QComboBox();self.cad_layer_toggle=QPushButton('نمایش/پنهان لایه')
@@ -1140,6 +1145,55 @@ class GraphicalTakeoffDialog(QDialog):
         margin = max(bounds.width(), bounds.height(), 1.0) * 0.05
         self.canvas.setSceneRect(bounds.adjusted(-margin, -margin, margin, margin))
         self._ifc_status()
+
+
+    def open_guided_takeoff(self):
+        """User-confirmed W1/A2 on the selected actual project and drawing."""
+        if self.app_service is None:
+            self.status.setText('سرویس واقعی پروژه لازم است.')
+            return None
+        try:
+            import hashlib
+            from app.contextual_takeoff_p6 import ContextualTakeoffDialog
+            pid=self.project_id_input.text().strip()
+            if not isinstance(self.app_service.open_project(pid),dict):
+                raise ValueError('پروژه واقعی ابتدا انتخاب شود.')
+            document={}
+            if self.viewer.path:
+                path=str(self.viewer.path)
+                if not Path(path).is_file():
+                    raise ValueError('سند نقشه در دسترس نیست.')
+                sha=hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                is_ifc=self.viewer.kind=='ifc'
+                revision=self.ifc_revision.text().strip() if is_ifc else ""
+                if is_ifc and not revision:
+                    raise ValueError('Revision صریح IFC الزامی است.')
+                if is_ifc and (
+                    self.viewer.ifc_document is None or
+                    sha != self.viewer.ifc_document.source_sha256):
+                    raise ValueError('مدل IFC و منبع واقعی مطابقت ندارند.')
+                document=dict(document_path=path,document_sha256=sha,revision=revision,
+                              global_id=(getattr(self,'_ifc_selected_global_id','') or "") if is_ifc else "")
+            def guard():
+                if self.project_id_input.text().strip()!=pid:
+                    raise RuntimeError('پروژه فعال تغییر کرده است.')
+                if document:
+                    current_path=str(self.viewer.path or "")
+                    if current_path!=document['document_path'] or not Path(current_path).is_file():
+                        raise RuntimeError('سند فعال تغییر کرده است.')
+                    if hashlib.sha256(Path(current_path).read_bytes()).hexdigest()!=document['document_sha256']:
+                        raise RuntimeError('محتوای نقشه تغییر کرده است.')
+                    if document['revision'] and self.ifc_revision.text().strip()!=document['revision']:
+                        raise RuntimeError('Revision IFC تغییر کرده است.')
+            dialog=ContextualTakeoffDialog(self.app_service,pid,self,
+                                           context_guard=guard,**document)
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            self._p6_takeoff_wizard=dialog
+            dialog.show()
+            return dialog
+        except Exception as exc:
+            self.status.setText('دستیار مرحله‌ای باز نشد: '+str(exc))
+            return None
 
     def open_verified_crossview(self):
         """Display *persisted* reviewed identities, never a hand-built demo mapping."""
