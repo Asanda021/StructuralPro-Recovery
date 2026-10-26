@@ -35,6 +35,7 @@ class IFC3DLoadSignals(QObject):
     failed = Signal(int, str)
     cancelled = Signal(int)
     stage = Signal(int, str)
+    progress = Signal(int, int, int)
 
 
 class IFC3DLoadJob(QRunnable):
@@ -66,7 +67,10 @@ class IFC3DLoadJob(QRunnable):
             self._checkpoint()
             self.signals.stage.emit(self.token, "خواندن هندسه واقعی IFC در پس‌زمینه…")
             contract = DeepIFCAdapter().read_display_contract(
-                source, revision=self.revision, max_triangles=40_000)
+                source, revision=self.revision, max_triangles=40_000,
+                cancel_event=self.cancellation, batch_size=32,
+                on_progress=lambda done, total: self.signals.progress.emit(
+                    self.token, done, total))
             self._checkpoint()
             if contract["source_sha256"] != self.expected_sha:
                 raise ValueError("هویت IFC در مدل سه‌بعدی و سند فعال یکسان نیست.")
