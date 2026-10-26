@@ -51,6 +51,17 @@ REVIEW_QUESTIONS = {
         "مالکیت مشترک سقف با متره‌های تیرچه و هالوکور کنترل شده است؟"),
     "floor_tile": ("مدل سرامیک و محدوده خالص کار تأیید شده‌اند؟",
                    "قرنیز، پرت خرید و ملات نباید خودکار فرض شوند."),
+    "waffle_one_way": ("جهت ریب و دیتایل واقعی وافل ثبت شده است؟",
+                       "مالکیت قالب، بتن ریب، تقاطع، سطح توپر و آرماتور مستقل است؟"),
+    "waffle_two_way": ("جهت هر دو دسته ریب و هندسه تقاطع‌ها ثبت شده است؟",
+                       "بازشوها و سلول‌های مشترک دوباره متره نشده‌اند؟"),
+    "hollowcore": ("قطعه کارخانه‌ای، جرم، دهانه و گواهی آن مستقل‌اند؟",
+                   "درز، بتن درجاریز و فولاد کارخانه‌ای دوباره‌شماری نشده‌اند؟"),
+    "mep_pipe": ("مسیر و طول واقعی لوله از نقشه مصوب موجود است؟",
+                 "قطر، متریال، اتصالات، عایق، بازشو و هویت طبقه مشخص‌اند؟",
+                 "تداخل با سازه و مصالح مشترک نیازمند بررسی انسانی است."),
+    "mep_electrical": ("مسیر کابل یا لوله‌گذاری، تعداد و نوع مدار واقعی است؟",
+                       "مقطع کابل، تابلو، تجهیزات، سینی و مرجع فنی مستندند؟"),
 }
 
 SPECIALIST_ONLY = {
@@ -223,8 +234,8 @@ class GovernedTakeoffAssistant:
         if code in SPECIALIST_ONLY:
             self._snapshot = None
             return ContextualPreview(code,SPECIALIST_ONLY[code],(),(),(),
-                ("برای این خانواده فقط فرم تخصصی موجود معتبر است؛ اسمبلی عمومی ساخته نمی‌شود.",),
-                digest,False)
+                ("این خانواده فقط از مسیر مستند تخصصی قابل متره است؛ اسمبلی عمومی معتبر ندارد.",),
+                digest,False,review_questions=REVIEW_QUESTIONS.get(code,()))
         template=self.library.get(code)
         if any(isinstance(v,float) for v in values.values()):
             raise ValueError("ورودی float دودویی پذیرفته نمی‌شود؛ مقدار صریح متنی/Decimal وارد کنید.")
@@ -295,6 +306,10 @@ class GovernedTakeoffAssistant:
                  ". پیشنهادها مقدار یا قیمت ندارند؛ ثبت تنها پس از تأیید مجاز است.")
         else:
             msg="برای پیشنهاد دقیق، خانواده متره و زمینه معتبر عضو و طبقه را انتخاب کنید."
+        msg=("زمینه واقعی: پروژه "+self.project_id+
+             "، طبقه "+(self.floor_id or "نامشخص")+
+             "، عضو "+(self.member_id or "نامشخص")+
+             "، Revision "+(self.revision or "ثبت نشده")+". "+msg)
         if any(x in q.casefold() for x in ("چقدر","مقدار","عدد","قیمت","هزینه","total","sum","quantity")):
             if boq_row_index is not None:
                 row=self.exact_boq_row(boq_row_index,expected_digest=boq_digest)
