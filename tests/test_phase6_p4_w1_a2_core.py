@@ -196,3 +196,41 @@ def test_unapproved_visual_ifc_global_id_must_not_become_financial_owner(tmp_pat
                  expected_digest=p.project_digest)
     assert svc.open_project("P")["boq"]==[]
     svc.store.close()
+
+
+def test_roof_same_owner_rejects_incompatible_joist_or_slab_double_count(tmp_path):
+    svc=case(tmp_path)
+    w=assistant(svc)
+    p=w.preview("concrete_slab",SLAB,measurement_source="real-roof-Z")
+    assert p.ready_to_review
+    w.commit(code="concrete_slab",inputs=SLAB,measurement_source="real-roof-Z",
+             approver="owner",expected_digest=p.project_digest)
+    other=w.preview("joist_block_roof_assembly",ROOF_BLOCK,
+                    measurement_source="real-roof-Z")
+    assert not other.ready_to_review
+    assert any("دوباره‌شماری" in x for x in other.blockers)
+    assert len(svc.open_project("P").get("takeoff_assemblies",[]))==1
+    svc.store.close()
+
+
+def test_real_ifc_identity_review_allows_only_matched_member_for_w1(tmp_path):
+    from test_phase2_priority5_closure import identity_case
+    from core.ai.contextual_takeoff_p6 import GovernedTakeoffAssistant
+    app,path,proof,proposal,args=identity_case(tmp_path)
+    app.review_ifc_identity("P",**args)
+    app.collaboration.add_user(User("owner","مدیر پروژه","owner"))
+    doc_hash=sha256(path.read_bytes()).hexdigest()
+    guide=GovernedTakeoffAssistant(app,"P",floor_id="F1",member_id="B1",
+        document_path=str(path),document_sha256=doc_hash,revision="R1",
+        global_id=proposal["global_id"])
+    beam={"count":"1","length":"4","width":"0.3","depth":"0.5"}
+    p=guide.preview("concrete_beam",beam,measurement_source="source:beam1")
+    assert p.ready_to_review
+    assert not p.financial_approved
+    assert len(p.components)==1
+    wrong=GovernedTakeoffAssistant(app,"P",floor_id="F1",member_id="B1",
+        document_path=str(path),document_sha256=doc_hash,revision="R2",
+        global_id=proposal["global_id"])
+    stale=wrong.preview("concrete_beam",beam,measurement_source="source:beam1")
+    assert not stale.ready_to_review and stale.blockers
+    app.store.close()
