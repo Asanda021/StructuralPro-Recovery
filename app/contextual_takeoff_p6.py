@@ -242,6 +242,8 @@ class ContextualTakeoffDialog(QDialog):
                 "ورودی‌های الزامی ناقص: "+("، ".join(result.missing) or "ندارد"),
                 "موانع: "+("؛ ".join(result.blockers) or "ندارد"),
                 "اقلام برای بررسی مستقل: "+("، ".join(x["title"] for x in result.companions) or "ندارد"),
+                "چک‌لیست تأیید مستقل (بدون مقدار فرضی):",
+                *result.review_questions,
                 "اجزای محاسبه‌شده فقط پیش‌نمایش فنی (غیرمالی):",
             ]
             parts += [c["title"]+" | "+c["quantity"]+" "+c["unit"]+
