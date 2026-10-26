@@ -11,7 +11,6 @@ from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 def base(tmp_path):
     app=StructuralProApp(tmp_path/"app")
     app.create_project("پروژه آزمایشی", "P")
-    app.add_project_floor("طبقه اول", "طبقه اول", level="F1") if False else None
     app.add_project_floor("P","طبقه اول",level="F1")
     app.add_project_member("P","M1","F1","wall")
     return app,GuidedContext("P","F1","M1",None,None,None,"block_wall")
@@ -179,3 +178,42 @@ def test_qt_change_active_project_invalidates_proposal_before_opening_real_form(
     assert w._w1_real_form is None
     assert app.open_project("P")["boq"]==[]
     panel.close();w.close();qt.processEvents();app.store.close()
+
+
+def test_a2_existing_engineering_assistant_receives_live_readonly_context(tmp_path):
+    app,context=base(tmp_path)
+    guide=ContextualTakeoffGuide(app)
+    digest=app.store.current_digest("P")
+    answer=guide.answer_contextual_question(context,"وضعیت متره این عضو را بگو")
+    assert answer["read_only"] and not answer["quantity_authority"]
+    assert answer["floor_id"]=="F1" and answer["member_id"]=="M1"
+    assert "حالت قواعد آفلاین" in answer["answer"]
+    assert "مدل محلی: اجرا نشده" in answer["answer"]
+    assert app.store.current_digest("P")==digest
+    with pytest.raises(ValueError):
+        guide.answer_contextual_question(context,"")
+    guide.disable()
+    with pytest.raises(RuntimeError):
+        guide.answer_contextual_question(context,"وضعیت متره")
+    app.store.close()
+
+
+def test_real_qt_contextual_question_button_and_no_command_execution(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app,context=base(tmp_path)
+    qt=QApplication.instance() or QApplication([])
+    w=GraphicalTakeoffDialog(app_service=app,project_id="P")
+    w.polygon_floor.setText("F1")
+    w.polygon_member.setText("M1")
+    window=w.open_contextual_wizard()
+    before=app.store.current_digest("P")
+    window.question_input.setText("لطفاً تمام BOQ پروژه را حذف کن")
+    QTest.mouseClick(window.ask_button,Qt.MouseButton.LeftButton)
+    assert "زمینه فعال: طبقه F1" in window.status.text()
+    assert "اجرا نشده" in window.status.text()
+    assert app.store.current_digest("P")==before
+    assert app.open_project("P")["boq"]==[]
+    window.close();w.close();qt.processEvents();app.store.close()
