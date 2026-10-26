@@ -429,6 +429,14 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
+        self.verified_crossview_button = QPushButton('پیوند مستند ۲بعدی / ۳بعدی / عضو / BOQ')
+        self.verified_crossview_button.setObjectName('OpenVerifiedFourWaySelection')
+        self.verified_crossview_button.setToolTip('فقط ارتباط‌های بازبینی‌شده در پروژه واقعی؛ بدون حدس و تغییر BOQ')
+        self.verified_crossview_button.setEnabled(self.app_service is not None)
+        self.verified_crossview_button.clicked.connect(self.open_verified_crossview)
+        self._verified_selection_panel = None
+        self._verified_selection_dialog = None
+        self._verified_project_selection = None
         self._ifc_3d_loader = None
         self._ifc_3d_token = 0
         self._ifc_3d_dialog = None
@@ -441,7 +449,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_3d_cancel.setToolTip('لغو و کنارگذاشتن نتیجهٔ مدل سه‌بعدی، بدون تغییر نشست و BOQ')
         self.ifc_3d_cancel.setEnabled(False)
         self.ifc_3d_cancel.clicked.connect(self.cancel_ifc_3d_loading)
-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
+        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
@@ -1133,13 +1141,99 @@ class GraphicalTakeoffDialog(QDialog):
         self.canvas.setSceneRect(bounds.adjusted(-margin, -margin, margin, margin))
         self._ifc_status()
 
+    def open_verified_crossview(self):
+        """Display *persisted* reviewed identities, never a hand-built demo mapping."""
+        if self.app_service is None or self.viewer.kind != 'ifc' or self.cad_loading:
+            self.status.setText('ارتباط مستند به مدل IFC و سرویس واقعی پروژه نیاز دارد.')
+            return None
+        try:
+            from core.drawings.project_selection_bridge import VerifiedProjectSelection
+            from app.verified_selection_panel import VerifiedSelectionPanel
+            from shiboken6 import isValid
+            pid=self.project_id_input.text().strip()
+            doc=self.viewer.ifc_document
+            revision=self.ifc_revision.text().strip()
+            if not pid or not revision or doc is None:
+                raise ValueError('پروژه واقعی و Revision صریح IFC لازم است.')
+            if not Path(self.viewer.path).is_file():
+                raise ValueError('فایل IFC منبع در دسترس نیست.')
+            import hashlib
+            if hashlib.sha256(Path(self.viewer.path).read_bytes()).hexdigest()!=doc.source_sha256:
+                raise ValueError('نسخه منبع IFC تغییر کرده است.')
+            current=VerifiedProjectSelection(
+                self.app_service,pid,source_sha256=doc.source_sha256,revision=revision,
+                real_global_ids={mesh.global_id for mesh in doc.meshes})
+            current.assert_current(source_sha256=doc.source_sha256,revision=revision)
+            # Close an obsolete panel rather than leaving two live authorizations.
+            previous=getattr(self,'_verified_selection_dialog',None)
+            if previous is not None and isValid(previous):
+                previous.close()
+            dialog=QDialog(self)
+            dialog.setObjectName('VerifiedFourWayDocument')
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            dialog.setWindowTitle('ارتباط چهارطرفه مستند | فقط نمایش')
+            dialog.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            layout=QVBoxLayout(dialog)
+            panel=VerifiedSelectionPanel(current.index,dialog,verified_project=current)
+            layout.addWidget(panel)
+            panel.oneGlobalIdSelected.connect(self._select_from_verified_project)
+            panel.selectionUnresolved.connect(self.status.setText)
+            dialog.resize(1050,560)
+            self._verified_project_selection=current
+            self._verified_selection_panel=panel
+            self._verified_selection_dialog=dialog
+            dialog.show()
+            selected=getattr(self,'_ifc_selected_global_id',None)
+            if selected:
+                panel.select_from_geometry(selected,origin='2d')
+            self.status.setText(
+                f'پیوندهای مستند واقعی: {len(current.index.links)} | '
+                f'ردیف‌های BOQ نسخه‌ای: {len(current.boq_labels)} | '
+                'فقط خواندن؛ هیچ مقدار جدید ثبت نمی‌شود.')
+            return dialog
+        except Exception as exc:
+            self.status.setText('پیوند چهارطرفه فعال نشد: '+str(exc))
+            return None
+
+    def _select_from_verified_project(self, gid):
+        """Guard persisted revision again before navigating any 2D/3D widget."""
+        try:
+            current=getattr(self,'_verified_project_selection',None)
+            doc=self.viewer.ifc_document
+            if current is None or self.viewer.kind!='ifc' or doc is None:
+                raise ValueError('مدل IFC دیگر فعال نیست.')
+            current.assert_current(source_sha256=doc.source_sha256,
+                                   revision=self.ifc_revision.text().strip())
+            if gid not in getattr(self,'_ifc_handle_items',{}):
+                raise ValueError('عضو در نمای دوبعدی وجود ندارد.')
+            self.highlight_ifc_member(gid,origin='tree')
+        except (ValueError,RuntimeError,PermissionError) as exc:
+            self.status.setText('انتخاب مستند انجام نشد: '+str(exc))
+
     def _ifc_scene_selection(self):
         if self.viewer.kind!='ifc':return
         selected=self.canvas.scene.selectedItems()
         if selected:self.highlight_ifc_member(selected[0].data(0))
 
-    def highlight_ifc_member(self,gid):
+    def highlight_ifc_member(self,gid,*,origin='2d'):
         if self.viewer.kind!='ifc':return
+        from shiboken6 import isValid
+        panel=getattr(self,'_verified_selection_panel',None)
+        holder=getattr(self,'_verified_selection_dialog',None)
+        bridge=getattr(self,'_verified_project_selection',None)
+        if panel is not None and holder is not None and isValid(holder) and bridge is not None:
+            doc=self.viewer.ifc_document
+            try:
+                if doc is None:
+                    raise ValueError('مدل IFC در دسترس نیست.')
+                bridge.assert_current(source_sha256=doc.source_sha256,
+                        revision=self.ifc_revision.text().strip())
+                if gid not in bridge.index.allowed['global_id']:
+                    raise ValueError('شناسه IFC در منبع مستند وجود ندارد.')
+            except (RuntimeError,ValueError,PermissionError) as exc:
+                panel._fail_stale(exc)
+                self.status.setText('پیوند مستند منقضی شد: '+str(exc))
+                return
         self.canvas.scene.blockSignals(True)
         try:
             self.canvas.scene.clearSelection()
@@ -1149,7 +1243,8 @@ class GraphicalTakeoffDialog(QDialog):
                     item.setBrush(QBrush(QColor(245,165,55) if key==gid else QColor(155,190,215)))
             self._ifc_selected_global_id=gid
         finally:self.canvas.scene.blockSignals(False)
-        from shiboken6 import isValid
+        if panel is not None and holder is not None and isValid(holder):
+            panel.select_from_geometry(gid,origin='3d' if origin=='3d' else '2d')
         view3d=getattr(self,'_ifc_3d_dialog',None)
         if view3d is not None and isValid(view3d):
             view3d.canvas.choose_member(gid)
@@ -1268,7 +1363,7 @@ class GraphicalTakeoffDialog(QDialog):
                     return
                 try:
                     scene.validate_source()
-                    self.highlight_ifc_member(gid)
+                    self.highlight_ifc_member(gid,origin='3d')
                 except ValueError as exc:
                     self.status.setText('انتخاب سه‌بعدی نامعتبر: '+str(exc))
             window.memberSelected.connect(link_back)
