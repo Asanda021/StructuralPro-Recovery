@@ -139,12 +139,15 @@ def packaged_edition(
     CI/release builds always ship EDITION. Development checkouts may omit it;
     in that case None is returned unless fail_closed=True.
     """
-    raw = os.getenv("STRUCTURALPRO_EDITION", "").strip().lower()
-    if not raw:
-        base = Path(bundle_dir) if bundle_dir is not None else Path(__file__).resolve().parents[2]
-        marker = base / "EDITION"
-        if marker.exists():
-            raw = marker.read_text(encoding="utf-8").strip().lower()
+    base = Path(bundle_dir) if bundle_dir is not None else Path(__file__).resolve().parents[2]
+    marker = base / "EDITION"
+    # A shipped unified marker is authoritative; environment strings must
+    # not downgrade the paid/AI capabilities or bypass the A1 security gate.
+    marker_value = marker.read_text(encoding="utf-8").strip().lower() if marker.exists() else ""
+    if marker_value == "unified":
+        return ProductEdition.UNIFIED
+    # Keep old edition marker parsing only for historical test/build consumers.
+    raw = os.getenv("STRUCTURALPRO_EDITION", "").strip().lower() or marker_value
     if not raw:
         if fail_closed:
             raise ValueError("StructuralPro edition marker is missing")
