@@ -138,3 +138,31 @@ def test_real_qt_unreviewed_is_visible_but_unlinked(tmp_path):
     panel._lookup("tree","B1")
     assert not sent and "ارتباط" in panel.detail.text()
     pane.close();dlg.close();qt.processEvents();app.store.close()
+
+
+def test_real_manual_boq_with_same_member_code_never_becomes_ifc_link(tmp_path):
+    app,path,proof,proposal=reviewed(tmp_path)
+    app.add_takeoff("P","building","slab",length=2,width=3,
+                    member_code="B1",source_id="manual:same-member-code",
+                    price_code="B1",unit_price=100)
+    snapshot=app.open_project("P")["boq"]
+    assert len(snapshot)==1
+    digest=app.store.current_digest("P")
+    graph=make(app,path)
+    key=next(iter(graph.boq_labels))
+    row=graph.resolve(origin="boq",identifier=key,
+        source_sha256=graph.source_sha256,revision="R1")
+    assert row.status=="unlinked" and row.global_ids==()
+    assert app.store.current_digest("P")==digest
+    app.store.close()
+
+
+def test_reviewer_permission_revocation_blocks_live_navigation(tmp_path):
+    app,path,proof,proposal=reviewed(tmp_path)
+    graph=make(app,path)
+    assert graph.assert_current(source_sha256=graph.source_sha256,revision="R1")
+    app.collaboration.users.pop("reviewer")
+    with pytest.raises(PermissionError):
+        graph.resolve(origin="tree",identifier="B1",
+            source_sha256=graph.source_sha256,revision="R1")
+    app.store.close()
