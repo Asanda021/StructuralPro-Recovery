@@ -70,7 +70,8 @@ class VerifiedSelectionPanel(QWidget):
             self.selectionUnresolved.emit(message)
             return result
         if len(result.global_ids) != 1:
-            message = f'این ردیف به {len(result.global_ids)} عضو معتبر مرتبط است؛ عضو مشخص را انتخاب کنید.'
+            persian_count = str(len(result.global_ids)).translate(str.maketrans('0123456789','۰۱۲۳۴۵۶۷۸۹'))
+            message = f'این ردیف به {persian_count} عضو معتبر مرتبط است؛ عضو مشخص را انتخاب کنید.'
             self.detail.setText(message)
             self.selectionUnresolved.emit(message)
             return result
