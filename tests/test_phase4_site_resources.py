@@ -117,3 +117,47 @@ def test_attendance_correction_adds_record_without_overwrite(setup):
     assert p['resource_availability'][1]['supersedes']==original['id']
     from core.projects.site_resources import capacity
     assert capacity(p,p['project_resources'][0],'2026-10-26')==0
+
+
+def test_conflict_priority_survives_unknown_other_resource(setup):
+    """Verified crew stoppage must not be masked by a later unknown crew."""
+    a, run, proof = setup
+    resource(run, proof, id='C')
+    run('resource_create', id='UNAVAILABLE', name='اکیپ بدون حضور',
+        kind='crew', capacity='1', unit='crew', discipline_id='S',
+        subcontractor='نمونه', source=proof)
+    run('resource_review', actor='reviewer', id='UNAVAILABLE')
+    run('resource_approve', actor='approver', id='UNAVAILABLE')
+    run('requirements', id='REQ', activity_id='A', resources=[
+        {'resource_id': 'C', 'quantity': '1'},
+        {'resource_id': 'UNAVAILABLE', 'quantity': '1'},
+    ], materials=[], source=proof)
+    assign(run, proof)
+    run('resource_event', id='STOP', resource_id='C',
+        start='2026-10-27', end='2026-10-27', state='absent', source=proof)
+    row = a.site_lookahead('P', start='2026-10-26', days=7)['activities'][0]
+    assert any('تداخل یا توقف منبع' in reason for reason in row['reasons'])
+    assert any('دسترسی نامشخص' in reason for reason in row['reasons'])
+    assert row['status'] == 'resource_conflict'
+
+
+def test_dashboard_conflict_is_read_only_and_auditable(setup):
+    from core.projects.site_dashboard import snapshot
+    from core.projects.controls import digest
+    a, run, proof = setup
+    resource(run, proof)
+    run('requirements', id='REQ', activity_id='A',
+        resources=[{'resource_id': 'C', 'quantity': '1'}], materials=[], source=proof)
+    assign(run, proof)
+    run('resource_event', id='STOP', resource_id='C',
+        start='2026-10-27', end='2026-10-27', state='stopped', source=proof)
+    original = a.open_project('P')
+    before = deepcopy(original)
+    output = snapshot(original, as_of='2026-10-26', days=7)
+    row = output['lookahead']['activities'][0]
+    assert row['status'] == 'resource_conflict'
+    assert any('تداخل یا توقف منبع' in reason for reason in row['reasons'])
+    assert output['source_digest'] == digest({k: v for k, v in before.items() if k != '_meta'})
+    assert original == before == a.open_project('P')
+    output['resources'].clear()
+    assert a.open_project('P') == before

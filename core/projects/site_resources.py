@@ -139,7 +139,7 @@ def lookahead(p,*,start,days=None,end=None):
     for a in p.get('project_schedule_tasks',[]):
         schedule=plan['activities'][a['id']] if plan else None
         if schedule and (schedule['finish']<start or schedule['start']>last.isoformat()):continue
-        reasons=[];status='ready'
+        reasons=[];status='ready'; resource_conflict_found=False
         if not schedule:reasons.append(error);status='insufficient_information'
         req=next((x for x in reversed(p.get('activity_resource_requirements',[])) if x['activity_id']==a['id']),None)
         if req is None or req.get('activity_basis')!=digest(a) or not valid_source(req):reasons.append('نیاز منابع فعالیت ثبت نشده، قدیمی یا دارای مدرک نامعتبر است');status='insufficient_information'
@@ -154,7 +154,9 @@ def lookahead(p,*,start,days=None,end=None):
                     available=capacity(p,resource,day)
                     total=sum((num(x['allocation'],'تخصیص') for x in p.get('resource_assignments',[]) if x.get('status')=='approved' and x['resource_id']==resource['id'] and x['start']<=day<=x['end']),Decimal(0))
                     if available is None:reasons.append('دسترسی نامشخص: '+day);status='insufficient_information'
-                    elif total>available:reasons.append('تداخل یا توقف منبع: '+resource['id']+' '+day);status='resource_conflict'
+                    elif total>available:
+                        reasons.append('تداخل یا توقف منبع: '+resource['id']+' '+day)
+                        status='resource_conflict'; resource_conflict_found=True
             if req['materials']:
                 from core.projects.site_materials import snapshot
                 materials=snapshot(p,as_of=start,activity_id=a['id'])
@@ -178,5 +180,6 @@ def lookahead(p,*,start,days=None,end=None):
         resolved={x['target_id'] for x in p.get('site_action_events',[]) if x['kind']=='obstacle_resolve' and x['date']<=start}
         for blocker in p.get('site_obstacles',[]):
             if blocker.get('date','9999-12-31')<=start and blocker.get('activity_id')==a['id'] and blocker['id'] not in resolved:reasons.append('مانع باز: '+blocker['id']);status='human_decision'
+        if resource_conflict_found: status='resource_conflict'
         result.append({'id':a['id'],'title':a['title'],'responsible':a.get('responsible'),'floor_ids':a.get('floor_ids',[]),'zone_ids':a.get('zone_ids',[]),'start':schedule['start'] if schedule else None,'finish':schedule['finish'] if schedule else None,'work_dates':occupied,'resources':req['resources'] if req else None,'status':status,'reasons':reasons,'requirement_id':req['id'] if req else None})
     return {'project_id':p['id'],'start':start,'end':last.isoformat(),'activities':result,'schedule_digest':digest(plan) if plan else None,'baseline_unchanged':True}

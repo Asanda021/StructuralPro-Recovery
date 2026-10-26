@@ -9,10 +9,12 @@ from core.platform.product import (
 
 def test_all_editions_exist_and_are_monotonic():
     profiles = [product_profile(e) for e in ProductEdition]
-    assert len(profiles) == 4
-    assert profiles[0].features <= profiles[1].features
-    assert profiles[1].features <= profiles[2].features
-    assert profiles[2].features <= profiles[3].features
+    # Four historical profiles remain readable for data migration; only
+    # UNIFIED is now the canonical new Windows product, with full capabilities.
+    assert len(profiles) == 5
+    for left, right in zip(profiles, profiles[1:]):
+        assert left.features <= right.features
+    assert product_profile(ProductEdition.UNIFIED).features == set(FEATURES)
     assert product_profile(ProductEdition.ENTERPRISE).features == set(FEATURES)
 
 

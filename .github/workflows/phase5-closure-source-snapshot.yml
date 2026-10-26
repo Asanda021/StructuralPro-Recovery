@@ -1,0 +1,70 @@
+name: Phase 5 unified latest closure verified source
+on:
+  push:
+    branches:
+      - feature/phase5-remaining-e2-a1-unified-20261026
+    paths:
+      - .github/workflows/phase5-closure-source-snapshot.yml
+permissions:
+  contents: read
+jobs:
+  create-verified-bundle:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout full history for portable verified bundle
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Build verify and independently reopen exact source snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p p5-remaining-source-snapshot
+          branch=feature/phase5-remaining-e2-a1-unified-20261026
+          git bundle create p5-remaining-source-snapshot/StructuralPro-phase5-remaining.bundle "refs/heads/$branch"
+          git bundle verify p5-remaining-source-snapshot/StructuralPro-phase5-remaining.bundle
+          mkdir clone-verify
+          git clone --quiet --branch "$branch" p5-remaining-source-snapshot/StructuralPro-phase5-remaining.bundle clone-verify/repository
+          test "$(git -C clone-verify/repository rev-parse HEAD)" = "$GITHUB_SHA"
+          git -C clone-verify/repository fsck --full --no-reflogs
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib, json, os, pathlib, subprocess
+          root=pathlib.Path('p5-remaining-source-snapshot')
+          source=root/'StructuralPro-phase5-remaining.bundle'
+          head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
+          tree=subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip()
+          def digest(path):
+              h=hashlib.sha256()
+              with open(path,'rb') as handle:
+                  for chunk in iter(lambda:handle.read(1024*1024),b''):h.update(chunk)
+              return h.hexdigest()
+          manifest={
+              'format':'structuralpro-phase5-source-snapshot',
+              'version':1,
+              'created_at_utc':datetime.now(timezone.utc).isoformat(),
+              'repository':'Asanda021/StructuralPro-Recovery',
+              'branch':'feature/phase5-remaining-e2-a1-unified-20261026',
+              'source_commit':head,'source_tree':tree,
+              'previous_security_product_commit':'93f936577b8dcd315410d8d6b283cb9c7aeede48',
+              'bundle':{'name':source.name,'bytes':source.stat().st_size,'sha256':digest(source)},
+              'restore_verified':'git bundle verify + independent git clone + git fsck + same HEAD',
+              'data_backup_reference':{
+                 'provider':'Google Drive', 'file_id':'1TMm1YgEfugGXh1Pc0CrwFIrpMcjNAVbu',
+                 'sha256':'43118bb70185dc6b66fc39ae17abd1f78061259fc6f67b434c08f66954559e81',
+                 'note':'previous P5-2 five-storey dataset, not a current P5-3 database snapshot; data is NOT bundled here',
+              },
+              'limitations':'Source bundle only, not an EXE or a Windows/Office acceptance result',
+          }
+          (root/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2),encoding='utf-8')
+          print('P5_VERIFIED_SNAPSHOT',json.dumps(manifest,ensure_ascii=False))
+          PY
+      - name: Preserve portable code snapshot with exact digest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p5-remaining-verified-source-snapshot
+          path: p5-remaining-source-snapshot/
+          if-no-files-found: error
+          retention-days: 30

@@ -85,6 +85,77 @@ class StructuralProApp:
 
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
+
+    def _session_document_hashes(self, project_id: str) -> dict[str, str]:
+        """Allow only registered source files whose bytes still match their hash."""
+        documents = self.project_documents(project_id)
+        if any(d["integrity"] != "verified" for d in documents):
+            raise ValueError("session source evidence changed or is missing")
+        return {str(d["id"]): str(d["sha256"]) for d in documents}
+
+    def _view_session_directory(self, project_id: str, subject_id: str) -> Path:
+        """Never use raw project IDs/user names as filesystem path components."""
+        from hashlib import sha256
+        key = sha256(json.dumps([project_id, subject_id], ensure_ascii=False).encode()).hexdigest()
+        root = self.data_dir / "view_sessions"
+        if root.is_symlink():
+            raise ValueError("unsafe session directory")
+        root.mkdir(exist_ok=True)
+        folder = root / key
+        if folder.is_symlink():
+            raise ValueError("unsafe session directory")
+        folder.mkdir(exist_ok=True)
+        return folder
+
+    def save_view_session(self, project_id: str, view: dict[str, Any]) -> dict[str, Any]:
+        """Write only independent presentation state; never mutate SQLite/BOQ."""
+        from core.platform.autosave import write_view_session
+        pid = str(project_id)
+        project = self.open_project(pid)  # store ACL checks OS identity
+        if project is None:
+            raise KeyError(pid)
+        principal = self.store.current_principal(pid)
+        revision = project["_meta"]["version"]
+        hashes = self._session_document_hashes(pid)
+        folder = self._view_session_directory(pid, principal.user_id)
+        snapshot_id = uuid4().hex
+        target = folder / (snapshot_id + ".json")
+        write_view_session(
+            target, project_id=pid, revision=revision,
+            subject_id=principal.user_id, view=view, document_hashes=hashes,
+        )
+        return {"snapshot_id": snapshot_id, "project_id": pid, "revision": revision}
+
+    def restore_view_session(self, project_id: str, snapshot_id: str) -> dict[str, Any]:
+        """Only return validated selection/view; caller can offer Restore/Discard."""
+        from core.platform.autosave import read_view_session
+        if not isinstance(snapshot_id, str) or len(snapshot_id) != 32 or any(
+            c not in "0123456789abcdef" for c in snapshot_id
+        ):
+            raise ValueError("invalid session ID")
+        pid = str(project_id)
+        project = self.open_project(pid)  # ACL and latest SQLite revision
+        if project is None:
+            raise KeyError(pid)
+        principal = self.store.current_principal(pid)
+        hashes = self._session_document_hashes(pid)
+        folder = self._view_session_directory(pid, principal.user_id)
+        allowed: dict[str, set[str]] = {
+            "document_id": set(hashes),
+        }
+        for key, values in (
+            ("floor_id", project.get("floors")),
+            ("member_id", project.get("takeoffs")),
+        ):
+            if isinstance(values, list):
+                allowed[key] = {str(item.get("id")) for item in values
+                                if isinstance(item, dict) and item.get("id") is not None}
+        return read_view_session(
+            folder / (snapshot_id + ".json"), project_id=pid,
+            revision=project["_meta"]["version"], subject_id=principal.user_id,
+            document_hashes=hashes, existing_ids=allowed,
+        )
+
     def add_project_document(self, project_id: str, path: str | Path) -> dict[str, Any]:
         """Register a regular evidence file with immutable project provenance."""
         from hashlib import sha256

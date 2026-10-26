@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import os
+import sys
 import re
 import subprocess
 import hashlib
@@ -31,11 +32,16 @@ class AIResponse:
 
 class LocalAIEngine:
     def __init__(self, model_dir=None, model_path=None, n_ctx=4096, edition=None):
-        self.bundle_dir = Path(__file__).resolve().parents[2]
-        self.edition = str(edition or os.getenv("STRUCTURALPRO_EDITION", "")).strip().lower()
-        if not self.edition:
-            packaged = packaged_edition(self.bundle_dir, fail_closed=False)
-            self.edition = packaged.value if packaged else ""
+        self.bundle_dir = (Path(sys.executable).resolve().parent if getattr(sys, "frozen", False)
+                           else Path(__file__).resolve().parents[2])
+        packaged = packaged_edition(self.bundle_dir, fail_closed=False)
+        if packaged is not None and packaged.value == "unified":
+            # Canonical shipping marker cannot be weakened via UI/env strings.
+            self.edition = "unified"
+        else:
+            self.edition = str(edition or os.getenv("STRUCTURALPRO_EDITION", "")).strip().lower()
+            if not self.edition:
+                self.edition = packaged.value if packaged else "unified"
         self.model_dir = Path(model_dir or os.getenv("STRUCTURALPRO_AI_MODEL_DIR") or self.bundle_dir / "models")
         self.runtime_dir = Path(os.getenv("STRUCTURALPRO_AI_RUNTIME_DIR") or self.bundle_dir / "ai_runtime")
         self.model_dir.mkdir(parents=True, exist_ok=True)
@@ -70,9 +76,37 @@ class LocalAIEngine:
         return True
 
     @property
+    def _unified_assets_ready(self):
+        # Explicit old-tier fixtures remain compatibility-only. Canonical one-
+        # edition execution must pass the complete offline A1 release gate.
+        if self.edition != "unified":
+            return True
+        from core.ai.release_gate import inspect_ai_release_assets
+        manifest_path = self.bundle_dir / "AI_RELEASE_MANIFEST.json"
+        gate = inspect_ai_release_assets(manifest_path, self.bundle_dir)
+        if not gate.ready:
+            return False
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            verified = {a["kind"]: (self.bundle_dir / a["path"]).resolve(strict=True)
+                        for a in manifest["assets"]}
+            actual = {
+                "model": self.model_path,
+                "mmproj": self.mmproj_path,
+                "runtime_text": self._binary("llama-cli"),
+                "runtime_vision": self._binary("llama-mtmd-cli"),
+            }
+            return all(
+                candidate is not None and candidate.resolve(strict=True) == verified[kind]
+                for kind, candidate in actual.items()
+            )
+        except (OSError, KeyError, ValueError, TypeError):
+            return False
+
+    @property
     def has_llm_model(self):
         return (self.tier is not AITier.NONE and self.model_path is not None
-                and self.model_path.is_file())
+                and self.model_path.is_file() and self._unified_assets_ready)
 
     @property
     def has_vision_model(self):
@@ -190,7 +224,8 @@ class LocalAIEngine:
             "Never claim that an AI answer replaces a deterministic engineering calculation."
         )
         user = f"{context}\nUser: {prompt}".strip()
-        binary = self._binary("llama-completion") or self._binary("llama-cli")
+        binary = (self._binary("llama-cli") if self.edition == "unified"
+                  else self._binary("llama-completion") or self._binary("llama-cli"))
         try:
             result = subprocess.run(
                 [
