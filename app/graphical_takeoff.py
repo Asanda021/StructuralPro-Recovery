@@ -1156,7 +1156,8 @@ class GraphicalTakeoffDialog(QDialog):
             import hashlib
             from app.contextual_takeoff_p6 import ContextualTakeoffDialog
             pid=self.project_id_input.text().strip()
-            if not isinstance(self.app_service.open_project(pid),dict):
+            project=self.app_service.open_project(pid)
+            if not isinstance(project,dict):
                 raise ValueError('پروژه واقعی ابتدا انتخاب شود.')
             document={}
             if self.viewer.path:
