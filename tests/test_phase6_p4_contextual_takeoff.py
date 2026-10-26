@@ -8,6 +8,33 @@ from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
+def test_failed_context_refresh_revokes_active_proposal(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.contextual_takeoff_panel import ContextualTakeoffDialog
+    qt = QApplication.instance() or QApplication([])
+    service, context = base(tmp_path)
+    state = [context]
+    def provider(family):
+        if state[0] is None:
+            raise RuntimeError('سند دیگر در دسترس نیست')
+        return replace(state[0], operation=family)
+    dialog = ContextualTakeoffDialog(service, provider)
+    try:
+        proposal = dialog.preview()
+        assert proposal is not None
+        state[0] = None
+        dialog.refresh_context()
+        assert dialog.active is None
+        assert not dialog.open_form_button.isEnabled()
+        assert not dialog.review_button.isEnabled()
+        with pytest.raises(ValueError):
+            dialog.guide.check_current(proposal)
+    finally:
+        dialog.close()
+        service.store.close()
+        qt.processEvents()
+
+
 def base(tmp_path):
     app=StructuralProApp(tmp_path/"app")
     app.create_project("پروژه آزمایشی", "P")

@@ -134,6 +134,7 @@ class ContextualTakeoffDialog(QDialog):
             self.inputs[name]=field
 
     def refresh_context(self):
+        self.cancel()
         try:
             context=self.context_provider(self.family.currentData())
             # A proposal must never linger across a source/project switch.
@@ -231,6 +232,7 @@ class ContextualTakeoffDialog(QDialog):
             self.status.setText(result["answer"])
             return result
         except Exception as exc:
+            self.cancel()
             self.status.setText("پاسخ صادر نشد: "+str(exc))
             return None
 
