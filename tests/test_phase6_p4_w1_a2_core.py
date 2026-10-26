@@ -234,3 +234,40 @@ def test_real_ifc_identity_review_allows_only_matched_member_for_w1(tmp_path):
     stale=wrong.preview("concrete_beam",beam,measurement_source="source:beam1")
     assert not stale.ready_to_review and stale.blockers
     app.store.close()
+
+
+def test_a2_only_exact_persisted_active_boq_row_via_decimal_and_digest(tmp_path):
+    svc=case(tmp_path)
+    w=assistant(svc)
+    p=w.preview("concrete_slab",SLAB,measurement_source="slab-number-01")
+    w.commit(code="concrete_slab",inputs=SLAB,
+             measurement_source="slab-number-01",approver="owner",
+             expected_digest=p.project_digest)
+    fresh=svc.store.current_digest("P")
+    real=w.exact_boq_row(0,expected_digest=fresh)
+    assert real["quantity"] and real["unit"] and real["source_ids"]
+    response=w.advise("مقدار دقیق ردیف انتخاب‌شده چقدر است؟",
+                      boq_row_index=0,boq_digest=fresh)
+    assert real["quantity"] in response["text"]
+    assert "منبع:" in response["text"]
+    assert response["commit_allowed"] is False
+    svc.add_project_floor("P","طبقه دوم",level="F2")
+    with pytest.raises(RuntimeError):
+        w.exact_boq_row(0,expected_digest=fresh)
+    assert len(svc.open_project("P").get("takeoff_assemblies",[]))==1
+    svc.store.close()
+
+
+def test_real_roof_checklist_requires_joist_direction_and_thermal_rebar_review(tmp_path):
+    svc=case(tmp_path)
+    w=assistant(svc)
+    p=w.preview("joist_block_roof_assembly",ROOF_BLOCK,
+                measurement_source="real:roof03")
+    assert any("جهت تیرچه" in q for q in p.review_questions)
+    assert any("میلگرد حرارتی" in q for q in p.review_questions)
+    assert any("دوباره" in q or "بتن" in q for q in p.review_questions)
+    assert "مش" in w.advise("چه اقلام وابسته‌ای لازم است؟",
+            code="joist_block_roof_assembly",inputs=ROOF_BLOCK,
+            measurement_source="real:roof03")["text"]
+    assert svc.open_project("P")["boq"]==[]
+    svc.store.close()
