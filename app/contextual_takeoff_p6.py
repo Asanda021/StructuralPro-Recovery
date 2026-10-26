@@ -49,7 +49,7 @@ class ContextualTakeoffDialog(QDialog):
 
     def __init__(self, service, project_id, parent=None, *, floor_id="", member_id="",
                  document_path="", document_sha256="", revision="", global_id="",
-                 context_guard=None):
+                 context_guard=None, region_selected=False):
         super().__init__(parent)
         self.setObjectName("P6W1A2TakeoffWizard")
         self.setWindowTitle("دستیار مرحله‌ای متره — W1 / A2 | فقط با منبع معتبر")
@@ -68,7 +68,11 @@ class ContextualTakeoffDialog(QDialog):
         root.addWidget(QLabel(
             "۱. پروژه و عضو واقعی  ← ۲. انتخاب عملیات  ← ۳. ورود دیتایل  ← "
             "۴. پیشنهاد و کنترل  ← ۵. ثبت فقط با تأیید و CAS"))
-        self.info=QLabel("داده پروژه فقط خواندنی است؛ مقدار و قیمت فرضی مجاز نیست.")
+        self.info=QLabel(
+            "ناحیه واقعی روی نقشه انتخاب شده است؛ مقیاس، ابعاد، نوع عملیات و تعداد از آن حدس زده نمی‌شود."
+            if region_selected else
+            "داده پروژه فقط خواندنی است؛ مقدار و قیمت فرضی مجاز نیست."
+        )
         self.info.setWordWrap(True)
         root.addWidget(self.info)
         p=service.open_project(project_id)
