@@ -55,7 +55,7 @@ def inspect_ai_release_assets(manifest_path: str | Path, asset_root: str | Path)
     if not isinstance(assets, list):
         return AIReleaseCheck(False, tuple(blockers+["invalid_assets"]), {})
     kinds = [x.get("kind") if isinstance(x, dict) else None for x in assets]
-    if len(assets) != 4 or set(kinds) != REQUIRED_KINDS or len(set(kinds)) != 3:
+    if len(assets) != 4 or set(kinds) != REQUIRED_KINDS or len(set(kinds)) != 4:
         blockers.append("missing_or_duplicate_model_projector_text_vision_runtime")
     for asset in assets:
         if not isinstance(asset, dict):
