@@ -1215,12 +1215,16 @@ class GraphicalTakeoffDialog(QDialog):
             # manual-only projects too. No region, width, count or geometry
             # is fabricated by this handoff. It owns its own approvals/BOQ.
             from app.roof_detail_editor import open_roof_editor
-            accepted=open_roof_editor(
+            open_roof_editor(
                 self.app_service,parent=self,project_id=context.project_id,
                 floor_id=context.floor_id,kind=context.operation)
-            return True if accepted else None
+            return True  # Editor opened; commit still needs its own explicit gate.
         if context.operation=="mep":
-            return None  # missing specialist discipline/operation binding
+            from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
+            open_reviewed_aec_editor(self.app_service,parent=self,
+                                     project_id=context.project_id,
+                                     floor_id=context.floor_id)
+            return True  # Real existing AEC/M&E forms own their approvals.
         dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
         dialog.floor_id.setText(context.floor_id)
         dialog.element_label.setText(context.member_id or "")
