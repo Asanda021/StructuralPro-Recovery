@@ -248,4 +248,4 @@ class VerifiedProjectSelection:
         if not result.boq_row_ids:
             lines.append("هیچ ردیف BOQ تأییدشده برای این عضو وجود ندارد.")
         lines.append("نمای فقط‌خواندنی؛ این پنل تأیید یا انتقال مالی صادر نمی‌کند.")
-        return "\\n".join(lines)
+        return "\n".join(lines)
