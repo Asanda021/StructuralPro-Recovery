@@ -34,8 +34,8 @@ def test_phase6_p1_offscreen_real_qt_toggle_nav_ribbon_and_persistence(tmp_path)
 import sys
 import os
 from pathlib import Path
-from PySide6.QtCore import Qt, QSettings, QTimer
-from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QScrollArea, QTabBar, QStackedWidget
+from PySide6.QtCore import Qt, QSettings, QTimer, QPoint
+from PySide6.QtWidgets import QApplication, QMainWindow, QPushButton, QScrollArea, QTabBar, QStackedWidget, QLabel
 Path.home = classmethod(lambda cls: Path(sys.argv[1]))
 from app.main import main
 real_exec = QApplication.exec
@@ -54,6 +54,11 @@ def inspect(app):
     assert tabs.count() == stack.count() == 23
     assert tabs.accessibleName() and toggle.accessibleName()
     assert ribbon.isVisible() and not toggle.isChecked()
+    brand = window.findChild(QLabel, 'BrandTitle')
+    assert brand is not None and brand.isVisible()
+    assert brand.width() >= brand.fontMetrics().horizontalAdvance('StructuralPro')
+    assert brand.mapTo(window, QPoint(brand.width(), 0)).x() <= window.width()
+    assert brand.mapTo(window, QPoint(0, 0)).x() >= 0
     screenshot_dir = os.getenv('STRUCTURALPRO_P6_SCREENSHOT_DIR')
     if screenshot_dir and sys.platform == 'win32':
         dest = Path(screenshot_dir)
