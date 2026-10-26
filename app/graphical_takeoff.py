@@ -1258,7 +1258,8 @@ class GraphicalTakeoffDialog(QDialog):
                 self.ifc_revision.text().strip() != scene.revision):
                 raise ValueError('سند IFC هنگام بارگذاری تغییر کرده؛ نتیجه نمایش داده نشد.')
             scene.validate_source()
-            window = IFC3DDialog(scene, self)
+            window = IFC3DDialog(scene, self, app_service=self.app_service,
+                                 project_id=self.project_id_input.text().strip())
             window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
             def link_back(gid):
                 if (self.viewer.kind != 'ifc' or self.viewer.ifc_document is None or
