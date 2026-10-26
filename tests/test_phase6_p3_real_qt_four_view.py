@@ -70,11 +70,18 @@ def test_changed_active_project_blocks_tree_navigation_and_revokes_panel(tmp_pat
     assert dialog is not None,workspace.status.text()
     panel=workspace._verified_selection_panel
     original=app.store.current_digest('P')
+    workspace.highlight_ifc_member(proposal["global_id"])
+    assert workspace._ifc_selected_global_id==proposal["global_id"]
+    assert panel.members.selectedItems()
     workspace.project_id_input.setText('ANOTHER-PROJECT')
     selections=[]
     panel.oneGlobalIdSelected.connect(selections.append)
     assert panel._lookup('tree','B1') is None
     assert not selections
+    assert workspace._ifc_selected_global_id == ''
+    assert not panel.members.selectedItems()
+    assert all(not item.isSelected() for rows in workspace._ifc_handle_items.values()
+               for item in rows)
     assert 'نامعتبر' in panel.detail.text()
     assert app.store.current_digest('P')==original
     dialog.close();workspace.close();qt.processEvents();app.store.close()
