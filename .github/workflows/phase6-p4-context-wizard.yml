@@ -12,6 +12,7 @@ on:
       - app/architecture_detail_editor.py
       - app/reviewed_structural_manual_editor.py
       - app/graphical_takeoff.py
+      - app/roof_detail_editor.py
       - tests/test_phase6_p4_contextual_takeoff.py
   workflow_dispatch:
 permissions:
@@ -35,6 +36,7 @@ jobs:
       QT_QPA_PLATFORM: ${{ matrix.qpa }}
       PYTHONPATH: .
       PYTHONUTF8: '1'
+      STRUCTURALPRO_W1_SCREENSHOTS: w1-screenshots
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -52,12 +54,14 @@ jobs:
       - name: Compile and execute real W1/A2 Qt and original assembly regression
         run: |
           python -m compileall -q core/ai/contextual_takeoff.py app/contextual_takeoff_panel.py app/graphical_takeoff.py
-          python -c "import sys,faulthandler,pytest; faulthandler.dump_traceback_later(90,exit=True); sys.exit(pytest.main(sys.argv[1:]))" -vv --maxfail=1 --junitxml=p6-p4-${{ matrix.qpa }}.xml tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p4_model_isolation.py tests/test_p601_p610_local_ai_gguf_runtime.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py tests/test_assembly_template_expansion.py
+          python -c "import sys,faulthandler,pytest; faulthandler.dump_traceback_later(180,exit=True); sys.exit(pytest.main(sys.argv[1:]))" -vv --maxfail=1 --junitxml=p6-p4-${{ matrix.qpa }}.xml tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p4_model_isolation.py tests/test_p601_p610_local_ai_gguf_runtime.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py tests/test_assembly_template_expansion.py tests/test_roof_specialist_ui.py tests/test_waffle_specialist_ui.py
       - name: Preserve original test logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p6-p4-qt-${{ matrix.qpa }}
-          path: p6-p4-${{ matrix.qpa }}.xml
+          path: |
+            p6-p4-${{ matrix.qpa }}.xml
+            w1-screenshots/*.png
           retention-days: 14
           if-no-files-found: warn
