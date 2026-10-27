@@ -52,7 +52,7 @@ def fill_table(table,columns,records):
  if table.property('fit_slope_headers'):
   table.resizeColumnsToContents();table.resizeRowsToContents()
 
-def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall',specialism=''):
+def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall',specialism='',context_guard=None):
  from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS,INSULATION_KINDS,INSULATION_OPERATIONS
  from core.takeoff.interior_cover_detail import KINDS as COVER_KINDS,GEOMETRY as COVER_GEOMETRY,TABLES as COVER_TABLES,TITLES as COVER_TITLES,CHOICES as COVER_CHOICES,CONTRACT
  from core.takeoff.skirting_detail import GEOMETRY as SKIRT_GEOMETRY,TABLES as SKIRT_TABLES,TITLES as SKIRT_TITLES,CHOICES as SKIRT_CHOICES,CONTRACT as SKIRT_CONTRACT
@@ -169,7 +169,9 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  buttons(summary,[('pdf','گزارش پی‌دی‌اف'),('xlsx','گزارش اکسل'),('docx','گزارش ورد'),('csv','داده جدولی')])
  message=QLabel('ابتدا عضو جدید یا بازگشایی را انتخاب کنید.');message.setWordWrap(True);outer.addWidget(message);c['message']=message
  buttons(outer,[('new','عضو جدید'),('load','بازگشایی'),('save','ذخیره'),('preview','محاسبه و ریزمتره'),('review','بازبینی'),('commit','ثبت قطعی در فهرست مقادیر')])
- def context():return c['project'].text().strip(),family.currentData(),c['floor'].text().strip(),c['id'].text().strip()
+ def context():
+  values=c['project'].text().strip(),family.currentData(),c['floor'].text().strip(),c['id'].text().strip()
+  return values
  def paint(record):
   state.update(record=deepcopy(record),data=deepcopy(record['data']),project=context()[0]);d=state['data'];a=d['architecture_detail'];dialog.setWindowTitle('متره تخصصی شیب‌بندی' if slope else 'متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[d['kind']].title)
   for key in ('save','preview','review','commit'):c[key].setEnabled(True)
@@ -226,7 +228,11 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   paint(r)
  def unchanged():
   if review_digest(capture())!=review_digest(state['record']['data']):raise ValueError('ابتدا تغییرات پیش‌نویس را ذخیره کنید')
+ def check_context():
+  if context_guard is not None:
+   pid,_,fl,mid=context();context_guard(pid,fl,mid)
  def save():
+  check_context()
   d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(context()[0],d,expected_revision=state['record']['revision']))
  def calculate():
   from core.takeoff.architecture_detail import preview
@@ -235,8 +241,8 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   for i,v in enumerate(r['rows']):
    for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']]):grid.setItem(i,j,QTableWidgetItem(str(x)))
   tabs.setCurrentIndex(tabs.count()-1);message.setText('محاسبه معتبر؛ نیازمند بازبینی نسخه جاری' if r['ready'] else '؛ '.join(r['blockers']))
- def review():unchanged();paint(service.review_roof_system(*context(),expected_revision=state['record']['revision'],reviewer=c['reviewer'].text(),note=c['note'].text()))
- def commit():unchanged();service.commit_aec_system(*context(),expected_revision=state['record']['revision']);load()
+ def review():check_context();unchanged();paint(service.review_roof_system(*context(),expected_revision=state['record']['revision'],reviewer=c['reviewer'].text(),note=c['note'].text()))
+ def commit():check_context();unchanged();service.commit_aec_system(*context(),expected_revision=state['record']['revision']);load()
  def create_amendment():
   path=Path(c['evidence_path'].text().strip());a=service.create_roof_amendment(*context(),capture(),expected_revision=state['record']['revision'],created_by=c['creator'].text(),reason=c['reason'].text(),evidence={'evidence_path':str(path),'evidence_sha256':sha256(path.read_bytes()).hexdigest(),'evidence_reference':c['evidence_ref'].text()});c['amend_id'].setText(a['id']);show_amendment(a);message.setText('درخواست اصلاحیه ثبت شد؛ مقادیر پیشین، پیشنهادی و اختلاف در جدول')
  def show_amendment(am):

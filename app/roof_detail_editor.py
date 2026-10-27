@@ -49,7 +49,7 @@ def read_table(table,cols):
  return rows
 
 
-def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None):
+def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None,context_guard=None):
  dialog=QDialog(parent);dialog.setObjectName('RoofDetailEditor');dialog.setWindowTitle('متره تخصصی '+SPECS[kind].title+' — ناحیه‌بندی و دیتایل مستند');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1280,850)
  outer=QVBoxLayout(dialog);tabs=QTabWidget();outer.addWidget(tabs);controls={};state={'record':None,'identity':None}
  def page(title):
@@ -226,16 +226,20 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
     from core.drawings.roof_region import planar_geometry
     d['roof_detail']['geometry'].update(shape='documented_planar',planar=planar_geometry(drawing_source))
   paint({'status':'draft','revision':0,'data':d})
+ def check_context():
+  if context_guard is not None:
+   pid,_,fl,mid=context();context_guard(pid,fl,mid)
  def save():
+  check_context()
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))
  def unchanged():
   d=capture()
   if review_digest(d)!=state['loaded_ui_digest']:raise ValueError('تغییرات ابتدا باید ذخیره شوند')
   return deepcopy(state['record']['data'])
  def review():
-  unchanged();ctx=context();paint(service.review_roof_system(*ctx,expected_revision=state['record']['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text()))
+  check_context();unchanged();ctx=context();paint(service.review_roof_system(*ctx,expected_revision=state['record']['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text()))
  def commit():
-  unchanged();ctx=context();service.commit_aec_system(*ctx,expected_revision=state['record']['revision']);load()
+  check_context();unchanged();ctx=context();service.commit_aec_system(*ctx,expected_revision=state['record']['revision']);load()
  def copy():
   pid,k,fl,mid=context();service.aec_workflow().copy_roof(pid,k,fl,mid,new_system_id=controls['new_id'].text(),new_source_id=controls['new_source'].text(),reason=controls['reason'].text());controls['id'].setText(controls['new_id'].text());load()
  def delete():

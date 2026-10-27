@@ -1056,3 +1056,237 @@ def test_w1_live_identity_change_after_handoff_fails_closed(tmp_path, changed):
         drawing.close()
         service.store.close()
         qt.processEvents()
+
+
+@pytest.mark.parametrize('family',['solid_slab','block_wall'])
+@pytest.mark.parametrize('action',['save','review','commit'])
+@pytest.mark.parametrize('change',['bytes','deleted','revision','project','floor','member','proposal','cas'])
+def test_w1_specialist_blocks_stale_modal_actions(tmp_path,family,monkeypatch,action,change):
+    from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    if family.startswith('waffle'):
+        from test_waffle_specialist_work import sample
+    elif family=='block_wall':
+        from test_architecture_specialist_work import sample
+    elif family=='floor_finish':
+        from test_floor_specialist_work import sample
+    elif family=='false_ceiling':
+        from test_suspended_ceiling_phase1 import sample
+    else:
+        from test_roof_specialist_work import sample
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+    service.add_project_floor('P','طبقه آزمایشی',level='L1')
+    specimen=sample() if family in ('floor_finish','false_ceiling') else sample(family)
+    service.save_aec_system_draft('P',specimen,expected_revision=0)
+    before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+    monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    from reportlab.pdfgen.canvas import Canvas
+    path=tmp_path/'synthetic-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA fixture');pdf.showPage();pdf.save()
+    drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
+    drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    def click(button):
+        tabs=button.window().findChild(QTabWidget)
+        if tabs:
+            for i in range(tabs.count()):
+                if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+        parent=button.parentWidget()
+        while parent:
+            if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+            parent=parent.parentWidget()
+        qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+    def complete_modal():
+        modal=qt.activeModalWidget()
+        try:
+            controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+            assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+            assert service.store.current_digest('P')==before
+            controls['id'].setText(specimen['system_id']);click(controls['load'])
+            controls['reviewer'].setText('بازبین مستقل مصنوعی')
+            controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+            if action=='commit':
+                click(controls['review']);assert not warnings,warnings
+            baseline=service.store.current_digest('P')
+            if change=='bytes':path.write_bytes(path.read_bytes()+b' changed')
+            elif change=='deleted':drawing.engine.close();path.unlink()
+            elif change=='revision':drawing.ifc_revision.setText('R2')
+            elif change=='project':drawing.project_id_input.setText('OTHER')
+            elif change=='floor':drawing.polygon_floor.setText('L2')
+            elif change=='member':drawing.polygon_member.setText('OTHER')
+            elif change=='cas':
+                service.save_aec_system_draft('P',specimen,expected_revision=service.get_aec_system('P',specimen['kind'],'L1',specimen['system_id'])['revision'])
+                baseline=service.store.current_digest('P')
+            else:assert wizard.preview() is not None
+            click(controls[action])
+            assert service.store.current_digest('P')==baseline, 'stale specialist action wrote SQLite'
+            assert not service.open_project('P')['boq']
+            assert warnings, 'stale specialist context must report rejection'
+            seen.append(family)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+    try:
+        click(wizard.preview_button);assert wizard.active is not None
+        timer.start(30);click(wizard.open_form_button)
+        assert not errors,errors
+        assert seen==[family]
+        assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
+
+@pytest.mark.parametrize('change',[None,'bytes','deleted','revision','project','floor','member','proposal','proof','cas'])
+def test_w1_parsed_synthetic_ifc_beam_identity_and_live_save(tmp_path,monkeypatch,change):
+    """Real parsed IFC and explicit synthetic identity review; no inferred quantities."""
+    from PySide6.QtWidgets import QApplication,QMessageBox
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from test_phase6_p3_real_project_bridge import reviewed
+    from test_stirrup_zones import complete_beam
+    qt=QApplication.instance() or QApplication([])
+    service,path,proof,proposal=reviewed(tmp_path)
+    specimen=complete_beam();specimen['floor_id']='F1'
+    service.save_beam_detail_draft('P',specimen,expected_revision=0)
+    warnings=[];monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    wizard=None
+    try:
+        drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
+        assert drawing.open_verified_crossview() is not None,drawing.status.text()
+        drawing.highlight_ifc_member(proposal['global_id'])
+        drawing.polygon_floor.setText('F1');drawing.polygon_member.setText('B1')
+        context=drawing.contextual_w1_context('beam')
+        assert context.review_status=='approved'
+        assert context.source_sha256==sha256(path.read_bytes()).hexdigest()
+        assert context.source_id==str(path) and context.revision=='R1'
+        assert context.project_id=='P' and context.member_id=='B1'
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        assert wizard.preview() is not None,wizard.status.text()
+        panel=wizard.open_form();QTest.mouseClick(panel.load_button,Qt.MouseButton.LeftButton)
+        assert not warnings,warnings
+        if change=='bytes':path.write_bytes(path.read_bytes()+b'\n/* changed */')
+        elif change=='deleted':path.unlink()
+        elif change=='revision':drawing.ifc_revision.setText('R2')
+        elif change=='project':drawing.project_id_input.setText('OTHER')
+        elif change=='floor':drawing.polygon_floor.setText('OTHER')
+        elif change=='member':drawing.polygon_member.setText('OTHER')
+        elif change=='proposal':assert wizard.preview() is not None
+        elif change=='proof':proof.write_text('tampered synthetic review evidence')
+        elif change=='cas':service.add_project_floor('P','Concurrent edit',level='F2')
+        before=service.store.current_digest('P')
+        QTest.mouseClick(panel.save_button,Qt.MouseButton.LeftButton)
+        if change:
+            assert warnings,'stale IFC must reject the live panel save'
+            assert service.store.current_digest('P')==before
+        else:
+            assert not warnings,warnings
+            assert service.get_beam_detail('P','F1','B1')['revision']==2
+        assert not service.open_project('P')['boq']
+        snapshot=service.open_project('P')
+    finally:
+        if wizard is not None:wizard.close()
+        drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'app')
+    try:assert reopened.open_project('P')==snapshot
+    finally:reopened.store.close()
+
+
+@pytest.mark.parametrize('family',['solid_slab','block_wall'])
+def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(tmp_path,family,monkeypatch):
+    from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    if family.startswith('waffle'):
+        from test_waffle_specialist_work import sample
+    elif family=='block_wall':
+        from test_architecture_specialist_work import sample
+    elif family=='floor_finish':
+        from test_floor_specialist_work import sample
+    elif family=='false_ceiling':
+        from test_suspended_ceiling_phase1 import sample
+    else:
+        from test_roof_specialist_work import sample
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+    service.add_project_floor('P','طبقه آزمایشی',level='L1')
+    specimen=sample() if family in ('floor_finish','false_ceiling') else sample(family)
+    service.save_aec_system_draft('P',specimen,expected_revision=0)
+    from test_phase2_priority5_ifc import model_file
+    from core.collaboration.workspace import User
+    path=tmp_path/'synthetic-model.ifc';model,objects=model_file(path)
+    typ='IfcSlab' if family=='solid_slab' else 'IfcWall'
+    gid=next(obj.GlobalId for obj in objects if obj.is_a()==typ)
+    service.add_project_member('P',specimen['system_id'],'L1',family)
+    service.collaboration.add_user(User('author','Synthetic author','editor'))
+    service.collaboration.add_user(User('reviewer','Synthetic reviewer','reviewer'))
+    proof=tmp_path/'synthetic-mapping.txt';proof.write_text('Explicit synthetic identity only '+family)
+    proposal=service.save_ifc_identity_proposal('P',str(path),revision='R1',global_id=gid,floor_id='L1',member_id=specimen['system_id'],author='author',reference='explicit synthetic mapping',expected_digest=service.store.current_digest('P'),source_sha256=sha256(path.read_bytes()).hexdigest())
+    service.review_ifc_identity('P',proposal_id=proposal['id'],reviewer='reviewer',evidence_path=str(proof),evidence_sha256=sha256(proof.read_bytes()).hexdigest(),note='Synthetic identity review; quantities from original manual draft',expected_digest=service.store.current_digest('P'))
+    before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+    monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
+    assert drawing.open_verified_crossview() is not None
+    drawing.highlight_ifc_member(gid)
+    drawing.polygon_member.setText(specimen['system_id'])
+    drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    def click(button):
+        tabs=button.window().findChild(QTabWidget)
+        if tabs:
+            for i in range(tabs.count()):
+                if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+        parent=button.parentWidget()
+        while parent:
+            if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+            parent=parent.parentWidget()
+        qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+    def complete_modal():
+        modal=qt.activeModalWidget()
+        try:
+            controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+            assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+            assert service.store.current_digest('P')==before
+            controls['id'].setText(specimen['system_id']);click(controls['load'])
+            click(controls['preview']);assert not warnings,warnings
+            assert not service.open_project('P')['boq']
+            import os
+            folder=os.environ.get('STRUCTURALPRO_W1_SCREENSHOTS')
+            if folder:
+                from pathlib import Path
+                target=Path(folder);target.mkdir(parents=True,exist_ok=True)
+                assert modal.grab().save(str(target/(family+'.png')))
+            controls['reviewer'].setText('بازبین مستقل مصنوعی')
+            controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+            if hasattr(modal,'roof_controls'):
+                original=controls['count'].text();controls['count'].setText('2')
+                click(controls['review'])
+                assert warnings and 'ذخیره' in warnings[-1]
+                assert service.store.current_digest('P')==before
+                warnings.clear();controls['count'].setText(original)
+            click(controls['review']);assert not warnings,warnings
+            assert not service.open_project('P')['boq']
+            assert drawing.open_verified_crossview() is not None
+            click(controls['commit']);assert not warnings,warnings
+            record=service.get_aec_system('P',specimen['kind'],'L1',specimen['system_id'])
+            assert record['status']=='committed'
+            assert service.open_project('P')['boq']
+            seen.append(family)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+    try:
+        click(wizard.preview_button);assert wizard.active is not None
+        timer.start(30);click(wizard.open_form_button)
+        assert not errors,errors
+        assert seen==[family]
+        assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
