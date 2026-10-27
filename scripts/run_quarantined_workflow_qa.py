@@ -5,6 +5,7 @@ Actions, builds binaries, or creates releases. Any failures remain failures.
 """
 from __future__ import annotations
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import os
@@ -186,15 +187,23 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
         environment["PYTHONPATH"] = str(staged)
         environment.setdefault("QT_QPA_PLATFORM", "offscreen")
         timed_out = False
-        try:
-            proc = subprocess.run(command, cwd=staged, env=environment, capture_output=True,
-                                  text=True, check=False, timeout=timeout)
-        except subprocess.TimeoutExpired as exc:
-            timed_out = True
-            def decoded(value):
-                return value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value or ""
-            proc = subprocess.CompletedProcess(command, 124, decoded(exc.stdout),
-                                               decoded(exc.stderr) + f"\nQA timeout after {timeout} seconds\n")
+        if log is not None:
+            log.parent.mkdir(parents=True, exist_ok=True)
+        with (log.open("w", encoding="utf-8") if log is not None else nullcontext(None)) as live_log:
+            try:
+                proc = subprocess.run(command, cwd=staged, env=environment,
+                                      stdout=live_log if live_log is not None else subprocess.PIPE,
+                                      stderr=subprocess.STDOUT if live_log is not None else subprocess.PIPE,
+                                      text=True, check=False, timeout=timeout)
+            except subprocess.TimeoutExpired as exc:
+                timed_out = True
+                def decoded(value):
+                    return value.decode("utf-8", errors="replace") if isinstance(value, bytes) else value or ""
+                proc = subprocess.CompletedProcess(command, 124, decoded(exc.stdout),
+                                                   decoded(exc.stderr) + f"\nQA timeout after {timeout} seconds\n")
+                if live_log is not None:
+                    live_log.write(proc.stderr)
+                    live_log.flush()
         stats = junit_summary(junit) if junit.exists() else {"error": "JUnit report missing"}
         junit_written = junit_output is not None and junit.is_file()
         if junit_written:
@@ -213,9 +222,6 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
         if output:
             output.parent.mkdir(parents=True,exist_ok=True)
             output.write_text(json.dumps(result,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-        if log:
-            log.parent.mkdir(parents=True,exist_ok=True)
-            log.write_text(proc.stdout+"\n"+proc.stderr,encoding="utf-8")
         print(f"{stats.get('passed')} passed, {stats.get('failed')} failed, {stats.get('skipped')} skipped")
         print("Active source workflows excluded; historical YAML is static-only in disposable fixture")
         return proc.returncode

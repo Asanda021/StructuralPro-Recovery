@@ -250,3 +250,36 @@ def test_official_runner_does_not_leave_stale_junit_on_timeout(tmp_path):
     assert result['overall_green'] is False
     assert result['junit_report_written'] is False
     assert not persisted.exists()
+
+
+def test_official_runner_streams_retained_log_before_test_completion(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    import time
+    r = fixture_repo(tmp_path)
+    (r / 'tests').mkdir()
+    finished = tmp_path / 'test-finished'
+    (r / 'tests/test_current.py').write_text(
+        'from pathlib import Path\nimport time\n'
+        'def test_delayed():\n    time.sleep(1)\n'
+        f'    Path({str(finished)!r}).write_text("finished")\n'
+    )
+    (r / 'conftest.py').write_text(
+        'import sys\n'
+        'def pytest_report_header(config): return "LIVE_QA_STDOUT_MARKER"\n'
+        'def pytest_unconfigure(config): print("LIVE_QA_STDERR_MARKER", file=sys.stderr, flush=True)\n'
+    )
+    log = tmp_path / 'retained.log'
+    observed_before_completion = False
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        future = pool.submit(module.run, r, log=log, mode='current')
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if log.exists() and 'LIVE_QA_STDOUT_MARKER' in log.read_text():
+                observed_before_completion = not finished.exists()
+                break
+            if future.done():
+                break
+            time.sleep(0.01)
+        assert future.result(timeout=10) == 0
+    assert observed_before_completion, 'Actual child output must be retained while the test is still running'
+    assert 'LIVE_QA_STDERR_MARKER' in log.read_text()
