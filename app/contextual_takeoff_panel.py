@@ -1,7 +1,7 @@
 """Persian Windows W1/A2 review-only wizard, driven by real drawing/project context."""
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel,
     QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget,
@@ -49,6 +49,8 @@ _INPUT_LABELS = {
 
 class ContextualTakeoffDialog(QDialog):
     """Every button changes real state. Nothing can write BOQ from this dialog."""
+
+    session_ended = Signal()
 
     def __init__(self, service, context_provider, *, parent=None, open_real_form=None):
         super().__init__(parent)
@@ -295,11 +297,17 @@ class ContextualTakeoffDialog(QDialog):
             self.preview_button.setEnabled(True)
             self.status.setText("راهنمای آفلاین قواعد مصوب فعال شد؛ مدل خارجی اجرا نمی‌شود.")
 
+    def closeEvent(self, event):
+        self.cancel()
+        super().closeEvent(event)
+
     def cancel(self):
+        had_active = self.active is not None
         if self.active is not None:
             self.guide.cancel(self.active.id)
         self.active=None
         self._input_snapshot=None
+        if had_active: self.session_ended.emit()
         self.review_button.setEnabled(False)
         self.open_form_button.setEnabled(False)
         self.status.setText("پیشنهاد لغو شد؛ BOQ و نشست نقشه تغییر نکرده‌اند.")

@@ -4,8 +4,92 @@ from hashlib import sha256
 
 import pytest
 
+from PySide6.QtWidgets import QMessageBox as _NativeMessageBox
+_NATIVE_WARNING = _NativeMessageBox.warning
+
 from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
+
+
+@pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
+def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,member,kind):
+    from PySide6.QtWidgets import QApplication,QMessageBox,QComboBox,QPushButton
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from reportlab.pdfgen.canvas import Canvas
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from test_column_stage22 import column
+    qt=QApplication.instance() or QApplication([])
+    monkeypatch.setattr(QMessageBox,'warning',_NATIVE_WARNING)
+    path=tmp_path/'qa-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA plan');pdf.showPage();pdf.save()
+    service=StructuralProApp(tmp_path/'db');service.create_project('نمونه','P')
+    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P',member,'L1',kind)
+    if family=='column':service.save_structural_member_draft('P',column(),expected_revision=0)
+    else:
+        from test_reviewed_aec_priorities_6_9 import sample
+        service.save_aec_system_draft('P',sample('mechanical_ventilation'),expected_revision=0)
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.open_drawing(str(path))
+    drawing.ifc_revision.setText('R1');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
+    warnings=[];errors=[];digest=service.store.current_digest('P')
+    watcher=QTimer(wizard)
+    def dismiss():
+        message=next((w for w in qt.topLevelWidgets() if isinstance(w,QMessageBox) and w.isVisible()),None)
+        if message is not None:warnings.append(message.text());message.done(0)
+    watcher.timeout.connect(dismiss);watcher.start(40)
+    def inside():
+        modal=qt.activeModalWidget()
+        try:
+            if family=='column':
+                c=modal.column_controls;QTest.mouseClick(c['load'],Qt.MouseButton.LeftButton)
+                save_button=c['save']
+            else:
+                box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')>=0)
+                box.setCurrentIndex(box.findData('mechanical_ventilation'))
+                button=lambda label:next(b for b in modal.findChildren(QPushButton) if b.text()==label)
+                QTest.mouseClick(button('بارگذاری پیش‌نویس'),Qt.MouseButton.LeftButton)
+                save_button=button('ذخیره نسخه در SQLite')
+            path.write_bytes(path.read_bytes()+b' changed')
+            QTest.mouseClick(save_button,Qt.MouseButton.LeftButton)
+            assert service.store.current_digest('P')==digest, 'stale W1 drawing allowed a save'
+            assert not service.open_project('P')['boq']
+            assert warnings, 'source change must be clearly reported'
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(inside)
+    try:
+        assert wizard.preview() is not None,wizard.status.text()
+        timer.start(40);wizard.open_form()
+        assert not errors,errors
+    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
+@pytest.mark.parametrize('family,member,kind',[('beam','B1','beam'),('column','C1','column'),('mep','S1','mep')])
+def test_w1_open_pdf_binds_live_sha_revision_and_rejects_changed_bytes(tmp_path,family,member,kind):
+    from PySide6.QtWidgets import QApplication
+    from reportlab.pdfgen.canvas import Canvas
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    path=tmp_path/'synthetic-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA plan - no dimensions');pdf.showPage();pdf.save()
+    service=StructuralProApp(tmp_path/'db');service.create_project('نمونه مصنوعی','P')
+    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P',member,'L1',kind)
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    try:
+        drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+        context=drawing.contextual_w1_context(family)
+        assert context.source_id==str(path)
+        assert context.source_sha256==sha256(path.read_bytes()).hexdigest()
+        assert context.revision=='R1'
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
+        proposal=wizard.preview();assert proposal is not None,wizard.status.text()
+        digest=service.store.current_digest('P')
+        path.write_bytes(path.read_bytes()+b' changed')
+        assert wizard.open_form() is None
+        assert wizard.active is None and not wizard.open_form_button.isEnabled()
+        assert service.store.current_digest('P')==digest and not service.open_project('P')['boq']
+    finally:drawing.close();service.store.close();qt.processEvents()
 
 
 def test_w1_beam_real_confirmation_no_then_yes_and_reopen(tmp_path):
@@ -681,3 +765,163 @@ def test_specialist_qt_dialog_constructed_without_modal_loop(tmp_path,family,dia
         assert app.open_project("P")["boq"]==[]
     finally:
         guide.close();drawing.close();qt.processEvents();app.store.close()
+
+
+def test_w1_cancel_allows_independent_beam_panel(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db'); service.create_project('آزمایشی','P')
+    service.add_project_floor('P','طبقه',level='L1'); service.add_project_member('P','B1','L1','beam')
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+    wizard=drawing.open_contextual_wizard(); wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        assert wizard.preview() is not None
+        panel=wizard.open_form(); assert panel is drawing.beam_detail_panel
+        wizard.cancel()
+        drawing.panel_toggle.setChecked(False); drawing.panel_toggle.setChecked(True)
+        assert panel.floor.text()=='' and panel.beam.text()==''
+        assert panel._w1_context_guard is None
+        panel.floor.setText('L1');panel.beam.setText('B1')
+        assert panel._identity()==('P','L1','B1')
+    finally:
+        wizard.close(); drawing.close(); service.store.close(); qt.processEvents()
+
+
+def test_w1_cancel_dirty_beam_preserves_edits_and_blocks_save(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('آزمایش','P')
+    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P','B1','L1','beam')
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('L1');drawing.polygon_member.setText('B1')
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        before=service.store.current_digest('P')
+        assert wizard.preview() is not None
+        panel=wizard.open_form();panel.geometry['length'].setText('3.25')
+        wizard.cancel()
+        assert panel.geometry['length'].text()=='3.25'
+        assert panel._w1_context_guard is not None
+        with pytest.raises(RuntimeError):panel._draft()
+        assert service.store.current_digest('P')==before
+        assert not service.open_project('P')['boq']
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+@pytest.mark.parametrize('accept',[False,True])
+def test_w1_explicit_discard_uses_real_confirmation(tmp_path,accept):
+    from PySide6.QtWidgets import QApplication,QMessageBox
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('آزمایش','P')
+    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P','B1','L1','beam')
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('L1');drawing.polygon_member.setText('B1')
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    seen=[];watcher=QTimer(wizard)
+    def answer():
+        message=qt.activeModalWidget()
+        if isinstance(message,QMessageBox):
+            seen.append(message.text())
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes if accept else QMessageBox.StandardButton.No),Qt.MouseButton.LeftButton)
+    watcher.timeout.connect(answer);watcher.start(30)
+    try:
+        before=service.store.current_digest('P');assert wizard.preview() is not None
+        panel=wizard.open_form();panel.geometry['length'].setText('3.25');wizard.cancel()
+        panel.release_w1_session()
+        assert seen
+        assert service.store.current_digest('P')==before and not service.open_project('P')['boq']
+        if accept:
+            assert panel._w1_context_guard is None and panel.geometry['length'].text()==''
+            assert panel.floor.text()=='' and panel.beam.text()==''
+        else:
+            assert panel._w1_context_guard is not None and panel.geometry['length'].text()=='3.25'
+            with pytest.raises(RuntimeError):panel._draft()
+    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
+@pytest.mark.parametrize('end_action', ['close', 'disable'])
+@pytest.mark.parametrize('dirty', [False, True])
+def test_w1_close_or_disable_restores_clean_and_preserves_dirty_beam(tmp_path, end_action, dirty):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Lifecycle test', 'P')
+    service.add_project_floor('P', 'Floor 1', level='L1')
+    service.add_project_member('P', 'B1', 'L1', 'beam')
+    drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    drawing.polygon_floor.setText('L1')
+    drawing.polygon_member.setText('B1')
+    wizard = drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        initial_digest = service.store.current_digest('P')
+        assert wizard.preview() is not None
+        panel = wizard.open_form()
+        assert panel is drawing.beam_detail_panel
+        if dirty:
+            panel.geometry['length'].setText('3.25')
+        if end_action == 'close':
+            wizard.close()
+        else:
+            wizard.toggle_enabled()
+            assert not wizard.guide.enabled
+        if dirty:
+            assert panel.geometry['length'].text() == '3.25'
+            assert panel._w1_context_guard is not None
+            with pytest.raises(RuntimeError):
+                panel._draft()
+        else:
+            assert panel._w1_context_guard is None
+            assert panel.floor.text() == '' and panel.beam.text() == ''
+        assert service.store.current_digest('P') == initial_digest
+        assert service.open_project('P')['boq'] == []
+    finally:
+        if end_action == 'disable':
+            wizard.close()
+        drawing.close()
+        service.store.close()
+        qt.processEvents()
+
+
+@pytest.mark.parametrize('changed', ['project', 'floor', 'member'])
+def test_w1_live_identity_change_after_handoff_fails_closed(tmp_path, changed):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Lifecycle identity test', 'P')
+    service.add_project_floor('P', 'Floor 1', level='L1')
+    service.add_project_member('P', 'B1', 'L1', 'beam')
+    drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    drawing.polygon_floor.setText('L1')
+    drawing.polygon_member.setText('B1')
+    wizard = drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        digest = service.store.current_digest('P')
+        assert wizard.preview() is not None
+        panel = wizard.open_form()
+        assert panel is drawing.beam_detail_panel
+        if changed == 'project':
+            drawing.project_id_input.setText('OTHER')
+        elif changed == 'floor':
+            drawing.polygon_floor.setText('L2')
+        else:
+            drawing.polygon_member.setText('B2')
+        with pytest.raises((RuntimeError, ValueError)):
+            panel._draft()
+        assert service.store.current_digest('P') == digest
+        assert service.open_project('P')['boq'] == []
+    finally:
+        wizard.close()
+        drawing.close()
+        service.store.close()
+        qt.processEvents()
