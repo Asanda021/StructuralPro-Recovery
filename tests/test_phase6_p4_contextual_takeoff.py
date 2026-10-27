@@ -8,6 +8,120 @@ from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
+def test_w1_beam_real_confirmation_no_then_yes_and_reopen(tmp_path):
+    from PySide6.QtWidgets import QApplication,QMessageBox
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from test_stirrup_zones import complete_beam
+    from decimal import Decimal
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('تیر مصنوعی','P')
+    service.add_project_floor('P','آزمایشی',level='L1');service.add_project_member('P','B1','L1','beam')
+    service.save_beam_detail_draft('P',complete_beam(),expected_revision=0)
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText('B1');drawing.show()
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    errors=[];choice=[QMessageBox.StandardButton.No];answered=[]
+    watcher=QTimer(wizard)
+    def answer():
+        message=qt.activeModalWidget()
+        if not isinstance(message,QMessageBox):return
+        button=message.button(choice[0])
+        if button is None:errors.append(message.text());message.done(0)
+        else:answered.append(choice[0]);QTest.mouseClick(button,Qt.MouseButton.LeftButton)
+    watcher.timeout.connect(answer);watcher.start(50)
+    try:
+        assert wizard.preview() is not None
+        panel=wizard.open_form();assert panel is drawing.beam_detail_panel
+        QTest.mouseClick(panel.load_button,Qt.MouseButton.LeftButton)
+        QTest.mouseClick(panel.commit_button,Qt.MouseButton.LeftButton)
+        assert answered==[QMessageBox.StandardButton.No] and not errors,errors
+        assert not service.open_project('P')['boq']
+        choice[0]=QMessageBox.StandardButton.Yes
+        QTest.mouseClick(panel.commit_button,Qt.MouseButton.LeftButton)
+        assert not errors,errors
+        project=service.open_project('P');assert project['boq']
+        totals={}
+        for row in project['boq']:totals[row['item_code']]=totals.get(row['item_code'],Decimal(0))+Decimal(str(row['quantity']))
+        assert totals['beam']==Decimal('5')*Decimal('.3')*Decimal('.5')
+        assert totals['formwork']==6
+        assert totals['rebar']==(24*Decimal('1.3')+13*Decimal('1.35'))*Decimal('.395')
+        digest=service.store.current_digest('P')
+        with pytest.raises(ValueError):service.commit_beam_detail('P','L1','B1',expected_revision=panel.revision)
+        assert digest==service.store.current_digest('P')
+    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==project
+    finally:reopened.store.close()
+
+
+@pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
+def test_w1_selected_member_reaches_original_modal_and_commits(tmp_path,family,member,kind):
+    from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QComboBox,QMessageBox
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from decimal import Decimal
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('مصنوعی صریح','P')
+    service.add_project_floor('P','آزمایشی',level='L1');service.add_project_member('P',member,'L1',kind)
+    if family=='column':
+        from test_column_stage22 import column
+        specimen=column();service.save_structural_member_draft('P',specimen,expected_revision=0)
+    else:
+        from test_reviewed_aec_priorities_6_9 import sample
+        specimen=sample('mechanical_ventilation');service.save_aec_system_draft('P',specimen,expected_revision=0)
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    before=service.store.current_digest('P');errors=[];seen=[]
+    def run():
+        modal=qt.activeModalWidget()
+        try:
+            assert any(w.text()==member for w in modal.findChildren(QLineEdit)), 'selected member identity was lost at specialist handoff'
+            def click(b):QTest.mouseClick(b,Qt.MouseButton.LeftButton);qt.processEvents()
+            if family=='column':
+                c=modal.column_controls;click(c['load']);click(c['preview'])
+                assert not service.open_project('P')['boq']
+                c['reviewer'].setText('بازبین مستقل مصنوعی');c['note'].setText('کنترل مستند نمونه مصنوعی')
+                click(c['review']);click(c['commit'])
+            else:
+                box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')>=0)
+                box.setCurrentIndex(box.findData('mechanical_ventilation'))
+                def button(label):return next(b for b in modal.findChildren(QPushButton) if b.text()==label)
+                click(button('بارگذاری پیش‌نویس'));click(button('اعتبارسنجی ریزمتره'))
+                assert not service.open_project('P')['boq']
+                click(button('ذخیره نسخه در SQLite'));click(button('ثبت قطعی در BOQ'))
+            project=service.open_project('P');assert project['boq']
+            assert len({t['source_id'] for t in project['takeoffs']})==len(project['takeoffs'])
+            if family=='column':
+                concrete=[r for r in project['boq'] if r.get('item_code')=='concrete']
+                # Existing synthetic fixture explicitly contains TWO identical columns.
+                assert sum(Decimal(str(r['quantity'])) for r in concrete)==Decimal('.4')*Decimal('.5')*3*2
+            else:
+                assert all(Decimal(str(r['quantity']))==1 for r in project['boq'])
+            seen.append(project)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(run)
+    watcher=QTimer(wizard)
+    def dismiss_warning():
+        message=qt.activeModalWidget()
+        if isinstance(message,QMessageBox):
+            errors.append(RuntimeError(message.text()));message.done(0)
+    watcher.timeout.connect(dismiss_warning);watcher.start(100)
+    try:
+        assert wizard.preview() is not None,wizard.status.text()
+        timer.start(40);QTest.mouseClick(wizard.open_form_button,Qt.MouseButton.LeftButton)
+        assert not errors,errors
+        assert seen and service.store.current_digest('P')!=before
+        snapshot=service.open_project('P')
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==snapshot
+    finally:reopened.store.close()
+
+
 @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall','floor_finish','false_ceiling'])
 def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
     from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea

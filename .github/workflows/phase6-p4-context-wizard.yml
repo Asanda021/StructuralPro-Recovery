@@ -12,6 +12,8 @@ on:
       - app/architecture_detail_editor.py
       - app/reviewed_structural_manual_editor.py
       - app/graphical_takeoff.py
+      - app/beam_detail_panel.py
+      - app/reviewed_aec_manual_editor.py
       - app/roof_detail_editor.py
       - tests/test_phase6_p4_contextual_takeoff.py
   workflow_dispatch:

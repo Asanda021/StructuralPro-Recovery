@@ -39,6 +39,7 @@ class BeamDetailPanel(QWidget):
         self._advanced_geometry=False
         self.revision = 0
         self._loaded_identity = None
+        self._loaded_projection = None
         self._segmented_kinds = set()
         self._stirrup_segments = None
         self._selected_evidence = None
@@ -444,6 +445,9 @@ class BeamDetailPanel(QWidget):
                 bar["segments"] = deepcopy(self._stirrup_segments)
             draft["bars"][kind] = bar
         if self._component_review:draft["component_review"]=deepcopy(self._component_review)
+        if (self._loaded_projection is not None and draft==self._loaded_projection and
+                self._loaded_identity==(project,draft['floor_id'],draft['beam_id'])):
+            return project,deepcopy(self._detail_template)
         return project, draft
 
     def load(self):
@@ -502,6 +506,8 @@ class BeamDetailPanel(QWidget):
                 self.save_button.setEnabled(True)
                 self.commit_button.setEnabled(True)
                 self.stirrup_zones_button.setEnabled(True)
+            self._loaded_projection=None
+            self._loaded_projection=deepcopy(self._draft()[1])
         except Exception as exc:
             QMessageBox.warning(self, "بارگذاری تیر", str(exc))
 

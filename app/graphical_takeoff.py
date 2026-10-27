@@ -1258,13 +1258,13 @@ class GraphicalTakeoffDialog(QDialog):
             from app.reviewed_structural_manual_editor import open_manual_structural_editor
             open_manual_structural_editor(self.app_service,parent=self,
                                           project_id=context.project_id,
-                                          floor_id=context.floor_id)
+                                          floor_id=context.floor_id,member_id=context.member_id or "")
             return True
         if context.operation=="mep":
             from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
             open_reviewed_aec_editor(self.app_service,parent=self,
                                      project_id=context.project_id,
-                                     floor_id=context.floor_id)
+                                     floor_id=context.floor_id,member_id=context.member_id or "")
             return True  # Real existing AEC/M&E forms own their approvals.
         dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
         dialog.floor_id.setText(context.floor_id)
