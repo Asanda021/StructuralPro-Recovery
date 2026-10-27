@@ -1,5 +1,17 @@
 # ادامه دقیق P6-4 — ۲۷ اکتبر ۲۰۲۶
 
+## checkpoint جاری (بخش‌های پایین تاریخی‌اند)
+کد جدید eb48e0553fcf1b5afa2a88c322df10f911d8a4ca؛ Tree9bb6061774e34a772854256aa58ba73ae64d6e63.
+CI40472322354 هر دو محیط99PASS، صفرFAIL/ERROR/SKIP. HEAD شواهد بعدی را ازGitHub بخوانید.
+دو اصلاح را تکرار نکنید: انتقال member_id ستون/MEP؛ حفظ داده اصلی تیر در بازخوانی بدون ویرایش.
+سه گردش واقعیW1تا ثبت وReopen وOracle مستقل روی fixture دستی مصنوعی اجرا شدند؛ تیر با پیام واقعیNo/Yes.
+JUnit/RED/لاگ درverification-20261027-followup؛ گزارش جاری بالایEXECUTION_REPORT.fa.md.
+باقی: نقشه معتبر باز و منشأDrawing در هر سه گردش، ماتریس کاملCancel/تعویض‌پروژه/SHA/Revision/CAS/خطای ذخیره برای هر خانواده؛
+مدل واقعیA2و مجوز مستقلBLOCKED. نخستین اقدام: یک گردش ستون با PDF واقعی و SHA/Revision صریح، سپس تغییر منبع در فرم باز و اثبات رد ذخیره بدون دستکاری Oracle.
+P6-4 PARTIAL؛ P6-6 آغاز نشود؛۸فاز،۸۵٪، بدونMerge/main/ForcePush/EXE/Release.
+
+---
+
 PR33؛ شاخه feature/phase6-p4-contextual-wizard-20261026.
 HEAD واقعی را ابتدا از GitHub بخوانید؛ آخرین کد آزموده f3eaec938f402142c921e669f345004b3050c73a
 و Tree آن 4d0bfbfcdfa85db2a697d3f28d92ce4dfd329e95 است. Commit شواهد بعدی کد را تغییر نمی‌دهد.

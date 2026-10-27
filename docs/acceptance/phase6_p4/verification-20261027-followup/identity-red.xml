@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.962" timestamp="2026-10-27T11:39:30.793873+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_selected_member_reaches_original_modal_and_commits[column-C1-column]" time="0.394"><failure message="AssertionError: [AssertionError('selected member identity was lost at specialist handoff&#10;  assert False&#10;   +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4dbcbe00&gt;)')]&#10;assert not [AssertionError('selected member identity was lost at specialist handoff\nassert False\n +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4dbcbe00&gt;)')]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_w1_selected_member_reache0')
+family = 'column', member = 'C1', kind = 'column'
+
+    @pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
+    def test_w1_selected_member_reaches_original_modal_and_commits(tmp_path,family,member,kind):
+        from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QComboBox,QMessageBox
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from decimal import Decimal
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('مصنوعی صریح','P')
+        service.add_project_floor('P','آزمایشی',level='L1');service.add_project_member('P',member,'L1',kind)
+        if family=='column':
+            from test_column_stage22 import column
+            specimen=column();service.save_structural_member_draft('P',specimen,expected_revision=0)
+        else:
+            from test_reviewed_aec_priorities_6_9 import sample
+            specimen=sample('mechanical_ventilation');service.save_aec_system_draft('P',specimen,expected_revision=0)
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        before=service.store.current_digest('P');errors=[];seen=[]
+        def run():
+            modal=qt.activeModalWidget()
+            try:
+                assert any(w.text()==member for w in modal.findChildren(QLineEdit)), 'selected member identity was lost at specialist handoff'
+                def click(b):QTest.mouseClick(b,Qt.MouseButton.LeftButton);qt.processEvents()
+                if family=='column':
+                    c=modal.column_controls;click(c['load']);click(c['preview'])
+                    assert not service.open_project('P')['boq']
+                    c['reviewer'].setText('بازبین مستقل مصنوعی');c['note'].setText('کنترل مستند نمونه مصنوعی')
+                    click(c['review']);click(c['commit'])
+                else:
+                    box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')&gt;=0)
+                    box.setCurrentIndex(box.findData('mechanical_ventilation'))
+                    def button(label):return next(b for b in modal.findChildren(QPushButton) if b.text()==label)
+                    click(button('بارگذاری پیش‌نویس'));click(button('اعتبارسنجی ریزمتره'))
+                    assert not service.open_project('P')['boq']
+                    click(button('ذخیره نسخه در SQLite'));click(button('ثبت قطعی در BOQ'))
+                project=service.open_project('P');assert project['boq']
+                assert len({r['source_id'] for t in project['takeoffs'] for r in t.get('quantities',[])})==len(project['takeoffs'])
+                if family=='column':
+                    concrete=[r for r in project['boq'] if r.get('item_code')=='concrete']
+                    assert sum(Decimal(str(r['quantity'])) for r in concrete)==Decimal('0.6')
+                seen.append(project)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(run)
+        try:
+            assert wizard.preview() is not None,wizard.status.text()
+            timer.start(40);QTest.mouseClick(wizard.open_form_button,Qt.MouseButton.LeftButton)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError('selected member identity was lost at specialist handoff
+E             assert False
+E              +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4dbcbe00&gt;)')]
+E           assert not [AssertionError('selected member identity was lost at specialist handoff\nassert False\n +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4dbcbe00&gt;)')]
+
+tests/test_phase6_p4_contextual_takeoff.py:60: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_selected_member_reaches_original_modal_and_commits[mep-S1-mep]" time="0.174"><failure message="AssertionError: [AssertionError('selected member identity was lost at specialist handoff&#10;  assert False&#10;   +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4d96aa80&gt;)')]&#10;assert not [AssertionError('selected member identity was lost at specialist handoff\nassert False\n +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4d96aa80&gt;)')]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_w1_selected_member_reache1')
+family = 'mep', member = 'S1', kind = 'mep'
+
+    @pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
+    def test_w1_selected_member_reaches_original_modal_and_commits(tmp_path,family,member,kind):
+        from PySide6.QtWidgets import QApplication,QPushButton,QLineEdit,QComboBox,QMessageBox
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from decimal import Decimal
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('مصنوعی صریح','P')
+        service.add_project_floor('P','آزمایشی',level='L1');service.add_project_member('P',member,'L1',kind)
+        if family=='column':
+            from test_column_stage22 import column
+            specimen=column();service.save_structural_member_draft('P',specimen,expected_revision=0)
+        else:
+            from test_reviewed_aec_priorities_6_9 import sample
+            specimen=sample('mechanical_ventilation');service.save_aec_system_draft('P',specimen,expected_revision=0)
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        before=service.store.current_digest('P');errors=[];seen=[]
+        def run():
+            modal=qt.activeModalWidget()
+            try:
+                assert any(w.text()==member for w in modal.findChildren(QLineEdit)), 'selected member identity was lost at specialist handoff'
+                def click(b):QTest.mouseClick(b,Qt.MouseButton.LeftButton);qt.processEvents()
+                if family=='column':
+                    c=modal.column_controls;click(c['load']);click(c['preview'])
+                    assert not service.open_project('P')['boq']
+                    c['reviewer'].setText('بازبین مستقل مصنوعی');c['note'].setText('کنترل مستند نمونه مصنوعی')
+                    click(c['review']);click(c['commit'])
+                else:
+                    box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')&gt;=0)
+                    box.setCurrentIndex(box.findData('mechanical_ventilation'))
+                    def button(label):return next(b for b in modal.findChildren(QPushButton) if b.text()==label)
+                    click(button('بارگذاری پیش‌نویس'));click(button('اعتبارسنجی ریزمتره'))
+                    assert not service.open_project('P')['boq']
+                    click(button('ذخیره نسخه در SQLite'));click(button('ثبت قطعی در BOQ'))
+                project=service.open_project('P');assert project['boq']
+                assert len({r['source_id'] for t in project['takeoffs'] for r in t.get('quantities',[])})==len(project['takeoffs'])
+                if family=='column':
+                    concrete=[r for r in project['boq'] if r.get('item_code')=='concrete']
+                    assert sum(Decimal(str(r['quantity'])) for r in concrete)==Decimal('0.6')
+                seen.append(project)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(run)
+        try:
+            assert wizard.preview() is not None,wizard.status.text()
+            timer.start(40);QTest.mouseClick(wizard.open_form_button,Qt.MouseButton.LeftButton)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError('selected member identity was lost at specialist handoff
+E             assert False
+E              +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4d96aa80&gt;)')]
+E           assert not [AssertionError('selected member identity was lost at specialist handoff\nassert False\n +  where False = any(&lt;generat...bject test_w1_selected_member_reaches_original_modal_and_commits.&lt;locals&gt;.run.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f9f4d96aa80&gt;)')]
+
+tests/test_phase6_p4_contextual_takeoff.py:60: AssertionError</failure></testcase></testsuite></testsuites>
