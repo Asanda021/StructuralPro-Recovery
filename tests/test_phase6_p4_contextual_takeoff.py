@@ -8,6 +8,85 @@ from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
+@pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall','floor_finish','false_ceiling'])
+def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+    from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    if family.startswith('waffle'):
+        from test_waffle_specialist_work import sample
+    elif family=='block_wall':
+        from test_architecture_specialist_work import sample
+    elif family=='floor_finish':
+        from test_floor_specialist_work import sample
+    elif family=='false_ceiling':
+        from test_suspended_ceiling_phase1 import sample
+    else:
+        from test_roof_specialist_work import sample
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+    service.add_project_floor('P','طبقه آزمایشی',level='L1')
+    specimen=sample() if family in ('floor_finish','false_ceiling') else sample(family)
+    service.save_aec_system_draft('P',specimen,expected_revision=0)
+    before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+    monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    def click(button):
+        tabs=button.window().findChild(QTabWidget)
+        if tabs:
+            for i in range(tabs.count()):
+                if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+        parent=button.parentWidget()
+        while parent:
+            if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+            parent=parent.parentWidget()
+        qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+    def complete_modal():
+        modal=qt.activeModalWidget()
+        try:
+            controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+            assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+            assert service.store.current_digest('P')==before
+            controls['id'].setText(specimen['system_id']);click(controls['load'])
+            click(controls['preview']);assert not warnings,warnings
+            assert not service.open_project('P')['boq']
+            import os
+            folder=os.environ.get('STRUCTURALPRO_W1_SCREENSHOTS')
+            if folder:
+                from pathlib import Path
+                target=Path(folder);target.mkdir(parents=True,exist_ok=True)
+                assert modal.grab().save(str(target/(family+'.png')))
+            controls['reviewer'].setText('بازبین مستقل مصنوعی')
+            controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+            if hasattr(modal,'roof_controls'):
+                original=controls['count'].text();controls['count'].setText('2')
+                click(controls['review'])
+                assert warnings and 'ذخیره' in warnings[-1]
+                assert service.store.current_digest('P')==before
+                warnings.clear();controls['count'].setText(original)
+            click(controls['review']);assert not warnings,warnings
+            assert not service.open_project('P')['boq']
+            click(controls['commit']);assert not warnings,warnings
+            record=service.get_aec_system('P',specimen['kind'],'L1',specimen['system_id'])
+            assert record['status']=='committed'
+            assert service.open_project('P')['boq']
+            seen.append(family)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+    try:
+        click(wizard.preview_button);assert wizard.active is not None
+        timer.start(30);click(wizard.open_form_button)
+        assert not errors,errors
+        assert seen==[family]
+        assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
 def test_beam_handoff_reuses_existing_specialist_panel_without_generic_editor(tmp_path):
     from PySide6.QtWidgets import QApplication
     from app.graphical_takeoff import GraphicalTakeoffDialog

@@ -172,6 +172,9 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if is_hollow:
    for key in ('pieces','pieces_add','pieces_remove','joist_count','joist_spacing','joist_axis','joist_supply_scope','joist_layout','joist_layout_add','joist_layout_remove'):controls[key].setEnabled(False)
   message.setText('نسخه '+str(entry['revision'])+'؛ '+('قطعی؛ تغییر فقط با اصلاحیه' if entry['status']=='committed' else 'پیش‌نویس؛ نیازمند بازبینی نسخه جاری'))
+  # Widget projection may include empty/disabled fields absent in older valid
+  # records. Remember that projection; never persist it merely to review a load.
+  state['loaded_ui_digest']=review_digest(capture())
  def capture():
   d=draft();capture_bar();g={key:(controls[key].currentData() if isinstance(controls[key],QComboBox) else controls[key].text().strip()) for key in ('unit','shape','repeat_scope','action','joist_axis','joist_supply_scope','rib_axis','panel_axis','length','width','depth','count','topping_thickness','bottom_thickness','joist_count','joist_spacing')}
   if kindbox.currentData() not in WAFFLE_KINDS:g.pop('rib_axis',None)
@@ -227,8 +230,8 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))
  def unchanged():
   d=capture()
-  if review_digest(d)!=review_digest(state['record']['data']):raise ValueError('تغییرات ابتدا باید ذخیره شوند')
-  return d
+  if review_digest(d)!=state['loaded_ui_digest']:raise ValueError('تغییرات ابتدا باید ذخیره شوند')
+  return deepcopy(state['record']['data'])
  def review():
   unchanged();ctx=context();paint(service.review_roof_system(*ctx,expected_revision=state['record']['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text()))
  def commit():
