@@ -49,7 +49,7 @@ def read_table(table,cols):
  return rows
 
 
-def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None):
+def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid_slab',drawing_source=None,context_guard=None):
  dialog=QDialog(parent);dialog.setObjectName('RoofDetailEditor');dialog.setWindowTitle('متره تخصصی '+SPECS[kind].title+' — ناحیه‌بندی و دیتایل مستند');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1280,850)
  outer=QVBoxLayout(dialog);tabs=QTabWidget();outer.addWidget(tabs);controls={};state={'record':None,'identity':None}
  def page(title):
@@ -226,24 +226,33 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
     from core.drawings.roof_region import planar_geometry
     d['roof_detail']['geometry'].update(shape='documented_planar',planar=planar_geometry(drawing_source))
   paint({'status':'draft','revision':0,'data':d})
+ def check_context():
+  if context_guard is not None:
+   pid,current_kind,fl,mid=context();context_guard(pid,fl,mid)
+   if current_kind!=kind:raise ValueError('نوع فرم با پیشنهاد دستیار مطابقت ندارد')
  def save():
+  check_context()
   pid,*_=context();d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(pid,d,expected_revision=state['record']['revision']))
  def unchanged():
   d=capture()
   if review_digest(d)!=state['loaded_ui_digest']:raise ValueError('تغییرات ابتدا باید ذخیره شوند')
   return deepcopy(state['record']['data'])
  def review():
-  unchanged();ctx=context();paint(service.review_roof_system(*ctx,expected_revision=state['record']['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text()))
+  check_context();unchanged();ctx=context();paint(service.review_roof_system(*ctx,expected_revision=state['record']['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text()))
  def commit():
-  unchanged();ctx=context();service.commit_aec_system(*ctx,expected_revision=state['record']['revision']);load()
+  check_context();unchanged();ctx=context();service.commit_aec_system(*ctx,expected_revision=state['record']['revision']);load()
  def copy():
+  check_context()
   pid,k,fl,mid=context();service.aec_workflow().copy_roof(pid,k,fl,mid,new_system_id=controls['new_id'].text(),new_source_id=controls['new_source'].text(),reason=controls['reason'].text());controls['id'].setText(controls['new_id'].text());load()
  def delete():
+  check_context()
   ctx=context()
   if state['record']['status']=='committed':raise ValueError('حذف سقف قطعی ممنوع است')
   if QMessageBox.question(dialog,'حذف کنترل‌شده','پیش‌نویس حذف و در تاریخچه نگهداری شود؟',QMessageBox.Yes|QMessageBox.No)!=QMessageBox.Yes:return
+  check_context()
   service.aec_workflow().delete_roof(*ctx,expected_revision=state['record']['revision'],reason=controls['reason'].text());state.update(record=None,identity=None);message.setText('پیش‌نویس حذف شد؛ تاریخچه محفوظ است')
  def create_amendment():
+  check_context()
   ctx=context();p=Path(controls['evidence_path'].text().strip())
   if not p.is_file():raise ValueError('فایل مدرک جدید موجود نیست')
   d=capture();d.pop('roof_review',None)
@@ -253,8 +262,10 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
   if not a or a.get('kind')!='roof_amendment' or a['beam_key']!=_id(k,fl,mid):raise ValueError('اصلاحیه متعلق به سقف انتخابی نیست')
   return pid,aid,a
  def review_amendment():
+  check_context()
   pid,aid,a=selected_amendment();service.review_beam_amendment(pid,aid,expected_revision=a['revision'],reviewer=controls['reviewer'].text(),note=controls['note'].text());message.setText('اصلاحیه مستقل بازبینی شد')
  def apply_amendment():
+  check_context()
   pid,aid,a=selected_amendment();service.apply_beam_amendment(pid,aid,expected_revision=a['revision']);load()
  def report(fmt):
   ctx=context();path,_=QFileDialog.getSaveFileName(dialog,'ذخیره گزارش سقف','',fmt.upper()+' (*.'+fmt+')')
