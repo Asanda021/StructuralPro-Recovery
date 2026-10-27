@@ -767,6 +767,69 @@ def test_specialist_qt_dialog_constructed_without_modal_loop(tmp_path,family,dia
         guide.close();drawing.close();qt.processEvents();app.store.close()
 
 
+@pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+    """The native confirmation runs a nested event loop: its context can expire."""
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtCore import QTimer, Qt
+    from PySide6.QtTest import QTest
+    from reportlab.pdfgen.canvas import Canvas
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from test_stirrup_zones import complete_beam
+
+    qt = QApplication.instance() or QApplication([])
+    path = tmp_path / 'synthetic.pdf'
+    pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Confirmation race', 'P')
+    service.add_project_floor('P', 'Floor', level='L1')
+    service.add_project_member('P', 'B1', 'L1', 'beam')
+    service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+    drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+    drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+    drawing.show()
+    wizard = drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    answered = []; snapshots = []
+    watcher = QTimer(wizard)
+    def answer():
+        message = qt.activeModalWidget()
+        if not isinstance(message, QMessageBox) or answered:
+            return
+        snapshots.append(service.store.current_digest('P'))
+        if changed == 'pdf_bytes':
+            path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+        elif changed == 'pdf_deleted':
+            path.unlink()
+        elif changed == 'revision':
+            drawing.ifc_revision.setText('R2')
+        elif changed == 'member':
+            drawing.polygon_member.setText('B2')
+        else:
+            wizard.cancel()
+        answered.append(True)
+        QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+    watcher.timeout.connect(answer); watcher.start(20)
+    try:
+        assert wizard.preview() is not None
+        panel = wizard.open_form()
+        QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+        QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+        assert answered == [True]
+        assert service.open_project('P')['boq'] == []
+        assert service.store.current_digest('P') == snapshots[0]
+        assert not service.open_project('P')['takeoffs']
+    finally:
+        watcher.stop(); wizard.close(); drawing.close(); service.store.close(); qt.processEvents()
+    reopened = StructuralProApp(tmp_path / 'db')
+    try:
+        assert not reopened.open_project('P')['boq']
+        assert reopened.store.current_digest('P') == snapshots[0]
+    finally:
+        reopened.store.close()
+
+
 def test_w1_cancel_allows_independent_beam_panel(tmp_path):
     from PySide6.QtWidgets import QApplication
     from app.graphical_takeoff import GraphicalTakeoffDialog

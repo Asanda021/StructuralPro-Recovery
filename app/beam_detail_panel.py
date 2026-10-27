@@ -601,13 +601,18 @@ class BeamDetailPanel(QWidget):
             report = self.service.preview_beam_detail(project, floor, beam)
             if not report["ready"]:
                 return
+            revision = self.revision
             answer = QMessageBox.question(self, "تأیید ثبت نهایی",
                                          f"کمیت‌های تأییدشده تیر {beam} به ریزمتره منتقل شوند؟",
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if answer != QMessageBox.StandardButton.Yes:
                 return
-            result = self.service.commit_beam_detail(project, floor, beam, expected_revision=self.revision)
+            # A native modal dialog runs an event loop. Source bytes, W1
+            # approval or the selected identity may change while it is open.
+            if self._identity() != (project, floor, beam):
+                raise RuntimeError("هویت تیر هنگام تأیید تغییر کرد؛ ثبت متوقف شد.")
+            result = self.service.commit_beam_detail(project, floor, beam, expected_revision=revision)
             self.message.setText(f"ثبت قطعی انجام شد؛ {result['takeoff_rows']} ردیف منتقل شد.")
             self.save_button.setEnabled(False)
             self.commit_button.setEnabled(False)
