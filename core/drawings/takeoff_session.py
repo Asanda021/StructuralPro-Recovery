@@ -340,7 +340,10 @@ class DrawingTakeoffSession:
             raise ValueError('مختصات در مرز نمایش Qt دقت خود را از دست می‌دهند؛ ثبت مسدود است')
         path=Path(self.drawing_source)
         if path.is_file() and path.suffix.lower()=='.pdf':
-            import fitz
+            try:
+                import pymupdf as fitz
+            except ModuleNotFoundError:
+                import fitz  # Compatibility with older supported PyMuPDF releases.
             with fitz.open(path) as pdf:
                 if not 1<=page<=len(pdf):raise ValueError('شماره صفحه نقشه نامعتبر است')
                 rect=pdf[page-1].rect

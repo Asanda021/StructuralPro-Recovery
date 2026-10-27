@@ -69,7 +69,7 @@ class ProjectStartWizard(QDialog):
         self.cancel_button.clicked.connect(self.reject)
 
 
-    def _profiles(self):
+    def _profiles(self, *, strict=False):
         try:
             rows=json.loads(self.settings.value("e3/custom", "[]"))
             if not isinstance(rows,list) or len(rows)>30:raise ValueError("profile list")
@@ -83,7 +83,9 @@ class ProjectStartWizard(QDialog):
                     raise ValueError("profile data")
             if len({p["name"] for p in rows})!=len(rows):raise ValueError("duplicates")
             return rows
-        except (TypeError, ValueError):return []
+        except (TypeError, ValueError) as exc:
+            if strict:raise ValueError("داده الگوهای قبلی خراب یا ناسازگار است؛ بازنویسی مجاز نیست.") from exc
+            return []
 
     def _load_profiles(self):
         for p in self._profiles():
@@ -130,7 +132,7 @@ class ProjectStartWizard(QDialog):
                 code=old["base"]
             if code not in TEMPLATES:raise ValueError("الگوی پایه نامعتبر")
             ds=self._disciplines() or list(TEMPLATES[code]["disciplines"])
-            profiles=[p for p in self._profiles() if p["name"]!=title]
+            profiles=[p for p in self._profiles(strict=True) if p["name"]!=title]
             if len(profiles)>=30:raise ValueError("حداکثر ۳۰ الگو")
             profiles.append({"name":title,"base":code,"disciplines":ds})
             self.settings.setValue("e3/custom",json.dumps(profiles,ensure_ascii=False))

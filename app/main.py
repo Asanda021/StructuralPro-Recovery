@@ -710,6 +710,9 @@ def main()->int:
                 display_verified_boq_row(project,entity_id,btable)
                 bpid.setText(record_project)
             if route=="takeoff":qpid.setText(record_project)
+            if route=="manual_formula":
+                from app.verified_search_navigation import prepare_verified_formula_view
+                prepare_verified_formula_view(service,record_project,entity_id,parent=w).exec()
             if route=="drawing":
                 from app.verified_search_navigation import prepare_verified_drawing_view
                 view=prepare_verified_drawing_view(service,record_project,entity_id,parent=w)

@@ -8,6 +8,31 @@ from hashlib import sha256
 from pathlib import Path
 
 
+def prepare_verified_formula_view(service, project_id, row_id, parent=None):
+    """Use the original formula editor and its validated register, never names."""
+    digest=service.store.current_digest(project_id)
+    register=service.load_manual_formulas(project_id)
+    if not row_id or row_id not in register:raise ValueError('ردیف متره معتبر موجود نیست.')
+    from app.manual_takeoff import ManualTakeoffDialog
+    view=ManualTakeoffDialog(service,project_id=project_id,parent=parent)
+    try:
+        view.refresh_formula_rows()
+        matches=[i for i in range(view.formula_table.rowCount())
+                 if view.formula_table.item(i,0).text()==row_id]
+        if len(matches)!=1:raise ValueError('شناسه ردیف متره یکتا نیست.')
+        from PySide6.QtCore import QItemSelectionModel
+        view.formula_table.selectionModel().setCurrentIndex(
+            view.formula_table.model().index(matches[0],0),
+            QItemSelectionModel.ClearAndSelect|QItemSelectionModel.Rows)
+        view.formula_load_button.click()
+        if view._formula_selected!=row_id or service.store.current_digest(project_id)!=digest:
+            raise RuntimeError('هویت یا نسخه ردیف هنگام بازکردن تغییر کرد: '+view.status.text())
+        return view
+    except Exception:
+        view.close()
+        raise
+
+
 def prepare_verified_controls_view(service, project_id, record_id, parent=None):
     """Focus an exact activity/WBS in the existing guarded controls workspace."""
     from PySide6.QtCore import Qt

@@ -6,6 +6,22 @@ from core.platform.application import StructuralProApp
 from app.project_start_wizard import ProjectStartWizard
 
 
+def test_corrupt_profile_storage_is_not_silently_overwritten(tmp_path):
+    from PySide6.QtCore import QSettings
+    qt=QApplication.instance() or QApplication([])
+    settings=QSettings(str(tmp_path/'profile.ini'),QSettings.IniFormat)
+    broken='{"old_profile": unfinished'
+    settings.setValue('e3/custom',broken);settings.sync()
+    app=StructuralProApp(tmp_path/'db');ui=ProjectStartWizard(app,settings=settings)
+    try:
+        ui.kind.setCurrentIndex(ui.kind.findData('residential'))
+        ui.profile_name.setText('جدید')
+        assert not ui.save_profile(), 'saving a profile silently discards unreadable existing profiles'
+        assert settings.value('e3/custom')==broken
+        assert app.store.list()==[]
+    finally:ui.close();app.store.close();qt.processEvents()
+
+
 def test_e3_click_preview_modify_cancel_and_create_sqlite(tmp_path):
     qt=QApplication.instance() or QApplication([])
     app=StructuralProApp(tmp_path/"data")

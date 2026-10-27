@@ -5,6 +5,38 @@ from core.platform.application import StructuralProApp
 from test_manual_formula_persistence import data
 
 
+def test_documented_opening_is_deducted_once_bulk_undo_redo_reopen(tmp_path):
+    from copy import deepcopy
+    service=StructuralProApp(tmp_path/'db');service.create_project('دیوار مصنوعی','P')
+    wall=data(family='block_wall',title='دیوار بلوکی مصنوعی',member='W1',unit='m2',expression='length*height-opening',
+        variables={'length':'4','height':'3','opening':'2'},
+        variable_units={'length':'m','height':'m','opening':'m2'},source_id='wall:W1',
+        deductions=[{'id':'O1','variable':'opening','quantity':'2','unit':'m2',
+                     'basis':'بازشوی مصنوعی یک در دو متر','source_id':'opening:O1'}])
+    service.save_manual_formula('P','W1',wall,expected_revision=0,reason='نمونه صریح')
+    digest=service.store.current_digest('P')
+    preview=service.preview_bulk_edit_manual_formulas('P',['W1'],changes={'variables':{'length':'5'}},expected_revisions={'W1':1})
+    assert preview['rows'][0]['old_quantity']=='10' and preview['rows'][0]['new_quantity']=='13'
+    assert service.store.current_digest('P')==digest
+    duplicate=deepcopy(wall);duplicate['member']='W2';duplicate['source_id']='wall:W2'
+    with pytest.raises(ValueError):service.save_manual_formula('P','W2',duplicate,expected_revision=0,reason='کسر تکراری باید رد شود')
+    assert service.store.current_digest('P')==digest
+    for operation in ('split','merge','ownership'):
+        with pytest.raises(ValueError):
+            service.bulk_edit_manual_formulas('P',['W1'],changes={operation:True},expected_revisions={'W1':1},reason='عملیات فاقد قرارداد رسمی')
+    service.bulk_edit_manual_formulas('P',['W1'],changes={'variables':{'length':'5'}},expected_revisions={'W1':1},reason='طول صریح جدید')
+    assert Decimal(str(service.load_manual_formulas('P')['W1']['quantity']))==13
+    service.undo_manual_formulas('P');assert Decimal(str(service.load_manual_formulas('P')['W1']['quantity']))==10
+    service.redo_manual_formulas('P');assert Decimal(str(service.load_manual_formulas('P')['W1']['quantity']))==13
+    project=service.open_project('P');assert not project['boq']
+    assert len(project['manual_formula_register'])==1
+    assert project['manual_formula_register']['W1']['data']['deductions']==wall['deductions']
+    service.store.close()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==project
+    finally:reopened.store.close()
+
+
 def test_bulk_sqlite_abort_preserves_all_rows_history_and_reopen(tmp_path):
     """SQLite trigger aborts the real transaction, not a mocked service save."""
     import sqlite3

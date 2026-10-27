@@ -10,6 +10,9 @@ on:
       - app/project_search_panel.py
       - app/verified_search_navigation.py
       - app/graphical_takeoff.py
+      - app/beam_detail_panel.py
+      - app/reviewed_aec_manual_editor.py
+      - app/reviewed_structural_manual_editor.py
       - app/roof_detail_editor.py
       - app/workspace_docks.py
       - app/manual_formula_controls.py
@@ -17,6 +20,9 @@ on:
       - core/projects/store.py
       - core/platform/application.py
       - core/search/global_search.py
+      - core/drawings/pdf_engine.py
+      - core/drawings/pdf_graphical.py
+      - core/drawings/takeoff_session.py
       - core/takeoff/manual_formula_register.py
       - tests/test_phase6_p5_*.py
   workflow_dispatch:

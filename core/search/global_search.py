@@ -81,7 +81,14 @@ def search_project(project, query, *, limit=100):
             rec("wbs",row,keys=("id","title","name","wbs_id"),route="project_controls")
     for row in rows(project.get("reports")):
         rec("report",row,keys=("id","title","name","path"),route="reports")
-    for row in rows(project.get("manual_formula_register")):
+    register=project.get("manual_formula_register")
+    if isinstance(register,dict):
+        for key,row in register.items():
+            if not isinstance(row,dict) or not isinstance(row.get('data'),dict):continue
+            for field in ('title','member','source_id','family'):
+                hit('manual_formula',row['data'].get(field),row,entity_id=key,
+                    source_id=row['data'].get('source_id'),revision=row.get('revision'),route='manual_formula')
+    for row in ([] if isinstance(register,dict) else rows(register)):
         if isinstance(row,dict):
             d=row.get("data",{})
             if isinstance(d,dict):

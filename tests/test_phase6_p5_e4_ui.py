@@ -175,3 +175,29 @@ def test_search_wbs_and_activity_focus_original_workspace_without_write(tmp_path
         assert before==service.store.current_digest('P')
     finally:service.store.close();qt.processEvents()
 
+def test_search_manual_formula_opens_same_record_in_original_editor(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from core.platform.application import StructuralProApp
+    from test_manual_formula_persistence import data
+    from app.project_search_panel import ProjectSearchDialog
+    import app.verified_search_navigation as navigation
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('جستجوی متره','P')
+    service.save_manual_formula('P','ROW1',data(title='عنوان یکتای آزمایشی'),expected_revision=0,reason='ورودی صریح')
+    opened=[]
+    search=ProjectSearchDialog(service,'P',initial_query='عنوان یکتای آزمایشی',
+        on_navigate=lambda route,pid,identity:opened.append(navigation.prepare_verified_formula_view(service,pid,identity)))
+    try:
+        assert search.results and search.results[0]['entity_id']=='ROW1', 'formula register key is lost from navigation identity'
+        before=service.store.current_digest('P');search.show();search.list.setCurrentRow(0)
+        QTest.mouseClick(search.open_button,Qt.MouseButton.LeftButton)
+        assert len(opened)==1,search.status.text()
+        view=opened[0];assert view._formula_selected=='ROW1'
+        assert view.formula_id.text()=='ROW1' and view._formula_revision==1
+        assert before==service.store.current_digest('P')
+    finally:
+        for view in opened:view.close()
+        search.close();service.store.close();qt.processEvents()
+

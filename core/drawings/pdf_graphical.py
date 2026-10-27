@@ -25,7 +25,10 @@ class GraphicMeasurement:
 class GraphicalPDFTakeoff:
     def inspect_geometry(self,path:str|Path)->list[PageGeometry]:
         try:
-            import fitz
+            try:
+                import pymupdf as fitz
+            except ModuleNotFoundError:
+                import fitz  # Compatibility with older supported PyMuPDF releases.
         except ImportError as exc:
             raise RuntimeError("PyMuPDF is required for graphical PDF inspection") from exc
         doc=fitz.open(str(path))
