@@ -1,0 +1,26 @@
+{
+  "url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40539534485",
+  "status": "Failure",
+  "observed_junit_annotations": [
+    {
+      "file": "p6-p4-offscreen.xml",
+      "tests": 135,
+      "passed": 135,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "a630f7f0ea71c68bc336f025735aade84b9c741d4377795271dfb341e8c9401e"
+    },
+    {
+      "file": "p6-p4-windows.xml",
+      "tests": 3,
+      "passed": 2,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "ef3bc0cad9d6df6fa0bc2a27dd6c5440ca4e5f00bf44622b48dfda0f91767b53"
+    }
+  ],
+  "raw_logs_and_artifacts_downloaded": false,
+  "artifact_access_note": "Artifact names/digests visible on public run page; binary download/raw logs require GitHub login in this execution context."
+}
