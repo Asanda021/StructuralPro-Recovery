@@ -1,0 +1,2 @@
+d380fddb0d2f4c66141284216025c389b66f505684c5a416a217f4ab15d58071  docs/acceptance/phase6_p5/verification-20261027-three-gates/e4/full.xml
+ebe5d2a5fdf8134e5d121b2a34ebcedbeafda9fbadb9d03085b19140f38f0a4c  docs/acceptance/phase6_p5/verification-20261027-three-gates/e4/targeted.xml
