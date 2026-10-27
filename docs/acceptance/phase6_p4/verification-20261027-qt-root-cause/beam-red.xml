@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.717" timestamp="2026-10-27T13:02:51.646999+01:00" hostname="0eca898cff15"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_cancel_allows_independent_beam_panel" time="0.211"><failure message="RuntimeError: پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.">tests/test_phase6_p4_contextual_takeoff.py:784: in test_w1_cancel_allows_independent_beam_panel
+    assert panel._identity()==('P','L1','B1')
+           ^^^^^^^^^^^^^^^^^
+app/beam_detail_panel.py:192: in _identity
+    if self._w1_context_guard is not None:self._w1_context_guard(project,floor,beam)
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app/graphical_takeoff.py:1250: in guard
+    raise RuntimeError('پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.')
+E   RuntimeError: پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.</failure></testcase></testsuite></testsuites>
