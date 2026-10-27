@@ -8,6 +8,65 @@ from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
+@pytest.mark.parametrize('family,dialog_name,controls_name',[
+    ('joist_block','RoofDetailEditor','roof_controls'),
+    ('joist_foam','RoofDetailEditor','roof_controls'),
+    ('waffle_one_way','RoofDetailEditor','roof_controls'),
+    ('waffle_two_way','RoofDetailEditor','roof_controls'),
+    ('solid_slab','RoofDetailEditor','roof_controls'),
+    ('block_wall','ArchitectureDetailEditor','architecture_controls'),
+    ('floor_finish','ArchitectureDetailEditor','architecture_controls'),
+    ('false_ceiling','ArchitectureDetailEditor','architecture_controls'),
+    ('column','ReviewedStructuralManualEditor','column_controls'),
+    ('mep','ReviewedAECManualEditor',None),
+])
+def test_native_modal_specialist_edit_and_cancel_preserves_sqlite(tmp_path,family,dialog_name,controls_name):
+    """Real nested Qt event loop and QTest clicks; no replacement of exec()."""
+    from PySide6.QtWidgets import QApplication,QDialog,QLineEdit
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    service,context=base(tmp_path)
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('F1')
+    wizard=drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    before=service.store.current_digest('P');observed=[];errors=[]
+    def edit_modal():
+        modal=qt.activeModalWidget()
+        try:
+            assert isinstance(modal,QDialog) and modal.objectName()==dialog_name
+            assert modal.layoutDirection()==Qt.LayoutDirection.RightToLeft
+            if controls_name:
+                controls=getattr(modal,controls_name)
+                assert controls['project'].text()=='P' and controls['floor'].text()=='F1'
+                field=controls['id']
+            else:
+                fields=modal.findChildren(QLineEdit)
+                assert any(f.text()=='P' for f in fields)
+                assert any(f.text()=='F1' for f in fields)
+                field=next(f for f in fields if not f.text())
+            field.setFocus();QTest.keyClicks(field,'QA-CANCELLED')
+            assert field.text()=='QA-CANCELLED'
+            assert service.store.current_digest('P')==before
+            observed.append(family)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(edit_modal)
+    try:
+        QTest.mouseClick(wizard.preview_button,Qt.MouseButton.LeftButton)
+        assert wizard.active is not None,wizard.status.text()
+        timer.start(30)
+        QTest.mouseClick(wizard.open_form_button,Qt.MouseButton.LeftButton)
+        assert not errors,errors
+        assert observed==[family]
+        assert before==service.store.current_digest('P')
+        assert not service.open_project('P')['boq']
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
 def test_failed_context_refresh_revokes_active_proposal(tmp_path):
     from PySide6.QtWidgets import QApplication
     from app.contextual_takeoff_panel import ContextualTakeoffDialog
