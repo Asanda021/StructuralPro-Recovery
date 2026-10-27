@@ -216,3 +216,37 @@ def test_cached_historical_root_rechecks_original_quarantine(tmp_path, monkeypat
         contracts._fixture.cache_clear()
         if temporary is not None:
             temporary.cleanup()
+
+
+def test_official_runner_persists_exact_junit_bytes(tmp_path):
+    r = fixture_repo(tmp_path)
+    (r / 'tests').mkdir()
+    (r / 'tests/test_current.py').write_text('def test_current(): assert True\n')
+    expected = tmp_path / 'actual-pytest.xml'
+    (r / 'conftest.py').write_text(
+        'from pathlib import Path\n'
+        'def pytest_unconfigure(config):\n'
+        f'    Path({str(expected)!r}).write_bytes(Path(config.option.xmlpath).read_bytes())\n'
+    )
+    persisted = tmp_path / 'output/result.xml'
+    status = module.run(r, mode='current', junit_output=persisted)
+    assert status == 0
+    assert persisted.read_bytes() == expected.read_bytes()
+    assert module.junit_summary(persisted)['passed'] == 1
+
+
+def test_official_runner_does_not_leave_stale_junit_on_timeout(tmp_path):
+    import json
+    r = fixture_repo(tmp_path)
+    (r / 'tests').mkdir()
+    (r / 'tests/test_current.py').write_text('import time\ndef test_slow(): time.sleep(2)\n')
+    persisted = tmp_path / 'stale.xml'
+    persisted.write_text('<testsuite><testcase name="old"/></testsuite>')
+    output = tmp_path / 'result.json'
+    status = module.run(r, output=output, mode='current', timeout=0.1, junit_output=persisted)
+    result = json.loads(output.read_text())
+    assert status == 124
+    assert result['timed_out'] is True
+    assert result['overall_green'] is False
+    assert result['junit_report_written'] is False
+    assert not persisted.exists()

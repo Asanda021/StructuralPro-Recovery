@@ -161,7 +161,8 @@ HISTORICAL_TESTS = ('tests/test_binary_build_security_contract.py', 'tests/test_
 
 
 def run(root: Path, output: Path | None = None, log: Path | None = None,
-        mode: str = "historical", timeout: float = 300) -> int:
+        mode: str = "historical", timeout: float = 300,
+        junit_output: Path | None = None) -> int:
     root = root.resolve(strict=True)
     if mode not in {"historical", "current"}:
         raise ValueError("Unknown verification mode")
@@ -172,6 +173,9 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
         staged = prepare_source(root, Path(d))
         policy = current_policy(staged)
         junit = Path(d) / "result.xml"
+        if junit_output is not None:
+            junit_output.parent.mkdir(parents=True, exist_ok=True)
+            junit_output.unlink(missing_ok=True)
         command = [sys.executable, "-m", "pytest", "-vv", "--disable-warnings", "--junitxml", str(junit)]
         if mode == "historical":
             command.extend(HISTORICAL_TESTS)
@@ -192,6 +196,9 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
             proc = subprocess.CompletedProcess(command, 124, decoded(exc.stdout),
                                                decoded(exc.stderr) + f"\nQA timeout after {timeout} seconds\n")
         stats = junit_summary(junit) if junit.exists() else {"error": "JUnit report missing"}
+        junit_written = junit_output is not None and junit.is_file()
+        if junit_written:
+            shutil.copyfile(junit, junit_output)
         result = {"execution": mode, "run_utc": datetime.now(timezone.utc).isoformat(),
                   "source_checkout": str(root), "disposable_source_policy": policy,
                   "historical_modules_excluded_from_current": list(HISTORICAL_TESTS) if mode == "current" else [],
@@ -200,6 +207,7 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
                   "historical_workflows_copied_to_temp_only": _WORKFLOW_COUNT if mode == "historical" else 0,
                   "github_actions_used": False, "build_or_release_performed": False,
                   "windows_gui_validated": False,
+                  "junit_report_written": junit_written,
                   "pytest_exit_code": proc.returncode, "timed_out": timed_out, "timeout_seconds": timeout, "stats": stats,
                   "overall_green": proc.returncode == 0 and stats.get("failed") == 0}
         if output:
@@ -218,10 +226,11 @@ def main() -> int:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--json", type=Path)
     parser.add_argument("--log", type=Path)
+    parser.add_argument("--junit", type=Path, help="Persist the actual pytest JUnit XML, when produced")
     parser.add_argument("--mode", choices=("current", "historical"), default="historical")
     parser.add_argument("--timeout", type=float, default=300, help="Maximum pytest wall time in seconds")
     args = parser.parse_args()
-    return run(args.root,args.json,args.log,args.mode,args.timeout)
+    return run(args.root,args.json,args.log,args.mode,args.timeout,args.junit)
 
 if __name__ == "__main__":
     sys.exit(main())
