@@ -5,7 +5,8 @@
   "p5_tree": "2d41d0e1abf92297482fe57ecf1e62c31d3fef01",
   "p5_ci_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40541143258",
   "main_observed_unchanged": "9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95",
-  "git_auth_latest_operation": "read failed: terminal prompts disabled; existing proxy authentication unavailable; do not request raw tokens",
+  "git_auth_latest_operation": "Restored without credentials/config changes; evidence commit febee5d push succeeded.",
   "local_worktree": "/workspace/StructuralPro-P5",
-  "p4_worktree": "/workspace/StructuralPro-Recovery"
+  "p4_worktree": "/workspace/StructuralPro-Recovery",
+  "p5_evidence_commit_published": "febee5d8e0e4c27f1e126c668404a7d670eea783"
 }
