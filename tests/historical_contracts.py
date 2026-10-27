@@ -9,7 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 import tempfile
 
-from scripts.run_quarantined_workflow_qa import prepare_fixture, current_policy, prepare_source
+from scripts.run_quarantined_workflow_qa import prepare_fixture, current_policy, prepare_source, quarantine_policy
 
 SOURCE_ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,6 +31,8 @@ def _fixture():
 
 
 def historical_root() -> Path:
+    # Never let a cached fixture hide changes to the original reviewed bytes.
+    quarantine_policy(SOURCE_ROOT)
     checkout, temporary = _fixture()
     # Recheck the isolated zero-active source even when the fixture is cached.
     current_policy(Path(temporary.name) / "source")

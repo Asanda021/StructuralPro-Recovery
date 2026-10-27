@@ -191,3 +191,28 @@ def test_official_runner_reports_timeout_without_green(tmp_path):
     assert status == 124
     assert result['timed_out'] is True
     assert result['overall_green'] is False
+
+
+@pytest.mark.parametrize('tampered', ['workflow', 'manifest'])
+def test_cached_historical_root_rechecks_original_quarantine(tmp_path, monkeypatch, tampered):
+    from tests import historical_contracts as contracts
+    r = fixture_repo(tmp_path)
+    (r / '.github/workflows').mkdir(parents=True)
+    (r / '.github/workflows/acceptance.yml').write_text('name: acceptance')
+    contracts._fixture.cache_clear()
+    monkeypatch.setattr(contracts, 'SOURCE_ROOT', r)
+    temporary = None
+    try:
+        historical = contracts.historical_root()
+        _, temporary = contracts._fixture()
+        assert len(list((historical / '.github/workflows').iterdir())) == 193
+        if tampered == 'workflow':
+            (r / 'recovery/disabled_workflows/w000.yml').write_text('tampered after cache')
+        else:
+            (r / 'recovery/workflow_sha256.json').write_text('{}')
+        with pytest.raises(RuntimeError, match='integrity'):
+            contracts.historical_root()
+    finally:
+        contracts._fixture.cache_clear()
+        if temporary is not None:
+            temporary.cleanup()

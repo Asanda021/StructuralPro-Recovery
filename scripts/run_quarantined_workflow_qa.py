@@ -20,14 +20,10 @@ _WORKFLOW_COUNT = 193
 _IGNORED = {".git", ".pytest_cache", "__pycache__", ".venv", "venv", "dist", "build"}
 
 
-def workflow_paths(root: Path) -> list[Path]:
+def _quarantined_paths(root: Path) -> list[Path]:
     root = root.resolve(strict=True)
-    for parent in (root / ".github", root / "recovery"):
-        if parent.is_symlink():
-            raise RuntimeError("Linked workflow policy parent directory")
-    live = root / ".github" / "workflows"
-    if live.exists() or live.is_symlink():
-        raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+    if (root / "recovery").is_symlink():
+        raise RuntimeError("Linked workflow policy parent directory")
     quarantined = root / "recovery" / "disabled_workflows"
     if not quarantined.is_dir() or quarantined.is_symlink():
         raise RuntimeError("Quarantined workflows directory unavailable or linked")
@@ -39,13 +35,23 @@ def workflow_paths(root: Path) -> list[Path]:
     return sorted(children)
 
 
-def current_policy(root: Path) -> dict:
-    """Require zero active Actions and the exact reviewed quarantine bytes.
+def workflow_paths(root: Path) -> list[Path]:
+    root = root.resolve(strict=True)
+    if (root / ".github").is_symlink():
+        raise RuntimeError("Linked workflow policy parent directory")
+    live = root / ".github" / "workflows"
+    if live.exists() or live.is_symlink():
+        raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+    return _quarantined_paths(root)
 
-    This is local source policy, never proof of GitHub settings or authorization.
+
+def quarantine_policy(root: Path) -> dict:
+    """Verify original archived bytes freshly, independently of active Actions.
+
+    This is not zero-active source authorization; current_policy remains strict.
     """
     root = root.resolve(strict=True)
-    workflows = workflow_paths(root)
+    workflows = _quarantined_paths(root)
     manifest = root / "recovery/workflow_sha256.json"
     if manifest.is_symlink() or not manifest.is_file():
         raise RuntimeError("Reviewed quarantine SHA-256 manifest is missing or linked")
@@ -56,7 +62,16 @@ def current_policy(root: Path) -> dict:
     actual = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in workflows}
     if expected != actual:
         raise RuntimeError("Quarantined workflow integrity mismatch")
-    return {"active_workflows": 0, "verified_quarantined_workflows": len(workflows)}
+    return {"verified_quarantined_workflows": len(workflows)}
+
+
+def current_policy(root: Path) -> dict:
+    """Require zero active Actions and the exact reviewed quarantine bytes.
+
+    This is local source policy, never proof of GitHub settings or authorization.
+    """
+    workflow_paths(root)
+    return {"active_workflows": 0, **quarantine_policy(root)}
 
 
 def prepare_source(root: Path, disposable: Path) -> Path:
@@ -73,6 +88,7 @@ def prepare_source(root: Path, disposable: Path) -> Path:
     for path in (root / ".github", root / ".github/workflows"):
         if path.is_symlink():
             raise RuntimeError("Linked active workflow path")
+    quarantine_policy(root)
     checkout = disposable / "source"
     if checkout.exists() or checkout.is_symlink():
         raise RuntimeError("Temporary source already exists")
