@@ -8,6 +8,42 @@ from hashlib import sha256
 from pathlib import Path
 
 
+def prepare_verified_controls_view(service, project_id, record_id, parent=None):
+    """Focus an exact activity/WBS in the existing guarded controls workspace."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QTreeWidgetItemIterator
+    digest=service.store.current_digest(project_id)
+    project=service.open_project(project_id)
+    if not isinstance(project,dict) or project.get('id')!=project_id:
+        raise ValueError('پروژه معتبر در دسترس نیست.')
+    candidates=[(kind,r) for kind in ('project_schedule_tasks','project_wbs')
+                for r in project.get(kind,[]) if isinstance(r,dict) and r.get('id')==record_id]
+    if not record_id or len(candidates)!=1:
+        raise ValueError('شناسه فعالیت یا WBS مفقود یا مبهم است.')
+    from app.project_controls_workspace import ProjectControlsWorkspace
+    view=ProjectControlsWorkspace(service,project_id,parent)
+    try:
+        if candidates[0][0]=='project_schedule_tasks':
+            view.select_activity(record_id)
+            if view.selected_id!=record_id:raise ValueError('فعالیت انتخاب نشد.')
+        else:
+            iterator=QTreeWidgetItemIterator(view.tree);matches=[]
+            while iterator.value():
+                item=iterator.value()
+                if item.data(0,Qt.ItemDataRole.UserRole)==('wbs',record_id):matches.append(item)
+                iterator+=1
+            if len(matches)!=1:raise ValueError('گره WBS یکتا نیست.')
+            view.tree.setCurrentItem(matches[0]);view.tree.scrollToItem(matches[0])
+            view.tree_selected(matches[0])
+        view.tabs.setCurrentIndex(0)
+        if service.store.current_digest(project_id)!=digest:
+            raise RuntimeError('نسخه پروژه هنگام ناوبری تغییر کرد.')
+        return view
+    except Exception:
+        view.close()
+        raise
+
+
 def prepare_verified_drawing_view(service, project_id, document_id, parent=None):
     """Open the exact project record, requiring its explicit hash and revision."""
     from core.projects.project_model import _identity

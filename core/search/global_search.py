@@ -76,7 +76,7 @@ def search_project(project, query, *, limit=100):
     for row in rows(project.get("boq")):
         rec("boq",row,keys=("description","title","item_code","price_code","item_no"),route="boq")
         rec("price_code",row,keys=("price_code",),route="prices")
-    for key in ("wbs","activities","work_packages","project_schedule_tasks"):
+    for key in ("wbs","activities","work_packages","project_schedule_tasks","project_wbs"):
         for row in rows(project.get(key)):
             rec("wbs",row,keys=("id","title","name","wbs_id"),route="project_controls")
     for row in rows(project.get("reports")):

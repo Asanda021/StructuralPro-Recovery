@@ -144,3 +144,34 @@ def test_search_opens_exact_document_only_with_live_sha_and_revision(tmp_path):
         assert before==service.store.current_digest('P')
     finally:service.store.close();qt.processEvents()
 
+def test_search_wbs_and_activity_focus_original_workspace_without_write(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from core.platform.application import StructuralProApp
+    from test_phase4_structure import structure,activity
+    from core.search.global_search import search_project
+    import app.verified_search_navigation as navigation
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('کنترل','P');structure(service);activity(service)
+    try:
+        assert any(r['entity_id']=='W1' for r in search_project(service.open_project('P'),'اسکلت')), 'canonical project_wbs is missing from search'
+        assert hasattr(navigation,'prepare_verified_controls_view'), 'WBS navigation does not focus the selected record'
+        before=service.store.current_digest('P')
+        from app.project_search_panel import ProjectSearchDialog
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt
+        for identifier,query in (('A','بتن‌ریزی'),('W1','اسکلت')):
+            opened=[]
+            search=ProjectSearchDialog(service,'P',initial_query=query,
+                on_navigate=lambda route,pid,identity:opened.append(navigation.prepare_verified_controls_view(service,pid,identity)))
+            search.show();search.list.setCurrentRow(0)
+            QTest.mouseClick(search.open_button,Qt.MouseButton.LeftButton)
+            assert len(opened)==1,search.status.text()
+            view=opened[0]
+            if identifier=='A':assert view.selected_id=='A' and view.fields['activity_id'].text()=='A'
+            else:assert view.fields['structure_id'].text()=='W1'
+            view.close();search.close();qt.processEvents()
+        import pytest
+        with pytest.raises(ValueError):navigation.prepare_verified_controls_view(service,'P','MISSING')
+        assert before==service.store.current_digest('P')
+    finally:service.store.close();qt.processEvents()
+

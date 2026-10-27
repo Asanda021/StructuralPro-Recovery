@@ -721,8 +721,8 @@ def main()->int:
                 if not workspace_docks.focus_member(entity_id):
                     so.setPlainText("رکورد پروژه باز شد، اما عضو/طبقه قابل هایلایت نیست: "+str(entity_id))
             if route=="project_controls":
-                # Open the existing guarded project-control workspace.
-                open_project_controls()
+                from app.verified_search_navigation import prepare_verified_controls_view
+                prepare_verified_controls_view(service,record_project,entity_id,parent=w).exec()
             elif route in mapping:
                 pages.setCurrentIndex(mapping[route])
             so.setPlainText("رکورد مستند انتخاب شد: "+str(entity_id)+
