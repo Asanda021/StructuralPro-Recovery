@@ -8,6 +8,30 @@ from core.platform.application import StructuralProApp
 from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
+def test_beam_handoff_reuses_existing_specialist_panel_without_generic_editor(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    qt=QApplication.instance() or QApplication([])
+    service,ctx=base(tmp_path)
+    service.add_project_member('P','B1','F1','beam')
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.polygon_floor.setText('F1');drawing.polygon_member.setText('B1');drawing.show()
+    wizard=drawing.open_contextual_wizard()
+    try:
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        assert wizard.preview() is not None,wizard.status.text()
+        before=service.store.current_digest('P')
+        result=wizard.open_form()
+        assert result is drawing.beam_detail_panel, 'beam wizard opens generic manual editor instead of existing beam specialist'
+        assert result.floor.text()=='F1' and result.beam.text()=='B1'
+        assert drawing.beam_dock.isVisible()
+        result.floor.setText('OTHER')
+        assert wizard.open_form() is None
+        assert result.floor.text()=='OTHER', 'handoff must not overwrite unfinished specialist inputs'
+        assert before==service.store.current_digest('P')
+    finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
 @pytest.mark.parametrize('family,dialog_name,controls_name',[
     ('joist_block','RoofDetailEditor','roof_controls'),
     ('joist_foam','RoofDetailEditor','roof_controls'),
@@ -217,11 +241,12 @@ def test_actual_qt_button_context_preview_reject_cancel_and_open_manual(tmp_path
     from PySide6.QtTest import QTest
     from app.graphical_takeoff import GraphicalTakeoffDialog
     app,ctx=base(tmp_path)
+    app.add_project_member('P','B1','F1','beam')
     qt=QApplication.instance() or QApplication([])
     w=GraphicalTakeoffDialog(app_service=app,project_id="P")
     w.show()
     w.polygon_floor.setText("F1")
-    w.polygon_member.setText("M1")
+    w.polygon_member.setText("B1")
     digest=app.store.current_digest("P")
     QTest.mouseClick(w.w1_guide_button,Qt.MouseButton.LeftButton)
     panel=w._w1_dialog
@@ -236,10 +261,11 @@ def test_actual_qt_button_context_preview_reject_cancel_and_open_manual(tmp_path
     assert review is not None and review["rejected_questions"]
     QTest.mouseClick(panel.open_form_button,Qt.MouseButton.LeftButton)
     assert panel._context is not None
-    manual=w._w1_real_form
+    manual=w.beam_detail_panel
     assert manual is not None and manual.isVisible()
-    assert manual.project_id.text()=="P" and manual.floor_id.text()=="F1"
-    manual.close()
+    assert manual.project_id_getter()=="P" and manual.floor.text()=="F1"
+    assert manual.beam.text()=='B1'
+    w.beam_dock.close()
     QTest.mouseClick(panel.cancel_button,Qt.MouseButton.LeftButton)
     assert panel.active is None and not panel.review_button.isEnabled()
     QTest.mouseClick(panel.disable_button,Qt.MouseButton.LeftButton)
