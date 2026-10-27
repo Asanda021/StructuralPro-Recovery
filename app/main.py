@@ -691,8 +691,17 @@ def main()->int:
                 "projects":idx_projects,"takeoff":idx_quick,"drawing":idx_drawing,
                 "prices":idx_prices,"boq":idx_boq,"reports":idx_reports,
             }
-            if route=="boq":bpid.setText(record_project)
+            if route=="boq":
+                from app.project_search_panel import display_verified_boq_row
+                # Search only selects a persisted BOQ row. Never recalculate
+                # the estimate or mutate prices/financial workflow.
+                project=service.open_project(record_project)
+                display_verified_boq_row(project,entity_id,btable)
+                bpid.setText(record_project)
             if route=="takeoff":qpid.setText(record_project)
+            if route=="projects" and str(entity_id)!=record_project:
+                if not workspace_docks.focus_member(entity_id):
+                    so.setPlainText("رکورد پروژه باز شد، اما عضو/طبقه قابل هایلایت نیست: "+str(entity_id))
             if route=="project_controls":
                 # Open the existing guarded project-control workspace.
                 open_project_controls()

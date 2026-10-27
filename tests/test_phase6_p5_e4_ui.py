@@ -43,3 +43,35 @@ def test_search_does_not_read_other_project(tmp_path):
         assert app.open_project("P2")["name"]=="پروژه محرمانه"
     finally:
         dialog.close();app.store.close();qt.processEvents()
+
+def test_boq_navigation_selects_exact_stored_row_without_financial_recalc(tmp_path):
+    from PySide6.QtWidgets import QApplication,QTableWidget
+    from app.project_search_panel import display_verified_boq_row
+    qt=QApplication.instance() or QApplication([])
+    table=QTableWidget(0,6)
+    project={"id":"P","boq":[
+        {"row_id":"B1","description":"دیوار","quantity":"13.00","unit":"m2"},
+        {"row_id":"B2","description":"سقف","quantity":"2.50","unit":"m3"},
+    ]}
+    before=repr(project)
+    assert display_verified_boq_row(project,"B2",table)==1
+    assert table.currentRow()==1
+    assert table.item(1,1).text()=="سقف"
+    assert table.item(1,2).text()=="2.50"
+    assert table.item(1,5).text()=="بدون مبلغ مصوب"
+    assert repr(project)==before
+    table.close();qt.processEvents()
+
+
+def test_boq_duplicate_identity_refused_without_changing_table(tmp_path):
+    import pytest
+    from PySide6.QtWidgets import QApplication,QTableWidget
+    from app.project_search_panel import display_verified_boq_row
+    qt=QApplication.instance() or QApplication([])
+    table=QTableWidget(0,6)
+    project={"id":"P","boq":[{"row_id":"B1","description":"الف"},
+                             {"row_id":"B1","description":"ب"}]}
+    with pytest.raises(ValueError):
+        display_verified_boq_row(project,"B1",table)
+    assert table.rowCount()==0
+    table.close();qt.processEvents()

@@ -123,7 +123,11 @@ class ProjectStartWizard(QDialog):
         try:
             title=self.profile_name.text().strip()
             if not title or len(title)>80:raise ValueError("نام الگو لازم است")
-            code=self._base()
+            code=self.kind.currentData()
+            if isinstance(code,str) and code.startswith("custom:"):
+                old=next((x for x in self._profiles() if "custom:"+x["name"]==code),None)
+                if old is None:raise ValueError("الگوی شخصی یافت نشد")
+                code=old["base"]
             if code not in TEMPLATES:raise ValueError("الگوی پایه نامعتبر")
             ds=self._disciplines() or list(TEMPLATES[code]["disciplines"])
             profiles=[p for p in self._profiles() if p["name"]!=title]

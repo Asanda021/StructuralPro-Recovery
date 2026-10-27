@@ -95,6 +95,28 @@ class WorkspaceDockController:
         self.status.setText(("عضو" if kind=="member" else "طبقه")+" واقعی: "+
                             str(item.get("id",""))+" | "+str(item.get("kind",item.get("name",""))))
 
+    def focus_member(self, member_id):
+        """Select a stored member from the real project tree, never guessed geometry."""
+        pid=self.project_id()
+        project=self.service.open_project(pid)
+        if not isinstance(project,dict):return False
+        matches=[m for m in project.get("members",[])
+                 if str(m.get("id",""))==str(member_id)]
+        if len(matches)!=1:return False
+        self.refresh()
+        for index in range(self.tree.topLevelItemCount()):
+            floor=self.tree.topLevelItem(index)
+            for sub in range(floor.childCount()):
+                child=floor.child(sub)
+                if child.text(0)==str(member_id):
+                    floor.setExpanded(True)
+                    self.dock.show()
+                    child.setSelected(True)
+                    self.tree.setCurrentItem(child)
+                    self.tree.scrollToItem(child)
+                    return True
+        return False
+
     def _clamp_floating(self):
         if not self.dock.isFloating():return
         screen=self.window.screen()

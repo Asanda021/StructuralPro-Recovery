@@ -8,6 +8,38 @@ from PySide6.QtWidgets import (
 from core.search.global_search import search_project
 
 
+def display_verified_boq_row(project, row_id, table):
+    """Read-only presentation of an exact stored BOQ row; no pricing recalc."""
+    from PySide6.QtWidgets import QTableWidgetItem
+    from core.projects.project_model import _identity
+    if not isinstance(project,dict):raise ValueError("پروژه معتبر لازم است")
+    rows=project.get("boq",[])
+    if not isinstance(rows,list):raise ValueError("BOQ معتبر نیست")
+    def rid(r):
+        return next((r.get(k) for k in ("row_id","id","item_id")
+                     if r.get(k) not in (None,"")),None)
+    selected=[i for i,r in enumerate(rows)
+              if isinstance(r,dict) and _identity(rid(r))==_identity(row_id)]
+    if not _identity(row_id) or len(selected)!=1:
+        raise ValueError("هویت ردیف BOQ مبهم یا مفقود است؛ ناوبری مسدود شد")
+    # Render the existing project rows before selection: never call estimate
+    # recalculation as a side effect of search.
+    prepared=[]
+    for i,row in enumerate(rows):
+        if not isinstance(row,dict):raise ValueError("ردیف BOQ معتبر نیست")
+        prepared.append([
+            row.get("item_no",i+1),row.get("description",""),
+            row.get("quantity","نامشخص"),row.get("unit",""),
+            row.get("price_code",""),row.get("total","بدون مبلغ مصوب")])
+    table.setRowCount(len(prepared))
+    for i,values in enumerate(prepared):
+        for j,value in enumerate(values):
+            table.setItem(i,j,QTableWidgetItem(str(value)))
+    table.selectRow(selected[0])
+    table.scrollToItem(table.item(selected[0],0))
+    return selected[0]
+
+
 class ProjectSearchDialog(QDialog):
     def __init__(self, service, project_id, *, parent=None, initial_query="", on_navigate=None):
         super().__init__(parent)
