@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.420" timestamp="2026-10-27T11:45:03.767097+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p5_e3_ui" name="test_corrupt_profile_storage_is_not_silently_overwritten" time="0.066"><failure message="AssertionError: saving a profile silently discards unreadable existing profiles&#10;assert not True&#10; +  where True = save_profile()&#10; +    where save_profile = &lt;app.project_start_wizard.ProjectStartWizard(0xf29e320, name=&quot;P6E3ProjectStartWizard&quot;) at 0x7fc0bc05cd40&gt;.save_profile">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-9/test_corrupt_profile_storage_i0')
+
+    def test_corrupt_profile_storage_is_not_silently_overwritten(tmp_path):
+        from PySide6.QtCore import QSettings
+        qt=QApplication.instance() or QApplication([])
+        settings=QSettings(str(tmp_path/'profile.ini'),QSettings.IniFormat)
+        broken='{"old_profile": unfinished'
+        settings.setValue('e3/custom',broken);settings.sync()
+        app=StructuralProApp(tmp_path/'db');ui=ProjectStartWizard(app,settings=settings)
+        try:
+            ui.kind.setCurrentIndex(ui.kind.findData('residential'))
+            ui.profile_name.setText('جدید')
+&gt;           assert not ui.save_profile(), 'saving a profile silently discards unreadable existing profiles'
+E           AssertionError: saving a profile silently discards unreadable existing profiles
+E           assert not True
+E            +  where True = save_profile()
+E            +    where save_profile = &lt;app.project_start_wizard.ProjectStartWizard(0xf29e320, name="P6E3ProjectStartWizard") at 0x7fc0bc05cd40&gt;.save_profile
+
+tests/test_phase6_p5_e3_ui.py:19: AssertionError</failure></testcase></testsuite></testsuites>

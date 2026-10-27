@@ -83,6 +83,28 @@ class StructuralProApp:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
         self.store.save(project_id,project); return self.store.get(project_id)
 
+    def preview_project_start(self, template_code: str, *, project_id: str, name: str,
+                              floor_count: int, floor_names=None, disciplines=None):
+        from core.projects.start_templates import preview_project_start
+        return preview_project_start(template_code, project_id=project_id, name=name,
+                                     floor_count=floor_count, floor_names=floor_names,
+                                     disciplines=disciplines)
+
+    def create_project_from_template(self, template_code: str, *, project_id: str, name: str,
+                                     floor_count: int, floor_names=None, disciplines=None):
+        from core.projects.start_templates import preview_project_start, project_payload
+        preview=self.preview_project_start(template_code, project_id=project_id, name=name,
+                                           floor_count=floor_count, floor_names=floor_names,
+                                           disciplines=disciplines)
+        from core.projects.project_model import _identity
+        for item in self.store.list():
+            if _identity(item.get("id"))==_identity(project_id):
+                raise ValueError("شناسه پروژه مشابه قبلاً وجود دارد.")
+            if _identity(item.get("name"))==_identity(name):
+                raise ValueError("نام پروژه مشابه قبلاً وجود دارد.")
+        self.store.save(project_id, project_payload(preview), create_only=True)
+        return self.store.get(project_id)
+
     def open_project(self,project_id:str)->dict[str,Any]|None: return self.store.get(project_id)
 
 
@@ -833,6 +855,11 @@ class StructuralProApp:
     def save_manual_formula(self, project_id, row_id, data, *, expected_revision, reason):
         from core.takeoff.manual_formula_register import save
         return save(self,project_id,row_id,data,expected_revision=expected_revision,reason=reason)
+
+    def preview_bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions):
+        from core.takeoff.manual_formula_register import preview_bulk_edit
+        return preview_bulk_edit(self,project_id,row_ids,changes=changes,
+                                 expected_revisions=expected_revisions)
 
     def bulk_edit_manual_formulas(self, project_id, row_ids, *, changes, expected_revisions, reason):
         from core.takeoff.manual_formula_register import bulk_edit

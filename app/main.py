@@ -155,6 +155,19 @@ def main()->int:
             pout.setText("پروژه با موفقیت ذخیره شد."); refresh_projects(); dashboard_page.refresh()
         except Exception as e: QMessageBox.critical(w,"خطا",str(e))
     create.clicked.connect(create_project)
+    def open_start_wizard():
+        from app.project_start_wizard import ProjectStartWizard
+        def created(new_id):
+            pid.setText(new_id)
+            refresh_projects()
+            dashboard_page.refresh()
+            pout.setText("پروژه ساختاری مستند ایجاد شد: "+new_id)
+        wizard=ProjectStartWizard(service,parent=w,on_created=created,settings=desktop_preferences.settings)
+        wizard.exec()
+    template_create=QPushButton("پروژه‌ساز مرحله‌ای با چهار الگو")
+    template_create.setObjectName("E3OpenProjectStartWizard")
+    template_create.clicked.connect(open_start_wizard)
+    v.addWidget(template_create)
     def open_selected():
         if not plist.currentItem(): return
         selected=plist.currentItem().text().split(" | ",1)[0]; pid.setText(selected)
@@ -349,7 +362,18 @@ def main()->int:
 
     inspect.clicked.connect(inspect_drawing)
     confirm.clicked.connect(confirm_drawing)
-    graphical.clicked.connect(lambda: GraphicalTakeoffDialog(w,file_edit.text().strip(), app_service=service, project_id=qpid.text().strip() or pid.text().strip()).exec())
+    def open_docked_drawing():
+        project_id=qpid.text().strip() or pid.text().strip()
+        if project_id!=pid.text().strip():
+            QMessageBox.warning(w,'فضای کار','ابتدا همان پروژه را در فضای کار انتخاب کنید.')
+            return
+        dialog=GraphicalTakeoffDialog(w,file_edit.text().strip(),app_service=service,project_id=project_id)
+        try:
+            workspace_docks.attach_view('2d',dialog,project_id)
+        except Exception as exc:
+            dialog.close()
+            QMessageBox.warning(w,'فضای کار',str(exc))
+    graphical.clicked.connect(open_docked_drawing)
     pages.addWidget(p); idx_drawing=pages.count()-1
 
     # Pricing — professional pricebook workspace with real user-file import.
@@ -667,9 +691,55 @@ def main()->int:
     sm=QWidget(); smv=QVBoxLayout(sm); sq=QLineEdit(); sq.setPlaceholderText("جستجوی پروژه، متره، آیتم یا کد فهرست‌بها")
     sb=QPushButton("جستجوی سراسری"); so=QTextEdit(); so.setReadOnly(True); smv.addWidget(sq); smv.addWidget(sb); smv.addWidget(so)
     def do_search():
-        import json
-        project=service.open_project(pid.text().strip()) if pid.text().strip() else None
-        so.setPlainText(json.dumps(search_project(project,sq.text()) if project else [],ensure_ascii=False,indent=2))
+        from app.project_search_panel import ProjectSearchDialog
+        project_id=pid.text().strip()
+        if not project_id:
+            so.setPlainText("ابتدا پروژه واقعی را در تب پروژه‌ها انتخاب کنید.")
+            return
+        def route_result(route,record_project,entity_id):
+            pid.setText(record_project)
+            mapping={
+                "projects":idx_projects,"takeoff":idx_quick,"drawing":idx_drawing,
+                "prices":idx_prices,"boq":idx_boq,"reports":idx_reports,
+            }
+            if route=="boq":
+                from app.project_search_panel import display_verified_boq_row
+                # Search only selects a persisted BOQ row. Never recalculate
+                # the estimate or mutate prices/financial workflow.
+                project=service.open_project(record_project)
+                display_verified_boq_row(project,entity_id,btable)
+                bpid.setText(record_project)
+            if route=="takeoff":qpid.setText(record_project)
+            if route=="manual_formula":
+                from app.verified_search_navigation import prepare_verified_formula_view
+                prepare_verified_formula_view(service,record_project,entity_id,parent=w).exec()
+            if route=="drawing":
+                from app.verified_search_navigation import prepare_verified_drawing_view
+                view=prepare_verified_drawing_view(service,record_project,entity_id,parent=w)
+                try:workspace_docks.attach_view('2d',view,record_project)
+                except Exception:
+                    view.close()
+                    raise
+            if route=="projects" and str(entity_id)!=record_project:
+                if not workspace_docks.focus_member(entity_id):
+                    so.setPlainText("رکورد پروژه باز شد، اما عضو/طبقه قابل هایلایت نیست: "+str(entity_id))
+            if route=="project_controls":
+                from app.verified_search_navigation import prepare_verified_controls_view
+                prepare_verified_controls_view(service,record_project,entity_id,parent=w).exec()
+            elif route in mapping:
+                pages.setCurrentIndex(mapping[route])
+            so.setPlainText("رکورد مستند انتخاب شد: "+str(entity_id)+
+                            " | عملیات اصلاح فقط در فرم اصلی و با تأیید مستقل انجام می‌شود.")
+        def open_verified_model(record_project, member_id):
+            from app.verified_search_navigation import prepare_verified_member_view
+            # The existing source IFC and independent review are both required.
+            workspace=prepare_verified_member_view(service,record_project,member_id,parent=w)
+            try:workspace.exec()
+            finally:workspace.close()
+        window=ProjectSearchDialog(service,project_id,parent=w,
+                                   initial_query=sq.text(),on_navigate=route_result,
+                                   on_open_model=open_verified_model)
+        window.exec()
     sb.clicked.connect(do_search)
     sheets=SheetRegistry(); markups=MarkupStore()
     smv.addWidget(QLabel("پشتیبانی چندنقشه و Markup در هسته پروژه فعال است."))
@@ -1089,6 +1159,7 @@ def main()->int:
             add_command("📊 گزارش", lambda: pages.setCurrentIndex(idx_reports))
         elif index == idx_projects:
             add_command("➕ ایجاد پروژه", create.click, True)
+            add_command("پروژه‌ساز چهارالگویی", open_start_wizard)
             add_command("📂 بازکردن پروژه", openb.click)
             add_command("ساختار، زمان‌بندی و پیشرفت", open_project_controls)
             add_command('منابع و دفتر کارگاه',open_site_operations)
@@ -1177,6 +1248,13 @@ def main()->int:
     shell.addWidget(content,1)
     layout.addLayout(shell,1)
     w.setCentralWidget(root)
+    from app.workspace_docks import WorkspaceDockController
+    workspace_docks=WorkspaceDockController(
+        w,desktop_preferences.settings,service,lambda:pid.text().strip())
+    presentation_row.addWidget(workspace_docks.toggle_button)
+    presentation_row.addWidget(workspace_docks.boq_toggle)
+    pid.textChanged.connect(lambda *_:workspace_docks.restore())
+    app.aboutToQuit.connect(lambda:workspace_docks.save() if pid.text().strip() else None)
     from app.desktop_shell import ContextRibbonController
     ribbon_controller=ContextRibbonController(ribbon_scroll, desktop_preferences, w)
     presentation_row.insertWidget(3, ribbon_controller.toggle_button)

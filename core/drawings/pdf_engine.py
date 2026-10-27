@@ -35,7 +35,10 @@ class PDFDrawingEngine:
         if self._doc is not None:
             return self
         try:
-            import fitz
+            try:
+                import pymupdf as fitz
+            except ModuleNotFoundError:
+                import fitz  # Compatibility with older supported PyMuPDF releases.
         except ImportError as exc:
             raise RuntimeError("برای نمایش واقعی PDF، وابستگی PyMuPDF باید نصب باشد.") from exc
         doc = None

@@ -1584,7 +1584,19 @@ class GraphicalTakeoffDialog(QDialog):
                     self.status.setText('انتخاب سه‌بعدی نامعتبر: '+str(exc))
             window.memberSelected.connect(link_back)
             self._ifc_3d_dialog = window
-            window.show()
+            selected_gid=getattr(self,"_ifc_selected_global_id",None)
+            verified=getattr(self,"_verified_project_selection",None)
+            if selected_gid and verified is not None:
+                self._check_live_four_way_context(verified)
+                chosen=verified.resolve(origin="2d",identifier=selected_gid,
+                    source_sha256=scene.source_sha256,revision=scene.revision)
+                if chosen.status=="linked" and len(chosen.global_ids)==1:
+                    window.canvas.choose_member(selected_gid)
+            workspace=getattr(self,'_workspace_controller',None)
+            if workspace is not None:
+                workspace.attach_view('3d',window,self.project_id_input.text().strip())
+            else:
+                window.show()
             self.status.setText('نمای سه‌بعدی از هندسهٔ معتبر IFC باز شد؛ متره فقط‌خواندنی است.')
         except Exception as exc:
             self.status.setText('نمای سه‌بعدی باز نشد: '+str(exc))

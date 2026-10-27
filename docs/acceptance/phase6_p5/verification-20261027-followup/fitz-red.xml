@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.787" timestamp="2026-10-27T11:51:32.166208+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_opens_exact_document_only_with_live_sha_and_revision" time="1.295"><failure message="FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-18/test_search_opens_exact_docume0')
+
+    def test_search_opens_exact_document_only_with_live_sha_and_revision(tmp_path):
+        from PySide6.QtWidgets import QApplication
+        from core.platform.application import StructuralProApp
+        from hashlib import sha256
+        from reportlab.pdfgen.canvas import Canvas
+        import app.verified_search_navigation as navigation
+        import pytest
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('اسناد','P')
+        path=tmp_path/'plan.pdf';c=Canvas(str(path));c.drawString(30,30,'synthetic QA document');c.save()
+        project=service.open_project('P')
+        project['drawings']=[{'id':'D1','name':'پلان آزمایشی','path':str(path),
+                              'source_sha256':sha256(path.read_bytes()).hexdigest(),'revision':'R1'}]
+        service.store.save('P',project,expected_digest=service.store.current_digest('P'))
+        try:
+            assert hasattr(navigation,'prepare_verified_drawing_view'), 'document search has no exact source handoff'
+            before=service.store.current_digest('P')
+&gt;           view=navigation.prepare_verified_drawing_view(service,'P','D1')
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase6_p5_e4_ui.py:134: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+app/verified_search_navigation.py:107: in prepare_verified_drawing_view
+    workspace.open_drawing(str(source))
+app/graphical_takeoff.py:864: in open_drawing
+    self.viewer.open(candidate)
+core/drawings/viewer_model.py:52: in open
+    with PDFDrawingEngine(p) as engine:
+         ^^^^^^^^^^^^^^^^^^^
+core/drawings/pdf_engine.py:103: in __enter__
+    return self.open()
+           ^^^^^^^^^^^
+core/drawings/pdf_engine.py:38: in open
+    import fitz
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    import warnings
+    
+    # pylint: disable=wildcard-import,unused-import,unused-wildcard-import,no-name-in-module
+    from pymupdf import *
+    from pymupdf import _as_fz_document
+    from pymupdf import _as_fz_page
+    from pymupdf import _as_pdf_document
+    from pymupdf import _as_pdf_page
+    from pymupdf import _log_items
+    from pymupdf import _log_items_active
+    from pymupdf import _log_items_clear
+    from pymupdf import __version__
+    from pymupdf import __doc__
+    from pymupdf import _globals
+    from pymupdf import _g_out_message
+    
+&gt;   warnings.warn(
+            'The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.',
+            FutureWarning,
+            )
+E   FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+
+/tmp/sp-p6/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning</failure></testcase></testsuite></testsuites>

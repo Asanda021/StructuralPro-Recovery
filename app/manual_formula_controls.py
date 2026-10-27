@@ -185,9 +185,33 @@ def attach(d,root):
         if any(d.formula_table.item(i.row(),0).data(Qt.UserRole)!='formula' for i in indices):raise ValueError('ویرایش گروهی فرمول نباید با ورودی تخصصی مخلوط شود')
         keys=[d.formula_table.item(i.row(),0).text() for i in indices];register=rows();return keys,{k:register[k]['revision'] for k in keys}
     def bulk():
-        keys,versions=selected_many();name=__import__('core.takeoff.manual_form_fields',fromlist=['canonical']).canonical(d.formula_bulk_name.text().strip());changes={'variables':{name:d.formula_bulk_value.text().strip()}}
-        if d.formula_bulk_unit.currentData() is not None:changes['variable_units']={name:d.formula_bulk_unit.currentData()}
-        d.service.bulk_edit_manual_formulas(d.project_id.text().strip(),keys,changes=changes,expected_revisions=versions,reason=d.formula_reason.text())
+        keys,versions=selected_many()
+        name=__import__('core.takeoff.manual_form_fields',fromlist=['canonical']).canonical(d.formula_bulk_name.text().strip())
+        changes={'variables':{name:d.formula_bulk_value.text().strip()}}
+        if d.formula_bulk_unit.currentData() is not None:
+            changes['variable_units']={name:d.formula_bulk_unit.currentData()}
+        pid=d.project_id.text().strip()
+        reason=d.formula_reason.text().strip()
+        if not reason:raise ValueError('علت ویرایش گروهی لازم است')
+        preview=d.service.preview_bulk_edit_manual_formulas(pid,keys,changes=changes,
+                                                             expected_revisions=versions)
+        details='\\n'.join(
+            f"{r['row_id']} | {r['old_quantity']} → {r['new_quantity']} {r['unit']} | "
+            f"نسخه {r['revision']} → پیش‌نویس"
+            for r in preview['rows'])
+        response=QMessageBox.question(d,'بازبینی ویرایش گروهی',
+            'فقط پارامتر انتخاب‌شده تغییر می‌کند؛ ردیف‌های بازبینی‌شده به پیش‌نویس برمی‌گردند. '
+            'بدون این تأیید هیچ ثبت یا تغییری انجام نمی‌شود.\\n'+details,
+            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if response!=QMessageBox.StandardButton.Yes:
+            d.status.setText('ویرایش گروهی لغو شد؛ داده‌ها تغییر نکردند')
+            return
+        if d.service.store.current_digest(pid)!=preview['cas_digest']:
+            raise RuntimeError('نسخه پروژه در فاصله پیش‌نمایش و تأیید تغییر کرده است')
+        d.service.bulk_edit_manual_formulas(pid,keys,changes=changes,
+                                             expected_revisions=versions,reason=reason)
+        d.status.setText(str(len(keys))+' ردیف با کنترل نسخه در دفتر اصلی ویرایش شد؛ تأیید BOQ انجام نشد')
     def copy_floor():
         keys,versions=selected_many();d.service.copy_manual_formulas(d.project_id.text().strip(),keys,floor=d.formula_copy_floor.text(),expected_revisions=versions,reason=d.formula_reason.text())
     def export(fmt):

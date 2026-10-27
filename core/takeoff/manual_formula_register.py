@@ -153,6 +153,56 @@ def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependenc
 def save(service,pid,key,data,*,expected_revision,reason):
     return save_many(service,pid,{key:data},expected_revisions={key:expected_revision},reason=reason)[key]
 
+def preview_bulk_edit(service,pid,keys,*,changes,expected_revisions):
+    """Preview exact Decimal re-evaluation on a detached copy; no writes."""
+    if not keys or len(keys)!=len(set(keys)) or set(keys)!=set(expected_revisions):
+        raise ValueError('انتخاب و نسخه‌های گروهی باید صریح و یکتا باشند')
+    if not isinstance(changes,dict) or not changes or set(changes)-{'variables','variable_units'}:
+        raise ValueError('پیش‌نمایش فقط ویرایش پارامتر صریح و واحد موجود را می‌پذیرد')
+    project,digest=read(service,pid)
+    register=verified(project)
+    original=evaluate_rows(graph(register))
+    candidate=deepcopy(register)
+    for key in keys:
+        if key not in register:raise ValueError('ردیف انتخاب‌شده وجود ندارد')
+        row=register[key]
+        revision(expected_revisions[key],row['revision'])
+        if row['status']=='committed':raise ValueError('ویرایش گروهی ردیف قطعی نیازمند اصلاحیه رسمی است')
+        d=candidate[key]['data']
+        for field,vals in changes.items():
+            if not isinstance(vals,dict) or not vals or set(vals)-set(d.get(field,{})):
+                raise ValueError('پارامتر یا واحد ناشناخته در گروه وجود دارد')
+            d[field].update(vals)
+        candidate[key]['data']=clean(d)
+        # Recheck the canonical IFC approval/quantity contract during PREVIEW,
+        # rather than postponing a provenance failure until Save/Apply.
+        from core.drawings.ifc_pipeline import validate_quantity_handoff
+        validate_quantity_handoff(service,project,candidate[key]['data'])
+        if candidate[key]['data'].get('ifc_evidence'):
+            # QTO belonging to a reviewed identity is immutable by generic
+            # group edit. Only the specialist amended-quantity workflow may
+            # propose a different physical allocation.
+            if candidate[key]['data']!=row['data']:
+                raise ValueError('ویرایش گروهی QTO/هویت IFC نیازمند اصلاحیه تخصصی است')
+    projected=evaluate_rows(graph(candidate))
+    # A changed dependency may not invalidate any previously committed result.
+    for key,row in register.items():
+        if row['status']=='committed' and number(original[key],'مقدار')!=number(projected[key],'مقدار'):
+            raise ValueError('اصلاح پیشنهادی مقدار ردیف قطعی وابسته را تغییر می‌دهد')
+    rows=[]
+    for key in keys:
+        old=register[key]
+        rows.append({
+            'row_id':key, 'old_quantity':str(original[key]),
+            'new_quantity':str(projected[key]),
+            'unit':old['data']['unit'], 'revision':old['revision'],
+            'status_before':old['status'], 'status_after':'draft',
+            'source_id':old['data']['source_id'],
+        })
+    return {'project_id':pid,'cas_digest':digest,'rows':rows,
+            'boq_write':False,'preview_only':True,'review_required':True}
+
+
 def bulk_edit(service,pid,keys,*,changes,expected_revisions,reason):
     reg=load(service,pid)
     if not keys or len(keys)!=len(set(keys)) or set(keys)!=set(expected_revisions):raise ValueError('انتخاب و نسخه‌ها باید یکتا باشند')

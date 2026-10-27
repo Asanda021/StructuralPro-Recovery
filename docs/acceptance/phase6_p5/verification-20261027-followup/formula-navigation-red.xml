@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.511" timestamp="2026-10-27T11:47:45.455579+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_manual_formula_opens_same_record_in_original_editor" time="0.124"><failure message="AssertionError: formula register key is lost from navigation identity&#10;assert ([{'kind': 'item', 'text': 'عنوان یکتای آزمایشی', 'data': {'basis': 'ورودی صریح مصنوعی؛ طول و عرض و ارتفاع متر', 'deductions': [], 'expression': 'length*width*height', 'family': 'column', ...}, 'project_id': 'P', ...}] and None == 'ROW1')&#10; +  where [{'kind': 'item', 'text': 'عنوان یکتای آزمایشی', 'data': {'basis': 'ورودی صریح مصنوعی؛ طول و عرض و ارتفاع متر', 'deductions': [], 'expression': 'length*width*height', 'family': 'column', ...}, 'project_id': 'P', ...}] = &lt;app.project_search_panel.ProjectSearchDialog(0x3793cd90, name=&quot;E4GlobalProjectSearch&quot;) at 0x7f63c816dfc0&gt;.results">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-12/test_search_manual_formula_ope0')
+
+    def test_search_manual_formula_opens_same_record_in_original_editor(tmp_path):
+        from PySide6.QtWidgets import QApplication
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from core.platform.application import StructuralProApp
+        from test_manual_formula_persistence import data
+        from app.project_search_panel import ProjectSearchDialog
+        import app.verified_search_navigation as navigation
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('جستجوی متره','P')
+        service.save_manual_formula('P','ROW1',data(title='عنوان یکتای آزمایشی'),expected_revision=0,reason='ورودی صریح')
+        opened=[]
+        search=ProjectSearchDialog(service,'P',initial_query='عنوان یکتای آزمایشی',
+            on_navigate=lambda route,pid,identity:opened.append(navigation.prepare_verified_formula_view(service,pid,identity)))
+        try:
+&gt;           assert search.results and search.results[0]['entity_id']=='ROW1', 'formula register key is lost from navigation identity'
+E           AssertionError: formula register key is lost from navigation identity
+E           assert ([{'kind': 'item', 'text': 'عنوان یکتای آزمایشی', 'data': {'basis': 'ورودی صریح مصنوعی؛ طول و عرض و ارتفاع متر', 'deductions': [], 'expression': 'length*width*height', 'family': 'column', ...}, 'project_id': 'P', ...}] and None == 'ROW1')
+E            +  where [{'kind': 'item', 'text': 'عنوان یکتای آزمایشی', 'data': {'basis': 'ورودی صریح مصنوعی؛ طول و عرض و ارتفاع متر', 'deductions': [], 'expression': 'length*width*height', 'family': 'column', ...}, 'project_id': 'P', ...}] = &lt;app.project_search_panel.ProjectSearchDialog(0x3793cd90, name="E4GlobalProjectSearch") at 0x7f63c816dfc0&gt;.results
+
+tests/test_phase6_p5_e4_ui.py:193: AssertionError</failure></testcase></testsuite></testsuites>
