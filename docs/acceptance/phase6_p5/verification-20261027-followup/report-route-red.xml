@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.493" timestamp="2026-10-27T11:54:39.846469+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p5_e4_ui" name="test_report_without_specialist_handoff_stays_explicitly_read_only" time="0.114"><failure message="AssertionError: unsupported report must not masquerade as an opened specialist record&#10;assert not [('reports', 'P', 'R1')]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-22/test_report_without_specialist0')
+
+    def test_report_without_specialist_handoff_stays_explicitly_read_only(tmp_path):
+        from PySide6.QtWidgets import QApplication
+        from core.platform.application import StructuralProApp
+        from app.project_search_panel import ProjectSearchDialog
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('گزارش','P')
+        project=service.open_project('P');project['reports']=[{'id':'R1','title':'گزارش فاقد مسیر تخصصی'}]
+        service.store.save('P',project,expected_digest=service.store.current_digest('P'))
+        calls=[];search=ProjectSearchDialog(service,'P',initial_query='فاقد مسیر تخصصی',on_navigate=lambda *args:calls.append(args))
+        try:
+            search.list.setCurrentRow(0);assert search.open_record() is not None
+&gt;           assert not calls, 'unsupported report must not masquerade as an opened specialist record'
+E           AssertionError: unsupported report must not masquerade as an opened specialist record
+E           assert not [('reports', 'P', 'R1')]
+
+tests/test_phase6_p5_e4_ui.py:215: AssertionError</failure></testcase></testsuite></testsuites>
