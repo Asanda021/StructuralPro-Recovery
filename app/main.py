@@ -713,6 +713,13 @@ def main()->int:
             if route=="manual_formula":
                 from app.verified_search_navigation import prepare_verified_formula_view
                 prepare_verified_formula_view(service,record_project,entity_id,parent=w).exec()
+            if route=="drawing_session":
+                from app.verified_search_navigation import prepare_verified_drawing_session_view
+                view=prepare_verified_drawing_session_view(service,record_project,entity_id,parent=w)
+                try:workspace_docks.attach_view('2d',view,record_project)
+                except Exception:
+                    view.close()
+                    raise
             if route=="drawing":
                 from app.verified_search_navigation import prepare_verified_drawing_view
                 view=prepare_verified_drawing_view(service,record_project,entity_id,parent=w)

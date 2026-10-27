@@ -181,3 +181,49 @@ def prepare_verified_member_view(service, project_id, member_id, parent=None):
     except Exception:
         workspace.close()
         raise
+
+
+def prepare_verified_drawing_session_view(service, project_id, session_id, parent=None):
+    """Restore an exact canonical session in the original viewer, without saving."""
+    from core.projects.project_model import _identity
+    from core.drawings.takeoff_session import DrawingTakeoffSession
+    if not _identity(project_id) or not _identity(session_id):
+        raise ValueError('شناسه پروژه و نشست معتبر لازم است.')
+    digest = service.store.current_digest(project_id)
+    record = service.load_drawing_takeoff_session(project_id, session_id)
+    if record.get('id') != session_id or type(record.get('revision')) is not int or record['revision'] < 1:
+        raise ValueError('هویت یا نسخه نشست معتبر نیست.')
+    restored = DrawingTakeoffSession.from_dict(record['session'])
+    source = Path(restored.drawing_source)
+    expected = record.get('source_sha256')
+    if (not isinstance(expected, str) or len(expected) != 64 or
+            restored.source_sha256 != expected or record.get('drawing_source') != str(source)):
+        raise ValueError('هش یا هویت منبع نشست معتبر نیست.')
+    if any(part.is_symlink() for part in (source, *source.parents)):
+        raise ValueError('مسیر پیوندی سند مجاز نیست.')
+    if source.suffix.lower() not in ('.pdf', '.dxf') or not source.is_file():
+        raise ValueError('مقصد نشست فقط PDF یا DXF موجود است؛ DWG پشتیبانی نشده است.')
+    if sha256(source.read_bytes()).hexdigest() != expected:
+        raise ValueError('هش منبع نشست تغییر کرده است.')
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    view = GraphicalTakeoffDialog(parent, app_service=service, project_id=project_id)
+    try:
+        view.open_drawing(str(source))
+        if view.viewer.kind == 'cad' and restored.cad_unit_evidence:
+            from core.drawings.dwg_takeoff import apply_documented_units
+            view.cad_document = apply_documented_units(view.cad_document, restored.cad_unit_evidence)
+            view.viewer.cad_document = view.cad_document
+        view.session = restored
+        view.canvas.session = restored
+        view.persisted_project_id = project_id
+        view.persisted_session_id = record['id']
+        view.persisted_session_revision = record['revision']
+        view.load_page(restored.current_page)
+        if (str(view.viewer.path) != str(source) or
+                sha256(source.read_bytes()).hexdigest() != expected or
+                service.store.current_digest(project_id) != digest):
+            raise RuntimeError('منبع یا نسخه پروژه هنگام ناوبری نشست تغییر کرد.')
+        return view
+    except Exception:
+        view.close()
+        raise

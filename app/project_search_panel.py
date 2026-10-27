@@ -163,7 +163,7 @@ class ProjectSearchDialog(QDialog):
                 "route":record["route"],
                 "record":record["data"],
             },ensure_ascii=False,indent=2,default=str))
-            supported=record['route'] in {'projects','boq','drawing','project_controls','manual_formula'}
+            supported=record['route'] in {'projects','boq','drawing','drawing_session','project_controls','manual_formula'}
             if self.on_navigate and supported and record["entity_id"]:
                 self.on_navigate(record["route"],record["project_id"],record["entity_id"])
             self.status.setText("رکورد تأییدشده از SQLite بازخوانی شد؛ هیچ مقدار یا تأییدی ثبت نشد." if supported else

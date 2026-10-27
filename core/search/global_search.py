@@ -86,6 +86,8 @@ def search_project(project, query, *, limit=100):
             rec("wbs",row,keys=("id","title","name","wbs_id"),route="project_controls")
     for row in rows(project.get("reports")):
         rec("report",row,keys=("id","title","name","path"),route="reports")
+    for row in rows(project.get("drawing_sessions")):
+        rec("drawing_session",row,keys=("id","drawing_source"),route="drawing_session")
     register=project.get("manual_formula_register")
     if isinstance(register,dict):
         for key,row in register.items():
