@@ -1392,3 +1392,126 @@ def test_w1_specialist_blocks_stale_secondary_writes(tmp_path,family,monkeypatch
     reopened=StructuralProApp(tmp_path/'db')
     try:assert reopened.open_project('P')==expected
     finally:reopened.store.close()
+
+
+@pytest.mark.parametrize('family,change',[(family,change) for family in ['beam','column'] for change in [None,'bytes','revision','proposal','stale_record']]+[('beam','dirty_draft')])
+def test_w1_parsed_ifc_manual_identity_full_original_flow(tmp_path,monkeypatch,family,change):
+    """Synthetic reviewed IFC identity; quantities remain original manual draft data."""
+    from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from test_phase2_priority5_ifc import model_file
+    from core.collaboration.workspace import User
+    if family=='beam':
+        from test_stirrup_zones import complete_beam
+        specimen=complete_beam();member='B1';ifc_type='IfcBeam'
+    else:
+        from test_column_stage22 import column
+        specimen=column();member='C1';ifc_type='IfcColumn'
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('Synthetic IFC identity manual quantities','P')
+    service.add_project_floor('P','Synthetic floor',level='L1');service.add_project_member('P',member,'L1',family)
+    if family=='beam':service.save_beam_detail_draft('P',specimen,expected_revision=0)
+    else:service.save_structural_member_draft('P',specimen,expected_revision=0)
+    path=tmp_path/'synthetic.ifc';model,objects=model_file(path)
+    gid=next(obj.GlobalId for obj in objects if obj.is_a()==ifc_type)
+    service.collaboration.add_user(User('author','Synthetic author','editor'));service.collaboration.add_user(User('reviewer','Synthetic independent reviewer','reviewer'))
+    proof=tmp_path/'mapping.txt';proof.write_text('Explicit synthetic '+family+' identity only; no quantity transfer')
+    proposal=service.save_ifc_identity_proposal('P',str(path),revision='R1',global_id=gid,floor_id='L1',member_id=member,author='author',reference='Explicit synthetic mapping',expected_digest=service.store.current_digest('P'),source_sha256=sha256(path.read_bytes()).hexdigest())
+    service.review_ifc_identity('P',proposal_id=proposal['id'],reviewer='reviewer',evidence_path=str(proof),evidence_sha256=sha256(proof.read_bytes()).hexdigest(),note='Identity only; original manual specialist draft',expected_digest=service.store.current_digest('P'))
+    warnings=[];errors=[];seen=[]
+    monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1');assert drawing.open_verified_crossview() is not None
+    drawing.highlight_ifc_member(gid);drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+    context=drawing.contextual_w1_context(family)
+    assert context.review_status=='approved' and context.source_sha256==sha256(path.read_bytes()).hexdigest()
+    assert context.member_id==member and context.project_id=='P' and context.revision=='R1'
+    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
+    def click(button):
+        tabs=button.window().findChild(QTabWidget)
+        if tabs:
+            for i in range(tabs.count()):
+                if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+        parent=button.parentWidget()
+        while parent:
+            if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+            parent=parent.parentWidget()
+        qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+    watcher=QTimer(wizard)
+    def answer():
+        message=qt.activeModalWidget()
+        if isinstance(message,QMessageBox):
+            try:button=message.button(QMessageBox.StandardButton.Yes)
+            except Exception as exc:errors.append(exc);button=None
+            finally:
+                if button is not None:QTest.mouseClick(button,Qt.MouseButton.LeftButton)
+                else:message.reject()
+    watcher.timeout.connect(answer);watcher.start(20)
+    def complete(panel):
+        controls=panel.column_controls if family=='column' else {'load':panel.load_button,'save':panel.save_button,'preview':panel.preview_button,'commit':panel.commit_button}
+        click(controls['load']);assert not warnings,warnings
+        click(controls['save']);assert not warnings,warnings
+        assert not service.open_project('P')['boq']
+        assert drawing.open_verified_crossview() is not None
+        click(controls['preview']);assert not warnings,warnings
+        if family=='beam':assert 'پیش‌نمایش:' in panel.message.text()
+        # Beam Preview intentionally saves a draft. Refresh is a real explicit
+        # user action between writes, never an automatic stale-CAS bypass.
+        assert drawing.open_verified_crossview() is not None
+        if family=='column':
+            click(controls['review']);assert not warnings,warnings
+            click(controls['save']);assert not warnings,warnings
+            assert drawing.open_verified_crossview() is not None
+        if change=='bytes':path.write_bytes(path.read_bytes()+b'\n/* changed source */')
+        elif change=='revision':drawing.ifc_revision.setText('R2')
+        elif change=='proposal':assert wizard.preview() is not None
+        elif change=='stale_record':
+            if family=='beam':
+                old=service.get_beam_detail('P','L1',member)
+                service.save_beam_detail_draft('P',old['data'],expected_revision=old['revision'])
+            else:
+                old=service.get_structural_member('P','column','L1',member)
+                service.save_structural_member_draft('P',old['data'],expected_revision=old['revision'])
+            # Explicitly refresh the project bridge, retaining the editor's
+            # stale member revision. Member CAS must independently reject it.
+            assert drawing.open_verified_crossview() is not None
+        elif change=='dirty_draft':panel.geometry['width'].setText('.4')
+        baseline=service.store.current_digest('P')
+        click(controls['commit'])
+        if change:
+            assert warnings,warnings
+            assert not service.open_project('P')['boq']
+            assert service.store.current_digest('P')==baseline
+            if change=='dirty_draft':
+                # Editing an IFC-bound manual draft must not silently reuse
+                # the old approved quantities or invent a viewport mapping.
+                saved=service.get_beam_detail('P','L1',member)
+                assert str(saved['data']['geometry']['width']) in ('.3','0.3')
+            seen.append(family)
+            return
+        else:assert not warnings,warnings
+        assert service.open_project('P')['boq']
+        if family=='beam':record=service.get_beam_detail('P','L1',member)
+        else:record=service.get_structural_member('P','column','L1',member)
+        assert record['status']=='committed'
+        seen.append(family)
+    def inside():
+        modal=qt.activeModalWidget()
+        try:complete(modal)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(inside)
+    try:
+        assert wizard.preview() is not None,wizard.status.text()
+        if family=='column':timer.start(30);wizard.open_form()
+        else:complete(wizard.open_form())
+        assert not errors,errors
+        assert seen==[family]
+        snapshot=service.open_project('P')
+    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==snapshot
+    finally:reopened.store.close()
