@@ -1244,9 +1244,13 @@ class GraphicalTakeoffDialog(QDialog):
         """Route to existing live workflows; never create a parallel commit."""
         from app.manual_takeoff import ManualTakeoffDialog
         from core.takeoff.roof_detail import KINDS
+        source_wizard = self._w1_dialog
+        source_proposal = source_wizard.active if source_wizard is not None else None
         def guard(project_id,floor_id,member_id):
             wizard=self._w1_dialog
-            if wizard is None or wizard.active is None or wizard._context!=context:
+            if (wizard is None or wizard is not source_wizard or
+                    source_proposal is None or wizard.active is not source_proposal or
+                    wizard._context!=context):
                 raise RuntimeError('پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.')
             if self.contextual_w1_context(context.operation)!=context:
                 raise RuntimeError('پروژه، عضو یا نسخه مدرک تغییر کرده است؛ عملیات متوقف شد.')
