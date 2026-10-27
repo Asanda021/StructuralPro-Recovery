@@ -1527,7 +1527,11 @@ class GraphicalTakeoffDialog(QDialog):
                     source_sha256=scene.source_sha256,revision=scene.revision)
                 if chosen.status=="linked" and len(chosen.global_ids)==1:
                     window.canvas.choose_member(selected_gid)
-            window.show()
+            workspace=getattr(self,'_workspace_controller',None)
+            if workspace is not None:
+                workspace.attach_view('3d',window,self.project_id_input.text().strip())
+            else:
+                window.show()
             self.status.setText('نمای سه‌بعدی از هندسهٔ معتبر IFC باز شد؛ متره فقط‌خواندنی است.')
         except Exception as exc:
             self.status.setText('نمای سه‌بعدی باز نشد: '+str(exc))

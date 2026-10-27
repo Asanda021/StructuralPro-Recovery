@@ -40,6 +40,7 @@ jobs:
       QT_QPA_PLATFORM: ${{ matrix.qpa }}
       PYTHONPATH: .
       PYTHONUTF8: '1'
+      STRUCTURALPRO_E5_SCREENSHOTS: e5-screenshots
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -58,11 +59,20 @@ jobs:
         run: |
           python -m compileall -q app/main.py app/project_start_wizard.py app/project_search_panel.py app/workspace_docks.py app/manual_formula_controls.py core/projects/start_templates.py core/search/global_search.py core/takeoff/manual_formula_register.py core/platform/application.py core/projects/store.py
           python -c "import sys,faulthandler,pytest; faulthandler.dump_traceback_later(160,exit=True); sys.exit(pytest.main(sys.argv[1:]))" -q --maxfail=1 --junitxml=p6-p5-${{ matrix.qpa }}.xml tests/test_phase6_p5_e3_templates.py tests/test_phase6_p5_e3_ui.py tests/test_phase6_p5_e4_search.py tests/test_phase6_p5_e4_ui.py tests/test_phase6_p5_e5_docks.py tests/test_phase6_p3_real_project_bridge.py tests/test_phase6_p5_e6_bulk_preview.py tests/test_manual_formula_persistence.py tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p3_real_qt_four_view.py
+      - name: Verify scaled Qt workspace
+        env:
+          QT_SCALE_FACTOR: '2'
+          STRUCTURALPRO_E5_SCREENSHOTS: e5-screenshots-scale2
+        run: python -m pytest -q tests/test_phase6_p5_e5_docks.py --junitxml=p6-p5-dpi-${{ matrix.qpa }}.xml
       - name: Upload JUnit evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p6-p5-qt-${{ matrix.qpa }}
-          path: p6-p5-${{ matrix.qpa }}.xml
+          path: |
+            p6-p5-${{ matrix.qpa }}.xml
+            p6-p5-dpi-${{ matrix.qpa }}.xml
+            e5-screenshots/*.png
+            e5-screenshots-scale2/*.png
           retention-days: 14
           if-no-files-found: warn

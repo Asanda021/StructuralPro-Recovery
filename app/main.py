@@ -362,7 +362,18 @@ def main()->int:
 
     inspect.clicked.connect(inspect_drawing)
     confirm.clicked.connect(confirm_drawing)
-    graphical.clicked.connect(lambda: GraphicalTakeoffDialog(w,file_edit.text().strip(), app_service=service, project_id=qpid.text().strip() or pid.text().strip()).exec())
+    def open_docked_drawing():
+        project_id=qpid.text().strip() or pid.text().strip()
+        if project_id!=pid.text().strip():
+            QMessageBox.warning(w,'فضای کار','ابتدا همان پروژه را در فضای کار انتخاب کنید.')
+            return
+        dialog=GraphicalTakeoffDialog(w,file_edit.text().strip(),app_service=service,project_id=project_id)
+        try:
+            workspace_docks.attach_view('2d',dialog,project_id)
+        except Exception as exc:
+            dialog.close()
+            QMessageBox.warning(w,'فضای کار',str(exc))
+    graphical.clicked.connect(open_docked_drawing)
     pages.addWidget(p); idx_drawing=pages.count()-1
 
     # Pricing — professional pricebook workspace with real user-file import.
@@ -699,6 +710,13 @@ def main()->int:
                 display_verified_boq_row(project,entity_id,btable)
                 bpid.setText(record_project)
             if route=="takeoff":qpid.setText(record_project)
+            if route=="drawing":
+                from app.verified_search_navigation import prepare_verified_drawing_view
+                view=prepare_verified_drawing_view(service,record_project,entity_id,parent=w)
+                try:workspace_docks.attach_view('2d',view,record_project)
+                except Exception:
+                    view.close()
+                    raise
             if route=="projects" and str(entity_id)!=record_project:
                 if not workspace_docks.focus_member(entity_id):
                     so.setPlainText("رکورد پروژه باز شد، اما عضو/طبقه قابل هایلایت نیست: "+str(entity_id))

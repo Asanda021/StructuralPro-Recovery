@@ -2,9 +2,9 @@
 
 Presentation state is saved only in QSettings, never in SQLite or BOQ.
 """
-from PySide6.QtCore import Qt,QByteArray
+from PySide6.QtCore import Qt,QByteArray,QTimer
 from PySide6.QtWidgets import (
-    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem
+    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QScrollArea
 )
 
 
@@ -14,6 +14,12 @@ class WorkspaceDockController:
         self.settings=settings
         self.service=service
         self.project_provider=project_provider
+        self.views={}
+        self.view_docks={}
+        self._view_timer=QTimer(window)
+        self._view_timer.setInterval(250)
+        self._view_timer.timeout.connect(self.validate_views)
+        self._view_timer.start()
         self.dock=QDockWidget("بازرس واقعی پروژه",window)
         self.dock.setObjectName("P6E5VerifiedProjectInspector")
         self.dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -66,6 +72,62 @@ class WorkspaceDockController:
         self.boq_toggle.setObjectName("E5BoqToggle")
         self.boq_toggle.clicked.connect(self.toggle_boq)
 
+    def attach_view(self, kind, view, project_id):
+        """Embed the existing viewer instance; docking never reloads its scene."""
+        if kind not in ('2d','3d'):
+            raise ValueError('نوع نمای فضای کار معتبر نیست.')
+        pid=str(project_id).strip()
+        if pid!=self.project_id() or not isinstance(self.service.open_project(pid),dict):
+            raise ValueError('نمای پروژه دیگر وارد فضای کار نمی‌شود.')
+        digest=self.service.store.current_digest(pid)
+        if kind=='2d':self._release_view('3d')
+        self._release_view(kind)
+        dock=self.view_docks.get(kind)
+        if dock is None:
+            dock=QDockWidget('نقشه دوبعدی' if kind=='2d' else 'مدل سه‌بعدی',self.window)
+            dock.setObjectName('P6E5ExistingViewer'+kind)
+            dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            if not self.window.restoreDockWidget(dock):
+                self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock)
+            self.window.menuBar().addAction(dock.toggleViewAction())
+            self.view_docks[kind]=dock
+        view.setWindowFlags(Qt.WindowType.Widget)
+        scroll=QScrollArea(dock)
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(view)
+        dock.setWidget(scroll)
+        self.views[kind]=(view,pid,digest)
+        # The 2D viewer hands its existing validated 3D dialog back here.
+        view._workspace_controller=self
+        dock.show();view.show();dock.raise_()
+        self._clamp_floating()
+        return dock
+
+    def _release_view(self, kind):
+        entry=self.views.pop(kind,None)
+        if entry is None:return
+        dock=self.view_docks[kind]
+        dock.hide()
+        view=entry[0]
+        # closeEvent owns cancellation and connection cleanup in the real viewer.
+        body=dock.widget()
+        dock.setWidget(None)
+        view.close()
+        view.deleteLater()
+        if body is not None:body.deleteLater()
+
+    def validate_views(self):
+        for kind,(_,pid,digest) in list(self.views.items()):
+            try:
+                valid=(pid==self.project_id() and
+                       isinstance(self.service.open_project(pid),dict) and
+                       self.service.store.current_digest(pid)==digest)
+            except Exception:
+                valid=False
+            if not valid:
+                self._release_view(kind)
+                self.status.setText('پروژه یا نسخه تغییر کرد؛ نمای قبلی بسته شد. سند را دوباره باز کنید.')
+
     def project_id(self):
         return str(self.project_provider() or "").strip()
 
@@ -93,6 +155,7 @@ class WorkspaceDockController:
             self.boq_dock.raise_()
 
     def refresh(self):
+        self.validate_views()
         self.tree.clear()
         self.boq_table.setRowCount(0)
         try:
@@ -159,7 +222,7 @@ class WorkspaceDockController:
         return False
 
     def _clamp_floating(self):
-        for dock in (self.dock,self.boq_dock):
+        for dock in (self.dock,self.boq_dock,*self.view_docks.values()):
             if not dock.isFloating():continue
             screen=dock.screen() or self.window.screen()
             if screen is None:continue
@@ -182,6 +245,7 @@ class WorkspaceDockController:
             return False
 
     def restore(self):
+        self.refresh()
         try:
             key=self._key()
             value=self.settings.value(key)
@@ -193,9 +257,15 @@ class WorkspaceDockController:
         except Exception as exc:
             self.status.setText("چینش معتبر بازیابی نشد: "+str(exc))
         self.dock.hide()
+        self.boq_dock.hide()
+        for dock in self.view_docks.values():dock.hide()
         return False
 
     def reset(self):
+        for dock in self.view_docks.values():
+            dock.setFloating(False)
+            self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock)
+            dock.hide()
         self.dock.setFloating(False)
         self.boq_dock.setFloating(False)
         self.window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea,self.dock)

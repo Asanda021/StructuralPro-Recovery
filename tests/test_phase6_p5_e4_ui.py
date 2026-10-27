@@ -114,3 +114,33 @@ def test_search_to_verified_ifc_rejects_missing_review_and_tampered_file(tmp_pat
     with pytest.raises((ValueError, RuntimeError)):
         prepare_verified_member_view(app,"P","B1")
     app.store.close()
+def test_search_opens_exact_document_only_with_live_sha_and_revision(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from core.platform.application import StructuralProApp
+    from hashlib import sha256
+    from reportlab.pdfgen.canvas import Canvas
+    import app.verified_search_navigation as navigation
+    import pytest
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('اسناد','P')
+    path=tmp_path/'plan.pdf';c=Canvas(str(path));c.drawString(30,30,'synthetic QA document');c.save()
+    project=service.open_project('P')
+    project['drawings']=[{'id':'D1','name':'پلان آزمایشی','path':str(path),
+                          'source_sha256':sha256(path.read_bytes()).hexdigest(),'revision':'R1'}]
+    service.store.save('P',project,expected_digest=service.store.current_digest('P'))
+    try:
+        assert hasattr(navigation,'prepare_verified_drawing_view'), 'document search has no exact source handoff'
+        before=service.store.current_digest('P')
+        view=navigation.prepare_verified_drawing_view(service,'P','D1')
+        assert view.viewer.kind=='pdf'
+        assert str(view.viewer.path)==str(path)
+        view.close();qt.processEvents()
+        assert before==service.store.current_digest('P')
+        path.write_bytes(path.read_bytes()+b'changed')
+        with pytest.raises(ValueError,match='هش'):
+            navigation.prepare_verified_drawing_view(service,'P','D1')
+        with pytest.raises(ValueError):
+            navigation.prepare_verified_drawing_view(service,'P','OTHER')
+        assert before==service.store.current_digest('P')
+    finally:service.store.close();qt.processEvents()
+

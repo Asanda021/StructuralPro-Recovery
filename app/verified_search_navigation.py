@@ -8,6 +8,52 @@ from hashlib import sha256
 from pathlib import Path
 
 
+def prepare_verified_drawing_view(service, project_id, document_id, parent=None):
+    """Open the exact project record, requiring its explicit hash and revision."""
+    from core.projects.project_model import _identity
+    if not _identity(document_id) or not _identity(project_id):
+        raise ValueError('شناسه سند و پروژه معتبر لازم است.')
+    digest=service.store.current_digest(project_id)
+    project=service.open_project(project_id)
+    if not isinstance(project,dict) or project.get('id')!=project_id:
+        raise ValueError('پروژه معتبر در دسترس نیست.')
+    records=[]
+    for key in ('drawings','documents'):
+        container=project.get(key,[])
+        if isinstance(container,dict):container=list(container.values())
+        if not isinstance(container,list):raise ValueError('فهرست اسناد معتبر نیست.')
+        records.extend(r for r in container if isinstance(r,dict) and
+                       str(r.get('id',''))==str(document_id))
+    if len(records)!=1:raise ValueError('سند فاقد هویت یکتا در پروژه است.')
+    record=records[0]
+    path=record.get('path') or record.get('source_path')
+    expected=record.get('source_sha256') or record.get('sha256')
+    revision=record.get('revision')
+    if (not isinstance(path,str) or not path.strip() or
+            not isinstance(expected,str) or len(expected)!=64 or
+            not isinstance(revision,str) or not revision.strip()):
+        raise ValueError('مسیر، هش کامل و Revision صریح سند لازم است.')
+    source=Path(path)
+    if any(part.is_symlink() for part in (source,*source.parents)):
+        raise ValueError('مسیر پیوندی سند مجاز نیست.')
+    if source.suffix.lower() not in ('.pdf','.dxf','.dwg','.ifc') or not source.is_file():
+        raise ValueError('سند نقشه معتبر در دسترس نیست.')
+    if sha256(source.read_bytes()).hexdigest()!=expected:
+        raise ValueError('هش سند تغییر کرده؛ ناوبری مسدود شد.')
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    workspace=GraphicalTakeoffDialog(parent,app_service=service,project_id=project_id)
+    try:
+        workspace.open_drawing(str(source))
+        workspace.ifc_revision.setText(revision)
+        if (sha256(source.read_bytes()).hexdigest()!=expected or
+                service.store.current_digest(project_id)!=digest):
+            raise RuntimeError('سند یا نسخه پروژه هنگام بازکردن تغییر کرد.')
+        return workspace
+    except Exception:
+        workspace.close()
+        raise
+
+
 def reviewed_member_source(service, project_id, member_id):
     from core.projects.project_model import _identity
     if not all(isinstance(x,str) and _identity(x) for x in (project_id,member_id)):
