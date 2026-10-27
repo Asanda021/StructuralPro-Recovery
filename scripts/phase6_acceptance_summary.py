@@ -30,8 +30,8 @@ def main(paths):
             tests=len(cases), passed=len(cases)-failed-errors-skipped,
             failed=failed, errors=errors, skipped=skipped,
             failures=[dict(test=case.get('classname', '') + '::' + case.get('name', ''),
-                detail='\n'.join(node.text or node.get('message', '') for node in case
-                    if node.tag in ('failure', 'error'))[-6000:])
+                detail='\n'.join(node.get('message', '') + '\n' + (node.text or '')[-2200:] for node in case
+                    if node.tag in ('failure', 'error'))[-3200:])
                 for case in cases if case.find('failure') is not None or case.find('error') is not None]))
     def git(ref):
         return subprocess.check_output(['git', 'rev-parse', ref], text=True).strip()
@@ -45,6 +45,8 @@ def main(paths):
         output = log.read_text(encoding='utf-8', errors='replace')
         counts = re.findall(r'(\d+) warnings?\b', output)
         evidence['warning_count'] = int(counts[-1]) if counts else None
+        if not counts and re.search(r'\d+ (?:passed|failed|skipped|errors?)\b.*\bin \d+\.\d+s', output) and 'warnings summary' not in output:
+            evidence['warning_count'] = 0
         evidence['warning_note'] = 'Count extracted from pytest output when available, not from JUnit.'
         evidence['pytest_log_sha256'] = hashlib.sha256(log.read_bytes()).hexdigest()
         evidence['pytest_log_tail'] = output[-12000:]
@@ -63,7 +65,8 @@ def main(paths):
             print('::error title=Phase 6 measured test diagnostic::' + escaped)
         for report in reports:
             print('::notice title=Phase 6 measured counts::' + json.dumps({
-                key: report[key] for key in ('file', 'tests', 'passed', 'failed', 'errors', 'skipped', 'sha256')}))
+                **{key: report[key] for key in ('file', 'tests', 'passed', 'failed', 'errors', 'skipped', 'sha256')},
+                'main_pytest_warning_count': evidence['warning_count']}))
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
             output.write(summary)
