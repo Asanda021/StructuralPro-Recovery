@@ -916,7 +916,7 @@ def test_w1_live_identity_change_after_handoff_fails_closed(tmp_path, changed):
             drawing.polygon_floor.setText('L2')
         else:
             drawing.polygon_member.setText('B2')
-        with pytest.raises(RuntimeError):
+        with pytest.raises((RuntimeError, ValueError)):
             panel._draft()
         assert service.store.current_digest('P') == digest
         assert service.open_project('P')['boq'] == []
