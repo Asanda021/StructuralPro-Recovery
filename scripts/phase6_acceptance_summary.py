@@ -51,6 +51,19 @@ def main(paths):
     Path('phase6-acceptance-summary.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
     summary = '## Phase 6 acceptance evidence\n\n```json\n' + json.dumps(evidence, indent=2) + '\n```\n'
     print(summary)
+    # Public run annotations remain inspectable when the web UI requires login
+    # for raw logs/artifacts. Keep the diagnostic bounded to synthetic QA data.
+    if os.environ.get('GITHUB_ACTIONS') == 'true':
+        diagnostics = [failure['test'] + '\n' + failure['detail']
+            for report in reports for failure in report['failures']]
+        if missing:
+            diagnostics.append('Missing JUnit: ' + ', '.join(missing) + '\n' + evidence.get('pytest_log_tail', '')[-6000:])
+        for diagnostic in diagnostics[:5]:
+            escaped = diagnostic.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+            print('::error title=Phase 6 measured test diagnostic::' + escaped)
+        for report in reports:
+            print('::notice title=Phase 6 measured counts::' + json.dumps({
+                key: report[key] for key in ('file', 'tests', 'passed', 'failed', 'errors', 'skipped', 'sha256')}))
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
             output.write(summary)
