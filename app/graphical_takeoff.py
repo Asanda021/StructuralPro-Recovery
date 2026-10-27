@@ -1215,6 +1215,27 @@ class GraphicalTakeoffDialog(QDialog):
         """Route to existing live workflows; never create a parallel commit."""
         from app.manual_takeoff import ManualTakeoffDialog
         from core.takeoff.roof_detail import KINDS
+        if context.operation=="beam":
+            panel=self.beam_detail_panel
+            if panel is None:
+                raise ValueError("فرم تخصصی تیر به سرویس پروژه متصل نیست.")
+            if context.member_id:
+                project=self.app_service.open_project(context.project_id)
+                members=[m for m in project.get('members',[]) if m.get('id')==context.member_id]
+                if len(members)!=1 or members[0].get('kind')!='beam':
+                    raise ValueError("عضو انتخاب‌شده به عنوان تیر مستند نشده است.")
+            expected=(context.project_id,context.floor_id,context.member_id or "")
+            if panel._loaded_identity is not None and panel._loaded_identity!=expected:
+                raise ValueError("فرم تیر دیگری باز است؛ ابتدا تغییرات آن را تعیین تکلیف کنید.")
+            for field,value in ((panel.floor,context.floor_id),(panel.beam,context.member_id or "")):
+                if field.text().strip() and field.text().strip()!=value:
+                    raise ValueError("ورودی ناتمام فرم تیر با انتخاب فعلی متفاوت است؛ انتقال لغو شد.")
+            panel.floor.setText(context.floor_id)
+            panel.beam.setText(context.member_id or "")
+            self.panel_toggle.setChecked(True)
+            self.beam_dock.show()
+            self.beam_dock.raise_()
+            return panel
         if context.operation in KINDS:
             # The original, fully reviewed specialist roof editor works for
             # manual-only projects too. No region, width, count or geometry
