@@ -2,6 +2,7 @@
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
+import pytest
 from core.platform.application import StructuralProApp
 from app.project_search_panel import ProjectSearchDialog
 
@@ -75,3 +76,39 @@ def test_boq_duplicate_identity_refused_without_changing_table(tmp_path):
         display_verified_boq_row(project,"B1",table)
     assert table.rowCount()==0
     table.close();qt.processEvents()
+
+
+def test_search_to_verified_ifc_real_source_and_fourway_selection(tmp_path):
+    from test_phase6_p3_real_project_bridge import reviewed
+    from app.verified_search_navigation import prepare_verified_member_view
+    app,path,proof,proposal=reviewed(tmp_path)
+    qt=QApplication.instance() or QApplication([])
+    before=app.store.current_digest("P")
+    viewer=prepare_verified_member_view(app,"P","B1")
+    try:
+        assert viewer._ifc_selected_global_id==proposal["global_id"]
+        assert viewer._verified_selection_panel.members.selectedItems()[0].text(0)=="B1"
+        assert viewer.viewer.kind=="ifc"
+        assert app.store.current_digest("P")==before
+        assert app.open_project("P")["boq"]==[]
+    finally:
+        viewer._verified_selection_dialog.close()
+        viewer.close();qt.processEvents();app.store.close()
+
+
+def test_search_to_verified_ifc_rejects_missing_review_and_tampered_file(tmp_path):
+    from test_phase2_priority5_closure import identity_case
+    from test_phase6_p3_real_project_bridge import reviewed
+    from app.verified_search_navigation import reviewed_member_source
+    app,path,proof,proposal,args=identity_case(tmp_path)
+    with pytest.raises(ValueError):
+        reviewed_member_source(app,"P","B1")
+    app.store.close()
+    app,path,proof,proposal=reviewed(tmp_path/"reviewed")
+    proof.write_text("tampered",encoding="utf8")
+    # Document SHA may still exist; independent proof is verified by live
+    # VerifiedProjectSelection on actual opening, never bypassed.
+    from app.verified_search_navigation import prepare_verified_member_view
+    with pytest.raises((ValueError, RuntimeError)):
+        prepare_verified_member_view(app,"P","B1")
+    app.store.close()

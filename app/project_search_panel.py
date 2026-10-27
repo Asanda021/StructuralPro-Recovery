@@ -41,11 +41,12 @@ def display_verified_boq_row(project, row_id, table):
 
 
 class ProjectSearchDialog(QDialog):
-    def __init__(self, service, project_id, *, parent=None, initial_query="", on_navigate=None):
+    def __init__(self, service, project_id, *, parent=None, initial_query="", on_navigate=None, on_open_model=None):
         super().__init__(parent)
         self.service=service
         self.pid=str(project_id).strip()
         self.on_navigate=on_navigate
+        self.on_open_model=on_open_model
         self.results=[]
         self.digest=None
         self.setObjectName("E4GlobalProjectSearch")
@@ -68,6 +69,10 @@ class ProjectSearchDialog(QDialog):
         self.open_button.setObjectName("E4OpenRecord")
         self.open_button.setEnabled(False)
         row.addWidget(self.open_button)
+        self.model_button=QPushButton("نمای 2D/3D عضو IFC با مدرک تأییدشده")
+        self.model_button.setObjectName("E4VerifiedIfcNavigation")
+        self.model_button.setEnabled(False)
+        row.addWidget(self.model_button)
         self.status=QLabel("جست‌وجو هیچ تغییری در داده مهندسی/مالی ایجاد نمی‌کند.")
         self.status.setWordWrap(True);layout.addWidget(self.status)
         self.search_button.clicked.connect(self.run_search)
@@ -75,6 +80,7 @@ class ProjectSearchDialog(QDialog):
         self.query.textChanged.connect(self.invalidate)
         self.list.currentItemChanged.connect(self.selected)
         self.open_button.clicked.connect(self.open_record)
+        self.model_button.clicked.connect(self.open_model)
         if initial_query.strip():self.run_search()
 
     def invalidate(self,*_):
@@ -82,6 +88,7 @@ class ProjectSearchDialog(QDialog):
         self.results=[]
         self.list.clear();self.detail.clear()
         self.open_button.setEnabled(False)
+        self.model_button.setEnabled(False)
 
     def run_search(self):
         self.invalidate()
@@ -108,7 +115,24 @@ class ProjectSearchDialog(QDialog):
 
     def selected(self,current,*_):
         self.open_button.setEnabled(current is not None and self.digest is not None)
+        self.model_button.setEnabled(
+            current is not None and self.digest is not None and
+            self.on_open_model is not None and
+            self.results[current.data(Qt.ItemDataRole.UserRole)]["kind"]=="member")
         self.detail.clear()
+
+    def open_model(self):
+        if not self.model_button.isEnabled():return None
+        record=self.open_record()
+        if record is None or record["kind"]!="member" or not record["entity_id"]:
+            return None
+        try:
+            result=self.on_open_model(record["project_id"],record["entity_id"])
+            self.status.setText("نمای IFC فقط از گیت واقعی هویت و Revision اجرا شد.")
+            return result
+        except Exception as exc:
+            self.status.setText("نمای مستند باز نشد: "+str(exc))
+            return None
 
     def open_record(self):
         item=self.list.currentItem()

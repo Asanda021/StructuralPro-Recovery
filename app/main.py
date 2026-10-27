@@ -709,8 +709,15 @@ def main()->int:
                 pages.setCurrentIndex(mapping[route])
             so.setPlainText("رکورد مستند انتخاب شد: "+str(entity_id)+
                             " | عملیات اصلاح فقط در فرم اصلی و با تأیید مستقل انجام می‌شود.")
+        def open_verified_model(record_project, member_id):
+            from app.verified_search_navigation import prepare_verified_member_view
+            # The existing source IFC and independent review are both required.
+            workspace=prepare_verified_member_view(service,record_project,member_id,parent=w)
+            try:workspace.exec()
+            finally:workspace.close()
         window=ProjectSearchDialog(service,project_id,parent=w,
-                                   initial_query=sq.text(),on_navigate=route_result)
+                                   initial_query=sq.text(),on_navigate=route_result,
+                                   on_open_model=open_verified_model)
         window.exec()
     sb.clicked.connect(do_search)
     sheets=SheetRegistry(); markups=MarkupStore()
