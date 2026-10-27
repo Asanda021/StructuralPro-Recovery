@@ -110,8 +110,10 @@ def preserve_originals(project,register):
         if row.get('status')=='committed':result[key]=deepcopy(row)
     return result
 
-def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependencies=None):
+def save_many(service,pid,changes,*,expected_revisions,reason,expected_dependencies=None,expected_digest=None):
     reason=text(reason,'علت ثبت یا اصلاح');project,digest=read(service,pid);register=verified(project);before=deepcopy(register)
+    if expected_digest is not None and expected_digest!=digest:
+        raise RuntimeError('نسخه پروژه از زمان پیش‌نمایش تغییر کرده است')
     for target,expected in (expected_dependencies or {}).items():
         if target not in register:raise RuntimeError('ردیف منبع کپی حذف شده است')
         revision(expected,register[target]['revision'])
@@ -185,12 +187,14 @@ def preview_bulk_edit(service,pid,keys,*,changes,expected_revisions):
             if candidate[key]['data']!=row['data']:
                 raise ValueError('ویرایش گروهی QTO/هویت IFC نیازمند اصلاحیه تخصصی است')
     projected=evaluate_rows(graph(candidate))
+    oldhash=fingerprints(register);newhash=fingerprints(candidate)
     # A changed dependency may not invalidate any previously committed result.
     for key,row in register.items():
-        if row['status']=='committed' and number(original[key],'مقدار')!=number(projected[key],'مقدار'):
+        if row['status']=='committed' and oldhash[key]!=newhash[key]:
             raise ValueError('اصلاح پیشنهادی مقدار ردیف قطعی وابسته را تغییر می‌دهد')
     rows=[]
-    for key in keys:
+    affected=[key for key in register if key in keys or oldhash[key]!=newhash[key]]
+    for key in affected:
         old=register[key]
         rows.append({
             'row_id':key, 'old_quantity':str(original[key]),
@@ -203,7 +207,7 @@ def preview_bulk_edit(service,pid,keys,*,changes,expected_revisions):
             'boq_write':False,'preview_only':True,'review_required':True}
 
 
-def bulk_edit(service,pid,keys,*,changes,expected_revisions,reason):
+def bulk_edit(service,pid,keys,*,changes,expected_revisions,reason,expected_digest=None):
     reg=load(service,pid)
     if not keys or len(keys)!=len(set(keys)) or set(keys)!=set(expected_revisions):raise ValueError('انتخاب و نسخه‌ها باید یکتا باشند')
     if not isinstance(changes,dict) or not changes or set(changes)-{'variables','variable_units','floor','member','title'}:raise ValueError('فیلد گروهی مجاز نیست')
@@ -216,7 +220,7 @@ def bulk_edit(service,pid,keys,*,changes,expected_revisions,reason):
                 d[field].update(val)
             else:d[field]=val
         proposed[key]=d
-    return save_many(service,pid,proposed,expected_revisions=expected_revisions,reason=reason)
+    return save_many(service,pid,proposed,expected_revisions=expected_revisions,reason=reason,expected_digest=expected_digest)
 
 def copy_rows(service,pid,keys,*,floor,expected_revisions,reason):
     from uuid import uuid4

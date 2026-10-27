@@ -153,6 +153,8 @@ class ProjectSearchDialog(QDialog):
             if len(matching)!=1:
                 raise RuntimeError("هویت یا محتوای رکورد مبهم است؛ انتخاب مسدود شد.")
             record=matching[0]
+            if record['link_status']=='ambiguous_record':
+                raise RuntimeError("شناسه رکورد در پروژه مبهم است؛ ناوبری مسدود شد.")
             self.detail.setPlainText(json.dumps({
                 "project_id":record["project_id"],
                 "entity_id":record["entity_id"],

@@ -7,6 +7,29 @@ from core.platform.application import StructuralProApp
 from app.project_search_panel import ProjectSearchDialog
 
 
+def test_search_duplicate_member_identity_is_not_resolved_by_matching_title(tmp_path):
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Ambiguous search', 'P')
+    project = service.open_project('P')
+    project['members'] = [
+        {'id': 'M1', 'floor_id': 'F1', 'kind': 'column', 'title': 'ستون شمالی', 'revision': 'R1'},
+        {'id': 'M1', 'floor_id': 'F2', 'kind': 'column', 'title': 'ستون جنوبی', 'revision': 'R2'},
+    ]
+    service.store.save('P', project, expected_digest=service.store.current_digest('P'))
+    digest = service.store.current_digest('P'); calls = []
+    panel = ProjectSearchDialog(service, 'P', initial_query='شمالی', on_navigate=lambda *args: calls.append(args))
+    try:
+        assert panel.list.count() == 1
+        panel.list.setCurrentRow(0)
+        QTest.mouseClick(panel.open_button, Qt.MouseButton.LeftButton)
+        assert not calls
+        assert 'مبهم' in panel.status.text()
+        assert service.store.current_digest('P') == digest
+        assert not service.open_project('P')['boq']
+    finally:
+        panel.close(); service.store.close(); qt.processEvents()
+
+
 def test_search_live_member_and_stale_fails_closed(tmp_path):
     qt=QApplication.instance() or QApplication([])
     app=StructuralProApp(tmp_path/"app")

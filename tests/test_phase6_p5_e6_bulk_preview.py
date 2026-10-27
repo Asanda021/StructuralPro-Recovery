@@ -5,6 +5,92 @@ from core.platform.application import StructuralProApp
 from test_manual_formula_persistence import data
 
 
+def test_bulk_preview_includes_unselected_dependency_changes_and_revisions(tmp_path):
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Dependency preview', 'P')
+    service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic input')
+    for key, factor in [('B', '2'), ('C', '3')]:
+        service.save_manual_formula('P', key, data(member=key, source_id='measured:' + key,
+            expression='base*factor', references={'base': 'A'}, variables={'factor': factor},
+            variable_units={'factor': 'عدد'}), expected_revision=0, reason='Explicit dependency')
+    before = service.open_project('P'); digest = service.store.current_digest('P')
+    try:
+        preview = service.preview_bulk_edit_manual_formulas('P', ['A'],
+            changes={'variables': {'length': '5'}}, expected_revisions={'A': 1})
+        rows = {r['row_id']: r for r in preview['rows']}
+        assert set(rows) == {'A', 'B', 'C'}
+        for key, old, new in [('A', '6', '3'), ('B', '12', '6'), ('C', '18', '9')]:
+            assert Decimal(rows[key]['old_quantity']) == Decimal(old)
+            assert Decimal(rows[key]['new_quantity']) == Decimal(new)
+            assert rows[key]['revision'] == 1
+        assert service.store.current_digest('P') == digest
+        assert service.open_project('P') == before
+    finally: service.store.close()
+
+
+def test_bulk_apply_requires_the_preview_project_digest_when_supplied(tmp_path):
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('CAS preview', 'P')
+    service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic input')
+    preview = service.preview_bulk_edit_manual_formulas('P', ['A'],
+        changes={'variables': {'length': '5'}}, expected_revisions={'A': 1})
+    concurrent = StructuralProApp(tmp_path / 'db')
+    try:
+        concurrent.add_project_floor('P', 'Concurrent floor', level='F2')
+        digest = service.store.current_digest('P'); before = service.open_project('P')
+        with pytest.raises(RuntimeError):
+            service.bulk_edit_manual_formulas('P', ['A'], changes={'variables': {'length': '5'}},
+                expected_revisions={'A': 1}, expected_digest=preview['cas_digest'], reason='Stale preview')
+        assert service.store.current_digest('P') == digest
+        assert service.open_project('P') == before
+    finally: concurrent.store.close(); service.store.close()
+
+
+def test_bulk_preview_cannot_invalidate_committed_dependency_even_if_quantity_equal(tmp_path):
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Equal quantity, different evidence', 'P')
+    service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic dimensions')
+    service.save_manual_formula('P', 'B', data(member='B', source_id='measured:B', expression='base',
+        references={'base': 'A'}, variables={}, variable_units={}), expected_revision=0, reason='Dependency')
+    service.review_manual_formula('P', 'B', expected_revision=1, reviewer='Engineer', note='Explicit review')
+    service.commit_manual_formula('P', 'B', expected_revision=1)
+    digest = service.store.current_digest('P')
+    try:
+        with pytest.raises(ValueError):
+            service.preview_bulk_edit_manual_formulas('P', ['A'],
+                changes={'variables': {'length': '5', 'width': '0.4'}}, expected_revisions={'A': 1})
+        assert service.store.current_digest('P') == digest
+    finally: service.store.close()
+
+
+@pytest.mark.parametrize('count', [1, 5, 20])
+def test_bulk_independent_member_totals_undo_redo_and_reopen(tmp_path, count):
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Independent quantities', 'P')
+    keys = [f'C{i}' for i in range(count)]
+    for key in keys:
+        service.save_manual_formula('P', key, data(member=key, source_id='measured:' + key),
+            expected_revision=0, reason='Explicit dimensions 10 x .2 x 3')
+    try:
+        preview = service.preview_bulk_edit_manual_formulas('P', keys, changes={'variables': {'length': '5'}},
+            expected_revisions={key: 1 for key in keys})
+        assert sum(Decimal(r['old_quantity']) for r in preview['rows']) == Decimal(count) * 10 * Decimal('.2') * 3
+        assert sum(Decimal(r['new_quantity']) for r in preview['rows']) == Decimal(count) * 5 * Decimal('.2') * 3
+        service.bulk_edit_manual_formulas('P', keys, changes={'variables': {'length': '5'}},
+            expected_revisions={key: 1 for key in keys}, expected_digest=preview['cas_digest'], reason='Explicit new length')
+        for operation, total in [(None, count * 3), ('undo_manual_formulas', count * 6), ('redo_manual_formulas', count * 3)]:
+            if operation: getattr(service, operation)('P')
+            register = service.load_manual_formulas('P')
+            assert len(register) == count
+            assert sum(Decimal(str(r['quantity'])) for r in register.values()) == total
+            assert all(r['revision'] >= 2 and r['status'] == 'draft' for r in register.values())
+            assert not service.open_project('P')['boq']
+        project = service.open_project('P'); digest = service.store.current_digest('P')
+        assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+    finally: service.store.close()
+    reopened = StructuralProApp(tmp_path / 'db')
+    try:
+        assert reopened.open_project('P') == project
+        assert reopened.store.current_digest('P') == digest
+    finally: reopened.store.close()
+
+
 def test_documented_opening_is_deducted_once_bulk_undo_redo_reopen(tmp_path):
     from copy import deepcopy
     service=StructuralProApp(tmp_path/'db');service.create_project('دیوار مصنوعی','P')

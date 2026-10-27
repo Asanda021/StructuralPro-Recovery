@@ -210,8 +210,9 @@ def attach(d,root):
         if d.service.store.current_digest(pid)!=preview['cas_digest']:
             raise RuntimeError('نسخه پروژه در فاصله پیش‌نمایش و تأیید تغییر کرده است')
         d.service.bulk_edit_manual_formulas(pid,keys,changes=changes,
-                                             expected_revisions=versions,reason=reason)
-        d.status.setText(str(len(keys))+' ردیف با کنترل نسخه در دفتر اصلی ویرایش شد؛ تأیید BOQ انجام نشد')
+                                             expected_revisions=versions,reason=reason,
+                                             expected_digest=preview['cas_digest'])
+        d.status.setText(str(len(preview['rows']))+' ردیف با وابستگی‌ها و کنترل نسخه در دفتر اصلی ویرایش شد؛ تأیید BOQ انجام نشد')
     def copy_floor():
         keys,versions=selected_many();d.service.copy_manual_formulas(d.project_id.text().strip(),keys,floor=d.formula_copy_floor.text(),expected_revisions=versions,reason=d.formula_reason.text())
     def export(fmt):
