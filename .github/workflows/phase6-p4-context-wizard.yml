@@ -58,7 +58,7 @@ jobs:
       - name: Compile and execute real W1/A2 Qt and original assembly regression
         run: |
           python -m compileall -q core/ai/contextual_takeoff.py app/contextual_takeoff_panel.py app/graphical_takeoff.py
-          python scripts/run_phase6_pytest.py 180 -vv --maxfail=1 --junitxml=p6-p4-${{ matrix.qpa }}.xml tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p4_model_isolation.py tests/test_p601_p610_local_ai_gguf_runtime.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py tests/test_assembly_template_expansion.py tests/test_roof_specialist_ui.py tests/test_waffle_specialist_ui.py
+          python scripts/run_phase6_pytest.py 240 -vv --maxfail=1 --junitxml=p6-p4-${{ matrix.qpa }}.xml tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p4_model_isolation.py tests/test_p601_p610_local_ai_gguf_runtime.py tests/test_phase6_p3_real_qt_four_view.py tests/test_phase6_p3_full_verified_boq.py tests/test_assembly_template_expansion.py tests/test_roof_specialist_ui.py tests/test_waffle_specialist_ui.py
       - name: Summarize actual JUnit counts and provenance
         if: always()
         run: python scripts/phase6_acceptance_summary.py p6-p4-${{ matrix.qpa }}.xml
