@@ -102,3 +102,17 @@ def test_bulk_change_after_other_writer_invalidates_preview_digest(tmp_path):
             expected_revisions={"A":0},reason="نسخه قدیمی")
     assert app.open_project("P")["boq"]==[]
     concurrent.store.close();app.store.close()
+
+
+def test_group_preview_rejects_ifc_evidence_tamper_without_writes(tmp_path):
+    app=StructuralProApp(tmp_path/"data")
+    app.create_project("آزمون حفاظت","P")
+    # A generic row cannot become IFC-approved merely by tagging an
+    # unreviewed identity. The canonical validator must fail closed.
+    source=data(member="C1",source_id="measured:test")
+    source["ifc_evidence"]={"proposal_id":"forged","quantity_name":"NetVolume",
+                            "author":"intruder"}
+    with pytest.raises((ValueError,KeyError,PermissionError)):
+        app.save_manual_formula("P","A",source,expected_revision=0,reason="مدرک جعلی")
+    assert app.open_project("P")["boq"]==[]
+    app.store.close()

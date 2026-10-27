@@ -104,7 +104,9 @@ def test_search_to_verified_ifc_rejects_missing_review_and_tampered_file(tmp_pat
     with pytest.raises(ValueError):
         reviewed_member_source(app,"P","B1")
     app.store.close()
-    app,path,proof,proposal=reviewed(tmp_path/"reviewed")
+    folder=tmp_path/"reviewed"
+    folder.mkdir()
+    app,path,proof,proposal=reviewed(folder)
     proof.write_text("tampered",encoding="utf8")
     # Document SHA may still exist; independent proof is verified by live
     # VerifiedProjectSelection on actual opening, never bypassed.

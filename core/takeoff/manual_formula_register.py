@@ -174,6 +174,16 @@ def preview_bulk_edit(service,pid,keys,*,changes,expected_revisions):
                 raise ValueError('پارامتر یا واحد ناشناخته در گروه وجود دارد')
             d[field].update(vals)
         candidate[key]['data']=clean(d)
+        # Recheck the canonical IFC approval/quantity contract during PREVIEW,
+        # rather than postponing a provenance failure until Save/Apply.
+        from core.drawings.ifc_pipeline import validate_quantity_handoff
+        validate_quantity_handoff(service,project,candidate[key]['data'])
+        if candidate[key]['data'].get('ifc_evidence'):
+            # QTO belonging to a reviewed identity is immutable by generic
+            # group edit. Only the specialist amended-quantity workflow may
+            # propose a different physical allocation.
+            if candidate[key]['data']!=row['data']:
+                raise ValueError('ویرایش گروهی QTO/هویت IFC نیازمند اصلاحیه تخصصی است')
     projected=evaluate_rows(graph(candidate))
     # A changed dependency may not invalidate any previously committed result.
     for key,row in register.items():
