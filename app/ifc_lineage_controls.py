@@ -26,6 +26,9 @@ def install_ifc_lineage_controls(dialog,layout,viewer,service,pid,author,reviewe
     history_preview=QPushButton('پیش‌نمایش مالک‌های قبل و بعد واگرد / تکرار');history_preview.setObjectName('ifc_history_preview')
     history_apply=QPushButton('اعمال نسخه تازه تاریخچه پس از تأیید مستقل');history_apply.setObjectName('ifc_history_apply')
     state={}
+    def history_context():
+        return viewer.project_id_input.text().strip(),str(viewer.viewer.path),viewer.ifc_revision.text().strip()
+    history_origin=history_context()
     def refresh():
         project=service.open_project(pid);chosen=lineages.currentData();lineages.blockSignals(True);lineages.clear()
         for event in project.get('ifc_identity_lineages',[]):lineages.addItem(event['mode']+' | '+event['id'],event['id'])
@@ -44,6 +47,8 @@ def install_ifc_lineage_controls(dialog,layout,viewer,service,pid,author,reviewe
                 summary.setText('نسخه مالکیت '+str(head['group_revision'])+' | '+head.get('history_action','apply')+' | '+head['previous_total']+' → '+head['current_total']+' '+head['unit']+' | '+applied['id'])
     def run(action):
         try:
+            if action in ('history_preview','history_apply') and (history_origin[0]!=pid or history_context()!=history_origin):
+                raise ValueError('پروژه یا نسخه منبع نمایش‌داده‌شده تغییر کرده؛ فرم بازبینی را دوباره باز کنید')
             if action=='preview':
                 path=Path(allocation.text());token=service.store.current_digest(pid)
                 args=dict(lineage_id=lineages.currentData(),evidence_path=str(path),evidence_sha256=sha256(path.read_bytes()).hexdigest(),author=author.text(),reviewer=reviewers.currentData(),expected_digest=token)

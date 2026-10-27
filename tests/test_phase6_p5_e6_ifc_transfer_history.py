@@ -177,6 +177,38 @@ def test_direct_sqlite_command_rejects_corrupted_history_identity_and_review(tmp
     finally: app.store.close()
 
 
+@pytest.mark.parametrize('change', ['project', 'revision', 'source'])
+def test_native_ifc_history_apply_rechecks_live_viewer_context(tmp_path, change):
+    from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QScrollArea
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app, args, _, _ = case(tmp_path)
+    app.apply_ifc_quantity_transfer('P', **args)
+    qt = QApplication.instance() or QApplication([])
+    source = app.open_project('P')['ifc_identity_reviews'][-1]['document']['source_path']
+    view = GraphicalTakeoffDialog(app_service=app, project_id='P'); view.show()
+    view.open_drawing(source); view.ifc_revision.setText('R2')
+    QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+    dialog = view._ifc_inspector
+    def click(name):
+        button = dialog.findChild(QPushButton, name)
+        dialog.findChild(QScrollArea).ensureWidgetVisible(button); qt.processEvents()
+        QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    try:
+        dialog.findChild(QLineEdit, 'ifc_author').setText('author')
+        dialog.findChild(QLineEdit, 'ifc_history_reason').setText('Synthetic inverse')
+        click('ifc_history_preview')
+        token = app.store.current_digest('P'); before = deepcopy(app.open_project('P'))
+        if change == 'project': view.project_id_input.setText('OTHER')
+        elif change == 'revision': view.ifc_revision.setText('R99')
+        else: view.open_drawing(str(tmp_path / 'beams-R1.ifc'))
+        click('ifc_group_confirm'); click('ifc_history_apply')
+        assert app.store.current_digest('P') == token
+        assert app.open_project('P') == before
+    finally: view.close(); app.store.close(); qt.processEvents()
+
+
 @pytest.mark.parametrize('count', [1, 5, 20])
 def test_independent_ifc_groups_preserve_total_and_other_owners_on_undo(tmp_path, count):
     transfers = []
