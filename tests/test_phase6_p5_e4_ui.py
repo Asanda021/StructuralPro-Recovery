@@ -201,3 +201,18 @@ def test_search_manual_formula_opens_same_record_in_original_editor(tmp_path):
         for view in opened:view.close()
         search.close();service.store.close();qt.processEvents()
 
+def test_report_without_specialist_handoff_stays_explicitly_read_only(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from core.platform.application import StructuralProApp
+    from app.project_search_panel import ProjectSearchDialog
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('گزارش','P')
+    project=service.open_project('P');project['reports']=[{'id':'R1','title':'گزارش فاقد مسیر تخصصی'}]
+    service.store.save('P',project,expected_digest=service.store.current_digest('P'))
+    calls=[];search=ProjectSearchDialog(service,'P',initial_query='فاقد مسیر تخصصی',on_navigate=lambda *args:calls.append(args))
+    try:
+        search.list.setCurrentRow(0);assert search.open_record() is not None
+        assert not calls, 'unsupported report must not masquerade as an opened specialist record'
+        assert 'فقط‌خواندنی' in search.status.text()
+    finally:search.close();service.store.close();qt.processEvents()
+
