@@ -1,3 +1,13 @@
+## ادامه اجرایی نهایی این مأموریت — ۲۷ اکتبر ۲۰۲۶
+
+کد/تست نهایی `0c8dae4ce1f182a7599932dc48b63455b933c6d5`؛ Tree `2d41d0e1abf92297482fe57ecf1e62c31d3fef01`. [CI 40541143258](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40541143258) SUCCESS: هر محیط Linux/Windows **۲۱۸ PASS اصلی + ۸ PASS scale2**، صفر FAIL/ERROR/SKIP و صفر warning pytest اصلی. هشت تست scale2 تکرار همان Dockها هستند. مبنای معتبر انتقال W1: f84b593 و CI40540215367، هر محیط۱۳۵PASS.
+
+هفت اصلاح واقعی: recheck تأیید تیر، guard وابسته به پیشنهاد اصلی، تشخیص ابهام جست‌وجو، ناوبری طبقه واقعی، نمایش همه وابسته‌های گروهی، اتصال digest تا SQLite و رد تغییر مدرک قطعی حتی با مقدار برابر. گزارش کامل فایل‌ها، Oracle، RED/GREEN، شواهد، گیت‌ها و checkpoint: [verification-20261027-hardening/REPORT.fa.md](verification-20261027-hardening/REPORT.fa.md).
+
+P6-4/P6-5 همچنان PARTIAL؛ مالکیت مشترک واقعی/Split-Merge، ماتریس کامل IFC/فرم‌ها، همه مقصدهای تخصصی، مدل تجاری و UAT فیزیکی بازند. Git auth در انتهای کار پس از Pushهای موفق محصول از کار افتاد؛ وضعیت انتشار Commit جدید شواهد باید جداگانه تأیید شود. main/Merge/ForcePush/Release/EXE/P6-6/فاز۷ انجام نشد؛۸فاز و۸۵٪ ثابت.
+
+---
+
 # StructuralPro — گزارش پذیرش فنی اولیه P6-5 (E3–E6)
 
 ## ادامه اجرایی جاری — ۲۷ اکتبر۲۰۲۶

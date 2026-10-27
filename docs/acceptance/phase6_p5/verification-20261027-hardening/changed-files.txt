@@ -1,0 +1,15 @@
+8	1	.github/workflows/phase6-p5-workspace-acceptance.yml
+6	1	app/beam_detail_panel.py
+5	1	app/graphical_takeoff.py
+2	2	app/main.py
+3	2	app/manual_formula_controls.py
+2	0	app/project_search_panel.py
+24	0	app/workspace_docks.py
+2	2	core/platform/application.py
+11	2	core/search/global_search.py
+9	5	core/takeoff/manual_formula_register.py
+77	0	scripts/phase6_acceptance_summary.py
+21	0	scripts/run_phase6_pytest.py
+133	2	tests/test_phase6_p4_contextual_takeoff.py
+66	0	tests/test_phase6_p5_e4_ui.py
+137	0	tests/test_phase6_p5_e6_bulk_preview.py

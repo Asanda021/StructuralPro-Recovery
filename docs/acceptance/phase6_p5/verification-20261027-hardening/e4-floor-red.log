@@ -1,0 +1,53 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_search_floor_opens_and_selects_actual_inspector_node ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-24/test_search_floor_opens_and_se0')
+
+    def test_search_floor_opens_and_selects_actual_inspector_node(tmp_path):
+        from PySide6.QtWidgets import QMainWindow
+        from PySide6.QtCore import QSettings
+        from app.workspace_docks import WorkspaceDockController
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('Floor navigation', 'P')
+        service.add_project_floor('P', 'طبقه بیست', level='F20')
+        window = QMainWindow(); window.show()
+        controller = WorkspaceDockController(window, QSettings(str(tmp_path / 'ui.ini'), QSettings.IniFormat), service, lambda: 'P')
+        calls = []
+        search = ProjectSearchDialog(service, 'P', initial_query='طبقه بیست',
+            on_navigate=lambda route, pid, identity: calls.append(controller.focus_project_record(identity)))
+        digest = service.store.current_digest('P')
+        try:
+            search.list.setCurrentRow(0)
+            QTest.mouseClick(search.open_button, Qt.MouseButton.LeftButton)
+>           assert calls == [True], search.status.text()
+E           AssertionError: ناوبری/نمایش مسدود شد: 'WorkspaceDockController' object has no attribute 'focus_project_record'
+E           assert [] == [True]
+E             
+E             Right contains one more item: True
+E             Use -v to get more diff
+
+tests/test_phase6_p5_e4_ui.py:49: AssertionError
+___________ test_search_floor_member_route_collision_is_not_guessed ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-24/test_search_floor_member_route0')
+
+    def test_search_floor_member_route_collision_is_not_guessed(tmp_path):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('Route identity', 'P')
+        service.add_project_floor('P', 'طبقه اول', level='X1')
+        service.add_project_member('P', 'X1', 'X1', 'column')
+        calls = []
+        search = ProjectSearchDialog(service, 'P', initial_query='طبقه اول', on_navigate=lambda *args: calls.append(args))
+        digest = service.store.current_digest('P')
+        try:
+            search.list.setCurrentRow(0)
+            QTest.mouseClick(search.open_button, Qt.MouseButton.LeftButton)
+>           assert not calls
+E           AssertionError: assert not [('projects', 'P', 'X1')]
+
+tests/test_phase6_p5_e4_ui.py:70: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase6_p5_e4_ui.py::test_search_floor_opens_and_selects_actual_inspector_node
+FAILED tests/test_phase6_p5_e4_ui.py::test_search_floor_member_route_collision_is_not_guessed
+2 failed, 11 deselected in 0.43s

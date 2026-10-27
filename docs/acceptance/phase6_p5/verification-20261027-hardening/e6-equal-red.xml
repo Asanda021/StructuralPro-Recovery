@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.248" timestamp="2026-10-27T16:11:13.005605+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p5_e6_bulk_preview" name="test_bulk_preview_cannot_invalidate_committed_dependency_even_if_quantity_equal" time="0.050"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-11/test_bulk_preview_cannot_inval0')
+
+    def test_bulk_preview_cannot_invalidate_committed_dependency_even_if_quantity_equal(tmp_path):
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('Equal quantity, different evidence', 'P')
+        service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic dimensions')
+        service.save_manual_formula('P', 'B', data(member='B', source_id='measured:B', expression='base',
+            references={'base': 'A'}, variables={}, variable_units={}), expected_revision=0, reason='Dependency')
+        service.review_manual_formula('P', 'B', expected_revision=1, reviewer='Engineer', note='Explicit review')
+        service.commit_manual_formula('P', 'B', expected_revision=1)
+        digest = service.store.current_digest('P')
+        try:
+&gt;           with pytest.raises(ValueError):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_phase6_p5_e6_bulk_preview.py:56: Failed</failure></testcase></testsuite></testsuites>

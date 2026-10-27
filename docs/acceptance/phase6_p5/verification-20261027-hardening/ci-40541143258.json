@@ -1,0 +1,53 @@
+{
+  "url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40541143258",
+  "status": "Success",
+  "commit": "0c8dae4ce1f182a7599932dc48b63455b933c6d5",
+  "observed_junit_annotations": [
+    {
+      "file": "p6-p5-dpi-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "77702bf6a2421cea8892d4ffc78d740a7139a2860d42d44cfab33c7b3f52c026",
+      "main_pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-offscreen.xml",
+      "tests": 218,
+      "passed": 218,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "ab52610ed28deebe48e6a04c210f0e2df247ae717732221828ce210a31152e25",
+      "main_pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-windows.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "941e03841f8db67a88b42c04011f6bd95bedc8eb44357f19c8b8cf561e360cac",
+      "main_pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-windows.xml",
+      "tests": 218,
+      "passed": 218,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "688bbd476ccedda33383fb0807e50080b46b0dea1123cfda722eb9183b111aa5",
+      "main_pytest_warning_count": 0
+    }
+  ],
+  "artifact_digests": [
+    "a589bdc86d2a241f8dde6a8a2a90bcd0fed504307d18c3f44eafda0756d1a3fe",
+    "38e792848088a065ad09b16592d70db23622d251076923f537d307aad6983b68"
+  ],
+  "raw_logs_and_artifacts_downloaded": false,
+  "artifact_access_note": "Artifact binaries/raw logs require GitHub login in this execution context. Counts/hashes obtained from real public CI annotations; local JUnit files are not Windows artifacts."
+}

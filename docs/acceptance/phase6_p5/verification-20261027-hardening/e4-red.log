@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_search_duplicate_member_identity_is_not_resolved_by_matching_title ____
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-7/test_search_duplicate_member_i0')
+
+    def test_search_duplicate_member_identity_is_not_resolved_by_matching_title(tmp_path):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('Ambiguous search', 'P')
+        project = service.open_project('P')
+        project['members'] = [
+            {'id': 'M1', 'floor_id': 'F1', 'kind': 'column', 'title': 'ستون شمالی', 'revision': 'R1'},
+            {'id': 'M1', 'floor_id': 'F2', 'kind': 'column', 'title': 'ستون جنوبی', 'revision': 'R2'},
+        ]
+        service.store.save('P', project, expected_digest=service.store.current_digest('P'))
+        digest = service.store.current_digest('P'); calls = []
+        panel = ProjectSearchDialog(service, 'P', initial_query='شمالی', on_navigate=lambda *args: calls.append(args))
+        try:
+            assert panel.list.count() == 1
+            panel.list.setCurrentRow(0)
+            QTest.mouseClick(panel.open_button, Qt.MouseButton.LeftButton)
+>           assert not calls
+E           AssertionError: assert not [('projects', 'P', 'M1')]
+
+tests/test_phase6_p5_e4_ui.py:25: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase6_p5_e4_ui.py::test_search_duplicate_member_identity_is_not_resolved_by_matching_title
+1 failed, 10 deselected in 0.62s

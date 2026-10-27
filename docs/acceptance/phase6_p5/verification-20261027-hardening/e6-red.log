@@ -1,0 +1,50 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+____ test_bulk_preview_includes_unselected_dependency_changes_and_revisions ____
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-9/test_bulk_preview_includes_uns0')
+
+    def test_bulk_preview_includes_unselected_dependency_changes_and_revisions(tmp_path):
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('Dependency preview', 'P')
+        service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic input')
+        for key, factor in [('B', '2'), ('C', '3')]:
+            service.save_manual_formula('P', key, data(member=key, source_id='measured:' + key,
+                expression='base*factor', references={'base': 'A'}, variables={'factor': factor},
+                variable_units={'factor': 'عدد'}), expected_revision=0, reason='Explicit dependency')
+        before = service.open_project('P'); digest = service.store.current_digest('P')
+        try:
+            preview = service.preview_bulk_edit_manual_formulas('P', ['A'],
+                changes={'variables': {'length': '5'}}, expected_revisions={'A': 1})
+            rows = {r['row_id']: r for r in preview['rows']}
+>           assert set(rows) == {'A', 'B', 'C'}
+E           AssertionError: assert {'A'} == {'A', 'B', 'C'}
+E             
+E             Extra items in the right set:
+E             'B'
+E             'C'
+E             Use -v to get more diff
+
+tests/test_phase6_p5_e6_bulk_preview.py:20: AssertionError
+______ test_bulk_apply_requires_the_preview_project_digest_when_supplied _______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-9/test_bulk_apply_requires_the_p0')
+
+    def test_bulk_apply_requires_the_preview_project_digest_when_supplied(tmp_path):
+        service = StructuralProApp(tmp_path / 'db'); service.create_project('CAS preview', 'P')
+        service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Synthetic input')
+        preview = service.preview_bulk_edit_manual_formulas('P', ['A'],
+            changes={'variables': {'length': '5'}}, expected_revisions={'A': 1})
+        concurrent = StructuralProApp(tmp_path / 'db')
+        try:
+            concurrent.add_project_floor('P', 'Concurrent floor', level='F2')
+            digest = service.store.current_digest('P'); before = service.open_project('P')
+            with pytest.raises(RuntimeError):
+>               service.bulk_edit_manual_formulas('P', ['A'], changes={'variables': {'length': '5'}},
+                    expected_revisions={'A': 1}, expected_digest=preview['cas_digest'], reason='Stale preview')
+E                   TypeError: StructuralProApp.bulk_edit_manual_formulas() got an unexpected keyword argument 'expected_digest'
+
+tests/test_phase6_p5_e6_bulk_preview.py:40: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_phase6_p5_e6_bulk_preview.py::test_bulk_preview_includes_unselected_dependency_changes_and_revisions
+FAILED tests/test_phase6_p5_e6_bulk_preview.py::test_bulk_apply_requires_the_preview_project_digest_when_supplied
+2 failed, 11 deselected in 0.25s
