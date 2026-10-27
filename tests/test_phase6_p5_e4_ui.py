@@ -30,6 +30,49 @@ def test_search_duplicate_member_identity_is_not_resolved_by_matching_title(tmp_
         panel.close(); service.store.close(); qt.processEvents()
 
 
+def test_search_floor_opens_and_selects_actual_inspector_node(tmp_path):
+    from PySide6.QtWidgets import QMainWindow
+    from PySide6.QtCore import QSettings
+    from app.workspace_docks import WorkspaceDockController
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Floor navigation', 'P')
+    service.add_project_floor('P', 'طبقه بیست', level='F20')
+    window = QMainWindow(); window.show()
+    controller = WorkspaceDockController(window, QSettings(str(tmp_path / 'ui.ini'), QSettings.IniFormat), service, lambda: 'P')
+    calls = []
+    search = ProjectSearchDialog(service, 'P', initial_query='طبقه بیست',
+        on_navigate=lambda route, pid, identity: calls.append(controller.focus_project_record(identity)))
+    digest = service.store.current_digest('P')
+    try:
+        search.list.setCurrentRow(0)
+        QTest.mouseClick(search.open_button, Qt.MouseButton.LeftButton)
+        assert calls == [True], search.status.text()
+        selected = controller.tree.selectedItems()
+        assert len(selected) == 1
+        kind, record = selected[0].data(0, Qt.ItemDataRole.UserRole)
+        assert kind == 'floor' and record['id'] == 'F20'
+        assert controller.dock.isVisible()
+        assert service.store.current_digest('P') == digest
+    finally: search.close(); window.close(); service.store.close(); qt.processEvents()
+
+
+def test_search_floor_member_route_collision_is_not_guessed(tmp_path):
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Route identity', 'P')
+    service.add_project_floor('P', 'طبقه اول', level='X1')
+    service.add_project_member('P', 'X1', 'X1', 'column')
+    calls = []
+    search = ProjectSearchDialog(service, 'P', initial_query='طبقه اول', on_navigate=lambda *args: calls.append(args))
+    digest = service.store.current_digest('P')
+    try:
+        search.list.setCurrentRow(0)
+        QTest.mouseClick(search.open_button, Qt.MouseButton.LeftButton)
+        assert not calls
+        assert 'مبهم' in search.status.text()
+        assert service.store.current_digest('P') == digest
+    finally: search.close(); service.store.close(); qt.processEvents()
+
+
 def test_search_live_member_and_stale_fails_closed(tmp_path):
     qt=QApplication.instance() or QApplication([])
     app=StructuralProApp(tmp_path/"app")

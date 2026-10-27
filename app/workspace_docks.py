@@ -199,6 +199,30 @@ class WorkspaceDockController:
         self.status.setText(("عضو" if kind=="member" else "طبقه")+" واقعی: "+
                             str(item.get("id",""))+" | "+str(item.get("kind",item.get("name",""))))
 
+    def focus_project_record(self, record_id):
+        """Focus an exact floor/member in the shared projects search route."""
+        project = self.service.open_project(self.project_id())
+        if not isinstance(project, dict):
+            return False
+        matches = [(kind, record) for kind, key in (('floor', 'floors'), ('member', 'members'))
+            for record in project.get(key, []) if str(record.get('id', '')) == str(record_id)]
+        if len(matches) != 1 or str(record_id) == str(project.get('id')):
+            return False
+        if matches[0][0] == 'member':
+            return self.focus_member(record_id)
+        self.refresh()
+        for index in range(self.tree.topLevelItemCount()):
+            item = self.tree.topLevelItem(index)
+            kind, record = item.data(0, Qt.ItemDataRole.UserRole)
+            if kind == 'floor' and str(record.get('id', '')) == str(record_id):
+                self.tree.clearSelection()
+                self.dock.show()
+                self.tree.setCurrentItem(item)
+                item.setSelected(True)
+                self.tree.scrollToItem(item)
+                return True
+        return False
+
     def focus_member(self, member_id):
         """Select a stored member from the real project tree, never guessed geometry."""
         pid=self.project_id()

@@ -24,7 +24,58 @@ def test_bulk_preview_includes_unselected_dependency_changes_and_revisions(tmp_p
             assert rows[key]['revision'] == 1
         assert service.store.current_digest('P') == digest
         assert service.open_project('P') == before
+        service.bulk_edit_manual_formulas('P', ['A'], changes={'variables': {'length': '5'}},
+            expected_revisions={'A': 1}, expected_digest=preview['cas_digest'], reason='Reviewed dependency closure')
+        for operation, total in [(None, 18), ('undo_manual_formulas', 36), ('redo_manual_formulas', 18)]:
+            if operation: getattr(service, operation)('P')
+            register = service.load_manual_formulas('P')
+            assert set(register) == {'A', 'B', 'C'}
+            assert sum(Decimal(str(r['quantity'])) for r in register.values()) == total
+            assert all(r['revision'] >= 2 for r in register.values())
+            assert not service.open_project('P')['boq']
+        snapshot = service.open_project('P'); final_digest = service.store.current_digest('P')
     finally: service.store.close()
+    reopened = StructuralProApp(tmp_path / 'db')
+    try:
+        assert reopened.open_project('P') == snapshot
+        assert reopened.store.current_digest('P') == final_digest
+    finally: reopened.store.close()
+
+
+def test_native_bulk_confirmation_displays_dependent_rows_and_no_is_read_only(tmp_path):
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtCore import Qt, QTimer
+    from PySide6.QtTest import QTest
+    from app.manual_takeoff import ManualTakeoffDialog
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db'); service.create_project('Native bulk preview', 'P')
+    service.save_manual_formula('P', 'A', data(), expected_revision=0, reason='Explicit input')
+    service.save_manual_formula('P', 'B', data(member='B', source_id='measured:B', expression='base*2',
+        variables={}, variable_units={}, references={'base': 'A'}), expected_revision=0, reason='Dependency')
+    dialog = ManualTakeoffDialog(service, 'P'); dialog.show(); dialog.manual_tabs.setCurrentIndex(1)
+    qt.processEvents()
+    assert dialog.formula_table.item(0, 0).text() == 'A'
+    dialog.formula_bulk_name.setText('length'); dialog.formula_bulk_value.setText('5')
+    dialog.formula_reason.setText('Explicit length revision')
+    dialog.formula_bulk_name.setFocus(); qt.processEvents()
+    QTest.mouseClick(dialog.formula_table.viewport(), Qt.MouseButton.LeftButton,
+        pos=dialog.formula_table.visualItemRect(dialog.formula_table.item(0, 0)).center())
+    qt.processEvents()
+    digest = service.store.current_digest('P'); messages = []
+    watcher = QTimer(dialog)
+    def reject():
+        message = qt.activeModalWidget()
+        if isinstance(message, QMessageBox):
+            messages.append(message.text())
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.No), Qt.MouseButton.LeftButton)
+    watcher.timeout.connect(reject); watcher.start(20)
+    try:
+        QTest.mouseClick(dialog.formula_bulk_button, Qt.MouseButton.LeftButton)
+        assert len(messages) == 1, dialog.status.text()
+        assert 'A | 6 → 3' in messages[0] and 'B | 12 → 6' in messages[0]
+        assert service.store.current_digest('P') == digest
+        assert not service.open_project('P')['boq']
+    finally: watcher.stop(); dialog.close(); service.store.close(); qt.processEvents()
 
 
 def test_bulk_apply_requires_the_preview_project_digest_when_supplied(tmp_path):

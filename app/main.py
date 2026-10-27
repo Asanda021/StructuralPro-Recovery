@@ -721,8 +721,8 @@ def main()->int:
                     view.close()
                     raise
             if route=="projects" and str(entity_id)!=record_project:
-                if not workspace_docks.focus_member(entity_id):
-                    so.setPlainText("رکورد پروژه باز شد، اما عضو/طبقه قابل هایلایت نیست: "+str(entity_id))
+                if not workspace_docks.focus_project_record(entity_id):
+                    raise ValueError("عضو/طبقه مقصد معتبر یا یکتا نیست: "+str(entity_id))
             if route=="project_controls":
                 from app.verified_search_navigation import prepare_verified_controls_view
                 prepare_verified_controls_view(service,record_project,entity_id,parent=w).exec()

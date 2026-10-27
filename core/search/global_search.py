@@ -32,10 +32,12 @@ def search_project(project, query, *, limit=100):
     results=[]
     seen=set()
     identity_records={}
+    navigation_records={}
     def hit(kind,text,data,*,entity_id=None,source_id=None,revision=None,route=None):
         identity=str(entity_id) if entity_id is not None else None
         if identity is not None:
             identity_records.setdefault((kind,identity),set()).add(id(data))
+            navigation_records.setdefault((route,identity),set()).add(id(data))
         label=str(text or "").strip()
         if not label or q not in normalize(label):return
         # Stable record position is for display only, not a fabricated identity.
@@ -97,6 +99,7 @@ def search_project(project, query, *, limit=100):
             if isinstance(d,dict):
                 rec("item",d,keys=("title","member","source_id","family"),route="takeoff")
     for result in results:
-        if len(identity_records.get((result['kind'],result['entity_id']),()))>1:
+        if (len(identity_records.get((result['kind'],result['entity_id']),()))>1 or
+                len(navigation_records.get((result['route'],result['entity_id']),()))>1):
             result['link_status']='ambiguous_record'
     return results[:limit]
