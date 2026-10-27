@@ -117,6 +117,15 @@ PR #34 باید **Open/Draft/Unmerged** بماند، بر پایه PR #33. هی�
 مسیر E4 با استفاده از سیستم بررسی IFC واقعی تکمیل و در ۱۲۹ تست Windows/Linux تأیید شد و پیش‌نمایش E6 اکنون برای منشأ IFC پیش از اعمال خطا می‌دهد. گیت‌های فیزیکی Windows/چندمانیتور و سایر خانواده‌های هندسی مشترک همچنان بازند. PR #34 همچنان Draft و ادغام‌نشده است.
 # ادامه ۲۷ اکتبر ۲۰۲۶ — دو نقص اثبات‌شده
 
+نتیجه CI نهایی کد `c808d8c777dfea2e00e0fd6acde2ffaefed291e6`، Tree
+`3df89f1b4f507ba2c3daeed6b26f3b5b44986850`:
+[Actions 40462462651](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40462462651)
+هر دو success؛ Linux ۱۳۱ PASS در۱۹٫۰۵ثانیه، Windows Native ۱۳۱ PASS در۶۶٫۳۸ثانیه؛
+صفر FAIL/ERROR/SKIP. شمارش‌ها از لاگ هر دو Job استخراج شدند.
+
+Benchmark محلی ۱۰هزار رکورد: ۷۰ نتیجه، زمان۰٫۱۹۲۷ثانیه، اوج تخصیص Python
+۴۰۵۱۷۷۴ بایت؛ این عدد RSS کل فرایند نیست. Linux6.18.55، Python3.12.
+
 مبنای HEAD: `0536ceb2e6dbd952fe23a8a8177875e607bf1c44`؛ P6-4 بدون تغییر و بر
 `241dd15e3e5c3c572f94237da5146ceb04dc9dbf` باقی است.
 
