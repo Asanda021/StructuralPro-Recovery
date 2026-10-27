@@ -1,3 +1,19 @@
+## Follow-up review: all reachable specialist mutations and family binding
+
+Latest code/tests: `b845366`. The earlier 175-test result below predates this follow-up. Root will run the full exact workflow and native Windows CI after integration. Latest targeted result: **28 PASS, zero failure/error/skip**, one existing fitz warning; `w1-secondary-green.xml` is the actual JUnit.
+
+Review correctly identified that Copy/Delete/Create amendment/Review amendment/Apply amendment were still reachable writes outside the initial three-button fix. Ten actual Qt REDs reproduced SQLite changes after proposal replacement (both editors × five actions), using valid original specialist drafts, committed records and amendment data. Added live guard entry checks to all these mutations. Six further REDs covered family dropdown changes: W1 now binds the editor's selected kind to the originally routed kind, without changing non-W1 semantics. Two REDs changed source Revision inside native Delete confirmation then clicked the real Yes button; post-confirmation checks now prevent stale deletion. Negative tests compare full SQLite snapshots, integrity and persisted state after reopening.
+
+The first confirmation-test attempt used QMessageBox.done(Yes), which canceled the static question instead of clicking its Yes button; that was a test harness mistake, corrected before capturing the preserved true SQLite-mutation RED. The final bounded callback clicks the real button and dismisses the dialog in finally even on callback error.
+
+Focused follow-up command:
+
+`QT_QPA_PLATFORM=offscreen /workspace/StructuralPro-Recovery/.venv/bin/python -m pytest -q tests/test_phase6_p4_contextual_takeoff.py -k 'secondary_writes or form_kind or parsed_synthetic_ifc_specialist or modal_review_and_explicit' --junitxml=docs/acceptance/phase6_p4/verification-20261027-three-gates/w1-secondary-green.xml`
+
+The 28 scenarios comprise 12 secondary-write/confirmation negatives, six family-change negatives, eight original positive specialist workflows, two parsed-IFC positive workflows. No full-suite result is claimed for the follow-up. Remaining IFC mapping limitations below are unchanged.
+
+---
+
 # W1 focused verification — synthetic fixtures, 2026-10-27
 
 Code/tests commit: `50b965f` (base `043bb4b`). No push, merge, release or executable build.
