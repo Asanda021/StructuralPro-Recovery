@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="7" time="0.912" timestamp="2026-10-27T08:05:31.585297+01:00" hostname="c4798f173d28"><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_live_member_and_stale_fails_closed" time="0.095" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_does_not_read_other_project" time="0.017" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_boq_navigation_selects_exact_stored_row_without_financial_recalc" time="0.003" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_boq_duplicate_identity_refused_without_changing_table" time="0.001" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_to_verified_ifc_real_source_and_fourway_selection" time="0.332" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_to_verified_ifc_rejects_missing_review_and_tampered_file" time="0.107" /><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_opens_exact_document_only_with_live_sha_and_revision" time="0.077"><failure message="AssertionError: document search has no exact source handoff&#10;assert False&#10; +  where False = hasattr(&lt;module 'app.verified_search_navigation' from '/workspace/scratch/5ff2acae0199/StructuralPro-P6-p5/app/verified_search_navigation.py'&gt;, 'prepare_verified_drawing_view')">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-17/test_search_opens_exact_docume0')
+
+    def test_search_opens_exact_document_only_with_live_sha_and_revision(tmp_path):
+        from PySide6.QtWidgets import QApplication
+        from core.platform.application import StructuralProApp
+        from hashlib import sha256
+        from reportlab.pdfgen.canvas import Canvas
+        import app.verified_search_navigation as navigation
+        import pytest
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('اسناد','P')
+        path=tmp_path/'plan.pdf';c=Canvas(str(path));c.drawString(30,30,'synthetic QA document');c.save()
+        project=service.open_project('P')
+        project['drawings']=[{'id':'D1','name':'پلان آزمایشی','path':str(path),
+                              'source_sha256':sha256(path.read_bytes()).hexdigest(),'revision':'R1'}]
+        service.store.save('P',project,expected_digest=service.store.current_digest('P'))
+        try:
+&gt;           assert hasattr(navigation,'prepare_verified_drawing_view'), 'document search has no exact source handoff'
+E           AssertionError: document search has no exact source handoff
+E           assert False
+E            +  where False = hasattr(&lt;module 'app.verified_search_navigation' from '/workspace/scratch/5ff2acae0199/StructuralPro-P6-p5/app/verified_search_navigation.py'&gt;, 'prepare_verified_drawing_view')
+
+tests/test_phase6_p5_e4_ui.py:132: AssertionError</failure></testcase></testsuite></testsuites>

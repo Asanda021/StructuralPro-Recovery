@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="0.620" timestamp="2026-10-27T07:59:08.081284+01:00" hostname="c4798f173d28"><testcase classname="tests.test_phase6_p5_e5_docks" name="test_failed_restore_clears_visible_previous_project" time="0.125"><failure message="assert not True&#10; +  where True = &lt;built-in method isVisible of PySide6.QtWidgets.QDockWidget object at 0x7fa6cff4fa40&gt;()&#10; +    where &lt;built-in method isVisible of PySide6.QtWidgets.QDockWidget object at 0x7fa6cff4fa40&gt; = &lt;PySide6.QtWidgets.QDockWidget(0x3f0a6e40, name=&quot;P6E5BoqReadOnlyDock&quot;) at 0x7fa6cff4fa40&gt;.isVisible&#10; +      where &lt;PySide6.QtWidgets.QDockWidget(0x3f0a6e40, name=&quot;P6E5BoqReadOnlyDock&quot;) at 0x7fa6cff4fa40&gt; = &lt;app.workspace_docks.WorkspaceDockController object at 0x7fa6d001d430&gt;.boq_dock">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_failed_restore_clears_vis0')
+
+    def test_failed_restore_clears_visible_previous_project(tmp_path):
+        from PySide6.QtWidgets import QTableWidgetItem
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('اول','P')
+        current=['P'];window=QMainWindow();window.show()
+        ctrl=WorkspaceDockController(window,QSettings(str(tmp_path/'ui.ini'),QSettings.IniFormat),service,lambda:current[0])
+        try:
+            ctrl.toggle_boq();ctrl.boq_table.setRowCount(1)
+            ctrl.boq_table.setItem(0,0,QTableWidgetItem('پروژه قبلی'))
+            current[0]='missing'
+            assert not ctrl.restore()
+&gt;           assert not ctrl.boq_dock.isVisible()
+E           assert not True
+E            +  where True = &lt;built-in method isVisible of PySide6.QtWidgets.QDockWidget object at 0x7fa6cff4fa40&gt;()
+E            +    where &lt;built-in method isVisible of PySide6.QtWidgets.QDockWidget object at 0x7fa6cff4fa40&gt; = &lt;PySide6.QtWidgets.QDockWidget(0x3f0a6e40, name="P6E5BoqReadOnlyDock") at 0x7fa6cff4fa40&gt;.isVisible
+E            +      where &lt;PySide6.QtWidgets.QDockWidget(0x3f0a6e40, name="P6E5BoqReadOnlyDock") at 0x7fa6cff4fa40&gt; = &lt;app.workspace_docks.WorkspaceDockController object at 0x7fa6d001d430&gt;.boq_dock
+
+tests/test_phase6_p5_e5_docks.py:19: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e5_docks" name="test_existing_2d_view_dock_retains_canvas_and_invalidates_on_revision" time="0.070"><failure message="AssertionError: existing viewers have no workspace dock handoff&#10;assert False&#10; +  where False = hasattr(&lt;app.workspace_docks.WorkspaceDockController object at 0x7fa6cfa14860&gt;, 'attach_view')">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-3/test_existing_2d_view_dock_ret0')
+
+    def test_existing_2d_view_dock_retains_canvas_and_invalidates_on_revision(tmp_path):
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('اول','P')
+        window=QMainWindow();window.resize(1100,800);window.show()
+        ctrl=WorkspaceDockController(window,QSettings(str(tmp_path/'ui.ini'),QSettings.IniFormat),service,lambda:'P')
+        view=GraphicalTakeoffDialog(window,app_service=service,project_id='P')
+        try:
+&gt;           assert hasattr(ctrl,'attach_view'), 'existing viewers have no workspace dock handoff'
+E           AssertionError: existing viewers have no workspace dock handoff
+E           assert False
+E            +  where False = hasattr(&lt;app.workspace_docks.WorkspaceDockController object at 0x7fa6cfa14860&gt;, 'attach_view')
+
+tests/test_phase6_p5_e5_docks.py:32: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e5_docks" name="test_failed_project_switch_clears_previous_boq" time="0.026" /><testcase classname="tests.test_phase6_p5_e5_docks" name="test_real_project_dock_show_hide_save_restore_without_boq_change" time="0.044" /><testcase classname="tests.test_phase6_p5_e5_docks" name="test_layout_not_saved_for_missing_project" time="0.020" /><testcase classname="tests.test_phase6_p5_e5_docks" name="test_two_independent_docks_save_and_restore_without_project_mutation" time="0.041" /></testsuite></testsuites>

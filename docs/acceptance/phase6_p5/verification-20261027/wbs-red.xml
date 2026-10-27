@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.399" timestamp="2026-10-27T08:21:48.428598+01:00" hostname="c4798f173d28"><testcase classname="tests.test_phase6_p5_e4_ui" name="test_search_wbs_and_activity_focus_original_workspace_without_write" time="0.126"><failure message="AssertionError: canonical project_wbs is missing from search&#10;assert False&#10; +  where False = any(&lt;generator object test_search_wbs_and_activity_focus_original_workspace_without_write.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f171e7bf780&gt;)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-35/test_search_wbs_and_activity_f0')
+
+    def test_search_wbs_and_activity_focus_original_workspace_without_write(tmp_path):
+        from PySide6.QtWidgets import QApplication
+        from core.platform.application import StructuralProApp
+        from test_phase4_structure import structure,activity
+        from core.search.global_search import search_project
+        import app.verified_search_navigation as navigation
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('کنترل','P');structure(service);activity(service)
+        try:
+&gt;           assert any(r['entity_id']=='W1' for r in search_project(service.open_project('P'),'اسکلت')), 'canonical project_wbs is missing from search'
+E           AssertionError: canonical project_wbs is missing from search
+E           assert False
+E            +  where False = any(&lt;generator object test_search_wbs_and_activity_focus_original_workspace_without_write.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f171e7bf780&gt;)
+
+tests/test_phase6_p5_e4_ui.py:156: AssertionError</failure></testcase></testsuite></testsuites>

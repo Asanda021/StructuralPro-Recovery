@@ -1,0 +1,101 @@
+{
+  "code_commit": "b30f90fe08e00ae4187031e116bea3dcbf65cf22",
+  "code_tree": "c041edcb2059599d0050bd41c1b518a689b74db6",
+  "ci": 40466896839,
+  "environment": {
+    "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+    "python": "3.12.14",
+    "sqlite": "3.53.1",
+    "pyside6": "6.12.0",
+    "ifcopenshell": "0.9.0.post1"
+  },
+  "files": [
+    {
+      "path": "drawing-red.xml",
+      "bytes": 2999,
+      "sha256": "ee1fe8d757b9c805a94c06ab1e9cc4ecc6a22b4ad5e9a67767fa2c4ccfbbf67a"
+    },
+    {
+      "path": "e5-red.xml",
+      "bytes": 4375,
+      "sha256": "599bbdb9115e0c339c31f43a5c6153f040bbe078860171463966dc6e3d3b5c6e"
+    },
+    {
+      "path": "layout-red.xml",
+      "bytes": 3559,
+      "sha256": "cf63c96b0cd32b010c7af449bff754250f3b808c1a14b33fd2eb9d57eaaa4040"
+    },
+    {
+      "path": "linux-model.png",
+      "bytes": 21398,
+      "sha256": "b30706dff0b8decaeca5b011385c99b7c9e8fbacb8d583101aefda80b4336731"
+    },
+    {
+      "path": "linux-scale2.xml",
+      "bytes": 1324,
+      "sha256": "56b47ffacd4c2d3ea2a09aa20810ce9b18107b327495a1a14c0b24eb0994b130"
+    },
+    {
+      "path": "linux-workspace.png",
+      "bytes": 82327,
+      "sha256": "09fd2092cd941be69350d5500843d87192853e4d95bbc925c7ed18811ada794c"
+    },
+    {
+      "path": "linux.xml",
+      "bytes": 25057,
+      "sha256": "544b9c9acf25091537e82ddd5dfbf3d834d8830df061513999840a0f8c3b1835"
+    },
+    {
+      "path": "ownership-linux.xml",
+      "bytes": 31596,
+      "sha256": "3cbc5955307b1dc8d5e9567aed6a834302213cb88792be2fe56b92ee8aa95283"
+    },
+    {
+      "path": "size-red.xml",
+      "bytes": 3648,
+      "sha256": "796fbfc26bc1ccb5ecc7ab21f5fae0fa50b1b744fd18508bf0c30abab9d97eb7"
+    },
+    {
+      "path": "wbs-red.xml",
+      "bytes": 1821,
+      "sha256": "3c04a3c07e3f8ab993af4becc8415c1e44a1ffbca22fe80dfad2508c047dc7db"
+    },
+    {
+      "path": "windows-model.png",
+      "bytes": 15804,
+      "sha256": "e82b8d5206ea302fb5a6c27a972a15e24dcf2c113e5e4ee4e01a643f0c90f1da"
+    },
+    {
+      "path": "windows-scale2.png",
+      "bytes": 28711,
+      "sha256": "d1b054aedf0a3adbea0f4ac9c0a0771e1cb4a0e113cec71aca78dcf46ff1fa3a"
+    },
+    {
+      "path": "windows-scale2.xml",
+      "bytes": 1325,
+      "sha256": "75cae87c91ace1bcb0f44b93d23433eee45ac3b5af282d7c046fc819c55ab8d9"
+    },
+    {
+      "path": "windows-workspace.png",
+      "bytes": 33542,
+      "sha256": "49a76b8d6f344710631c021cce9ab5150b900d489a27e25a88fd63b13b1a1930"
+    },
+    {
+      "path": "windows.xml",
+      "bytes": 25059,
+      "sha256": "b6ce32d70f830a944c8bc8c3768b9171257e1f29c77f4ca97cadebad3e855701"
+    }
+  ],
+  "code_sha256": {
+    "app/workspace_docks.py": "f3f00809e8ae45108a478e7905e6347723ff4f45084529825e095984b962cbad",
+    "app/main.py": "4e2a9cb861d180ab3088da0a11a244892c496e32b7c28960c446e2afcf45722c",
+    "app/graphical_takeoff.py": "c7d6f4019a0d7e22e714ab9fb0281bb6b0b2685141c72e04236504b039924ebd",
+    "app/roof_detail_editor.py": "e78230cac8b48bb2ce2fa9b1a6d18383db962a993305eb2f312977d5e22147dc",
+    "app/verified_search_navigation.py": "d7c5934e0395fbe10b541211be12c62699a92ff41e32e212aebd4557465c735d",
+    "core/search/global_search.py": "5d22fbfbdbd2120be021bc056550124aae718f0feac0d0e989133eecd2fab0bd",
+    "tests/test_phase6_p4_contextual_takeoff.py": "b291542e90d842523abc52bebacbc34fca09566756e1a26e19011fdd45ce3d73",
+    "tests/test_phase6_p5_e4_ui.py": "b1a39d22075f3c59f077190ecf2d524e1e63462d624a7e8e3788ed6294952c9c",
+    "tests/test_phase6_p5_e5_docks.py": "8038c9a3ec85f397eac614630dfbb80be70df4cae92e58211aee80f9b6a6af0f",
+    "tests/test_phase6_p5_e6_bulk_preview.py": "5f8d5519c696e0317f667ce0d778f6642a48f37277f7fc12cdb2e02ddcf63211"
+  }
+}
