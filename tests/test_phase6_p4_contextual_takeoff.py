@@ -12,7 +12,8 @@ from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
 
 
 @pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
-def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,member,kind):
+@pytest.mark.parametrize('change', ['bytes', 'deleted', 'revision', 'project', 'floor', 'member', 'proposal'])
+def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,member,kind,change):
     from PySide6.QtWidgets import QApplication,QMessageBox,QComboBox,QPushButton
     from PySide6.QtCore import QTimer,Qt
     from PySide6.QtTest import QTest
@@ -49,7 +50,13 @@ def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,
                 button=lambda label:next(b for b in modal.findChildren(QPushButton) if b.text()==label)
                 QTest.mouseClick(button('بارگذاری پیش‌نویس'),Qt.MouseButton.LeftButton)
                 save_button=button('ذخیره نسخه در SQLite')
-            path.write_bytes(path.read_bytes()+b' changed')
+            if change=='bytes':path.write_bytes(path.read_bytes()+b' changed')
+            elif change=='deleted':path.unlink()
+            elif change=='revision':drawing.ifc_revision.setText('R2')
+            elif change=='project':drawing.project_id_input.setText('OTHER')
+            elif change=='floor':drawing.polygon_floor.setText('L2')
+            elif change=='member':drawing.polygon_member.setText('OTHER')
+            else:assert wizard.preview() is not None
             QTest.mouseClick(save_button,Qt.MouseButton.LeftButton)
             assert service.store.current_digest('P')==digest, 'stale W1 drawing allowed a save'
             assert not service.open_project('P')['boq']
@@ -62,7 +69,13 @@ def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,
         assert wizard.preview() is not None,wizard.status.text()
         timer.start(40);wizard.open_form()
         assert not errors,errors
+        assert service.store.current_digest('P')==digest
     finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:
+        assert reopened.store.current_digest('P')==digest
+        assert not reopened.open_project('P')['boq']
+    finally:reopened.store.close()
 
 
 @pytest.mark.parametrize('family,member,kind',[('beam','B1','beam'),('column','C1','column'),('mep','S1','mep')])
