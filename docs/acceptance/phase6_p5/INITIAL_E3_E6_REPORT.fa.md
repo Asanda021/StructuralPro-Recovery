@@ -252,3 +252,22 @@ Benchmark محلی ۱۰هزار رکورد: ۷۰ نتیجه، زمان۰٫۱۹۲
   پذیرش یکپارچه و سخت‌افزار فیزیکی Windows هنوز با این بسته اثبات نشده‌اند.
 - P6-4 مدل واقعی BLOCKED است؛ به‌علت این مانع P6-5 متوقف نشد. P6-6 آغاز نشده است.
 
+
+---
+
+## ثبت انتقال معتبر W1 به P6-5 | ۲۷ اکتبر ۲۰۲۶
+
+**کد و تست واقعاً ثبت‌شده بر شاخه PR #34:** 665e9989c29d58c690d83b2f73b407a24c61db34؛ Tree: db33cb16fc8e888d5b79e1b04109c3801c19918a. تغییرات واقعی ۵ فایل اجرایی و آزمون W1 با حفظ تغییرات P6-5 در app/graphical_takeoff.py اعمال شدند. این یک Commit عادی است؛ نه Merge و نه Force Push.
+
+[CI مستقل P6-5 روی همین Commit](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40515516006) در هر دو محیط SUCCESS شد:
+- Linux Qt: ۱۸۸ PASS، ۰ FAIL، ۰ ERROR، ۰ SKIP؛ ۸ PASS اضافه برای اجرای جداگانه scale2.
+- Windows Native Qt: ۱۸۸ PASS، ۰ FAIL، ۰ ERROR، ۰ SKIP؛ ۸ PASS اضافه برای اجرای جداگانه scale2.
+- هشت آزمون DPI در هر سیستم، تکرار مجموعه مشخص در مقیاس متفاوت‌اند، نه هشت سناریوی مستقل جدید. در لاگ‌های این دو بسته هشدار pytest ثبت نشد.
+- [JUnit و تصاویر Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40515516006/artifacts/12739831068)؛ [JUnit و تصاویر Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40515516006/artifacts/12738393400).
+- مبنای تأیید PR #33: Commit کد/تست 0a955cd43d85941bd3c19c773485b6cb06061381؛ [CI 40514369144](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40514369144) هر محیط ۱۱۵ PASS با یک هشدار fitz.
+- Close/Disable تمیز و ویرایش‌نشده/ناتمام، بازگشت مستقل پنل تیر، تغییر پروژه/طبقه/عضو پس از handoff و PDF SHA در دامنه آزموده‌شده fail-closed شدند.
+- **گیت‌های باز:** پوشش کامل سناریوهای IFC پیچیده، همه Save/Preview/Commit تخصصی و تغییر منبع در تمام پنجره‌ها، اتصال کامل ناوبری E4، مالکیت مشترک هندسی و Split/Merge در E6، آزمون انسانی چندمانیتور/Windows و مدل تجاری مجاز A2. بنابراین هر دو اولویت P6-4 و P6-5 همچنان PARTIAL اند؛ نه RELEASE READY.
+- PRها Open/Draft/Unmerged، بدون تغییر main، Merge، Force Push، EXE، Release یا شروع P6-6 و فاز ۷. نقشه‌راه ثابت ۸ فاز و پیشرفت ثبت‌شده ۸۵٪ پابرجاست.
+
+### خلاصه وضعیت پروژه و چت
+رفع چرخه عمر W1 وارد کد PR #33 و PR #34 شده و CI واقعی هر دو سیستم برای بسته‌های موجود سبز است. گیت‌های مستقل ذکرشده هنوز بازند و باید در همین فاز ۶ بسته شوند.

@@ -1,3 +1,18 @@
+# آخرین checkpoint معتبر | ۲۷ اکتبر ۲۰۲۶
+
+مخزن: Asanda021/StructuralPro-Recovery. PR #33 و PR #34 باز، Draft و Unmerged اند.
+
+- PR33: آخرین commit کد/تست 0a955cd43d85941bd3c19c773485b6cb06061381؛ CI 40514369144: Linux ۱۱۵ PASS و Windows ۱۱۵ PASS، هرکدام ۱ هشدار fitz. مستندات PR33 مستقل پس از Commit کد به‌روز شده‌اند؛ HEAD را زنده بخوانید.
+- PR34: Commit کد/تست 665e9989c29d58c690d83b2f73b407a24c61db34؛ Tree db33cb16fc8e888d5b79e1b04109c3801c19918a. CI 40515516006: در هر محیط Linux/Windows تعداد ۱۸۸ PASS اصلی + ۸ PASS scale2؛ صفر FAIL/ERROR/SKIP. این ۸، آزمون‌های تکراری در scale2 هستند.
+- W1 lifecycle اکنون کد اجرایی دارد، نه فقط patch: clean Cancel/Close/Disable، dirty preservation/guard، Discard Yes/No، PDF SHA و اعتبار پروژه/طبقه/عضو پس از اتصال تست شده‌اند. ۵ فایل اصلی و فایل تست P6-4 به شاخه P6-5 منتقل شدند و E3–E6 حفظ شدند.
+- SHA256SUMS شاهدهای قدیمی W1 در PR33 برای همه شش فایل تکمیل شد؛ لاگ‌ها و JUnitهای جدید در Artifactهای CI اصلی هستند.
+- **باز:** کل پوشش IFC پیچیده، همه Save/Preview/Commit و تغییر منبع هنگام ویرایش در تمام خانواده‌ها؛ E4 مقصدهای تخصصی؛ E6 Shared Geometry Ownership/Split-Merge؛ UAT فیزیکی Windows و چندمانیتور؛ مدل واقعی دارای مجوز A2. هیچ ادعای پذیرفته‌شدن این گیت‌ها نشده است.
+- verdict هر دو P6-4/P6-5: PARTIAL. P6-6 و فاز ۷ شروع نشده‌اند. هشت فاز و ۸۵٪ ثبت‌شده بدون تغییر. بدون Merge/main/Force Push/Release/EXE.
+
+[CI W1](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40514369144) | [CI P6-5](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40515516006)
+
+---
+
 # checkpoint مستقل ۲۷ اکتبر۲۰۲۶
 
 ## checkpoint جاری این اجرا
