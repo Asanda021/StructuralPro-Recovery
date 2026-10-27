@@ -842,3 +842,86 @@ def test_w1_explicit_discard_uses_real_confirmation(tmp_path,accept):
             assert panel._w1_context_guard is not None and panel.geometry['length'].text()=='3.25'
             with pytest.raises(RuntimeError):panel._draft()
     finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
+@pytest.mark.parametrize('end_action', ['close', 'disable'])
+@pytest.mark.parametrize('dirty', [False, True])
+def test_w1_close_or_disable_restores_clean_and_preserves_dirty_beam(tmp_path, end_action, dirty):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Lifecycle test', 'P')
+    service.add_project_floor('P', 'Floor 1', level='L1')
+    service.add_project_member('P', 'B1', 'L1', 'beam')
+    drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    drawing.polygon_floor.setText('L1')
+    drawing.polygon_member.setText('B1')
+    wizard = drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        initial_digest = service.store.current_digest('P')
+        assert wizard.preview() is not None
+        panel = wizard.open_form()
+        assert panel is drawing.beam_detail_panel
+        if dirty:
+            panel.geometry['length'].setText('3.25')
+        if end_action == 'close':
+            wizard.close()
+        else:
+            wizard.toggle_enabled()
+            assert not wizard.guide.enabled
+        if dirty:
+            assert panel.geometry['length'].text() == '3.25'
+            assert panel._w1_context_guard is not None
+            with pytest.raises(RuntimeError):
+                panel._draft()
+        else:
+            assert panel._w1_context_guard is None
+            assert panel.floor.text() == '' and panel.beam.text() == ''
+        assert service.store.current_digest('P') == initial_digest
+        assert service.open_project('P')['boq'] == []
+    finally:
+        if end_action == 'disable':
+            wizard.close()
+        drawing.close()
+        service.store.close()
+        qt.processEvents()
+
+
+@pytest.mark.parametrize('changed', ['project', 'floor', 'member'])
+def test_w1_live_identity_change_after_handoff_fails_closed(tmp_path, changed):
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Lifecycle identity test', 'P')
+    service.add_project_floor('P', 'Floor 1', level='L1')
+    service.add_project_member('P', 'B1', 'L1', 'beam')
+    drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    drawing.polygon_floor.setText('L1')
+    drawing.polygon_member.setText('B1')
+    wizard = drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+    try:
+        digest = service.store.current_digest('P')
+        assert wizard.preview() is not None
+        panel = wizard.open_form()
+        assert panel is drawing.beam_detail_panel
+        if changed == 'project':
+            drawing.project_id_input.setText('OTHER')
+        elif changed == 'floor':
+            drawing.polygon_floor.setText('L2')
+        else:
+            drawing.polygon_member.setText('B2')
+        with pytest.raises(RuntimeError):
+            panel._draft()
+        assert service.store.current_digest('P') == digest
+        assert service.open_project('P')['boq'] == []
+    finally:
+        wizard.close()
+        drawing.close()
+        service.store.close()
+        qt.processEvents()
