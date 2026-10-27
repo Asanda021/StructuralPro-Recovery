@@ -162,7 +162,7 @@ def main()->int:
             refresh_projects()
             dashboard_page.refresh()
             pout.setText("پروژه ساختاری مستند ایجاد شد: "+new_id)
-        wizard=ProjectStartWizard(service,parent=w,on_created=created)
+        wizard=ProjectStartWizard(service,parent=w,on_created=created,settings=desktop_preferences.settings)
         wizard.exec()
     template_create=QPushButton("پروژه‌ساز مرحله‌ای با چهار الگو")
     template_create.setObjectName("E3OpenProjectStartWizard")

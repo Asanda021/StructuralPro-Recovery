@@ -50,3 +50,25 @@ def test_e3_incomplete_and_reused_id_do_not_modify(tmp_path):
         assert digest==app.store.current_digest("P")
     finally:
         ui.close();app.store.close();qt.processEvents()
+
+def test_saved_user_profile_reopens_with_selected_disciplines(tmp_path):
+    from PySide6.QtCore import QSettings
+    qt=QApplication.instance() or QApplication([])
+    settings=QSettings(str(tmp_path/"profile.ini"),QSettings.Format.IniFormat)
+    app=StructuralProApp(tmp_path/"db")
+    first=ProjectStartWizard(app,settings=settings)
+    first.kind.setCurrentIndex(first.kind.findData("industrial"))
+    first.profile_name.setText("کارخانه کوچک")
+    first.profile_disciplines.setText("civil,steel,electrical")
+    assert first.save_profile()
+    assert app.store.list()==[]
+    first.close()
+    ui=ProjectStartWizard(app,settings=settings)
+    try:
+        ui.kind.setCurrentIndex(ui.kind.findData("custom:کارخانه کوچک"))
+        ui.project_id.setText("IC");ui.name.setText("کارخانه");ui.floors.setValue(5)
+        assert ui.preview()["disciplines"]==["civil","steel","electrical"]
+        assert ui.create()["template_start"]["disciplines"]==["civil","steel","electrical"]
+        assert ui.delete_profile()
+        assert app.open_project("IC")["boq"]==[]
+    finally:ui.close();app.store.close();qt.processEvents()
