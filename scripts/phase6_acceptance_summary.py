@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import subprocess
 import sys
 import xml.etree.ElementTree as ET
@@ -27,7 +28,11 @@ def main(paths):
         skipped = sum(case.find('skipped') is not None for case in cases)
         reports.append(dict(file=name, sha256=hashlib.sha256(raw).hexdigest(),
             tests=len(cases), passed=len(cases)-failed-errors-skipped,
-            failed=failed, errors=errors, skipped=skipped))
+            failed=failed, errors=errors, skipped=skipped,
+            failures=[dict(test=case.get('classname', '') + '::' + case.get('name', ''),
+                detail='\n'.join(node.text or node.get('message', '') for node in case
+                    if node.tag in ('failure', 'error'))[-6000:])
+                for case in cases if case.find('failure') is not None or case.find('error') is not None]))
     def git(ref):
         return subprocess.check_output(['git', 'rev-parse', ref], text=True).strip()
     evidence = dict(commit=git('HEAD'), tree=git('HEAD^{tree}'),
@@ -35,6 +40,14 @@ def main(paths):
         platform=platform.platform(), python=platform.python_version(),
         reports=reports, missing=missing,
         warning_count=None, warning_note='JUnit does not encode the pytest warning count; inspect the original job log.')
+    log = Path('phase6-pytest.log')
+    if log.is_file():
+        output = log.read_text(encoding='utf-8', errors='replace')
+        counts = re.findall(r'(\d+) warnings?\b', output)
+        evidence['warning_count'] = int(counts[-1]) if counts else None
+        evidence['warning_note'] = 'Count extracted from pytest output when available, not from JUnit.'
+        evidence['pytest_log_sha256'] = hashlib.sha256(log.read_bytes()).hexdigest()
+        evidence['pytest_log_tail'] = output[-12000:]
     Path('phase6-acceptance-summary.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
     summary = '## Phase 6 acceptance evidence\n\n```json\n' + json.dumps(evidence, indent=2) + '\n```\n'
     print(summary)

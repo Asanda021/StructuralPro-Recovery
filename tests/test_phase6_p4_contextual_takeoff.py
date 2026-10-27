@@ -804,25 +804,29 @@ def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, chan
     drawing.show()
     wizard = drawing.open_contextual_wizard()
     wizard.family.setCurrentIndex(wizard.family.findData('beam'))
-    answered = []; snapshots = []
+    answered = []; snapshots = []; mutation_errors = []
     watcher = QTimer(wizard)
     def answer():
         message = qt.activeModalWidget()
         if not isinstance(message, QMessageBox) or answered:
             return
         snapshots.append(service.store.current_digest('P'))
-        if changed == 'pdf_bytes':
-            path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
-        elif changed == 'pdf_deleted':
-            path.unlink()
-        elif changed == 'revision':
-            drawing.ifc_revision.setText('R2')
-        elif changed == 'member':
-            drawing.polygon_member.setText('B2')
-        else:
-            wizard.cancel()
-        answered.append(True)
-        QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        try:
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+        except Exception as exc:
+            mutation_errors.append(repr(exc))
+        finally:
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
     watcher.timeout.connect(answer); watcher.start(20)
     try:
         assert wizard.preview() is not None
@@ -830,6 +834,7 @@ def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, chan
         QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
         QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
         assert answered == [True]
+        assert not mutation_errors, mutation_errors
         assert service.open_project('P')['boq'] == []
         assert service.store.current_digest('P') == snapshots[0]
         assert not service.open_project('P')['takeoffs']
