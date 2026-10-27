@@ -5,6 +5,25 @@ from core.platform.application import StructuralProApp
 from app.workspace_docks import WorkspaceDockController
 
 
+def test_failed_project_switch_clears_previous_boq(tmp_path):
+    from PySide6.QtWidgets import QTableWidgetItem
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db')
+    service.create_project('آزمایشی','P')
+    current=['P']
+    window=QMainWindow()
+    ctrl=WorkspaceDockController(window,QSettings(str(tmp_path/'ui.ini'),QSettings.IniFormat),service,lambda:current[0])
+    try:
+        ctrl.boq_table.setRowCount(1)
+        ctrl.boq_table.setItem(0,1,QTableWidgetItem('اطلاعات پروژه قبلی'))
+        current[0]='missing'
+        ctrl.refresh()
+        assert ctrl.boq_table.rowCount()==0
+        assert ctrl.tree.topLevelItemCount()==0
+    finally:
+        window.close();service.store.close();qt.processEvents()
+
+
 def test_real_project_dock_show_hide_save_restore_without_boq_change(tmp_path):
     qt=QApplication.instance() or QApplication([])
     service=StructuralProApp(tmp_path/"project")

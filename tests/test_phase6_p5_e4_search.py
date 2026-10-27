@@ -71,3 +71,15 @@ def test_equal_price_codes_are_not_unique_boq_identity():
     assert len(hits)==2
     assert all(x["entity_id"] is None and x["link_status"]=="unindexed_record" for x in hits)
     assert hits[0]["data"] is not hits[1]["data"]
+def test_canonical_schedule_tasks_are_searchable_without_mutation():
+    from copy import deepcopy
+    from core.search.global_search import search_project
+    project={'id':'P','project_schedule_tasks':[
+        {'id':'ACT-1','title':'اجرای دیوار طبقه ۲۰','revision':3}]}
+    original=deepcopy(project)
+    hits=search_project(project,'دیوار طبقه 20')
+    assert len(hits)==1
+    assert hits[0]['entity_id']=='ACT-1'
+    assert hits[0]['revision']==3
+    assert project==original
+

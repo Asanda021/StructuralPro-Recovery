@@ -94,6 +94,7 @@ class WorkspaceDockController:
 
     def refresh(self):
         self.tree.clear()
+        self.boq_table.setRowCount(0)
         try:
             pid=self.project_id()
             p=self.service.open_project(pid)
@@ -124,6 +125,8 @@ class WorkspaceDockController:
                                 str(p.get("_meta",{}).get("version","فاقد"))+
                                 " | بدون تغییر اطلاعات مهندسی")
         except Exception as exc:
+            self.tree.clear()
+            self.boq_table.setRowCount(0)
             self.status.setText("نمایش بازرس ممکن نیست: "+str(exc))
 
     def show_selected(self):
