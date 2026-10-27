@@ -1,0 +1,37 @@
+{
+  "code_commit": "f3eaec938f402142c921e669f345004b3050c73a",
+  "code_tree": "4d0bfbfcdfa85db2a697d3f28d92ce4dfd329e95",
+  "ci": 40466288771,
+  "files": [
+    {
+      "path": "beam-red.xml",
+      "bytes": 2484,
+      "sha256": "8f0b0465f65dd57687700d7af73e14be7e0e1543d56a4e47d15195e573eab18f"
+    },
+    {
+      "path": "linux-slab.png",
+      "bytes": 91001,
+      "sha256": "f9dc1a185aea3e2b47eb54a071e87f3401f68c759151df260a6dae49accb8308"
+    },
+    {
+      "path": "linux.xml",
+      "bytes": 15571,
+      "sha256": "a70041cbfb98babb87ce2fb5a623ac236840a1e896ce5ca63577abe8eada6d5c"
+    },
+    {
+      "path": "roof-roundtrip-red.xml",
+      "bytes": 24387,
+      "sha256": "fca7464ee379a13336a7fdcc84c66502ef75d5ca2b016572f8ad3907a8d011ad"
+    },
+    {
+      "path": "windows-slab.png",
+      "bytes": 32909,
+      "sha256": "e4db8d5801f563a86c6fbb8f1e9800f0aa0050474717c09d5ffeaf3bceb2c4c0"
+    },
+    {
+      "path": "windows.xml",
+      "bytes": 15572,
+      "sha256": "538234e7e7a758e02a24ddbe9bfef579f3bf9bf8a083cc1ae5bea7bb06347930"
+    }
+  ]
+}

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="6" time="1.526" timestamp="2026-10-27T08:13:39.944568+01:00" hostname="c4798f173d28"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[solid_slab]" time="0.418"><failure message="AssertionError: [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']&#10;  assert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]&#10;assert not [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-29/test_w1_modal_review_and_expli0')
+family = 'solid_slab'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fad334401a0&gt;
+
+    @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall'])
+    def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        if family.startswith('waffle'):
+            from test_waffle_specialist_work import sample
+        elif family=='block_wall':
+            from test_architecture_specialist_work import sample
+        else:
+            from test_roof_specialist_work import sample
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+        service.add_project_floor('P','طبقه آزمایشی',level='L1')
+        specimen=sample(family)
+        service.save_aec_system_draft('P',specimen,expected_revision=0)
+        before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+        monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+        drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        def click(button):
+            tabs=button.window().findChild(QTabWidget)
+            if tabs:
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+            parent=button.parentWidget()
+            while parent:
+                if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+                parent=parent.parentWidget()
+            qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+        def complete_modal():
+            modal=qt.activeModalWidget()
+            try:
+                controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+                assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+                assert service.store.current_digest('P')==before
+                controls['id'].setText(specimen['system_id']);click(controls['load'])
+                click(controls['preview']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                controls['reviewer'].setText('بازبین مستقل مصنوعی')
+                controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+                click(controls['review']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                click(controls['commit']);assert not warnings,warnings
+                record=service.get_aec_system('P',family,'L1',specimen['system_id'])
+                assert record['status']=='committed'
+                assert service.open_project('P')['boq']
+                seen.append(family)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+        try:
+            click(wizard.preview_button);assert wizard.active is not None
+            timer.start(30);click(wizard.open_form_button)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError("['تغییرات ابتدا باید ذخیره شوند']
+E             assert not ['تغییرات ابتدا باید ذخیره شوند']")]
+E           assert not [AssertionError("['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']")]
+
+tests/test_phase6_p4_contextual_takeoff.py:68: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[joist_block]" time="0.121"><failure message="AssertionError: [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']&#10;  assert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]&#10;assert not [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-29/test_w1_modal_review_and_expli1')
+family = 'joist_block'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fad2cabbef0&gt;
+
+    @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall'])
+    def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        if family.startswith('waffle'):
+            from test_waffle_specialist_work import sample
+        elif family=='block_wall':
+            from test_architecture_specialist_work import sample
+        else:
+            from test_roof_specialist_work import sample
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+        service.add_project_floor('P','طبقه آزمایشی',level='L1')
+        specimen=sample(family)
+        service.save_aec_system_draft('P',specimen,expected_revision=0)
+        before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+        monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+        drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        def click(button):
+            tabs=button.window().findChild(QTabWidget)
+            if tabs:
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+            parent=button.parentWidget()
+            while parent:
+                if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+                parent=parent.parentWidget()
+            qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+        def complete_modal():
+            modal=qt.activeModalWidget()
+            try:
+                controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+                assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+                assert service.store.current_digest('P')==before
+                controls['id'].setText(specimen['system_id']);click(controls['load'])
+                click(controls['preview']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                controls['reviewer'].setText('بازبین مستقل مصنوعی')
+                controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+                click(controls['review']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                click(controls['commit']);assert not warnings,warnings
+                record=service.get_aec_system('P',family,'L1',specimen['system_id'])
+                assert record['status']=='committed'
+                assert service.open_project('P')['boq']
+                seen.append(family)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+        try:
+            click(wizard.preview_button);assert wizard.active is not None
+            timer.start(30);click(wizard.open_form_button)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError("['تغییرات ابتدا باید ذخیره شوند']
+E             assert not ['تغییرات ابتدا باید ذخیره شوند']")]
+E           assert not [AssertionError("['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']")]
+
+tests/test_phase6_p4_contextual_takeoff.py:68: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[joist_foam]" time="0.160"><failure message="AssertionError: [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']&#10;  assert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]&#10;assert not [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-29/test_w1_modal_review_and_expli2')
+family = 'joist_foam'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fad2c6daed0&gt;
+
+    @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall'])
+    def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        if family.startswith('waffle'):
+            from test_waffle_specialist_work import sample
+        elif family=='block_wall':
+            from test_architecture_specialist_work import sample
+        else:
+            from test_roof_specialist_work import sample
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+        service.add_project_floor('P','طبقه آزمایشی',level='L1')
+        specimen=sample(family)
+        service.save_aec_system_draft('P',specimen,expected_revision=0)
+        before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+        monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+        drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        def click(button):
+            tabs=button.window().findChild(QTabWidget)
+            if tabs:
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+            parent=button.parentWidget()
+            while parent:
+                if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+                parent=parent.parentWidget()
+            qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+        def complete_modal():
+            modal=qt.activeModalWidget()
+            try:
+                controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+                assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+                assert service.store.current_digest('P')==before
+                controls['id'].setText(specimen['system_id']);click(controls['load'])
+                click(controls['preview']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                controls['reviewer'].setText('بازبین مستقل مصنوعی')
+                controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+                click(controls['review']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                click(controls['commit']);assert not warnings,warnings
+                record=service.get_aec_system('P',family,'L1',specimen['system_id'])
+                assert record['status']=='committed'
+                assert service.open_project('P')['boq']
+                seen.append(family)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+        try:
+            click(wizard.preview_button);assert wizard.active is not None
+            timer.start(30);click(wizard.open_form_button)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError("['تغییرات ابتدا باید ذخیره شوند']
+E             assert not ['تغییرات ابتدا باید ذخیره شوند']")]
+E           assert not [AssertionError("['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']")]
+
+tests/test_phase6_p4_contextual_takeoff.py:68: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[waffle_one_way]" time="0.143"><failure message="AssertionError: [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']&#10;  assert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]&#10;assert not [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-29/test_w1_modal_review_and_expli3')
+family = 'waffle_one_way'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fad2c6ac890&gt;
+
+    @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall'])
+    def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        if family.startswith('waffle'):
+            from test_waffle_specialist_work import sample
+        elif family=='block_wall':
+            from test_architecture_specialist_work import sample
+        else:
+            from test_roof_specialist_work import sample
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+        service.add_project_floor('P','طبقه آزمایشی',level='L1')
+        specimen=sample(family)
+        service.save_aec_system_draft('P',specimen,expected_revision=0)
+        before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+        monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+        drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        def click(button):
+            tabs=button.window().findChild(QTabWidget)
+            if tabs:
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+            parent=button.parentWidget()
+            while parent:
+                if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+                parent=parent.parentWidget()
+            qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+        def complete_modal():
+            modal=qt.activeModalWidget()
+            try:
+                controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+                assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+                assert service.store.current_digest('P')==before
+                controls['id'].setText(specimen['system_id']);click(controls['load'])
+                click(controls['preview']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                controls['reviewer'].setText('بازبین مستقل مصنوعی')
+                controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+                click(controls['review']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                click(controls['commit']);assert not warnings,warnings
+                record=service.get_aec_system('P',family,'L1',specimen['system_id'])
+                assert record['status']=='committed'
+                assert service.open_project('P')['boq']
+                seen.append(family)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+        try:
+            click(wizard.preview_button);assert wizard.active is not None
+            timer.start(30);click(wizard.open_form_button)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError("['تغییرات ابتدا باید ذخیره شوند']
+E             assert not ['تغییرات ابتدا باید ذخیره شوند']")]
+E           assert not [AssertionError("['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']")]
+
+tests/test_phase6_p4_contextual_takeoff.py:68: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[waffle_two_way]" time="0.124"><failure message="AssertionError: [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']&#10;  assert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]&#10;assert not [AssertionError(&quot;['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']&quot;)]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-29/test_w1_modal_review_and_expli4')
+family = 'waffle_two_way'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fad2c64b560&gt;
+
+    @pytest.mark.parametrize('family',['solid_slab','joist_block','joist_foam','waffle_one_way','waffle_two_way','block_wall'])
+    def test_w1_modal_review_and_explicit_commit_use_original_specialist(tmp_path,family,monkeypatch):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        if family.startswith('waffle'):
+            from test_waffle_specialist_work import sample
+        elif family=='block_wall':
+            from test_architecture_specialist_work import sample
+        else:
+            from test_roof_specialist_work import sample
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+        service.add_project_floor('P','طبقه آزمایشی',level='L1')
+        specimen=sample(family)
+        service.save_aec_system_draft('P',specimen,expected_revision=0)
+        before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+        monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+        drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+        def click(button):
+            tabs=button.window().findChild(QTabWidget)
+            if tabs:
+                for i in range(tabs.count()):
+                    if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+            parent=button.parentWidget()
+            while parent:
+                if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+                parent=parent.parentWidget()
+            qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+        def complete_modal():
+            modal=qt.activeModalWidget()
+            try:
+                controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+                assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+                assert service.store.current_digest('P')==before
+                controls['id'].setText(specimen['system_id']);click(controls['load'])
+                click(controls['preview']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                controls['reviewer'].setText('بازبین مستقل مصنوعی')
+                controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+                click(controls['review']);assert not warnings,warnings
+                assert not service.open_project('P')['boq']
+                click(controls['commit']);assert not warnings,warnings
+                record=service.get_aec_system('P',family,'L1',specimen['system_id'])
+                assert record['status']=='committed'
+                assert service.open_project('P')['boq']
+                seen.append(family)
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+        try:
+            click(wizard.preview_button);assert wizard.active is not None
+            timer.start(30);click(wizard.open_form_button)
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError("['تغییرات ابتدا باید ذخیره شوند']
+E             assert not ['تغییرات ابتدا باید ذخیره شوند']")]
+E           assert not [AssertionError("['تغییرات ابتدا باید ذخیره شوند']\nassert not ['تغییرات ابتدا باید ذخیره شوند']")]
+
+tests/test_phase6_p4_contextual_takeoff.py:68: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_review_and_explicit_commit_use_original_specialist[block_wall]" time="0.192" /></testsuite></testsuites>
