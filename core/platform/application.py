@@ -343,6 +343,18 @@ class StructuralProApp:
         from core.takeoff.manual_formula_amendments import apply_ifc_transfer
         return apply_ifc_transfer(self, project_id, **kwargs)
 
+    def preview_ifc_quantity_transfer_step(self, project_id, **kwargs):
+        from core.takeoff.manual_formula_amendments import preview_ifc_transfer_step
+        return preview_ifc_transfer_step(self, project_id, **kwargs)
+
+    def undo_ifc_quantity_transfer(self, project_id, **kwargs):
+        from core.takeoff.manual_formula_amendments import step_ifc_transfer
+        return step_ifc_transfer(self, project_id, action='undo', **kwargs)
+
+    def redo_ifc_quantity_transfer(self, project_id, **kwargs):
+        from core.takeoff.manual_formula_amendments import step_ifc_transfer
+        return step_ifc_transfer(self, project_id, action='redo', **kwargs)
+
     def assess_ifc_lineage_quantities(self, project_id, **kwargs):
         from core.drawings.ifc_lineage import assess_quantities
         return assess_quantities(self, project_id, **kwargs)

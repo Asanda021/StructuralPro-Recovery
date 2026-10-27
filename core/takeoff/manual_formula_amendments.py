@@ -123,6 +123,9 @@ def guard(previous,updated,command):
     if isinstance(command,dict) and command.get('action')=='ifc_transfer':
         ifc_transfer_guard(previous,updated,command)
         return
+    if isinstance(command,dict) and command.get('action')=='apply_ifc_transfer_step':
+        ifc_transfer_step_guard(previous,updated,command)
+        return
     changed=[f for f in FIELDS if previous.get(f,{})!=updated.get(f,{})]
     if not changed:return
     if not isinstance(command,dict) or command.get('action') not in {'create','review','apply'}:raise ValueError('اصلاحیه متره فقط از گردش رسمی قابل ثبت است')
@@ -863,8 +866,16 @@ def apply_ifc_transfer(service,pid,*,lineage_id,evidence_path,evidence_sha256,au
 
 def ifc_transfer_effective(project,rows):
     result=deepcopy(rows)
-    for event in project.get('manual_formula_amendments',{}).values():
-        if event.get('kind')!=IFC_TRANSFER:continue
+    events={key:event for key,event in project.get('manual_formula_amendments',{}).items()
+            if event.get('kind')==IFC_TRANSFER}
+    ordered=[];seen=set()
+    while len(ordered)<len(events):
+        ready=[(key,event) for key,event in events.items() if key not in seen and
+               (not event.get('previous_transfer_id') or event['previous_transfer_id'] in seen)]
+        if not ready:raise ValueError('زنجیره انتقال مالکیت ناقص یا چرخه‌ای است')
+        for key,event in ready:
+            ordered.append(event);seen.add(key)
+    for event in ordered:
         payload={k:v for k,v in event.items() if k not in ('id','status','revision','created_at','review')}
         if event.get('status')!='applied' or event.get('review',{}).get('digest')!=digest(payload):
             raise ValueError('بازبینی انتقال گروهی مقدار معتبر نیست')
@@ -896,3 +907,118 @@ def ifc_transfer_guard(previous,updated,command):
     from core.takeoff.commit_guards import rebuild_project_boq
     _,boq=rebuild_project_boq(updated,updated.get('takeoffs',[]))
     if updated.get('boq')!=boq:raise ValueError('BOQ با مالکیت مؤثر گروه مطابقت ندارد')
+
+
+def ifc_transfer_head(project, transfer_id):
+    """Resolve one existing group and its append-only compensation chain."""
+    journal=project.get(FIELDS[0],{})
+    root=journal.get(transfer_id)
+    if not root or root.get('kind')!=IFC_TRANSFER or root.get('transfer_root'):
+        raise ValueError('شناسه انتقال اصلی معتبر نیست')
+    head=root;seen={transfer_id}
+    while True:
+        children=[event for event in journal.values() if event.get('previous_transfer_id')==head['id']]
+        if not children:return root,head
+        if len(children)!=1:raise ValueError('شاخه مبهم در تاریخچه انتقال مالکیت')
+        child=children[0]
+        if (child['id'] in seen or child.get('transfer_root')!=transfer_id or
+                child.get('group_revision')!=head['group_revision']+1):
+            raise ValueError('نسخه زنجیره انتقال مالکیت معتبر نیست')
+        seen.add(child['id']);head=child
+
+
+def ifc_transfer_step_payload(project, *, transfer_id, action, expected_revision,
+                              expected_digest, author, reviewer, reason):
+    """Reverse exact reviewed rows; never divide quantities or invent owners."""
+    from core.platform.concurrency import assert_unchanged
+    from core.projects.project_model import _identity
+    financial_block(project)
+    if not isinstance(expected_digest,str) or not expected_digest:
+        raise ValueError('CAS برای واگرد مالکیت لازم است')
+    assert_unchanged({k:v for k,v in project.items() if k!='_meta'},expected_digest)
+    if action not in ('undo','redo'):raise ValueError('عملیات تاریخچه مالکیت معتبر نیست')
+    if _identity(author)==_identity(reviewer):raise ValueError('بازبین واگرد مالکیت باید مستقل باشد')
+    root,head=ifc_transfer_head(project,transfer_id)
+    revision(expected_revision,head['group_revision'])
+    if reviewer!=root.get('review',{}).get('reviewer'):
+        raise ValueError('واگرد این انتقال به همان بازبین مستقل ثبت‌شده نیاز دارد')
+    if (action=='undo')==(head.get('history_action')=='undo'):
+        raise ValueError('ترتیب واگرد/تکرار مالکیت معتبر نیست')
+    # Revalidate live IFC, allocation and delta evidence through the ORIGINAL
+    # payload validator, with only this group's financial events removed.
+    source=deepcopy(project)
+    source[FIELDS[0]]={key:event for key,event in source.get(FIELDS[0],{}).items()
+        if key!=transfer_id and event.get('transfer_root')!=transfer_id}
+    expected=ifc_transfer_payload(source,lineage_id=root['lineage_id'],
+        evidence_path=root['evidence_path'],evidence_sha256=root['evidence_sha256'],
+        author=root['created_by'],reviewer=root['reviewer'],expected_digest=root['expected_project_digest'])
+    if any(root.get(key)!=value for key,value in expected.items()):
+        raise ValueError('مدرک انتقال اصلی با منبع جاری مطابقت ندارد')
+    effective=effective_takeoffs(project,project.get('takeoffs',[]))
+    expected_rows={r['source_id']:r for r in head['rows']}
+    if {r['source_id']:r for r in effective if r['source_id'] in expected_rows}!=expected_rows:
+        raise ValueError('مالکیت مؤثر پس از انتقال تغییر کرده؛ واگرد گروه مسدود است')
+    from decimal import Decimal
+    return {**{key:deepcopy(root[key]) for key in ('kind','lineage_id','project_id','building_id',
+        'quantity_name','unit','classification','evidence_path','evidence_sha256','quantity_change_document')},
+        'operation':('merge' if root['operation']=='split' else 'split') if action=='undo' else root['operation'],
+        'transfer_root':transfer_id,'previous_transfer_id':head['id'],'history_action':action,
+        'group_revision':head['group_revision']+1,'previous':deepcopy(head['current']),
+        'current':deepcopy(head['previous']),'previous_total':head['current_total'],
+        'current_total':head['previous_total'],'delta':format(-Decimal(head['delta']),'f'),
+        'consumed_rows':deepcopy(head['rows']),'rows':deepcopy(head['consumed_rows']),
+        'created_by':text(author,'نویسنده'),'reviewer':text(reviewer,'بازبین'),
+        'reviewer_role':root['review']['role'],
+        'reason':text(reason,'علت واگرد یا تکرار'),'expected_project_digest':expected_digest}
+
+
+def preview_ifc_transfer_step(service,pid,**kwargs):
+    from core.drawings.ifc_pipeline import _authorized
+    _authorized(service,kwargs['author'],'edit');_authorized(service,kwargs['reviewer'],'review')
+    project,_=read(service,pid)
+    return {**ifc_transfer_step_payload(project,**kwargs),'preview_only':True,'commit_allowed':False}
+
+
+def step_ifc_transfer(service,pid,**kwargs):
+    from core.drawings.ifc_pipeline import _authorized
+    _authorized(service,kwargs['author'],'edit');user=_authorized(service,kwargs['reviewer'],'review')
+    project,_=read(service,pid)
+    payload=ifc_transfer_step_payload(project,**kwargs)
+    if user.role!=payload['reviewer_role']:
+        raise PermissionError('نقش بازبین انتقال تغییر کرده است؛ بازبینی تازه لازم است')
+    event={**payload,'id':'MA-'+uuid4().hex,'status':'applied','revision':1,
+        'created_at':datetime.now(timezone.utc).isoformat(),
+        'review':{'reviewer':kwargs['reviewer'],'role':user.role,'digest':digest(payload)}}
+    project.setdefault(FIELDS[0],{})[event['id']]=event
+    from core.takeoff.commit_guards import rebuild_project_boq
+    _,project['boq']=rebuild_project_boq(project,project.get('takeoffs',[]))
+    service.store.save(pid,project,expected_digest=kwargs['expected_digest'],
+        manual_formula_command={'action':'apply_ifc_transfer_step','id':event['id']})
+    return deepcopy(event)
+
+
+def ifc_transfer_step_guard(previous,updated,command):
+    old=previous.get(FIELDS[0],{});new=updated.get(FIELDS[0],{});event=new.get(command['id'],{})
+    if (command['id'] in old or set(new)!=set(old)|{command['id']} or
+            event.get('id')!=command['id'] or any(new[key]!=value for key,value in old.items())):
+        raise ValueError('تاریخچه واگرد مالکیت قابل بازنویسی نیست')
+    expected=ifc_transfer_step_payload(previous,transfer_id=event.get('transfer_root'),
+        action=event.get('history_action'),expected_revision=event.get('group_revision',0)-1,
+        expected_digest=event.get('expected_project_digest'),author=event.get('created_by'),
+        reviewer=event.get('reviewer'),reason=event.get('reason'))
+    review=event.get('review',{})
+    if (set(event)!=set(expected)|{'id','status','revision','created_at','review'} or
+            any(event.get(key)!=value for key,value in expected.items()) or event.get('status')!='applied' or
+            type(event.get('revision')) is not int or event['revision']!=1 or
+            set(review)!={'reviewer','role','digest'} or review.get('reviewer')!=expected['reviewer'] or
+            review.get('role')!=expected['reviewer_role'] or review.get('digest')!=digest(expected)):
+        raise ValueError('واگرد مالکیت با مدرک و نسخه بازبینی‌شده مطابقت ندارد')
+    try:
+        if datetime.fromisoformat(event['created_at']).tzinfo is None:raise ValueError()
+    except (ValueError,TypeError):raise ValueError('زمان ثبت واگرد مالکیت معتبر نیست')
+    if (previous.get('takeoffs',[])!=updated.get('takeoffs',[]) or
+            previous.get(FIELDS[1],{})!=updated.get(FIELDS[1],{})):
+        raise ValueError('اصل متره یا اشاره‌گر اصلاحیه تغییرپذیر نیست')
+    from core.takeoff.commit_guards import rebuild_project_boq
+    _,boq=rebuild_project_boq(updated,updated.get('takeoffs',[]))
+    if updated.get('boq')!=boq:raise ValueError('BOQ با واگرد مالکیت مؤثر مطابقت ندارد')
