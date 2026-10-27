@@ -39,7 +39,30 @@ def test_bulk_copy_filter_history_with_native_qt_clicks(tmp_path,nonblocking_err
  def select():
   d.formula_table.clearSelection();d.formula_table.setFocus();QTest.mouseClick(d.formula_table.viewport(),Qt.LeftButton,pos=d.formula_table.visualItemRect(d.formula_table.item(0,0)).center());_qt.processEvents()
  def click(button):QTest.mouseClick(button,Qt.LeftButton);_qt.processEvents()
- select();d.formula_bulk_name.setText('length');d.formula_bulk_value.setText('5');d.formula_reason.setText('تغییر صریح طول');click(d.formula_bulk_button);assert s.load_manual_formulas('P')['A']['quantity']==3,d.status.text()
+ select();d.formula_bulk_name.setText('length');d.formula_bulk_value.setText('5');d.formula_reason.setText('تغییر صریح طول')
+ # The product requires an explicit native confirmation before writing.
+ from PySide6.QtWidgets import QMessageBox
+ confirmations=[];expired=[]
+ responder=QTimer();responder.setInterval(10)
+ watchdog=QTimer();watchdog.setSingleShot(True)
+ def approve_native_bulk():
+  dialog=QApplication.activeModalWidget()
+  if isinstance(dialog,QMessageBox) and dialog.isVisible():
+   button=dialog.button(QMessageBox.StandardButton.Yes)
+   if button is not None:
+    confirmations.append(dialog.text());responder.stop()
+    QTest.mouseClick(button,Qt.LeftButton)
+ def dismiss_stalled_confirmation():
+  expired.append(True)
+  dialog=QApplication.activeModalWidget()
+  if dialog is not None:dialog.reject()
+ responder.timeout.connect(approve_native_bulk);watchdog.timeout.connect(dismiss_stalled_confirmation)
+ responder.start();watchdog.start(2000)
+ try:click(d.formula_bulk_button)
+ finally:responder.stop();watchdog.stop()
+ assert not expired,'Native bulk confirmation did not complete within two seconds'
+ assert len(confirmations)==1,'The real bulk confirmation must appear exactly once'
+ assert s.load_manual_formulas('P')['A']['quantity']==3,d.status.text()
  select();d.formula_copy_floor.setText('دوم');d.formula_reason.setText('کپی عضو مستقل');click(d.formula_floor_copy_button);assert len(s.load_manual_formulas('P'))==2,d.status.text()
  d.formula_search.setText('دوم');_qt.processEvents();assert sum(not d.formula_table.isRowHidden(i) for i in range(2))==1
  d.formula_search.clear();_qt.processEvents();select()
