@@ -169,9 +169,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  buttons(summary,[('pdf','گزارش پی‌دی‌اف'),('xlsx','گزارش اکسل'),('docx','گزارش ورد'),('csv','داده جدولی')])
  message=QLabel('ابتدا عضو جدید یا بازگشایی را انتخاب کنید.');message.setWordWrap(True);outer.addWidget(message);c['message']=message
  buttons(outer,[('new','عضو جدید'),('load','بازگشایی'),('save','ذخیره'),('preview','محاسبه و ریزمتره'),('review','بازبینی'),('commit','ثبت قطعی در فهرست مقادیر')])
- def context():
-  values=c['project'].text().strip(),family.currentData(),c['floor'].text().strip(),c['id'].text().strip()
-  return values
+ def context():return c['project'].text().strip(),family.currentData(),c['floor'].text().strip(),c['id'].text().strip()
  def paint(record):
   state.update(record=deepcopy(record),data=deepcopy(record['data']),project=context()[0]);d=state['data'];a=d['architecture_detail'];dialog.setWindowTitle('متره تخصصی شیب‌بندی' if slope else 'متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[d['kind']].title)
   for key in ('save','preview','review','commit'):c[key].setEnabled(True)
@@ -230,7 +228,8 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   if review_digest(capture())!=review_digest(state['record']['data']):raise ValueError('ابتدا تغییرات پیش‌نویس را ذخیره کنید')
  def check_context():
   if context_guard is not None:
-   pid,_,fl,mid=context();context_guard(pid,fl,mid)
+   pid,current_kind,fl,mid=context();context_guard(pid,fl,mid)
+   if current_kind!=kind:raise ValueError('نوع فرم با پیشنهاد دستیار مطابقت ندارد')
  def save():
   check_context()
   d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(context()[0],d,expected_revision=state['record']['revision']))
@@ -244,6 +243,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  def review():check_context();unchanged();paint(service.review_roof_system(*context(),expected_revision=state['record']['revision'],reviewer=c['reviewer'].text(),note=c['note'].text()))
  def commit():check_context();unchanged();service.commit_aec_system(*context(),expected_revision=state['record']['revision']);load()
  def create_amendment():
+  check_context()
   path=Path(c['evidence_path'].text().strip());a=service.create_roof_amendment(*context(),capture(),expected_revision=state['record']['revision'],created_by=c['creator'].text(),reason=c['reason'].text(),evidence={'evidence_path':str(path),'evidence_sha256':sha256(path.read_bytes()).hexdigest(),'evidence_reference':c['evidence_ref'].text()});c['amend_id'].setText(a['id']);show_amendment(a);message.setText('درخواست اصلاحیه ثبت شد؛ مقادیر پیشین، پیشنهادی و اختلاف در جدول')
  def show_amendment(am):
   from core.takeoff.architecture_detail import preview
@@ -258,12 +258,16 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   if not am or am['beam_key']!=_id(kind,floor,sid):raise ValueError('اصلاحیه متعلق به عضو نمایش‌داده‌شده نیست')
   show_amendment(am);return am
  def review_amendment():
+  check_context()
   am=amendment_context();service.review_beam_amendment(context()[0],am['id'],expected_revision=am['revision'],reviewer=c['reviewer'].text(),note=c['note'].text());message.setText('اصلاحیه مستقل بازبینی شد')
  def apply_amendment():
+  check_context()
   am=amendment_context();service.apply_beam_amendment(context()[0],am['id'],expected_revision=am['revision']);load()
- def copy():service.aec_workflow().copy_roof(*context(),new_system_id=c['new_id'].text(),new_source_id=c['new_source'].text(),reason=c['reason'].text());c['id'].setText(c['new_id'].text());load()
+ def copy():check_context();service.aec_workflow().copy_roof(*context(),new_system_id=c['new_id'].text(),new_source_id=c['new_source'].text(),reason=c['reason'].text());c['id'].setText(c['new_id'].text());load()
  def delete():
+  check_context()
   if QMessageBox.question(dialog,'حذف کنترل‌شده','حذف پیش‌نویس با حفظ تاریخچه انجام شود؟')!=QMessageBox.Yes:return
+  check_context()
   service.aec_workflow().delete_roof(*context(),expected_revision=state['record']['revision'],reason=c['reason'].text());state['data']=None;message.setText('پیش‌نویس حذف شد؛ تاریخچه محفوظ است')
  def report(fmt):
   unchanged();path,_=QFileDialog.getSaveFileName(dialog,'مسیر گزارش','','*.'+fmt)

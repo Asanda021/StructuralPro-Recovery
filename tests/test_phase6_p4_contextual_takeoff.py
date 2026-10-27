@@ -1060,7 +1060,7 @@ def test_w1_live_identity_change_after_handoff_fails_closed(tmp_path, changed):
 
 @pytest.mark.parametrize('family',['solid_slab','block_wall'])
 @pytest.mark.parametrize('action',['save','review','commit'])
-@pytest.mark.parametrize('change',['bytes','deleted','revision','project','floor','member','proposal','cas'])
+@pytest.mark.parametrize('change',['bytes','deleted','revision','project','floor','member','proposal','cas','form_kind'])
 def test_w1_specialist_blocks_stale_modal_actions(tmp_path,family,monkeypatch,action,change):
     from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
     from PySide6.QtCore import QTimer,Qt
@@ -1111,7 +1111,9 @@ def test_w1_specialist_blocks_stale_modal_actions(tmp_path,family,monkeypatch,ac
             if action=='commit':
                 click(controls['review']);assert not warnings,warnings
             baseline=service.store.current_digest('P')
-            if change=='bytes':path.write_bytes(path.read_bytes()+b' changed')
+            if change=='form_kind':
+                box=controls['kind'];box.setCurrentIndex(box.findData('joist_block' if family=='solid_slab' else 'floor_finish'))
+            elif change=='bytes':path.write_bytes(path.read_bytes()+b' changed')
             elif change=='deleted':drawing.engine.close();path.unlink()
             elif change=='revision':drawing.ifc_revision.setText('R2')
             elif change=='project':drawing.project_id_input.setText('OTHER')
@@ -1125,6 +1127,7 @@ def test_w1_specialist_blocks_stale_modal_actions(tmp_path,family,monkeypatch,ac
             assert service.store.current_digest('P')==baseline, 'stale specialist action wrote SQLite'
             assert not service.open_project('P')['boq']
             assert warnings, 'stale specialist context must report rejection'
+            if change=='form_kind':assert any('نوع فرم' in warning for warning in warnings),warnings
             seen.append(family)
         except Exception as exc:errors.append(exc)
         finally:
@@ -1290,3 +1293,102 @@ def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(
         assert seen==[family]
         assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
     finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+
+
+@pytest.mark.parametrize('family',['solid_slab','block_wall'])
+@pytest.mark.parametrize('action,change',[(action,'proposal') for action in ['copy','delete','create_amendment','review_amendment','apply_amendment']]+[('delete','confirm_revision')])
+def test_w1_specialist_blocks_stale_secondary_writes(tmp_path,family,monkeypatch,action,change):
+    from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
+    from PySide6.QtCore import QTimer,Qt
+    from PySide6.QtTest import QTest
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    if family=='block_wall':
+        from test_architecture_specialist_work import sample
+    else:
+        from test_roof_specialist_work import sample
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('ورودی صریح مصنوعی','P')
+    service.add_project_floor('P','طبقه آزمایشی',level='L1')
+    specimen=sample(family)
+    service.save_aec_system_draft('P',specimen,expected_revision=0)
+    from copy import deepcopy
+    evidence=tmp_path/'synthetic-revision.txt';evidence.write_text('Explicit synthetic changed detail')
+    amendment=None
+    if 'amendment' in action:
+        service.review_roof_system('P',specimen['kind'],'L1',specimen['system_id'],expected_revision=1,reviewer='Original independent reviewer',note='Synthetic review')
+        service.commit_aec_system('P',specimen['kind'],'L1',specimen['system_id'],expected_revision=2)
+        revised=deepcopy(service.get_aec_system('P',specimen['kind'],'L1',specimen['system_id'])['data']);revised.pop('roof_review',None)
+        if family=='solid_slab':revised['roof_detail']['geometry']['count']='2'
+        else:revised['architecture_detail']['surfaces'][0]['thickness_m']='.03'
+        if action!='create_amendment':
+            amendment=service.create_roof_amendment('P',specimen['kind'],'L1',specimen['system_id'],revised,expected_revision=2,created_by='Synthetic creator',reason='Explicit synthetic revision',evidence={'evidence_path':str(evidence),'evidence_sha256':sha256(evidence.read_bytes()).hexdigest(),'evidence_reference':'Synthetic detail'})
+            if action=='apply_amendment':service.review_beam_amendment('P',amendment['id'],expected_revision=1,reviewer='Independent synthetic reviewer',note='Synthetic amendment check')
+    before=service.store.current_digest('P');warnings=[];errors=[];seen=[]
+    monkeypatch.setattr(QMessageBox,'warning',lambda parent,title,text,*_:warnings.append(str(text)))
+    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
+    from reportlab.pdfgen.canvas import Canvas
+    path=tmp_path/'synthetic-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA fixture');pdf.showPage();pdf.save()
+    drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
+    drawing.polygon_floor.setText('L1');wizard=drawing.open_contextual_wizard()
+    wizard.family.setCurrentIndex(wizard.family.findData(family));wizard.show()
+    def click(button):
+        tabs=button.window().findChild(QTabWidget)
+        if tabs:
+            for i in range(tabs.count()):
+                if tabs.widget(i).isAncestorOf(button):tabs.setCurrentIndex(i);break
+        parent=button.parentWidget()
+        while parent:
+            if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(button)
+            parent=parent.parentWidget()
+        qt.processEvents();QTest.mouseClick(button,Qt.MouseButton.LeftButton);qt.processEvents()
+    def complete_modal():
+        modal=qt.activeModalWidget()
+        try:
+            controls=getattr(modal,'architecture_controls',None) or modal.roof_controls
+            assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
+            assert service.store.current_digest('P')==before
+            controls['id'].setText(specimen['system_id']);click(controls['load'])
+            controls['reviewer'].setText('بازبین مستقل مصنوعی')
+            controls['note'].setText('کنترل داده مصنوعی با فرم اصلی')
+            for key,value in [('creator','Synthetic creator'),('reason','Explicit synthetic revision'),('new_id','COPY'),('new_source','synthetic-copy-source'),('evidence_path',str(evidence)),('evidence_ref','Synthetic detail')]:controls[key].setText(value)
+            if amendment:controls['amend_id'].setText(amendment['id'])
+            if action=='create_amendment':
+                if family=='solid_slab':controls['count'].setText('2')
+                else:
+                    from PySide6.QtWidgets import QTableWidgetItem
+                    table=controls['tables']['surfaces'];column=next(i for i,item in enumerate(controls['columns']['surfaces']) if item[0]=='thickness_m');table.setItem(0,column,QTableWidgetItem('.03'))
+            baseline=service.store.current_digest('P')
+            snapshot=service.open_project('P')
+            if change=='proposal':assert wizard.preview() is not None
+            click(controls[action])
+            assert service.store.current_digest('P')==baseline, 'stale specialist action wrote SQLite'
+            assert service.open_project('P')==snapshot
+            assert warnings and any(('پیشنهاد دستیار' if change=='proposal' else 'تغییر') in warning for warning in warnings), warnings
+            seen.append(family)
+        except Exception as exc:errors.append(exc)
+        finally:
+            if modal is not None:modal.reject()
+    watcher=QTimer(wizard)
+    def answer_delete():
+        message=qt.activeModalWidget()
+        if isinstance(message,QMessageBox):
+            try:
+                if change=='confirm_revision':drawing.ifc_revision.setText('R2')
+            except Exception as exc:errors.append(exc)
+            finally:
+                button=message.button(QMessageBox.StandardButton.Yes)
+                if button is not None:QTest.mouseClick(button,Qt.MouseButton.LeftButton)
+                else:message.reject()
+    watcher.timeout.connect(answer_delete);watcher.start(20)
+    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(complete_modal)
+    try:
+        click(wizard.preview_button);assert wizard.active is not None
+        timer.start(30);click(wizard.open_form_button)
+        assert not errors,errors
+        assert seen==[family]
+        assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+        expected=service.open_project('P')
+    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==expected
+    finally:reopened.store.close()
