@@ -235,3 +235,24 @@ Windows کد تازه هنوز NOT VERIFIED است. مدل واقعی A2 به‌
 ### خلاصه وضعیت پروژه و چت
 
 اصلاح UI و اتصالات اختصاصی متره و آزمون‌های سازگار با آنها روی شاخه همان اولویت ۴ ثبت شدند و ۶۹ تست در Linux و ۶۹ تست در Windows موفق‌اند. مرحله کدنویسی قواعد آفلاین در دامنه اعلام‌شده تمام شده است؛ تنها پذیرش مدل واقعی و QA مستقل Windows بازند. اولویت ۵ شروع نشده است.
+
+
+---
+
+## W1 lifecycle integration | 2026-10-27 | 115 PASS per OS
+
+**جدیدترین نتیجه اجرایی، بدون بازنویسی تاریخچه گزارش بالا**
+
+- کد اجرایی Cancel → Restore در Commit e447c085f60cb5c502974ee69463c6df153682f2 روی ۵ فایل محصول ثبت شده است.
+- آخرین Commit تست 0a955cd43d85941bd3c19c773485b6cb06061381 است؛ ۷ سناریوی جدید Close/Disable، clean/dirty و تغییر هویت پس از handoff نیز اضافه شدند.
+- [CI نهایی کد و آزمون](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40514369144): Linux Qt ۱۱۵ PASS، Windows Native Qt ۱۱۵ PASS، صفر FAIL/ERROR/SKIP، یک هشدار non-blocking fitz در هر محیط.
+- [JUnit/تصاویر Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40514369144/artifacts/12738437180) و [JUnit/تصاویر Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40514369144/artifacts/12738108898).
+- CI میانی 40514043697 روی انتظار تست محدود به RuntimeError شکست خورد؛ کد در تغییر پروژه به‌شکل صحیح و fail-closed خطای ValueError داد. قرارداد خطای تست اصلاح و CI هر دو سیستم سبز شد. شکست میانی حذف نشده است.
+- فایل docs/acceptance/phase6_p4/verification-20261027-w1-lifecycle/SHA256SUMS برای هر ۶ شاهد با SHA-256 واقعی کامل شده است.
+- محدوده احراز: Restore در Cancel بدون تغییر، حفظ ورودی dirty و guard، تأیید/رد واقعی Discard، Close/Disable clean/dirty، ابطال تغییر پروژه/طبقه/عضو و تغییر منبع PDF، آزمون‌های قبلی مثبت/منفی و رگرسیون تعیین‌شده.
+- **گیت‌های باز:** همه سناریوهای IFC پیچیده و تغییر میان‌نشستی منبع در کلیه ویرایشگرها، پوشش کامل Save/Preview/Commit تمام خانواده‌ها، مدل تجاری A2 با منشأ/مجوز معتبر و UAT فیزیکی Windows. وضعیت هر دو اولویت P6-4 و P6-5 برابر PARTIAL است، نه انتشار نهایی.
+- کد معتبر در PR #34 با Commit 665e9989c29d58c690d83b2f73b407a24c61db34 منتقل شد؛ CI مستقل P6-5 جداگانه داوری می‌شود.
+- بدون Merge، تغییر main، Force Push، EXE، Release، شروع P6-6 یا فاز ۷. نقشه‌راه دقیقاً ۸ فاز و درصد ثبت‌شده ۸۵٪ است.
+
+### خلاصه وضعیت پروژه و چت
+کد محصول واقعاً اصلاح شد و CI جدید P6-4 در هر دو سیستم سبز است. انتقال به PR #34 ثبت شده ولی پذیرش مستقل E3–E6 و گیت‌های مدل/Windows باز باقی می‌مانند.
