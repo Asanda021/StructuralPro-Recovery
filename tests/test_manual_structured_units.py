@@ -180,8 +180,8 @@ def test_legacy_read_migration_history_and_no_automatic_approval(tmp_path):
  s.store.close();s=StructuralProApp(tmp_path);assert s.load_manual_formulas('P')['old']['data']['variable_units']==d['variable_units'];s.store.close()
 
 def test_native_bulk_unit_control(tmp_path):
- from PySide6.QtWidgets import QApplication
- from PySide6.QtCore import Qt
+ from PySide6.QtWidgets import QApplication,QMessageBox
+ from PySide6.QtCore import Qt,QTimer
  from PySide6.QtTest import QTest
  from app.manual_takeoff import ManualTakeoffDialog
  global _qt
@@ -189,7 +189,27 @@ def test_native_bulk_unit_control(tmp_path):
  d=ManualTakeoffDialog(s,'P');d.show();d.manual_tabs.setCurrentIndex(1);_qt.processEvents()
  assert hasattr(d,'formula_bulk_unit'),'واحد ویرایش گروهی به رابط متصل نیست'
  d.table.setCurrentCell(0,0);d.formula_bulk_name.setText('length');d.formula_bulk_value.setText('1000');d.formula_reason.setText('واحد و مقدار صریح');combo=d.formula_bulk_unit;combo.setCurrentIndex(combo.findData('mm'))
- QTest.mouseClick(d.formula_bulk_button,Qt.LeftButton);_qt.processEvents();r=s.load_manual_formulas('P')['A'];assert r['data']['variable_units']['length']=='mm' and Decimal(str(r['quantity']))==Decimal('.6')
+ confirmations=[];expired=[]
+ responder=QTimer();responder.setInterval(10)
+ watchdog=QTimer();watchdog.setSingleShot(True)
+ def approve_native_bulk():
+  dialog=QApplication.activeModalWidget()
+  if isinstance(dialog,QMessageBox) and dialog.isVisible():
+   button=dialog.button(QMessageBox.StandardButton.Yes)
+   if button is not None:
+    confirmations.append(dialog.text());responder.stop()
+    QTest.mouseClick(button,Qt.LeftButton)
+ def dismiss_stalled_confirmation():
+  expired.append(True)
+  dialog=QApplication.activeModalWidget()
+  if dialog is not None:dialog.reject()
+ responder.timeout.connect(approve_native_bulk);watchdog.timeout.connect(dismiss_stalled_confirmation)
+ responder.start();watchdog.start(2000)
+ try:QTest.mouseClick(d.formula_bulk_button,Qt.LeftButton);_qt.processEvents()
+ finally:responder.stop();watchdog.stop()
+ assert not expired,'Native unit-edit confirmation did not complete within two seconds'
+ assert len(confirmations)==1,'The real bulk confirmation must appear exactly once'
+ r=s.load_manual_formulas('P')['A'];assert r['data']['variable_units']['length']=='mm' and Decimal(str(r['quantity']))==Decimal('.6')
  d.close();d.deleteLater();_qt.processEvents();s.store.close()
 
 def test_all_85_explicit_quantity_families_and_incompatible_output(tmp_path):
