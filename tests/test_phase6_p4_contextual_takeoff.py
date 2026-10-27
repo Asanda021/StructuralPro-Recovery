@@ -51,7 +51,12 @@ def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,
                 QTest.mouseClick(button('بارگذاری پیش‌نویس'),Qt.MouseButton.LeftButton)
                 save_button=button('ذخیره نسخه در SQLite')
             if change=='bytes':path.write_bytes(path.read_bytes()+b' changed')
-            elif change=='deleted':path.unlink()
+            elif change=='deleted':
+                # Windows denies unlinking a file held by the PDF backend.
+                # Release only that handle; retain the displayed scene and W1
+                # identity, then remove the real source and exercise Save.
+                drawing.engine.close()
+                path.unlink()
             elif change=='revision':drawing.ifc_revision.setText('R2')
             elif change=='project':drawing.project_id_input.setText('OTHER')
             elif change=='floor':drawing.polygon_floor.setText('L2')
@@ -815,6 +820,7 @@ def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, chan
             if changed == 'pdf_bytes':
                 path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
             elif changed == 'pdf_deleted':
+                drawing.engine.close()
                 path.unlink()
             elif changed == 'revision':
                 drawing.ifc_revision.setText('R2')

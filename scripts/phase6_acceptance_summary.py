@@ -30,8 +30,8 @@ def main(paths):
             tests=len(cases), passed=len(cases)-failed-errors-skipped,
             failed=failed, errors=errors, skipped=skipped,
             failures=[dict(test=case.get('classname', '') + '::' + case.get('name', ''),
-                detail='\n'.join(node.text or node.get('message', '') for node in case
-                    if node.tag in ('failure', 'error'))[-6000:])
+                detail='\n'.join(node.get('message', '') + '\n' + (node.text or '')[-2200:] for node in case
+                    if node.tag in ('failure', 'error'))[-3200:])
                 for case in cases if case.find('failure') is not None or case.find('error') is not None]))
     def git(ref):
         return subprocess.check_output(['git', 'rev-parse', ref], text=True).strip()
