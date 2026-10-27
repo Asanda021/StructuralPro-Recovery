@@ -1224,6 +1224,7 @@ def main()->int:
     workspace_docks=WorkspaceDockController(
         w,desktop_preferences.settings,service,lambda:pid.text().strip())
     presentation_row.addWidget(workspace_docks.toggle_button)
+    presentation_row.addWidget(workspace_docks.boq_toggle)
     pid.textChanged.connect(lambda *_:workspace_docks.restore())
     app.aboutToQuit.connect(lambda:workspace_docks.save() if pid.text().strip() else None)
     from app.desktop_shell import ContextRibbonController

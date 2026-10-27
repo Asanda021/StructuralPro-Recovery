@@ -43,3 +43,24 @@ def test_layout_not_saved_for_missing_project(tmp_path):
     assert not ctrl.restore()
     assert not ctrl.dock.isVisible()
     win.close();service.store.close();qt.processEvents()
+
+def test_two_independent_docks_save_and_restore_without_project_mutation(tmp_path):
+    qt=QApplication.instance() or QApplication([])
+    app=StructuralProApp(tmp_path/"db")
+    app.create_project("پروژه","P")
+    prefs=QSettings(str(tmp_path/"ui.ini"),QSettings.Format.IniFormat)
+    window=QMainWindow();window.show()
+    docks=WorkspaceDockController(window,prefs,app,lambda:"P")
+    try:
+        before=app.store.current_digest("P")
+        docks.toggle();docks.toggle_boq()
+        assert docks.dock.isVisible() and docks.boq_dock.isVisible()
+        assert docks.boq_table.rowCount()==0
+        assert docks.save()
+        docks.dock.hide();docks.boq_dock.hide()
+        assert docks.restore()
+        assert docks.dock.isVisible() and docks.boq_dock.isVisible()
+        docks.reset()
+        assert not docks.dock.isVisible() and not docks.boq_dock.isVisible()
+        assert before==app.store.current_digest("P")
+    finally:window.close();app.store.close();qt.processEvents()

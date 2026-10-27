@@ -4,7 +4,7 @@ Presentation state is saved only in QSettings, never in SQLite or BOQ.
 """
 from PySide6.QtCore import Qt,QByteArray
 from PySide6.QtWidgets import (
-    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem
+    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem
 )
 
 
@@ -45,6 +45,26 @@ class WorkspaceDockController:
         self.save_button.clicked.connect(self.save)
         self.reset_button.clicked.connect(self.reset)
         self.tree.itemSelectionChanged.connect(self.show_selected)
+        self.boq_dock=QDockWidget("ردیف‌های واقعی BOQ",window)
+        self.boq_dock.setObjectName("P6E5BoqReadOnlyDock")
+        self.boq_dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.boq_dock.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetClosable |
+            QDockWidget.DockWidgetFeature.DockWidgetMovable |
+            QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+        body=QWidget();v=QVBoxLayout(body)
+        v.addWidget(QLabel("فقط خواندن از سند پروژه؛ هیچ برآورد یا قیمتی محاسبه نمی‌شود."))
+        self.boq_table=QTableWidget(0,4)
+        self.boq_table.setObjectName("E5StoredBOQ")
+        self.boq_table.setHorizontalHeaderLabels(["ردیف","شرح","مقدار","واحد"])
+        self.boq_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        v.addWidget(self.boq_table)
+        self.boq_dock.setWidget(body)
+        self.window.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.boq_dock)
+        self.boq_dock.hide()
+        self.boq_toggle=QPushButton("نمایش / پنهان‌کردن جدول BOQ")
+        self.boq_toggle.setObjectName("E5BoqToggle")
+        self.boq_toggle.clicked.connect(self.toggle_boq)
 
     def project_id(self):
         return str(self.project_provider() or "").strip()
@@ -64,6 +84,14 @@ class WorkspaceDockController:
             self.dock.show()
             self.dock.raise_()
 
+    def toggle_boq(self):
+        if self.boq_dock.isVisible():
+            self.boq_dock.hide()
+        else:
+            self.refresh()
+            self.boq_dock.show()
+            self.boq_dock.raise_()
+
     def refresh(self):
         self.tree.clear()
         try:
@@ -76,6 +104,16 @@ class WorkspaceDockController:
                 node.setData(0,Qt.ItemDataRole.UserRole,("floor",floor))
                 self.tree.addTopLevelItem(node)
                 floor_nodes[str(floor["id"])]=node
+            rows=p.get("boq",[])
+            if not isinstance(rows,list):raise ValueError("داده BOQ نامعتبر است")
+            self.boq_table.setRowCount(len(rows))
+            for i,row in enumerate(rows):
+                if not isinstance(row,dict):raise ValueError("ردیف BOQ معتبر نیست")
+                values=[row.get("row_id",row.get("id",i+1)),
+                        row.get("description",""),row.get("quantity","نامشخص"),
+                        row.get("unit","")]
+                for j,value in enumerate(values):
+                    self.boq_table.setItem(i,j,QTableWidgetItem(str(value)))
             for m in p.get("members",[]):
                 floor_id=str(m.get("floor_id",""))
                 if floor_id not in floor_nodes:continue
@@ -118,15 +156,16 @@ class WorkspaceDockController:
         return False
 
     def _clamp_floating(self):
-        if not self.dock.isFloating():return
-        screen=self.window.screen()
-        if screen is None:return
-        rect=screen.availableGeometry()
-        width=min(self.dock.width(),rect.width())
-        height=min(self.dock.height(),rect.height())
-        self.dock.resize(max(100,width),max(100,height))
-        self.dock.move(max(rect.left(),min(self.dock.x(),rect.right()-width+1)),
-                       max(rect.top(),min(self.dock.y(),rect.bottom()-height+1)))
+        for dock in (self.dock,self.boq_dock):
+            if not dock.isFloating():continue
+            screen=dock.screen() or self.window.screen()
+            if screen is None:continue
+            rect=screen.availableGeometry()
+            width=min(dock.width(),rect.width())
+            height=min(dock.height(),rect.height())
+            dock.resize(max(100,width),max(100,height))
+            dock.move(max(rect.left(),min(dock.x(),rect.right()-width+1)),
+                      max(rect.top(),min(dock.y(),rect.bottom()-height+1)))
 
     def save(self):
         try:
@@ -155,8 +194,11 @@ class WorkspaceDockController:
 
     def reset(self):
         self.dock.setFloating(False)
+        self.boq_dock.setFloating(False)
         self.window.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea,self.dock)
+        self.window.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea,self.boq_dock)
         self.dock.hide()
+        self.boq_dock.hide()
         try:
             key=self._key()
             self.settings.remove(key)

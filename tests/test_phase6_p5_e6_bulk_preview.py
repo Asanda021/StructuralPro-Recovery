@@ -64,3 +64,41 @@ def test_committed_row_is_not_bulk_modified(tmp_path):
                                                expected_revisions={"A":1})
     assert app.store.current_digest("P")==digest
     app.store.close()
+
+def test_twenty_member_bulk_undo_redo_uses_original_guarded_history(tmp_path):
+    from decimal import Decimal
+    app=StructuralProApp(tmp_path/"data")
+    app.create_project("ویرایش گروهی","P")
+    keys=[]
+    for i in range(20):
+        key=f"C{i+1}"
+        app.save_manual_formula("P",key,data(member=key,source_id="measured:"+key),
+                                expected_revision=0,reason="ورودی صریح")
+        keys.append(key)
+    app.bulk_edit_manual_formulas("P",keys,changes={"variables":{"length":"5"}},
+                                 expected_revisions={key:1 for key in keys},
+                                 reason="تغییر گروهی")
+    assert all(Decimal(str(app.load_manual_formulas("P")[k]["quantity"]))==3 for k in keys)
+    app.undo_manual_formulas("P")
+    assert all(Decimal(str(app.load_manual_formulas("P")[k]["quantity"]))==6 for k in keys)
+    app.redo_manual_formulas("P")
+    assert all(Decimal(str(app.load_manual_formulas("P")[k]["quantity"]))==3 for k in keys)
+    assert app.open_project("P")["boq"]==[]
+    app.store.close()
+
+
+def test_bulk_change_after_other_writer_invalidates_preview_digest(tmp_path):
+    app=StructuralProApp(tmp_path/"data")
+    app.create_project("هم‌زمان","P")
+    app.save_manual_formula("P","A",data(),expected_revision=0,reason="اول")
+    preview=app.preview_bulk_edit_manual_formulas("P",["A"],
+        changes={"variables":{"length":"7"}},expected_revisions={"A":1})
+    concurrent=StructuralProApp(tmp_path/"data")
+    concurrent.add_project_floor("P","دوم",level="F2")
+    assert app.store.current_digest("P")!=preview["cas_digest"]
+    with pytest.raises(RuntimeError):
+        app.bulk_edit_manual_formulas("P",["A"],
+            changes={"variables":{"length":"7"}},
+            expected_revisions={"A":0},reason="نسخه قدیمی")
+    assert app.open_project("P")["boq"]==[]
+    concurrent.store.close();app.store.close()
