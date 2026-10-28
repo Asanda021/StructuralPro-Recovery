@@ -663,21 +663,16 @@ def test_live_qt_handoff_to_existing_specialist_without_auto_commit(tmp_path,fam
     guide.family.setCurrentIndex(guide.family.findData(family))
     assert guide.preview() is not None,guide.status.text()
     seen=[]
-    def close_specialist():
-        dialogs=[w for w in qt.topLevelWidgets() if
-                 isinstance(w,QDialog) and w.objectName()==real_dialog]
-        if dialogs:
-            seen.append(dialogs[0].objectName())
-            dialogs[0].reject()
-    # Construction may process Qt events before the specialist enters exec().
-    # Poll for its visible native dialog instead of losing a one-shot callback.
+    # Full-suite runs can retain hidden dialogs from earlier tests. Only the
+    # currently executing native modal belongs to this handoff.
     closer=QTimer()
     closer.setInterval(50)
     def close_visible_specialist():
-        if any(isinstance(w,QDialog) and w.objectName()==real_dialog and w.isVisible()
-               for w in qt.topLevelWidgets()):
+        dialog=qt.activeModalWidget()
+        if isinstance(dialog,QDialog) and dialog.objectName()==real_dialog:
             closer.stop()
-            close_specialist()
+            seen.append(dialog.objectName())
+            dialog.reject()
     closer.timeout.connect(close_visible_specialist)
     closer.start()
     digest=app.store.current_digest("P")
