@@ -9,3 +9,7 @@
 تست واقعی با QTimer تکرارشونده و deadline محدود، فعال بودن QMessageBox، نام، عنوان، والد واقعی و دکمه استاندارد مورد انتظار را بررسی کرده و از QTest.mouseClick استفاده می‌کند. برای خطای amendment دکمه Ok و برای تأیید خروج بدون ذخیره دکمه Yes است؛ حالت پنجره غیرمنتظره بدون کلیک دکمه نامرتبط با خطای صریح پایان می‌یابد. انتظار نمایش فرم والد/شمع نیز محدود و به نام اصلی متصل است. در مسیر شکست فقط cleanup کنترل‌شده پنجره اجازه بازگشت pytest می‌دهد و شکست پنهان نمی‌شود. کد محصول، SQLite، CAS، شمار revision، رد مالکیت، BOQ و assertionهای قبلی محفوظ‌اند.
 
 اجرای محلی واقعی Qt offscreen: [۹ PASS، صفر FAIL/ERROR/SKIP](qtfix-targeted.xml)، شامل آزمون جدید تأخیر و پنجره نامرتبط و suiteهای amendment/controller. Windows native و رگرسیون گسترده، تا گزارش مستقل GitHub در این checkpoint NOT VERIFIED است. نه Merge/ForcePush/main/Release/EXE و نه P6-6/فاز۷؛۸فاز و۸۵٪ حفظ است.
+
+## رگرسیون محلی نسخه میانی
+
+رگرسیون جاری محلی روی کد میانی1a37ec0 (پیش از کنترل والد در74cc37d) تکمیل شد:۸۳۷۱PASS،۱FAIL،۰ERROR،۱۰SKIP،۳warning؛۶۰۵٫۱۸ثانیه،بدونtimeout. شکست `tests/test_beam_historical_migration.py::test_migration_two_process_sqlite_cas[False]` از نوع `_queue.Empty` است. اجرای مستقل مجدد همان مورد۱PASS در۰٫۸۰ثانیه داشت؛ این نتیجه جداگانه، شکست full را حذف یا علت قطعی آن را ثابت نمی‌کند. XML/JSON/log اصلی و JUnit بازآزمایی در همین پوشه‌اند. این snapshot جای CI کد نهایی را نمی‌گیرد.
