@@ -349,3 +349,26 @@ def test_search_exact_dxf_document_opens_real_cad_without_boq_write(tmp_path):
         if viewer is not None: viewer.close()
         service.store.close()
         qt.processEvents()
+
+
+@pytest.mark.parametrize("link_scope", ["file", "parent"])
+def test_reviewed_member_source_rejects_linked_ifc_file_or_parent_without_write(tmp_path, monkeypatch, link_scope):
+    """Reject source and parent symlinks before exposing an approved IFC member."""
+    from pathlib import Path
+    from test_phase6_p3_real_project_bridge import reviewed
+    from app.verified_search_navigation import reviewed_member_source
+    service, source, proof, proposal = reviewed(tmp_path)
+    before = service.store.current_digest("P")
+    original_is_symlink = Path.is_symlink
+    linked = source if link_scope == "file" else source.parent
+    monkeypatch.setattr(
+        Path, "is_symlink",
+        lambda current: current == linked or original_is_symlink(current),
+    )
+    try:
+        with pytest.raises(ValueError, match="پیوندی"):
+            reviewed_member_source(service, "P", "B1")
+        assert service.store.current_digest("P") == before
+        assert service.open_project("P")["boq"] == []
+    finally:
+        service.store.close()

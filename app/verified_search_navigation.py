@@ -149,6 +149,8 @@ def reviewed_member_source(service, project_id, member_id):
         raise ValueError("عضو فاقد منبع IFC تأییدشده یکتا است")
     path,expected_sha,revision=next(iter(candidates))
     source=Path(path)
+    if any(part.is_symlink() for part in (source,*source.parents)):
+        raise ValueError("مسیر پیوندی منبع IFC تأییدشده مجاز نیست")
     if not source.is_file():raise ValueError("سند IFC تأییدشده در دسترس نیست")
     if (len(expected_sha)!=64 or
             sha256(source.read_bytes()).hexdigest()!=expected_sha):
