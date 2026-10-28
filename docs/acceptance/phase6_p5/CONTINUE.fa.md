@@ -1,3 +1,8 @@
+## E4 callback post-CAS | ۲۸ اکتبر ۲۰۲۶
+- RED [CI #40718061692](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40718061692): Windows **۵ FAIL/۳ PASS** با JUnit؛ Linux پیش از JUnit در teardown Qt SIGSEGV کرد، نه RED کامل.
+- Fix `426c485f16c4938299a9c0415e96dd5ff15d1c1b`: رد `False` صریح و Digest stale پس از callback؛ `None` موفق legacy محفوظ. GREEN [CI #40718625140](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40718625140): **۴۸ PASS هر سیستم Windows/Linux**، صفر FAIL/ERROR/SKIP و JUnit واقعی.
+- [گزارش رسمی](verification-20261028-e4-callback-post-cas/REPORT.fa.md)، CI E3–E6 جدید [#40718251010](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40718251010) و full source [#40719136460](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40719136460) باید جدا تکمیل شوند. PR33/34 Draft/Unmerged، main/Release ثابت، ۸فاز/۸۵٪ ثابت.
+
 ## راستی‌آزمایی مستقل رگرسیون کامل — ۲۸ اکتبر ۲۰۲۶
 
 Run [40707200358](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40707200358) موفق است؛ workflow b68f739c061b63c738bb9f2ebe886c6bd0d4f880 و Source c10b9291cb443431287d656fcf00c4b26e71e196. XML/JSON اصلی بازدریافت و شمارش مستقل شد: Linux ۸۳۹۸PASS/۵SKIP؛ Windows shard0=۲۷۶۷PASS/۳SKIP، shard1=۲۹۷۲PASS/۳SKIP، shard2=۲۶۵۷PASS/۱SKIP؛ همه صفرFAIL/ERROR و timeout=false، exit=0. Union برابر ۸۴۰۳ شناسه یکتا، صفرDuplicate/Missing/Extra؛ verify-full-union نیز SUCCESS. این شمارش testcase است، نه تضمین تعداد سناریوهای مستقل مهندسی. Artifactها: Linux12826120653، Windows0=12823764439، Windows1=12824842498، Windows2=12825711148، Union12826115581؛ همگی هنگام بررسی منقضی‌نشده بودند.
