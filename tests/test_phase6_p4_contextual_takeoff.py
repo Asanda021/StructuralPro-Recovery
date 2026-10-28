@@ -1209,7 +1209,9 @@ def test_w1_parsed_synthetic_ifc_beam_identity_and_live_save(tmp_path,monkeypatc
 
 
 @pytest.mark.parametrize('family',['solid_slab','block_wall'])
-def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(tmp_path,family,monkeypatch):
+@pytest.mark.parametrize('action,change',[(None,None)]+[(action,change) for action in ['save','review','commit'] for change in ['bytes','revision']])
+def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(tmp_path,family,monkeypatch,action,change):
+    """Synthetic parsed IFC identity; quantities stay in original manual drafts."""
     from PySide6.QtWidgets import QApplication,QMessageBox,QTabWidget,QScrollArea
     from PySide6.QtCore import QTimer,Qt
     from PySide6.QtTest import QTest
@@ -1266,6 +1268,29 @@ def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(
             assert controls['project'].text()=='P' and controls['floor'].text()=='L1'
             assert service.store.current_digest('P')==before
             controls['id'].setText(specimen['system_id']);click(controls['load'])
+            assert not warnings,warnings
+            if action is not None:
+                controls['reviewer'].setText('Synthetic independent specialist reviewer')
+                controls['note'].setText('Original manual quantities; synthetic IFC identity only')
+                if action=='commit':
+                    click(controls['review']);assert not warnings,warnings
+                    assert drawing.open_verified_crossview() is not None
+                snapshot=service.open_project('P')
+                digest=service.store.current_digest('P')
+                context=drawing.contextual_w1_context(family)
+                assert context.review_status=='approved'
+                assert context.source_id==str(path) and context.source_sha256==sha256(path.read_bytes()).hexdigest()
+                assert context.revision=='R1' and context.member_id==specimen['system_id']
+                assert context.project_id=='P' and context.floor_id=='L1'
+                if change=='bytes':path.write_bytes(path.read_bytes()+b'\n/* synthetic changed IFC source */')
+                else:drawing.ifc_revision.setText('R2')
+                click(controls[action])
+                assert warnings and any('IFC' in warning for warning in warnings),warnings
+                assert service.store.current_digest('P')==digest
+                assert service.open_project('P')==snapshot
+                assert not service.open_project('P')['boq']
+                seen.append(family)
+                return
             click(controls['preview']);assert not warnings,warnings
             assert not service.open_project('P')['boq']
             import os
@@ -1300,7 +1325,11 @@ def test_w1_parsed_synthetic_ifc_specialist_review_commit_with_explicit_refresh(
         assert not errors,errors
         assert seen==[family]
         assert service.store.db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+        expected=service.open_project('P')
     finally:wizard.close();drawing.close();service.store.close();qt.processEvents()
+    reopened=StructuralProApp(tmp_path/'db')
+    try:assert reopened.open_project('P')==expected
+    finally:reopened.store.close()
 
 
 @pytest.mark.parametrize('family',['solid_slab','block_wall'])
