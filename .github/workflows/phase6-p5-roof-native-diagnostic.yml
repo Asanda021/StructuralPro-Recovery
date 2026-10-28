@@ -21,7 +21,7 @@ jobs:
         run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 3d1ac2d7a6be62b09e2daf17472632e022efcf06
+          ref: facbe18af8f051e52cac250410b72f688655f7a9
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
@@ -40,7 +40,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p6-native-roof-diagnostic-3d1ac2d
+          name: p6-native-roof-diagnostic-facbe18
           path: |
             roof-native.xml
             phase6-pytest.log
