@@ -1,5 +1,6 @@
 """Native Qt clicks/dialogs and real services, synthetic inputs only."""
 from pathlib import Path
+from time import monotonic
 import json
 import pytest
 from PySide6.QtWidgets import QApplication,QInputDialog,QMessageBox,QDialogButtonBox,QFileDialog,QDialog,QLineEdit,QTabWidget,QScrollArea
@@ -22,6 +23,50 @@ def show_control(control):
   if isinstance(parent,QScrollArea):parent.ensureWidgetVisible(control)
   parent=parent.parentWidget()
  QApplication.processEvents()
+
+
+def _select_roof_document(qt, owner, directory, filename, errors, timeout=4.0):
+ timer=QTimer(qt);timer.setInterval(20);deadline=monotonic()+timeout
+ state={'prepared':False,'clicked':False,'timed_out':False}
+ def poll():
+  f=qt.activeModalWidget()
+  try:
+   if state['timed_out'] and isinstance(f,QDialog) and f is not owner:
+    timer.stop();QDialog.done(f,QDialog.Rejected);return
+   if isinstance(f,QFileDialog) and f.parentWidget() is owner and f.windowTitle()=='جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی':
+    edit=f.findChild(QLineEdit,'fileNameEdit');buttons=f.findChild(QDialogButtonBox)
+    button=buttons.button(QDialogButtonBox.Open) if buttons else None
+    if edit is not None and button is not None:
+     if not state['prepared']:
+      f.setDirectory(str(directory));edit.setFocus();QTest.keyClick(edit,Qt.Key_A,Qt.ControlModifier);QTest.keyClicks(edit,filename);state['prepared']=True
+     if button.isVisible() and button.isEnabled() and not state['clicked']:
+      state['clicked']=True;QTest.mouseClick(button,Qt.LeftButton)
+   if monotonic()>=deadline and not state['timed_out']:
+    state['timed_out']=True;errors.append('Timed out waiting for documented roof file dialog to close')
+    if isinstance(f,QDialog) and f is not owner:timer.stop();QDialog.done(f,QDialog.Rejected)
+  except Exception as exc:
+   errors.append(repr(exc));timer.stop()
+   if isinstance(f,QFileDialog):f.reject()
+ timer.timeout.connect(poll);timer.start()
+ return timer,state
+
+
+def _click_roof_control(qt, owner, button, errors, timeout=4.0, *, prepared=False):
+ if not prepared:show_control(button)
+ timer=QTimer(qt);timer.setInterval(20);deadline=monotonic()+timeout
+ state={'handled':False}
+ def poll():
+  modal=qt.activeModalWidget()
+  if isinstance(modal,QMessageBox) and modal.parentWidget() is owner:
+   target=modal.button(QMessageBox.Ok)
+   if not state['handled'] and modal.windowTitle()=='کنترل دیتایل سقف' and target and target.isVisible() and target.isEnabled():
+    state['handled']=True;errors.append(modal.text());QTest.mouseClick(target,Qt.LeftButton)
+  if monotonic()>=deadline:
+   errors.append('Timed out waiting for roof action to finish');timer.stop()
+   if isinstance(modal,QDialog) and modal is not owner:QDialog.done(modal,QDialog.Rejected)
+ timer.timeout.connect(poll);timer.start()
+ try:QTest.mouseClick(button,Qt.LeftButton)
+ finally:timer.stop()
 
 
 def test_native_boundary_cut_components_remove_and_undo(tmp_path):
@@ -70,31 +115,14 @@ def test_existing_roof_editor_real_planar_schedule_and_boq(tmp_path,kind):
   try:
    c=w.roof_controls
    def click(button):
-    show_control(button)
-    def alert():
-     modal=_qt.activeModalWidget()
-     if isinstance(modal,QMessageBox):
-      errors.append(modal.text());QTest.mouseClick(modal.button(QMessageBox.Ok),Qt.LeftButton)
-    QTimer.singleShot(30,alert);QTest.mouseClick(button,Qt.LeftButton)
+    _click_roof_control(_qt,w,button,errors)
    c['floor'].setText('L1');c['id'].setText('S1');click(c['new'])
    assert c['shape'].findData('documented_planar')>=0
    c['plan'].setText(data['source']['plan_ref']);c['detail'].setText(data['source']['detail_ref'])
-   def choose(attempt=0):
-    f=_qt.activeModalWidget()
-    try:
-     assert isinstance(f,QFileDialog)
-     if attempt==0:f.setDirectory(str(tmp_path))
-     if attempt in (0,2):
-      edit=f.findChild(QLineEdit,'fileNameEdit');edit.setFocus();QTest.keyClick(edit,Qt.Key_A,Qt.ControlModifier);QTest.keyClicks(edit,'detail.json')
-     button=f.findChild(QDialogButtonBox).button(QDialogButtonBox.Open)
-     if not button.isEnabled() and attempt<50:
-      QTimer.singleShot(20,lambda:choose(attempt+1));return
-     assert button.isEnabled()
-     QTest.mouseClick(f.findChild(QDialogButtonBox).button(QDialogButtonBox.Open),Qt.LeftButton)
-    except Exception as exc:
-     errors.append(repr(exc))
-     if f:f.reject()
-   QTimer.singleShot(30,choose);click(c['import_detail'])
+   show_control(c['import_detail']);file_timer,file_state=_select_roof_document(_qt,w,tmp_path,'detail.json',errors)
+   try:_click_roof_control(_qt,w,c['import_detail'],errors,prepared=True)
+   finally:file_timer.stop()
+   assert file_state['clicked'],errors
    assert c['shape'].currentData()=='documented_planar'
    click(c['save']);assert app.get_aec_system('P',kind,'L1','S1')
    click(c['preview']);assert 'نیازمند اطلاعات' not in c['message'].text(),c['message'].text()
@@ -202,28 +230,14 @@ def test_real_roof_geometry_revision_through_existing_amendment_buttons(tmp_path
   try:
    c=w.roof_controls;c['id'].setText('S1')
    def click(button):
-    show_control(button)
-    def alert():
-     m=_qt.activeModalWidget()
-     if isinstance(m,QMessageBox):errors.append(m.text());QTest.mouseClick(m.button(QMessageBox.Ok),Qt.LeftButton)
-    QTimer.singleShot(30,alert);QTest.mouseClick(button,Qt.LeftButton)
+    _click_roof_control(_qt,w,button,errors)
    click(c['load']);assert 'source_geometry_amendment' in c,'missing explicit measured-source revision control'
    show_control(c['source_geometry_amendment']);QTest.mouseClick(c['source_geometry_amendment'],Qt.LeftButton,pos=c['source_geometry_amendment'].rect().topRight()+QPointF(-10,10).toPoint())
    assert c['source_geometry_amendment'].isChecked()
-   def choose(attempt=0):
-    f=_qt.activeModalWidget()
-    try:
-     assert isinstance(f,QFileDialog)
-     if attempt==0:f.setDirectory(str(tmp_path))
-     if attempt in (0,2):
-      edit=f.findChild(QLineEdit,'fileNameEdit');QTest.keyClick(edit,Qt.Key_A,Qt.ControlModifier);QTest.keyClicks(edit,'roof-geometry-amendment.json')
-     button=f.findChild(QDialogButtonBox).button(QDialogButtonBox.Open)
-     if not button.isEnabled() and attempt<50:QTimer.singleShot(20,lambda:choose(attempt+1));return
-     assert button.isEnabled();QTest.mouseClick(button,Qt.LeftButton)
-    except Exception as exc:
-     errors.append(repr(exc))
-     if f:f.reject()
-   QTimer.singleShot(30,choose);click(c['import_detail'])
+   show_control(c['import_detail']);file_timer,file_state=_select_roof_document(_qt,w,tmp_path,'roof-geometry-amendment.json',errors)
+   try:_click_roof_control(_qt,w,c['import_detail'],errors,prepared=True)
+   finally:file_timer.stop()
+   assert file_state['clicked'],errors
    c['creator'].setText('synthetic UI author');c['reason'].setText('one explicit vertex and bound source revision')
    c['evidence_path'].setText(str(tmp_path/'roof-geometry-amendment.json'));c['evidence_ref'].setText('explicit synthetic revised detail')
    c['reviewer'].setText('independent synthetic UI reviewer');c['note'].setText('13 m2 / 2.6 m3 analytic oracle')
@@ -236,3 +250,21 @@ def test_real_roof_geometry_revision_through_existing_amendment_buttons(tmp_path
   finally:w.accept()
  QTimer.singleShot(20,drive);open_roof_editor(app,project_id='P',floor_id='L1',kind='solid_slab',drawing_source=proposal['source'])
  assert not errors,errors;app.store.close()
+
+
+def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
+ global _qt
+ from PySide6.QtCore import QEventLoop
+ _qt=QApplication.instance() or QApplication([]);errors=[];selected=[]
+ document=tmp_path/'detail.json';document.write_text('{}')
+ parent=QDialog();parent.setObjectName('RoofDetailEditor');parent.setModal(True);parent.show();_qt.processEvents()
+ loop=QEventLoop()
+ timer,state=_select_roof_document(_qt,parent,tmp_path,'detail.json',errors)
+ def delayed_file():
+  f=QFileDialog(parent,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی',str(tmp_path),'JSON (*.json)')
+  f.setOption(QFileDialog.DontUseNativeDialog);f.setFileMode(QFileDialog.ExistingFile)
+  f.exec();selected.extend(f.selectedFiles())
+ QTimer.singleShot(80,delayed_file);QTimer.singleShot(900,loop.quit)
+ loop.exec();timer.stop();was_visible=parent.isVisible();parent.close();_qt.processEvents()
+ assert not errors and was_visible and state['clicked'],errors
+ assert selected==[str(document)]
