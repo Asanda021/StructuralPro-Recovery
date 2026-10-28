@@ -125,7 +125,9 @@ class ProjectSearchDialog(QDialog):
 
     def open_model(self):
         if not self.model_button.isEnabled():return None
-        record=self.open_record()
+        # Validate/display the selected record without also opening the generic
+        # project destination. The IFC callback owns the single specialist route.
+        record=self.open_record(navigate=False)
         if record is None or record["kind"]!="member" or not record["entity_id"]:
             return None
         try:
@@ -136,7 +138,7 @@ class ProjectSearchDialog(QDialog):
             self.status.setText("نمای مستند باز نشد: "+str(exc))
             return None
 
-    def open_record(self):
+    def open_record(self, *, navigate=True):
         item=self.list.currentItem()
         if item is None or self.digest is None:return None
         try:
@@ -166,7 +168,7 @@ class ProjectSearchDialog(QDialog):
                 "record":record["data"],
             },ensure_ascii=False,indent=2,default=str))
             supported=record['route'] in {'projects','boq','drawing','drawing_session','project_controls','manual_formula'}
-            if self.on_navigate and supported and record["entity_id"]:
+            if navigate and self.on_navigate and supported and record["entity_id"]:
                 self.on_navigate(record["route"],record["project_id"],record["entity_id"])
             self.status.setText("رکورد تأییدشده از SQLite بازخوانی شد؛ هیچ مقدار یا تأییدی ثبت نشد." if supported else
                 "رکورد SQLite فقط‌خواندنی است؛ مسیر تخصصی معتبر برای این نوع نتیجه پشتیبانی نشده است.")

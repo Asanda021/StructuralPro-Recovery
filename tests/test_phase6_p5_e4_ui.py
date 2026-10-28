@@ -372,3 +372,28 @@ def test_reviewed_member_source_rejects_linked_ifc_file_or_parent_without_write(
         assert service.open_project("P")["boq"] == []
     finally:
         service.store.close()
+
+
+def test_ifc_button_dispatches_only_verified_model_destination(tmp_path):
+    """The two E4 navigation buttons must never open both destinations."""
+    from test_phase6_p3_real_project_bridge import reviewed
+    qt = QApplication.instance() or QApplication([])
+    app, _, _, _ = reviewed(tmp_path)
+    calls = []
+    panel = ProjectSearchDialog(app, 'P', initial_query='B1',
+        on_navigate=lambda *args: calls.append(('generic', args)),
+        on_open_model=lambda *args: calls.append(('verified_ifc', args)))
+    digest = app.store.current_digest('P')
+    try:
+        candidates = [i for i, item in enumerate(panel.results)
+                      if item['kind'] == 'member' and item['entity_id'] == 'B1']
+        assert len(candidates) == 1, 'The reviewed member must be uniquely searchable'
+        panel.show(); qt.processEvents()
+        panel.list.setCurrentRow(candidates[0]); qt.processEvents()
+        assert panel.model_button.isEnabled()
+        QTest.mouseClick(panel.model_button, Qt.MouseButton.LeftButton)
+        assert calls == [('verified_ifc', ('P', 'B1'))], calls
+        assert app.store.current_digest('P') == digest
+        assert not app.open_project('P')['boq']
+    finally:
+        panel.close(); app.store.close(); qt.processEvents()
