@@ -1,3 +1,9 @@
+## پذیرش نهایی fcf847 — ۲۸ اکتبر ۲۰۲۶
+
+[CI40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079): Linux و Windows native هرکدام۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warningfitz. historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هریک۸تکرار در هر سیستم PASS. [گسترده40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) هنوز درحال‌اجرا؛ گیت کل تا نتیجه واقعی آن PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## آخرین اجرای گسترده و تشخیص — ۲۸ اکتبر ۲۰۲۶
 
 کد/آزمون fcf8472493e842fe707740d2baf166468bf11cdf؛ CI پذیرش [40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079)، CI گسترده جدید [40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852). آخرین workflow0a7decf بخش واقعی انتهایی log را تنها در شکست به notice منتقل می‌کند؛ timeoutهای قبلی ثابت‌اند. نتیجه Windows تا JUnit/JSON واقعی PARTIAL است. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

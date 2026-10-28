@@ -1,3 +1,9 @@
+## پذیرش SHA نهایی — هر دو سیستم SUCCESS
+
+[CI40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) روی کد fcf847: Linux و Windows هرکدام **۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warning fitz**؛ historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هرکدام۸تکرار در هرسیستم PASS،صفرFAIL/ERROR/SKIP و بدون هشدار pytest. notices واقعیJunit و digest artifact در [JSON](acceptance-fcf-final.json) ثبت شدند. رگرسیون گسترده40670626852 و بررسی کامل artifact مستقل از این پذیرش هنوز PARTIAL است.
+
+---
+
 ## رگرسیون گسترده با تشخیص قابل بررسی
 
 آخرین اجرای گسترده [40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852)، workflow `0a7decf`، روی کد ثابت fcf847 است و هنوز پایان نیافته. اگر runner شکست/timeout دهد، آخرین بخش همان لاگ واقعی به notice اضافه می‌شود تا محل شکست بعدی بدون دسترسی artifact API قابل بررسی باشد؛ timeout و خروجی اصلی تغییر نکرده‌اند. اجرای واقعی هر دو فرمان تشخیص با لاگ کنترل‌شده و کاراکترهای newline/percent، exit۰ و escaping درست را اثبات کرد. خروجی کامل همچنان در artifact اصلی است. CI پذیرش مستقل40669898079 از workflow قبلیa0cd4c7 روی همین کد fcf847 اجرا می‌شود؛ تغییر بعدی صرفاً diagnostic workflow گسترده است.
