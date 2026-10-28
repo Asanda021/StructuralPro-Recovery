@@ -161,9 +161,31 @@ def junit_summary(report: Path) -> dict:
 HISTORICAL_TESTS = ('tests/test_binary_build_security_contract.py', 'tests/test_owner_approved_binary_build_workflows.py', 'tests/test_p37_real_product_deployment.py', 'tests/test_p37_release_gate_separation.py', 'tests/test_p61_p70_release_delivery.py', 'tests/test_priority_10_compliance.py', 'tests/test_priority_10_release.py', 'tests/test_priority_10_release_integrity.py', 'tests/test_priority_17_reports_excel_pdf.py', 'tests/test_priority_38_pre_release_freeze.py', 'tests/test_priority_41_ci_dependency_parity.py', 'tests/test_priority_42_windows_runtime_smoke.py', 'tests/test_priority_43_release_artifact_integrity.py', 'tests/test_priority_49_windows_installer_acceptance.py', 'tests/test_priority_9_qa.py')
 
 
+
+def current_test_modules(root: Path, *, shard_count: int = 1, shard_index: int = 0):
+    """Partition every active pytest module exactly once, without skipping tests."""
+    if (type(shard_count) is not int or shard_count < 1 or
+            type(shard_index) is not int or not 0 <= shard_index < shard_count):
+        raise ValueError("Invalid current regression shard selection")
+    tests = root / "tests"
+    if not tests.is_dir():
+        raise RuntimeError("Current tests directory unavailable")
+    archived = set(HISTORICAL_TESTS)
+    active = sorted(
+        p.relative_to(root).as_posix() for p in tests.rglob("test_*.py")
+        if p.is_file() and p.relative_to(root).as_posix() not in archived
+    )
+    if not active or shard_count > len(active):
+        raise RuntimeError("Missing active test modules or too many shards")
+    assigned = active[shard_index::shard_count]
+    manifest_sha = hashlib.sha256(("\n".join(active) + "\n").encode("utf-8")).hexdigest()
+    return active, assigned, manifest_sha
+
+
 def run(root: Path, output: Path | None = None, log: Path | None = None,
         mode: str = "historical", timeout: float = 300,
-        junit_output: Path | None = None) -> int:
+        junit_output: Path | None = None, *, shard_count: int = 1,
+        shard_index: int = 0) -> int:
     root = root.resolve(strict=True)
     if mode not in {"historical", "current"}:
         raise ValueError("Unknown verification mode")
@@ -178,10 +200,16 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
             junit_output.parent.mkdir(parents=True, exist_ok=True)
             junit_output.unlink(missing_ok=True)
         command = [sys.executable, "-m", "pytest", "-vv", "--disable-warnings", "--junitxml", str(junit)]
+        active_modules = selected_modules = []
+        module_manifest_sha = None
         if mode == "historical":
+            if shard_count != 1 or shard_index != 0:
+                raise ValueError("Historical contracts cannot be sharded")
             command.extend(HISTORICAL_TESTS)
         else:
-            command.extend("--ignore=" + name for name in HISTORICAL_TESTS)
+            active_modules, selected_modules, module_manifest_sha = current_test_modules(
+                staged, shard_count=shard_count, shard_index=shard_index)
+            command.extend(selected_modules)
         command.extend(["-o", "faulthandler_timeout=60"])
         environment = dict(os.environ)
         environment["PYTHONPATH"] = str(staged)
@@ -217,6 +245,10 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
                   "github_actions_used": False, "build_or_release_performed": False,
                   "windows_gui_validated": False,
                   "junit_report_written": junit_written,
+                  "shard_count": shard_count, "shard_index": shard_index,
+                  "current_test_modules_total": len(active_modules),
+                  "current_test_modules_in_shard": len(selected_modules),
+                  "current_test_manifest_sha256": module_manifest_sha,
                   "pytest_exit_code": proc.returncode, "timed_out": timed_out, "timeout_seconds": timeout, "stats": stats,
                   "overall_green": proc.returncode == 0 and stats.get("failed") == 0}
         if output:
@@ -235,9 +267,12 @@ def main() -> int:
     parser.add_argument("--junit", type=Path, help="Persist the actual pytest JUnit XML, when produced")
     parser.add_argument("--mode", choices=("current", "historical"), default="historical")
     parser.add_argument("--timeout", type=float, default=300, help="Maximum pytest wall time in seconds")
+    parser.add_argument("--shard-count", type=int, default=1)
+    parser.add_argument("--shard-index", type=int, default=0)
     args = parser.parse_args()
     try:
-        return run(args.root,args.json,args.log,args.mode,args.timeout,args.junit)
+        return run(args.root,args.json,args.log,args.mode,args.timeout,args.junit,
+                   shard_count=args.shard_count, shard_index=args.shard_index)
     except Exception as exc:
         # Setup errors happen before pytest/JUnit; keep them visible without
         # weakening policy, inventing test results or retaining stale XML.
