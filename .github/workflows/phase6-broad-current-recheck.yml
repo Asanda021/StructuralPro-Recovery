@@ -48,7 +48,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"df29e70f6946e610a59f221b6bb93c776c6621d6","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"df29e70f6946e610a59f221b6bb93c776c6621d6","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
       - name: Preserve original current-suite logs, JSON and JUnit
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -95,7 +95,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"df29e70f6946e610a59f221b6bb93c776c6621d6","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"df29e70f6946e610a59f221b6bb93c776c6621d6","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
       - name: Preserve original native Windows JUnit logs and JSON
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
