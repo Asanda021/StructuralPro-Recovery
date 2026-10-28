@@ -2,7 +2,7 @@
 from pathlib import Path
 from PySide6.QtCore import QObject, QSettings
 from PySide6.QtWidgets import QPushButton
-from PySide6.QtGui import QFont, QFontDatabase
+from PySide6.QtGui import QFont, QFontDatabase, QRawFont
 from app.theme import APP_STYLESHEET
 
 # Qt alpha compositing supplies glass-like panels without Windows-only APIs.
@@ -46,20 +46,37 @@ QDockWidget::title { background: #243d59; color: #ecf4ff; padding: 5px; }
 
 
 # Qt stylesheet font-family lists are not reliable platform fallbacks.
-# Prefer an actually installed font with Arabic/Persian glyph coverage.
+# A family advertising Arabic support may still have no Latin glyphs (e.g. some
+# Noto Sans Arabic installs). Verify the actual raw font used for mixed RTL text.
+_MIXED_SCRIPT_CHARS = frozenset(
+    'StructuralPro 0123456789 ۰۱۲۳۴۵۶۷۸۹ کارگاه متره'
+) - {' '}
+
+
+def _supports_mixed_script(chosen):
+    raw = QRawFont.fromFont(QFont(chosen, 16))
+    return raw.isValid() and all(
+        raw.supportsCharacter(ord(character))
+        for character in _MIXED_SCRIPT_CHARS
+    )
+
+
 def _preferred_persian_font():
     families = QFontDatabase.families()
     by_name = {name.casefold(): name for name in families}
     preferred = ('Vazirmatn', 'Tahoma', 'Segoe UI', 'Noto Sans Arabic',
                  'Noto Naskh Arabic', 'DejaVu Sans', 'Arial')
     arabic = QFontDatabase.WritingSystem.Arabic
-    for name in preferred:
+    checked = set()
+    for name in (*preferred, *families):
         chosen = by_name.get(name.casefold())
-        if chosen and arabic in QFontDatabase.writingSystems(chosen):
+        if chosen is None or chosen in checked:
+            continue
+        checked.add(chosen)
+        if (arabic in QFontDatabase.writingSystems(chosen)
+                and _supports_mixed_script(chosen)):
             return chosen, True
-    for chosen in families:
-        if arabic in QFontDatabase.writingSystems(chosen):
-            return chosen, True
+    # Do not claim that a fallback has verified Persian/Latin coverage.
     fallback = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont).family()
     return fallback, False
 

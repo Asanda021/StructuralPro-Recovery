@@ -28,7 +28,7 @@ from app.desktop_preferences import _preferred_persian_font
 app=QApplication([])
 selected, arabic_supported = _preferred_persian_font()
 raw=QRawFont.fromFont(QFont(selected, 16))
-characters='StructuralPro 1234 کارگاه متره'
+characters='StructuralPro 0123456789 ۰۱۲۳۴۵۶۷۸۹ کارگاه متره'
 font=QFont(selected, 18)
 metrics=QFontMetrics(font)
 glyphs={ch: bool(raw.supportsCharacter(ord(ch))) for ch in set(characters) if not ch.isspace()}
@@ -38,6 +38,7 @@ result=dict(platform=sys.platform, qpa=os.environ.get('QT_QPA_PLATFORM'), family
             available_fonts=QFontDatabase.families()[:100])
 print('PHASE6_FONT_DIAGNOSTIC '+json.dumps(result,ensure_ascii=False),flush=True)
 assert selected and raw.isValid()
+assert arabic_supported, 'No installed font passed Persian/Latin coverage validation'
 assert all(glyphs.values()), 'Qt selected font lacks printable glyphs, see diagnostic'
 dest=Path(os.environ.get('STRUCTURALPRO_P6_FONT_DIR', '.'))
 dest.mkdir(parents=True,exist_ok=True)
