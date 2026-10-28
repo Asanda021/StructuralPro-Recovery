@@ -16,7 +16,9 @@ def display_verified_boq_row(project, row_id, table):
     rows=project.get("boq",[])
     if not isinstance(rows,list):raise ValueError("BOQ معتبر نیست")
     def rid(r):
-        return next((r.get(k) for k in ("row_id","id","item_id")
+        # Match canonical E4 search_project identity precedence exactly.
+        # Printed row_id is an alias when an explicit stored id exists.
+        return next((r.get(k) for k in ("id","row_id","item_id")
                      if r.get(k) not in (None,"")),None)
     selected=[i for i,r in enumerate(rows)
               if isinstance(r,dict) and _identity(rid(r))==_identity(row_id)]
