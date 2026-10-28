@@ -4,6 +4,40 @@ from pathlib import Path
 import ezdxf,pytest
 from core.drawings.dwg_takeoff import DWGTakeoffEngine
 
+def _peak_process_rss_kib():
+    """Peak resident memory, using the actual OS API on Windows and Unix."""
+    import os
+    if os.name != 'nt':
+        import resource
+        return resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+    import ctypes
+    from ctypes import wintypes
+
+    class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
+        _fields_ = [
+            ('cb', wintypes.DWORD), ('PageFaultCount', wintypes.DWORD),
+            ('PeakWorkingSetSize', ctypes.c_size_t),
+            ('WorkingSetSize', ctypes.c_size_t),
+            ('QuotaPeakPagedPoolUsage', ctypes.c_size_t),
+            ('QuotaPagedPoolUsage', ctypes.c_size_t),
+            ('QuotaPeakNonPagedPoolUsage', ctypes.c_size_t),
+            ('QuotaNonPagedPoolUsage', ctypes.c_size_t),
+            ('PagefileUsage', ctypes.c_size_t),
+            ('PeakPagefileUsage', ctypes.c_size_t),
+        ]
+
+    counters = PROCESS_MEMORY_COUNTERS()
+    counters.cb = ctypes.sizeof(counters)
+    get_process = ctypes.windll.kernel32.GetCurrentProcess
+    get_process.restype = wintypes.HANDLE
+    get_memory = ctypes.windll.psapi.GetProcessMemoryInfo
+    get_memory.argtypes = [wintypes.HANDLE, ctypes.POINTER(PROCESS_MEMORY_COUNTERS), wintypes.DWORD]
+    get_memory.restype = wintypes.BOOL
+    if not get_memory(get_process(), ctypes.byref(counters), counters.cb):
+        raise OSError(ctypes.get_last_error(), 'GetProcessMemoryInfo failed')
+    return counters.PeakWorkingSetSize / 1024
+
+
 def fixture(tmp_path,n=1,unit=6):
  d=ezdxf.new('R2018');d.units=unit
  for i in range(n):d.modelspace().add_line((i,0),(i+3,4))
@@ -42,8 +76,7 @@ def test_async_responsiveness_and_oracle(tmp_path,n):
   assert sum(e.data['length'] for e in w.cad_document.entities)==5*n and len(w._cad_handle_items)==n
   assert len(ticks)>10;gap=max(b-a for a,b in zip(ticks,ticks[1:]));assert gap<.5
   QTest.mouseClick(w.fit,Qt.LeftButton);QTest.mouseClick(w.cad_layer_toggle,Qt.LeftButton);QTest.mouseClick(w.cad_layer_toggle,Qt.LeftButton)
-  import resource
-  (tmp_path/'responsiveness.json').write_text(json.dumps({'entities':n,'elapsed_s':elapsed,'timestamps':ticks,'max_event_gap_s':gap,'threshold_s':.5,'threshold_reason':'Coarse interactive 500ms upper bound on this shared Linux host; 10ms timer. Not a cross-machine SLA.','peak_rss_kib':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,'oracle_m':n*5,'all_retained':True}))
+  (tmp_path/'responsiveness.json').write_text(json.dumps({'entities':n,'elapsed_s':elapsed,'timestamps':ticks,'max_event_gap_s':gap,'threshold_s':.5,'threshold_reason':'Coarse interactive 500ms upper bound on shared CI host; 10ms timer. Not a cross-machine SLA.','peak_rss_kib':_peak_process_rss_kib(),'oracle_m':n*5,'all_retained':True}))
   w.grab().save(str(tmp_path/'async-cad.png'))
  finally:timer.stop();w.close()
 
