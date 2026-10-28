@@ -1,3 +1,9 @@
+## CI گسترده Linux روی SHA نهایی
+
+[CI40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852): Linux **۸۳۷۸PASS،۰FAIL،۵SKIP** از۸۳۸۳مورد، exit۰، `timed_out=false` و `overall_green=true`؛ شمارش notice از JSON/JUnit واقعی runner گرفته شده است. این پنج SKIP به PASS تبدیل نمی‌شوند. Windows هنوز جاری است. [شاهد notice](broad-ci-linux.json)؛ JUnit/log محلی همان SHA جداگانه با۱۰SKIP قابل مشاهده است.
+
+---
+
 ## پذیرش نهایی fcf847 — هر دو سیستم SUCCESS
 
 [CI40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079): Linux و Windows native هرکدام **۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warning fitz**؛ historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هرکدام۸تکرار در هر سیستم PASS. [شواهد شمارش/hash](acceptance-fcf-final.json). اجرای گسترده40670626852 هنوز مستقل و جاری است؛ تا نتیجه آن کل مأموریت PARTIAL است.

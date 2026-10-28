@@ -1,3 +1,9 @@
+## CI گسترده Linux نهایی
+
+Run40670626852 کدfcf847: Linux۸۳۷۸PASS،۰FAIL،۵SKIP،exit۰،بدونtimeout؛ Windows هنوز جاری و گیت کلی PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## پذیرش نهایی fcf847 — ۲۸ اکتبر ۲۰۲۶
 
 CI40669898079 روی Linux و Windows هرکدام۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warningfitz؛ historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هرکدام۸تکرارPASS. broad Linux محلی۸۳۷۳PASS/۰FAIL/۱۰SKIP؛ [CI گسترده40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) هنوز جاری است، بنابراین PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

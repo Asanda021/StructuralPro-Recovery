@@ -1,0 +1,18 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852",
+  "source": "public CI notice from actual runner JSON/JUnit",
+  "result": {
+    "source_sha": "fcf8472493e842fe707740d2baf166468bf11cdf",
+    "pytest_exit_code": 0,
+    "timed_out": false,
+    "overall_green": true,
+    "stats": {
+      "collected": 8383,
+      "passed": 8378,
+      "failed": 0,
+      "skipped": 5,
+      "failures": []
+    }
+  },
+  "windows": "still running"
+}
