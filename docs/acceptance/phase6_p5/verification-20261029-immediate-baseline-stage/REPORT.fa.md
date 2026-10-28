@@ -33,3 +33,17 @@
 
 ## قیود و خلاصه وضعیت پروژه و گفت‌وگو
 P6-5 همچنان **PARTIAL**؛ رگرسیون Broad روی یک SHA موفق، پذیرش همه خانواده‌ها/Windows UAT و پایداری بی‌کرش را اثبات نمی‌کند. PR #34 باید Open/Draft/Unmerged باقی بماند. بدون Merge، تغییر main، Force Push، EXE/Release و شروع P6-6/فاز ۷. نقشه‌راه دقیقاً ۸ فاز و پیشرفت ثبت‌شده ۸۵٪ است. این چت بر مقایسه سه اجرای واقعی، Baseline بدون profiler و اندازه‌گیری جداگانه هزینه توابع متمرکز شد؛ Access Violation مستقل از profiler به‌صورت واقعی بازتولید شد و بدون حدس زدن ریشه، اندازه‌گیری‌ها ثبت شدند.
+
+
+## نتیجه نهایی مستقل Windows در اجرای Stage
+اجرای https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40765263869 اکنون `completed/success` است: Linux و Windows هر دو Job موفق. Artifact واقعی Windows به نام `p6-fivefloor-stage-windows` و Artifact ID `12849099376` بازدریافت و `summary.json`، `catalog-isolated.json`، `run-1-journal.json`، `run-1.xml` و لاگ اصلی آن بررسی شد.
+- Windows Stage روی تست اصلی: یک PASS/صفر FAIL/ERROR/SKIP، `pytest exit=0`، `timed_out=false`، wall `118.156s`، JUnit واقعی.
+- تعداد مشترک فراخوانی‌های Python میان دو محیط در همین سناریو: `catalog() 41306`، `clean() 41112`، `verified() 633` و `deepcopy() 89045`.
+- Windows زمان تجمعی: `catalog() 42.420670s`، `clean() 44.732989s`، `verified() 49.069696s`، `deepcopy() 25.481336s`، `evaluate_rows() 2.049201s` و `fingerprints() 0.797679s`. زمان‌ها تو در تو هستند و قابل جمع نیستند.
+- ۲۰۰ بار `catalog()` بدون بازنویسی محصول روی Windows: میانگین `1.0652ms`، p95 `1.1982ms` و بیشینه `1.6655ms`. Digest خروجی با Linux یکسان است: `f56221305ea3bb4869e173fb0caa9b576389e87c150454a8d1c5f10c8ec6440f`.
+- علت کرش اولیه همچنان **NOT PROVEN**: یک اجرای مرحله‌ای PASS اثر واقعی `0xC0000005` در تکرار دوم Baseline بدون profiler را نفی نمی‌کند. این CI **یک تکرار** در هر محیط داشته، نه سه اجرای مرحله‌ای.
+
+**حکم نهایی این مأموریت:** مقایسه سه Run واقعی DONE؛ Baseline بدون پروفایلر DONE با **Windows RED/CRASH**؛ اندازه‌گیری مرحله‌ای توابع در Linux و Windows DONE با **PASS محدود یک سناریو**؛ رفع Access Violation یا بهینه‌سازی محصول **NOT DONE**. P6-5 همچنان PARTIAL. نقشه راه ۸ فاز، ۸۵٪ ثبت‌شده، PR34 Draft/Unmerged و عدم Merge/Release/main محفوظ‌اند.
+
+## خلاصه نهایی وضعیت پروژه و گفت‌وگو
+گام فوری تعیین شواهد و نقاط پرهزینه اجرا شد. متریک‌های دو سیستم اکنون قابل ممیزی در Artifactها هستند، اما پایان عیب‌یابی native به‌شمار نمی‌روند. گام بعدی در **همین فاز ۶ اولویت ۵**: آزمون تکرارشونده crash و علت native، سپس RED→GREEN/Oracle مستقل برای بهبود مجاز فراخوانی‌های تکراری `catalog()` و `verified()`، همراه با مقایسه قبل/بعد و CI معتبر.
