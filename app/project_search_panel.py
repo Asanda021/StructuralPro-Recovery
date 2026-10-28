@@ -140,9 +140,16 @@ class ProjectSearchDialog(QDialog):
             if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
                 raise RuntimeError("نسخه پروژه پیش از نمایش IFC تغییر کرد.")
             result=self.on_open_model(record["project_id"],record["entity_id"])
+            # Existing main.py opens modal destinations and returns None on
+            # success; only literal False is an explicit failed handoff.
+            if result is False:
+                raise RuntimeError("مقصد IFC ناوبری را صریحاً رد کرد.")
+            if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+                raise RuntimeError("نسخه پروژه پس از اجرای مقصد IFC تغییر کرد.")
             self.status.setText("نمای IFC فقط از گیت واقعی هویت و Revision اجرا شد.")
             return result
         except Exception as exc:
+            self.invalidate()
             self.status.setText("نمای مستند باز نشد: "+str(exc))
             return None
 
@@ -181,7 +188,13 @@ class ProjectSearchDialog(QDialog):
             },ensure_ascii=False,indent=2,default=str))
             supported=record['route'] in {'projects','boq','drawing','drawing_session','project_controls','manual_formula'}
             if navigate and self.on_navigate and supported and record["entity_id"]:
-                self.on_navigate(record["route"],record["project_id"],record["entity_id"])
+                outcome=self.on_navigate(record["route"],record["project_id"],record["entity_id"])
+                if outcome is False:
+                    raise RuntimeError("مقصد رکورد ناوبری را صریحاً رد کرد.")
+                # The callback may run a modal dialog or reenter the event loop.
+                # Never label an obsolete snapshot as an approved destination.
+                if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+                    raise RuntimeError("نسخه پروژه پس از اجرای مقصد تغییر کرد.")
             self.status.setText("رکورد تأییدشده از SQLite بازخوانی شد؛ هیچ مقدار یا تأییدی ثبت نشد." if supported else
                 "رکورد SQLite فقط‌خواندنی است؛ مسیر تخصصی معتبر برای این نوع نتیجه پشتیبانی نشده است.")
             return record
