@@ -1,3 +1,9 @@
+## ریشه QFileDialog Windows و اصلاح محصول
+
+CIهدفمند40674791106 روی a41:۱۰PASS/۱FAIL؛ علت اول `fileNameEdit` در QFileDialog بومی Windows وجود ندارد، `setFocus` به None می‌رسد. [شاهد](verification-20261028-windows-qt-timeout/roof-native-first-failure.txt). محصولcce78eb در فایل سقف فقط `DontUseNativeDialog` را برای انتخاب JSON دیتایل اعمال می‌کند؛ Qt واقعی/QTest و BOQ دست نخورده، local۲۴PASS. [CIهدفمند40675283022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022) و [پذیرش40675283032](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283032) جاری، broad cce هنوز باید بعد از آن راه‌اندازی شود. rerun محلی broad a41:۸۳۷۵PASS/۰FAIL/۱۰SKIP،SIGSEGV اول همچنان ثبت. وضعیت کل PARTIAL.
+
+---
+
 ## سه شکست و native crash بعدی در Windows
 
 Broad40672896854 رویa41cd18: Linux۸۳۸۰PASS/۵SKIP، Windows سه FAIL در تست سقف planar و سپس0xC0000409 روی تست اصلاحیه هندسی، بدون JUnit. اجرای هدفمند Windows [40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) برای ثبت اولین خطای واقعی جاری؛ همان pair در Linux۱۶PASS. هیچ‌یک از شکست‌های broad پنهان نیست؛ گیت PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

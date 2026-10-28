@@ -1,0 +1,12 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106",
+  "source": "a41cd180d1b78b1233a20b4c5d440e93c792cce0",
+  "passed": 10,
+  "failed": 1,
+  "errors": 0,
+  "skipped": 0,
+  "junit_sha256": "c44368e8f1d36804146b675a49de01ac592bf50ada433a23b7c721d5eb695959",
+  "failure": "QFileDialog fileNameEdit missing on native Windows dialog; AttributeError setFocus; no committed roof draft",
+  "artifact": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106/artifacts/12809414711",
+  "artifact_download": "blocked by GitHub API access policy"
+}

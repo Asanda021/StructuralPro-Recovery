@@ -1,3 +1,13 @@
+## ریشه شکست واقعی QFileDialog و بازآزمایی
+
+CIهدفمند [40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) روی Windows،JUnitواقعی **۱۰PASS/۱FAIL/۰ERROR/۰SKIP** و هشc44368e8... تولید کرد. خطای ثبت‌شده `AttributeError: NoneType has no attribute setFocus` است: `QFileDialog` بومی Windows، فرزند Qt به نام fileNameEdit را فراهم نکرد و import دیتایل سقف انجام نشد. [متن واقعی notice](roof-native-first-failure.txt)، [metadata](roof-native-first-failure.json)، [artifact واقعی](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106/artifacts/12809414711). علت نخستین FAIL روشن است؛ علت قطعی native crash بعدی جداگانه هنوز از نبودJUnit قابل اثبات نیست.
+
+تغییر حداقلی واقعی محصول `app/roof_detail_editor.py`، تنها در انتخاب فایل JSON دیتایل، `QFileDialog.Option.DontUseNativeDialog` را اعمال می‌کند تا همان فرم Qt و کنترل قابل تعامل و دسترس‌پذیر روی Windows استفاده شود. هیچ mock جای پنجره یا QTest ننشسته و قرارداد فایل/منبع/BOQ تغییر نکرده است. [رگرسیون محلی سقف و شمع۲۴PASS،۱warning](qtfix-roof-native-green.xml). کد جدید cce78eb2b1beb11710a5b29355928e91a653a169، [CIهدفمند Windows40675283022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022)، [CIپذیرش40675283032](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283032) درحال‌اجرا هستند؛ Windows جدید تا نتیجه واقعی PASS نیست.
+
+رگرسیون گسترده محلی تکراری source a41cd18، پس از SIGSEGV اول، از ابتدا تکمیل شد: **۸۳۷۵PASS،۰FAIL/ERROR،۱۰SKIP،۳warning** در۵۸۱٫۸۳ثانیه، exit۰،بدونtimeout؛ JUnit/JSON/log واقعی در همین پوشه‌اند. این بازآزمایی SIGSEGV ثبت‌شده اول را محو نمی‌کند. کد cce شامل تغییر محصول بعدی است و به رگرسیون مستقل خود نیاز دارد.
+
+---
+
 ## تشخیص مستقل شکست بعدی Windows
 
 در CI40672896854، هر سه پارامتر `test_existing_roof_editor_real_planar_schedule_and_boq` به‌صورت FAIL دیده شدند و سپس subprocess هنگام `test_real_roof_geometry_revision_through_existing_amendment_buttons` با0xC0000409 پایان یافت؛ JUnit کامل ساخته نشد و علت شکست‌ها از خروجی باقی‌مانده مشخص نیست. Linux روی همان دو فایل سقف/اصلاحیه با `--maxfail=1` **۱۶PASS،۱warning** داشت ([JUnit](qtfix-roof-pair.xml)). برای شناسایی **اولین شکست واقعی Windows**، [CI هدفمند40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) روی source a41cd18 با Qt native، لاگ و JUnit اصلی و حداکثر۲۴۰ثانیه اجرا می‌شود. این اجرای تشخیصی، broad ناموفق را موفق نمی‌کند و هنوز نتیجه نداده است.
