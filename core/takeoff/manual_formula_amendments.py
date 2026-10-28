@@ -940,6 +940,8 @@ def ifc_transfer_step_payload(project, *, transfer_id, action, expected_revision
     if _identity(author)==_identity(reviewer):raise ValueError('بازبین واگرد مالکیت باید مستقل باشد')
     root,head=ifc_transfer_head(project,transfer_id)
     revision(expected_revision,head['group_revision'])
+    if any(link.get('lineage_id')==root['lineage_id'] for link in project.get('ifc_2d_crosswalks',[])):
+        raise ValueError('واگرد گروه دارای Crosswalk مهاجرت‌کرده به قرارداد معکوس مستقل نیاز دارد')
     if reviewer!=root.get('review',{}).get('reviewer'):
         raise ValueError('واگرد این انتقال به همان بازبین مستقل ثبت‌شده نیاز دارد')
     if (action=='undo')==(head.get('history_action')=='undo'):
@@ -965,7 +967,7 @@ def ifc_transfer_step_payload(project, *, transfer_id, action, expected_revision
         'transfer_root':transfer_id,'previous_transfer_id':head['id'],'history_action':action,
         'group_revision':head['group_revision']+1,'previous':deepcopy(head['current']),
         'current':deepcopy(head['previous']),'previous_total':head['current_total'],
-        'current_total':head['previous_total'],'delta':format(-Decimal(head['delta']),'f'),
+        'current_total':head['previous_total'],'delta':format(Decimal(head['delta']).copy_negate(),'f'),
         'consumed_rows':deepcopy(head['rows']),'rows':deepcopy(head['consumed_rows']),
         'created_by':text(author,'نویسنده'),'reviewer':text(reviewer,'بازبین'),
         'reviewer_role':root['review']['role'],

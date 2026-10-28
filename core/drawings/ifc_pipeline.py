@@ -571,6 +571,13 @@ def crosswalk_group_records(project,*,lineage_id,evidence_path,evidence_sha256,a
     if _identity(author)==_identity(reviewer):raise ValueError('بازبین مهاجرت گروهی باید مستقل باشد')
     event=next((x for x in project.get('ifc_identity_lineages',[]) if x['id']==lineage_id),None)
     if event is None:raise ValueError('دفتر Split/Merge مبنای Crosswalk یافت نشد')
+    from core.takeoff.manual_formula_amendments import IFC_TRANSFER, ifc_transfer_head
+    for key, transfer in project.get('manual_formula_amendments',{}).items():
+        if (transfer.get('kind')==IFC_TRANSFER and transfer.get('lineage_id')==lineage_id
+                and not transfer.get('transfer_root')):
+            _, head=ifc_transfer_head(project,key)
+            if head.get('history_action')=='undo':
+                raise ValueError('مهاجرت Crosswalk تا بازاعمال مالکیت واگردشده مجاز نیست')
     original=Path(event['evidence_path'])
     if not original.is_file() or sha256(original.read_bytes()).hexdigest()!=event['evidence_sha256']:raise ValueError('مدرک تغییر هویت تغییر کرده است')
     path=Path(evidence_path)

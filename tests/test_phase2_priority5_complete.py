@@ -8,7 +8,7 @@ from test_phase2_priority5_closure import identity_case
 from test_phase2_priority5_ifc_lineage_chat import _review
 
 
-def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, names=('B1','B2','B3')):
+def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, names=('B1','B2','B3'), quantity_name='Length'):
     import ifcopenshell as ifc
     from core.drawings.ifc_pipeline import quantity_formula_data
     if identity is None:
@@ -25,9 +25,11 @@ def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, na
     model.create_entity('IfcRelContainedInSpatialStructure',GlobalId=ifc.guid.new(),RelatedElements=[second],RelatingStructure=storey)
     def length(obj,value):
         definitions=[x.RelatingPropertyDefinition for x in obj.IsDefinedBy if x.RelatingPropertyDefinition.is_a('IfcElementQuantity')]
-        if definitions:definitions[0].Quantities[0].LengthValue=float(value)
+        amount=Decimal(str(value))*({'Length':Decimal(1),'GrossSideArea':Decimal('.3'),'GrossVolume':Decimal('.2')*Decimal('.3')}[quantity_name])
+        entity,field={'Length':('IfcQuantityLength','LengthValue'),'GrossSideArea':('IfcQuantityArea','AreaValue'),'GrossVolume':('IfcQuantityVolume','VolumeValue')}[quantity_name]
+        q=model.create_entity(entity,Name=quantity_name,**{field:float(amount)})
+        if definitions:definitions[0].Quantities=[q]
         else:
-            q=model.create_entity('IfcQuantityLength',Name='Length',LengthValue=float(value))
             qs=model.create_entity('IfcElementQuantity',GlobalId=ifc.guid.new(),Name='Qto_Beam',MethodOfMeasurement='Explicit synthetic segment schedule',Quantities=[q])
             model.create_entity('IfcRelDefinesByProperties',GlobalId=ifc.guid.new(),RelatedObjects=[obj],RelatingPropertyDefinition=qs)
         # Real swept solid: 0.2 x 0.3 section, extrusion along the member X axis.
@@ -43,7 +45,7 @@ def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, na
     old=[_review(app,oldpath,revision='R1',gid=first.GlobalId,member=names[0],proof=proof)]
     if mode=='merge':old.append(_review(app,oldpath,revision='R1',gid=second.GlobalId,member=names[1],proof=proof))
     for n,pid in enumerate(old):
-        data=quantity_formula_data(app,'P',pid,'Length',author='author')
+        data=quantity_formula_data(app,'P',pid,quantity_name,author='author')
         app.save_manual_formula('P',f'old-{names[0]}-{n}',data,expected_revision=0,reason='Explicit original QTO')
         app.review_manual_formula('P',f'old-{names[0]}-{n}',expected_revision=1,reviewer='reviewer',note='Independent synthetic review')
         app.commit_manual_formula('P',f'old-{names[0]}-{n}',expected_revision=1)
@@ -64,7 +66,8 @@ def case(tmp_path, mode='split', delta=False, crosswalks=None, identity=None, na
         links=[drawing_mapping(app,tmp_path,pid,'new-'+str(n),crosswalks,([2,5 if delta else 4] if mode=='split' else [6])[n]) for n,pid in enumerate(new)]
         migration={'policy':'reviewed_ifc_crosswalk_group_v1','project_id':'P','lineage_id':event['id'],'previous_crosswalk_ids':[x['id'] for x in old_links],'current':links}
         (tmp_path/'crosswalk-group.json').write_text(json.dumps(migration))
-    allocation={'policy':'reviewed_ifc_quantity_allocation_v1','project_id':'P','lineage_id':event['id'],'quantity_name':'Length','unit':'m','classification':'unspecified','previous':[{'proposal_id':p,'quantity':str(q),'scope_reference':'Explicit old member'} for p,q in zip(old,[6] if mode=='split' else [2,4])],'current':[{'proposal_id':p,'quantity':str(q),'scope_reference':'Explicit current segment'} for p,q in zip(new,[2,5 if delta else 4] if mode=='split' else [6])]}
+    factor={'Length':Decimal(1),'GrossSideArea':Decimal('.3'),'GrossVolume':Decimal('.06')}[quantity_name]
+    allocation={'policy':'reviewed_ifc_quantity_allocation_v1','project_id':'P','lineage_id':event['id'],'quantity_name':quantity_name,'unit':{'Length':'m','GrossSideArea':'m2','GrossVolume':'m3'}[quantity_name],'classification':'unspecified' if quantity_name=='Length' else 'gross','previous':[{'proposal_id':p,'quantity':str(Decimal(q)*factor),'scope_reference':'Explicit old member'} for p,q in zip(old,[6] if mode=='split' else [2,4])],'current':[{'proposal_id':p,'quantity':str(Decimal(q)*factor),'scope_reference':'Explicit current segment'} for p,q in zip(new,[2,5 if delta else 4] if mode=='split' else [6])]}
     ep=tmp_path/'allocation.json';ep.write_text(json.dumps(allocation))
     args=dict(lineage_id=event['id'],evidence_path=str(ep),evidence_sha256=sha256(ep.read_bytes()).hexdigest(),author='author',reviewer='reviewer',expected_digest=app.store.current_digest('P'))
     return app,args,ep,allocation

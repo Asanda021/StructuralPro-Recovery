@@ -46,6 +46,30 @@ def test_ifc_transfer_undo_redo_preserves_history_quantities_and_reopen(tmp_path
     finally: app.store.close()
 
 
+@pytest.mark.parametrize('mode', ['split', 'merge'])
+@pytest.mark.parametrize('quantity_name,unit,expected', [('GrossSideArea','m2',Decimal(6)*Decimal('.3')),
+    ('GrossVolume','m3',Decimal(6)*Decimal('.2')*Decimal('.3'))])
+def test_documented_ifc_surface_and_concrete_volume_shares_conserve_original(tmp_path, mode, quantity_name, unit, expected):
+    app,args,_,_=case(tmp_path,mode,quantity_name=quantity_name)
+    original=deepcopy(app.open_project('P'));event=app.apply_ifc_quantity_transfer('P',**args)
+    try:
+        for action,version in [(None,1),('undo',1),('redo',2)]:
+            if action:
+                getattr(app,action+'_ifc_quantity_transfer')('P',transfer_id=event['id'],expected_revision=version,
+                    author='author',reviewer='reviewer',reason='Explicit synthetic face/solid ownership',expected_digest=app.store.current_digest('P'))
+            project=app.open_project('P')
+            assert {row['unit'] for row in project['boq']}=={unit}
+            assert sum(Decimal(str(row['quantity'])) for row in project['boq'])==expected
+            assert project['takeoffs']==original['takeoffs']
+            assert project['manual_formula_register']==original['manual_formula_register']
+        assert event['classification']=='gross'
+        assert sum(Decimal(row['quantity']) for row in event['current'])==expected
+    finally:app.store.close()
+    reopened=StructuralProApp(tmp_path/'app')
+    try:assert reopened.open_project('P')==project
+    finally:reopened.store.close()
+
+
 @pytest.mark.parametrize('bad', ['stale_digest', 'stale_revision', 'self_review', 'unknown_actor',
     'proof', 'source', 'redo_before_undo', 'duplicate_undo'])
 def test_transfer_history_rejects_expired_or_invalid_authority_without_writes(tmp_path, bad):
@@ -209,6 +233,22 @@ def test_native_ifc_history_apply_rechecks_live_viewer_context(tmp_path, change)
     finally: view.close(); app.store.close(); qt.processEvents()
 
 
+def test_ifc_inverse_cannot_rewind_a_migrated_crosswalk_without_its_own_contract(tmp_path):
+    app,args,_,_=case(tmp_path,crosswalks='dxf')
+    proof=tmp_path/'crosswalk-group.json'
+    app.migrate_ifc_crosswalk_group('P',lineage_id=args['lineage_id'],evidence_path=str(proof),
+        evidence_sha256=sha256(proof.read_bytes()).hexdigest(),author='author',reviewer='reviewer',
+        expected_digest=app.store.current_digest('P'))
+    transfer=app.apply_ifc_quantity_transfer('P',**dict(args,expected_digest=app.store.current_digest('P')))
+    before=deepcopy(app.open_project('P'));token=app.store.current_digest('P')
+    try:
+        with pytest.raises(ValueError):
+            app.undo_ifc_quantity_transfer('P',transfer_id=transfer['id'],expected_revision=1,
+                author='author',reviewer='reviewer',reason='No inverse crosswalk review exists',expected_digest=token)
+        assert app.open_project('P')==before and app.store.current_digest('P')==token
+    finally:app.store.close()
+
+
 @pytest.mark.parametrize('count', [1, 5, 20])
 def test_independent_ifc_groups_preserve_total_and_other_owners_on_undo(tmp_path, count):
     transfers = []
@@ -235,3 +275,20 @@ def test_independent_ifc_groups_preserve_total_and_other_owners_on_undo(tmp_path
     reopened = StructuralProApp(tmp_path / '0' / 'app')
     try: assert reopened.open_project('P') == after
     finally: reopened.store.close()
+
+
+def test_crosswalk_migration_rejects_effectively_undone_quantity_ownership(tmp_path):
+    app,args,_,_=case(tmp_path,crosswalks='dxf')
+    transfer=app.apply_ifc_quantity_transfer('P',**args)
+    app.undo_ifc_quantity_transfer('P',transfer_id=transfer['id'],expected_revision=1,
+        author='author',reviewer='reviewer',reason='Restore original owners',
+        expected_digest=app.store.current_digest('P'))
+    before=deepcopy(app.open_project('P'));token=app.store.current_digest('P')
+    proof=tmp_path/'crosswalk-group.json'
+    try:
+        with pytest.raises(ValueError):
+            app.migrate_ifc_crosswalk_group('P',lineage_id=args['lineage_id'],evidence_path=str(proof),
+                evidence_sha256=sha256(proof.read_bytes()).hexdigest(),author='author',reviewer='reviewer',
+                expected_digest=token)
+        assert app.open_project('P')==before and app.store.current_digest('P')==token
+    finally:app.store.close()
