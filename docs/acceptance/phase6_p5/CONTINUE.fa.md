@@ -1,3 +1,9 @@
+## پذیرش و گسترده Linux روی a41cd18
+
+CI40672896825 هر سیستم۴۸۳PASS،۰FAIL/ERROR/SKIP؛ CI40672896854 Linux۸۳۸۰PASS،۵SKIP،۰FAIL،بدونtimeout. Windows گسترده هنوز جاری؛ broadمحلی قبلی SIGSEGV و retry مستقل پنج‌طبقه۱PASS جداگانه ثبت شده‌اند. وضعیت کل PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## بازآزمایی پنج‌طبقه
 
 آزمون پنج‌طبقه که broadمحلیa41 را با SIGSEGV قطع کرد، به‌تنهایی ۱PASS/۷۵٫۹۶ثانیه شد؛ SIGSEGV broad همچنان ثبت و علت نامشخص است. CI پذیرش/گسترده a41 جاری‌اند؛ وضعیت کل PARTIAL.

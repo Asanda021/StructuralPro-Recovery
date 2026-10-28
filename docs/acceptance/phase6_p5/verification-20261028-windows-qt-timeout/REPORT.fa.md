@@ -1,3 +1,11 @@
+## نتایج GitHub روی a41cd18
+
+[پذیرش40672896825](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825): Linux و Windows هرکدام **۴۸۳PASS،۰FAIL/ERROR/SKIP،۱warning fitz**. historical۱۳۰،security۲۶ و دو تکرار۸تایی DPI در هرسیستم همگی PASS بدون warning. JUnit/تصاویر واقعی در [artifact Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825/artifacts/12808488866) و [artifact Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825/artifacts/12809771646)؛ شمارش/hash از notice در [JSON](acceptance-roof-final.json).
+
+[گسترده40672896854](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896854): Linux **۸۳۸۰PASS،۰FAIL،۵SKIP،exit۰،بدونtimeout** از۸۳۸۵ مورد؛ [artifact واقعی Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896854/artifacts/12809727288) و [notice](broad-roof-linux.json). Windows هنوز جاری؛ کل مأموریت تا نتیجه آن و بازرسی artifact PARTIAL است. این موفقیت‌ها SIGSEGV اجرای محلی قبلی را پاک نمی‌کنند.
+
+---
+
 ## بازآزمایی مستقل پنج‌طبقه
 
 آزمون `test_real_qt_fourteen_operations_five_floors_and_all_reports` روی همان worktree تمیز a41cd18 به‌تنهایی با faulthandler۶۰ثانیه **۱PASS در۷۵٫۹۶ثانیه** شد؛ [JUnit](qtfix-fivefloor-retry.xml) و log محفوظ‌اند. این بازآزمایی خطای SIGSEGV در broad محلی را رفع‌شده یا بی‌اثر نمی‌کند و علت آن را اثبات نمی‌کند. CI گسترده مستقل همان SHA در جریان است.
