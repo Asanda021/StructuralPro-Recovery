@@ -27,3 +27,7 @@
 [CI40668037315](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037315) SUCCESS: هر سیستم Linux و Windows native،۴۷۳PASS اصلی،۱۳۰تاریخی،۲۶security و۸+۸تکرارDPI، همگی صفرFAIL/ERROR/SKIP؛۱هشدارfitz در اصلی و۰ در دیگر مراحل. نسخه workflow b423fcf و کد/آزمون74cc37d یکسان‌اند؛ این بسته شامل آزمون واقعی شمع اصلاح‌شده است. هش JUnitهای واقعی از notices و artifact metadata در acceptance-ci-measured.json ثبت شده‌اند. رگرسیون گسترده هنوز باید جداگانه تمام شود؛ اینCIجای آن را نمی‌گیرد.
 
 اجرای محلی74cc پیش از اتمام برای جایگزینی با source جدید fcf847، با SIGTERM روی همان subprocess آزمون متوقف شد؛ خروجی partial و JSON بدونJUnit ثبت شدند و PASS/FAIL نهایی نیستند. اجرای جدید محلی از worktree تمیز source fcf847 انجام می‌شود.
+
+## اجرای گسترده superseded 74cc
+
+Run40668037298 بعد از اصلاح watchdog جایگزین و Cancel شد؛ نتیجه نهایی قابل پذیرش نیست. notice عمومی Windows کد subprocess **3221226505 (0xC0000409)**، `timed_out=false` و JUnit مفقود را ثبت کرده است. علت این کد و نسبت آن با لغو از notice به‌تنهایی روشن نیست؛ نه PASS است و نه به مسابقه تایمر نسبت داده می‌شود. [اطلاعات ثبت‌شده](superseded-broad-ci.json). اجرای fcf847 مستقل ادامه دارد و Windows آن باید تعیین تکلیف شود.

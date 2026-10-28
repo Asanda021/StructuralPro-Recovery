@@ -1,0 +1,24 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037298",
+  "status": "Cancelled",
+  "not_final": true,
+  "public_notices": [
+    {
+      "source_sha": "74cc37d68c35a0a113643e7538d9dce3378e3597",
+      "pytest_exit_code": 3221226505,
+      "timed_out": false,
+      "overall_green": false,
+      "stats": {
+        "error": "JUnit report missing"
+      }
+    },
+    {
+      "source_sha": "74cc37d68c35a0a113643e7538d9dce3378e3597",
+      "pytest_exit_code": null,
+      "timed_out": null,
+      "overall_green": null,
+      "stats": {}
+    }
+  ],
+  "interpretation": "Superseded when watchdog fix was pushed; Windows subprocess code3221226505 with missing JUnit is preserved, not attributed to cancellation without further evidence."
+}
