@@ -119,16 +119,30 @@ class ProjectSearchDialog(QDialog):
             self.status.setText("جست‌وجو مجاز نشد: "+str(exc))
             return []
 
+    def _result_index(self, item):
+        index=item.data(Qt.ItemDataRole.UserRole)
+        if (type(index) is not int or not 0<=index<len(self.results) or
+                self.list.row(item)!=index):
+            raise ValueError("هویت انتخاب نتیجه معتبر نیست؛ دوباره جست‌وجو کنید.")
+        return index
+
     def selected(self,current,*_):
+        if current is not None:
+            try:index=self._result_index(current)
+            except ValueError as exc:
+                self.invalidate()
+                self.status.setText("ناوبری/نمایش مسدود شد: "+str(exc))
+                return
         self.open_button.setEnabled(current is not None and self.digest is not None)
         self.model_button.setEnabled(
             current is not None and self.digest is not None and
             self.on_open_model is not None and
-            self.results[current.data(Qt.ItemDataRole.UserRole)]["kind"]=="member")
+            self.results[index]["kind"]=="member")
         self.detail.clear()
 
     def open_model(self):
         if not self.model_button.isEnabled():return None
+        digest=self.digest
         # Validate/display the selected record without also opening the generic
         # project destination. The IFC callback owns the single specialist route.
         record=self.open_record(navigate=False)
@@ -137,14 +151,14 @@ class ProjectSearchDialog(QDialog):
         try:
             # A specialist destination must not receive an identity from a
             # search snapshot invalidated after open_record() returned.
-            if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+            if self.digest!=digest or self.service.store.current_digest(self.pid)!=digest:
                 raise RuntimeError("نسخه پروژه پیش از نمایش IFC تغییر کرد.")
             result=self.on_open_model(record["project_id"],record["entity_id"])
             # Existing main.py opens modal destinations and returns None on
             # success; only literal False is an explicit failed handoff.
             if result is False:
                 raise RuntimeError("مقصد IFC ناوبری را صریحاً رد کرد.")
-            if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+            if self.digest!=digest or self.service.store.current_digest(self.pid)!=digest:
                 raise RuntimeError("نسخه پروژه پس از اجرای مقصد IFC تغییر کرد.")
             self.status.setText("نمای IFC فقط از گیت واقعی هویت و Revision اجرا شد.")
             return result
@@ -156,12 +170,13 @@ class ProjectSearchDialog(QDialog):
     def open_record(self, *, navigate=True):
         item=self.list.currentItem()
         if item is None or self.digest is None:return None
+        digest=self.digest
         try:
-            if self.service.store.current_digest(self.pid)!=self.digest:
+            if self.service.store.current_digest(self.pid)!=digest:
                 raise RuntimeError("نسخه پروژه تغییر کرده؛ دوباره جست‌وجو کنید.")
             project=self.service.open_project(self.pid)
             if not project:raise ValueError("پروژه دیگر در دسترس نیست.")
-            selected=self.results[item.data(Qt.ItemDataRole.UserRole)]
+            selected=self.results[self._result_index(item)]
             # Re-run original search against the verified current project, not
             # stale serialized Qt item data.
             candidates=search_project(project,self.query.text(),limit=100)
@@ -173,7 +188,7 @@ class ProjectSearchDialog(QDialog):
                 raise RuntimeError("هویت یا محتوای رکورد مبهم است؛ انتخاب مسدود شد.")
             # Re-search may be slow, and stored records may stay byte-identical
             # while an unrelated project write revokes this navigation.
-            if self.service.store.current_digest(self.pid)!=self.digest:
+            if self.digest!=digest or self.service.store.current_digest(self.pid)!=digest:
                 raise RuntimeError("نسخه پروژه هنگام بازخوانی رکورد تغییر کرد.")
             record=matching[0]
             if record['link_status']=='ambiguous_record':
@@ -193,7 +208,7 @@ class ProjectSearchDialog(QDialog):
                     raise RuntimeError("مقصد رکورد ناوبری را صریحاً رد کرد.")
                 # The callback may run a modal dialog or reenter the event loop.
                 # Never label an obsolete snapshot as an approved destination.
-                if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+                if self.digest!=digest or self.service.store.current_digest(self.pid)!=digest:
                     raise RuntimeError("نسخه پروژه پس از اجرای مقصد تغییر کرد.")
             self.status.setText("رکورد تأییدشده از SQLite بازخوانی شد؛ هیچ مقدار یا تأییدی ثبت نشد." if supported else
                 "رکورد SQLite فقط‌خواندنی است؛ مسیر تخصصی معتبر برای این نوع نتیجه پشتیبانی نشده است.")

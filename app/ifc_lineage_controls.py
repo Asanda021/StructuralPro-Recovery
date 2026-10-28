@@ -47,7 +47,7 @@ def install_ifc_lineage_controls(dialog,layout,viewer,service,pid,author,reviewe
                 summary.setText('نسخه مالکیت '+str(head['group_revision'])+' | '+head.get('history_action','apply')+' | '+head['previous_total']+' → '+head['current_total']+' '+head['unit']+' | '+applied['id'])
     def run(action):
         try:
-            if action in ('history_preview','history_apply') and (history_origin[0]!=pid or history_context()!=history_origin):
+            if action in ('preview','apply','migrate','history_preview','history_apply') and (history_origin[0]!=pid or history_context()!=history_origin):
                 raise ValueError('پروژه یا نسخه منبع نمایش‌داده‌شده تغییر کرده؛ فرم بازبینی را دوباره باز کنید')
             if action=='preview':
                 path=Path(allocation.text());token=service.store.current_digest(pid)
