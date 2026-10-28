@@ -1,3 +1,9 @@
+## آخرین اجرای گسترده و تشخیص — ۲۸ اکتبر ۲۰۲۶
+
+کد/آزمون fcf8472493e842fe707740d2baf166468bf11cdf؛ CI پذیرش [40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079)، CI گسترده جدید [40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852). آخرین workflow0a7decf بخش واقعی انتهایی log را تنها در شکست به notice منتقل می‌کند؛ timeoutهای قبلی ثابت‌اند. نتیجه Windows تا JUnit/JSON واقعی PARTIAL است. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## آخرین checkpoint کنترل watchdog — ۲۸ اکتبر ۲۰۲۶
 
 کد fcf8472493e842fe707740d2baf166468bf11cdf؛ workflow a0cd4c7. RED واقعی: کلیک QTest بلعیده شد و watchdog قدیم نمی‌توانست بسته‌نشدن modal را گزارش دهد؛ اصلاح فعال‌ماندن تایمر تا بازگشت پنجره،۱۰تست هدفمندPASS. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md). [CI پذیرش40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) و [CI گسترده40669898071](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898071) pending؛ نتیجه قبلی74cc صرفاً snapshot است. Windows گسترده، JUnit و نتیجه نهایی هنوز PARTIAL.

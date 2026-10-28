@@ -1,3 +1,9 @@
+## رگرسیون گسترده با تشخیص قابل بررسی
+
+آخرین اجرای گسترده [40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852)، workflow `0a7decf`، روی کد ثابت fcf847 است و هنوز پایان نیافته. اگر runner شکست/timeout دهد، آخرین بخش همان لاگ واقعی به notice اضافه می‌شود تا محل شکست بعدی بدون دسترسی artifact API قابل بررسی باشد؛ timeout و خروجی اصلی تغییر نکرده‌اند. اجرای واقعی هر دو فرمان تشخیص با لاگ کنترل‌شده و کاراکترهای newline/percent، exit۰ و escaping درست را اثبات کرد. خروجی کامل همچنان در artifact اصلی است. CI پذیرش مستقل40669898079 از workflow قبلیa0cd4c7 روی همین کد fcf847 اجرا می‌شود؛ تغییر بعدی صرفاً diagnostic workflow گسترده است.
+
+---
+
 ## آخرین کد و گیت‌های جاری
 
 کد/آزمون نهایی `fcf8472493e842fe707740d2baf166468bf11cdf`، workflow `a0cd4c7`؛ [پذیرش40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) و [گسترده40669898071](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898071) هنوز تکمیل نشده‌اند، حکم نهایی PARTIAL است. متن زیر snapshotهای پیشین را حفظ می‌کند؛ CI موفق۴۷۳ تست مربوط به کد قبلی74cc است، نه SHA جدید.
