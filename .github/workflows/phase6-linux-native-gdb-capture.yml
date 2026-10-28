@@ -1,0 +1,157 @@
+# Diagnose a historical intermittent Linux native crash without mutating code or release state.
+name: P6 Linux native SIGSEGV bounded gdb capture
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-linux-native-gdb-capture.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture-native-stack:
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [focus, prefix]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 27
+    env:
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: cd855297af657a382c76909eabad7523688148a2
+          persist-credentials: false
+      - name: Verify immutable source and baseline
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "cd855297af657a382c76909eabad7523688148a2"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install native debugger and original Qt dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gdb libegl1 libopengl0 libgl1 libxcb-cursor0
+          python -m pip install -q -r requirements.txt "ifcopenshell>=0.8"
+      - name: Stage exact source without active GitHub workflows or Git metadata
+        shell: bash
+        run: |
+          python - <<'PY_STAGE'
+          import json, os, tempfile
+          from pathlib import Path
+          from scripts.run_quarantined_workflow_qa import prepare_source, current_policy
+          temp = Path(tempfile.mkdtemp(prefix="structuralpro_gdb_"))
+          stage = prepare_source(Path.cwd(), temp)
+          current_policy(stage)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf8") as f:
+              f.write("P6_STAGED=" + str(stage) + "\n")
+          Path("gdb-stage.json").write_text(json.dumps({
+              "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+              "staged": True, "active_workflows_copied": 0,
+              "gdb": "native SIGSEGV capture with no memory/core upload",
+          }, indent=2))
+          PY_STAGE
+      - name: Run bounded original-order reproducer under native GDB
+        shell: bash
+        env:
+          P6_KIND: ${{ matrix.kind }}
+        run: |
+          python - <<'PY_GDB'
+          import json, os, re, subprocess, sys, time, xml.etree.ElementTree as ET
+          from pathlib import Path
+          from scripts.run_quarantined_workflow_qa import current_test_modules
+          stage = Path(os.environ["P6_STAGED"])
+          root = Path(os.environ["GITHUB_WORKSPACE"])
+          kind = os.environ["P6_KIND"]
+          _, active, manifest = current_test_modules(stage)
+          anchor = "tests/test_manual_formula_fivefloor_closure.py"
+          if kind == "prefix":
+              assert anchor in active
+              modules = active[:active.index(anchor)+1]
+          else:
+              modules = [
+                  "tests/test_manual_final_forms.py",
+                  "tests/test_manual_final_sorting.py",
+                  "tests/test_manual_five_storey_acceptance.py",
+                  "tests/test_manual_formula_amendments.py",
+                  "tests/test_manual_formula_deduction_commands.py",
+                  anchor,
+              ]
+              assert all(m in active for m in modules)
+          attempts = 2 if kind == "focus" else 1
+          outputs = []
+          for n in range(1, attempts+1):
+              xml = root / f"gdb-{kind}-{n}.xml"
+              log = root / f"gdb-{kind}-{n}.log"
+              seconds = 900 if kind == "prefix" else 460
+              cmd = [
+                  "timeout","--signal=TERM","--kill-after=15s",f"{seconds}s",
+                  "gdb","-q","-batch",
+                  "-ex","set confirm off",
+                  "-ex","set pagination off",
+                  "-ex","set print frame-arguments none",
+                  "-ex","handle SIGPIPE nostop noprint pass",
+                  "-ex","run",
+                  "-ex","thread apply all bt 35",
+                  "-ex","info sharedlibrary",
+                  "--args", sys.executable,"-X","faulthandler","-m","pytest",
+                  "-vv","--disable-warnings",
+                  "-o","faulthandler_timeout=60",
+                  "--junitxml",str(xml),*modules,
+              ]
+              t0=time.monotonic()
+              with log.open("w",encoding="utf8") as handle:
+                  try:
+                      proc=subprocess.run(cmd,cwd=stage,env=dict(os.environ,PYTHONPATH=str(stage)),
+                          stdout=handle,stderr=subprocess.STDOUT,timeout=seconds+50,check=False)
+                      rc=proc.returncode
+                  except subprocess.TimeoutExpired:
+                      rc=124
+                      handle.write("\nExternal diagnostic timeout; no test PASS claim.\n")
+              raw=log.read_text(encoding="utf8",errors="replace")
+              signal=bool(re.search(r"Program received signal SIG(?:SEGV|ABRT|BUS)",raw))
+              blocked=bool(re.search(r"(ptrace: Operation not permitted|Could not trace|No such process)",raw,re.I))
+              cases=None
+              if xml.is_file():
+                  tests=list(ET.parse(xml).getroot().iter("testcase"))
+                  cases={
+                      "total":len(tests),
+                      "failed":sum(z.find("failure") is not None for z in tests),
+                      "errors":sum(z.find("error") is not None for z in tests),
+                      "skipped":sum(z.find("skipped") is not None for z in tests)
+                  }
+              result={
+                  "attempt":n,"case":kind,"source_sha":"cd855297af657a382c76909eabad7523688148a2",
+                  "manifest_sha256":manifest,"modules":len(modules),"end_module":modules[-1],
+                  "gdb_exit":rc,"elapsed_seconds":round(time.monotonic()-t0,2),
+                  "native_signal_captured":signal,"ptrace_blocked":blocked,
+                  "junit":cases,"junit_present":xml.is_file(),
+                  "timeout":rc in (124,137),"log_file":log.name,
+                  "signal_line":next((z[:700] for z in raw.splitlines() if "Program received signal" in z),None),
+                  "last_test_lines":[z[-380:] for z in raw.splitlines() if "::test_" in z][-5:]
+              }
+              outputs.append(result)
+              print("::notice title=Native Qt diagnostic::" + json.dumps(result,ensure_ascii=False)[:5000],flush=True)
+              if signal or blocked or rc!=0 or cases is None or cases["failed"] or cases["errors"]:
+                  break
+          (root/f"gdb-{kind}-summary.json").write_text(json.dumps(outputs,ensure_ascii=False,indent=2))
+          if any(x["native_signal_captured"] or x["ptrace_blocked"] or x["gdb_exit"]!=0 or
+                 not x["junit_present"] or (x["junit"]["failed"] or x["junit"]["errors"])
+                 for x in outputs):
+              sys.exit(1)
+          PY_GDB
+      - name: Preserve native debugger trace and actual JUnit, never upload memory or core dumps
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-linux-gdb-${{ matrix.kind }}
+          path: |
+            gdb-stage.json
+            gdb-${{ matrix.kind }}-summary.json
+            gdb-${{ matrix.kind }}-*.log
+            gdb-${{ matrix.kind }}-*.xml
+          retention-days: 14
+          if-no-files-found: warn
