@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.331" timestamp="2026-10-28T10:52:28.616733+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase2_priority3_close_ui" name="test_delayed_file_dialog_does_not_reject_its_roof_parent" time="0.252"><failure message="AssertionError: the one-shot rejected the wrong modal parent&#10;assert (not ['file dialog not active'])">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-50/test_delayed_file_dialog_does_0')
+
+    def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
+     global _qt
+     from PySide6.QtCore import QEventLoop
+     _qt=QApplication.instance() or QApplication([]);errors=[];selected=[]
+     document=tmp_path/'detail.json';document.write_text('{}')
+     parent=QDialog();parent.setObjectName('RoofDetailEditor');parent.setModal(True);parent.show();_qt.processEvents()
+     loop=QEventLoop()
+     def old_choose():
+      f=_qt.activeModalWidget()
+      try:assert isinstance(f,QFileDialog)
+      except Exception:
+       errors.append('file dialog not active')
+       if f:f.reject()
+     def delayed_file():
+      f=QFileDialog(parent,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی',str(tmp_path),'JSON (*.json)')
+      f.setOption(QFileDialog.DontUseNativeDialog);f.setFileMode(QFileDialog.ExistingFile)
+      QTimer.singleShot(80,f.reject);f.exec();selected.extend(f.selectedFiles())
+     QTimer.singleShot(30,old_choose);QTimer.singleShot(80,delayed_file);QTimer.singleShot(240,loop.quit)
+     loop.exec();was_visible=parent.isVisible();parent.close();_qt.processEvents()
+&gt;    assert not errors and was_visible,'the one-shot rejected the wrong modal parent'
+E    AssertionError: the one-shot rejected the wrong modal parent
+E    assert (not ['file dialog not active'])
+
+tests/test_phase2_priority3_close_ui.py:260: AssertionError</failure></testcase></testsuite></testsuites>

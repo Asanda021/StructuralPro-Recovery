@@ -1,0 +1,41 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_delayed_file_dialog_does_not_reject_its_roof_parent ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-50/test_delayed_file_dialog_does_0')
+
+    def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
+     global _qt
+     from PySide6.QtCore import QEventLoop
+     _qt=QApplication.instance() or QApplication([]);errors=[];selected=[]
+     document=tmp_path/'detail.json';document.write_text('{}')
+     parent=QDialog();parent.setObjectName('RoofDetailEditor');parent.setModal(True);parent.show();_qt.processEvents()
+     loop=QEventLoop()
+     def old_choose():
+      f=_qt.activeModalWidget()
+      try:assert isinstance(f,QFileDialog)
+      except Exception:
+       errors.append('file dialog not active')
+       if f:f.reject()
+     def delayed_file():
+      f=QFileDialog(parent,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی',str(tmp_path),'JSON (*.json)')
+      f.setOption(QFileDialog.DontUseNativeDialog);f.setFileMode(QFileDialog.ExistingFile)
+      QTimer.singleShot(80,f.reject);f.exec();selected.extend(f.selectedFiles())
+     QTimer.singleShot(30,old_choose);QTimer.singleShot(80,delayed_file);QTimer.singleShot(240,loop.quit)
+     loop.exec();was_visible=parent.isVisible();parent.close();_qt.processEvents()
+>    assert not errors and was_visible,'the one-shot rejected the wrong modal parent'
+E    AssertionError: the one-shot rejected the wrong modal parent
+E    assert (not ['file dialog not active'])
+
+tests/test_phase2_priority3_close_ui.py:260: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+=============================== warnings summary ===============================
+../StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17
+  /workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_phase2_priority3_close_ui.py::test_delayed_file_dialog_does_not_reject_its_roof_parent
+1 failed, 7 deselected, 1 warning in 1.53s

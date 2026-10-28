@@ -1,0 +1,16 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022",
+  "tested_source": "cce78eb2b1beb11710a5b29355928e91a653a169",
+  "status": "Success",
+  "report": {
+    "file": "roof-native.xml",
+    "tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "9eae3673c8ca79c77b8cfeed95332121a1d850619f0b405be937bfa6137b9a04",
+    "pytest_warning_count": null
+  },
+  "artifact": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022/artifacts/12810615998"
+}

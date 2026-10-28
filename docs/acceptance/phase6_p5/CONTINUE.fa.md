@@ -1,3 +1,9 @@
+## انتخابگر سقف و آزمون‌های نهایی — ۲۸ اکتبر ۲۰۲۶
+
+Windows هدفمند40675283022 پس از تغییر QFileDialog محصول رویcce78eb:۱۶PASS/۰FAIL/ERROR/SKIP؛ [artifact](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022/artifacts/12810615998). RED جدید ثابت کرد تایمر انتخاب فایل قبل از نمایش QFileDialog می‌تواند فرم والد را رد کند؛ test-only گارد هویت/والد/Open و انتظار محدود روی5daf8fb افزوده شد و بسته محلی۲۹PASS است. [CIهدفمند40675825529](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529)، [پذیرش40675825474](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825474)، [گسترده40675825520](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825520) جاری؛ وضعیت کل PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## ریشه QFileDialog Windows و اصلاح محصول
 
 CIهدفمند40674791106 روی a41:۱۰PASS/۱FAIL؛ علت اول `fileNameEdit` در QFileDialog بومی Windows وجود ندارد، `setFocus` به None می‌رسد. [شاهد](verification-20261028-windows-qt-timeout/roof-native-first-failure.txt). محصولcce78eb در فایل سقف فقط `DontUseNativeDialog` را برای انتخاب JSON دیتایل اعمال می‌کند؛ Qt واقعی/QTest و BOQ دست نخورده، local۲۴PASS. [CIهدفمند40675283022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022) و [پذیرش40675283032](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283032) جاری، broad cce هنوز باید بعد از آن راه‌اندازی شود. rerun محلی broad a41:۸۳۷۵PASS/۰FAIL/۱۰SKIP،SIGSEGV اول همچنان ثبت. وضعیت کل PARTIAL.

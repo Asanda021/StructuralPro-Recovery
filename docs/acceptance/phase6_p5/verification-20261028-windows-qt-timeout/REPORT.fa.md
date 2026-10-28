@@ -1,3 +1,13 @@
+## Qt-owned QFileDialog در Windows و گارد انتخاب فایل
+
+پس از تغییر حداقلی محصول cce78eb، [CIهدفمندWindows40675283022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022) روی همان دو فایل سقف/اصلاحیه **۱۶PASS،۰FAIL/ERROR/SKIP**؛ [artifact/JUnitواقعی](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022/artifacts/12810615998)، [metadata](roof-native-cce-success.json). این نتیجه بازآزمایی مستقیم خطای fileNameEdit قبلی است، نه اجرای کل broad.
+
+یک RED کنترل‌شده دیگر نشان داد callback انتخاب فایل اگر قبل از QFileDialog واقعی اجرا شود، فرم والد RoofDetailEditor را به‌اشتباه reject می‌کرد ([JUnit RED](qtfix-file-race-red.xml)). در تست، انتظار محدود برای QFileDialog با والد/عنوان دقیق و دکمه Open واقعی، ورود نام فایل با QTest و بستن صریح خطا جایگزین آن شد. QMessageBoxهای خطای سقف نیز با timer محدود و بررسی والد/عنوان/destination button کنترل می‌شوند، بدون mock یا کلیک روی پنجره نادرست. QTest واقعی، XML/SQLite و assertionهای موجود حفظ‌اند. [بسته مشترک نهایی۲۹PASS،۱warning](qtfix-full-target-green.xml).
+
+کد/تست نهایی `5daf8fbc1c71446afb806d665feb9ab6959367df`، workflow `a99d1a9`؛ [CIهدفمند Windows40675825529](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529)، [CIپذیرش40675825474](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825474)، [CIگسترده40675825520](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825520) جاری‌اند. هر سه باید مستقل ارزیابی شوند؛ نه Windows broad و نه علت نهایی0xC0000409 تا نتیجه واقعی جدید PASS نامیده نمی‌شوند. سقف۱۵۰۰ثانیه تغییر نکرده است.
+
+---
+
 ## ریشه شکست واقعی QFileDialog و بازآزمایی
 
 CIهدفمند [40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) روی Windows،JUnitواقعی **۱۰PASS/۱FAIL/۰ERROR/۰SKIP** و هشc44368e8... تولید کرد. خطای ثبت‌شده `AttributeError: NoneType has no attribute setFocus` است: `QFileDialog` بومی Windows، فرزند Qt به نام fileNameEdit را فراهم نکرد و import دیتایل سقف انجام نشد. [متن واقعی notice](roof-native-first-failure.txt)، [metadata](roof-native-first-failure.json)، [artifact واقعی](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106/artifacts/12809414711). علت نخستین FAIL روشن است؛ علت قطعی native crash بعدی جداگانه هنوز از نبودJUnit قابل اثبات نیست.
