@@ -32,7 +32,9 @@ jobs:
         shell: bash
         run: |
           test "$(git rev-parse HEAD)" = '${{ github.sha }}'
-          git diff --exit-code cd855297af657a382c76909eabad7523688148a2 HEAD -- core/takeoff/manual_formula_register.py app/manual_formula_controls.py tests/test_manual_formula_fivefloor_closure.py
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = '4e3750a0e797073d40bacb395e448da4f14b6c56'
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = '07e8ce4567eec5122253cd220a49fed6e2e27d9e'
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = 'f81c979051bcbaaf00015fa411314e28f370b291'
           python -m py_compile scripts/measure_fivefloor_stage.py
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
