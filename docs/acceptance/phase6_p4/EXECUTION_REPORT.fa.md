@@ -1,3 +1,18 @@
+# checkpoint معتبر این مأموریت — ۲۸ اکتبر ۲۰۲۶
+
+آخرین کد/آزمون: `575facbe6060019282fe33697e79edc9fa087a84`، Tree: `b764573f22b05aceda528b76bf51e78f37b7390e`.
+[CI مستقل 40613469502](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40613469502): SUCCESS؛ Linux Qt offscreen **۲۴۵ PASS** و Windows Qt native **۲۴۵ PASS**؛ هر محیط صفر FAIL/ERROR/SKIP و یک FutureWarning موجود fitz. همان سناریوها در دو سیستم هستند، نه ۴۹۰ سناریوی مستقل. Artifactهای واقعی از بخش Artifacts همین run قابل دریافت‌اند؛ شمارش و SHA256 XML از noticeهای واقعی CI در `verification-20261027-three-gates/ci-measured.json` ذخیره است.
+
+نقص‌های جدید: guard زنده W1 در همه mutationهای سقف/معماری، اتصال نوع خانواده، recheck بعد از Yes واقعی Delete، و اصلاح Beam Preview/Commit پس از ذخیره مشروع Draft خود فرم. تایمر قدیمی آزمون handoff پیش از نمایش modal مصرف می‌شد؛ فقط آزمون با انتظار پنجره قابل‌مشاهده اصلاح شد. قواعد کمی و تأیید اصلی حفظ شدند.
+
+IFC4 مصنوعی قابل Parse: Beam و Column با GlobalId/SHA/Revision و نگاشت بازبینی‌شده، زنجیره اصلی فرم، CAS و SQLite Reopen؛ Slab→solid_slab و Wall→block_wall با Review→refresh صریح crossview→Commit. کمیت فرم‌ها دستی، صریح و مصنوعی است؛ این شواهد استخراج هندسی IFC یا نقشه واقعی مالک نیستند. MEP IFC مهندسی و دیگر زیرگونه‌های سقف/معماری بدون قرارداد معتبر BLOCKED/NOT VERIFIED هستند. Preview تیر طبق قرارداد موجود Draft ذخیره می‌کند؛ read-only نامیدن آن صحیح نیست.
+
+مرجع انتقال به PR34 همین کد است و رگرسیون مستقل P5 در گزارش آن PR ثبت می‌شود. P6-4 به‌صورت کلی PARTIAL باقی است؛ A2 تجاری بدون وزن/Runtime/منشأ/مجوز BLOCKED. Windows فیزیکی دو‌مانیتوره و Sleep/Resume و تأیید مهندسی مالک NOT VERIFIED. PR33 باز/Draft/ادغام‌نشده؛ main/Merge/ForcePush/Release/EXE/P6-6/فاز۷ انجام نشده‌اند. نقشه‌راه۸فاز و پیشرفت۸۵٪ ثابت.
+
+گزارش جزئی و شواهد RED/SQLite: [W1_REPORT.md](verification-20261027-three-gates/W1_REPORT.md). مطالب زیر تاریخچه‌اند و مبنای HEAD جاری نیستند.
+
+---
+
 ## ادامه اجرایی معتبر — ایمنی تأیید و نشست W1، ۲۷ اکتبر ۲۰۲۶
 
 آخرین Commit کد/تست: `f84b593a48ab5e20d22a56149fe3687a512c3f0a`؛ Tree: `40df2edd3c19d4de6a4093405b9204e672a3eff3`.

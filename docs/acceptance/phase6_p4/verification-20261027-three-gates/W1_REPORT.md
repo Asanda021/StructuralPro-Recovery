@@ -1,3 +1,13 @@
+## Final root validation — 2026-10-28
+
+This section supersedes intermediate counts and family limitations below. Code/test `575facbe6060019282fe33697e79edc9fa087a84`, tree `b764573f22b05aceda528b76bf51e78f37b7390e`. Actual CI 40613469502 succeeds on Linux offscreen and Windows native: **245 passed each**, zero failed/errors/skipped, one existing fitz FutureWarning each. Counts and artifact digests are preserved in ci-measured.json; earlier XML remains identified by its own run.
+
+Followup `442b878`/`46a6f8c` added 11 parsed-IFC full-flow scenarios and fixed Beam's own legitimate Preview draft invalidating its subsequent read/implicit Commit preview. Column now has a positive complete original editor chain as well as source/proposal/member revision negatives. Beam positive Preview and explicit refresh/Commit and source/CAS negatives are tested; dirty Beam without a documented drawing region remains rejected without invented mapping. Live guard checks remain before writes and after native confirmation. Existing Beam workflow regression is included in the 245-test workflow.
+
+Supported IFC evidence: Beam, Column, solid_slab, block_wall only in their explicitly tested manual synthetic contexts; not all structural subtypes. No engineering IFC MEP mapping or real building acceptance is claimed. The final test-only timer repair waits for a visible actual modal rather than consuming a one-shot while its controls are still constructing. No confirmation is mocked.
+
+---
+
 ## Follow-up review: all reachable specialist mutations and family binding
 
 Latest code/tests: `b845366`. The earlier 175-test result below predates this follow-up. Root will run the full exact workflow and native Windows CI after integration. Latest targeted result: **28 PASS, zero failure/error/skip**, one existing fitz warning; `w1-secondary-green.xml` is the actual JUnit.
