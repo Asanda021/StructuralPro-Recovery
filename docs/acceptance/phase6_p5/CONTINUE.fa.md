@@ -1,3 +1,9 @@
+## Windows هدفمند نهایی
+
+CI40676687429 روی facbe18:۱۷PASS،۰FAIL/ERROR/SKIP؛ شامل QFileDialog واقعی و cleanup timer. پذیرش40676687306 و گسترده40676687299 هنوز جاری؛ PARTIAL تا broad واقعی Windows. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## آخرین منبع: پاک‌سازی timerها
 
 CIهدفمند Windows40676193303 روی3d1:۱۷PASS،۰FAIL/ERROR/SKIP. RED بعدی ثابت کرد timer متوقف‌شده به QApplication نشت می‌کند؛ پاک‌سازی `deleteLater`،۲۹PASS محلی. source نهایی facbe18af8f051e52cac250410b72f688655f7a9،workflow911d49a؛ CIهای [هدفمند](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687429)، [پذیرش](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687306)، [گسترده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) در جریان. status کلی PARTIAL تا نتیجه Windows broad و بررسی artifact. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

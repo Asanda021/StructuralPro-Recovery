@@ -1,3 +1,9 @@
+## هدفمند Windows نهایی
+
+[CI40676687429](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687429) روی source facbe18: **۱۷PASS،۰FAIL/ERROR/SKIP** در Qt native، شامل QFileDialog واقعی و تست عدم نشت timer. [JUnit/artifact](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687429/artifacts/12810059371) و [notice/hash](roof-native-fac-success.json). این نتیجه جای رگرسیون گستردهWindows را نمی‌گیرد؛ [40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) هنوز جاری است.
+
+---
+
 ## Windows هدفمند و پاک‌سازی timerها
 
 [CI40676193303](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303) روی3d1ac2d: Windows native **۱۷PASS،۰FAIL/ERROR/SKIP**، شامل QFileDialog واقعی و اصلاحیه هندسی؛ [JUnit/artifact](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303/artifacts/12811196414)، [metadata/hash](roof-native-3d-success.json). این موفقیت full broad نیست.
