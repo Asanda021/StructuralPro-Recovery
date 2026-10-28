@@ -1,3 +1,7 @@
+## مأموریت محدود تشخیص native SIGSEGV با GDB | ۲۸ اکتبر ۲۰۲۶
+- [CI تشخیصی #40756726986](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986)، workflow commit `58fdc9e1155eaaee9ee976c3964dd914bf8c0406`، pinned source `cd855297af657a382c76909eabad7523688148a2`. دو مسیر `focus` و `prefix` زیر GDB بومی، logging/JUnit واقعی بدون core upload؛ هنگام ثبت در حال اجرا.
+- [گزارش مستقل و مرزهای نتیجه](verification-20261028-linux-native-gdb/REPORT.fa.md). علت قطعی تا native stack تأییدشده **نامعلوم**؛ SIGSEGV تاریخی حفظ شده، محصول و main تغییر نکردند، PR33/34 Draft/Unmerged، ۸ فاز و ۸۵٪ ثابت.
+
 ## نتیجه معتبر نهایی E4/E6 — ۲۸ اکتبر ۲۰۲۶
 
 **P6-5 همچنان PARTIAL**؛ اصلاح محصول `aecf184...` و source نهایی `cd855297af657a382c76909eabad7523688148a2` واقعی و آزموده‌اند.۱۱RED E4/E6، RED قطعی fixture سقف و بازتولید timeout تو‌در‌تو ثبت و اصلاح شدند؛ هیچ assertion/testcase حذف یا Skip/XFail نشد، timeoutها افزایش نیافتند.
