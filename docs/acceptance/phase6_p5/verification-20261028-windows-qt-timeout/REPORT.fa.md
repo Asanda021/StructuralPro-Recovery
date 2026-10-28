@@ -1,3 +1,9 @@
+## رگرسیون محلی سقف: توقف native و نتیجه ناتمام
+
+اجرای گسترده محلی worktree تمیز a41cd18 پیش از رسیدن به آزمون سقف، در `tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports` در حدود۳۴٪ با **pytest_exit_code=-11 (SIGSEGV)،timed_out=false و JUnit مفقود** پایان یافت. faulthandler پس از۶۰ثانیه فقط ابتدای stack را قبل از توقف نوشت؛ از آن علت crash معلوم نیست. log/JSON و شمارش ردیف‌های progress در این پوشه نگه داشته شده‌اند؛ این‌ها نتیجه PASS/FAIL نهایی نیستند. همان سناریو در full منبع قبلی fcf847 PASS شده بود. بازآزمایی مستقل در حال انجام است؛ CI هر دو سیستم جدید نیز جداگانه در حال اجراست.
+
+---
+
 ## دومین شکست واقعی Windows و اصلاح سقف PDF
 
 [CI40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) روی fcf847: Linux۸۳۷۸PASS/۰FAIL/۵SKIP،بدونtimeout؛ Windows **exit3221226505 / 0xC0000409، `timed_out=false` و JUnit مفقود**. تا حدود۶۱٪ پیش رفت و آخرین سطر قابل مشاهده به `tests/test_phase2_pdf_roof_ui.py::test_actual_pdf_region_to_specialist_bo...` رسید. [JSON notice واقعی](broad-fcf-final.json) و [بخش واقعی قابل مشاهده لاگ](broad-fcf-windows-diagnostic.txt) ذخیره‌اند؛ نوع پارامتر و علت native crash از این سطر ناقص ثابت نمی‌شوند. شمار PASS Windows بدون JUnit معلوم نیست. این run شکست‌خورده است و در اولین timeout شمع باقی نماند.

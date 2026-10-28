@@ -1,0 +1,7 @@
+{
+  "source_sha": "a41cd180d1b78b1233a20b4c5d440e93c792cce0",
+  "status": "native process exit -11; incomplete; JUnit missing",
+  "observed_progress_only": {
+    "PASSED": 2870
+  }
+}
