@@ -32,6 +32,13 @@ on:
       - core/drawings/takeoff_session.py
       - core/takeoff/manual_formula_register.py
       - tests/test_phase6_p5_*.py
+      - tests/test_phase6_p4_contextual_takeoff.py
+      - tests/test_beam_detail_workflow.py
+      - tests/test_phase2_priority5_complete.py
+      - tests/test_phase2_priority5_ifc_lineage_chat.py
+      - tests/test_manual_formula_qt_closure.py
+      - tests/test_manual_structured_units.py
+      - core/drawings/ifc_pipeline.py
       - scripts/phase6_acceptance_summary.py
       - scripts/run_phase6_pytest.py
   workflow_dispatch:
