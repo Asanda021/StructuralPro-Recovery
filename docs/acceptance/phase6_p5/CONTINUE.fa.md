@@ -1,3 +1,9 @@
+## بررسی مستقل timeout ویندوز — ۲۸ اکتبر ۲۰۲۶
+
+**PARTIAL:** Run 40661082617 روی source 6990c9259eb23de25cad96a641f57413f6306609 در Windows با exit 124 و timeout 1500 ثانیه و JUnit مفقود شکست خورد. Artifact 12805470944 بازدریافت شد و SHA256 آن f4ce9616c0e88bc0cbfa22e869a39adb177fa0ec3e428323e15a02c2cb9a6875 با لاگ برابر است. Stack در QMessageBox.exec در app/bored_pile_detail_editor.py خط ۱۴۱ و test_bored_pile_draft_amendment_real_qt.py حوالی خط ۶۶ است. آزمون از singleShot(10) برای بستن هشدار و تأیید خروج استفاده می‌کند؛ زمان‌بندی عامل محتمل است اما stack به‌تنهایی علت قطعی را اثبات نمی‌کند. در این بررسی کد تغییر نکرد و RED/GREEN و Windows CI جدید اجرا نشد. محیط مجازی قبلی در محیط تازه موجود نبود. اقدام بعد: بازتولید کنترل‌شده در Windows native با ثبت نوع پنجره، زمان و رویداد تایمر و سپس اصلاح مبتنی بر شواهد، آزمون هدفمند و broad هر دو سیستم. CI محدود قبلی 40659709412 بر روی 6990c925 هر دو سیستم موفق بوده و جای broad Windows را نمی‌گیرد. بدون Merge/Force Push/main/Release/EXE/P6-6؛ ۸ فاز و ۸۵٪ ثابت.
+
+---
+
 ## آخرین شاهد رگرسیون کامل اصلاح مودال، Run #40661082617
 - **Source SHA آزموده‌شده:** `6990c9259eb23de25cad96a641f57413f6306609`، workflow trigger `e85fcfbdf990e82d89f28e95a1185821af369c7a`؛ قفل source در Checkout و assert فعال است.
 - **Linux completed/success** در [Run #40661082617](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40661082617)؛ JUnit/JSON واقعی: **۸۳۸۰ collected، ۸۳۷۵ PASS، ۰ FAIL، ۵ SKIP مختص Windows**؛ `pytest_exit_code=0`، `timed_out=false`، `overall_green=true`.
