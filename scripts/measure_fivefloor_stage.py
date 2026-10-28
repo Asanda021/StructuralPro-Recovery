@@ -92,7 +92,7 @@ def pytest_collection_finish(session):
         if not module_name.startswith(("app.", "core.")) or not hasattr(module, "__dict__"):
             continue
         for attr, value in tuple(module.__dict__.items()):
-            if attr in _ORIGINAL and value is _ORIGINAL[attr]:
+            if attr in ("catalog", "verified", "clean", "fingerprints", "evaluate_rows") and value is _ORIGINAL[attr]:
                 module.__dict__[attr] = getattr(register, attr)
     _flush(force=True)
 
