@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________________ test_ignored_click_is_reported_by_watchdog __________________
+
+    def test_ignored_click_is_reported_by_watchdog():
+        import pytest
+        from PySide6.QtCore import QEventLoop, QObject, QEvent
+        qt = QApplication.instance() or QApplication([])
+        loop = QEventLoop()
+        class IgnoreClicks(QObject):
+            def eventFilter(self, watched, event):
+                return event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease)
+        event_filter = IgnoreClicks()
+        def open_warning():
+            box = QMessageBox()
+            box.setOption(QMessageBox.Option.DontUseNativeDialog)
+            box.setObjectName('BoredPileErrorMessage')
+            box.setWindowTitle('کنترل دیتایل شمع')
+            box.setStandardButtons(QMessageBox.Ok)
+            box.button(QMessageBox.Ok).installEventFilter(event_filter)
+            QTimer.singleShot(400, lambda: box.done(QMessageBox.No))
+            box.exec()
+        QTimer.singleShot(10, open_warning)
+        QTimer.singleShot(600, loop.quit)
+>       with pytest.raises(AssertionError, match='Expected modal'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+tests/test_bored_pile_draft_amendment_real_qt.py:221: Failed
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_bored_pile_draft_amendment_real_qt.py::test_ignored_click_is_reported_by_watchdog
+1 failed, 3 deselected in 0.83s

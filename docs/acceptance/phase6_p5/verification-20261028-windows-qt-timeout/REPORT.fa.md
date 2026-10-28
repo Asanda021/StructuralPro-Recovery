@@ -1,3 +1,11 @@
+## آخرین کد و گیت‌های جاری
+
+کد/آزمون نهایی `fcf8472493e842fe707740d2baf166468bf11cdf`، workflow `a0cd4c7`؛ [پذیرش40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) و [گسترده40669898071](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898071) هنوز تکمیل نشده‌اند، حکم نهایی PARTIAL است. متن زیر snapshotهای پیشین را حفظ می‌کند؛ CI موفق۴۷۳ تست مربوط به کد قبلی74cc است، نه SHA جدید.
+
+پس از پذیرش74cc یک حفره در watchdog دیده شد: اگر QTest کلیک را بفرستد اما پنجره بسته نشود، توقف زودهنگام تایمر اجازه انتظار نامحدود می‌دهد. آزمون واقعی Qt با event filter که کلیک را می‌بلعد این حفره را بازتولید کرد:۱RED ([JUnit](qtfix-watchdog-red.xml)). تایمر اکنون پس از کلیک تا بازگشت واقعی modal فعال می‌ماند؛ در deadline با خطای صریح و cleanup خاتمه می‌دهد. suite هدفمند۱۰PASS ([JUnit](qtfix-watchdog-green.xml))؛ بدون حذف/Skip و بدون افزایش timeout گسترده.
+
+---
+
 # اصلاح Timeout پنجره Qt شمع — ۲۸ اکتبر ۲۰۲۶
 
 **وضعیت: PARTIAL تا اتمام و بازرسی CI.** کد/آزمون واقعی روی PR34 اعمال و push شده است. SHA آزمون‌شونده `74cc37d68c35a0a113643e7538d9dce3378e3597`؛ workflow روی همان SHA ثابت است. [پذیرش مستقل](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037315) و [رگرسیون گسترده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037298) آغاز شده‌اند؛ تا تولید نتیجه نهایی شمار Windows/Linux ادعا نمی‌شود.

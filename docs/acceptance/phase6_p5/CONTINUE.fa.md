@@ -1,3 +1,9 @@
+## آخرین checkpoint کنترل watchdog — ۲۸ اکتبر ۲۰۲۶
+
+کد fcf8472493e842fe707740d2baf166468bf11cdf؛ workflow a0cd4c7. RED واقعی: کلیک QTest بلعیده شد و watchdog قدیم نمی‌توانست بسته‌نشدن modal را گزارش دهد؛ اصلاح فعال‌ماندن تایمر تا بازگشت پنجره،۱۰تست هدفمندPASS. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md). [CI پذیرش40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) و [CI گسترده40669898071](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898071) pending؛ نتیجه قبلی74cc صرفاً snapshot است. Windows گسترده، JUnit و نتیجه نهایی هنوز PARTIAL.
+
+---
+
 ## Windows Qt timeout — checkpoint جاری ۲۸ اکتبر ۲۰۲۶
 
 کد/تست `74cc37d68c35a0a113643e7538d9dce3378e3597`، workflow `b423fcf178a16a1242599ed2d7b898d910f482ce`. پنجره خطای واقعی BoredPileErrorMessage از stack قبلی شناسایی شد؛ بازپخش تأخیر کنترل‌شده نشان داد singleShot(10) پیش از نمایش QMessageBox می‌تواند از دست برود، ولی علت انحصاری رخداد Windows ثابت نشده است. انتظار دارای deadline، کنترل والد/شناسه/عنوان/دکمه و کلیک واقعی Qt برای هشدار و خروج بدون ذخیره پیاده شده و۹تست محلی PASS دارند. [گزارش و RED/GREEN](verification-20261028-windows-qt-timeout/REPORT.fa.md).
