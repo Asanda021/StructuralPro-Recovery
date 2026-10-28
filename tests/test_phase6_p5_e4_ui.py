@@ -285,3 +285,67 @@ def test_report_without_specialist_handoff_stays_explicitly_read_only(tmp_path):
         assert 'فقط‌خواندنی' in search.status.text()
     finally:search.close();service.store.close();qt.processEvents()
 
+
+
+@pytest.mark.parametrize('extension', ['dwg', 'ifc'])
+def test_search_generic_document_refuses_unverified_dwg_and_ifc_without_write(tmp_path, extension):
+    """A generic drawing ID cannot bypass DWG provenance or IFC review."""
+    from hashlib import sha256
+    import app.verified_search_navigation as navigation
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Unverified document', 'P')
+    path = tmp_path / ('model.' + extension)
+    path.write_bytes(b'synthetic-not-an-approved-conversion-or-review')
+    project = service.open_project('P')
+    project['drawings'] = [{
+        'id': 'D1', 'name': 'Unreviewed document',
+        'path': str(path),
+        'source_sha256': sha256(path.read_bytes()).hexdigest(),
+        'revision': 'R1',
+    }]
+    service.store.save('P', project, expected_digest=service.store.current_digest('P'))
+    before = service.store.current_digest('P')
+    try:
+        with pytest.raises(ValueError, match='PDF/DXF'):
+            navigation.prepare_verified_drawing_view(service, 'P', 'D1')
+        assert service.store.current_digest('P') == before
+        assert service.open_project('P')['boq'] == []
+    finally:
+        service.store.close()
+        qt.processEvents()
+
+
+def test_search_exact_dxf_document_opens_real_cad_without_boq_write(tmp_path):
+    """The fail-closed restriction must preserve verified DXF navigation."""
+    from hashlib import sha256
+    import ezdxf
+    import app.verified_search_navigation as navigation
+    qt = QApplication.instance() or QApplication([])
+    service = StructuralProApp(tmp_path / 'db')
+    service.create_project('Explicit DXF', 'P')
+    source = ezdxf.new('R2018')
+    source.header['$INSUNITS'] = 6
+    source.modelspace().add_line((0, 0), (4, 0))
+    path = tmp_path / 'plan.dxf'
+    source.saveas(path)
+    project = service.open_project('P')
+    project['drawings'] = [{
+        'id': 'D1', 'name': 'Verified DXF', 'path': str(path),
+        'source_sha256': sha256(path.read_bytes()).hexdigest(),
+        'revision': 'R1',
+    }]
+    service.store.save('P', project, expected_digest=service.store.current_digest('P'))
+    before = service.store.current_digest('P')
+    viewer = None
+    try:
+        viewer = navigation.prepare_verified_drawing_view(service, 'P', 'D1')
+        assert viewer.viewer.kind == 'cad'
+        assert str(viewer.viewer.path) == str(path)
+        assert viewer.cad_document.source_sha256 == sha256(path.read_bytes()).hexdigest()
+        assert service.store.current_digest('P') == before
+        assert not service.open_project('P')['boq']
+    finally:
+        if viewer is not None: viewer.close()
+        service.store.close()
+        qt.processEvents()

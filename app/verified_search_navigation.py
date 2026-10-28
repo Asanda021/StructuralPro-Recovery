@@ -97,7 +97,11 @@ def prepare_verified_drawing_view(service, project_id, document_id, parent=None)
     source=Path(path)
     if any(part.is_symlink() for part in (source,*source.parents)):
         raise ValueError('مسیر پیوندی سند مجاز نیست.')
-    if source.suffix.lower() not in ('.pdf','.dxf','.dwg','.ifc') or not source.is_file():
+    if source.suffix.lower() not in ('.pdf','.dxf'):
+        # Generic search has no verified DWG conversion provenance or IFC
+        # member crosswalk. IFC requires the independent reviewed-member path.
+        raise ValueError('ناوبری سند عمومی فقط برای PDF/DXF معتبر است؛ DWG/IFC مسیر مستقل می‌خواهد.')
+    if not source.is_file():
         raise ValueError('سند نقشه معتبر در دسترس نیست.')
     if sha256(source.read_bytes()).hexdigest()!=expected:
         raise ValueError('هش سند تغییر کرده؛ ناوبری مسدود شد.')
@@ -105,6 +109,10 @@ def prepare_verified_drawing_view(service, project_id, document_id, parent=None)
     workspace=GraphicalTakeoffDialog(parent,app_service=service,project_id=project_id)
     try:
         workspace.open_drawing(str(source))
+        expected_kind = 'pdf' if source.suffix.lower() == '.pdf' else 'cad'
+        if (workspace.viewer.kind != expected_kind or
+                str(workspace.viewer.path) != str(source)):
+            raise RuntimeError('نمایشگر مقصد با سند تأییدشده یکسان نیست.')
         workspace.ifc_revision.setText(revision)
         if (sha256(source.read_bytes()).hexdigest()!=expected or
                 service.store.current_digest(project_id)!=digest):
