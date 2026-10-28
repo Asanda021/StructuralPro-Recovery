@@ -22,14 +22,51 @@ def displace(path):
 def test_native_dbmoved_code(tmp_path):
     path=prepare(tmp_path)
     with closing(sqlite3.connect(path)) as c:
-        c.execute('select * from projects').fetchall();held,h=displace(path)
+        c.execute('select * from projects').fetchall()
+        if os.name == 'nt':
+            # Windows denies renaming an open SQLite file; test its real lock.
+            before = sha(path)
+            with pytest.raises(PermissionError):
+                displace(path)
+            assert sha(path) == before
+            assert c.execute('select * from projects').fetchall()
+            return
+        held,h=displace(path)
         with pytest.raises(sqlite3.OperationalError) as e:c.execute("insert into revisions values('X',1,0,'{}')")
         assert (e.value.sqlite_errorcode,e.value.sqlite_errorname)==(1032,'SQLITE_READONLY_DBMOVED')
     assert sha(path)==h
 
 @pytest.mark.parametrize('operation',['get','list','revisions','save','backup','integrity'])
 def test_displaced_connection_refuses_success(tmp_path,operation):
-    path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P');held,h=displace(path)
+    path=prepare(tmp_path);s=ProjectStore(path);p=s.get('P')
+    if os.name == 'nt':
+        # The OS denies displacement. Check each real operation afterwards.
+        before=sha(path)
+        try:
+            with pytest.raises(PermissionError):
+                displace(path)
+            assert sha(path)==before
+            actions={'get':lambda:s.get('P'),'list':s.list,
+                     'revisions':lambda:s.revisions('P'),
+                     'save':lambda:s.save('P',p),
+                     'backup':lambda:s.backup(tmp_path/'wrong.db'),
+                     'integrity':s.integrity_check}
+            result=actions[operation]()
+            assert result is not None
+            assert s.integrity_check()['ok']
+            assert s.get('P')['exact']=='0.000000000000000001'
+            if operation=='backup':
+                assert (tmp_path/'wrong.db').exists()
+                with closing(sqlite3.connect(tmp_path/'wrong.db')) as db:
+                    require_project_history_consistency(db)
+            else:
+                assert not (tmp_path/'wrong.db').exists()
+            if operation=='save':
+                assert s.get('P')['_meta']['version']==2
+        finally:
+            s.close()
+        return
+    held,h=displace(path)
     actions={'get':lambda:s.get('P'),'list':s.list,'revisions':lambda:s.revisions('P'),'save':lambda:s.save('P',p),'backup':lambda:s.backup(tmp_path/'wrong.db'),'integrity':s.integrity_check}
     try:
         with pytest.raises(RuntimeError,match='database identity'):actions[operation]()
@@ -51,6 +88,27 @@ def test_displacement_at_commit_never_acknowledged(tmp_path,monkeypatch,stage):
     def factory(*a,**k):k['factory']=Connection;return connect(*a,**k)
     monkeypatch.setattr(sqlite3,'connect',factory);s=ProjectStore(path);monkeypatch.setattr(sqlite3,'connect',connect)
     p=s.get('P');p['unacknowledged']='new';trigger['on']=True
+    if os.name == 'nt':
+        # Failed rename during commit never reports success. Even if COMMIT
+        # succeeded, the connection is uncertain and must stay quarantined.
+        try:
+            with pytest.raises(PermissionError):
+                s.save('P',p)
+            with pytest.raises(RuntimeError,match='quarantined|uncertain'):
+                s.get('P')
+        finally:
+            s.close()
+        assert (tmp_path/'last-ack.db').is_file()
+        with closing(connect(tmp_path/'last-ack.db')) as db:
+            require_project_history_consistency(db)
+        restored=ProjectStore(tmp_path/'last-ack.db')
+        try:
+            previous=restored.get('P')
+            assert previous['_meta']['version']==1
+            assert 'unacknowledged' not in previous
+        finally:
+            restored.close()
+        return
     try:
         with pytest.raises(RuntimeError,match='database identity'):s.save('P',p)
     finally:s.close()
@@ -80,6 +138,20 @@ def test_displacement_inside_real_transaction(tmp_path,monkeypatch,boundary):
     def factory(*a,**k):k['factory']=Connection;return connect(*a,**k)
     monkeypatch.setattr(sqlite3,'connect',factory);s=ProjectStore(path);monkeypatch.setattr(sqlite3,'connect',connect)
     p=s.get('P');p['unacknowledged']='new';trigger['on']=True
+    if os.name == 'nt':
+        # The rename is denied inside the real transaction; rollback must
+        # leave the original persisted quantity and identity unmodified.
+        before=sha(path)
+        try:
+            with pytest.raises(PermissionError):
+                s.save('P',p)
+            assert sha(path)==before
+            assert 'unacknowledged' not in s.get('P')
+            assert s.integrity_check()['ok']
+            assert not (tmp_path/'unsafe.db').exists()
+        finally:
+            s.close()
+        return
     try:
         with pytest.raises((sqlite3.DatabaseError,RuntimeError)) as e:s.save('P',p)
         if isinstance(e.value,sqlite3.DatabaseError):assert e.value.sqlite_errorcode==1032
@@ -128,6 +200,18 @@ def test_native_dbmoved_latches_failure_even_if_path_is_restored(tmp_path, monke
     old["unacknowledged"] = "never-publish"
     before = sha(path)
     state["armed"] = True
+    if os.name == 'nt':
+        # The native Windows file lock refuses the swap; retained 1032
+        # quarantine is exercised independently by the injected-code test.
+        try:
+            with pytest.raises(PermissionError):
+                store.save('P',old)
+            assert sha(path)==before
+            assert 'unacknowledged' not in store.get('P')
+            assert store.integrity_check()['ok']
+        finally:
+            store.close()
+        return
     try:
         with pytest.raises(sqlite3.OperationalError) as error:
             store.save("P", old)
@@ -141,3 +225,49 @@ def test_native_dbmoved_latches_failure_even_if_path_is_restored(tmp_path, monke
         assert not (tmp_path / "forbidden.db").exists()
     finally:
         store.close()
+
+
+def test_sqlite_1032_quarantines_connection_even_without_path_swap(tmp_path, monkeypatch):
+    """Exercise the 1032 latch across OS, independently of native rename tests.
+
+    Windows forbids open-database rename before DBMOVED can occur.
+    """
+    path=prepare(tmp_path)
+    connect=sqlite3.connect
+    armed={'yes':False}
+    class Code1032Connection(sqlite3.Connection):
+        def execute(self,sql,*args,**kwargs):
+            if armed['yes'] and sql.startswith('INSERT OR REPLACE INTO projects('):
+                armed['yes']=False
+                error=sqlite3.OperationalError('injected SQLITE_READONLY_DBMOVED')
+                error.sqlite_errorcode=sqlite3.SQLITE_READONLY_DBMOVED
+                raise error
+            return super().execute(sql,*args,**kwargs)
+    def factory(*args,**kwargs):
+        kwargs['factory']=Code1032Connection
+        return connect(*args,**kwargs)
+    monkeypatch.setattr(sqlite3,'connect',factory)
+    store=ProjectStore(path)
+    monkeypatch.setattr(sqlite3,'connect',connect)
+    original=store.get('P')
+    original['unacknowledged']='untrusted'
+    before=sha(path);armed['yes']=True
+    try:
+        with pytest.raises(sqlite3.OperationalError) as info:
+            store.save('P',original)
+        assert info.value.sqlite_errorcode==sqlite3.SQLITE_READONLY_DBMOVED
+        assert sha(path)==before
+        with pytest.raises(RuntimeError,match='database identity'):
+            store.get('P')
+        with pytest.raises(RuntimeError,match='database identity'):
+            store.backup(tmp_path/'disallowed.db')
+        assert not (tmp_path/'disallowed.db').exists()
+    finally:
+        store.close()
+    reopened=ProjectStore(path)
+    try:
+        assert reopened.get('P')['_meta']['version']==1
+        assert 'unacknowledged' not in reopened.get('P')
+    finally:
+        reopened.close()
+
