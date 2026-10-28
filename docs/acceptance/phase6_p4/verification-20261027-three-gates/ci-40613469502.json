@@ -1,0 +1,36 @@
+{
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40613469502",
+  "code_commit": "575facbe6060019282fe33697e79edc9fa087a84",
+  "code_tree": "b764573f22b05aceda528b76bf51e78f37b7390e",
+  "status": "Success",
+  "reports": [
+    {
+      "file": "p6-p4-offscreen.xml",
+      "tests": 245,
+      "passed": 245,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "13ac1f973db24131ce3a50f18d974b8f858954bc5d16b841096eec541d29ebcd",
+      "main_pytest_warning_count": 1
+    },
+    {
+      "file": "p6-p4-windows.xml",
+      "tests": 245,
+      "passed": 245,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "cba5542dad9cf5010593e51041a2096a672273c0cbc3bb3a61271433db87fa61",
+      "main_pytest_warning_count": 1
+    }
+  ],
+  "artifact_sha256": [
+    "d9ad5b45bf4fdd96ea34ab37ed3fa361726aeea7087d5710e7cada18bc187d27",
+    "d9ad5b45bf4fdd96ea34ab37ed3fa361726aeea7087d5710e7cada18bc187d27",
+    "43e0963a6d9865cdf7c4661447b943385a9e5c7da68cc9df70d5b45360b4aac4",
+    "43e0963a6d9865cdf7c4661447b943385a9e5c7da68cc9df70d5b45360b4aac4"
+  ],
+  "artifact_links": [],
+  "provenance": "Actual public CI notices; artifact ZIP not downloaded without authentication."
+}

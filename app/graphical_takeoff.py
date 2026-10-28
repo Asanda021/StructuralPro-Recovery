@@ -376,6 +376,14 @@ class GraphicalTakeoffDialog(QDialog):
         self.geometry_components=QComboBox();self.geometry_components.addItem('تمام اجزای سطح',None)
         self.back_vertex.setToolTip('فقط رأس‌های انتخاب در حال ترسیم را اصلاح می‌کند')
         self.edit_vertices.setToolTip('مختصات مرجع صفحه به صورت JSON؛ تغییر مقدار فقط از هندسه معتبر')
+        self.w1_guide_button=QPushButton("دستیار مرحله‌ای متره و AI آگاه به زمینه")
+        self.w1_guide_button.setObjectName("OpenPhase6P4ContextualWizard")
+        self.w1_guide_button.setToolTip("پیشنهاد فقط‌خواندنی اقلام وابسته؛ ورودی واقعی، تأیید جدا و فرم اصلی")
+        self.w1_guide_button.setEnabled(self.app_service is not None)
+        self.w1_guide_button.clicked.connect(self.open_contextual_wizard)
+        self._w1_dialog=None
+        self._w1_real_form=None
+        self._w1_pdf_source=None
         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
         self.region_to_roof.setEnabled(self.app_service is not None)
         self.region_to_roof.setToolTip("انتخاب صریح نوع سقف؛ دیتایل مصالح از مساحت حدس زده نمی‌شود")
@@ -405,7 +413,7 @@ class GraphicalTakeoffDialog(QDialog):
         for index, x in enumerate([
             self.open_pdf, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
-            self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.opening_button, self.edit_button, self.undo, self.redo,
+            self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
@@ -426,7 +434,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
         self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
-        self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
+        self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح مدرک PDF یا IFC')
+        revision_row=QHBoxLayout();revision_row.addWidget(QLabel('نسخه مدرک:'));revision_row.addWidget(self.ifc_revision)
+        toolbar_rows.addLayout(revision_row)
         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
         self.verified_crossview_button = QPushButton('پیوند مستند ۲بعدی / ۳بعدی / عضو / BOQ')
@@ -449,7 +459,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_3d_cancel.setToolTip('لغو و کنارگذاشتن نتیجهٔ مدل سه‌بعدی، بدون تغییر نشست و BOQ')
         self.ifc_3d_cancel.setEnabled(False)
         self.ifc_3d_cancel.clicked.connect(self.cancel_ifc_3d_loading)
-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
+        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
@@ -839,6 +849,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.select_drawing()
 
     def open_drawing(self, path):
+        import hashlib
         self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         candidate = str(path)
@@ -853,8 +864,22 @@ class GraphicalTakeoffDialog(QDialog):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return
+        # Bind the displayed PDF to the bytes actually validated by the viewer.
+        pdf_sha=None
+        if Path(candidate).suffix.lower()=='.pdf':
+            with open(candidate,'rb') as source_file:
+                pdf_sha=hashlib.file_digest(source_file,'sha256').hexdigest()
+        previous_path=str(self.viewer.path) if self.viewer.path else None
         # Open first: if parsing fails, retain the currently displayed drawing/session.
         self.viewer.open(candidate)
+        if pdf_sha is not None:
+            with open(candidate,'rb') as source_file:
+                if hashlib.file_digest(source_file,'sha256').hexdigest()!=pdf_sha:
+                    self._w1_pdf_source=None
+                    raise ValueError('فایل PDF هنگام بازکردن تغییر کرد؛ دوباره باز کنید.')
+        self._w1_pdf_source=(str(self.viewer.path),pdf_sha) if pdf_sha else None
+        if previous_path and previous_path!=str(self.viewer.path) and self.viewer.kind=='pdf':
+            self.ifc_revision.clear()
         new_engine = PDFDrawingEngine(candidate) if self.viewer.kind == "pdf" else None
         if self.engine is not None:
             self.engine.close()
@@ -1140,6 +1165,174 @@ class GraphicalTakeoffDialog(QDialog):
         margin = max(bounds.width(), bounds.height(), 1.0) * 0.05
         self.canvas.setSceneRect(bounds.adjusted(-margin, -margin, margin, margin))
         self._ifc_status()
+
+    def contextual_w1_context(self, family):
+        """Collect only current, real project/member/source, not AI guesses."""
+        from core.ai.contextual_takeoff import GuidedContext
+        import hashlib
+        if self.app_service is None:
+            raise ValueError("سرویس پروژه متصل نیست.")
+        pid=self.project_id_input.text().strip()
+        if self.persisted_project_id and pid!=self.persisted_project_id:
+            raise ValueError("پروژه فعال تغییر کرده است؛ ابتدا نشست پروژه جدید را مستقل باز کنید.")
+        try:
+            project=self.app_service.open_project(pid)
+        except KeyError as exc:
+            raise ValueError("پروژه واقعی انتخاب نشده است.") from exc
+        if not isinstance(project,dict):
+            raise ValueError("پروژه واقعی انتخاب نشده است.")
+        floor=self.polygon_floor.text().strip()
+        member=self.polygon_member.text().strip() or None
+        rev=None
+        sha=None
+        source=None
+        review="unreviewed"
+        if self.viewer.kind=="pdf":
+            if not self._w1_pdf_source or not self.viewer.path:
+                raise ValueError('منشأ PDF بازشده قابل اعتبارسنجی نیست؛ سند را دوباره باز کنید.')
+            source,sha=self._w1_pdf_source
+            if source!=str(self.viewer.path) or not Path(source).is_file():
+                raise ValueError('فایل PDF بازشده دیگر در دسترس نیست.')
+            with Path(source).open('rb') as source_file:
+                if hashlib.file_digest(source_file,'sha256').hexdigest()!=sha:
+                    raise ValueError('فایل PDF پس از نمایش تغییر کرده؛ سند را دوباره باز کنید.')
+            rev=self.ifc_revision.text().strip()
+            if not rev:raise ValueError('نسخه مدرک PDF باید صریح وارد شود.')
+        elif self.viewer.kind=="ifc":
+            doc=self.viewer.ifc_document
+            if doc is None or not self.viewer.path:
+                raise ValueError("مدل IFC معتبر باز نیست.")
+            source=str(self.viewer.path)
+            sha=doc.source_sha256
+            rev=self.ifc_revision.text().strip()
+            if not rev:
+                raise ValueError("Revision مدل IFC باید صریح باشد.")
+            if not Path(source).is_file() or hashlib.sha256(Path(source).read_bytes()).hexdigest()!=sha:
+                raise ValueError("هش فایل IFC بازشده تغییر کرده است.")
+            global_id=getattr(self,'_ifc_selected_global_id',None)
+            bridge=getattr(self,'_verified_project_selection',None)
+            if global_id and bridge is not None:
+                self._check_live_four_way_context(bridge)
+                link=bridge.resolve(origin="2d",identifier=global_id,
+                    source_sha256=sha,revision=rev)
+                if link.status=="linked" and len(link.member_ids)==1:
+                    linked=link.member_ids[0]
+                    if member and member!=linked:
+                        raise ValueError("هویت عضو واردشده با تأیید IFC مطابقت ندارد.")
+                    member=linked
+                    floors={m.get("floor_id") for m in project.get("members",[])
+                            if m.get("id")==member}
+                    if len(floors)==1:
+                        audited_floor=next(iter(floors))
+                        if floor and floor!=audited_floor:
+                            raise ValueError("طبقه انتخاب‌شده با عضو IFC مطابقت ندارد.")
+                        floor=floor or audited_floor
+                    review="approved"
+                elif member:
+                    raise ValueError("عضو واردشده هنوز به IFC بازبینی‌شده متصل نیست.")
+            elif global_id and member:
+                raise ValueError("تطبیق عضو IFC بدون سند مستقل تأیید نشده است.")
+        if not floor:
+            raise ValueError("شناسه طبقه باید در ابزار نقشه/متره مشخص شود.")
+        return GuidedContext(
+            project_id=pid,floor_id=floor,member_id=member,
+            source_id=source,source_sha256=sha,revision=rev,
+            operation=family,current_tab="نقشه و متره",
+            review_status=review)
+
+    def _open_w1_real_form(self, context):
+        """Route to existing live workflows; never create a parallel commit."""
+        from app.manual_takeoff import ManualTakeoffDialog
+        from core.takeoff.roof_detail import KINDS
+        source_wizard = self._w1_dialog
+        source_proposal = source_wizard.active if source_wizard is not None else None
+        def guard(project_id,floor_id,member_id):
+            wizard=self._w1_dialog
+            if (wizard is None or wizard is not source_wizard or
+                    source_proposal is None or wizard.active is not source_proposal or
+                    wizard._context!=context):
+                raise RuntimeError('پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.')
+            if self.contextual_w1_context(context.operation)!=context:
+                raise RuntimeError('پروژه، عضو یا نسخه مدرک تغییر کرده است؛ عملیات متوقف شد.')
+            if (project_id!=context.project_id or floor_id!=context.floor_id or
+                    (context.member_id and member_id!=context.member_id)):
+                raise RuntimeError('هویت فرم با عضو و پروژه انتخاب‌شده مطابقت ندارد.')
+        if context.operation=="beam":
+            panel=self.beam_detail_panel
+            if panel is None:
+                raise ValueError("فرم تخصصی تیر به سرویس پروژه متصل نیست.")
+            if context.member_id:
+                project=self.app_service.open_project(context.project_id)
+                members=[m for m in project.get('members',[]) if m.get('id')==context.member_id]
+                if len(members)!=1 or members[0].get('kind')!='beam':
+                    raise ValueError("عضو انتخاب‌شده به عنوان تیر مستند نشده است.")
+            expected=(context.project_id,context.floor_id,context.member_id or "")
+            if panel._loaded_identity is not None and panel._loaded_identity!=expected:
+                raise ValueError("فرم تیر دیگری باز است؛ ابتدا تغییرات آن را تعیین تکلیف کنید.")
+            for field,value in ((panel.floor,context.floor_id),(panel.beam,context.member_id or "")):
+                if field.text().strip() and field.text().strip()!=value:
+                    raise ValueError("ورودی ناتمام فرم تیر با انتخاب فعلی متفاوت است؛ انتقال لغو شد.")
+            panel.begin_w1_session(guard)
+            panel.floor.setText(context.floor_id)
+            panel.beam.setText(context.member_id or "")
+            panel.bind_w1_complete()
+            self.panel_toggle.setChecked(True)
+            self.beam_dock.show()
+            self.beam_dock.raise_()
+            return panel
+        if context.operation in KINDS:
+            # The original, fully reviewed specialist roof editor works for
+            # manual-only projects too. No region, width, count or geometry
+            # is fabricated by this handoff. It owns its own approvals/BOQ.
+            from app.roof_detail_editor import open_roof_editor
+            open_roof_editor(
+                self.app_service,parent=self,project_id=context.project_id,
+                floor_id=context.floor_id,kind=context.operation,context_guard=guard)
+            return True  # Editor opened; commit still needs its own explicit gate.
+        if context.operation in ("block_wall","wall_with_opening","floor_finish","false_ceiling"):
+            # Reuse the original reviewed architectural form and its approval gates.
+            from app.architecture_detail_editor import open_architecture_editor
+            kind={"wall_with_opening":"block_wall",
+                  "false_ceiling":"suspended_ceiling"}.get(context.operation,context.operation)
+            open_architecture_editor(self.app_service,parent=self,
+                                     project_id=context.project_id,
+                                     floor_id=context.floor_id,kind=kind,context_guard=guard)
+            return True
+        if context.operation=="column":
+            from app.reviewed_structural_manual_editor import open_manual_structural_editor
+            open_manual_structural_editor(self.app_service,parent=self,
+                                          project_id=context.project_id,
+                                          floor_id=context.floor_id,member_id=context.member_id or "",
+                                          context_guard=guard)
+            return True
+        if context.operation=="mep":
+            from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
+            open_reviewed_aec_editor(self.app_service,parent=self,
+                                     project_id=context.project_id,
+                                     floor_id=context.floor_id,member_id=context.member_id or "",
+                                     context_guard=guard)
+            return True  # Real existing AEC/M&E forms own their approvals.
+        dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
+        dialog.floor_id.setText(context.floor_id)
+        dialog.element_label.setText(context.member_id or "")
+        self._w1_real_form=dialog
+        dialog.show()
+        return dialog
+
+    def open_contextual_wizard(self):
+        if self.app_service is None:
+            self.status.setText("راهنمای متره به پروژه واقعی نیاز دارد.")
+            return None
+        from app.contextual_takeoff_panel import ContextualTakeoffDialog
+        dialog=ContextualTakeoffDialog(
+            self.app_service,self.contextual_w1_context,parent=self,
+            open_real_form=self._open_w1_real_form)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        self._w1_dialog=dialog
+        if self.beam_detail_panel is not None:
+            dialog.session_ended.connect(self.beam_detail_panel.end_w1_session)
+        dialog.show()
+        return dialog
 
     def open_verified_crossview(self):
         """Display *persisted* reviewed identities, never a hand-built demo mapping."""

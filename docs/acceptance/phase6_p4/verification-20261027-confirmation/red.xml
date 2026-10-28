@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="2.659" timestamp="2026-10-27T16:05:11.558697+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_rechecks_source_after_native_commit_confirmation[pdf_bytes]" time="1.187"><failure message="AssertionError: assert [{'allowance_...تیر B1', ...}] == []&#10;  &#10;  Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-2/test_w1_beam_rechecks_source_a0')
+changed = 'pdf_bytes'
+
+    @pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+    def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+        """The native confirmation runs a nested event loop: its context can expire."""
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtCore import QTimer, Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+    
+        qt = QApplication.instance() or QApplication([])
+        path = tmp_path / 'synthetic.pdf'
+        pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+        service = StructuralProApp(tmp_path / 'db')
+        service.create_project('Confirmation race', 'P')
+        service.add_project_floor('P', 'Floor', level='L1')
+        service.add_project_member('P', 'B1', 'L1', 'beam')
+        service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+        drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+        drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+        drawing.show()
+        wizard = drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        answered = []; snapshots = []
+        watcher = QTimer(wizard)
+        def answer():
+            message = qt.activeModalWidget()
+            if not isinstance(message, QMessageBox) or answered:
+                return
+            snapshots.append(service.store.current_digest('P'))
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer); watcher.start(20)
+        try:
+            assert wizard.preview() is not None
+            panel = wizard.open_form()
+            QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+            assert answered == [True]
+&gt;           assert service.open_project('P')['boq'] == []
+E           AssertionError: assert [{'allowance_...تیر B1', ...}] == []
+E             
+E             Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}
+E             Use -v to get more diff
+
+tests/test_phase6_p4_contextual_takeoff.py:820: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_rechecks_source_after_native_commit_confirmation[pdf_deleted]" time="0.172"><failure message="AssertionError: assert [{'allowance_...تیر B1', ...}] == []&#10;  &#10;  Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-2/test_w1_beam_rechecks_source_a1')
+changed = 'pdf_deleted'
+
+    @pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+    def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+        """The native confirmation runs a nested event loop: its context can expire."""
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtCore import QTimer, Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+    
+        qt = QApplication.instance() or QApplication([])
+        path = tmp_path / 'synthetic.pdf'
+        pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+        service = StructuralProApp(tmp_path / 'db')
+        service.create_project('Confirmation race', 'P')
+        service.add_project_floor('P', 'Floor', level='L1')
+        service.add_project_member('P', 'B1', 'L1', 'beam')
+        service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+        drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+        drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+        drawing.show()
+        wizard = drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        answered = []; snapshots = []
+        watcher = QTimer(wizard)
+        def answer():
+            message = qt.activeModalWidget()
+            if not isinstance(message, QMessageBox) or answered:
+                return
+            snapshots.append(service.store.current_digest('P'))
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer); watcher.start(20)
+        try:
+            assert wizard.preview() is not None
+            panel = wizard.open_form()
+            QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+            assert answered == [True]
+&gt;           assert service.open_project('P')['boq'] == []
+E           AssertionError: assert [{'allowance_...تیر B1', ...}] == []
+E             
+E             Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}
+E             Use -v to get more diff
+
+tests/test_phase6_p4_contextual_takeoff.py:820: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_rechecks_source_after_native_commit_confirmation[revision]" time="0.176"><failure message="AssertionError: assert [{'allowance_...تیر B1', ...}] == []&#10;  &#10;  Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-2/test_w1_beam_rechecks_source_a2')
+changed = 'revision'
+
+    @pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+    def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+        """The native confirmation runs a nested event loop: its context can expire."""
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtCore import QTimer, Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+    
+        qt = QApplication.instance() or QApplication([])
+        path = tmp_path / 'synthetic.pdf'
+        pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+        service = StructuralProApp(tmp_path / 'db')
+        service.create_project('Confirmation race', 'P')
+        service.add_project_floor('P', 'Floor', level='L1')
+        service.add_project_member('P', 'B1', 'L1', 'beam')
+        service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+        drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+        drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+        drawing.show()
+        wizard = drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        answered = []; snapshots = []
+        watcher = QTimer(wizard)
+        def answer():
+            message = qt.activeModalWidget()
+            if not isinstance(message, QMessageBox) or answered:
+                return
+            snapshots.append(service.store.current_digest('P'))
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer); watcher.start(20)
+        try:
+            assert wizard.preview() is not None
+            panel = wizard.open_form()
+            QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+            assert answered == [True]
+&gt;           assert service.open_project('P')['boq'] == []
+E           AssertionError: assert [{'allowance_...تیر B1', ...}] == []
+E             
+E             Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}
+E             Use -v to get more diff
+
+tests/test_phase6_p4_contextual_takeoff.py:820: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_rechecks_source_after_native_commit_confirmation[member]" time="0.145"><failure message="AssertionError: assert [{'allowance_...تیر B1', ...}] == []&#10;  &#10;  Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-2/test_w1_beam_rechecks_source_a3')
+changed = 'member'
+
+    @pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+    def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+        """The native confirmation runs a nested event loop: its context can expire."""
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtCore import QTimer, Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+    
+        qt = QApplication.instance() or QApplication([])
+        path = tmp_path / 'synthetic.pdf'
+        pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+        service = StructuralProApp(tmp_path / 'db')
+        service.create_project('Confirmation race', 'P')
+        service.add_project_floor('P', 'Floor', level='L1')
+        service.add_project_member('P', 'B1', 'L1', 'beam')
+        service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+        drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+        drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+        drawing.show()
+        wizard = drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        answered = []; snapshots = []
+        watcher = QTimer(wizard)
+        def answer():
+            message = qt.activeModalWidget()
+            if not isinstance(message, QMessageBox) or answered:
+                return
+            snapshots.append(service.store.current_digest('P'))
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer); watcher.start(20)
+        try:
+            assert wizard.preview() is not None
+            panel = wizard.open_form()
+            QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+            assert answered == [True]
+&gt;           assert service.open_project('P')['boq'] == []
+E           AssertionError: assert [{'allowance_...تیر B1', ...}] == []
+E             
+E             Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}
+E             Use -v to get more diff
+
+tests/test_phase6_p4_contextual_takeoff.py:820: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_rechecks_source_after_native_commit_confirmation[cancel]" time="0.163"><failure message="AssertionError: assert [{'allowance_...تیر B1', ...}] == []&#10;  &#10;  Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-2/test_w1_beam_rechecks_source_a4')
+changed = 'cancel'
+
+    @pytest.mark.parametrize('changed', ['pdf_bytes', 'pdf_deleted', 'revision', 'member', 'cancel'])
+    def test_w1_beam_rechecks_source_after_native_commit_confirmation(tmp_path, changed):
+        """The native confirmation runs a nested event loop: its context can expire."""
+        from PySide6.QtWidgets import QApplication, QMessageBox
+        from PySide6.QtCore import QTimer, Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+    
+        qt = QApplication.instance() or QApplication([])
+        path = tmp_path / 'synthetic.pdf'
+        pdf = Canvas(str(path)); pdf.drawString(40, 700, 'Synthetic QA'); pdf.showPage(); pdf.save()
+        service = StructuralProApp(tmp_path / 'db')
+        service.create_project('Confirmation race', 'P')
+        service.add_project_floor('P', 'Floor', level='L1')
+        service.add_project_member('P', 'B1', 'L1', 'beam')
+        service.save_beam_detail_draft('P', complete_beam(), expected_revision=0)
+        drawing = GraphicalTakeoffDialog(app_service=service, project_id='P')
+        drawing.open_drawing(str(path)); drawing.ifc_revision.setText('R1')
+        drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
+        drawing.show()
+        wizard = drawing.open_contextual_wizard()
+        wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        answered = []; snapshots = []
+        watcher = QTimer(wizard)
+        def answer():
+            message = qt.activeModalWidget()
+            if not isinstance(message, QMessageBox) or answered:
+                return
+            snapshots.append(service.store.current_digest('P'))
+            if changed == 'pdf_bytes':
+                path.write_bytes(path.read_bytes() + b'\n% changed while confirming\n')
+            elif changed == 'pdf_deleted':
+                path.unlink()
+            elif changed == 'revision':
+                drawing.ifc_revision.setText('R2')
+            elif changed == 'member':
+                drawing.polygon_member.setText('B2')
+            else:
+                wizard.cancel()
+            answered.append(True)
+            QTest.mouseClick(message.button(QMessageBox.StandardButton.Yes), Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer); watcher.start(20)
+        try:
+            assert wizard.preview() is not None
+            panel = wizard.open_form()
+            QTest.mouseClick(panel.load_button, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button, Qt.MouseButton.LeftButton)
+            assert answered == [True]
+&gt;           assert service.open_project('P')['boq'] == []
+E           AssertionError: assert [{'allowance_...تیر B1', ...}] == []
+E             
+E             Left contains 3 more items, first extra item: {'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'بتن خالص تیر B1', ...}
+E             Use -v to get more diff
+
+tests/test_phase6_p4_contextual_takeoff.py:820: AssertionError</failure></testcase></testsuite></testsuites>

@@ -9,7 +9,7 @@ import hashlib
 from copy import deepcopy
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton,
     QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog, QFileDialog,
@@ -39,6 +39,10 @@ class BeamDetailPanel(QWidget):
         self._advanced_geometry=False
         self.revision = 0
         self._loaded_identity = None
+        self._w1_context_guard = None
+        self._w1_snapshot = None
+        self._w1_baseline = None
+        self._loaded_projection = None
         self._segmented_kinds = set()
         self._stirrup_segments = None
         self._selected_evidence = None
@@ -173,8 +177,53 @@ class BeamDetailPanel(QWidget):
         self.docx_button=QPushButton('ریزمتره تیر Word');self.csv_button=QPushButton('ریزمتره تیر CSV');buttons.addWidget(self.docx_button);buttons.addWidget(self.csv_button)
         self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
         self.docx_button.clicked.connect(lambda:self.export('docx'));self.csv_button.clicked.connect(lambda:self.export('csv'))
+        self.w1_release_button=QPushButton('پایان نشست دستیار و بازیابی وضعیت قبلی تیر')
+        root.addWidget(self.w1_release_button)
+        self.w1_release_button.clicked.connect(self.release_w1_session)
         self.setLayoutDirection(Qt.RightToLeft)
         self.reset_form()
+
+    def _w1_snapshot_state(self):
+        fields=[(w,w.text()) for w in self.findChildren(QLineEdit)]
+        combos=[(w,w.currentIndex()) for w in self.findChildren(QComboBox)]
+        attrs={k:deepcopy(getattr(self,k)) for k in ('revision','_loaded_identity','_loaded_projection','_detail_template','_component_review','_advanced_geometry','_segmented_kinds','_stirrup_segments','_selected_evidence')}
+        return fields,combos,attrs
+
+    def begin_w1_session(self, guard):
+        if self._w1_context_guard is not None:
+            raise ValueError('ابتدا نشست قبلی دستیار را تعیین تکلیف کنید.')
+        self._w1_snapshot=self._w1_snapshot_state()
+        self._w1_context_guard=guard
+
+    def bind_w1_complete(self):
+        self._w1_baseline=self._w1_snapshot_state()
+
+    def end_w1_session(self):
+        if self._w1_context_guard is None or self._w1_baseline is None:
+            return
+        if self._w1_snapshot_state()==self._w1_baseline:
+            self.release_w1_session()
+        else:
+            self.message.setText("نشست دستیار پایان یافت؛ تغییرات ناتمام حفظ شده و ثبت مسدود است. برای کنارگذاشتن از دکمه بازیابی استفاده کنید.")
+
+    def release_w1_session(self):
+        if self._w1_context_guard is None or self._w1_snapshot is None:
+            return
+        previous=self._w1_snapshot
+        changed=self._w1_baseline is None or self._w1_snapshot_state()!=self._w1_baseline
+        if changed and QMessageBox.question(self,'تغییرات ناتمام','تغییرات نشست دستیار کنار گذاشته و وضعیت قبلی بازیابی شود؟',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:
+            self.message.setText('تغییرات حفظ شدند؛ ذخیره تا تعیین تکلیف نشست مجاز نیست.')
+            return
+        fields,combos,attrs=previous
+        for w,v in fields:
+            blocker=QSignalBlocker(w);w.setText(v);del blocker
+        for w,v in combos:
+            blocker=QSignalBlocker(w);w.setCurrentIndex(v);del blocker
+        for key,value in attrs.items():setattr(self,key,deepcopy(value))
+        self._w1_snapshot=None
+        self._w1_baseline=None
+        self._w1_context_guard=None
+        self.message.setText('وضعیت قبلی پنل بازیابی شد؛ ذخیره‌ای انجام نشد.')
 
     def reset_form(self):
         for kind, status in empty_beam("طبقه", "تیر")["bars"].items():
@@ -187,6 +236,7 @@ class BeamDetailPanel(QWidget):
         beam = self.beam.text().strip()
         if not project or not floor or not beam:
             raise ValueError("شناسه پروژه، طبقه و تیر باید مشخص باشند")
+        if self._w1_context_guard is not None:self._w1_context_guard(project,floor,beam)
         return project, floor, beam
 
     @staticmethod
@@ -444,6 +494,9 @@ class BeamDetailPanel(QWidget):
                 bar["segments"] = deepcopy(self._stirrup_segments)
             draft["bars"][kind] = bar
         if self._component_review:draft["component_review"]=deepcopy(self._component_review)
+        if (self._loaded_projection is not None and draft==self._loaded_projection and
+                self._loaded_identity==(project,draft['floor_id'],draft['beam_id'])):
+            return project,deepcopy(self._detail_template)
         return project, draft
 
     def load(self):
@@ -502,6 +555,8 @@ class BeamDetailPanel(QWidget):
                 self.save_button.setEnabled(True)
                 self.commit_button.setEnabled(True)
                 self.stirrup_zones_button.setEnabled(True)
+            self._loaded_projection=None
+            self._loaded_projection=deepcopy(self._draft()[1])
         except Exception as exc:
             QMessageBox.warning(self, "بارگذاری تیر", str(exc))
 
@@ -527,32 +582,49 @@ class BeamDetailPanel(QWidget):
             return False
 
     def preview(self):
-        if not self.save():
+        try:
+            project, floor, beam = self._identity()
+            if not self.save():
+                return False
+            result = self.service.preview_beam_detail(project, floor, beam)
+            if result["ready"]:
+                self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
+                                     "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"])+"؛ "+self.quantity_summary(result))
+            else:
+                self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
+            return bool(result["ready"])
+        except Exception as exc:
+            QMessageBox.warning(self, "پیش‌نمایش تیر", str(exc))
             return False
-        project, floor, beam = self._identity()
-        result = self.service.preview_beam_detail(project, floor, beam)
-        if result["ready"]:
-            self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
-                                 "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"])+"؛ "+self.quantity_summary(result))
-        else:
-            self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
-        return bool(result["ready"])
 
     def commit(self):
-        if not self.preview():
-            return
         try:
+            project, draft = self._draft()
+            record = self.service.get_beam_detail(project, draft["floor_id"], draft["beam_id"])
+            # An explicit Preview already saved this exact draft. Reuse it
+            # after the user refreshed IFC links; another implicit save would
+            # immediately stale that review again before Commit can start.
+            if (self._loaded_identity != (project, draft["floor_id"], draft["beam_id"]) or
+                    record is None or record["revision"] != self.revision or
+                    record["data"] != draft):
+                if not self.preview():
+                    return
             project, floor, beam = self._identity()
             report = self.service.preview_beam_detail(project, floor, beam)
             if not report["ready"]:
                 return
+            revision = self.revision
             answer = QMessageBox.question(self, "تأیید ثبت نهایی",
                                          f"کمیت‌های تأییدشده تیر {beam} به ریزمتره منتقل شوند؟",
                                          QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                          QMessageBox.StandardButton.No)
             if answer != QMessageBox.StandardButton.Yes:
                 return
-            result = self.service.commit_beam_detail(project, floor, beam, expected_revision=self.revision)
+            # A native modal dialog runs an event loop. Source bytes, W1
+            # approval or the selected identity may change while it is open.
+            if self._identity() != (project, floor, beam):
+                raise RuntimeError("هویت تیر هنگام تأیید تغییر کرد؛ ثبت متوقف شد.")
+            result = self.service.commit_beam_detail(project, floor, beam, expected_revision=revision)
             self.message.setText(f"ثبت قطعی انجام شد؛ {result['takeoff_rows']} ردیف منتقل شد.")
             self.save_button.setEnabled(False)
             self.commit_button.setEnabled(False)

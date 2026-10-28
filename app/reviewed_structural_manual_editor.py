@@ -49,7 +49,7 @@ def _show_table(grid, keys, rows):
                 grid.setItem(grid.rowCount()-1, col, QTableWidgetItem(str(item[key])))
 
 
-def open_manual_structural_editor(service, *, parent=None, project_id="", floor_id=""):
+def open_manual_structural_editor(service, *, parent=None, project_id="", floor_id="", member_id="", context_guard=None):
     dialog=QDialog(parent)
     dialog.setWindowTitle("متره دستی تأییدشده سازه بتنی و پی")
     dialog.setObjectName("ReviewedStructuralManualEditor")
@@ -62,7 +62,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
     kinds=QComboBox()
     for code, meta in KINDS.items():
         kinds.addItem(meta[0],code)
-    ident=QLineEdit()
+    ident=QLineEdit(str(member_id))
     source_id=QLineEdit()
     source_id.setPlaceholderText("شناسه برداشت مستقل از یک دیتایل واقعی")
     for key,widget in (("پروژه",project),("طبقه",floor),("نوع عضو",kinds),
@@ -169,6 +169,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
         pid, fl, k, mid=project.text().strip(),floor.text().strip(),kinds.currentData(),ident.text().strip()
         if not (pid and fl and mid):
             raise ValueError("پروژه، طبقه و شناسه عضو الزامی‌اند")
+        if context_guard is not None:context_guard(pid,fl,mid)
         if service.open_project(pid) is None:
             raise ValueError("پروژه موجود نیست")
         return pid,fl,k,mid

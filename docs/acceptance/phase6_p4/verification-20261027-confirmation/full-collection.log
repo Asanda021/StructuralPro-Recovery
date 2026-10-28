@@ -1,0 +1,206 @@
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/test_binary_build_security_contract.py _________
+tests/test_binary_build_security_contract.py:8: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_____ ERROR collecting tests/test_owner_approved_binary_build_workflows.py _____
+tests/test_owner_approved_binary_build_workflows.py:8: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+__________ ERROR collecting tests/test_p37_real_product_deployment.py __________
+tests/test_p37_real_product_deployment.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+__________ ERROR collecting tests/test_p37_release_gate_separation.py __________
+tests/test_p37_release_gate_separation.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+___________ ERROR collecting tests/test_p61_p70_release_delivery.py ____________
+tests/test_p61_p70_release_delivery.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+____________ ERROR collecting tests/test_priority_10_compliance.py _____________
+tests/test_priority_10_compliance.py:4: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+______________ ERROR collecting tests/test_priority_10_release.py ______________
+tests/test_priority_10_release.py:4: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_________ ERROR collecting tests/test_priority_10_release_integrity.py _________
+tests/test_priority_10_release_integrity.py:4: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_________ ERROR collecting tests/test_priority_17_reports_excel_pdf.py _________
+tests/test_priority_17_reports_excel_pdf.py:4: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+________ ERROR collecting tests/test_priority_38_pre_release_freeze.py _________
+tests/test_priority_38_pre_release_freeze.py:6: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_______ ERROR collecting tests/test_priority_41_ci_dependency_parity.py ________
+tests/test_priority_41_ci_dependency_parity.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_______ ERROR collecting tests/test_priority_42_windows_runtime_smoke.py _______
+tests/test_priority_42_windows_runtime_smoke.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+____ ERROR collecting tests/test_priority_43_release_artifact_integrity.py _____
+tests/test_priority_43_release_artifact_integrity.py:5: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+___ ERROR collecting tests/test_priority_49_windows_installer_acceptance.py ____
+tests/test_priority_49_windows_installer_acceptance.py:6: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+_________________ ERROR collecting tests/test_priority_9_qa.py _________________
+tests/test_priority_9_qa.py:7: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:30: in historical_root
+    current_policy(SOURCE_ROOT)
+scripts/run_quarantined_workflow_qa.py:48: in current_policy
+    workflows = workflow_paths(root)
+                ^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:30: in workflow_paths
+    raise RuntimeError("Active or linked GitHub Actions path detected: refusing test checkout")
+E   RuntimeError: Active or linked GitHub Actions path detected: refusing test checkout
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fitz/__init__.py:17
+  /workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_binary_build_security_contract.py - RuntimeError: Active or ...
+ERROR tests/test_owner_approved_binary_build_workflows.py - RuntimeError: Act...
+ERROR tests/test_p37_real_product_deployment.py - RuntimeError: Active or lin...
+ERROR tests/test_p37_release_gate_separation.py - RuntimeError: Active or lin...
+ERROR tests/test_p61_p70_release_delivery.py - RuntimeError: Active or linked...
+ERROR tests/test_priority_10_compliance.py - RuntimeError: Active or linked G...
+ERROR tests/test_priority_10_release.py - RuntimeError: Active or linked GitH...
+ERROR tests/test_priority_10_release_integrity.py - RuntimeError: Active or l...
+ERROR tests/test_priority_17_reports_excel_pdf.py - RuntimeError: Active or l...
+ERROR tests/test_priority_38_pre_release_freeze.py - RuntimeError: Active or ...
+ERROR tests/test_priority_41_ci_dependency_parity.py - RuntimeError: Active o...
+ERROR tests/test_priority_42_windows_runtime_smoke.py - RuntimeError: Active ...
+ERROR tests/test_priority_43_release_artifact_integrity.py - RuntimeError: Ac...
+ERROR tests/test_priority_49_windows_installer_acceptance.py - RuntimeError: ...
+ERROR tests/test_priority_9_qa.py - RuntimeError: Active or linked GitHub Act...
+!!!!!!!!!!!!!!!!!!! Interrupted: 15 errors during collection !!!!!!!!!!!!!!!!!!!
+1 warning, 15 errors in 9.23s

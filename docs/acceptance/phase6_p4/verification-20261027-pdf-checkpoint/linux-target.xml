@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="1.173" timestamp="2026-10-27T12:44:51.761585+01:00" hostname="0eca898cff15"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_does_not_save_if_open_pdf_changes[column-C1-column]" time="0.536" /><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_modal_does_not_save_if_open_pdf_changes[mep-S1-mep]" time="0.158"><failure message="AssertionError: [AssertionError('source change must be clearly reported; button visible=True enabled=True&#10;  assert []')]&#10;assert not [AssertionError('source change must be clearly reported; button visible=True enabled=True\nassert []')]">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-2/test_w1_modal_does_not_save_if1')
+family = 'mep', member = 'S1', kind = 'mep'
+
+    @pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
+    def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,family,member,kind):
+        from PySide6.QtWidgets import QApplication,QMessageBox,QComboBox,QPushButton
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from reportlab.pdfgen.canvas import Canvas
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_column_stage22 import column
+        qt=QApplication.instance() or QApplication([])
+        path=tmp_path/'qa-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA plan');pdf.showPage();pdf.save()
+        service=StructuralProApp(tmp_path/'db');service.create_project('نمونه','P')
+        service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P',member,'L1',kind)
+        if family=='column':service.save_structural_member_draft('P',column(),expected_revision=0)
+        else:
+            from test_reviewed_aec_priorities_6_9 import sample
+            service.save_aec_system_draft('P',sample('mechanical_ventilation'),expected_revision=0)
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.open_drawing(str(path))
+        drawing.ifc_revision.setText('R1');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
+        warnings=[];errors=[];digest=service.store.current_digest('P')
+        watcher=QTimer(wizard)
+        def dismiss():
+            message=qt.activeModalWidget()
+            if isinstance(message,QMessageBox):warnings.append(message.text());message.done(0)
+        watcher.timeout.connect(dismiss);watcher.start(40)
+        def inside():
+            modal=qt.activeModalWidget()
+            try:
+                if family=='column':
+                    c=modal.column_controls;QTest.mouseClick(c['load'],Qt.MouseButton.LeftButton)
+                    save_button=c['save']
+                else:
+                    box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')&gt;=0)
+                    box.setCurrentIndex(box.findData('mechanical_ventilation'))
+                    button=lambda label:next(b for b in modal.findChildren(QPushButton) if b.text()==label)
+                    QTest.mouseClick(button('بارگذاری پیش‌نویس'),Qt.MouseButton.LeftButton)
+                    save_button=button('ذخیره نسخه در SQLite')
+                path.write_bytes(path.read_bytes()+b' changed')
+                QTest.mouseClick(save_button,Qt.MouseButton.LeftButton)
+                assert service.store.current_digest('P')==digest, 'stale W1 drawing allowed a save'
+                assert not service.open_project('P')['boq']
+                assert warnings, f'source change must be clearly reported; button visible={save_button.isVisible()} enabled={save_button.isEnabled()}'
+            except Exception as exc:errors.append(exc)
+            finally:
+                if modal is not None:modal.reject()
+        timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(inside)
+        try:
+            assert wizard.preview() is not None,wizard.status.text()
+            timer.start(40);wizard.open_form()
+&gt;           assert not errors,errors
+E           AssertionError: [AssertionError('source change must be clearly reported; button visible=True enabled=True
+E             assert []')]
+E           assert not [AssertionError('source change must be clearly reported; button visible=True enabled=True\nassert []')]
+
+tests/test_phase6_p4_contextual_takeoff.py:60: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_open_pdf_binds_live_sha_revision_and_rejects_changed_bytes[beam-B1-beam]" time="0.102" /><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_open_pdf_binds_live_sha_revision_and_rejects_changed_bytes[column-C1-column]" time="0.099" /><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_open_pdf_binds_live_sha_revision_and_rejects_changed_bytes[mep-S1-mep]" time="0.105" /></testsuite></testsuites>

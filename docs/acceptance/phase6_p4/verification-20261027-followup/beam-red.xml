@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.670" timestamp="2026-10-27T11:53:14.995003+03:30" hostname="ec501525f41c"><testcase classname="tests.test_phase6_p4_contextual_takeoff" name="test_w1_beam_real_confirmation_no_then_yes_and_reopen" time="0.378"><failure message="AssertionError: ['اطلاعات تأییدشده geometry تغییر کرده؛ ابتدا تأیید پیشین را لغو و نسخه جدید را بازبینی کنید']&#10;assert ([] == [&lt;StandardButton.No: 65536&gt;]&#10;  &#10;  Right contains one more item: &lt;StandardButton.No: 65536&gt;&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-root/pytest-21/test_w1_beam_real_confirmation0')
+
+    def test_w1_beam_real_confirmation_no_then_yes_and_reopen(tmp_path):
+        from PySide6.QtWidgets import QApplication,QMessageBox
+        from PySide6.QtCore import QTimer,Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        from test_stirrup_zones import complete_beam
+        from decimal import Decimal
+        qt=QApplication.instance() or QApplication([])
+        service=StructuralProApp(tmp_path/'db');service.create_project('تیر مصنوعی','P')
+        service.add_project_floor('P','آزمایشی',level='L1');service.add_project_member('P','B1','L1','beam')
+        service.save_beam_detail_draft('P',complete_beam(),expected_revision=0)
+        drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText('B1');drawing.show()
+        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData('beam'))
+        errors=[];choice=[QMessageBox.StandardButton.No];answered=[]
+        watcher=QTimer(wizard)
+        def answer():
+            message=qt.activeModalWidget()
+            if not isinstance(message,QMessageBox):return
+            button=message.button(choice[0])
+            if button is None:errors.append(message.text());message.done(0)
+            else:answered.append(choice[0]);QTest.mouseClick(button,Qt.MouseButton.LeftButton)
+        watcher.timeout.connect(answer);watcher.start(50)
+        try:
+            assert wizard.preview() is not None
+            panel=wizard.open_form();assert panel is drawing.beam_detail_panel
+            QTest.mouseClick(panel.load_button,Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.commit_button,Qt.MouseButton.LeftButton)
+&gt;           assert answered==[QMessageBox.StandardButton.No] and not errors,errors
+E           AssertionError: ['اطلاعات تأییدشده geometry تغییر کرده؛ ابتدا تأیید پیشین را لغو و نسخه جدید را بازبینی کنید']
+E           assert ([] == [&lt;StandardButton.No: 65536&gt;]
+E             
+E             Right contains one more item: &lt;StandardButton.No: 65536&gt;
+E             Use -v to get more diff)
+
+tests/test_phase6_p4_contextual_takeoff.py:38: AssertionError</failure></testcase></testsuite></testsuites>

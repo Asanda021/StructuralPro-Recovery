@@ -1,0 +1,362 @@
+diff --git a/app/beam_detail_panel.py b/app/beam_detail_panel.py
+index a7cd510..737a160 100644
+--- a/app/beam_detail_panel.py
++++ b/app/beam_detail_panel.py
+@@ -9,7 +9,7 @@ import hashlib
+ from copy import deepcopy
+ from pathlib import Path
+ 
+-from PySide6.QtCore import Qt
++from PySide6.QtCore import Qt, QSignalBlocker
+ from PySide6.QtWidgets import (
+     QWidget, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QPushButton,
+     QComboBox, QMessageBox, QScrollArea, QGroupBox, QInputDialog, QFileDialog,
+@@ -39,6 +39,8 @@ class BeamDetailPanel(QWidget):
+         self._advanced_geometry=False
+         self.revision = 0
+         self._loaded_identity = None
++        self._w1_context_guard = None
++        self._w1_snapshot = None
+         self._loaded_projection = None
+         self._segmented_kinds = set()
+         self._stirrup_segments = None
+@@ -174,9 +176,42 @@ class BeamDetailPanel(QWidget):
+         self.docx_button=QPushButton('ریزمتره تیر Word');self.csv_button=QPushButton('ریزمتره تیر CSV');buttons.addWidget(self.docx_button);buttons.addWidget(self.csv_button)
+         self.xlsx_button.clicked.connect(lambda:self.export('xlsx'));self.pdf_button.clicked.connect(lambda:self.export('pdf'))
+         self.docx_button.clicked.connect(lambda:self.export('docx'));self.csv_button.clicked.connect(lambda:self.export('csv'))
++        self.w1_release_button=QPushButton('پایان نشست دستیار و بازیابی وضعیت قبلی تیر')
++        root.addWidget(self.w1_release_button)
++        self.w1_release_button.clicked.connect(self.release_w1_session)
+         self.setLayoutDirection(Qt.RightToLeft)
+         self.reset_form()
+ 
++    def _w1_snapshot_state(self):
++        fields=[(w,w.text()) for w in self.findChildren(QLineEdit)]
++        combos=[(w,w.currentIndex()) for w in self.findChildren(QComboBox)]
++        attrs={k:deepcopy(getattr(self,k)) for k in ('revision','_loaded_identity','_loaded_projection','_detail_template','_component_review','_advanced_geometry','_segmented_kinds','_stirrup_segments','_selected_evidence')}
++        return fields,combos,attrs
++
++    def begin_w1_session(self, guard):
++        if self._w1_context_guard is not None:
++            raise ValueError('ابتدا نشست قبلی دستیار را تعیین تکلیف کنید.')
++        self._w1_snapshot=self._w1_snapshot_state()
++        self._w1_context_guard=guard
++
++    def release_w1_session(self):
++        if self._w1_context_guard is None or self._w1_snapshot is None:
++            return
++        previous=self._w1_snapshot
++        changed=self._w1_snapshot_state()!=previous
++        if changed and QMessageBox.question(self,'تغییرات ناتمام','تغییرات نشست دستیار کنار گذاشته و وضعیت قبلی بازیابی شود؟',QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:
++            self.message.setText('تغییرات حفظ شدند؛ ذخیره تا تعیین تکلیف نشست مجاز نیست.')
++            return
++        fields,combos,attrs=previous
++        for w,v in fields:
++            blocker=QSignalBlocker(w);w.setText(v);del blocker
++        for w,v in combos:
++            blocker=QSignalBlocker(w);w.setCurrentIndex(v);del blocker
++        for key,value in attrs.items():setattr(self,key,deepcopy(value))
++        self._w1_snapshot=None
++        self._w1_context_guard=None
++        self.message.setText('وضعیت قبلی پنل بازیابی شد؛ ذخیره‌ای انجام نشد.')
++
+     def reset_form(self):
+         for kind, status in empty_beam("طبقه", "تیر")["bars"].items():
+             self.bars[kind]["status"].setCurrentIndex(self.bars[kind]["status"].findData(status["status"]))
+@@ -188,6 +223,7 @@ class BeamDetailPanel(QWidget):
+         beam = self.beam.text().strip()
+         if not project or not floor or not beam:
+             raise ValueError("شناسه پروژه، طبقه و تیر باید مشخص باشند")
++        if self._w1_context_guard is not None:self._w1_context_guard(project,floor,beam)
+         return project, floor, beam
+ 
+     @staticmethod
+diff --git a/app/graphical_takeoff.py b/app/graphical_takeoff.py
+index 5c92d39..ee3bf35 100644
+--- a/app/graphical_takeoff.py
++++ b/app/graphical_takeoff.py
+@@ -383,6 +383,7 @@ class GraphicalTakeoffDialog(QDialog):
+         self.w1_guide_button.clicked.connect(self.open_contextual_wizard)
+         self._w1_dialog=None
+         self._w1_real_form=None
++        self._w1_pdf_source=None
+         self.region_to_roof = QPushButton("سقف تخصصی از ناحیه")
+         self.region_to_roof.setEnabled(self.app_service is not None)
+         self.region_to_roof.setToolTip("انتخاب صریح نوع سقف؛ دیتایل مصالح از مساحت حدس زده نمی‌شود")
+@@ -433,7 +434,9 @@ class GraphicalTakeoffDialog(QDialog):
+         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
+         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
+         self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
+-        self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح IFC')
++        self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح مدرک PDF یا IFC')
++        revision_row=QHBoxLayout();revision_row.addWidget(QLabel('نسخه مدرک:'));revision_row.addWidget(self.ifc_revision)
++        toolbar_rows.addLayout(revision_row)
+         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
+         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
+         self.verified_crossview_button = QPushButton('پیوند مستند ۲بعدی / ۳بعدی / عضو / BOQ')
+@@ -456,7 +459,7 @@ class GraphicalTakeoffDialog(QDialog):
+         self.ifc_3d_cancel.setToolTip('لغو و کنارگذاشتن نتیجهٔ مدل سه‌بعدی، بدون تغییر نشست و BOQ')
+         self.ifc_3d_cancel.setEnabled(False)
+         self.ifc_3d_cancel.clicked.connect(self.cancel_ifc_3d_loading)
+-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_revision);ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
++        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
+         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
+         toolbar_rows.addWidget(self.source_label)
+         root.addWidget(toolbar)
+@@ -846,6 +849,7 @@ class GraphicalTakeoffDialog(QDialog):
+         self.select_drawing()
+ 
+     def open_drawing(self, path):
++        import hashlib
+         self.cancel_ifc_3d_loading()
+         self.cancel_cad_loading()
+         candidate = str(path)
+@@ -860,8 +864,22 @@ class GraphicalTakeoffDialog(QDialog):
+             )
+             if answer != QMessageBox.StandardButton.Yes:
+                 return
++        # Bind the displayed PDF to the bytes actually validated by the viewer.
++        pdf_sha=None
++        if Path(candidate).suffix.lower()=='.pdf':
++            with open(candidate,'rb') as source_file:
++                pdf_sha=hashlib.file_digest(source_file,'sha256').hexdigest()
++        previous_path=str(self.viewer.path) if self.viewer.path else None
+         # Open first: if parsing fails, retain the currently displayed drawing/session.
+         self.viewer.open(candidate)
++        if pdf_sha is not None:
++            with open(candidate,'rb') as source_file:
++                if hashlib.file_digest(source_file,'sha256').hexdigest()!=pdf_sha:
++                    self._w1_pdf_source=None
++                    raise ValueError('فایل PDF هنگام بازکردن تغییر کرد؛ دوباره باز کنید.')
++        self._w1_pdf_source=(str(self.viewer.path),pdf_sha) if pdf_sha else None
++        if previous_path and previous_path!=str(self.viewer.path) and self.viewer.kind=='pdf':
++            self.ifc_revision.clear()
+         new_engine = PDFDrawingEngine(candidate) if self.viewer.kind == "pdf" else None
+         if self.engine is not None:
+             self.engine.close()
+@@ -1169,7 +1187,18 @@ class GraphicalTakeoffDialog(QDialog):
+         sha=None
+         source=None
+         review="unreviewed"
+-        if self.viewer.kind=="ifc":
++        if self.viewer.kind=="pdf":
++            if not self._w1_pdf_source or not self.viewer.path:
++                raise ValueError('منشأ PDF بازشده قابل اعتبارسنجی نیست؛ سند را دوباره باز کنید.')
++            source,sha=self._w1_pdf_source
++            if source!=str(self.viewer.path) or not Path(source).is_file():
++                raise ValueError('فایل PDF بازشده دیگر در دسترس نیست.')
++            with Path(source).open('rb') as source_file:
++                if hashlib.file_digest(source_file,'sha256').hexdigest()!=sha:
++                    raise ValueError('فایل PDF پس از نمایش تغییر کرده؛ سند را دوباره باز کنید.')
++            rev=self.ifc_revision.text().strip()
++            if not rev:raise ValueError('نسخه مدرک PDF باید صریح وارد شود.')
++        elif self.viewer.kind=="ifc":
+             doc=self.viewer.ifc_document
+             if doc is None or not self.viewer.path:
+                 raise ValueError("مدل IFC معتبر باز نیست.")
+@@ -1215,6 +1244,15 @@ class GraphicalTakeoffDialog(QDialog):
+         """Route to existing live workflows; never create a parallel commit."""
+         from app.manual_takeoff import ManualTakeoffDialog
+         from core.takeoff.roof_detail import KINDS
++        def guard(project_id,floor_id,member_id):
++            wizard=self._w1_dialog
++            if wizard is None or wizard.active is None or wizard._context!=context:
++                raise RuntimeError('پیشنهاد دستیار لغو یا جایگزین شده است؛ دوباره پیش‌نمایش کنید.')
++            if self.contextual_w1_context(context.operation)!=context:
++                raise RuntimeError('پروژه، عضو یا نسخه مدرک تغییر کرده است؛ عملیات متوقف شد.')
++            if (project_id!=context.project_id or floor_id!=context.floor_id or
++                    (context.member_id and member_id!=context.member_id)):
++                raise RuntimeError('هویت فرم با عضو و پروژه انتخاب‌شده مطابقت ندارد.')
+         if context.operation=="beam":
+             panel=self.beam_detail_panel
+             if panel is None:
+@@ -1230,6 +1268,7 @@ class GraphicalTakeoffDialog(QDialog):
+             for field,value in ((panel.floor,context.floor_id),(panel.beam,context.member_id or "")):
+                 if field.text().strip() and field.text().strip()!=value:
+                     raise ValueError("ورودی ناتمام فرم تیر با انتخاب فعلی متفاوت است؛ انتقال لغو شد.")
++            panel.begin_w1_session(guard)
+             panel.floor.setText(context.floor_id)
+             panel.beam.setText(context.member_id or "")
+             self.panel_toggle.setChecked(True)
+@@ -1258,13 +1297,15 @@ class GraphicalTakeoffDialog(QDialog):
+             from app.reviewed_structural_manual_editor import open_manual_structural_editor
+             open_manual_structural_editor(self.app_service,parent=self,
+                                           project_id=context.project_id,
+-                                          floor_id=context.floor_id,member_id=context.member_id or "")
++                                          floor_id=context.floor_id,member_id=context.member_id or "",
++                                          context_guard=guard)
+             return True
+         if context.operation=="mep":
+             from app.reviewed_aec_manual_editor import open_reviewed_aec_editor
+             open_reviewed_aec_editor(self.app_service,parent=self,
+                                      project_id=context.project_id,
+-                                     floor_id=context.floor_id,member_id=context.member_id or "")
++                                     floor_id=context.floor_id,member_id=context.member_id or "",
++                                     context_guard=guard)
+             return True  # Real existing AEC/M&E forms own their approvals.
+         dialog=ManualTakeoffDialog(self.app_service,project_id=context.project_id,parent=self)
+         dialog.floor_id.setText(context.floor_id)
+diff --git a/app/reviewed_aec_manual_editor.py b/app/reviewed_aec_manual_editor.py
+index 3816486..6e472ee 100644
+--- a/app/reviewed_aec_manual_editor.py
++++ b/app/reviewed_aec_manual_editor.py
+@@ -31,7 +31,7 @@ _COLUMNS = (
+ )
+ 
+ 
+-def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id="", member_id=""):
++def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id="", member_id="", context_guard=None):
+     """Open a modal real editor for manual reviewed AEC component records."""
+     dialog = QDialog(parent)
+     dialog.setObjectName("ReviewedAECManualEditor")
+@@ -165,6 +165,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
+         )
+         if not pid or not fl or not code or not sid:
+             raise ValueError("پروژه، طبقه، نوع سیستم و شناسه عضو باید مشخص شوند")
++        if context_guard is not None:context_guard(pid,fl,sid)
+         if service.open_project(pid) is None:
+             raise ValueError("پروژه موردنظر در پایگاه داده وجود ندارد")
+         return pid, fl, code, sid
+diff --git a/app/reviewed_structural_manual_editor.py b/app/reviewed_structural_manual_editor.py
+index 6f9b745..63d3a18 100644
+--- a/app/reviewed_structural_manual_editor.py
++++ b/app/reviewed_structural_manual_editor.py
+@@ -49,7 +49,7 @@ def _show_table(grid, keys, rows):
+                 grid.setItem(grid.rowCount()-1, col, QTableWidgetItem(str(item[key])))
+ 
+ 
+-def open_manual_structural_editor(service, *, parent=None, project_id="", floor_id="", member_id=""):
++def open_manual_structural_editor(service, *, parent=None, project_id="", floor_id="", member_id="", context_guard=None):
+     dialog=QDialog(parent)
+     dialog.setWindowTitle("متره دستی تأییدشده سازه بتنی و پی")
+     dialog.setObjectName("ReviewedStructuralManualEditor")
+@@ -169,6 +169,7 @@ def open_manual_structural_editor(service, *, parent=None, project_id="", floor_
+         pid, fl, k, mid=project.text().strip(),floor.text().strip(),kinds.currentData(),ident.text().strip()
+         if not (pid and fl and mid):
+             raise ValueError("پروژه، طبقه و شناسه عضو الزامی‌اند")
++        if context_guard is not None:context_guard(pid,fl,mid)
+         if service.open_project(pid) is None:
+             raise ValueError("پروژه موجود نیست")
+         return pid,fl,k,mid
+diff --git a/tests/test_phase6_p4_contextual_takeoff.py b/tests/test_phase6_p4_contextual_takeoff.py
+index 9ec31e9..45e7c81 100644
+--- a/tests/test_phase6_p4_contextual_takeoff.py
++++ b/tests/test_phase6_p4_contextual_takeoff.py
+@@ -4,10 +4,94 @@ from hashlib import sha256
+ 
+ import pytest
+ 
++from PySide6.QtWidgets import QMessageBox as _NativeMessageBox
++_NATIVE_WARNING = _NativeMessageBox.warning
++
+ from core.platform.application import StructuralProApp
+ from core.ai.contextual_takeoff import ContextualTakeoffGuide, GuidedContext
+ 
+ 
++@pytest.mark.parametrize('family,member,kind',[('column','C1','column'),('mep','S1','mep')])
++def test_w1_modal_does_not_save_if_open_pdf_changes(tmp_path,monkeypatch,family,member,kind):
++    from PySide6.QtWidgets import QApplication,QMessageBox,QComboBox,QPushButton
++    from PySide6.QtCore import QTimer,Qt
++    from PySide6.QtTest import QTest
++    from reportlab.pdfgen.canvas import Canvas
++    from app.graphical_takeoff import GraphicalTakeoffDialog
++    from test_column_stage22 import column
++    qt=QApplication.instance() or QApplication([])
++    monkeypatch.setattr(QMessageBox,'warning',_NATIVE_WARNING)
++    path=tmp_path/'qa-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA plan');pdf.showPage();pdf.save()
++    service=StructuralProApp(tmp_path/'db');service.create_project('نمونه','P')
++    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P',member,'L1',kind)
++    if family=='column':service.save_structural_member_draft('P',column(),expected_revision=0)
++    else:
++        from test_reviewed_aec_priorities_6_9 import sample
++        service.save_aec_system_draft('P',sample('mechanical_ventilation'),expected_revision=0)
++    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P');drawing.open_drawing(str(path))
++    drawing.ifc_revision.setText('R1');drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
++    wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
++    warnings=[];errors=[];digest=service.store.current_digest('P')
++    watcher=QTimer(wizard)
++    def dismiss():
++        message=next((w for w in qt.topLevelWidgets() if isinstance(w,QMessageBox) and w.isVisible()),None)
++        if message is not None:warnings.append(message.text());message.done(0)
++    watcher.timeout.connect(dismiss);watcher.start(40)
++    def inside():
++        modal=qt.activeModalWidget()
++        try:
++            if family=='column':
++                c=modal.column_controls;QTest.mouseClick(c['load'],Qt.MouseButton.LeftButton)
++                save_button=c['save']
++            else:
++                box=next(b for b in modal.findChildren(QComboBox) if b.findData('mechanical_ventilation')>=0)
++                box.setCurrentIndex(box.findData('mechanical_ventilation'))
++                button=lambda label:next(b for b in modal.findChildren(QPushButton) if b.text()==label)
++                QTest.mouseClick(button('بارگذاری پیش‌نویس'),Qt.MouseButton.LeftButton)
++                save_button=button('ذخیره نسخه در SQLite')
++            path.write_bytes(path.read_bytes()+b' changed')
++            QTest.mouseClick(save_button,Qt.MouseButton.LeftButton)
++            assert service.store.current_digest('P')==digest, 'stale W1 drawing allowed a save'
++            assert not service.open_project('P')['boq']
++            assert warnings, 'source change must be clearly reported'
++        except Exception as exc:errors.append(exc)
++        finally:
++            if modal is not None:modal.reject()
++    timer=QTimer(wizard);timer.setSingleShot(True);timer.timeout.connect(inside)
++    try:
++        assert wizard.preview() is not None,wizard.status.text()
++        timer.start(40);wizard.open_form()
++        assert not errors,errors
++    finally:watcher.stop();wizard.close();drawing.close();service.store.close();qt.processEvents()
++
++
++@pytest.mark.parametrize('family,member,kind',[('beam','B1','beam'),('column','C1','column'),('mep','S1','mep')])
++def test_w1_open_pdf_binds_live_sha_revision_and_rejects_changed_bytes(tmp_path,family,member,kind):
++    from PySide6.QtWidgets import QApplication
++    from reportlab.pdfgen.canvas import Canvas
++    from app.graphical_takeoff import GraphicalTakeoffDialog
++    qt=QApplication.instance() or QApplication([])
++    path=tmp_path/'synthetic-plan.pdf';pdf=Canvas(str(path));pdf.drawString(40,700,'Synthetic QA plan - no dimensions');pdf.showPage();pdf.save()
++    service=StructuralProApp(tmp_path/'db');service.create_project('نمونه مصنوعی','P')
++    service.add_project_floor('P','طبقه',level='L1');service.add_project_member('P',member,'L1',kind)
++    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
++    try:
++        drawing.open_drawing(str(path));drawing.ifc_revision.setText('R1')
++        drawing.polygon_floor.setText('L1');drawing.polygon_member.setText(member)
++        context=drawing.contextual_w1_context(family)
++        assert context.source_id==str(path)
++        assert context.source_sha256==sha256(path.read_bytes()).hexdigest()
++        assert context.revision=='R1'
++        wizard=drawing.open_contextual_wizard();wizard.family.setCurrentIndex(wizard.family.findData(family))
++        proposal=wizard.preview();assert proposal is not None,wizard.status.text()
++        digest=service.store.current_digest('P')
++        path.write_bytes(path.read_bytes()+b' changed')
++        assert wizard.open_form() is None
++        assert wizard.active is None and not wizard.open_form_button.isEnabled()
++        assert service.store.current_digest('P')==digest and not service.open_project('P')['boq']
++    finally:drawing.close();service.store.close();qt.processEvents()
++
++
+ def test_w1_beam_real_confirmation_no_then_yes_and_reopen(tmp_path):
+     from PySide6.QtWidgets import QApplication,QMessageBox
+     from PySide6.QtCore import QTimer,Qt
+@@ -681,3 +765,22 @@ def test_specialist_qt_dialog_constructed_without_modal_loop(tmp_path,family,dia
+         assert app.open_project("P")["boq"]==[]
+     finally:
+         guide.close();drawing.close();qt.processEvents();app.store.close()
++
++
++def test_w1_cancel_allows_independent_beam_panel(tmp_path):
++    from PySide6.QtWidgets import QApplication
++    from app.graphical_takeoff import GraphicalTakeoffDialog
++    qt=QApplication.instance() or QApplication([])
++    service=StructuralProApp(tmp_path/'db'); service.create_project('آزمایشی','P')
++    service.add_project_floor('P','طبقه',level='L1'); service.add_project_member('P','B1','L1','beam')
++    drawing=GraphicalTakeoffDialog(app_service=service,project_id='P')
++    drawing.polygon_floor.setText('L1'); drawing.polygon_member.setText('B1')
++    wizard=drawing.open_contextual_wizard(); wizard.family.setCurrentIndex(wizard.family.findData('beam'))
++    try:
++        assert wizard.preview() is not None
++        panel=wizard.open_form(); assert panel is drawing.beam_detail_panel
++        wizard.cancel()
++        drawing.panel_toggle.setChecked(False); drawing.panel_toggle.setChecked(True)
++        assert panel._identity()==('P','L1','B1')
++    finally:
++        wizard.close(); drawing.close(); service.store.close(); qt.processEvents()

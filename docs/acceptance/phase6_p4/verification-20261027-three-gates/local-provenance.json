@@ -1,0 +1,7 @@
+{
+  "linux-workflow.xml": "245 passed before final test-only visible-timer repair; product Beam fix46a6 and workflowcd02003 already present",
+  "linux-workflow.log": "same prior local workflow; native Windows and final timer SHA are measured independently by CI40613469502",
+  "ifc-full-flow-final.xml": "11 current Beam/Column parsed synthetic IFC manual identity scenarios, code575facb",
+  "ifc-full-final.xml": "10 current earlier parsed synthetic IFC Beam live-save scenarios, code575facb",
+  "native-handoff-timer.xml": "3 current original specialist handoff scenarios, code575facb"
+}

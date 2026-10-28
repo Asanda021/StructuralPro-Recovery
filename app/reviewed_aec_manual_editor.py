@@ -31,7 +31,7 @@ _COLUMNS = (
 )
 
 
-def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""):
+def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id="", member_id="", context_guard=None):
     """Open a modal real editor for manual reviewed AEC component records."""
     dialog = QDialog(parent)
     dialog.setObjectName("ReviewedAECManualEditor")
@@ -45,7 +45,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
     kind = QComboBox()
     for code, spec in service.aec_system_types().items():
         kind.addItem(spec["title"], code)
-    system = QLineEdit()
+    system = QLineEdit(str(member_id))
     identity = QLineEdit()
     identity.setPlaceholderText("شناسه یکتای واقعی منبع برداشت؛ بدون عدد پیش‌فرض")
     form.addRow("شناسه پروژه", project)
@@ -165,6 +165,7 @@ def open_reviewed_aec_editor(service, *, parent=None, project_id="", floor_id=""
         )
         if not pid or not fl or not code or not sid:
             raise ValueError("پروژه، طبقه، نوع سیستم و شناسه عضو باید مشخص شوند")
+        if context_guard is not None:context_guard(pid,fl,sid)
         if service.open_project(pid) is None:
             raise ValueError("پروژه موردنظر در پایگاه داده وجود ندارد")
         return pid, fl, code, sid

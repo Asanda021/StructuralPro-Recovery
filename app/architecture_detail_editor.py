@@ -52,7 +52,7 @@ def fill_table(table,columns,records):
  if table.property('fit_slope_headers'):
   table.resizeColumnsToContents();table.resizeRowsToContents()
 
-def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall',specialism=''):
+def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kind='block_wall',specialism='',context_guard=None):
  from core.takeoff.floor_detail import GEOMETRY as FLOOR_GEOMETRY,FIELDS as FLOOR_FIELDS,OPENINGS as FLOOR_OPENINGS,INSULATION_KINDS,INSULATION_OPERATIONS
  from core.takeoff.interior_cover_detail import KINDS as COVER_KINDS,GEOMETRY as COVER_GEOMETRY,TABLES as COVER_TABLES,TITLES as COVER_TITLES,CHOICES as COVER_CHOICES,CONTRACT
  from core.takeoff.skirting_detail import GEOMETRY as SKIRT_GEOMETRY,TABLES as SKIRT_TABLES,TITLES as SKIRT_TITLES,CHOICES as SKIRT_CHOICES,CONTRACT as SKIRT_CONTRACT
@@ -99,7 +99,7 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
  if slope:geometry_keys=SLOPE_GEOMETRY;table_fields=SLOPE_TABLES;state_groups=[]
  if paint_mode:geometry_keys=PAINT_GEOMETRY;table_fields={'openings':CEILING_BOX,'zones':PAINT_ZONE};state_groups=[]
  if ceiling_mode:geometry_keys=CEILING_GEOMETRY;table_fields={'openings':CEILING_BOX};state_groups=[]
- dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
+ dialog=QDialog(parent);dialog.setObjectName('ArchitectureDetailEditor');dialog.setWindowTitle('متره تخصصی شیب‌بندی' if slope else 'متره تخصصی قرنیز' if skirt else 'متره تخصصی '+SPECS[kind].title);dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(1220,840);outer=QVBoxLayout(dialog);c={};dialog.architecture_controls=c;state={'record':None,'data':None,'project':None}
  def line(layout,key,title,value=''):
   w=QLineEdit(str(value));layout.addRow(title,w);c[key]=w;return w
  def buttons(layout,items):
@@ -226,7 +226,12 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   paint(r)
  def unchanged():
   if review_digest(capture())!=review_digest(state['record']['data']):raise ValueError('ابتدا تغییرات پیش‌نویس را ذخیره کنید')
+ def check_context():
+  if context_guard is not None:
+   pid,current_kind,fl,mid=context();context_guard(pid,fl,mid)
+   if current_kind!=kind:raise ValueError('نوع فرم با پیشنهاد دستیار مطابقت ندارد')
  def save():
+  check_context()
   d=capture();d.pop('roof_review',None);paint(service.save_aec_system_draft(context()[0],d,expected_revision=state['record']['revision']))
  def calculate():
   from core.takeoff.architecture_detail import preview
@@ -235,9 +240,10 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   for i,v in enumerate(r['rows']):
    for j,x in enumerate([v['description'],v['quantity'],v['unit'],v['source_ref']]):grid.setItem(i,j,QTableWidgetItem(str(x)))
   tabs.setCurrentIndex(tabs.count()-1);message.setText('محاسبه معتبر؛ نیازمند بازبینی نسخه جاری' if r['ready'] else '؛ '.join(r['blockers']))
- def review():unchanged();paint(service.review_roof_system(*context(),expected_revision=state['record']['revision'],reviewer=c['reviewer'].text(),note=c['note'].text()))
- def commit():unchanged();service.commit_aec_system(*context(),expected_revision=state['record']['revision']);load()
+ def review():check_context();unchanged();paint(service.review_roof_system(*context(),expected_revision=state['record']['revision'],reviewer=c['reviewer'].text(),note=c['note'].text()))
+ def commit():check_context();unchanged();service.commit_aec_system(*context(),expected_revision=state['record']['revision']);load()
  def create_amendment():
+  check_context()
   path=Path(c['evidence_path'].text().strip());a=service.create_roof_amendment(*context(),capture(),expected_revision=state['record']['revision'],created_by=c['creator'].text(),reason=c['reason'].text(),evidence={'evidence_path':str(path),'evidence_sha256':sha256(path.read_bytes()).hexdigest(),'evidence_reference':c['evidence_ref'].text()});c['amend_id'].setText(a['id']);show_amendment(a);message.setText('درخواست اصلاحیه ثبت شد؛ مقادیر پیشین، پیشنهادی و اختلاف در جدول')
  def show_amendment(am):
   from core.takeoff.architecture_detail import preview
@@ -252,12 +258,16 @@ def open_architecture_editor(service,*,parent=None,project_id='',floor_id='',kin
   if not am or am['beam_key']!=_id(kind,floor,sid):raise ValueError('اصلاحیه متعلق به عضو نمایش‌داده‌شده نیست')
   show_amendment(am);return am
  def review_amendment():
+  check_context()
   am=amendment_context();service.review_beam_amendment(context()[0],am['id'],expected_revision=am['revision'],reviewer=c['reviewer'].text(),note=c['note'].text());message.setText('اصلاحیه مستقل بازبینی شد')
  def apply_amendment():
+  check_context()
   am=amendment_context();service.apply_beam_amendment(context()[0],am['id'],expected_revision=am['revision']);load()
- def copy():service.aec_workflow().copy_roof(*context(),new_system_id=c['new_id'].text(),new_source_id=c['new_source'].text(),reason=c['reason'].text());c['id'].setText(c['new_id'].text());load()
+ def copy():check_context();service.aec_workflow().copy_roof(*context(),new_system_id=c['new_id'].text(),new_source_id=c['new_source'].text(),reason=c['reason'].text());c['id'].setText(c['new_id'].text());load()
  def delete():
+  check_context()
   if QMessageBox.question(dialog,'حذف کنترل‌شده','حذف پیش‌نویس با حفظ تاریخچه انجام شود؟')!=QMessageBox.Yes:return
+  check_context()
   service.aec_workflow().delete_roof(*context(),expected_revision=state['record']['revision'],reason=c['reason'].text());state['data']=None;message.setText('پیش‌نویس حذف شد؛ تاریخچه محفوظ است')
  def report(fmt):
   unchanged();path,_=QFileDialog.getSaveFileName(dialog,'مسیر گزارش','','*.'+fmt)

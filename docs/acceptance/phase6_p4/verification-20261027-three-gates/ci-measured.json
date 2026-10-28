@@ -1,0 +1,33 @@
+{
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40616456506",
+  "status": "Success",
+  "code_commit": "04e2e61151013a09f31e92aa943978b5de8bf188",
+  "code_tree": "dc7078d441dd0d9e231ebc0d6f1c005178aee29f",
+  "reports": [
+    {
+      "file": "p6-p4-offscreen.xml",
+      "tests": 257,
+      "passed": 257,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "399d1aa52c4ac73dee3c661330c0f20d349d6ccf7d1dcb8807fd49cc122f21ba",
+      "main_pytest_warning_count": 1
+    },
+    {
+      "file": "p6-p4-windows.xml",
+      "tests": 257,
+      "passed": 257,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "2d849623d32a0ae4861959b66c37731ac832289616e08ec93e68675050b2eea2",
+      "main_pytest_warning_count": 1
+    }
+  ],
+  "artifact_sha256": [
+    "2769d158579bb90f4667fdd39e4002e2427cebb6d9f51dd8a7d44116154e6fd5",
+    "8b7b6094082eb0e59ac5093cca269c062df15114faf5d90bfc39d7ada002a3a2"
+  ],
+  "provenance": "Actual public JUnit notices and artifact metadata. Artifact ZIP not downloaded without authentication; use this run Artifacts for native JUnit."
+}

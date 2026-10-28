@@ -1,0 +1,30 @@
+{
+  "url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40540215367",
+  "status": "Success",
+  "commit": "f84b593a48ab5e20d22a56149fe3687a512c3f0a",
+  "observed_junit_annotations": [
+    {
+      "file": "p6-p4-offscreen.xml",
+      "tests": 135,
+      "passed": 135,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "a607548cb39c8ce6f6d53e59678fa74ec92ab819c5e02d3270114c8b52b46616"
+    },
+    {
+      "file": "p6-p4-windows.xml",
+      "tests": 135,
+      "passed": 135,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "15cba2ca18dd59f37b159db1ef345f96fe6fd7367a025f2243685ac2da2c4f51"
+    }
+  ],
+  "artifact_digests": [
+    "7077831e54c81def6ef0a630e93505255c905e7bf65159047e9e1eeb73cd86e2",
+    "2782e21526e9db71a29b2770627131304ab2c703850502cf1fbb85943990d3c2"
+  ],
+  "raw_logs_and_artifacts_downloaded": false
+}

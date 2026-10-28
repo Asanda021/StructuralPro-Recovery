@@ -1,0 +1,37 @@
+{
+  "code_commit": "eb48e0553fcf1b5afa2a88c322df10f911d8a4ca",
+  "code_tree": "9bb6061774e34a772854256aa58ba73ae64d6e63",
+  "ci": 40472322354,
+  "files": [
+    {
+      "path": "beam-column-regression.xml",
+      "bytes": 18475,
+      "sha256": "260ecb913f6d3891f04c44bfb943362102b7baba4df29b7b85e563829245dbc9"
+    },
+    {
+      "path": "beam-red.log",
+      "bytes": 3211,
+      "sha256": "7d162188bf944acd4dd45640a2ccabbe1c49c507299067bee1e2586c613c17a8"
+    },
+    {
+      "path": "beam-red.xml",
+      "bytes": 3164,
+      "sha256": "fda1948c3d0ac67ff26b1fa2ea6c06c7f4840a13eaf6c7aefac7c83b13685dc8"
+    },
+    {
+      "path": "identity-red.xml",
+      "bytes": 10768,
+      "sha256": "e9ca5d706e8d5f696bda4e8f893586ee74a5653751c0ff419131320b257f6113"
+    },
+    {
+      "path": "linux.xml",
+      "bytes": 16025,
+      "sha256": "be8e355ad590eeafadc88a1f0a0ec4995e67377c4dd41c10bdfb17a1e1ef8b92"
+    },
+    {
+      "path": "windows.xml",
+      "bytes": 16026,
+      "sha256": "4f456c86da6634b12cbfe336a19caa07a805451c88585f6854fa85a22b0c6627"
+    }
+  ]
+}

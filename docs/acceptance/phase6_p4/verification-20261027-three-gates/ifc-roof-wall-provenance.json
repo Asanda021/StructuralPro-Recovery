@@ -1,0 +1,21 @@
+{
+  "code_commit": "04e2e61151013a09f31e92aa943978b5de8bf188",
+  "code_tree": "dc7078d441dd0d9e231ebc0d6f1c005178aee29f",
+  "kind": "test-only coverage; no product behavior change",
+  "targeted_passed": 14,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "warnings": 0,
+  "positive_paths": 2,
+  "additional_negative_cases": 12,
+  "matrix": "IfcSlab\u2192solid_slab and IfcWall\u2192block_wall \u00d7 Save/Review/Commit \u00d7 changed IFC bytes/explicit IFC revision",
+  "assertions": [
+    "specific IFC rejection warning",
+    "unchanged full SQLite snapshot and digest",
+    "no BOQ",
+    "SQLite integrity",
+    "reopened full-state equality"
+  ],
+  "review_commit_setup": "Commit first gets valid Review and explicit existing crossview refresh before invalidating source"
+}

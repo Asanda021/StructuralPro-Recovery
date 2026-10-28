@@ -1,0 +1,33 @@
+{
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40614385899",
+  "code_commit": "e4c0888856be59de1023a94941fa67fcde19d9ed",
+  "code_tree": "adbd72b521c57fc2b683287383a7f5aee244657d",
+  "status": "Success",
+  "reports": [
+    {
+      "file": "p6-p4-offscreen.xml",
+      "tests": 245,
+      "passed": 245,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "fb711747513c2bbb5765289e84ec8f6265ae63072b5a56c423bb2ad7dec34b44",
+      "main_pytest_warning_count": 1
+    },
+    {
+      "file": "p6-p4-windows.xml",
+      "tests": 245,
+      "passed": 245,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "9209c6ec1ef49d1e977705bdb99c1b49128509679138b4c09da5f4746f48059c",
+      "main_pytest_warning_count": 1
+    }
+  ],
+  "artifact_sha256": [
+    "a42f8dd44efcedd36a3b9d1eeef25391714979844344da43ddecad38577b0e25",
+    "b1cd4b3078f06953ee2d57347b204ef0f0af8f3d5283023e30332398d4ccd650"
+  ],
+  "provenance": "Actual public CI notices; downloadable JUnit/screenshots are in this run Artifacts. ZIP not downloaded without authentication."
+}
