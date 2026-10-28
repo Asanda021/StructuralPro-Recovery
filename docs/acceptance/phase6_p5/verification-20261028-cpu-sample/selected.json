@@ -1,0 +1,100 @@
+[
+  {
+    "function": "('~', 0, \"<method 'commit' of 'sqlite3.Connection' objects>\")",
+    "primitive": 32,
+    "calls": 32,
+    "self_s": 0.30848924,
+    "cumulative_s": 0.30848924
+  },
+  {
+    "function": "('~', 0, \"<method 'execute' of 'sqlite3.Connection' objects>\")",
+    "primitive": 871,
+    "calls": 871,
+    "self_s": 0.041660791,
+    "cumulative_s": 0.041660791
+  },
+  {
+    "function": "('~', 0, \"<method 'fetchone' of 'sqlite3.Cursor' objects>\")",
+    "primitive": 704,
+    "calls": 704,
+    "self_s": 0.017695193,
+    "cumulative_s": 0.017695193
+  },
+  {
+    "function": "('~', 0, '<built-in method _sqlite3.connect>')",
+    "primitive": 1,
+    "calls": 1,
+    "self_s": 0.00010048500000000001,
+    "cumulative_s": 0.000116335
+  },
+  {
+    "function": "('~', 0, '<built-in method _sqlite3.register_adapter>')",
+    "primitive": 2,
+    "calls": 2,
+    "self_s": 9.210000000000001e-07,
+    "cumulative_s": 9.210000000000001e-07
+  },
+  {
+    "function": "('~', 0, '<built-in method _sqlite3.register_converter>')",
+    "primitive": 2,
+    "calls": 2,
+    "self_s": 2.424e-06,
+    "cumulative_s": 2.424e-06
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py', 118, 'deepcopy')",
+    "primitive": 11124,
+    "calls": 13980913,
+    "self_s": 8.657766467,
+    "cumulative_s": 17.559980615
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/sqlite3/dbapi2.py', 1, '<module>')",
+    "primitive": 1,
+    "calls": 1,
+    "self_s": 9.575500000000001e-05,
+    "cumulative_s": 0.001136419
+  },
+  {
+    "function": "('/workspace/scratch/5ff2acae0199/p6-profile/app/manual_formula_controls.py', 110, 'refresh')",
+    "primitive": 34,
+    "calls": 34,
+    "self_s": 0.10423932200000001,
+    "cumulative_s": 7.288624006
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/sqlite3/__init__.py', 1, '<module>')",
+    "primitive": 1,
+    "calls": 1,
+    "self_s": 2.8406000000000002e-05,
+    "cumulative_s": 0.0015226460000000001
+  },
+  {
+    "function": "('~', 0, \"<method 'sortItems' of 'PySide6.QtWidgets.QTableWidget' objects>\")",
+    "primitive": 34,
+    "calls": 34,
+    "self_s": 0.005450971000000001,
+    "cumulative_s": 0.15218124300000002
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/sqlite3/dbapi2.py', 57, 'register_adapters_and_converters')",
+    "primitive": 1,
+    "calls": 1,
+    "self_s": 0.000204548,
+    "cumulative_s": 0.00021146900000000002
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/sqlite3/__init__.py', 63, '__getattr__')",
+    "primitive": 1,
+    "calls": 1,
+    "self_s": 8.02e-07,
+    "cumulative_s": 8.02e-07
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/sqlite3/dbapi2.py', 101, '__getattr__')",
+    "primitive": 4,
+    "calls": 4,
+    "self_s": 4.7590000000000005e-06,
+    "cumulative_s": 4.7590000000000005e-06
+  }
+]

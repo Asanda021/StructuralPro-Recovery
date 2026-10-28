@@ -1,0 +1,76 @@
+OFFLINE QA: native connect/send syscalls blocked; inherited by child processes.
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_real_qt_fourteen_operations_five_floors_and_all_reports _________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-1/test_real_qt_fourteen_operatio0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f9c5248e3c0>
+
+    def test_real_qt_fourteen_operations_five_floors_and_all_reports(tmp_path,monkeypatch):
+     global _qt
+     _qt=QApplication.instance() or QApplication([]);s=StructuralProApp(tmp_path/'db');s.create_project('ساختمان پنج‌طبقه کاملاً مصنوعی','P');d=ManualTakeoffDialog(s,'P');d.show();d.manual_tabs.setCurrentIndex(1);_qt.processEvents()
+     for i,(label,family,unit,expression,variables,expected) in enumerate(CASES):
+      d.formula_id.setText('A'+str(i));d._formula_revision=0;d._formula_selected=None;d.formula_source.setText('synthetic:fivefloor:A'+str(i));d.formula_member.setText('عضو-'+label);d.floor_id.setText('طبقه۱');d.formula_family.setCurrentIndex(d.formula_family.findData(family));d.formula_unit.setCurrentIndex(d.formula_unit.findData(unit));d.formula_title.setText(label);d.formula_expression.setText(expression);d.formula_variables.setPlainText('\n'.join(k+'='+v for k,v in variables.items()));d.formula_basis.setText('مصنوعی؛ ابعاد متر، تعداد عدد، وزن واحد کیلوگرم بر متر؛ بدون پرت یا دیتایل حدسی');d.formula_reason.setText('ورود صریح مصنوعی')
+      explicit_units={'طول':'m','عرض':'m','ارتفاع':'m','ضخامت':'m','تعداد':'عدد','وزن':'kg/m','بازشو':'m2'}
+      from core.takeoff.manual_form_fields import canonical
+      for name in variables:
+       combo=d.dynamic_units[canonical(name)];combo.setCurrentIndex(combo.findData(explicit_units[name]))
+      click(d.formula_save_button,_qt);row=s.load_manual_formulas('P')['A'+str(i)];assert Decimal(str(row['quantity']))==Decimal(expected)
+     for floor in ['طبقه۲','طبقه۳','طبقه۴','طبقه۵']:
+      d.formula_search.setText('طبقه۱');_qt.processEvents();d.formula_table.setFocus();QTest.keyClick(d.formula_table,Qt.Key_A,Qt.ControlModifier);_qt.processEvents()
+      assert len(d.formula_table.selectionModel().selectedRows())==14
+      d.formula_copy_floor.setText(floor);d.formula_reason.setText('تکرار صریح اعضای مستقل در طبقه جدید');click(d.formula_floor_copy_button,_qt)
+     assert len(s.load_manual_formulas('P'))==70,d.status.text()
+     d.formula_search.clear();_qt.processEvents()
+     # A failed incomplete edit must preserve every row.
+     select_key(d,'A0',_qt);click(d.formula_load_button,_qt);d.formula_variables.setPlainText('طول=4');d.formula_reason.setText('ورودی ناقص');before=s.load_manual_formulas('P');click(d.formula_save_button,_qt);assert s.load_manual_formulas('P')==before
+     d.formula_reviewer.setText('مهندس مصنوعی');d.formula_review_note.setText('مرجع مستقل هر فرمول و واحد کنترل شد')
+     for key in list(s.load_manual_formulas('P')):
+>     select_key(d,key,_qt);click(d.formula_review_button,_qt);assert s.load_manual_formulas('P')[key]['status']=='reviewed',d.status.text();select_key(d,key,_qt);click(d.formula_commit_button,_qt);assert s.load_manual_formulas('P')[key]['status']=='committed',d.status.text()
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     AssertionError: فرمول ثبت نشد: متغیر تعریف نشده: عرض
+E     assert 'draft' == 'reviewed'
+E       
+E       - reviewed
+E       + draft
+
+tests/test_manual_formula_fivefloor_closure.py:55: AssertionError
+----------------------------- Captured stderr call -----------------------------
+This plugin does not support propagateSizeHints()
+Traceback (most recent call last):
+  File "/workspace/scratch/5ff2acae0199/p6-profile/app/manual_formula_controls.py", line 98, in run
+    try:fn();refresh()
+        ^^^^
+  File "/workspace/scratch/5ff2acae0199/p6-profile/app/manual_formula_controls.py", line 175, in review
+    d.service.review_manual_formula(d.project_id.text().strip(),key,expected_revision=row['revision'],reviewer=d.formula_reviewer.text(),note=d.formula_review_note.text())
+  File "/workspace/scratch/5ff2acae0199/p6-profile/core/platform/application.py", line 894, in review_manual_formula
+    return review(self,project_id,row_id,expected_revision=expected_revision,reviewer=reviewer,note=note)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py", line 242, in review
+    reviewer=text(reviewer,'بازبین');note=text(note,'یادداشت کنترل فرمول و واحد');project,digest=read(service,pid);reg=verified(project);row=reg[key];revision(expected_revision,row['revision'])
+                                                                                                                       ^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py", line 98, in verified
+    if clean(row['data'])!=row['data'] or row.get('numeric_policy')!=POLICY:raise ValueError('قرارداد یا سیاست فرمول ذخیره‌شده معتبر نیست')
+       ^^^^^^^^^^^^^^^^^^
+  File "/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py", line 37, in clean
+    if d['family'] not in {r['code'] for r in catalog()}:raise ValueError('خانواده در کتابخانه مرجع نیست')
+                                              ^^^^^^^^^
+  File "/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py", line 22, in catalog
+    return deepcopy(rows)
+           ^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py", line 136, in deepcopy
+    y = copier(x, memo)
+        ^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py", line 196, in _deepcopy_list
+    append(deepcopy(a, memo))
+           ^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py", line 136, in deepcopy
+    y = copier(x, memo)
+        ^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py", line 221, in _deepcopy_dict
+    y[deepcopy(key, memo)] = deepcopy(value, memo)
+    ~^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+=========================== short test summary info ============================
+FAILED tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports
+1 failed in 25.14s

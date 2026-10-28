@@ -1,0 +1,7 @@
+## نمونه واقعی CPU، ۲۸ اکتبر ۲۰۲۶
+
+PARTIAL. Source جاری a26ba57324e33391a9cf5d0f214458a41749d8b6؛ فایل‌های هدف نسبت به cd855297af657a382c76909eabad7523688148a2 بدون تفاوت. Linux/Python3.12/PySide6 6.10.2/SQLite3.53.1، pytest9.2.0، Qt offscreen، محافظ شبکه run_offline_tests.py؛ fixture موجود مصنوعی آزمون بدون تغییر. اجرای کامل cProfile در سقف محلی ۱۸۰ثانیه exit124 و فاقد JUnit نهایی شد. نمونه دوم عمداً پس از۲۵ثانیه با SIGINT متوقف شد و partial.prof تولید کرد؛ PASS نیست. selected.json و top5.json داده واقعی همین نمونه‌اند، نه کل سناریو؛ زمان‌های تجمعی تو در تو هستند و جمع‌پذیر نیستند.
+
+Deepcopy:۱۳۹۸۰۹۱۳فراخوانی،۱۱۱۲۴primitive،self۸٫۶۵۸s،cum۱۷٫۵۶۰s؛ refresh۳۴بار/cum۷٫۲۸۹s؛ sortItems۳۴بار/cum۰٫۱۵۲s؛ SQLite commit۳۲بار/۰٫۳۰۸s وexecute۸۷۱بار/۰٫۰۴۲s. verified۱۱۹بار/۱۸٫۹۶۷s؛catalog۵۱۳۰بار/۱۷٫۲۸۳s. این نمونه هزینه بازاعتبارسنجی/catalog/deepcopy را نشان می‌دهد و علت SIGSEGV را اثبات نمی‌کند. نمونه RSS حدود۱۰۹MB بود، نه Peak Memory. سربار cProfile زیاد است.
+
+Baseline بدون profiler،زمان هر۱۴عملیات،tracemalloc،سه تکرار،sorting وregister مستقل وWindows جدید NOT EXECUTED. هیچ بهینه‌سازی محصول انجام نشد. SIGSEGV NOT REPRODUCED؛ ROOT CAUSE NOT PROVEN. لاگ‌هایGDB40756726986 بررسی شد:focus دوبار۲۲test وprefix۲۸۷۹test موفق،native_signal_captured=false؛ هشدارFaulthandlerیک‌دقیقه‌ای باپایانموفق معادلCrashنیست. نخستین اقدام:baselineبدونprofilerوپروفایل مرحله‌ای باcheckpoint دوره‌ای سپس بررسی تکرارcatalog بدون تغییر قرارداد اعتبارسنجی؛ فقط پس ازRED/Oracle واندازه‌گیری قبل/بعد اصلاح شود. بدونMerge/main/ForcePush/Release/EXE؛۸فازو۸۵٪ثابت.

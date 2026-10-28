@@ -1,0 +1,32 @@
+[
+  {
+    "function": "('/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py', 94, 'verified')",
+    "calls": 119,
+    "self_s": 0.027746359,
+    "cumulative_s": 18.967358007
+  },
+  {
+    "function": "('/workspace/scratch/5ff2acae0199/p6-profile/app/manual_formula_controls.py', 97, 'run')",
+    "calls": 36,
+    "self_s": 0.002178114,
+    "cumulative_s": 18.309242428
+  },
+  {
+    "function": "('/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py', 31, 'clean')",
+    "calls": 5068,
+    "self_s": 0.270926846,
+    "cumulative_s": 17.765851724
+  },
+  {
+    "function": "('/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/copy.py', 118, 'deepcopy')",
+    "calls": 13980913,
+    "self_s": 8.657766467,
+    "cumulative_s": 17.559980615
+  },
+  {
+    "function": "('/workspace/scratch/5ff2acae0199/p6-profile/core/takeoff/manual_formula_register.py', 18, 'catalog')",
+    "calls": 5130,
+    "self_s": 0.104753258,
+    "cumulative_s": 17.282537074
+  }
+]
