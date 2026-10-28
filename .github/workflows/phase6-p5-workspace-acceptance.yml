@@ -65,6 +65,9 @@ jobs:
       PYTHONUTF8: '1'
       STRUCTURALPRO_E5_SCREENSHOTS: e5-screenshots
     steps:
+      - name: Preserve exact quarantined bytes on Windows checkout
+        if: matrix.os == 'windows-2022'
+        run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           persist-credentials: false
@@ -91,12 +94,14 @@ jobs:
           PHASE6_PYTEST_LOG_PATH: p6-qa-security-${{ matrix.qpa }}.log
         run: python scripts/run_phase6_pytest.py 180 -q tests/test_recovery_quarantined_workflow_qa.py --junitxml=p6-qa-security-${{ matrix.qpa }}.xml
       - name: Verify Qt workspace at 150 percent scale
+        if: always()
         env:
           QT_SCALE_FACTOR: '1.5'
           PHASE6_PYTEST_LOG_PATH: p6-p5-dpi150-${{ matrix.qpa }}.log
           STRUCTURALPRO_E5_SCREENSHOTS: e5-screenshots-scale150
         run: python scripts/run_phase6_pytest.py 180 -q tests/test_phase6_p5_e5_docks.py --junitxml=p6-p5-dpi150-${{ matrix.qpa }}.xml
       - name: Verify scaled Qt workspace
+        if: always()
         env:
           QT_SCALE_FACTOR: '2'
           PHASE6_PYTEST_LOG_PATH: p6-p5-dpi-${{ matrix.qpa }}.log
