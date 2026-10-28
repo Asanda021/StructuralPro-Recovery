@@ -77,3 +77,10 @@ Run40668037298 بعد از اصلاح watchdog جایگزین و Cancel شد؛ �
 ## شاهد جزئی CI نهایی fcf847
 
 Linux پذیرش40669898079:۴۷۴PASS،صفرFAIL/ERROR/SKIP،۱warningfitz؛ تاریخی۱۳۰،security۲۶،DPI۱۵۰و۲۰۰ هرکدام۸PASS. Windows همان run همچنان درحال‌اجراست؛ شمار آن حدس زده نشده است. [JSON شاهد جزئی](acceptance-fcf-partial.json).
+
+## پیوند مستقیم artifactهای اجراهای ثبت‌شده
+
+- پذیرش نهایی fcf847،[JUnit و شواهد Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079/artifacts/12807568509)،[JUnit و شواهد Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079/artifacts/12808760306).
+- اجرای گسترده fcf847،[Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852/artifacts/12808737175)،[Windows شکست‌خورده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852/artifacts/12808327783). Windows JUnit تولید نکرد؛ artifact شامل لاگ/JSON آن اجراست.
+
+این شناسه‌ها از metadata عمومی همان صفحات واقعی آمده‌اند؛ دانلود ZIP از این محیط به دلیل Forbidden GitHub API انجام نشد.
