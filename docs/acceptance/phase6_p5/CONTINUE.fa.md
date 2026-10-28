@@ -1,3 +1,9 @@
+## آخرین SHA: مسیر قابل‌حمل Qt در Windows
+
+CIهدفمند40675825529 روی5daf:۱۶PASS و۱FAIL فقط در آزمون جدید به‌خاطر نمایش `/` در Qt در برابر `\` در Windows؛ مقایسه Path با حفظ هویت دقیق فایل اصلاح شد. کد جدید3d1ac2d7a6be62b09e2daf17472632e022efcf06 و workflow cbe1d9f؛ CIهای [هدفمندWindows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303)، [پذیرش](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193299)، [گسترده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193128) جاری؛ JUnit و report کامل Windows هنوز PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## انتخابگر سقف و آزمون‌های نهایی — ۲۸ اکتبر ۲۰۲۶
 
 Windows هدفمند40675283022 پس از تغییر QFileDialog محصول رویcce78eb:۱۶PASS/۰FAIL/ERROR/SKIP؛ [artifact](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022/artifacts/12810615998). RED جدید ثابت کرد تایمر انتخاب فایل قبل از نمایش QFileDialog می‌تواند فرم والد را رد کند؛ test-only گارد هویت/والد/Open و انتظار محدود روی5daf8fb افزوده شد و بسته محلی۲۹PASS است. [CIهدفمند40675825529](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529)، [پذیرش40675825474](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825474)، [گسترده40675825520](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825520) جاری؛ وضعیت کل PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

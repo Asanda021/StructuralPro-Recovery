@@ -1,3 +1,11 @@
+## اصلاح قابل‌حمل هویت مسیر Windows
+
+CIهدفمند [40675825529](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529) روی 5daf: **۱۶PASS،۱FAIL،۰ERROR/SKIP**؛ همه۱۶تست واقعی پیشین از جمله اصلاحیه هندسی گذشتند. FAIL تنها در تست جدید ما بود: Qt مسیر C:/... و pathlib همان فایل C:\... را نمایش می‌دادند؛ مقایسه خام رشته‌ای نادرست بود. [متن واقعی](roof-native-path-failure.txt) و [metadata/JUnit hash](roof-native-path-failure.json) حفظ شده‌اند. مقایسه به `len(selected)==1 and Path(selected[0])==document` تغییر کرد؛ همچنان دقیقاً همان فایل را می‌طلبد، نه رشته‌نمایش خاص سیستم. بسته مشترک local۲۹PASS/۱warning روی کدجدید.
+
+کد/تست نهایی `3d1ac2d7a6be62b09e2daf17472632e022efcf06`،workflow `cbe1d9f`؛ [CIهدفمندWindows40676193303](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303)، [CIپذیرش40676193299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193299)، [CIگسترده40676193128](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193128) روی همان کد جاری‌اند. اجرای local5daf برای کار روی SHAجدید باSIGTERM متعلق به خودمان قطع و log/JSON ناقص آن محفوظ شد؛ full exact3d1 از worktree تمیز جاری است. هیچ شمار قبلی به اجرای جدید تعمیم داده نمی‌شود.
+
+---
+
 ## Qt-owned QFileDialog در Windows و گارد انتخاب فایل
 
 پس از تغییر حداقلی محصول cce78eb، [CIهدفمندWindows40675283022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022) روی همان دو فایل سقف/اصلاحیه **۱۶PASS،۰FAIL/ERROR/SKIP**؛ [artifact/JUnitواقعی](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675283022/artifacts/12810615998)، [metadata](roof-native-cce-success.json). این نتیجه بازآزمایی مستقیم خطای fileNameEdit قبلی است، نه اجرای کل broad.

@@ -1,0 +1,16 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529",
+  "tested_source": "5daf8fbc1c71446afb806d665feb9ab6959367df",
+  "report": {
+    "file": "roof-native.xml",
+    "tests": 17,
+    "passed": 16,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 0,
+    "sha256": "1065f839cdde0b9e37e38e3a0afa58ccbbe9751f871d8016e90e1958624b4f2a",
+    "pytest_warning_count": null
+  },
+  "artifact_id": "12810731676",
+  "failure": "Qt selected C:/... while pathlib formatted C:\\...; same file, representation differs"
+}
