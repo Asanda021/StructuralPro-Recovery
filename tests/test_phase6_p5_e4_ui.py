@@ -111,7 +111,8 @@ def test_search_does_not_read_other_project(tmp_path):
     finally:
         dialog.close();app.store.close();qt.processEvents()
 
-def test_boq_navigation_selects_exact_stored_row_without_financial_recalc(tmp_path):
+@pytest.mark.parametrize("row_selection", [True, False])
+def test_boq_navigation_selects_exact_stored_row_without_financial_recalc(tmp_path, row_selection):
     from PySide6.QtWidgets import QApplication,QTableWidget
     from app.project_search_panel import display_verified_boq_row
     qt=QApplication.instance() or QApplication([])
@@ -121,8 +122,10 @@ def test_boq_navigation_selects_exact_stored_row_without_financial_recalc(tmp_pa
         {"row_id":"B2","description":"سقف","quantity":"2.50","unit":"m3"},
     ]}
     before=repr(project)
+    if not row_selection: table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectColumns)
     assert display_verified_boq_row(project,"B2",table)==1
     assert table.currentRow()==1
+    assert {index.row() for index in table.selectionModel().selectedIndexes()}=={1}
     assert table.item(1,1).text()=="سقف"
     assert table.item(1,2).text()=="2.50"
     assert table.item(1,5).text()=="بدون مبلغ مصوب"

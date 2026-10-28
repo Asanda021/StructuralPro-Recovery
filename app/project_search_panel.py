@@ -35,7 +35,9 @@ def display_verified_boq_row(project, row_id, table):
     for i,values in enumerate(prepared):
         for j,value in enumerate(values):
             table.setItem(i,j,QTableWidgetItem(str(value)))
-    table.selectRow(selected[0])
+    from PySide6.QtCore import QItemSelectionModel
+    table.setCurrentCell(selected[0],0,
+        QItemSelectionModel.SelectionFlag.ClearAndSelect | QItemSelectionModel.SelectionFlag.Rows)
     table.scrollToItem(table.item(selected[0],0))
     return selected[0]
 
