@@ -1,3 +1,9 @@
+## بازآزمایی پنج‌طبقه
+
+آزمون پنج‌طبقه که broadمحلیa41 را با SIGSEGV قطع کرد، به‌تنهایی ۱PASS/۷۵٫۹۶ثانیه شد؛ SIGSEGV broad همچنان ثبت و علت نامشخص است. CI پذیرش/گسترده a41 جاری‌اند؛ وضعیت کل PARTIAL.
+
+---
+
 ## توقف Linux محلی روی a41cd18
 
 broadمحلی روی آزمون پنج‌طبقه manual_formula در۳۴٪ با SIGSEGV / exit -11،بدونtimeout و بدونJUnit متوقف شد. علت معلوم نیست؛ بازآزمایی مستقل و CI40672896825/40672896854 جاری‌اند. این اجرا PASS نیست. [log/JSON](verification-20261028-windows-qt-timeout/REPORT.fa.md).

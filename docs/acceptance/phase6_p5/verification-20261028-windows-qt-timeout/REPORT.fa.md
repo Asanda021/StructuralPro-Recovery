@@ -1,3 +1,9 @@
+## بازآزمایی مستقل پنج‌طبقه
+
+آزمون `test_real_qt_fourteen_operations_five_floors_and_all_reports` روی همان worktree تمیز a41cd18 به‌تنهایی با faulthandler۶۰ثانیه **۱PASS در۷۵٫۹۶ثانیه** شد؛ [JUnit](qtfix-fivefloor-retry.xml) و log محفوظ‌اند. این بازآزمایی خطای SIGSEGV در broad محلی را رفع‌شده یا بی‌اثر نمی‌کند و علت آن را اثبات نمی‌کند. CI گسترده مستقل همان SHA در جریان است.
+
+---
+
 ## رگرسیون محلی سقف: توقف native و نتیجه ناتمام
 
 اجرای گسترده محلی worktree تمیز a41cd18 پیش از رسیدن به آزمون سقف، در `tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports` در حدود۳۴٪ با **pytest_exit_code=-11 (SIGSEGV)،timed_out=false و JUnit مفقود** پایان یافت. faulthandler پس از۶۰ثانیه فقط ابتدای stack را قبل از توقف نوشت؛ از آن علت crash معلوم نیست. log/JSON و شمارش ردیف‌های progress در این پوشه نگه داشته شده‌اند؛ این‌ها نتیجه PASS/FAIL نهایی نیستند. همان سناریو در full منبع قبلی fcf847 PASS شده بود. بازآزمایی مستقل در حال انجام است؛ CI هر دو سیستم جدید نیز جداگانه در حال اجراست.
