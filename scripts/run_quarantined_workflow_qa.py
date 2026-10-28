@@ -236,7 +236,27 @@ def main() -> int:
     parser.add_argument("--mode", choices=("current", "historical"), default="historical")
     parser.add_argument("--timeout", type=float, default=300, help="Maximum pytest wall time in seconds")
     args = parser.parse_args()
-    return run(args.root,args.json,args.log,args.mode,args.timeout,args.junit)
+    try:
+        return run(args.root,args.json,args.log,args.mode,args.timeout,args.junit)
+    except Exception as exc:
+        # Setup errors happen before pytest/JUnit; keep them visible without
+        # weakening policy, inventing test results or retaining stale XML.
+        import traceback
+        details=traceback.format_exc()
+        if args.junit is not None:args.junit.unlink(missing_ok=True)
+        if args.log is not None:
+            args.log.parent.mkdir(parents=True,exist_ok=True)
+            args.log.write_text(details,encoding='utf-8')
+        if args.json is not None:
+            args.json.parent.mkdir(parents=True,exist_ok=True)
+            args.json.write_text(json.dumps({'execution':args.mode,'source_checkout':str(args.root),
+                'pytest_exit_code':None,'setup_error':str(exc),'overall_green':False,
+                'junit_report_written':False,'github_actions_used':False,
+                'build_or_release_performed':False},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+        annotation=str(exc)[:1600].replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+        print('::error title=Quarantined QA setup::'+annotation,flush=True)
+        print(details,file=sys.stderr)
+        return 1
 
 if __name__ == "__main__":
     sys.exit(main())

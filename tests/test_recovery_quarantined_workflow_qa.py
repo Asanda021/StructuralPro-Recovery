@@ -283,3 +283,36 @@ def test_official_runner_streams_retained_log_before_test_completion(tmp_path):
         assert future.result(timeout=10) == 0
     assert observed_before_completion, 'Actual child output must be retained while the test is still running'
     assert 'LIVE_QA_STDERR_MARKER' in log.read_text()
+
+
+def test_cli_setup_failure_is_visible_and_never_a_green_report(tmp_path):
+    import subprocess, sys, json
+    r=fixture_repo(tmp_path)
+    (r/'recovery/workflow_sha256.json').write_text('{}')
+    report=tmp_path/'status.json'; log=tmp_path/'trace.log'; junit=tmp_path/'actual.xml'
+    junit.write_text('stale, not this execution')
+    proc=subprocess.run([sys.executable,str(SCRIPT),'--root',str(r),'--json',str(report),
+        '--log',str(log),'--junit',str(junit)],capture_output=True,text=True,timeout=30)
+    assert proc.returncode==1
+    assert '::error title=Quarantined QA setup::' in proc.stdout
+    result=json.loads(report.read_text())
+    assert result['overall_green'] is False and result['pytest_exit_code'] is None
+    assert 'integrity mismatch' in result['setup_error']
+    assert 'Traceback' in log.read_text() and not junit.exists()
+    assert not (r/'.github/workflows').exists()
+
+
+def test_exact_git_checkout_retains_manifest_bytes_despite_crlf_defaults(tmp_path):
+    import subprocess, json, hashlib, os
+    r=fixture_repo(tmp_path)
+    for f in (r/'recovery/disabled_workflows').iterdir():f.write_bytes(b'name: archived\n')
+    (r/'recovery/workflow_sha256.json').write_text(json.dumps({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (r/'recovery/disabled_workflows').iterdir()}))
+    def git(*args):subprocess.run(['git','-C',str(r),*args],check=True,capture_output=True)
+    git('init');git('config','core.autocrlf','false');git('add','recovery')
+    crlf=tmp_path/'rewritten'; exact=tmp_path/'exact';crlf.mkdir();exact.mkdir()
+    git('-c','core.autocrlf=true','-c','core.eol=crlf','checkout-index','--all','--prefix='+str(crlf)+os.sep)
+    assert next((crlf/'recovery/disabled_workflows').iterdir()).read_bytes()==b'name: archived\r\n'
+    with pytest.raises(RuntimeError,match='integrity mismatch'):module.current_policy(crlf)
+    git('-c','core.autocrlf=false','checkout-index','--all','--prefix='+str(exact)+os.sep)
+    assert module.current_policy(exact)=={'active_workflows':0,'verified_quarantined_workflows':193}
+    assert module.current_policy(r)['verified_quarantined_workflows']==193
