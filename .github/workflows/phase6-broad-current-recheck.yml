@@ -24,14 +24,14 @@ jobs:
       - name: Checkout the exact newly verified E4 code and tests
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 76969a29d29588b4b0a1b1cbf43a81a319958fdf
+          ref: 6990c9259eb23de25cad96a641f57413f6306609
           persist-credentials: false
       - name: Assert source SHA before broad QA
         shell: bash
         run: |
           actual="$(git rev-parse HEAD)"
-          printf 'Requested source SHA: %s\nActual source SHA: %s\n' '76969a29d29588b4b0a1b1cbf43a81a319958fdf' "$actual"
-          test "$actual" = '76969a29d29588b4b0a1b1cbf43a81a319958fdf'
+          printf 'Requested source SHA: %s\nActual source SHA: %s\n' '6990c9259eb23de25cad96a641f57413f6306609' "$actual"
+          test "$actual" = '6990c9259eb23de25cad96a641f57413f6306609'
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
@@ -48,12 +48,12 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"76969a29d29588b4b0a1b1cbf43a81a319958fdf","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"6990c9259eb23de25cad96a641f57413f6306609","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
       - name: Preserve original current-suite logs, JSON and JUnit
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p6-broad-current-linux-76969a29d295
+          name: p6-broad-current-linux-6990c9259eb2
           path: |
             phase6-broad-current.json
             phase6-broad-current.log
@@ -75,14 +75,14 @@ jobs:
       - name: Checkout exact tested E4 source and tests
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 76969a29d29588b4b0a1b1cbf43a81a319958fdf
+          ref: 6990c9259eb23de25cad96a641f57413f6306609
           persist-credentials: false
       - name: Assert pinned current source SHA before broad Windows QA
         shell: bash
         run: |
           actual="$(git rev-parse HEAD)"
-          printf 'Requested source SHA: %s\\nActual source SHA: %s\\n' '76969a29d29588b4b0a1b1cbf43a81a319958fdf' "$actual"
-          test "$actual" = '76969a29d29588b4b0a1b1cbf43a81a319958fdf'
+          printf 'Requested source SHA: %s\\nActual source SHA: %s\\n' '6990c9259eb23de25cad96a641f57413f6306609' "$actual"
+          test "$actual" = '6990c9259eb23de25cad96a641f57413f6306609'
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
@@ -95,12 +95,12 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"76969a29d29588b4b0a1b1cbf43a81a319958fdf","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print(json.dumps({"source_sha":"6990c9259eb23de25cad96a641f57413f6306609","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
       - name: Preserve original native Windows JUnit logs and JSON
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p6-broad-current-windows-76969a29d295
+          name: p6-broad-current-windows-6990c9259eb2
           path: |
             phase6-broad-current-windows.json
             phase6-broad-current-windows.log
