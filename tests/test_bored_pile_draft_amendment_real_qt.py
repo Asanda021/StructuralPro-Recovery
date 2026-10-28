@@ -15,7 +15,7 @@ from test_bored_pile_real_application_controller import _setup, _document, _owne
 
 
 @contextmanager
-def _expected_modal(qt, object_name, title, button, *, timeout=4.0):
+def _expected_modal(qt, object_name, title, button, *, parent=None, timeout=4.0):
     """Click the specific live Qt modal, or close it and fail within a bound."""
     timer = QTimer()
     timer.setInterval(20)
@@ -24,7 +24,8 @@ def _expected_modal(qt, object_name, title, button, *, timeout=4.0):
     def poll():
         box = qt.activeModalWidget()
         if isinstance(box, QMessageBox):
-            if box.objectName() == object_name and box.windowTitle() == title:
+            if (box.objectName() == object_name and box.windowTitle() == title
+                    and (parent is None or box.parentWidget() is parent)):
                 target = box.button(button)
                 if target is not None and target.isVisible() and target.isEnabled():
                     state['clicked'] = True
@@ -112,18 +113,18 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
                 assert app.open_project('P')['boq'] == app.open_project('P')['takeoffs'] == []
                 # A repeated file and an empty reason must fail without another version.
                 c['amendment_reason'].setText('تلاش تکراری')
-                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok):
+                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok, parent=pile_dialog):
                     click('amend')
                 assert c['controller'].revision == 2 and c['message'].text().startswith('خطا:')
                 c['amendment_reason'].clear()
-                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok):
+                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok, parent=pile_dialog):
                     click('amend')
                 assert c['controller'].revision == 2 and c['message'].text().startswith('خطا:')
             except Exception as exc:
                 errors.append(repr(exc))
             finally:
                 try:
-                    with _expected_modal(qt, '', 'تغییرات ذخیره‌نشده', QMessageBox.Yes):
+                    with _expected_modal(qt, '', 'تغییرات ذخیره‌نشده', QMessageBox.Yes, parent=pile_dialog):
                         pile_dialog.reject()
                 except Exception as exc:
                     errors.append(repr(exc))
