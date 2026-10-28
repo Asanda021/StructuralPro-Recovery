@@ -1,5 +1,9 @@
 # نقطه ادامه معتبر — ۲۸ اکتبر ۲۰۲۶
 
+## پذیرش E4: مسیر سند عمومی، ۲۸ اکتبر
+
+روی PR #34 اصلاح اجرایی `caadb784dd199bdeceb6d3b2ab5b180bb2a8bba1` با محدودسازی مسیر سند عمومی به PDF/DXF و رد صریح DWG/IFC فاقد قرارداد مستقل ثبت شد. [CI موفق #40652984455](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40652984455) پس از اصلاح بودجه زمانی روی `2eb95e88f034558674591b26b7c35ccd4647ce03` برای **Linux و Windows هرکدام ۴۶۶ PASS اصلی، ۱۳۰ تاریخی، ۲۶ امنیتی و ۸+۸ DPI؛ صفر FAIL/ERROR/SKIP** ثبت کرد؛ یک هشدار fitz در بسته اصلی هر سیستم. [CI قبلی #40651721016](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40651721016) در Windows در سقف ۴۸۰ثانیه JUnit اصلی نداشت و FAIL ماند، نه PASS. [گزارش E4](verification-20261028-e4-safe-routing/REPORT.fa.md). E4 در کل **PARTIAL** است و DWG/IFC specialist بدون قرارداد، مالکیت مشترک E6، A2 و UAT فیزیکی همچنان مسدودند. تست گسترده ۸۳۷۵تایی روی کد قدیمی `7cbeac9b` بوده و نباید به SHA جدید نسبت داده شود. هشت فاز، ۸۵٪ و وضعیت Draft/Unmerged ثابت.
+
 ## وضعیت جدید رگرسیون گسترده (تأییدشده در GitHub Actions #40648107800)
 
 **مبنای جاری بر گزارش‌های قدیمی پایین ارجح است:** کد `7cbeac9b245586bf83922bc4dbf2783de56214ad` روی Linux با `۸۳۷۰ PASS / ۰ FAIL / ۰ ERROR / ۵ SKIP` از `۸۳۷۵` تست جاری، `exit=0` و `timed_out=false` پذیرفته شد. دو شکست baseline تاریخ ۲۷ اکتبر (Shell و فونت) در همین چت اصلاح و در CI اختصاصی Linux/Windows نیز تأیید شدند. **پنج آزمون SKIP مختص Windows در CI #40651198197 به‌صورت هدفمند هر پنج PASS شدند؛** رگرسیون کامل Windows هنوز اجرا نشده؛ نتیجه قبلی `۸۳۵۱ PASS / ۲ FAIL` فقط شاهد snapshot قدیمی است. مرجع جدید: [گزارش رگرسیون ۲۸ اکتبر](verification-20261028-broad-recheck/RESULT.fa.md) و [CI موفق](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40648107800). مستندات پس از SHA آزموده‌شده تغییر می‌کنند و نباید با اجرای مجدد کد اشتباه شوند. سایر گیت‌های تخصصی، A2 و UAT انسانی همچنان `PARTIAL/BLOCKED`، وضعیت ۸۵٪ و ۸ فاز ثابت.
