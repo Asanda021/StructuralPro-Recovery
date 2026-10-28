@@ -1,8 +1,9 @@
 """Real Qt dialogs and clicks, real vector PDF and SQLite; synthetic design."""
 import json
 from pathlib import Path
+from time import monotonic
 import pytest
-from PySide6.QtWidgets import QApplication,QMessageBox,QInputDialog,QFileDialog,QTabWidget
+from PySide6.QtWidgets import QApplication,QMessageBox,QInputDialog,QFileDialog,QTabWidget,QDialog
 from PySide6.QtCore import Qt,QTimer,QRectF
 from PySide6.QtTest import QTest
 from app.graphical_takeoff import GraphicalTakeoffDialog
@@ -15,6 +16,25 @@ def qt():
     global _qt
     _qt=QApplication.instance() or QApplication([])
     return _qt
+
+
+def _await_roof_modal(qt, callback, errors, *, owner=None, timeout=20.0):
+    timer=QTimer(qt);timer.setInterval(20)
+    state={'started':False};deadline=monotonic()+timeout
+    def poll():
+        active=qt.activeModalWidget()
+        if not state['started'] and isinstance(active,QDialog) and active.objectName()=='RoofDetailEditor':
+            state['started']=True
+            try:callback(active)
+            except Exception as exc:
+                errors.append(repr(exc));QDialog.done(active,QDialog.Rejected)
+        if monotonic()>=deadline:
+            errors.append('Timed out waiting for roof modal to finish')
+            timer.stop()
+            if isinstance(active,QDialog):QDialog.done(active,QDialog.Rejected)
+            elif isinstance(owner,QDialog):QDialog.done(owner,QDialog.Rejected)
+    timer.timeout.connect(poll);timer.start()
+    return timer,state
 
 @pytest.mark.parametrize('kind',KINDS)
 def test_actual_pdf_region_to_specialist_boq(qt,tmp_path,monkeypatch,kind):
@@ -36,8 +56,7 @@ def test_actual_pdf_region_to_specialist_boq(qt,tmp_path,monkeypatch,kind):
             for i in range(tabs.count()):
                 if tabs.widget(i).isAncestorOf(b):tabs.setCurrentIndex(i);break
         qt.processEvents();QTest.mouseClick(b,Qt.LeftButton);qt.processEvents()
-    def journey():
-        roof=qt.activeModalWidget()
+    def journey(roof):
         try:
             assert roof.objectName()=='RoofDetailEditor' and roof.layoutDirection()==Qt.RightToLeft
             c=roof.roof_controls;c['floor'].setText('L1');c['id'].setText('S1');click(c,'new')
@@ -55,7 +74,10 @@ def test_actual_pdf_region_to_specialist_boq(qt,tmp_path,monkeypatch,kind):
         finally:roof.reject()
     try:
         assert hasattr(dlg,'region_to_roof'), 'missing specialist button'
-        QTimer.singleShot(40,journey);QTest.mouseClick(dlg.region_to_roof,Qt.LeftButton)
+        timer,state=_await_roof_modal(qt,journey,errors,owner=dlg)
+        try:QTest.mouseClick(dlg.region_to_roof,Qt.LeftButton)
+        finally:timer.stop()
+        assert state['started'], 'roof modal never became active'
         dlg.grab().save(str(tmp_path/(kind+'-pdf.png')))
         assert not errors and not warnings,(errors,warnings)
     finally:dlg.close();app.store.close()
@@ -130,3 +152,35 @@ def test_oversized_pdf_renders_lower_resolution_in_same_scene_coordinates(qt,tmp
         assert d.session.calibrations=={} # display resampling never guesses engineering scale
         d.grab().save(str(tmp_path/'large-sheet.png'))
     finally:d.close()
+
+
+def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
+    from PySide6.QtCore import QEventLoop
+    from PySide6.QtWidgets import QDialog
+    seen=[]
+    roof=QDialog();roof.setObjectName('RoofDetailEditor')
+    loop=QEventLoop()
+    errors=[]
+    timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=1.0)
+    def open_roof():
+        QTimer.singleShot(20,roof.reject)
+        roof.exec()
+    QTimer.singleShot(80,open_roof)
+    QTimer.singleShot(180,loop.quit)
+    loop.exec();timer.stop()
+    assert state['started'] and not errors
+    assert seen==[roof], 'the actual roof modal was not observed'
+
+
+def test_unexpected_roof_modal_is_bounded_and_reported(qt):
+    from PySide6.QtCore import QEventLoop
+    errors=[];seen=[];loop=QEventLoop()
+    timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=0.08)
+    def open_unexpected():
+        dialog=QDialog();dialog.setObjectName('UnexpectedDialog')
+        seen.append(dialog.exec())
+    QTimer.singleShot(10,open_unexpected)
+    QTimer.singleShot(200,loop.quit)
+    loop.exec();timer.stop()
+    assert not state['started'] and errors==['Timed out waiting for roof modal to finish']
+    assert seen==[QDialog.Rejected]
