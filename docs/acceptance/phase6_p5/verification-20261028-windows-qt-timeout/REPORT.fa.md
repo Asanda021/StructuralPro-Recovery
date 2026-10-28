@@ -1,3 +1,9 @@
+## رگرسیون گسترده محلی دقیق fcf847
+
+از worktree تمیز در همان SHA fcf847، runner رسمی با timeout اصلی۱۲۰۰ثانیه تکمیل شد: **۸۳۷۳PASS،۰FAIL،۰ERROR،۱۰SKIP،۳warning** در۵۷۴٫۲۸ثانیه؛ exit۰ و `timed_out=false`. JUnit اصلی [qtfix-final-linux.xml](qtfix-final-linux.xml)، JSON/log اصلی و [اسامی/علت ده SKIP](final-linux-skips.json) موجودند. SKIPها PASS نیستند و هیچ موردی توسط این تغییر اضافه نشد. این نتیجه محلی Windows نیست؛ [CIگسترده40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) جداگانه جاری است.
+
+---
+
 ## پذیرش SHA نهایی — هر دو سیستم SUCCESS
 
 [CI40669898079](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079) روی کد fcf847: Linux و Windows هرکدام **۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warning fitz**؛ historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هرکدام۸تکرار در هرسیستم PASS،صفرFAIL/ERROR/SKIP و بدون هشدار pytest. notices واقعیJunit و digest artifact در [JSON](acceptance-fcf-final.json) ثبت شدند. رگرسیون گسترده40670626852 و بررسی کامل artifact مستقل از این پذیرش هنوز PARTIAL است.

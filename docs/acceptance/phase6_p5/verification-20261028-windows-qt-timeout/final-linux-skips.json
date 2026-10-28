@@ -1,0 +1,52 @@
+[
+  {
+    "test": "tests.test_phase4_sqlite_windows_native::test_windows_live_connection_blocks_rename_and_preserves_committed_revisions",
+    "message": "Windows NTFS file-sharing semantics",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_phase4_sqlite_windows_native.py:17: Windows NTFS file-sharing semantics"
+  },
+  {
+    "test": "tests.test_phase4_sqlite_windows_native::test_windows_closed_database_can_be_moved_then_reopened_safely",
+    "message": "Windows NTFS file-sharing semantics",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_phase4_sqlite_windows_native.py:54: Windows NTFS file-sharing semantics"
+  },
+  {
+    "test": "tests.test_phase5_p3_trusted_identity_store::test_windows_identity_is_read_from_the_live_access_token",
+    "message": "Windows Native only",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_phase5_p3_trusted_identity_store.py:46: Windows Native only"
+  },
+  {
+    "test": "tests.test_phase5_unified_packaging::test_windows_single_edition_validate_only_does_not_build",
+    "message": "native PowerShell required",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_phase5_unified_packaging.py:110: native PowerShell required"
+  },
+  {
+    "test": "tests.test_phase5_windows_native_acceptance::test_current_windows_token_principal_reaches_projectstore_and_real_qt_workspace",
+    "message": "requires native Windows",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_phase5_windows_native_acceptance.py:16: requires native Windows"
+  },
+  {
+    "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+    "message": "PowerShell runtime unavailable",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_windows_build_native_failures.py:12: PowerShell runtime unavailable"
+  },
+  {
+    "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+    "message": "PowerShell runtime unavailable",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_windows_build_native_failures.py:12: PowerShell runtime unavailable"
+  },
+  {
+    "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+    "message": "PowerShell runtime unavailable",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_windows_build_native_failures.py:12: PowerShell runtime unavailable"
+  },
+  {
+    "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+    "message": "PowerShell runtime unavailable",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_windows_build_native_failures.py:12: PowerShell runtime unavailable"
+  },
+  {
+    "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+    "message": "PowerShell runtime unavailable",
+    "detail": "/tmp/structuralpro_qa_result_ytewb1qo/source/tests/test_windows_build_native_failures.py:12: PowerShell runtime unavailable"
+  }
+]
