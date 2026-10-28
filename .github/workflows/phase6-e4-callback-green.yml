@@ -10,6 +10,7 @@ on:
       - app/ifc_lineage_controls.py
       - tests/test_phase6_p5_e4_identity_generation.py
       - tests/test_phase6_p5_e6_live_context.py
+      - tests/test_phase2_pdf_roof_ui.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -38,11 +39,11 @@ jobs:
         run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: aecf184424e944f4409800e50df5652f2a574c34
+          ref: cd855297af657a382c76909eabad7523688148a2
           persist-credentials: false
       - name: Verify exact accepted source SHA
         shell: bash
-        run: test "$(git rev-parse HEAD)" = "aecf184424e944f4409800e50df5652f2a574c34"
+        run: test "$(git rev-parse HEAD)" = "cd855297af657a382c76909eabad7523688148a2"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
@@ -56,7 +57,7 @@ jobs:
       - name: Validate callback contracts and existing E4 real Qt navigation
         run: |
           python -m compileall -q app/project_search_panel.py
-          python scripts/run_phase6_pytest.py 780 -q --junitxml=p6-e4-callback-green-${{ matrix.qpa }}.xml tests/test_e4_callback_contract.py tests/test_phase6_p5_e4_snapshot_race.py tests/test_phase6_p5_e4_search.py tests/test_phase6_p5_e4_ui.py tests/test_phase6_p5_e4_sessions.py tests/test_phase6_p5_e4_identity_generation.py tests/test_phase6_p5_e6_live_context.py tests/test_phase6_p5_e6_ifc_transfer_history.py tests/test_phase6_p5_e6_bulk_preview.py tests/test_phase2_priority5_complete.py
+          python scripts/run_phase6_pytest.py 780 -q --junitxml=p6-e4-callback-green-${{ matrix.qpa }}.xml tests/test_e4_callback_contract.py tests/test_phase6_p5_e4_snapshot_race.py tests/test_phase6_p5_e4_search.py tests/test_phase6_p5_e4_ui.py tests/test_phase6_p5_e4_sessions.py tests/test_phase6_p5_e4_identity_generation.py tests/test_phase6_p5_e6_live_context.py tests/test_phase6_p5_e6_ifc_transfer_history.py tests/test_phase6_p5_e6_bulk_preview.py tests/test_phase2_priority5_complete.py tests/test_phase2_pdf_roof_ui.py
       - name: Inspect real JUnit and retained pytest log
         if: always()
         run: python scripts/phase6_acceptance_summary.py p6-e4-callback-green-${{ matrix.qpa }}.xml
