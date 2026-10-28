@@ -1,3 +1,7 @@
+## پذیرش گیت امنیتی E4: منبع IFC پیوندی، ۲۸ اکتبر
+
+اصلاح کد/تست `76969a29d29588b4b0a1b1cbf43a81a319958fdf` فقط روی PR #34: مسیر تأییدشده IFC در `reviewed_member_source` برای symlink خود فایل و پوشه‌های والد به‌صورت fail-closed مسدود شد؛ دو آزمون منفی با شبیه‌سازی دقیق `Path.is_symlink` اضافه شدند، بدون نوشتن در BOQ. [CI مستقل #40654824158](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40654824158) روی **همین SHA** با نتیجه `completed/success` برای Linux offscreen و Windows native تأیید شد. هر محیط: **۴۶۸ PASS اصلی + ۱۳۰ تاریخی + ۲۶ امنیتی + ۸ DPI ۱۵۰٪ + ۸ DPI ۲۰۰٪**؛ در هر بسته صفر FAIL/ERROR/SKIP، یک هشدار `fitz` در بسته اصلی. DPI تکرار همان آزمون‌های Dock است؛ نباید تعداد بسته‌ها را تعداد سناریوی یکتا نامید. گزارش JUnit و هش‌ها در [پرونده گیت](verification-20261028-e4-ifc-link-guard/REPORT.fa.md) و Artifacts اجرا ثبت‌اند. **E4 در کل PARTIAL**، مسیرهای DWG و IFC تخصصی فاقد قرارداد همچنان BLOCKED، رگرسیون گسترده ۸۳۷۵تایی روی این SHA اجرا نشده، UAT فیزیکی Windows انجام نشده است. PR33/34 Draft/Unmerged، main بدون تغییر، هشت فاز و ۸۵٪ ثابت. Commit مستندات بعدی اجرای جدید کد محسوب نمی‌شود.
+
 # نقطه ادامه معتبر — ۲۸ اکتبر ۲۰۲۶
 
 ## پذیرش E4: مسیر سند عمومی، ۲۸ اکتبر
