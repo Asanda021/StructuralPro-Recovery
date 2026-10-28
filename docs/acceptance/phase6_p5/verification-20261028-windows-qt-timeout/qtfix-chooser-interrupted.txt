@@ -1,0 +1,1 @@
+Local source cce78eb pytest interrupted by SIGTERM to start final source5daf8fb; not a completed result.

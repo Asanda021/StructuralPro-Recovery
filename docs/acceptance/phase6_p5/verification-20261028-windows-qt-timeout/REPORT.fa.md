@@ -130,3 +130,5 @@ Linux پذیرش40669898079:۴۷۴PASS،صفرFAIL/ERROR/SKIP،۱warningfitz؛ �
 - اجرای گسترده fcf847،[Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852/artifacts/12808737175)،[Windows شکست‌خورده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852/artifacts/12808327783). Windows JUnit تولید نکرد؛ artifact شامل لاگ/JSON آن اجراست.
 
 این شناسه‌ها از metadata عمومی همان صفحات واقعی آمده‌اند؛ دانلود ZIP از این محیط به دلیل Forbidden GitHub API انجام نشد.
+
+رگرسیون محلی source cce78eb پیش از خاتمه، برای اجرای worktree تمیز source نهایی5daf8fb عمداً با SIGTERM روی subprocess خود متوقف شد؛ log و JSON بدونJUnit حفظ شده و نه PASS و نه شکست کامل محسوب می‌شود. اجرای دقیق5daf از صفر جاری است.
