@@ -49,6 +49,11 @@ jobs:
         shell: bash
         run: |
           python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"fcf8472493e842fe707740d2baf166468bf11cdf","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+      - name: Surface actual broad failure log for diagnosis
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; j=pathlib.Path("phase6-broad-current.json"); p=pathlib.Path("phase6-broad-current.log"); d=json.loads(j.read_text(encoding="utf-8")) if j.is_file() else {}; t=p.read_text(encoding="utf-8",errors="replace")[-9000:] if p.is_file() else "No actual pytest log was produced"; print("::notice title=Broad failure diagnostic::"+t.replace("%","%25").replace("\r","%0D").replace("\n","%0A")) if d.get("overall_green") is not True else None'
       - name: Preserve original current-suite logs, JSON and JUnit
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -96,6 +101,11 @@ jobs:
         shell: bash
         run: |
           python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"fcf8472493e842fe707740d2baf166468bf11cdf","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+      - name: Surface actual broad failure log for diagnosis
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; j=pathlib.Path("phase6-broad-current-windows.json"); p=pathlib.Path("phase6-broad-current-windows.log"); d=json.loads(j.read_text(encoding="utf-8")) if j.is_file() else {}; t=p.read_text(encoding="utf-8",errors="replace")[-9000:] if p.is_file() else "No actual pytest log was produced"; print("::notice title=Broad failure diagnostic::"+t.replace("%","%25").replace("\r","%0D").replace("\n","%0A")) if d.get("overall_green") is not True else None'
       - name: Preserve original native Windows JUnit logs and JSON
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
