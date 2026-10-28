@@ -37,3 +37,5 @@
 ## اجرای گسترده superseded 74cc
 
 Run40668037298 بعد از اصلاح watchdog جایگزین و Cancel شد؛ نتیجه نهایی قابل پذیرش نیست. notice عمومی Windows کد subprocess **3221226505 (0xC0000409)**، `timed_out=false` و JUnit مفقود را ثبت کرده است. علت این کد و نسبت آن با لغو از notice به‌تنهایی روشن نیست؛ نه PASS است و نه به مسابقه تایمر نسبت داده می‌شود. [اطلاعات ثبت‌شده](superseded-broad-ci.json). اجرای fcf847 مستقل ادامه دارد و Windows آن باید تعیین تکلیف شود.
+
+رگرسیون محلی تمام۲۱فایل `tests/test_bored_pile*.py` روی کدfcf847: **۳۵۱PASS،۰FAIL/ERROR/SKIP،۰warning** در۴٫۷۳ثانیه؛ [JUnit](qtfix-bored-pile-suite.xml) و log اصلی محفوظ‌اند. این آمار شامل۱۰تست هدفمند است و نباید دوباره جمع شود.
