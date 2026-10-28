@@ -96,10 +96,14 @@ class ProjectSearchDialog(QDialog):
         self.invalidate()
         try:
             # ProjectStore enforces role and project scope before any indexing.
+            # Pin the version *before* reading the project: do not combine
+            # an old authorized snapshot with a digest from a newer write.
+            digest=self.service.store.current_digest(self.pid)
             p=self.service.open_project(self.pid)
             if not p:raise ValueError("پروژه معتبر و قابل دسترس نیست.")
-            digest=self.service.store.current_digest(self.pid)
             entries=search_project(p,self.query.text(),limit=100)
+            if self.service.store.current_digest(self.pid)!=digest:
+                raise RuntimeError("نسخه پروژه هنگام جست‌وجو تغییر کرد.")
             self.digest=digest
             self.results=entries
             for i,row in enumerate(entries):
@@ -131,6 +135,10 @@ class ProjectSearchDialog(QDialog):
         if record is None or record["kind"]!="member" or not record["entity_id"]:
             return None
         try:
+            # A specialist destination must not receive an identity from a
+            # search snapshot invalidated after open_record() returned.
+            if self.digest is None or self.service.store.current_digest(self.pid)!=self.digest:
+                raise RuntimeError("نسخه پروژه پیش از نمایش IFC تغییر کرد.")
             result=self.on_open_model(record["project_id"],record["entity_id"])
             self.status.setText("نمای IFC فقط از گیت واقعی هویت و Revision اجرا شد.")
             return result
@@ -156,6 +164,10 @@ class ProjectSearchDialog(QDialog):
                       x["text"]==selected["text"] and x["data"]==selected["data"]]
             if len(matching)!=1:
                 raise RuntimeError("هویت یا محتوای رکورد مبهم است؛ انتخاب مسدود شد.")
+            # Re-search may be slow, and stored records may stay byte-identical
+            # while an unrelated project write revokes this navigation.
+            if self.service.store.current_digest(self.pid)!=self.digest:
+                raise RuntimeError("نسخه پروژه هنگام بازخوانی رکورد تغییر کرد.")
             record=matching[0]
             if record['link_status']=='ambiguous_record':
                 raise RuntimeError("شناسه رکورد در پروژه مبهم است؛ ناوبری مسدود شد.")
