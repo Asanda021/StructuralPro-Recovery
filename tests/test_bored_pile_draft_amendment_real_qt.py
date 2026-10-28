@@ -1,15 +1,49 @@
 """Actual PySide6 menu and draft-amendment clicks against StructuralProApp/SQLite."""
 from copy import deepcopy
+from contextlib import contextmanager
+from time import monotonic
 import json
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QDialog
 
 from app.reviewed_structural_manual_editor import open_manual_structural_editor
 from core.platform.application import StructuralProApp
 from test_bored_pile_draft_amendment_real_application import _changed_document
 from test_bored_pile_real_application_controller import _setup, _document, _ownership
+
+
+@contextmanager
+def _expected_modal(qt, object_name, title, button, *, timeout=4.0):
+    """Click the specific live Qt modal, or close it and fail within a bound."""
+    timer = QTimer()
+    timer.setInterval(20)
+    deadline = monotonic() + timeout
+    state = {'clicked': False, 'error': None}
+    def poll():
+        box = qt.activeModalWidget()
+        if isinstance(box, QMessageBox):
+            if box.objectName() == object_name and box.windowTitle() == title:
+                target = box.button(button)
+                if target is not None and target.isVisible() and target.isEnabled():
+                    state['clicked'] = True
+                    timer.stop()
+                    QTest.mouseClick(target, Qt.LeftButton, pos=target.rect().center())
+                    return
+        if monotonic() >= deadline:
+            state['error'] = f'Expected modal {object_name!r}/{title!r}, got {box!r}'
+            timer.stop()
+            if isinstance(box, QMessageBox):
+                box.done(QMessageBox.No)
+    timer.timeout.connect(poll)
+    timer.start()
+    try:
+        yield
+    finally:
+        timer.stop()
+    assert not state['error'], state['error']
+    assert state['clicked'], f'Expected modal {object_name!r}/{title!r} was not shown'
 
 
 def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch):
@@ -22,11 +56,6 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
     chosen = [_document(tmp_path/'revised.json', revised)]
     monkeypatch.setattr(QFileDialog, 'getOpenFileName', lambda *_: (chosen[0], ''))
     errors = []
-    def dismiss_warning():
-        box = qt.activeModalWidget()
-        if isinstance(box, QMessageBox):
-            QTest.mouseClick(box.button(QMessageBox.Ok), Qt.LeftButton,
-                             pos=box.button(QMessageBox.Ok).rect().center())
     def parent():
         dialog = qt.activeModalWidget()
         controls = dialog.column_controls
@@ -58,22 +87,22 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
                 assert app.open_project('P')['boq'] == app.open_project('P')['takeoffs'] == []
                 # A repeated file and an empty reason must fail without another version.
                 c['amendment_reason'].setText('تلاش تکراری')
-                QTimer.singleShot(10, dismiss_warning)
-                click('amend')
+                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok):
+                    click('amend')
                 assert c['controller'].revision == 2 and c['message'].text().startswith('خطا:')
                 c['amendment_reason'].clear()
-                QTimer.singleShot(10, dismiss_warning)
-                click('amend')
+                with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok):
+                    click('amend')
                 assert c['controller'].revision == 2 and c['message'].text().startswith('خطا:')
             except Exception as exc:
                 errors.append(repr(exc))
             finally:
-                def discard_unsaved_reason():
-                    box = qt.activeModalWidget()
-                    if isinstance(box, QMessageBox):
-                        QTest.mouseClick(box.button(QMessageBox.Yes), Qt.LeftButton)
-                QTimer.singleShot(10, discard_unsaved_reason)
-                pile_dialog.reject()
+                try:
+                    with _expected_modal(qt, '', 'تغییرات ذخیره‌نشده', QMessageBox.Yes):
+                        pile_dialog.reject()
+                except Exception as exc:
+                    errors.append(repr(exc))
+                    QDialog.done(pile_dialog, QDialog.Rejected)
         try:
             controls['kind'].setCurrentIndex(controls['kind'].findData('bored_pile'))
             controls['id'].setText('PG1')
@@ -97,3 +126,45 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
     assert record['data']['pile_detail']['input'] == revised
     assert len(reopened.open_project('P')['structural_member_history']) == 1
     reopened.store.close()
+
+
+def test_delayed_real_warning_is_clicked_after_early_timer_would_expire():
+    qt = QApplication.instance() or QApplication([])
+    seen = []
+    early = []
+    QTimer.singleShot(10, lambda: early.append(qt.activeModalWidget()))
+    def open_later():
+        box = QMessageBox()
+        box.setObjectName('BoredPileErrorMessage')
+        box.setWindowTitle('کنترل دیتایل شمع')
+        box.setStandardButtons(QMessageBox.Ok)
+        seen.append(box.exec())
+    # Deliberately exceed the old 10 ms one-shot timer.
+    QTimer.singleShot(80, open_later)
+    from PySide6.QtCore import QEventLoop
+    loop = QEventLoop()
+    QTimer.singleShot(200, loop.quit)
+    with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok):
+        loop.exec()
+    assert early == [None]
+    assert seen == [QMessageBox.Ok]
+
+
+def test_unexpected_modal_fails_within_bound_without_clicking_its_button():
+    import pytest
+    from PySide6.QtCore import QEventLoop
+    qt = QApplication.instance() or QApplication([])
+    seen = []
+    def open_unexpected():
+        box = QMessageBox()
+        box.setObjectName('UnrelatedWarning')
+        box.setWindowTitle('unrelated')
+        box.setStandardButtons(QMessageBox.Ok)
+        seen.append(box.exec())
+    loop = QEventLoop()
+    QTimer.singleShot(10, open_unexpected)
+    QTimer.singleShot(200, loop.quit)
+    with pytest.raises(AssertionError, match='Expected modal'):
+        with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok, timeout=0.08):
+            loop.exec()
+    assert seen == [QMessageBox.No]
