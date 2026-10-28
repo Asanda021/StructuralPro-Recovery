@@ -1,3 +1,13 @@
+## راستی‌آزمایی مستقل رگرسیون کامل — ۲۸ اکتبر ۲۰۲۶
+
+Run [40707200358](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40707200358) موفق است؛ workflow b68f739c061b63c738bb9f2ebe886c6bd0d4f880 و Source c10b9291cb443431287d656fcf00c4b26e71e196. XML/JSON اصلی بازدریافت و شمارش مستقل شد: Linux ۸۳۹۸PASS/۵SKIP؛ Windows shard0=۲۷۶۷PASS/۳SKIP، shard1=۲۹۷۲PASS/۳SKIP، shard2=۲۶۵۷PASS/۱SKIP؛ همه صفرFAIL/ERROR و timeout=false، exit=0. Union برابر ۸۴۰۳ شناسه یکتا، صفرDuplicate/Missing/Extra؛ verify-full-union نیز SUCCESS. این شمارش testcase است، نه تضمین تعداد سناریوهای مستقل مهندسی. Artifactها: Linux12826120653، Windows0=12823764439، Windows1=12824842498، Windows2=12825711148، Union12826115581؛ همگی هنگام بررسی منقضی‌نشده بودند.
+
+بعد از source فقط workflow و گزارش‌ها در HEAD اولیه 2d59f8e تغییر کرده بودند، نه کد app/core/tests. PR33=c859cebccf83a43e456e73377bb2dea764e00823 و main=9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95؛ هر دو PR Open/Draft/Unmerged. PR34 در API mergeable=false داشت؛ تعارض حل نشده است. در این بررسی کد محصول تغییر نکرد و RED/GREEN جدید ثبت نشد. قرارداد callbackهای main فعلاً موفقیت را با return None نیز بیان می‌کند؛ بنابراین بدون آزمون نباید همه Noneها را failure کرد. سناریوهای False/Exception و تغییر زمینه پس از callback هنوز در این نوبت آزموده نشدند. PySide6 در runtime پیش‌فرض موجود نبود؛ اجرای تازه Qt انجام نشد.
+
+P6-5 همچنان PARTIAL: Beam/Column/MEP تخصصی از جست‌وجو فقط با crosswalk/منشأ معتبر؛ DWG بدون منشأ تبدیل و E6 سهم مالکیت نامستند BLOCKED/read-only؛ A2 تجاری و UAT فیزیکی مستقل. نخستین اقدام: آزمون RED واقعی callback ناموفق با حفظ قرارداد None مصرف‌کنندگان فعلی و بررسی post-callback CAS؛ سپس اصلاح حداقلی و CI دو سیستم. E3/E5/E6 این نوبت مجدداً آزموده نشدند. ۸ فاز و ۸۵٪ ثابت، بدون Merge/ForcePush/main/Release/EXE/P6-6/فاز۷.
+
+---
+
 ## P6-5 E4: پذیرش جامع جدید و رگرسیون گسترده | ۲۸ اکتبر ۲۰۲۶
 - CI [#40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) موفق: هر سیستم Linux/Windows **۴۹۲ PASS اصلی + ۱۳۰ تاریخی + ۲۶ امنیت + ۸ DPI150 + ۸ DPI200**؛ صفر FAIL/ERROR/SKIP. source کد `c10b929...`؛ جزئیات و JUnit در [گزارش](verification-20261028-e4-live-snapshot/REPORT.fa.md).
 - CI اختصاصی E4 [#40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682): هر محیط ۴۰PASS. رگرسیون کامل همین source در [#40707200358](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40707200358) آغاز شد و تا پایان Linux/Windows/Union **NOT VERIFIED**. فاز۶ P6-5 هنوز PARTIAL؛ قراردادهای فاقد منشأ BLOCKED؛ PR33/34 Draft/Unmerged، main/Release ثابت، ۸فاز/۸۵٪ ثابت.
