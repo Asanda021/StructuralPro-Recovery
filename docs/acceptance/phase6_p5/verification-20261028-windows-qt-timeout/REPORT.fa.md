@@ -1,3 +1,9 @@
+## تشخیص مستقل شکست بعدی Windows
+
+در CI40672896854، هر سه پارامتر `test_existing_roof_editor_real_planar_schedule_and_boq` به‌صورت FAIL دیده شدند و سپس subprocess هنگام `test_real_roof_geometry_revision_through_existing_amendment_buttons` با0xC0000409 پایان یافت؛ JUnit کامل ساخته نشد و علت شکست‌ها از خروجی باقی‌مانده مشخص نیست. Linux روی همان دو فایل سقف/اصلاحیه با `--maxfail=1` **۱۶PASS،۱warning** داشت ([JUnit](qtfix-roof-pair.xml)). برای شناسایی **اولین شکست واقعی Windows**، [CI هدفمند40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) روی source a41cd18 با Qt native، لاگ و JUnit اصلی و حداکثر۲۴۰ثانیه اجرا می‌شود. این اجرای تشخیصی، broad ناموفق را موفق نمی‌کند و هنوز نتیجه نداده است.
+
+---
+
 ## نتایج GitHub روی a41cd18
 
 [پذیرش40672896825](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825): Linux و Windows هرکدام **۴۸۳PASS،۰FAIL/ERROR/SKIP،۱warning fitz**. historical۱۳۰،security۲۶ و دو تکرار۸تایی DPI در هرسیستم همگی PASS بدون warning. JUnit/تصاویر واقعی در [artifact Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825/artifacts/12808488866) و [artifact Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825/artifacts/12809771646)؛ شمارش/hash از notice در [JSON](acceptance-roof-final.json).

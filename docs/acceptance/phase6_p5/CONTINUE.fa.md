@@ -1,3 +1,9 @@
+## سه شکست و native crash بعدی در Windows
+
+Broad40672896854 رویa41cd18: Linux۸۳۸۰PASS/۵SKIP، Windows سه FAIL در تست سقف planar و سپس0xC0000409 روی تست اصلاحیه هندسی، بدون JUnit. اجرای هدفمند Windows [40674791106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40674791106) برای ثبت اولین خطای واقعی جاری؛ همان pair در Linux۱۶PASS. هیچ‌یک از شکست‌های broad پنهان نیست؛ گیت PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## پذیرش و گسترده Linux روی a41cd18
 
 CI40672896825 هر سیستم۴۸۳PASS،۰FAIL/ERROR/SKIP؛ CI40672896854 Linux۸۳۸۰PASS،۵SKIP،۰FAIL،بدونtimeout. Windows گسترده هنوز جاری؛ broadمحلی قبلی SIGSEGV و retry مستقل پنج‌طبقه۱PASS جداگانه ثبت شده‌اند. وضعیت کل PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
