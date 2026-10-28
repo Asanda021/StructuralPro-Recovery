@@ -1,3 +1,7 @@
+## E4 BOQ identity: RED و GREEN قطعی | ۲۸ اکتبر ۲۰۲۶
+- [RED #40758706644](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644): هر سیستم ۵۳PASS/۲FAIL. [GREEN #40758937945](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945) روی source `64d637b`: هر سیستم ۵۵PASS/صفرFAIL/ERROR/SKIP؛ JUnit [Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945/artifacts/12847492008) و [Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945/artifacts/12847965802). [گزارش با شواهد](verification-20261028-e4-boq-identity/REPORT.fa.md).
+- فقط ناسازگاری هویت جدول BOQ برطرف شده، P6-5 همچنان PARTIAL؛ نقشه راه هشت‌فازی و ۸۵٪ ثابت، PR33/34 Draft و Unmerged.
+
 ## E4 BOQ record identity RED/GREEN + GDB closure | ۲۸ اکتبر ۲۰۲۶
 - GDB [#40756726986](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986): focus ۲×۲۲PASS، prefix ۲۸۷۹PASS/۱۶۰ ماژول، بدون SIGSEGV یا Timeout، JUnit اصلی بررسی شد. `ROOT CAUSE UNDETERMINED`، crash قبلی پاک نشده است. [گزارش GDB](verification-20261028-linux-native-gdb/REPORT.fa.md).
 - E4 خطای هویت `id` در جست‌وجو در برابر `row_id` در جدول BOQ: [RED #40758706644](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644) دو شکست واقعی، اصلاح کمینه `64d637b`، [GREEN #40758937945](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945) درحال اجرا. [گزارش و شواهد](verification-20261028-e4-boq-identity/REPORT.fa.md).

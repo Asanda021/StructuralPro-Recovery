@@ -1,3 +1,12 @@
+## نتیجه قطعی RED/GREEN دو‌سیستمی | ۲۸ اکتبر ۲۰۲۶
+
+- [RED #40758706644](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644) با checkout pinned `26201e31d8c7c2b5bc48642f6f4e8a152ef68d21`: Linux **۵۳ PASS، ۲ FAIL**، Windows **۵۳ PASS، ۲ FAIL**؛ خطاهای مشابه: انتخاب «سقف» به‌جای «کف» و عدم یافتن ردیف دوم. شکست‌ها حفظ شده‌اند، نه حذف یا XFAIL. [JUnit RED Linux #12846683069](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644/artifacts/12846683069) و [JUnit RED Windows #12846912834](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644/artifacts/12846912834).
+- [GREEN #40758937945](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945) با checkout دقیق `64d637bfe8522349d78b30431a44527401ff7ce4` و workflow `ae4ee47e20bd16ae7a7c12fcd42e0d2475923ad3`: Linux **۵۵ PASS** (۶٫۳۳ ثانیه) و Windows **۵۵ PASS** (۳۱٫۹۲ ثانیه)، در هر دو محیط **صفر FAIL/ERROR/SKIP**. JUnit اصلی حفظ شد: [Linux #12847492008](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945/artifacts/12847492008) و [Windows #12847965802](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945/artifacts/12847965802).
+- هر ۵۵ testcase در دو OS تکرار شده‌اند؛ ادعای ۱۱۰ سناریوی مستقل نمی‌کنیم. ۲ سناریوی جدید قبلاً واقعاً RED بودند. هیچ فایل آزمون حذف، assertion ضعیف، timeout افزایش، موتور مالی یا هویت ساختگی افزوده نشده است.
+- تغییر محصول **فقط** `app/project_search_panel.py`: تطبیق اولویت `id` و `row_id` انتخاب جدول با موتور `search_project`. ردیف جست‌وجوشده همان ردیف نمایشی است؛ مقدار/قیمت/BOQ نوشته نمی‌شود.
+- این شواهد، **پذیرش نقص محدود BOQ E4** است؛ پذیرش سراسری E4، E6 و همه ۸۴۲۳ testcase source جدید را به‌تنهایی اثبات نمی‌کند. بسته جامع جدید P6-5 در گیت جدا در GitHub اجرا می‌شود و باید مستقل خوانده شود.
+- `main` هنگام این راستی‌آزمایی `9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95` و PR #33 `c859cebccf83a43e456e73377bb2dea764e00823` باقی مانده‌اند؛ PR #34 Draft/Open/Unmerged و Merge/Release/EXE انجام نشده است.
+
 # P6-5 E4 | تطبیق هویت ردیف جست‌وجو و جدول BOQ
 
 **تاریخ:** ۲۸ اکتبر ۲۰۲۶. **PR:** #34 Draft/Open/Unmerged. **دامنه:** انتخاب فقط‌خواندنی ردیف BOQ با شناسه ذخیره‌شده، بدون محاسبه و ثبت مالی.
