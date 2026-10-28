@@ -6,14 +6,13 @@ popups can return without a modal widget in the offscreen Qt platform.
 """
 import json
 from pathlib import Path
-from PySide6.QtCore import Qt,QTimer
+from PySide6.QtCore import Qt,QTimer,QElapsedTimer
 from PySide6.QtWidgets import QApplication,QFileDialog,QMessageBox
 from PySide6.QtTest import QTest
 from app.bored_pile_detail_editor import open_bored_pile_editor
 from app.bored_pile_draft_controller import PileDraftController
 from test_bored_pile_real_application_controller import _setup,_ownership,_document
 
-_NATIVE_WARNING=QMessageBox.warning
 _qt=None
 
 def test_real_qt_evidence_save_reopen_preview_cas_and_error(tmp_path,monkeypatch):
@@ -21,12 +20,35 @@ def test_real_qt_evidence_save_reopen_preview_cas_and_error(tmp_path,monkeypatch
  _qt=QApplication.instance() or QApplication([])
  app,seed,data=_setup(tmp_path);owner=_document(tmp_path/'owner.json',_ownership(data));chosen=[str(tmp_path/'pile.json')];errors=[];clicked=set()
  monkeypatch.setattr(QFileDialog,'getOpenFileName',lambda *_:(chosen[0],''))
- monkeypatch.setattr(QMessageBox,'warning',_NATIVE_WARNING)
  warnings=[]
  def dismiss():
   box=_qt.activeModalWidget()
-  if isinstance(box,QMessageBox):
-   warnings.append(box.text());QTest.mouseClick(box.button(QMessageBox.Ok),Qt.LeftButton,pos=box.button(QMessageBox.Ok).rect().center())
+  if not isinstance(box,QMessageBox):
+   box=next((w for w in _qt.topLevelWidgets() if isinstance(w,QMessageBox)
+             and w.isVisible() and w.objectName()=='BoredPileErrorMessage'),None)
+  if isinstance(box,QMessageBox) and box.isVisible():
+   assert box.objectName()=='BoredPileErrorMessage'
+   assert box.testOption(QMessageBox.Option.DontUseNativeDialog)
+   ok=box.button(QMessageBox.StandardButton.Ok)
+   assert ok is not None
+   warnings.append(box.text())
+   QTest.mouseClick(ok,Qt.LeftButton,pos=ok.rect().center())
+   return True
+  return False
+ def arm_warning():
+  clock=QElapsedTimer();clock.start()
+  def poll():
+   if dismiss():return
+   if clock.elapsed()>=3000:
+    errors.append('Real Qt error dialog not visible within 3s on native platform')
+    modal=_qt.activeModalWidget()
+    if isinstance(modal,QMessageBox):modal.reject()
+    for widget in _qt.topLevelWidgets():
+     if widget.objectName()=='BoredPileDraftEditor':
+      widget.can_close=lambda:True;widget.reject()
+    return
+   QTimer.singleShot(15,poll)
+  QTimer.singleShot(0,poll)
  def run():
   dlg=_qt.activeModalWidget();c=dlg.pile_controls
   def click(key):
@@ -47,10 +69,10 @@ def test_real_qt_evidence_save_reopen_preview_cas_and_error(tmp_path,monkeypatch
    if os.environ.get('STRUCTURALPRO_PILE_QA_DIR'):
     qa=Path(os.environ['STRUCTURALPRO_PILE_QA_DIR']);qa.mkdir(parents=True,exist_ok=True);dlg.grab().save(str(qa/'preview.png'));c['tabs'].setCurrentIndex(1);_qt.processEvents();dlg.grab().save(str(qa/'geometry.png'));c['tabs'].setCurrentIndex(2)
    peer=PileDraftController(app,'P');peer.load('FND','PG1');peer.set_preflight(reviewer='PeerReviewer',ownership_reference='Peer synthetic audit');peer.save();assert peer.revision==2
-   QTimer.singleShot(10,dismiss);click('save');assert warnings and 'تعارض نسخه' in c['message'].text() and c['controller'].revision==1;assert app.get_structural_member('P','bored_pile','FND','PG1')['revision']==2;click('load');assert c['controller'].revision==2;click('history_refresh');assert c['history'].rowCount()==1
-   chosen[0]=str(tmp_path/'bad.json');Path(chosen[0]).write_text('{}');before=c['controller'].data.copy();QTimer.singleShot(10,dismiss);click('input');assert c['message'].text().startswith('خطا:') and c['controller'].data==before
-   c['group'].setText('OTHER');QTimer.singleShot(10,dismiss);click('save');assert 'خطا:' in c['message'].text() and c['controller'].revision==2;assert app.get_structural_member('P','bored_pile','FND','PG1')['revision']==2
-   c['group'].setText('PG1');original_source=c['source_id'].text();c['source_id'].setText('OTHER-SOURCE');QTimer.singleShot(10,dismiss);click('save');assert 'منبع نمایشی' in c['message'].text() and c['controller'].revision==2;c['source_id'].setText(original_source)
+   arm_warning();click('save');assert warnings and 'تعارض نسخه' in c['message'].text() and c['controller'].revision==1;assert app.get_structural_member('P','bored_pile','FND','PG1')['revision']==2;click('load');assert c['controller'].revision==2;click('history_refresh');assert c['history'].rowCount()==1
+   chosen[0]=str(tmp_path/'bad.json');Path(chosen[0]).write_text('{}');before=c['controller'].data.copy();arm_warning();click('input');assert c['message'].text().startswith('خطا:') and c['controller'].data==before
+   c['group'].setText('OTHER');arm_warning();click('save');assert 'خطا:' in c['message'].text() and c['controller'].revision==2;assert app.get_structural_member('P','bored_pile','FND','PG1')['revision']==2
+   c['group'].setText('PG1');original_source=c['source_id'].text();c['source_id'].setText('OTHER-SOURCE');arm_warning();click('save');assert 'منبع نمایشی' in c['message'].text() and c['controller'].revision==2;c['source_id'].setText(original_source)
    Path(tmp_path/'pile.json').write_text('{}');click('preview');report=json.loads(c['report'].toPlainText());assert not report['engineering_ready'] and report['blockers'] and 'نامعتبر' in c['message'].text();assert not app.open_project('P')['boq']
    assert {'new','input','owner','save','load','preview','history_refresh'}<=clicked
    click('close')

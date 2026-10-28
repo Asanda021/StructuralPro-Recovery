@@ -127,7 +127,18 @@ def open_bored_pile_editor(service, *, parent=None, project_id='', floor_id='', 
             fn()
         except (ValueError, KeyError, TypeError, OSError, RuntimeError, AttributeError) as exc:
             message.setText('خطا: ' + str(exc))
-            QMessageBox.warning(dialog, 'کنترل دیتایل شمع', str(exc))
+            # Prefer the same Qt-owned, RTL error dialog on Linux and Windows.
+            # Native platform popups can hide the modal widget from both QA
+            # and keyboard/accessibility inspection, leaving nested loops stuck.
+            box = QMessageBox(dialog)
+            box.setOption(QMessageBox.Option.DontUseNativeDialog)
+            box.setObjectName('BoredPileErrorMessage')
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle('کنترل دیتایل شمع')
+            box.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            box.setText(str(exc))
+            box.setStandardButtons(QMessageBox.StandardButton.Ok)
+            box.exec()
 
     def button(key, title, fn):
         w = QPushButton(title)
