@@ -1,0 +1,44 @@
+{
+  "initial_head": "d242797c2595938ad5be5baa25c27e783a15a324",
+  "red_source": "535abd97683f9792d9853dc49af672bbabfe0764",
+  "green_source": "aecf184424e944f4409800e50df5652f2a574c34",
+  "note": "Local RED/GREEN executed with these product and test bytes before commits; remote pinned CI separately verifies clean source. Counts are test cases and are not additive engineering scenarios.",
+  "reports": [
+    {
+      "file": "p6-e4e6-green.xml",
+      "sha256": "90c259264d78236c74eecc7f6cd41f9e7ae94a0df05f491013ad8c4b9ac32a83",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "p6-e4e6-related.xml",
+      "sha256": "72e9363308f8ca83d2aa10b73457c54b2f1de375ef0d3216c1dfa10da761903a",
+      "tests": 149,
+      "passed": 149,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "p6-contract-boundaries.xml",
+      "sha256": "9c6b2a13e762257625bdbc1562a052677ca3b1010a7c4f7f055c2336235b1a9a",
+      "tests": 188,
+      "passed": 188,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "file": "p6-e4e6-red-final.xml",
+      "sha256": "6a6ac3cac1f159a820d86b93cd2c170d94f9ddadaf5b75f55458aaa6edadad27",
+      "tests": 11,
+      "passed": 0,
+      "failed": 11,
+      "errors": 0,
+      "skipped": 0
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "run": "40746431177",
+  "status": [
+    "Failure"
+  ],
+  "reports": [
+    {
+      "source_sha": "aecf184424e944f4409800e50df5652f2a574c34",
+      "pytest_exit_code": 1,
+      "timed_out": false,
+      "overall_green": false,
+      "stats": {
+        "collected": 3187,
+        "passed": 3183,
+        "failed": 1,
+        "skipped": 3,
+        "failures": [
+          {
+            "name": "tests.test_phase2_pdf_roof_ui::test_delayed_roof_modal_is_seen_even_if_construction_is_slow",
+            "reason": "assert (False) qt = <PySide6.QtWidgets.QApplication(0x2b588868d40) at 0x000002B585BE0340>\n\n    def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):\n        from PySide6.QtCore import QEventLoop\n        from PySide6.QtWidgets import QDialog\n        seen=[]\n        roof=QDialog();roof.setObjectName('RoofDetailEditor')\n        loop=QEventLoop()\n        errors=[]\n        timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=1.0)\n        def open_roof():\n            QTimer.singleShot(20,roof.reject)\n            roof.exec()\n        QTimer.singleShot(80,open_roof)\n        QTimer.singleShot(180,loop.quit)\n        loop.exec();timer.stop();timer.deleteLater()\n>       assert state['started'] and not errors\nE       assert (False)\n\ntests\\test_phase2_pdf_roof_ui.py:171: AssertionError"
+          }
+        ]
+      }
+    },
+    {
+      "source_sha": "aecf184424e944f4409800e50df5652f2a574c34",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 2646,
+        "passed": 2645,
+        "failed": 0,
+        "skipped": 1,
+        "failures": []
+      }
+    },
+    {
+      "source_sha": "aecf184424e944f4409800e50df5652f2a574c34",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 8422,
+        "passed": 8417,
+        "failed": 0,
+        "skipped": 5,
+        "failures": []
+      }
+    },
+    {
+      "source_sha": "aecf184424e944f4409800e50df5652f2a574c34",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 2589,
+        "passed": 2586,
+        "failed": 0,
+        "skipped": 3,
+        "failures": []
+      }
+    }
+  ],
+  "artifacts": [
+    [
+      "p6-broad-current-linux",
+      "12841294328"
+    ],
+    [
+      "p6-broad-current-windows-0",
+      "12842743020"
+    ],
+    [
+      "p6-broad-current-windows-1",
+      "12843025787"
+    ],
+    [
+      "p6-broad-current-windows-2",
+      "12842392477"
+    ]
+  ],
+  "digests": [
+    "3427023af2dc51c4087035c9777aef58779348b788609e75582e7d0f4e8c6b92",
+    "3427023af2dc51c4087035c9777aef58779348b788609e75582e7d0f4e8c6b92",
+    "f8c25f5f9f73a2c4907f1008aeabd72f17301e676c949e994180d600253a5f9e",
+    "f8c25f5f9f73a2c4907f1008aeabd72f17301e676c949e994180d600253a5f9e",
+    "5e90592f8fbb3fe346b20e04e391f022f765ba3323e81dc526b00f2d7c71c956",
+    "5e90592f8fbb3fe346b20e04e391f022f765ba3323e81dc526b00f2d7c71c956",
+    "d4ae52a9abc98b1bd633f230010d9c36c4491be60ab7dda13da5bb3d0e568582",
+    "d4ae52a9abc98b1bd633f230010d9c36c4491be60ab7dda13da5bb3d0e568582"
+  ]
+}

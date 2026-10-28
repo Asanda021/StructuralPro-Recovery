@@ -1,0 +1,36 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_delayed_roof_modal_is_seen_even_if_construction_is_slow _________
+
+qt = <PySide6.QtWidgets.QApplication(0x2cf89180) at 0x7f1ad375dec0>
+
+    def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
+        from PySide6.QtCore import QEventLoop
+        from PySide6.QtWidgets import QDialog
+        seen=[]
+        roof=QDialog();roof.setObjectName('RoofDetailEditor')
+        loop=QEventLoop()
+        errors=[]
+        timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=1.0)
+        # Deterministically model a busy native event loop: the first observation
+        # occurs after the old 20 ms self-dismissal would have run.
+        timer.setInterval(120)
+        def open_roof():
+            QTimer.singleShot(20,roof.reject)
+            roof.exec()
+        QTimer.singleShot(80,open_roof)
+        QTimer.singleShot(180,loop.quit)
+        loop.exec();timer.stop();timer.deleteLater()
+>       assert state['started'] and not errors
+E       assert (False)
+
+tests/test_phase2_pdf_roof_ui.py:174: AssertionError
+=============================== warnings summary ===============================
+../StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17
+  /workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_phase2_pdf_roof_ui.py::test_delayed_roof_modal_is_seen_even_if_construction_is_slow
+1 failed, 1 warning in 1.07s

@@ -1,0 +1,1 @@
+{"timed_out": false, "exit": 0, "stdout": "Expected explicit assertion; active modal: None\n", "stderr": "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/fitz/__init__.py:17: FutureWarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\n  warnings.warn(\n"}

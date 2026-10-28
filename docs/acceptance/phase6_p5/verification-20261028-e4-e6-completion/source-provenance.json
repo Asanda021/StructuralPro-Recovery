@@ -1,0 +1,27 @@
+{
+  "initial_head": "d242797c2595938ad5be5baa25c27e783a15a324",
+  "red_source": "535abd97683f9792d9853dc49af672bbabfe0764",
+  "tested_source": "cd855297af657a382c76909eabad7523688148a2",
+  "tested_tree": "d7a76fbd98e2bb68f9e5fab70c887668aa4907e2",
+  "targeted_and_acceptance_workflow_head": "0a82cc775c1afc4c4504dea084650b9d70921e12",
+  "broad_workflow_head": "acb0fa4940e73ed918adb66d27ad6ed9704c0cec",
+  "source_trees": {
+    "app": "6aba5bbc33aa27aa2cab74aadfb251701f96a62f",
+    "core": "11eb37864588260aa884b6d7485143831830f210",
+    "tests": "b71e8f5f62ed95f247b32005a00687b6ee5972cb",
+    "scripts": "ba7a10f215c4cc76b8d74c51708525a3b6bfc404"
+  },
+  "source_files": {
+    "requirements.txt": "96d46b676dddfce7dcd8dccb79150710e4218c8a",
+    "pytest.ini": "c7b23ecb1408be49fb2fa8ef77ffa48640681e34"
+  },
+  "note": "Final source includes the E4/E6 fixes plus strengthened roof diagnostic fixture. Only one existing test file is strengthened; no original testcase is removed or skipped. Initial broad source aecf184 evidence is retained separately.",
+  "added_test_files": [
+    "tests/test_phase6_p5_e4_identity_generation.py",
+    "tests/test_phase6_p5_e6_live_context.py"
+  ],
+  "existing_test_files_modified": [
+    "tests/test_phase2_pdf_roof_ui.py"
+  ],
+  "product_fix_source": "aecf184424e944f4409800e50df5652f2a574c34"
+}

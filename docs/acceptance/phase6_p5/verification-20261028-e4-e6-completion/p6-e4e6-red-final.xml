@@ -1,0 +1,476 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="11" time="3.064" timestamp="2026-10-28T18:26:41.781117+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase6_p5_e4_identity_generation" name="test_invalid_result_index_cannot_dispatch_another_real_record[-1]" time="0.054"><failure message="AssertionError: An invalid result index dispatched a different stored record&#10;assert not [('projects', 'P', 'F2')]">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_invalid_result_index_cann0')
+index = -1
+
+    @pytest.mark.parametrize("index", [-1, True, 1])
+    def test_invalid_result_index_cannot_dispatch_another_real_record(tmp_path, index):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / "db")
+        service.create_project("E4 identity project", "P")
+        service.add_project_floor("P", "E4 first floor", level="F1")
+        service.add_project_floor("P", "E4 second floor", level="F2")
+        calls = []
+        panel = ProjectSearchDialog(service, "P", initial_query="E4",
+                                    on_navigate=lambda *args: calls.append(args))
+        before = service.open_project("P")
+        token = service.store.current_digest("P")
+        try:
+            assert len(panel.results) == 3
+            panel.show()
+            panel.list.setCurrentRow(0)
+            panel.list.currentItem().setData(Qt.ItemDataRole.UserRole, index)
+            QTest.mouseClick(panel.open_button, Qt.MouseButton.LeftButton)
+&gt;           assert not calls, "An invalid result index dispatched a different stored record"
+E           AssertionError: An invalid result index dispatched a different stored record
+E           assert not [('projects', 'P', 'F2')]
+
+tests/test_phase6_p5_e4_identity_generation.py:28: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e4_identity_generation" name="test_invalid_result_index_cannot_dispatch_another_real_record[True]" time="0.007"><failure message="AssertionError: An invalid result index dispatched a different stored record&#10;assert not [('projects', 'P', 'F1')]">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_invalid_result_index_cann1')
+index = True
+
+    @pytest.mark.parametrize("index", [-1, True, 1])
+    def test_invalid_result_index_cannot_dispatch_another_real_record(tmp_path, index):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / "db")
+        service.create_project("E4 identity project", "P")
+        service.add_project_floor("P", "E4 first floor", level="F1")
+        service.add_project_floor("P", "E4 second floor", level="F2")
+        calls = []
+        panel = ProjectSearchDialog(service, "P", initial_query="E4",
+                                    on_navigate=lambda *args: calls.append(args))
+        before = service.open_project("P")
+        token = service.store.current_digest("P")
+        try:
+            assert len(panel.results) == 3
+            panel.show()
+            panel.list.setCurrentRow(0)
+            panel.list.currentItem().setData(Qt.ItemDataRole.UserRole, index)
+            QTest.mouseClick(panel.open_button, Qt.MouseButton.LeftButton)
+&gt;           assert not calls, "An invalid result index dispatched a different stored record"
+E           AssertionError: An invalid result index dispatched a different stored record
+E           assert not [('projects', 'P', 'F1')]
+
+tests/test_phase6_p5_e4_identity_generation.py:28: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e4_identity_generation" name="test_invalid_result_index_cannot_dispatch_another_real_record[1]" time="0.007"><failure message="AssertionError: An invalid result index dispatched a different stored record&#10;assert not [('projects', 'P', 'F1')]">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_invalid_result_index_cann2')
+index = 1
+
+    @pytest.mark.parametrize("index", [-1, True, 1])
+    def test_invalid_result_index_cannot_dispatch_another_real_record(tmp_path, index):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / "db")
+        service.create_project("E4 identity project", "P")
+        service.add_project_floor("P", "E4 first floor", level="F1")
+        service.add_project_floor("P", "E4 second floor", level="F2")
+        calls = []
+        panel = ProjectSearchDialog(service, "P", initial_query="E4",
+                                    on_navigate=lambda *args: calls.append(args))
+        before = service.open_project("P")
+        token = service.store.current_digest("P")
+        try:
+            assert len(panel.results) == 3
+            panel.show()
+            panel.list.setCurrentRow(0)
+            panel.list.currentItem().setData(Qt.ItemDataRole.UserRole, index)
+            QTest.mouseClick(panel.open_button, Qt.MouseButton.LeftButton)
+&gt;           assert not calls, "An invalid result index dispatched a different stored record"
+E           AssertionError: An invalid result index dispatched a different stored record
+E           assert not [('projects', 'P', 'F1')]
+
+tests/test_phase6_p5_e4_identity_generation.py:28: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e4_identity_generation" name="test_callback_refresh_cannot_replace_the_original_navigation_cas[record]" time="0.009"><failure message="AssertionError: Callback refresh replaced the original CAS token&#10;assert 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' is None&#10; +  where 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' = &lt;app.project_search_panel.ProjectSearchDialog(0x74ead90, name=&quot;E4GlobalProjectSearch&quot;) at 0x7f5070108b80&gt;.digest">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_callback_refresh_cannot_r0')
+kind = 'record'
+
+    @pytest.mark.parametrize("kind", ["record", "ifc"])
+    def test_callback_refresh_cannot_replace_the_original_navigation_cas(tmp_path, kind):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / "db")
+        service.create_project("E4 callback project", "P")
+        service.add_project_floor("P", "First", level="F1")
+        service.add_project_member("P", "B1", "F1", "column")
+        calls = []
+    
+        def callback(*args):
+            calls.append(args)
+            service.add_project_floor("P", "Concurrent", level="F2")
+            # A callback can reenter Qt and refresh the same search dialog.
+            panel.run_search()
+            return None
+    
+        panel = ProjectSearchDialog(service, "P", initial_query="B1" if kind == "ifc" else "E4 callback",
+            on_navigate=callback if kind == "record" else None,
+            on_open_model=callback if kind == "ifc" else None)
+        token = service.store.current_digest("P")
+        try:
+            panel.show()
+            panel.list.setCurrentRow(0)
+            QTest.mouseClick(panel.model_button if kind == "ifc" else panel.open_button,
+                             Qt.MouseButton.LeftButton)
+            assert len(calls) == 1
+            assert service.store.current_digest("P") != token
+&gt;           assert panel.digest is None, "Callback refresh replaced the original CAS token"
+E           AssertionError: Callback refresh replaced the original CAS token
+E           assert 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' is None
+E            +  where 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' = &lt;app.project_search_panel.ProjectSearchDialog(0x74ead90, name="E4GlobalProjectSearch") at 0x7f5070108b80&gt;.digest
+
+tests/test_phase6_p5_e4_identity_generation.py:65: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e4_identity_generation" name="test_callback_refresh_cannot_replace_the_original_navigation_cas[ifc]" time="0.008"><failure message="AssertionError: Callback refresh replaced the original CAS token&#10;assert 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' is None&#10; +  where 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' = &lt;app.project_search_panel.ProjectSearchDialog(0x74c2f60, name=&quot;E4GlobalProjectSearch&quot;) at 0x7f50701235c0&gt;.digest">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_callback_refresh_cannot_r1')
+kind = 'ifc'
+
+    @pytest.mark.parametrize("kind", ["record", "ifc"])
+    def test_callback_refresh_cannot_replace_the_original_navigation_cas(tmp_path, kind):
+        qt = QApplication.instance() or QApplication([])
+        service = StructuralProApp(tmp_path / "db")
+        service.create_project("E4 callback project", "P")
+        service.add_project_floor("P", "First", level="F1")
+        service.add_project_member("P", "B1", "F1", "column")
+        calls = []
+    
+        def callback(*args):
+            calls.append(args)
+            service.add_project_floor("P", "Concurrent", level="F2")
+            # A callback can reenter Qt and refresh the same search dialog.
+            panel.run_search()
+            return None
+    
+        panel = ProjectSearchDialog(service, "P", initial_query="B1" if kind == "ifc" else "E4 callback",
+            on_navigate=callback if kind == "record" else None,
+            on_open_model=callback if kind == "ifc" else None)
+        token = service.store.current_digest("P")
+        try:
+            panel.show()
+            panel.list.setCurrentRow(0)
+            QTest.mouseClick(panel.model_button if kind == "ifc" else panel.open_button,
+                             Qt.MouseButton.LeftButton)
+            assert len(calls) == 1
+            assert service.store.current_digest("P") != token
+&gt;           assert panel.digest is None, "Callback refresh replaced the original CAS token"
+E           AssertionError: Callback refresh replaced the original CAS token
+E           assert 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' is None
+E            +  where 'a7e0a5b21cacc7530b25449d9be58448c3c7a8ead9b97cda1b802109cb875293' = &lt;app.project_search_panel.ProjectSearchDialog(0x74c2f60, name="E4GlobalProjectSearch") at 0x7f50701235c0&gt;.digest
+
+tests/test_phase6_p5_e4_identity_generation.py:65: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[project-apply]" time="0.474"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}&#10;  &#10;  Omitting 14 identical items, use -vv to show&#10;  Differing items:&#10;  {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}&#10;  {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212002.647392}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212002.4619992}}&#10;  Left contains 1 more item:&#10;  {'manual_formula_amendments': {'MA-a5b378a22382499bb5e9d4787e5654db': {'building_id': '3P8i1FKmf2Sh0sMhPapAtp',...&#10;  &#10;  ...Full output truncated (266 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch0')
+action = 'apply', change = 'project'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}
+E             
+E             Omitting 14 identical items, use -vv to show
+E             Differing items:
+E             {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}
+E             {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212002.647392}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212002.4619992}}
+E             Left contains 1 more item:
+E             {'manual_formula_amendments': {'MA-a5b378a22382499bb5e9d4787e5654db': {'building_id': '3P8i1FKmf2Sh0sMhPapAtp',...
+E             
+E             ...Full output truncated (266 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[project-migrate]" time="0.625"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212003.2715225}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212003.1447656}}&#10;  {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0MsLSlU0LB5PwVTH$hPsSR', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'bcf56dd9836eca5c9d581606acf3ae5c7e0633a60285e37afc93abc8cd3289f4', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0MsLSlU0LB5PwVTH$hPsSR', 'commit_allowed': False, 'coordin...: ['1...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch1')
+action = 'migrate', change = 'project'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}
+E             
+E             Omitting 16 identical items, use -vv to show
+E             Differing items:
+E             {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212003.2715225}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212003.1447656}}
+E             {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0MsLSlU0LB5PwVTH$hPsSR', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'bcf56dd9836eca5c9d581606acf3ae5c7e0633a60285e37afc93abc8cd3289f4', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0MsLSlU0LB5PwVTH$hPsSR', 'commit_allowed': False, 'coordin...: ['1...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[revision-apply]" time="0.318"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}&#10;  &#10;  Omitting 14 identical items, use -vv to show&#10;  Differing items:&#10;  {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}&#10;  {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212003.5954573}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212003.4243188}}&#10;  Left contains 1 more item:&#10;  {'manual_formula_amendments': {'MA-a2ef85a68acb410f960eb53aff9343d1': {'building_id': '0P_xebft9CjhHol3BPRgDy',...&#10;  &#10;  ...Full output truncated (266 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch2')
+action = 'apply', change = 'revision'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}
+E             
+E             Omitting 14 identical items, use -vv to show
+E             Differing items:
+E             {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}
+E             {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212003.5954573}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212003.4243188}}
+E             Left contains 1 more item:
+E             {'manual_formula_amendments': {'MA-a2ef85a68acb410f960eb53aff9343d1': {'building_id': '0P_xebft9CjhHol3BPRgDy',...
+E             
+E             ...Full output truncated (266 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[revision-migrate]" time="0.407"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212004.0083807}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212003.839586}}&#10;  {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0DW55FLujEyB2fL1OvO2RF', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'e3848ccebeea3df6010ffb5dec5df9cc4d07812dcf4c5612cf53cef3e950dcf1', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0DW55FLujEyB2fL1OvO2RF', 'commit_allowed': False, 'coordin...: ['10...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch3')
+action = 'migrate', change = 'revision'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}
+E             
+E             Omitting 16 identical items, use -vv to show
+E             Differing items:
+E             {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212004.0083807}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212003.839586}}
+E             {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0DW55FLujEyB2fL1OvO2RF', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'e3848ccebeea3df6010ffb5dec5df9cc4d07812dcf4c5612cf53cef3e950dcf1', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '0DW55FLujEyB2fL1OvO2RF', 'commit_allowed': False, 'coordin...: ['10...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[source-apply]" time="0.346"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}&#10;  &#10;  Omitting 14 identical items, use -vv to show&#10;  Differing items:&#10;  {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}&#10;  {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212004.3502195}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212004.162188}}&#10;  Left contains 1 more item:&#10;  {'manual_formula_amendments': {'MA-a43e725ecfe84790aa47e3037c035f45': {'building_id': '0CL$h9s_93Dvrxwg2lQaiU',...&#10;  &#10;  ...Full output truncated (266 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch4')
+action = 'apply', change = 'source'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...], ...}], ...} == {'boq': [{'al...], ...}], ...}
+E             
+E             Omitting 14 identical items, use -vv to show
+E             Differing items:
+E             {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]} != {'boq': [{'allowance_quantity': 0, 'category': 'building', 'chapter': '', 'description': 'کمیت عمومی IFC — Length', ...}]}
+E             {'_meta': {'id': 'P', 'version': 17, 'updated_at': 1793212004.3502195}} != {'_meta': {'id': 'P', 'version': 16, 'updated_at': 1793212004.162188}}
+E             Left contains 1 more item:
+E             {'manual_formula_amendments': {'MA-a43e725ecfe84790aa47e3037c035f45': {'building_id': '0CL$h9s_93Dvrxwg2lQaiU',...
+E             
+E             ...Full output truncated (266 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_live_context" name="test_group_mutation_refuses_changed_viewer_without_writes[source-migrate]" time="0.441"><failure message="AssertionError: Stale IFC review mutated stored ownership/crosswalk&#10;assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212004.791476}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212004.6416845}}&#10;  {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '1CBJ1cYf59H800NmldIPYa', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'c3dc6444f5bc80218f852292de897a58f4242b2e2152d8fc65850b908c5a1736', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '1CBJ1cYf59H800NmldIPYa', 'commit_allowed': False, 'coordin...: ['10...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-60/test_group_mutation_refuses_ch5')
+action = 'migrate', change = 'source'
+
+    @pytest.mark.parametrize("action", ["apply", "migrate"])
+    @pytest.mark.parametrize("change", ["project", "revision", "source"])
+    def test_group_mutation_refuses_changed_viewer_without_writes(tmp_path, action, change):
+        qt = QApplication.instance() or QApplication([])
+        service, args, allocation, _ = case(tmp_path, crosswalks="dxf" if action == "migrate" else None)
+        source = service.open_project("P")["ifc_identity_reviews"][-1]["document"]["source_path"]
+        view = GraphicalTakeoffDialog(app_service=service, project_id="P")
+        view.show()
+        view.open_drawing(source)
+        view.ifc_revision.setText("R2")
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+    
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            assert button is not None
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button)
+            qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+    
+        try:
+            dialog.findChild(QLineEdit, "ifc_author").setText("author")
+            if action == "apply":
+                dialog.findChild(QLineEdit, "ifc_group_allocation").setText(str(allocation))
+                click("ifc_group_preview")
+                assert dialog.findChild(QTableWidget, "ifc_group_quantities").rowCount() == 3
+                assert "انجام نشد" not in dialog.findChild(QLabel, "ifc_review_outcome").text()
+            else:
+                dialog.findChild(QLineEdit, "ifc_group_crosswalk_document").setText(str(tmp_path / "crosswalk-group.json"))
+            before = deepcopy(service.open_project("P"))
+            token = service.store.current_digest("P")
+            revision_count = service.store.db.execute("SELECT count(*) FROM revisions").fetchone()[0]
+            if change == "project":
+                view.project_id_input.setText("OTHER")
+            elif change == "revision":
+                view.ifc_revision.setText("R99")
+            else:
+                view.open_drawing(str(tmp_path / "beams-R1.ifc"))
+            click("ifc_group_confirm")
+            click("ifc_group_" + action)
+&gt;           assert service.open_project("P") == before, "Stale IFC review mutated stored ownership/crosswalk"
+E           AssertionError: Stale IFC review mutated stored ownership/crosswalk
+E           assert {'boq': [{'al...id': 'P', ...} == {'boq': [{'al...id': 'P', ...}
+E             
+E             Omitting 16 identical items, use -vv to show
+E             Differing items:
+E             {'_meta': {'id': 'P', 'version': 21, 'updated_at': 1793212004.791476}} != {'_meta': {'id': 'P', 'version': 20, 'updated_at': 1793212004.6416845}}
+E             {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '1CBJ1cYf59H800NmldIPYa', 'commit_allowed': False, 'coordin...: ['1000000', '9', '0'], 'ifc_sha256': 'c3dc6444f5bc80218f852292de897a58f4242b2e2152d8fc65850b908c5a1736', ...}, ...}]} != {'ifc_2d_crosswalks': [{'author': 'author', 'building_id': '1CBJ1cYf59H800NmldIPYa', 'commit_allowed': False, 'coordin...: ['10...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_phase6_p5_e6_live_context.py:52: AssertionError</failure></testcase></testsuite></testsuites>

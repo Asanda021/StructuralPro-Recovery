@@ -1,0 +1,76 @@
+{
+  "source_sha": "aecf184424e944f4409800e50df5652f2a574c34",
+  "stats": {
+    "tests": 8422,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 10,
+    "passed": 8412
+  },
+  "pytest_exit_code": 0,
+  "timed_out": false,
+  "junit_report_written": true,
+  "overall_green": true,
+  "timeout_seconds": 1200.0,
+  "current_test_modules_total": 707,
+  "current_test_manifest_sha256": "e89de674e5fe212c3472b6e629eea6f23dc1fb8617e41ffee7de26524efde54a",
+  "files": [
+    {
+      "file": "p6-e4e6-broad-local.xml.gz",
+      "original_sha256": "e2cf1f00a29f41c93f461f980dd0dce63880b8519f3282fc8f4d8e440c6f3a7a",
+      "original_bytes": 5391770
+    },
+    {
+      "file": "p6-e4e6-broad-local.json.gz",
+      "original_sha256": "73cdbcdc255f51488cb341a7c440dd5552b60b01fd1589c2ce45e32e14dc231b",
+      "original_bytes": 5566696
+    },
+    {
+      "file": "p6-e4e6-broad-local.log.gz",
+      "original_sha256": "5894386959ea5d4c1e58fc3f284078191bcdbfefce2eb68e1c60412fb0c06d70",
+      "original_bytes": 5175461
+    }
+  ],
+  "skips": [
+    {
+      "test": "tests.test_phase4_sqlite_windows_native::test_windows_live_connection_blocks_rename_and_preserves_committed_revisions",
+      "reason": "Windows NTFS file-sharing semantics"
+    },
+    {
+      "test": "tests.test_phase4_sqlite_windows_native::test_windows_closed_database_can_be_moved_then_reopened_safely",
+      "reason": "Windows NTFS file-sharing semantics"
+    },
+    {
+      "test": "tests.test_phase5_p3_trusted_identity_store::test_windows_identity_is_read_from_the_live_access_token",
+      "reason": "Windows Native only"
+    },
+    {
+      "test": "tests.test_phase5_unified_packaging::test_windows_single_edition_validate_only_does_not_build",
+      "reason": "native PowerShell required"
+    },
+    {
+      "test": "tests.test_phase5_windows_native_acceptance::test_current_windows_token_principal_reaches_projectstore_and_real_qt_workspace",
+      "reason": "requires native Windows"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[1]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[2]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[3]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[4]",
+      "reason": "PowerShell runtime unavailable"
+    },
+    {
+      "test": "tests.test_windows_build_native_failures::test_native_failure_stops_build_before_stale_payload_is_accepted[5]",
+      "reason": "PowerShell runtime unavailable"
+    }
+  ]
+}

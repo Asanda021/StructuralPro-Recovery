@@ -1,0 +1,24 @@
+{
+  "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+  "reports": [
+    {
+      "file": "p6-roof-self-dismiss-final.xml",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d92f213041015f541ffd75639dc6ea7d9c0afdb12936a144c0d7b612af4d6d55"
+    },
+    {
+      "file": "p6-e4e6-stable-related.xml",
+      "tests": 159,
+      "passed": 159,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d2ab860651d30fc690ef00cb095b398ceaf046c05c5a65a77dc24bba2c5171d4"
+    }
+  ],
+  "roof_pre_fix_fault": "One real CI failure on aecf184 plus controlled delayed-poll RED; nested-modal intermediate fix was independently rejected under external 4s bound and repaired before final source acceptance."
+}

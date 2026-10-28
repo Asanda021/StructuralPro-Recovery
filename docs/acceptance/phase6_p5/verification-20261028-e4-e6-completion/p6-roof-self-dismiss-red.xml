@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.073" timestamp="2026-10-28T18:46:27.146324+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase2_pdf_roof_ui" name="test_delayed_roof_modal_is_seen_even_if_construction_is_slow" time="0.198"><failure message="assert (False)">qt = &lt;PySide6.QtWidgets.QApplication(0x2cf89180) at 0x7f1ad375dec0&gt;
+
+    def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
+        from PySide6.QtCore import QEventLoop
+        from PySide6.QtWidgets import QDialog
+        seen=[]
+        roof=QDialog();roof.setObjectName('RoofDetailEditor')
+        loop=QEventLoop()
+        errors=[]
+        timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=1.0)
+        # Deterministically model a busy native event loop: the first observation
+        # occurs after the old 20 ms self-dismissal would have run.
+        timer.setInterval(120)
+        def open_roof():
+            QTimer.singleShot(20,roof.reject)
+            roof.exec()
+        QTimer.singleShot(80,open_roof)
+        QTimer.singleShot(180,loop.quit)
+        loop.exec();timer.stop();timer.deleteLater()
+&gt;       assert state['started'] and not errors
+E       assert (False)
+
+tests/test_phase2_pdf_roof_ui.py:174: AssertionError</failure></testcase></testsuite></testsuites>

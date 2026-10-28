@@ -1,0 +1,24 @@
+{
+  "initial_head": "d242797c2595938ad5be5baa25c27e783a15a324",
+  "red_source": "535abd97683f9792d9853dc49af672bbabfe0764",
+  "tested_source": "aecf184424e944f4409800e50df5652f2a574c34",
+  "tested_tree": "68aaea78fba1b85a6962c1d2a065fc860e27d76f",
+  "targeted_and_acceptance_workflow_head": "c1e28be25fc73d77946490a888499c8c289f4a78",
+  "broad_workflow_head": "1300eaac6191f9ca749d9cc259c443afe2720ae8",
+  "source_trees": {
+    "app": "6aba5bbc33aa27aa2cab74aadfb251701f96a62f",
+    "core": "11eb37864588260aa884b6d7485143831830f210",
+    "tests": "83812b879a30cc1e5e8ddd65e9cc23cdd7defd95",
+    "scripts": "ba7a10f215c4cc76b8d74c51708525a3b6bfc404"
+  },
+  "source_files": {
+    "requirements.txt": "96d46b676dddfce7dcd8dccb79150710e4218c8a",
+    "pytest.ini": "c7b23ecb1408be49fb2fa8ef77ffa48640681e34"
+  },
+  "note": "The two listed test files are additions; no existing test bytes changed. Later commits change CI configuration and acceptance evidence only.",
+  "added_test_files": [
+    "tests/test_phase6_p5_e4_identity_generation.py",
+    "tests/test_phase6_p5_e6_live_context.py"
+  ],
+  "existing_test_files_modified": []
+}

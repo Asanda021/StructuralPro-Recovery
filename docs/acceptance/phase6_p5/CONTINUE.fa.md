@@ -1,3 +1,17 @@
+## Source نهایی پس از رفع fixture Windows — ۲۸ اکتبر ۲۰۲۶
+
+CI گسترده [40746431177](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40746431177) روی aecf184 در Linux8417PASS/5SKIP شد، ولی Windows یک FAIL واقعی در آزمون تشخیص مودال سقف داشت؛ timeout نبود، JUnit موجود و Union اجرا نشده است. نقص تایمر20ms خود fixture با RED قطعی بازتولید و بدون تغییر timeout یا حذف assertion اصلاح شد؛ cleanup مودال تو‌در‌تو نیز با RED جدا و بازبینی مستقل محدود شد.
+
+Source نهایی `cd855297af657a382c76909eabad7523688148a2`؛ محصول E4/E6 همان aecf184، fixture سقف تقویت‌شده. محلی۱۵۹PASS/۰FAIL/۰ERROR/۰SKIP/۱warning. [هدفمند40749023272](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272) SUCCESS هر سیستم۱۵۹PASS/صفرFAIL/ERROR/SKIP/JUnit معتبر. [جامع40749023450](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450) و [full40749998943](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943) در حال اجرا؛ نتیجه source قبلی برای این source کافی نیست. [گزارش](verification-20261028-e4-e6-completion/REPORT.fa.md) و شواهد قدیم/جدید جدا محفوظ‌اند. P6-5 PARTIAL،۸فاز/۸۵٪، PR33/34 Draft/Unmerged و main/Release ثابت.
+
+## E4/E6: اصلاح هویت و زمینه زنده — ۲۸ اکتبر ۲۰۲۶
+
+مبنای جدید: HEAD اولیه `d242797...` از remote بازیابی شد. ۱۱ RED واقعی (اندیس نتیجه نامعتبر، جایگزینی CAS در callback، ثبت Apply/Migrate با زمینه IFC تغییرکرده) و اصلاح source `aecf184424e944f4409800e50df5652f2a574c34` ثبت شدند. محلی:۱۱GREEN،۱۴۹رگرسیون مرتبط،۱۸۸مرز مالکیت/AI؛ صفرFAIL/ERROR/SKIP، یک هشدار fitz در بسته۱۴۹.
+
+[CI هدفمند40745562636](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40745562636) روی همان source: **Linux۱۴۹PASS + Windows۱۴۹PASS**، صفرFAIL/ERROR/SKIP و JUnit معتبر. [پذیرش جامع40745562892](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40745562892) و [رگرسیون کامل40746431177](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40746431177) در حال تکمیل؛ تا پایان واقعی، نتیجه نهایی NOT VERIFIED است. [گزارش و شواهد](verification-20261028-e4-e6-completion/REPORT.fa.md).
+
+E4/E6/W1 در کل PARTIAL؛ قرارداد DWG، مقصد تخصصی فاقد نگاشت، مالکیت مشترک نامستند و inverse Crosswalk مسدودند؛ A2 بدون وزن/runtime/مجوز واقعی BLOCKED. تعارض واقعی PR34 با base=PR33 فقط در دو ابزار `phase6_acceptance_summary.py` و `run_phase6_pytest.py` بررسی شد؛ حل نشده است. هیچ Merge/Rebase/ForcePush/main/Release/EXE انجام نشده؛۸فاز/۸۵٪ و P6-5 ثابت.
+
 ## E4 callback post-CAS | ۲۸ اکتبر ۲۰۲۶
 - RED [CI #40718061692](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40718061692): Windows **۵ FAIL/۳ PASS** با JUnit؛ Linux پیش از JUnit در teardown Qt SIGSEGV کرد، نه RED کامل.
 - Fix `426c485f16c4938299a9c0415e96dd5ff15d1c1b`: رد `False` صریح و Digest stale پس از callback؛ `None` موفق legacy محفوظ. GREEN [CI #40718625140](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40718625140): **۴۸ PASS هر سیستم Windows/Linux**، صفر FAIL/ERROR/SKIP و JUnit واقعی.
