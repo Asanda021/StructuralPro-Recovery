@@ -1,3 +1,11 @@
+## Windows Qt timeout — checkpoint جاری ۲۸ اکتبر ۲۰۲۶
+
+کد/تست `74cc37d68c35a0a113643e7538d9dce3378e3597`، workflow `b423fcf178a16a1242599ed2d7b898d910f482ce`. پنجره خطای واقعی BoredPileErrorMessage از stack قبلی شناسایی شد؛ بازپخش تأخیر کنترل‌شده نشان داد singleShot(10) پیش از نمایش QMessageBox می‌تواند از دست برود، ولی علت انحصاری رخداد Windows ثابت نشده است. انتظار دارای deadline، کنترل والد/شناسه/عنوان/دکمه و کلیک واقعی Qt برای هشدار و خروج بدون ذخیره پیاده شده و۹تست محلی PASS دارند. [گزارش و RED/GREEN](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+[CI پذیرش40668037315](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037315) و [CI گسترده40668037298](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037298) برای SHA جدید در حال اجرا هستند؛ بدون نتیجه نهایی Windows و JUnit، گیت PARTIAL است. هیچ timeout افزایش نیافت، test حذف یا skip نشد، محصول و assertionهای داده محفوظ‌اند. PRها Draft/Unmerged؛ main ثابت،۸فاز و۸۵٪ بدون تغییر.
+
+---
+
 ## بررسی مستقل timeout ویندوز — ۲۸ اکتبر ۲۰۲۶
 
 **PARTIAL:** Run 40661082617 روی source 6990c9259eb23de25cad96a641f57413f6306609 در Windows با exit 124 و timeout 1500 ثانیه و JUnit مفقود شکست خورد. Artifact 12805470944 بازدریافت شد و SHA256 آن f4ce9616c0e88bc0cbfa22e869a39adb177fa0ec3e428323e15a02c2cb9a6875 با لاگ برابر است. Stack در QMessageBox.exec در app/bored_pile_detail_editor.py خط ۱۴۱ و test_bored_pile_draft_amendment_real_qt.py حوالی خط ۶۶ است. آزمون از singleShot(10) برای بستن هشدار و تأیید خروج استفاده می‌کند؛ زمان‌بندی عامل محتمل است اما stack به‌تنهایی علت قطعی را اثبات نمی‌کند. در این بررسی کد تغییر نکرد و RED/GREEN و Windows CI جدید اجرا نشد. محیط مجازی قبلی در محیط تازه موجود نبود. اقدام بعد: بازتولید کنترل‌شده در Windows native با ثبت نوع پنجره، زمان و رویداد تایمر و سپس اصلاح مبتنی بر شواهد، آزمون هدفمند و broad هر دو سیستم. CI محدود قبلی 40659709412 بر روی 6990c925 هر دو سیستم موفق بوده و جای broad Windows را نمی‌گیرد. بدون Merge/Force Push/main/Release/EXE/P6-6؛ ۸ فاز و ۸۵٪ ثابت.

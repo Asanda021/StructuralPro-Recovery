@@ -1,0 +1,7 @@
+This plugin does not support propagateSizeHints()
+old one-shot observed expected QMessageBox: [False]
+Traceback (most recent call last):
+  File "/workspace/qtfix-old-timer-repro.py", line 21, in <module>
+    assert observed==[True], 'RED: one-shot expired before the real QMessageBox appeared'
+           ^^^^^^^^^^^^^^^^
+AssertionError: RED: one-shot expired before the real QMessageBox appeared
