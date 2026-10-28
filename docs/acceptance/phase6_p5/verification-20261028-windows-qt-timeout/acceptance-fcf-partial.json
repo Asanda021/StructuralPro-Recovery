@@ -1,0 +1,57 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40669898079",
+  "status_at_capture": "In progress",
+  "reports": [
+    {
+      "file": "p6-qa-security-offscreen.xml",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "0d881c2250e8acafd33acce1edb393ba06ff5c129101972867620f211258fd48",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-offscreen.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "2f0f76c7f12138a6bb7e9e9a8af44f03a20acf2d2c34ec79ccf5fc354f6da603",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "5dc75bab403b1b0b5ae657ed93ddeec9ec30113aebcd746f5e53af91856a59af",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "61bb0774849d0f64e447d1d8f8e74c527449094dbd52e93228ffd60db927bd97",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-offscreen.xml",
+      "tests": 474,
+      "passed": 474,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "510c4762b07a2c86c1b33d28882eab766c284a1e05e11c4dcfdc6be1ed631085",
+      "pytest_warning_count": 1
+    }
+  ],
+  "windows": "pending, no inferred counts"
+}
