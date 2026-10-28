@@ -267,4 +267,4 @@ def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
  QTimer.singleShot(80,delayed_file);QTimer.singleShot(900,loop.quit)
  loop.exec();timer.stop();was_visible=parent.isVisible();parent.close();_qt.processEvents()
  assert not errors and was_visible and state['clicked'],errors
- assert selected==[str(document)]
+ assert len(selected)==1 and Path(selected[0])==document
