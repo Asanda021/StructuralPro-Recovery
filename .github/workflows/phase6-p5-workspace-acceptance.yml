@@ -19,7 +19,7 @@ on:
       - app/project_search_panel.py
       - app/verified_search_navigation.py
       - app/bored_pile_detail_editor.py
-      - tests/test_bored_pile_real_qt_stabilization.py tests/test_bored_pile_draft_amendment_real_qt.py
+      - tests/test_bored_pile_real_qt_stabilization.py
       - tests/test_bored_pile_draft_amendment_real_qt.py
       - app/graphical_takeoff.py
       - app/beam_detail_panel.py
