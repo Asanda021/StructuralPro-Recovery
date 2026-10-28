@@ -1,0 +1,84 @@
+{
+  "run": "40749998943",
+  "status": [
+    "Failure"
+  ],
+  "reports": [
+    {
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "pytest_exit_code": -11,
+      "timed_out": false,
+      "overall_green": false,
+      "stats": {
+        "error": "JUnit report missing"
+      }
+    },
+    {
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 3188,
+        "passed": 3185,
+        "failed": 0,
+        "skipped": 3,
+        "failures": []
+      }
+    },
+    {
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 2589,
+        "passed": 2586,
+        "failed": 0,
+        "skipped": 3,
+        "failures": []
+      }
+    },
+    {
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 2646,
+        "passed": 2645,
+        "failed": 0,
+        "skipped": 1,
+        "failures": []
+      }
+    }
+  ],
+  "artifacts": [
+    [
+      "p6-broad-current-linux",
+      "12842899022"
+    ],
+    [
+      "p6-broad-current-windows-0",
+      "12845415127"
+    ],
+    [
+      "p6-broad-current-windows-1",
+      "12842659855"
+    ],
+    [
+      "p6-broad-current-windows-2",
+      "12845050524"
+    ]
+  ],
+  "digests": [
+    "8f4e26610be4142f595fa4f74c82721b5c832c1b5e3e68069b8a9537865a04bd",
+    "8f4e26610be4142f595fa4f74c82721b5c832c1b5e3e68069b8a9537865a04bd",
+    "78091ba72c450739d94e570a00121c21c955264420c9fa7f8a872d8335c64664",
+    "78091ba72c450739d94e570a00121c21c955264420c9fa7f8a872d8335c64664",
+    "2107949e921d55f5f8c6c0a127296f6e6d3b782bc3e6af9fc08b9a101ad916c7",
+    "2107949e921d55f5f8c6c0a127296f6e6d3b782bc3e6af9fc08b9a101ad916c7",
+    "05b8a718907ef0ba08aa4b0cd7bddd366734dad7b69c498ac81d4311ff502906",
+    "05b8a718907ef0ba08aa4b0cd7bddd366734dad7b69c498ac81d4311ff502906"
+  ]
+}

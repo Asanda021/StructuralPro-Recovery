@@ -1,0 +1,12 @@
+fd6dee1aca6a6a3b396c1bac66b5e7429dfefa35
+100644 cff7927ea53abafc8f07a351e51f4da810453135 2	scripts/phase6_acceptance_summary.py
+100644 d8c857eaec066c0f857f800e8dc11e1616b408f0 3	scripts/phase6_acceptance_summary.py
+100644 bb5c39240c5abdd3dc7c035cf2a13f406d3bc6d9 2	scripts/run_phase6_pytest.py
+100644 84f5f6fb35b46f5daf6079950fa0e2c439782f86 3	scripts/run_phase6_pytest.py
+
+Auto-merging app/graphical_takeoff.py
+Auto-merging app/roof_detail_editor.py
+Auto-merging scripts/phase6_acceptance_summary.py
+CONFLICT (add/add): Merge conflict in scripts/phase6_acceptance_summary.py
+Auto-merging scripts/run_phase6_pytest.py
+CONFLICT (add/add): Merge conflict in scripts/run_phase6_pytest.py

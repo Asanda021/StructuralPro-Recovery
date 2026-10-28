@@ -1,0 +1,35 @@
+{
+  "head_at_verification": "b2264832013f243d186aa2eeea9663c9a0246aa0",
+  "refs": {
+    "refs/heads/feature/phase6-p5-workspace-e3-e6-20261027": "b2264832013f243d186aa2eeea9663c9a0246aa0",
+    "refs/heads/main": "9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95",
+    "refs/pull/33/head": "c859cebccf83a43e456e73377bb2dea764e00823",
+    "refs/pull/34/head": "b2264832013f243d186aa2eeea9663c9a0246aa0"
+  },
+  "prs": {
+    "33": {
+      "headSha": "c859cebccf83a43e456e73377bb2dea764e00823",
+      "baseBranch": "feature/phase6-p3-production-integration-20261026",
+      "baseSha": "a0951a5d60b7c82040327be63b99e6fcc2aadfe2",
+      "state": "DRAFT",
+      "closedTime": null,
+      "mergedTime": null
+    },
+    "34": {
+      "headSha": "b2264832013f243d186aa2eeea9663c9a0246aa0",
+      "baseBranch": "feature/phase6-p4-contextual-wizard-20261026",
+      "baseSha": "241dd15e3e5c3c572f94237da5146ceb04dc9dbf",
+      "state": "DRAFT",
+      "closedTime": null,
+      "mergedTime": null
+    }
+  },
+  "conflict_files": [
+    "scripts/phase6_acceptance_summary.py",
+    "scripts/run_phase6_pytest.py"
+  ],
+  "main_unchanged": true,
+  "pr33_unchanged": true,
+  "merge_rebase_force_push_performed": false,
+  "note": "Verified before final evidence-only commit; final post-push check is additionally retained outside checkout to avoid a self-referential commit hash."
+}

@@ -1,0 +1,192 @@
+{
+  "run": "40751958863",
+  "status": [
+    "Success"
+  ],
+  "reports": [
+    {
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 8423,
+        "passed": 8418,
+        "failed": 0,
+        "skipped": 5,
+        "failures": []
+      }
+    },
+    {
+      "verified": true,
+      "shards": 3,
+      "modules": 707,
+      "case_count": 8423,
+      "module_manifest_sha256": "e89de674e5fe212c3472b6e629eea6f23dc1fb8617e41ffee7de26524efde54a",
+      "windows_passed": 8416,
+      "windows_skipped": 7,
+      "linux_passed": 8418,
+      "linux_skipped": 5
+    },
+    {
+      "artifact": "p6-broad-current-windows-2",
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "files": [
+        {
+          "name": "phase6-broad-current-windows.json",
+          "sha256": "af894ba1a1ec2cf8c6774ad518f6ac0a5c47378151fcb1bc242c4025d8b51615",
+          "bytes": 430956,
+          "pytest_exit_code": 0,
+          "timed_out": false,
+          "junit_report_written": true,
+          "overall_green": true,
+          "current_test_modules_total": 707,
+          "current_test_modules_in_shard": 235
+        },
+        {
+          "name": "phase6-broad-current-windows.log",
+          "sha256": "5ba46c6e54167d73822e19ede8e2a10cf13c24519381cac59b8103d91145c836",
+          "bytes": 305248,
+          "tail": "99%]\r\ntests/test_windows_ui_navigation_dashboard.py::test_user_pricebook_is_persisted_locally PASSED [ 99%]\r\ntests/test_windows_ui_navigation_dashboard.py::test_quick_takeoff_preserves_selected_discipline PASSED [ 99%]\r\ntests/test_windows_ui_navigation_dashboard.py::test_main_navigation_has_controlled_glass_styling PASSED [ 99%]\r\ntests/test_windows_ui_navigation_dashboard.py::test_collaboration_workspace_is_integrated_into_primary_navigation PASSED [100%]\r\n\r\n- generated xml file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\structuralpro_qa_result_mz74bsds\\result.xml -\r\n=========== 2586 passed, 3 skipped, 1 warning in 661.27s (0:11:01) ============\r\n"
+        },
+        {
+          "name": "phase6-broad-current-windows.xml",
+          "sha256": "d08197b7aa1d7a3e22a5213040c1930241bf6551511e14b8b1a3b83d200107e0",
+          "bytes": 366232,
+          "tests": 2589,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 3,
+          "skip_reasons": [
+            "Native complex text oracle unavailable",
+            "POSIX rename of an open SQLite file is needed for this fault injection"
+          ]
+        }
+      ]
+    },
+    {
+      "artifact": "p6-broad-current-windows-1",
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "files": [
+        {
+          "name": "phase6-broad-current-windows.json",
+          "sha256": "11dfb578085907529b54afeae00cfad5cfb234fefcf680133d03267a194c6b62",
+          "bytes": 533939,
+          "pytest_exit_code": 0,
+          "timed_out": false,
+          "junit_report_written": true,
+          "overall_green": true,
+          "current_test_modules_total": 707,
+          "current_test_modules_in_shard": 236
+        },
+        {
+          "name": "phase6-broad-current-windows.log",
+          "sha256": "19362d3e8e25d64176f1caed0fca7da9beef6a16aa8c8e4c4a1492121cda1aee",
+          "bytes": 377896,
+          "tail": "] PASSED [ 99%]\r\ntests/test_work_pdf_precision.py::test_scientific_number_is_measured_as_an_indivisible_number[-1.234567890123456789e-50] PASSED [ 99%]\r\ntests/test_work_pdf_precision.py::test_summary_number_too_wide_is_rejected PASSED [ 99%]\r\ntests/test_work_pdf_precision.py::test_unique_later_identity_and_generated_identity_do_not_change_source PASSED [ 99%]\r\ntests/test_work_pdf_precision.py::test_real_persian_all_pages_and_export_precision PASSED [100%]\r\n\r\n- generated xml file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\structuralpro_qa_result_4v64w4k_\\result.xml -\r\n=========== 3185 passed, 3 skipped, 1 warning in 511.22s (0:08:31) ============\r\n"
+        },
+        {
+          "name": "phase6-broad-current-windows.xml",
+          "sha256": "45c0f4b3b0a8389de444deba78fe16eea6296fe42b94a6aa749f3401eaa69177",
+          "bytes": 453655,
+          "tests": 3188,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 3,
+          "skip_reasons": [
+            "requires POSIX directory renames and hard links"
+          ]
+        }
+      ]
+    },
+    {
+      "artifact": "p6-broad-current-windows-0",
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "files": [
+        {
+          "name": "phase6-broad-current-windows.json",
+          "sha256": "a200945cf2b45662b92067a25497943fab0a6fb478a5b13533a5a993ad98f6ac",
+          "bytes": 445329,
+          "pytest_exit_code": 0,
+          "timed_out": false,
+          "junit_report_written": true,
+          "overall_green": true,
+          "current_test_modules_total": 707,
+          "current_test_modules_in_shard": 236
+        },
+        {
+          "name": "phase6-broad-current-windows.log",
+          "sha256": "dae23cf79a1ded0f70e87fe1426e763f3da5375b3b6fdd8cda496cd10d7a9f59",
+          "bytes": 316577,
+          "tail": "issued_financial_integrity.py::test_previous_payment_cannot_be_unknown_or_nonfinite[inf] PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_previous_payment_cannot_be_unknown_or_nonfinite[-1] PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_statement_preview_requires_explicit_period_work PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_estimate_report_does_not_invent_unspecified_period_work PASSED [100%]\r\n\r\n- generated xml file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\structuralpro_qa_result_bxpg_547\\result.xml -\r\n=========== 2645 passed, 1 skipped, 3 warnings in 853.69s (0:14:13) ===========\r\n"
+        },
+        {
+          "name": "phase6-broad-current-windows.xml",
+          "sha256": "98778a8d530e0d1e91ff478ed409f392ec9ef444e9d73f5cc583aa1f2771a6b6",
+          "bytes": 378172,
+          "tests": 2646,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 1,
+          "skip_reasons": [
+            "POSIX identity assertion"
+          ]
+        }
+      ]
+    },
+    {
+      "artifact": "p6-broad-current-linux",
+      "source_sha": "cd855297af657a382c76909eabad7523688148a2",
+      "files": [
+        {
+          "name": "phase6-broad-current.json",
+          "sha256": "c3c1d56cf04306ebde0ecc80bf6fbcee913f1a48e9f33abcb755d239c3a2b0b6",
+          "bytes": 1372596,
+          "pytest_exit_code": 0,
+          "timed_out": false,
+          "junit_report_written": true,
+          "overall_green": true,
+          "current_test_modules_total": 707,
+          "current_test_modules_in_shard": 707
+        },
+        {
+          "name": "phase6-broad-current.log",
+          "sha256": "43d2613af2a8ae11ab00e91255982e23db729b5ac1119f7a8e0c03dd7a7dc32f",
+          "bytes": 981458,
+          "tail": "67890123456789012345678901e+120] PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_scientific_number_is_measured_as_an_indivisible_number[-1.234567890123456789e-50] PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_summary_number_too_wide_is_rejected PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_unique_later_identity_and_generated_identity_do_not_change_source PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_real_persian_all_pages_and_export_precision PASSED [100%]\n\n----- generated xml file: /tmp/structuralpro_qa_result_0af24ang/result.xml -----\n=========== 8418 passed, 5 skipped, 3 warnings in 811.21s (0:13:31) ============\n"
+        },
+        {
+          "name": "phase6-broad-current.xml",
+          "sha256": "85bd1296cf407b929be039b8117039a603361bcb74d577298958ed30193570d3",
+          "bytes": 1196567,
+          "tests": 8423,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 5,
+          "skip_reasons": [
+            "Windows NTFS file-sharing semantics",
+            "Windows Native only",
+            "native PowerShell required",
+            "requires native Windows"
+          ]
+        }
+      ]
+    }
+  ],
+  "artifacts": [
+    [
+      "p6-broad-current-linux",
+      "12844019387"
+    ],
+    [
+      "p6-broad-shard-union-verification",
+      "12844708189"
+    ]
+  ],
+  "digests": [
+    "723076e6b41e631f786d9555a75495c3440e34e7a1a4dcb0ad9607dc3c69056f",
+    "723076e6b41e631f786d9555a75495c3440e34e7a1a4dcb0ad9607dc3c69056f",
+    "a95df30151e8ad0a92a0b44037e28fd6cf44ca4e28450bea3c6e087fd9efd65f",
+    "a95df30151e8ad0a92a0b44037e28fd6cf44ca4e28450bea3c6e087fd9efd65f"
+  ]
+}

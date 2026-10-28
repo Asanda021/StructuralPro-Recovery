@@ -1,3 +1,35 @@
+# نتیجه نهایی این مأموریت — PARTIAL
+
+اصلاحات قابل‌اثبات و مجاز E4/E6 پیاده‌سازی و روی Linux/Windows آزموده شدند؛ source نهایی **`cd855297af657a382c76909eabad7523688148a2`** است. HEAD اولیه **`d242797c2595938ad5be5baa25c27e783a15a324`** بود؛ HEAD کد/CI هنگام راستی‌آزمایی **`b2264832013f243d186aa2eeea9663c9a0246aa0`** است. commit پایانی شواهد کد آزموده‌شده را تغییر نمی‌دهد؛ HEAD پس از push در پاسخ نهایی و بررسی مستقل post-push ثبت می‌شود.
+
+- کد محصول E4/E6: `aecf184424e944f4409800e50df5652f2a574c34`؛ کنترل اندیس معتبر Qt، حفظ CAS اصلی حین callback و محافظ زمینه IFC در Preview/Apply/Migrate.
+- تقویت fixture سقف: `cd855297af657a382c76909eabad7523688148a2`؛ مشاهده هویت/دکمه واقعی پیش از QTest و cleanup محدود در همان مهلت۱ثانیه‌ای، بدون حذف assertion یا افزایش timeout.
+- [هدفمند نهایی40749023272](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272): هر محیط159PASS، صفرFAIL/ERROR/SKIP و JUnit معتبر.
+- [پذیرش جامع40749023450](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450): هر محیط515PASS اصلی +130تاریخی +26امنیت +8DPI150 +8DPI200، صفرFAIL/ERROR/SKIP؛ یک هشدار fitz در بسته اصلی.
+- [رگرسیون کامل Windows40749998943](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943) و [بازآزمایی کامل Linux/Union40751958863](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751958863) روی **همان source**؛ job `verify-full-union` **SUCCESS**.
+
+| محیط نهایی | PASS | FAIL | ERROR | SKIP | Exit | Timeout | JUnit |
+|---|---:|---:|---:|---:|---:|---|---|
+| Linux کامل، اجرای تازه | 8418 | 0 | 0 | 5 | 0 | false | معتبر |
+| Windows shard0 | 2645 | 0 | 0 | 1 | 0 | false | معتبر |
+| Windows shard1 | 3185 | 0 | 0 | 3 | 0 | false | معتبر |
+| Windows shard2 | 2586 | 0 | 0 | 3 | 0 | false | معتبر |
+| مجموع Windows | 8416 | 0 | 0 | 7 | 0 | false | سه XML معتبر |
+
+**Union=8423 testcase یکتا،707ماژول،صفرDuplicate/Missing/Extra**. این تعداد testcase است، نه تعداد سناریوی مستقل مهندسی. manifest ماژول‌ها `e89de674e5fe212c3472b6e629eea6f23dc1fb8617e41ffee7de26524efde54a` است. XML/JSON/log اصلی هر چهار Artifact در گیت Union دانلود و بازخوانی شدند؛ هر فایل SHA256 مستقل دارد و tail واقعی log/علت SKIP در `final-union-inspected.json` ثبت است.
+
+[Linux JUnit/JSON/log12844019387](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751958863/artifacts/12844019387)؛ [Windows0=12845415127](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12845415127)؛ [Windows1=12842659855](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12842659855)؛ [Windows2=12845050524](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12845050524)؛ [Union و گزارش بازرسی12844708189](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751958863/artifacts/12844708189).
+
+**علت PARTIAL:** E4/E6/W1 در کل هنوز قراردادهای فاقد سند دارند، A2 فاقد دارایی واقعی/مجوز معتبر است، UAT فیزیکی مستقل انجام نشده و علت دقیق SIGSEGV قبلی Linux اثبات نشده است. اجرای تازه Linux با همان کد8418PASS شد و بازتولید هدفمند22PASS بود؛ این شواهد علت crash قبلی را رفع‌شده ثابت نمی‌کنند. run40749998943 به علت SIGSEGV Linux همچنان **Failure** است؛ آن نتیجه و JUnit مفقودش حذف یا PASS نشده‌اند. هیچ اصلاح حدسی روی محصول/پاکسازی عمومی Qt اعمال نشد.
+
+PR33/34 طبق بررسی تازه **Open/Draft/Unmerged**؛ main=`9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95` و PR33=`c859cebccf83a43e456e73377bb2dea764e00823` ثابت. PR34 با base=PR33 دو تعارض واقعی add/add در `scripts/phase6_acceptance_summary.py` و `scripts/run_phase6_pytest.py` دارد؛ فقط بررسی و پیشنهاد انجام شد. Merge/Rebase/ForcePush/main/Release/installer/EXE/P6-6/فاز۷ انجام نشد. فاز۶/P6-5، نقشه راه۸فاز و پیشرفت ثبت‌شده۸۵٪ ثابت است.
+
+اقدام بعدی محدود: قرارداد و سند مستقل مالکیت مشترک/inverse Crosswalk/مقصد تخصصی DWG و IFC؛ دارایی واقعی A2 با منشأ/مجوز/runtime/inference و Human Review؛ UAT مالک؛ و capture native backtrace در صورت بازتولید crash. رفع تعارض فقط در مأموریت دارای مجوز مستقل مجاز است. سایر کارهای مستقل مجاز این نوبت انجام شدند.
+
+---
+
+وضعیت‌های درحال‌اجرا در تاریخچهٔ زیر، متعلق به لحظهٔ ثبت همان checkpoint هستند؛ نتیجهٔ نهایی بالای این فایل مرجع است.
+
 # تکمیل محدوده معتبر E4/E6 — ۲۸ اکتبر ۲۰۲۶
 
 وضعیت مأموریت **PARTIAL** است؛ CI اولیه هدفمند و جامع موفق بودند، ولی رگرسیون کامل یک نقص واقعی در fixture مودال Windows پیدا کرد. اصلاح و RED/GREEN آن ثبت شده؛ CI source نهایی تا پایان واقعی باز است. این گزارش تعداد testcase را ثبت می‌کند، نه شمار سناریوهای مستقل مهندسی.
@@ -52,7 +84,7 @@
 - source نهایی: `cd855297af657a382c76909eabad7523688148a2`.
 - رگرسیون مرتبط محلی نهایی:۱۵۹PASS، صفرFAIL/ERROR/SKIP و۱warning fitz،۵۴٫۷۵ثانیه؛ JUnit `p6-e4e6-stable-related.xml`.
 - هدفمند Windows/Linux: [40749023272](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272)، **SUCCESS**، هر محیط۱۵۹PASS و صفرFAIL/ERROR/SKIP؛ JUnit معتبر. [Artifact Linux12841619350](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272/artifacts/12841619350)، [Artifact Windows12843915525](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272/artifacts/12843915525).
-- پذیرش جامع دو سیستم: [40749023450](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450)، در حال اجرا.
+- پذیرش جامع دو سیستم: [40749023450](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450)، **SUCCESS**، هر محیط۵۱۵PASS اصلی +۱۳۰تاریخی +۲۶امنیت +۸DPI150 +۸DPI200، صفرFAIL/ERROR/SKIP و JUnit معتبر؛ یک هشدار fitz در بسته اصلی. [Artifact Linux12842119720](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450/artifacts/12842119720)، [Artifact Windows12842379948](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450/artifacts/12842379948). کد app/core/tests/scripts در checkout workflow `0a82cc7...` با source نهایی `cd85529...` یکسان است.
 - full Linux/سه shard Windows/Union جدید: [40749998943](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943)، workflow `acb0fa4` و source pinned `cd855297af657a382c76909eabad7523688148a2`؛ پس از SUCCESS هدفمند آغاز شد. اجرای قدیمی FAIL به‌عنوان شاهد باقی می‌ماند.
 
 ## شکست بعدی Windows و رفع fixture، بدون پنهان‌کردن نتیجه
@@ -62,6 +94,16 @@
 علت fixture: خود آزمون پنجره را با singleShot20ms می‌بست، درحالی‌که poll20ms و quit180ms می‌توانستند فرصت مشاهده را از بین ببرند. با first-poll120ms، همان assertion پیش از اصلاح به‌صورت قطعی RED شد (`p6-roof-self-dismiss-red.xml`:1FAIL). اکنون موفقیت فقط بعد از هویت دقیق همان QDialog و مشاهده دکمه Close واقعی visible/enabled و کلیک QTest مجاز است؛ خروج حلقه با برگشت exec هماهنگ است. مهلت۱ثانیه‌ای افزایش نیافت.
 
 بازبین مستقل، پوشیده‌شدن سقف با مودال تو‌در‌تو را نیز بازتولید کرد: helper پس از بستن مودال رویی متوقف می‌شد و سقف می‌ماند؛ اجرای مستقل بیرونی در۴ثانیه exit124 داشت. timer پاکسازی owned در همان مهلت1000ms اضافه شد که هم مودال فعال و هم سقف شناخته‌شده را می‌بندد و خطای صریح ثبت می‌کند. این مسیر هرگز موفقیت محسوب نمی‌شود. `p6-roof-nested-red.json` و `p6-roof-nested-green.json` نشان می‌دهند بعد از اصلاح assertion صریح و activeModal=None با exit0 از اسکریپت تشخیص ثبت شد. یک آزمون Qt واقعی جدید همین حالت خطا را کنترل می‌کند. تمام فایل سقف10PASS (`p6-roof-self-dismiss-final.xml`)، با یک هشدار fitz شد. این timeout مربوط به بازتولید محلی کنترل‌شده است؛ run ویندوز timeout نداشت.
+
+## توقف native Linux پس از اصلاح Windows
+
+در [40749998943](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943) روی source نهایی cd85529، Linux با **exit=-11/SIGSEGV، timeout=false، JUnit مفقود** متوقف شد. [Artifact اصلی12842899022](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12842899022) شامل JSON/log واقعی است؛ این قسمت FAIL/NOT VERIFIED است و تعداد PASS نهایی برای آن ساخته نمی‌شود. Windows همان source هر سه shard را با JUnit واقعی تمام کرد: shard0=2645PASS/1SKIP، shard1=3185PASS/3SKIP و shard2=2586PASS/3SKIP؛ جمع8416PASS/7SKIP و صفرFAIL/ERROR/Timeout، exit0. [Windows0 Artifact12845415127](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12845415127)، [Windows1 Artifact12842659855](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12842659855)، [Windows2 Artifact12845050524](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943/artifacts/12845050524). خود این run در مجموع به علت Linux همچنان Failure است و Union آن اجرا نشد.
+
+آخرین لاگ در حدود۳۴٪ به `tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports` می‌رسد. faulthandler60s فقط نمونه stack است، نه حد timeout testcase؛ همین پیام در رگرسیون محلی موفق هم وجود دارد. stack موجود پس از `posixpath.join` و آغاز frame بعدی قطع شده و محل crash native را ثابت نمی‌کند. فایل‌های این مسیر و cleanup آن از source قدیمی a41 تا cd85529 تغییر نکرده‌اند؛ این به‌تنهایی علت یا بی‌اثربودن تغییرات دیگر را ثابت نمی‌کند.
+
+بررسی مستقل یک مسئله چرخه‌عمر قدیمی را بازتولید کرد: سه تست فرم قبلی پس از close/deleteLater/processEvents به‌ترتیب۱/۲/۳ فرم پنهان و timer فعال باقی می‌گذارند؛ ارسال DeferredDelete تعداد را به صفر می‌رساند. ارتباط علّی این مسئله با SIGSEGV اثبات نشده؛ اصلاح حدسی روی محصول یا conftest انجام نشد.
+
+[تشخیص Artifact و بازتولید همان SHA40751306233](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751306233) **SUCCESS،22PASS/صفرFAIL/ERROR/SKIP** شد؛ ماژول‌های بلافاصله پیشین و آزمون متوقف‌شده بدون تغییر assertion اجرا شدند. [Artifact12843891778](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751306233/artifacts/12843891778). فایل اصلی log داخل CI واقعاً بازخوانی شد:348292byte، SHA256=`ec99df2884f7c5bf7ed8e94d71312a11b7a332e89566386a4731aa2ddfa652ef`؛ JUnit اصلی موجود نیست. stack واقعاً در همان frame ناقص قطع شده است. PASS این22آزمون علت crash کامل را تعیین نمی‌کند. بازآزمایی کامل فقط Linux روی همان source در [40751958863](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751958863) با ثبت backtrace native و Union از Windows همان SHA جدا اجرا می‌شود؛ core حافظه منتشر نمی‌شود و فقط backtrace بدون آرگومان frame ممکن است ثبت شود. تکرار موفق به‌تنهایی اثبات رفع علت نیست.
 
 ## ماتریس پذیرش و پیش‌نیازهای بیرونی
 
@@ -102,6 +144,10 @@ Git read/push از مسیر مجاز موجود کار می‌کند. GitHub API
 ## فهرست تغییرات این مأموریت
 
 محصول: `app/project_search_panel.py` و `app/ifc_lineage_controls.py`. آزمون: دو ماژول جدید E4/E6 که در بخش نقص‌ها نام برده شدند. CI: سه workflow هدفمند/پذیرش/رگرسیون کامل. شواهد: همین پوشه و `CONTINUE.fa.md`. فهرست مسیرهای کامل در `changed-files.txt` و بایت‌های شواهد در `SHA256SUMS` ثبت می‌شود. فقط fixture مودال سقف در یک فایل آزمون قبلی تقویت شد؛ نام و assertionهای اصلی حفظ شدند و یک آزمون تو‌در‌تو افزوده شد. هیچ testcase قبلی حذف یا Skip/XFail نشد.
+
+## بررسی نهایی PR و مبنای انتشار
+
+پس از تغییرات کد/CI، `post-change-verification.json` با Git remote و HTML تازه تأیید کرد: PR33 و PR34 هر دوDRAFT/Open با closedTime=null و mergedTime=null؛ main=`9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95` و PR33=`c859cebccf83a43e456e73377bb2dea764e00823` بدون تغییرند. HEAD هنگام این بررسی `b2264832013f243d186aa2eeea9663c9a0246aa0` است؛ commit پایانی فقط شواهد را تکمیل می‌کند و post-push جدا بررسی می‌شود. `final-base-merge-tree-conflicts.txt` همان دو تعارض را دوباره نشان داد و `PR34-base-diff-stat.txt` اختلاف واقعی شاخه با base را در این snapshot ثبت می‌کند. Release/installer/EXE یا تغییر main انجام نشد.
 
 ## ادامه اجرایی
 

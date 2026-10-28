@@ -23,5 +23,7 @@
   "existing_test_files_modified": [
     "tests/test_phase2_pdf_roof_ui.py"
   ],
-  "product_fix_source": "aecf184424e944f4409800e50df5652f2a574c34"
+  "product_fix_source": "aecf184424e944f4409800e50df5652f2a574c34",
+  "linux_diagnostic_workflow_head": "9168c856f3507511ebe03489a4c2ebcd41b47316",
+  "linux_recheck_workflow_head": "b2264832013f243d186aa2eeea9663c9a0246aa0"
 }

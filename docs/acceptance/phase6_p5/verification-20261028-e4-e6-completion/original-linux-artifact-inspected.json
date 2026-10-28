@@ -1,0 +1,10 @@
+{
+  "pytest_exit_code": -11,
+  "timed_out": false,
+  "junit_report_written": false,
+  "overall_green": false,
+  "timeout_seconds": 1200.0,
+  "log_bytes": 348292,
+  "log_sha256": "ec99df2884f7c5bf7ed8e94d71312a11b7a332e89566386a4731aa2ddfa652ef",
+  "junit_exists": false
+}

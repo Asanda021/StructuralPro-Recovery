@@ -1,3 +1,15 @@
+## نتیجه معتبر نهایی E4/E6 — ۲۸ اکتبر ۲۰۲۶
+
+**P6-5 همچنان PARTIAL**؛ اصلاح محصول `aecf184...` و source نهایی `cd855297af657a382c76909eabad7523688148a2` واقعی و آزموده‌اند.۱۱RED E4/E6، RED قطعی fixture سقف و بازتولید timeout تو‌در‌تو ثبت و اصلاح شدند؛ هیچ assertion/testcase حذف یا Skip/XFail نشد، timeoutها افزایش نیافتند.
+
+[هدفمند40749023272](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023272): هر سیستم159PASS؛ [پذیرش جامع40749023450](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749023450): هر سیستم515PASS اصلی +130تاریخی +26امنیت +8+8DPI. آخرین full: Linux8418PASS/5SKIP در [40751958863](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40751958863)؛ Windows8416PASS/7SKIP در سه shard [40749998943](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40749998943). هر چهار بخش تازه صفرFAIL/ERROR/Timeout و JUnit معتبر دارند. **verify-full-union SUCCESS:8423شناسه یکتا/707ماژول،صفرDuplicate/Missing/Extra**؛ Artifactهای اصلی XML/JSON/log خوانده و هش شدند. [گزارش نهایی و شواهد](verification-20261028-e4-e6-completion/REPORT.fa.md).
+
+Linux اجرای40749998943 SIGSEGV/-11 و JUnit مفقود داشت؛ همان run همچنان Failure است. اجرای تازه با همان کد و بازتولید هدفمند22PASS، علت crash قبلی را ثابت یا رفع‌شده نمی‌کنند؛ این ریسک باز است. مسئله قدیمی DeferredDelete مشاهده شد ولی ارتباط علّی آن اثبات نشد و اصلاح حدسی انجام نشد.
+
+قرارداد DWG/IFC تخصصی فاقد نگاشت، اشتراک فیزیکی بتن/میلگرد/پوشش بدون سند سهم، inverse Crosswalk، A2 واقعی و UAT مالک هنوز BLOCKED/PARTIAL هستند. تعارض PR34 با base=PR33 فقط در دو ابزار CI بررسی شد و حل نشد. PR33/34 Open/Draft/Unmerged؛ main و PR33 ثابت؛ بدون Merge/Rebase/ForcePush/Release/installer/EXE/P6-6/فاز۷. **فاز۶/P6-5،۸فاز/۸۵٪ ثابت**. ادامه از HEAD زنده PR34، با حفظ شواهد شکست‌ها و source نهایی؛ پذیرش کامل محصول ادعا نشود.
+
+---
+
 ## Source نهایی پس از رفع fixture Windows — ۲۸ اکتبر ۲۰۲۶
 
 CI گسترده [40746431177](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40746431177) روی aecf184 در Linux8417PASS/5SKIP شد، ولی Windows یک FAIL واقعی در آزمون تشخیص مودال سقف داشت؛ timeout نبود، JUnit موجود و Union اجرا نشده است. نقص تایمر20ms خود fixture با RED قطعی بازتولید و بدون تغییر timeout یا حذف assertion اصلاح شد؛ cleanup مودال تو‌در‌تو نیز با RED جدا و بازبینی مستقل محدود شد.
