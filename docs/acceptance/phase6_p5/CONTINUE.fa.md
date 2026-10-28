@@ -1,3 +1,9 @@
+## گیت جاری رگرسیون گسترده: تقسیم کامل Windows بدون حذف آزمون | ۲۸ اکتبر ۲۰۲۶
+- شکست واقعی [#40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) روی source `facbe18...`: Linux ۸۳۸۱ PASS/۵ SKIP، Windows timeout ۱۵۰۰ثانیه در حدود ۷۴٪ و JUnit مفقود؛ گلوگاه آزمون E6 تعداد ۲۰ و stack ذخیره SQLite؛ علت انحصاری نامعلوم.
+- کد runner+validator `cfa33bf7...`، trigger workflow `1b9bbc8...`، [CI جدید #40681114708](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40681114708) روی **Linux کامل + سه Windows shard + تطبیق fail-closed JUnit Union** شروع شد. حد زمانی هر shard ۱۵۰۰ثانیه، بدون Skip/XFail/حذف تست.
+- گیت تخصصی اصلاح E4 [#40679324114](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40679324114) روی source `69dcdd0...` در هر دو سیستم SUCCESS، اما این broad جدید نیست.
+- [گزارش دقیق گیت](verification-20261028-broad-sharded/REPORT.fa.md). تا CI جدید کامل نشده **P6-5 PARTIAL**. PR33/34 Draft/Unmerged؛ main، نقشه راه ۸فازی و ۸۵٪ پیشرفت کل بدون تغییر.
+
 ## ادامه اجرایی E4: حذف مسیر ناخواسته دوبل عضو IFC، ۲۸ اکتبر
 - Commit کد/آزمون `69dcdd09aa8963bc694638ea912417b263540608`؛ یک رویداد دکمه IFC اکنون فقط `on_open_model` را فراخوانی می‌کند، در حالی‌که بازبینی رکورد و Digest همان است. [CI جدید #40679324114](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40679324114) هنوز در لحظه ثبت در حال اجرا است؛ `PASS` کد تازه ادعا نشود.
 - [گزارش و ماتریس گیت‌های باز](verification-20261028-e4-single-route/REPORT.fa.md). CI تخصصی روی source قبلی `facbe18...` در [#40676687306](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687306) هر دو سیستم موفق؛ broad ویندوز [#40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) هنوز در حال اجرا. PR33/34 Draft/Unmerged؛ main، Merge، EXE و Release بدون تغییر؛ ۸ فاز/۸۵٪ ثابت.
