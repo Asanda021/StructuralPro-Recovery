@@ -12,6 +12,13 @@ import sys
 import xml.etree.ElementTree as ET
 
 
+def warning_count(output):
+    counts=re.findall(r'(\d+) warnings?\b',output)
+    if counts:return int(counts[-1])
+    if re.search(r'\d+ (?:passed|failed|skipped|errors?)\b.*\bin \d+\.\d+s',output) and 'warnings summary' not in output:return 0
+    return None
+
+
 def main(paths):
     reports = []
     missing = []
@@ -43,13 +50,14 @@ def main(paths):
     log = Path('phase6-pytest.log')
     if log.is_file():
         output = log.read_text(encoding='utf-8', errors='replace')
-        counts = re.findall(r'(\d+) warnings?\b', output)
-        evidence['warning_count'] = int(counts[-1]) if counts else None
-        if not counts and re.search(r'\d+ (?:passed|failed|skipped|errors?)\b.*\bin \d+\.\d+s', output) and 'warnings summary' not in output:
-            evidence['warning_count'] = 0
+        evidence['warning_count'] = warning_count(output)
         evidence['warning_note'] = 'Count extracted from pytest output when available, not from JUnit.'
         evidence['pytest_log_sha256'] = hashlib.sha256(log.read_bytes()).hexdigest()
         evidence['pytest_log_tail'] = output[-12000:]
+    for report in reports:
+        stage_log=Path(report['file']).with_suffix('.log')
+        report['pytest_warning_count']=warning_count(stage_log.read_text(encoding='utf-8',errors='replace')) if stage_log.is_file() else (
+            evidence['warning_count'] if re.fullmatch(r'p6-p[45]-(?:offscreen|windows)\.xml',Path(report['file']).name) else None)
     Path('phase6-acceptance-summary.json').write_text(json.dumps(evidence, indent=2), encoding='utf-8')
     summary = '## Phase 6 acceptance evidence\n\n```json\n' + json.dumps(evidence, indent=2) + '\n```\n'
     print(summary)
@@ -66,7 +74,7 @@ def main(paths):
         for report in reports:
             print('::notice title=Phase 6 measured counts::' + json.dumps({
                 **{key: report[key] for key in ('file', 'tests', 'passed', 'failed', 'errors', 'skipped', 'sha256')},
-                'main_pytest_warning_count': evidence['warning_count']}))
+                'pytest_warning_count': report['pytest_warning_count']}))
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as output:
             output.write(summary)

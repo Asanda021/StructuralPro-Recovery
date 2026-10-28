@@ -1,5 +1,6 @@
 """Retain the original pytest output and exit status, including native Qt hangs."""
 import subprocess
+import os
 import sys
 from pathlib import Path
 
@@ -16,6 +17,6 @@ except subprocess.TimeoutExpired as exc:
     output = (exc.stdout or b'').decode('utf-8', errors='replace') if isinstance(exc.stdout, bytes) else (exc.stdout or '')
     output += '\nRunner exceeded its external timeout.\n'
     code = 124
-Path('phase6-pytest.log').write_text(output, encoding='utf-8')
+Path(os.environ.get('PHASE6_PYTEST_LOG_PATH', 'phase6-pytest.log')).write_text(output, encoding='utf-8')
 print(output, end='')
 raise SystemExit(code)
