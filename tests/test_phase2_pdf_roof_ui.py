@@ -76,7 +76,7 @@ def test_actual_pdf_region_to_specialist_boq(qt,tmp_path,monkeypatch,kind):
         assert hasattr(dlg,'region_to_roof'), 'missing specialist button'
         timer,state=_await_roof_modal(qt,journey,errors,owner=dlg)
         try:QTest.mouseClick(dlg.region_to_roof,Qt.LeftButton)
-        finally:timer.stop()
+        finally:timer.stop();timer.deleteLater()
         assert state['started'], 'roof modal never became active'
         dlg.grab().save(str(tmp_path/(kind+'-pdf.png')))
         assert not errors and not warnings,(errors,warnings)
@@ -167,7 +167,7 @@ def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
         roof.exec()
     QTimer.singleShot(80,open_roof)
     QTimer.singleShot(180,loop.quit)
-    loop.exec();timer.stop()
+    loop.exec();timer.stop();timer.deleteLater()
     assert state['started'] and not errors
     assert seen==[roof], 'the actual roof modal was not observed'
 
@@ -181,6 +181,6 @@ def test_unexpected_roof_modal_is_bounded_and_reported(qt):
         seen.append(dialog.exec())
     QTimer.singleShot(10,open_unexpected)
     QTimer.singleShot(200,loop.quit)
-    loop.exec();timer.stop()
+    loop.exec();timer.stop();timer.deleteLater()
     assert not state['started'] and errors==['Timed out waiting for roof modal to finish']
     assert seen==[QDialog.Rejected]

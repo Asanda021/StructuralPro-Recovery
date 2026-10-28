@@ -66,7 +66,7 @@ def _click_roof_control(qt, owner, button, errors, timeout=4.0, *, prepared=Fals
    if isinstance(modal,QDialog) and modal is not owner:QDialog.done(modal,QDialog.Rejected)
  timer.timeout.connect(poll);timer.start()
  try:QTest.mouseClick(button,Qt.LeftButton)
- finally:timer.stop()
+ finally:timer.stop();timer.deleteLater()
 
 
 def test_native_boundary_cut_components_remove_and_undo(tmp_path):
@@ -121,7 +121,7 @@ def test_existing_roof_editor_real_planar_schedule_and_boq(tmp_path,kind):
    c['plan'].setText(data['source']['plan_ref']);c['detail'].setText(data['source']['detail_ref'])
    show_control(c['import_detail']);file_timer,file_state=_select_roof_document(_qt,w,tmp_path,'detail.json',errors)
    try:_click_roof_control(_qt,w,c['import_detail'],errors,prepared=True)
-   finally:file_timer.stop()
+   finally:file_timer.stop();file_timer.deleteLater()
    assert file_state['clicked'],errors
    assert c['shape'].currentData()=='documented_planar'
    click(c['save']);assert app.get_aec_system('P',kind,'L1','S1')
@@ -236,7 +236,7 @@ def test_real_roof_geometry_revision_through_existing_amendment_buttons(tmp_path
    assert c['source_geometry_amendment'].isChecked()
    show_control(c['import_detail']);file_timer,file_state=_select_roof_document(_qt,w,tmp_path,'roof-geometry-amendment.json',errors)
    try:_click_roof_control(_qt,w,c['import_detail'],errors,prepared=True)
-   finally:file_timer.stop()
+   finally:file_timer.stop();file_timer.deleteLater()
    assert file_state['clicked'],errors
    c['creator'].setText('synthetic UI author');c['reason'].setText('one explicit vertex and bound source revision')
    c['evidence_path'].setText(str(tmp_path/'roof-geometry-amendment.json'));c['evidence_ref'].setText('explicit synthetic revised detail')
@@ -265,6 +265,9 @@ def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
   f.setOption(QFileDialog.DontUseNativeDialog);f.setFileMode(QFileDialog.ExistingFile)
   f.exec();selected.extend(f.selectedFiles())
  QTimer.singleShot(80,delayed_file);QTimer.singleShot(900,loop.quit)
- loop.exec();timer.stop();was_visible=parent.isVisible();parent.close();_qt.processEvents()
+ loop.exec();timer.stop();timer.deleteLater();was_visible=parent.isVisible();parent.close();_qt.processEvents()
  assert not errors and was_visible and state['clicked'],errors
  assert len(selected)==1 and Path(selected[0])==document
+ from PySide6.QtCore import QCoreApplication,QEvent
+ QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);_qt.processEvents()
+ assert timer not in _qt.findChildren(QTimer), 'file-dialog timer leaked into later Qt tests'

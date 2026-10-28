@@ -44,6 +44,7 @@ def _expected_modal(qt, object_name, title, button, *, parent=None, timeout=4.0)
         yield
     finally:
         timer.stop()
+        timer.deleteLater()
     assert not state['error'], state['error']
     assert state['clicked'], f'Expected modal {object_name!r}/{title!r} was not shown'
 
@@ -134,14 +135,20 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
             controls['scroll'].ensureWidgetVisible(controls['pile_specialist'])
             qt.processEvents()
             child_timer = _schedule_dialog(qt, 'BoredPileDraftEditor', child, errors)
-            QTest.mouseClick(controls['pile_specialist'], Qt.LeftButton,
-                             pos=controls['pile_specialist'].rect().center())
+            try:
+                QTest.mouseClick(controls['pile_specialist'], Qt.LeftButton,
+                                 pos=controls['pile_specialist'].rect().center())
+            finally:
+                child_timer.stop(); child_timer.deleteLater()
         except Exception as exc:
             errors.append(repr(exc))
         finally:
             dialog.reject()
     parent_timer = _schedule_dialog(qt, 'ReviewedStructuralManualEditor', parent, errors)
-    open_manual_structural_editor(app, project_id='P', floor_id='FND')
+    try:
+        open_manual_structural_editor(app, project_id='P', floor_id='FND')
+    finally:
+        parent_timer.stop(); parent_timer.deleteLater()
     qt.processEvents()
     assert errors == []
     app.store.close()
