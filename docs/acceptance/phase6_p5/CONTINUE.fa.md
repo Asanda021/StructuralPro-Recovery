@@ -1,3 +1,8 @@
+## E4 CAS stale navigation | ۲۸ اکتبر ۲۰۲۶
+- کد و ۳ آزمون جدید Qt: `c10b9291cb443431287d656fcf00c4b26e71e196`؛ جلوگیری از استفاده از Snapshot قدیمی در جست‌وجو، کلیک رکورد و callback تخصصی IFC، بدون تغییر BOQ.
+- CI هدفمند Windows/Linux [#40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) و CI پذیرش P6-5 [#40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) **در لحظه ثبت در حال اجرا**؛ تا JUnit واقعی و اعلام دو سیستم، E4 صرفاً اصلاح ثبت‌شده و P6-5 PARTIAL.
+- [گزارش دقیق و گیت‌ها](verification-20261028-e4-live-snapshot/REPORT.fa.md). PR33/34 Draft/Open/Unmerged؛ main و Release بدون تغییر؛ ۸ فاز و ۸۵٪ ثابت.
+
 ## پیگیری Portability Windows و آزمون دوباره کل رگرسیون | ۲۸ اکتبر
 - [CI #40681114708](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40681114708): Linux ۸۳۹۴PASS/۵SKIP؛ Windows shard0 ۳۰۲۱PASS/۱۶FAIL/۳SKIP، shard1 ۲۶۷۷PASS/۰FAIL/۳SKIP، shard2 ۲۶۷۷PASS/۱FAIL/۱SKIP؛ Union اجرا نشد. خطاها از `resource` Unix، قفل SQLite Windows و سیاست امنیتی legacy هستند.
 - اصلاحات واقعی به `48a85f5d7ae4a88fe8f092a7e0c27be792bf9b9d` رسیدند؛ [CI هدفمند #40683427836](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40683427836): هر سیستم **۳۱PASS، صفر FAIL/SKIP**، JUnit واقعی. [CI گسترده جدید #40683854260](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40683854260) در حال اجرا، source قفل‌شده `48a85f...`.
