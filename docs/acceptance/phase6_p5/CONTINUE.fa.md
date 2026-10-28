@@ -1,3 +1,9 @@
+## پذیرش نهایی fcf847 — ۲۸ اکتبر ۲۰۲۶
+
+CI40669898079 روی Linux و Windows هرکدام۴۷۴PASS،۰FAIL/ERROR/SKIP،۱warningfitz؛ historical۱۳۰،security۲۶ و DPI۱۵۰/۲۰۰ هرکدام۸تکرارPASS. broad Linux محلی۸۳۷۳PASS/۰FAIL/۱۰SKIP؛ [CI گسترده40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) هنوز جاری است، بنابراین PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## رگرسیون محلی نهایی — ۲۸ اکتبر ۲۰۲۶
 
 SHA fcf847: broad Linux از worktree تمیز **۸۳۷۳PASS،۰FAIL/ERROR،۱۰SKIP،۳warning،exit۰،بدونtimeout**؛ JUnit واقعی در [شواهد](verification-20261028-windows-qt-timeout/qtfix-final-linux.xml). CI پذیرش هر سیستم۴۷۴PASS؛ Windows broad در [40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) هنوز جاری و گیت کل PARTIAL است.
