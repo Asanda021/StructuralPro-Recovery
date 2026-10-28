@@ -21,6 +21,7 @@ on:
       - app/bored_pile_detail_editor.py
       - tests/test_bored_pile_real_qt_stabilization.py
       - tests/test_bored_pile_draft_amendment_real_qt.py
+      - tests/test_phase2_pdf_roof_ui.py
       - app/graphical_takeoff.py
       - app/beam_detail_panel.py
       - app/reviewed_aec_manual_editor.py
@@ -91,7 +92,7 @@ jobs:
       - name: Compile E3 to E6 and run Qt plus canonical regression
         run: |
           python -m compileall -q app/bored_pile_detail_editor.py app/main.py app/desktop_preferences.py app/project_start_wizard.py app/project_search_panel.py app/workspace_docks.py app/manual_formula_controls.py core/projects/start_templates.py core/search/global_search.py core/takeoff/manual_formula_register.py core/platform/application.py core/projects/store.py
-          python scripts/run_phase6_pytest.py 720 -q --maxfail=1 --junitxml=p6-p5-${{ matrix.qpa }}.xml tests/test_phase6_p5_e3_templates.py tests/test_phase6_p5_e3_ui.py tests/test_phase6_p5_e4_search.py tests/test_phase6_p5_e4_ui.py tests/test_phase6_p5_e4_sessions.py tests/test_phase6_p5_e5_docks.py tests/test_phase6_p3_real_project_bridge.py tests/test_phase6_p5_e6_bulk_preview.py tests/test_phase6_p5_e6_ifc_transfer_history.py tests/test_phase2_priority5_complete.py tests/test_phase2_priority5_ifc_lineage_chat.py tests/test_manual_formula_persistence.py tests/test_manual_formula_qt_closure.py tests/test_manual_structured_units.py tests/test_beam_detail_workflow.py tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p3_real_qt_four_view.py tests/test_master13_desktop_shell_runtime.py tests/test_phase6_p1_font_diagnostics.py tests/test_roof_specialist_ui.py tests/test_waffle_specialist_ui.py tests/test_bored_pile_real_qt_stabilization.py tests/test_bored_pile_draft_amendment_real_qt.py
+          python scripts/run_phase6_pytest.py 720 -q --maxfail=1 --junitxml=p6-p5-${{ matrix.qpa }}.xml tests/test_phase6_p5_e3_templates.py tests/test_phase6_p5_e3_ui.py tests/test_phase6_p5_e4_search.py tests/test_phase6_p5_e4_ui.py tests/test_phase6_p5_e4_sessions.py tests/test_phase6_p5_e5_docks.py tests/test_phase6_p3_real_project_bridge.py tests/test_phase6_p5_e6_bulk_preview.py tests/test_phase6_p5_e6_ifc_transfer_history.py tests/test_phase2_priority5_complete.py tests/test_phase2_priority5_ifc_lineage_chat.py tests/test_manual_formula_persistence.py tests/test_manual_formula_qt_closure.py tests/test_manual_structured_units.py tests/test_beam_detail_workflow.py tests/test_phase6_p4_contextual_takeoff.py tests/test_phase6_p3_real_qt_four_view.py tests/test_master13_desktop_shell_runtime.py tests/test_phase6_p1_font_diagnostics.py tests/test_roof_specialist_ui.py tests/test_waffle_specialist_ui.py tests/test_bored_pile_real_qt_stabilization.py tests/test_bored_pile_draft_amendment_real_qt.py tests/test_phase2_pdf_roof_ui.py
       - name: Verify safely quarantined historical contracts
         if: always()
         run: python scripts/run_quarantined_workflow_qa.py --mode historical --timeout 180 --json p6-historical-${{ matrix.qpa }}.json --log p6-historical-${{ matrix.qpa }}.log --junit p6-historical-${{ matrix.qpa }}.xml
