@@ -36,6 +36,8 @@ def _expected_modal(qt, object_name, title, button, *, timeout=4.0):
             timer.stop()
             if isinstance(box, QMessageBox):
                 box.done(QMessageBox.No)
+            elif isinstance(box, QDialog):
+                QDialog.done(box, QDialog.Rejected)
     timer.timeout.connect(poll)
     timer.start()
     try:
@@ -44,6 +46,29 @@ def _expected_modal(qt, object_name, title, button, *, timeout=4.0):
         timer.stop()
     assert not state['error'], state['error']
     assert state['clicked'], f'Expected modal {object_name!r}/{title!r} was not shown'
+
+
+def _schedule_dialog(qt, name, callback, errors, *, timeout=8.0):
+    timer = QTimer(qt)
+    timer.setInterval(20)
+    deadline = monotonic() + timeout
+    def poll():
+        dialog = qt.activeModalWidget()
+        if isinstance(dialog, QDialog) and dialog.objectName() == name:
+            timer.stop()
+            try:
+                callback()
+            except Exception as exc:
+                errors.append(repr(exc))
+                QDialog.done(dialog, QDialog.Rejected)
+        elif monotonic() >= deadline:
+            timer.stop()
+            errors.append(f'Expected dialog {name!r}; active={dialog!r}')
+            if isinstance(dialog, QDialog):
+                QDialog.done(dialog, QDialog.Rejected)
+    timer.timeout.connect(poll)
+    timer.start()
+    return timer
 
 
 def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch):
@@ -108,14 +133,14 @@ def test_real_menu_amendment_reopens_and_revokes_ownership(tmp_path, monkeypatch
             controls['id'].setText('PG1')
             controls['scroll'].ensureWidgetVisible(controls['pile_specialist'])
             qt.processEvents()
-            QTimer.singleShot(20, child)
+            child_timer = _schedule_dialog(qt, 'BoredPileDraftEditor', child, errors)
             QTest.mouseClick(controls['pile_specialist'], Qt.LeftButton,
                              pos=controls['pile_specialist'].rect().center())
         except Exception as exc:
             errors.append(repr(exc))
         finally:
             dialog.reject()
-    QTimer.singleShot(25, parent)
+    parent_timer = _schedule_dialog(qt, 'ReviewedStructuralManualEditor', parent, errors)
     open_manual_structural_editor(app, project_id='P', floor_id='FND')
     qt.processEvents()
     assert errors == []
