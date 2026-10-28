@@ -23,13 +23,12 @@ def _expected_modal(qt, object_name, title, button, *, parent=None, timeout=4.0)
     state = {'clicked': False, 'error': None}
     def poll():
         box = qt.activeModalWidget()
-        if isinstance(box, QMessageBox):
+        if not state['clicked'] and isinstance(box, QMessageBox):
             if (box.objectName() == object_name and box.windowTitle() == title
                     and (parent is None or box.parentWidget() is parent)):
                 target = box.button(button)
                 if target is not None and target.isVisible() and target.isEnabled():
                     state['clicked'] = True
-                    timer.stop()
                     QTest.mouseClick(target, Qt.LeftButton, pos=target.rect().center())
                     return
         if monotonic() >= deadline:
@@ -196,3 +195,28 @@ def test_unexpected_modal_fails_within_bound_without_clicking_its_button():
         with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok, timeout=0.08):
             loop.exec()
     assert seen == [QMessageBox.No]
+
+
+def test_ignored_click_is_reported_by_watchdog():
+    import pytest
+    from PySide6.QtCore import QEventLoop, QObject, QEvent
+    qt = QApplication.instance() or QApplication([])
+    loop = QEventLoop()
+    class IgnoreClicks(QObject):
+        def eventFilter(self, watched, event):
+            return event.type() in (QEvent.Type.MouseButtonPress, QEvent.Type.MouseButtonRelease)
+    event_filter = IgnoreClicks()
+    def open_warning():
+        box = QMessageBox()
+        box.setOption(QMessageBox.Option.DontUseNativeDialog)
+        box.setObjectName('BoredPileErrorMessage')
+        box.setWindowTitle('کنترل دیتایل شمع')
+        box.setStandardButtons(QMessageBox.Ok)
+        box.button(QMessageBox.Ok).installEventFilter(event_filter)
+        QTimer.singleShot(400, lambda: box.done(QMessageBox.No))
+        box.exec()
+    QTimer.singleShot(10, open_warning)
+    QTimer.singleShot(600, loop.quit)
+    with pytest.raises(AssertionError, match='Expected modal'):
+        with _expected_modal(qt, 'BoredPileErrorMessage', 'کنترل دیتایل شمع', QMessageBox.Ok, timeout=0.12):
+            loop.exec()
