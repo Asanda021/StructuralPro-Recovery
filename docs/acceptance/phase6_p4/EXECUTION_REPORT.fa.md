@@ -1,7 +1,7 @@
 # checkpoint معتبر این مأموریت — ۲۸ اکتبر ۲۰۲۶
 
-آخرین کد/آزمون: `e4c0888856be59de1023a94941fa67fcde19d9ed`، Tree: `adbd72b521c57fc2b683287383a7f5aee244657d`.
-[CI مستقل 40614385899](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40614385899): SUCCESS؛ Linux Qt offscreen **۲۴۵ PASS** و Windows Qt native **۲۴۵ PASS**؛ هر محیط صفر FAIL/ERROR/SKIP و یک FutureWarning موجود fitz. همان سناریوها در دو سیستم هستند، نه ۴۹۰ سناریوی مستقل. Artifactهای واقعی از بخش Artifacts همین run قابل دریافت‌اند؛ شمارش و SHA256 XML از noticeهای واقعی CI در `verification-20261027-three-gates/ci-measured.json` ذخیره است.
+آخرین کد/آزمون: `04e2e61151013a09f31e92aa943978b5de8bf188`، Tree: `dc7078d441dd0d9e231ebc0d6f1c005178aee29f`.
+[CI مستقل 40616456506](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40616456506): SUCCESS؛ Linux Qt offscreen **۲۵۷ PASS** و Windows Qt native **۲۵۷ PASS**؛ هر محیط صفر FAIL/ERROR/SKIP و یک FutureWarning موجود fitz. همان سناریوها در دو سیستم هستند، نه ۴۹۰ سناریوی مستقل. Artifactهای واقعی از بخش Artifacts همین run قابل دریافت‌اند؛ شمارش و SHA256 XML از noticeهای واقعی CI در `verification-20261027-three-gates/ci-measured.json` ذخیره است.
 
 نقص‌های جدید: guard زنده W1 در همه mutationهای سقف/معماری، اتصال نوع خانواده، recheck بعد از Yes واقعی Delete، و اصلاح Beam Preview/Commit پس از ذخیره مشروع Draft خود فرم. تایمر قدیمی آزمون handoff پیش از نمایش modal مصرف می‌شد؛ فقط آزمون با انتظار پنجره قابل‌مشاهده اصلاح شد. قواعد کمی و تأیید اصلی حفظ شدند.
 
@@ -13,6 +13,9 @@ IFC4 مصنوعی قابل Parse: Beam و Column با GlobalId/SHA/Revision و �
 
 
 اصلاح نهایی آزمون فقط modal فعال QApplication را می‌بندد؛ پنجره مخفی باقی‌مانده از آزمون قبلی نباید انتخاب شود. اجرای گسترده پیشین برای تشخیص این آلودگی حالت متوقف شد و PASS محسوب نشده است.
+
+
+پوشش نهایی IFC سقف/دیوار:۱۲آزمون منفی جدید، برای solid_slab/IfcSlab و block_wall/IfcWall در Save/Review/Commit پس از تغییر bytes یا Revision. Commit ابتدا Review معتبر و refresh صریح crossview دارد. رد مشخص IFC، snapshot کامل/digest/BOQ بدون تغییر، integrity و SQLite Reopen برابر کنترل می‌شوند. این۱۲ از ابتدا PASS بوده‌اند و به‌عنوان RED جدید شمرده نمی‌شوند؛ تغییر نهایی فقط آزمون است. نتیجه هدفمند۱۴PASS/۰FAIL/۰ERROR/۰SKIP/۰warning در ifc-roof-wall-final.xml ذخیره است. پوشش کامل به PR34 در ed0e28a منتقل شده و آن PR CI مستقل خود را دارد.
 
 ---
 

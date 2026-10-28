@@ -1,6 +1,6 @@
 ## Final root validation — 2026-10-28
 
-This section supersedes intermediate counts and family limitations below. Code/test `e4c0888856be59de1023a94941fa67fcde19d9ed`, tree `adbd72b521c57fc2b683287383a7f5aee244657d`. Actual CI 40614385899 succeeds on Linux offscreen and Windows native: **245 passed each**, zero failed/errors/skipped, one existing fitz FutureWarning each. Counts and artifact digests are preserved in ci-measured.json; earlier XML remains identified by its own run.
+This section supersedes intermediate counts and family limitations below. Code/test `04e2e61151013a09f31e92aa943978b5de8bf188`, tree `dc7078d441dd0d9e231ebc0d6f1c005178aee29f`. Actual CI 40616456506 succeeds on Linux offscreen and Windows native: **257 passed each**, zero failed/errors/skipped, one existing fitz FutureWarning each. Counts and artifact digests are preserved in ci-measured.json; earlier XML remains identified by its own run.
 
 Followup `442b878`/`46a6f8c` added 11 parsed-IFC full-flow scenarios and fixed Beam's own legitimate Preview draft invalidating its subsequent read/implicit Commit preview. Column now has a positive complete original editor chain as well as source/proposal/member revision negatives. Beam positive Preview and explicit refresh/Commit and source/CAS negatives are tested; dirty Beam without a documented drawing region remains rejected without invented mapping. Live guard checks remain before writes and after native confirmation. Existing Beam workflow regression is included in the 245-test workflow.
 
@@ -8,6 +8,9 @@ Supported IFC evidence: Beam, Column, solid_slab, block_wall only in their expli
 
 
 اصلاح نهایی آزمون فقط modal فعال QApplication را می‌بندد؛ پنجره مخفی باقی‌مانده از آزمون قبلی نباید انتخاب شود. اجرای گسترده پیشین برای تشخیص این آلودگی حالت متوقف شد و PASS محسوب نشده است.
+
+
+پوشش نهایی IFC سقف/دیوار:۱۲آزمون منفی جدید، برای solid_slab/IfcSlab و block_wall/IfcWall در Save/Review/Commit پس از تغییر bytes یا Revision. Commit ابتدا Review معتبر و refresh صریح crossview دارد. رد مشخص IFC، snapshot کامل/digest/BOQ بدون تغییر، integrity و SQLite Reopen برابر کنترل می‌شوند. این۱۲ از ابتدا PASS بوده‌اند و به‌عنوان RED جدید شمرده نمی‌شوند؛ تغییر نهایی فقط آزمون است. نتیجه هدفمند۱۴PASS/۰FAIL/۰ERROR/۰SKIP/۰warning در ifc-roof-wall-final.xml ذخیره است. پوشش کامل به PR34 در ed0e28a منتقل شده و آن PR CI مستقل خود را دارد.
 
 ---
 
