@@ -1,3 +1,11 @@
+## نتیجه قطعی GDB پس از دانلود Artifactهای اصلی
+- [Run #40756726986](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986) در هر دو Job `focus` و `prefix` **completed/success** است. source checkout: `cd855297af657a382c76909eabad7523688148a2`، manifest `e89de674e5fe212c3472b6e629eea6f23dc1fb8617e41ffee7de26524efde54a`.
+- [Artifact focus #12847215975](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986/artifacts/12847215975): دو اجرای مستقل با GDB exit=0؛ هر اجرا ۲۲ testcase / ۲۲PASS، صفر FAIL/ERROR/SKIP، بدون Timeout و بدون ptrace block. زمان‌ها ۱۲۵٫۳۷ و ۱۲۲٫۸۲ ثانیه. در هر دو log پیام `Timeout (0:01:00)!` مربوط به diagnostic faulthandler ثبت شده، نه خروج timeout runner.
+- [Artifact prefix #12846751153](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986/artifacts/12846751153): ترتیب اصلی تا آزمون مورد اشاره، ۱۶۰ ماژول، ۲٬۸۷۹ testcase / ۲٬۸۷۹ PASS، صفر FAIL/ERROR/SKIP، GDB exit=0، مدت ۲۸۴٫۷۶ ثانیه، بدون Timeout یا ptrace block. پیام faulthandler ۶۰ ثانیه‌ای باز هم دیده شده ولی آزمون به پایان رسیده است.
+- فیلد `native_signal_captured=false` در هر سه JSON، `signal_line=null` و هیچ `Program received signal SIGSEGV` در این سه اجرا وجود ندارد. JUnit همه اجراها موجود و اصل ZIPها بررسی شد.
+- **حکم مهندسی:** `NOT REPRODUCED` در سه اجرای bounded؛ `ROOT CAUSE UNDETERMINED`. این نه رفع crash را اثبات می‌کند و نه SIGSEGV اصلی را پاک می‌کند. در نبود backtrace، هیچ patch حدسی در Qt انجام نشد.
+- نتیجه مأموریت محدود ریشه‌یابی تا این سطح بسته می‌شود، اما ریسک SIGSEGV تاریخی در گیت عمومی P6-5 همچنان `UNRESOLVED` باقی است. فقط اگر crash دوباره رخ دهد، stack بومی/شواهد جدید مبنای اصلاح خواهد بود.
+
 # فاز ۶، P6-5 | تشخیص بومی SIGSEGV نامنظم Linux (مأموریت محدود)
 
 **تاریخ:** ۲۸ اکتبر ۲۰۲۶. **برنامه:** هشت فاز ثابت، ۸۵٪ ثبت‌شده بدون تغییر. **مخزن:** `Asanda021/StructuralPro-Recovery`. **PR هدف:** #34 Draft/Open/Unmerged.

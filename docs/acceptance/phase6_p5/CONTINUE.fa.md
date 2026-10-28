@@ -1,3 +1,8 @@
+## E4 BOQ record identity RED/GREEN + GDB closure | ۲۸ اکتبر ۲۰۲۶
+- GDB [#40756726986](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986): focus ۲×۲۲PASS، prefix ۲۸۷۹PASS/۱۶۰ ماژول، بدون SIGSEGV یا Timeout، JUnit اصلی بررسی شد. `ROOT CAUSE UNDETERMINED`، crash قبلی پاک نشده است. [گزارش GDB](verification-20261028-linux-native-gdb/REPORT.fa.md).
+- E4 خطای هویت `id` در جست‌وجو در برابر `row_id` در جدول BOQ: [RED #40758706644](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758706644) دو شکست واقعی، اصلاح کمینه `64d637b`، [GREEN #40758937945](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40758937945) درحال اجرا. [گزارش و شواهد](verification-20261028-e4-boq-identity/REPORT.fa.md).
+- PR33/34 Draft/Unmerged؛ بدون تغییر main/Release/EXE/فاز۷؛ P6-5 PARTIAL، ۸ فاز و ۸۵٪ ثبت‌شده ثابت.
+
 ## مأموریت محدود تشخیص native SIGSEGV با GDB | ۲۸ اکتبر ۲۰۲۶
 - [CI تشخیصی #40756726986](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40756726986)، workflow commit `58fdc9e1155eaaee9ee976c3964dd914bf8c0406`، pinned source `cd855297af657a382c76909eabad7523688148a2`. دو مسیر `focus` و `prefix` زیر GDB بومی، logging/JUnit واقعی بدون core upload؛ هنگام ثبت در حال اجرا.
 - [گزارش مستقل و مرزهای نتیجه](verification-20261028-linux-native-gdb/REPORT.fa.md). علت قطعی تا native stack تأییدشده **نامعلوم**؛ SIGSEGV تاریخی حفظ شده، محصول و main تغییر نکردند، PR33/34 Draft/Unmerged، ۸ فاز و ۸۵٪ ثابت.
