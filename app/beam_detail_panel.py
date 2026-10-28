@@ -582,21 +582,33 @@ class BeamDetailPanel(QWidget):
             return False
 
     def preview(self):
-        if not self.save():
+        try:
+            project, floor, beam = self._identity()
+            if not self.save():
+                return False
+            result = self.service.preview_beam_detail(project, floor, beam)
+            if result["ready"]:
+                self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
+                                     "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"])+"؛ "+self.quantity_summary(result))
+            else:
+                self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
+            return bool(result["ready"])
+        except Exception as exc:
+            QMessageBox.warning(self, "پیش‌نمایش تیر", str(exc))
             return False
-        project, floor, beam = self._identity()
-        result = self.service.preview_beam_detail(project, floor, beam)
-        if result["ready"]:
-            self.message.setText("همه اقلام تأییدشده‌اند. پیش‌نمایش: " +
-                                 "؛ ".join(f"{x['description']}: {x['quantity']} "+{'m3':'متر مکعب','m2':'متر مربع','kg':'کیلوگرم'}[x['unit']] for x in result["rows"])+"؛ "+self.quantity_summary(result))
-        else:
-            self.message.setText("ثبت نهایی مسدود است: " + "؛ ".join(result["blockers"]))
-        return bool(result["ready"])
 
     def commit(self):
-        if not self.preview():
-            return
         try:
+            project, draft = self._draft()
+            record = self.service.get_beam_detail(project, draft["floor_id"], draft["beam_id"])
+            # An explicit Preview already saved this exact draft. Reuse it
+            # after the user refreshed IFC links; another implicit save would
+            # immediately stale that review again before Commit can start.
+            if (self._loaded_identity != (project, draft["floor_id"], draft["beam_id"]) or
+                    record is None or record["revision"] != self.revision or
+                    record["data"] != draft):
+                if not self.preview():
+                    return
             project, floor, beam = self._identity()
             report = self.service.preview_beam_detail(project, floor, beam)
             if not report["ready"]:
