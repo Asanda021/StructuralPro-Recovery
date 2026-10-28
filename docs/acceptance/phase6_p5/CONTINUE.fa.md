@@ -1,3 +1,8 @@
+## پیگیری Portability Windows و آزمون دوباره کل رگرسیون | ۲۸ اکتبر
+- [CI #40681114708](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40681114708): Linux ۸۳۹۴PASS/۵SKIP؛ Windows shard0 ۳۰۲۱PASS/۱۶FAIL/۳SKIP، shard1 ۲۶۷۷PASS/۰FAIL/۳SKIP، shard2 ۲۶۷۷PASS/۱FAIL/۱SKIP؛ Union اجرا نشد. خطاها از `resource` Unix، قفل SQLite Windows و سیاست امنیتی legacy هستند.
+- اصلاحات واقعی به `48a85f5d7ae4a88fe8f092a7e0c27be792bf9b9d` رسیدند؛ [CI هدفمند #40683427836](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40683427836): هر سیستم **۳۱PASS، صفر FAIL/SKIP**، JUnit واقعی. [CI گسترده جدید #40683854260](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40683854260) در حال اجرا، source قفل‌شده `48a85f...`.
+- [گزارش پذیرش و محدودیت‌ها](verification-20261028-windows-portability/REPORT.fa.md). تا نتیجه واقعی هر چهار Job و `verify-full-union`، فاز۶ P6-5 PARTIAL؛ PR33/34 Draft/Unmerged و main بدون تغییر، ۸ فاز/۸۵٪ ثابت.
+
 ## گیت جاری رگرسیون گسترده: تقسیم کامل Windows بدون حذف آزمون | ۲۸ اکتبر ۲۰۲۶
 - شکست واقعی [#40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) روی source `facbe18...`: Linux ۸۳۸۱ PASS/۵ SKIP، Windows timeout ۱۵۰۰ثانیه در حدود ۷۴٪ و JUnit مفقود؛ گلوگاه آزمون E6 تعداد ۲۰ و stack ذخیره SQLite؛ علت انحصاری نامعلوم.
 - کد runner+validator `cfa33bf7...`، trigger workflow `1b9bbc8...`، [CI جدید #40681114708](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40681114708) روی **Linux کامل + سه Windows shard + تطبیق fail-closed JUnit Union** شروع شد. حد زمانی هر shard ۱۵۰۰ثانیه، بدون Skip/XFail/حذف تست.
