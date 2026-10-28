@@ -1,3 +1,7 @@
+## ادامه اجرایی E4: حذف مسیر ناخواسته دوبل عضو IFC، ۲۸ اکتبر
+- Commit کد/آزمون `69dcdd09aa8963bc694638ea912417b263540608`؛ یک رویداد دکمه IFC اکنون فقط `on_open_model` را فراخوانی می‌کند، در حالی‌که بازبینی رکورد و Digest همان است. [CI جدید #40679324114](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40679324114) هنوز در لحظه ثبت در حال اجرا است؛ `PASS` کد تازه ادعا نشود.
+- [گزارش و ماتریس گیت‌های باز](verification-20261028-e4-single-route/REPORT.fa.md). CI تخصصی روی source قبلی `facbe18...` در [#40676687306](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687306) هر دو سیستم موفق؛ broad ویندوز [#40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) هنوز در حال اجرا. PR33/34 Draft/Unmerged؛ main، Merge، EXE و Release بدون تغییر؛ ۸ فاز/۸۵٪ ثابت.
+
 ## Windows هدفمند نهایی
 
 CI40676687429 روی facbe18:۱۷PASS،۰FAIL/ERROR/SKIP؛ شامل QFileDialog واقعی و cleanup timer. پذیرش40676687306 و گسترده40676687299 هنوز جاری؛ PARTIAL تا broad واقعی Windows. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
