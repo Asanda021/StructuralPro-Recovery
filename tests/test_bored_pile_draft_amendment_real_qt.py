@@ -160,6 +160,7 @@ def test_delayed_real_warning_is_clicked_after_early_timer_would_expire():
     QTimer.singleShot(10, lambda: early.append(qt.activeModalWidget()))
     def open_later():
         box = QMessageBox()
+        box.setOption(QMessageBox.Option.DontUseNativeDialog)
         box.setObjectName('BoredPileErrorMessage')
         box.setWindowTitle('کنترل دیتایل شمع')
         box.setStandardButtons(QMessageBox.Ok)
@@ -182,6 +183,7 @@ def test_unexpected_modal_fails_within_bound_without_clicking_its_button():
     seen = []
     def open_unexpected():
         box = QMessageBox()
+        box.setOption(QMessageBox.Option.DontUseNativeDialog)
         box.setObjectName('UnrelatedWarning')
         box.setWindowTitle('unrelated')
         box.setStandardButtons(QMessageBox.Ok)
