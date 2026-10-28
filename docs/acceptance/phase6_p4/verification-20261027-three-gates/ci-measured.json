@@ -1,7 +1,7 @@
 {
-  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40613469502",
-  "code_commit": "575facbe6060019282fe33697e79edc9fa087a84",
-  "code_tree": "b764573f22b05aceda528b76bf51e78f37b7390e",
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40614385899",
+  "code_commit": "e4c0888856be59de1023a94941fa67fcde19d9ed",
+  "code_tree": "adbd72b521c57fc2b683287383a7f5aee244657d",
   "status": "Success",
   "reports": [
     {
@@ -11,7 +11,7 @@
       "failed": 0,
       "errors": 0,
       "skipped": 0,
-      "sha256": "13ac1f973db24131ce3a50f18d974b8f858954bc5d16b841096eec541d29ebcd",
+      "sha256": "fb711747513c2bbb5765289e84ec8f6265ae63072b5a56c423bb2ad7dec34b44",
       "main_pytest_warning_count": 1
     },
     {
@@ -21,16 +21,13 @@
       "failed": 0,
       "errors": 0,
       "skipped": 0,
-      "sha256": "cba5542dad9cf5010593e51041a2096a672273c0cbc3bb3a61271433db87fa61",
+      "sha256": "9209c6ec1ef49d1e977705bdb99c1b49128509679138b4c09da5f4746f48059c",
       "main_pytest_warning_count": 1
     }
   ],
   "artifact_sha256": [
-    "d9ad5b45bf4fdd96ea34ab37ed3fa361726aeea7087d5710e7cada18bc187d27",
-    "d9ad5b45bf4fdd96ea34ab37ed3fa361726aeea7087d5710e7cada18bc187d27",
-    "43e0963a6d9865cdf7c4661447b943385a9e5c7da68cc9df70d5b45360b4aac4",
-    "43e0963a6d9865cdf7c4661447b943385a9e5c7da68cc9df70d5b45360b4aac4"
+    "a42f8dd44efcedd36a3b9d1eeef25391714979844344da43ddecad38577b0e25",
+    "b1cd4b3078f06953ee2d57347b204ef0f0af8f3d5283023e30332398d4ccd650"
   ],
-  "artifact_links": [],
-  "provenance": "Actual public CI notices; artifact ZIP not downloaded without authentication."
+  "provenance": "Actual public CI notices; downloadable JUnit/screenshots are in this run Artifacts. ZIP not downloaded without authentication."
 }
