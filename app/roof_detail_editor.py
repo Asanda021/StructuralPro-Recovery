@@ -279,7 +279,7 @@ def open_roof_editor(service,*,parent=None,project_id='',floor_id='',kind='solid
  def import_detail():
   import json
   from core.drawings.roof_region import detail_payload
-  d=capture();path=QFileDialog.getOpenFileName(dialog,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی','','JSON (*.json)')[0]
+  d=capture();path=QFileDialog.getOpenFileName(dialog,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی','','JSON (*.json)',options=QFileDialog.Option.DontUseNativeDialog)[0]
   if not path:return
   file=Path(path);payload=json.loads(file.read_text(encoding='utf-8-sig'))
   if not isinstance(payload,dict) or set(payload)!=set(detail_payload(d)):raise ValueError('ساختار جدول دیتایل معتبر نیست')
