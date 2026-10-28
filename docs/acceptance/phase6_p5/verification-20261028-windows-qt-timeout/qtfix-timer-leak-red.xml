@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.831" timestamp="2026-10-28T11:00:21.917567+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase2_priority3_close_ui" name="test_delayed_file_dialog_does_not_reject_its_roof_parent" time="0.898"><failure message="AssertionError: file-dialog timer leaked into later Qt tests&#10;assert &lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt; not in [&lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt;]&#10; +  where [&lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt;] = &lt;built-in method findChildren of PySide6.QtWidgets.QApplication object at 0x7f610b1de640&gt;(QTimer)&#10; +    where &lt;built-in method findChildren of PySide6.QtWidgets.QApplication object at 0x7f610b1de640&gt; = &lt;PySide6.QtWidgets.QApplication(0x3afeb9f0) at 0x7f610b1de640&gt;.findChildren">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-57/test_delayed_file_dialog_does_0')
+
+    def test_delayed_file_dialog_does_not_reject_its_roof_parent(tmp_path):
+     global _qt
+     from PySide6.QtCore import QEventLoop
+     _qt=QApplication.instance() or QApplication([]);errors=[];selected=[]
+     document=tmp_path/'detail.json';document.write_text('{}')
+     parent=QDialog();parent.setObjectName('RoofDetailEditor');parent.setModal(True);parent.show();_qt.processEvents()
+     loop=QEventLoop()
+     timer,state=_select_roof_document(_qt,parent,tmp_path,'detail.json',errors)
+     def delayed_file():
+      f=QFileDialog(parent,'جدول دیتایل صریح؛ صرفاً ورودی قابل بازبینی',str(tmp_path),'JSON (*.json)')
+      f.setOption(QFileDialog.DontUseNativeDialog);f.setFileMode(QFileDialog.ExistingFile)
+      f.exec();selected.extend(f.selectedFiles())
+     QTimer.singleShot(80,delayed_file);QTimer.singleShot(900,loop.quit)
+     loop.exec();timer.stop();was_visible=parent.isVisible();parent.close();_qt.processEvents()
+     assert not errors and was_visible and state['clicked'],errors
+     assert len(selected)==1 and Path(selected[0])==document
+     from PySide6.QtCore import QCoreApplication,QEvent
+     QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete);_qt.processEvents()
+&gt;    assert timer not in _qt.findChildren(QTimer), 'file-dialog timer leaked into later Qt tests'
+E    AssertionError: file-dialog timer leaked into later Qt tests
+E    assert &lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt; not in [&lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt;]
+E     +  where [&lt;PySide6.QtCore.QTimer(0x3ae4c4b0) at 0x7f610b190780&gt;] = &lt;built-in method findChildren of PySide6.QtWidgets.QApplication object at 0x7f610b1de640&gt;(QTimer)
+E     +    where &lt;built-in method findChildren of PySide6.QtWidgets.QApplication object at 0x7f610b1de640&gt; = &lt;PySide6.QtWidgets.QApplication(0x3afeb9f0) at 0x7f610b1de640&gt;.findChildren
+
+tests/test_phase2_priority3_close_ui.py:273: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,3 +1,9 @@
+## آخرین منبع: پاک‌سازی timerها
+
+CIهدفمند Windows40676193303 روی3d1:۱۷PASS،۰FAIL/ERROR/SKIP. RED بعدی ثابت کرد timer متوقف‌شده به QApplication نشت می‌کند؛ پاک‌سازی `deleteLater`،۲۹PASS محلی. source نهایی facbe18af8f051e52cac250410b72f688655f7a9،workflow911d49a؛ CIهای [هدفمند](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687429)، [پذیرش](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687306)، [گسترده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) در جریان. status کلی PARTIAL تا نتیجه Windows broad و بررسی artifact. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## آخرین SHA: مسیر قابل‌حمل Qt در Windows
 
 CIهدفمند40675825529 روی5daf:۱۶PASS و۱FAIL فقط در آزمون جدید به‌خاطر نمایش `/` در Qt در برابر `\` در Windows؛ مقایسه Path با حفظ هویت دقیق فایل اصلاح شد. کد جدید3d1ac2d7a6be62b09e2daf17472632e022efcf06 و workflow cbe1d9f؛ CIهای [هدفمندWindows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303)، [پذیرش](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193299)، [گسترده](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193128) جاری؛ JUnit و report کامل Windows هنوز PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

@@ -1,3 +1,13 @@
+## Windows هدفمند و پاک‌سازی timerها
+
+[CI40676193303](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303) روی3d1ac2d: Windows native **۱۷PASS،۰FAIL/ERROR/SKIP**، شامل QFileDialog واقعی و اصلاحیه هندسی؛ [JUnit/artifact](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676193303/artifacts/12811196414)، [metadata/hash](roof-native-3d-success.json). این موفقیت full broad نیست.
+
+بازبینی پس از آن نشان داد QTimer متوقف‌شده با والد QApplication می‌تواند پس از بستن popup باقی بماند و state آزمون را به مورد بعدی ببرد. RED واقعی با تست همان QFileDialog و DeferredDelete، QTimer باقی‌مانده را دید ([JUnit](qtfix-timer-leak-red.xml)). در هر سه فایل Qt، timerها در finally متوقف و `deleteLater` می‌شوند؛ بازآزمایی واقعی مشترک **۲۹PASS،۱warning** ([JUnit](qtfix-timer-cleanup-green.xml)). این leak واقعی است اما به native crash قبلی بدون dump قطعی نسبت داده نمی‌شود.
+
+کد/تست نهایی `facbe18af8f051e52cac250410b72f688655f7a9`، workflow `911d49a`؛ [Windows هدفمند40676687429](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687429)، [پذیرش40676687306](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687306)، [گسترده40676687299](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40676687299) جاری‌اند؛ تا Windows broad و JUnit/log واقعی وضعیت PARTIAL.
+
+---
+
 ## اصلاح قابل‌حمل هویت مسیر Windows
 
 CIهدفمند [40675825529](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40675825529) روی 5daf: **۱۶PASS،۱FAIL،۰ERROR/SKIP**؛ همه۱۶تست واقعی پیشین از جمله اصلاحیه هندسی گذشتند. FAIL تنها در تست جدید ما بود: Qt مسیر C:/... و pathlib همان فایل C:\... را نمایش می‌دادند؛ مقایسه خام رشته‌ای نادرست بود. [متن واقعی](roof-native-path-failure.txt) و [metadata/JUnit hash](roof-native-path-failure.json) حفظ شده‌اند. مقایسه به `len(selected)==1 and Path(selected[0])==document` تغییر کرد؛ همچنان دقیقاً همان فایل را می‌طلبد، نه رشته‌نمایش خاص سیستم. بسته مشترک local۲۹PASS/۱warning روی کدجدید.
