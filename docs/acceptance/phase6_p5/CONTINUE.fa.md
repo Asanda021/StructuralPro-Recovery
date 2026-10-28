@@ -1,3 +1,9 @@
+## شکست دوم Windows و checkpoint سقف — ۲۸ اکتبر ۲۰۲۶
+
+CIگسترده40670626852 رویfcf847 در Windows با **0xC0000409،timeout=false،JUnit مفقود** پایان یافت؛ Linux۸۳۷۸PASS/۵SKIP. آخرین سطر عمومی به تست واقعی Qt سقف PDF می‌رسد. RED نشان داد تایمر۴۰ms می‌تواند قبل از نمایش modal اجرا شود؛ انتظار محدود و شناسایی RoofDetailEditor در تست اصلاح شد، بدون انتساب قطعی crash به مسابقه. روی کدa41cd18 رگرسیون مشترک شمع/سقف۲۱PASS محلی؛ [CIپذیرش40672896825](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825) و [CIگسترده40672896854](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896854) جاری‌اند. وضعیت کل PARTIAL تا JUnit واقعی Windows. [گزارش/شواهد](verification-20261028-windows-qt-timeout/REPORT.fa.md).
+
+---
+
 ## CI گسترده Linux نهایی
 
 Run40670626852 کدfcf847: Linux۸۳۷۸PASS،۰FAIL،۵SKIP،exit۰،بدونtimeout؛ Windows هنوز جاری و گیت کلی PARTIAL. [گزارش](verification-20261028-windows-qt-timeout/REPORT.fa.md).

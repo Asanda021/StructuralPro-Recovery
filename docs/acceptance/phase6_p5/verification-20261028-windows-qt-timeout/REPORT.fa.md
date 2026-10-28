@@ -1,3 +1,13 @@
+## دومین شکست واقعی Windows و اصلاح سقف PDF
+
+[CI40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852) روی fcf847: Linux۸۳۷۸PASS/۰FAIL/۵SKIP،بدونtimeout؛ Windows **exit3221226505 / 0xC0000409، `timed_out=false` و JUnit مفقود**. تا حدود۶۱٪ پیش رفت و آخرین سطر قابل مشاهده به `tests/test_phase2_pdf_roof_ui.py::test_actual_pdf_region_to_specialist_bo...` رسید. [JSON notice واقعی](broad-fcf-final.json) و [بخش واقعی قابل مشاهده لاگ](broad-fcf-windows-diagnostic.txt) ذخیره‌اند؛ نوع پارامتر و علت native crash از این سطر ناقص ثابت نمی‌شوند. شمار PASS Windows بدون JUnit معلوم نیست. این run شکست‌خورده است و در اولین timeout شمع باقی نماند.
+
+همان آزمون سقف singleShot(40) داشت و callback بدون کنترل `activeModalWidget()` در finally `roof.reject()` را فراخوانی می‌کرد. [RED کنترل‌شده](qtfix-roof-red.xml) نشان داد تایمر می‌تواند قبل از نمایش RoofDetailEditor مقدار None ببیند. اصلاح حداقلی در خود تست، انتظار محدود برای QDialog فعال با نام RoofDetailEditor و ثبت خطا/cleanup را به کار می‌گیرد؛ Qt اصلی، PDF، SQLite، کلیک‌ها و assertionهای BOQ/مدرک حفظ شده‌اند. رگرسیون سقف/وافل۱۷PASS و رگرسیون مشترک شمع/سقف۲۱PASS، هرکدام۱warningfitz، JUnit واقعی کنار همین گزارش‌اند. این شواهد ریسک مسابقه را اثبات می‌کنند؛ علت دقیق کد 0xC0000409 تا مشاهده اجرای Windows جدید قطعی نیست.
+
+کد/آزمون جدید `a41cd180d1b78b1233a20b4c5d440e93c792cce0`؛ workflow `2f766ca`؛ [CI پذیرش40672896825](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896825) اکنون آزمون واقعی سقف را نیز دارد و [CI گسترده40672896854](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40672896854) بر همان SHA ثابت است. هر دو تا نتیجه واقعی NOT VERIFIED. حدهای قبلی۱۲۰۰/۱۵۰۰ تغییر نکرده‌اند. Linux broad جداگانه در worktree تمیز همین SHA نیز در حال اجرا است.
+
+---
+
 ## CI گسترده Linux روی SHA نهایی
 
 [CI40670626852](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852): Linux **۸۳۷۸PASS،۰FAIL،۵SKIP** از۸۳۸۳مورد، exit۰، `timed_out=false` و `overall_green=true`؛ شمارش notice از JSON/JUnit واقعی runner گرفته شده است. این پنج SKIP به PASS تبدیل نمی‌شوند. Windows هنوز جاری است. [شاهد notice](broad-ci-linux.json)؛ JUnit/log محلی همان SHA جداگانه با۱۰SKIP قابل مشاهده است.

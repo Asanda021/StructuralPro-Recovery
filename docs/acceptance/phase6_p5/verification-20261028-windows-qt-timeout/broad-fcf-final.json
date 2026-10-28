@@ -1,0 +1,34 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40670626852",
+  "source_sha": "fcf8472493e842fe707740d2baf166468bf11cdf",
+  "status": "Failure",
+  "results": [
+    {
+      "source_sha": "fcf8472493e842fe707740d2baf166468bf11cdf",
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "overall_green": true,
+      "stats": {
+        "collected": 8383,
+        "passed": 8378,
+        "failed": 0,
+        "skipped": 5,
+        "failures": []
+      }
+    },
+    {
+      "source_sha": "fcf8472493e842fe707740d2baf166468bf11cdf",
+      "pytest_exit_code": 3221226505,
+      "timed_out": false,
+      "overall_green": false,
+      "stats": {
+        "error": "JUnit report missing"
+      }
+    }
+  ],
+  "artifact_sha256": [
+    "9368837ca217daa2907686056f338e2421523322c97a89ffc185bbde1365b33c",
+    "bc76c21c70613bcfd190db498916f60dd12e1c50cbf9782c96e69677a607ea6e"
+  ],
+  "interpretation": "Windows exit 0xc0000409, timed_out false, JUnit missing. Last visible log reaches tests/test_phase2_pdf_roof_ui.py::test_actual_pdf_region_to_specialist_bo; truncated public annotation does not prove which parameter or cause."
+}

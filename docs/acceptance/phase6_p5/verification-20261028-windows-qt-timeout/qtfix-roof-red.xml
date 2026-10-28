@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.145" timestamp="2026-10-28T10:30:43.606183+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase2_pdf_roof_ui" name="test_delayed_roof_modal_is_seen_even_if_construction_is_slow" time="0.182"><failure message="AssertionError: one-shot missed the actual roof modal&#10;assert [None] == [&lt;PySide6.QtW...7efeb948ee80&gt;]&#10;  &#10;  At index 0 diff: None != &lt;PySide6.QtWidgets.QDialog(0x139b75a0, name=&quot;RoofDetailEditor&quot;) at 0x7efeb948ee80&gt;&#10;  Use -v to get more diff">qt = &lt;PySide6.QtWidgets.QApplication(0x13503e20) at 0x7efeb9468e00&gt;
+
+    def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
+        from PySide6.QtCore import QEventLoop
+        from PySide6.QtWidgets import QDialog
+        seen=[]
+        roof=QDialog();roof.setObjectName('RoofDetailEditor')
+        loop=QEventLoop()
+        QTimer.singleShot(40,lambda:seen.append(qt.activeModalWidget()))
+        def open_roof():
+            QTimer.singleShot(20,roof.reject)
+            roof.exec()
+        QTimer.singleShot(80,open_roof)
+        QTimer.singleShot(180,loop.quit)
+        loop.exec()
+&gt;       assert seen==[roof], 'one-shot missed the actual roof modal'
+E       AssertionError: one-shot missed the actual roof modal
+E       assert [None] == [&lt;PySide6.QtW...7efeb948ee80&gt;]
+E         
+E         At index 0 diff: None != &lt;PySide6.QtWidgets.QDialog(0x139b75a0, name="RoofDetailEditor") at 0x7efeb948ee80&gt;
+E         Use -v to get more diff
+
+tests/test_phase2_pdf_roof_ui.py:148: AssertionError</failure></testcase></testsuite></testsuites>
