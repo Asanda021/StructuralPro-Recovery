@@ -1,0 +1,8 @@
+{
+  "source": "74cc37d68c35a0a113643e7538d9dce3378e3597",
+  "status": "interrupted-for-newer-source; no final JUnit; not a completed result",
+  "observed_progress": {
+    "PASSED": 2888,
+    "FAILED": 1
+  }
+}
