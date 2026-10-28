@@ -1,3 +1,12 @@
+## نتیجه نهایی پذیرش E3–E6 در هر دو سیستم | ۲۸ اکتبر ۲۰۲۶
+- [CI #40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) completed/success بر کد دقیق `c10b9291cb443431287d656fcf00c4b26e71e196`. هر دو Ubuntu 24.04 Qt offscreen و Windows 2022 Qt native، **۴۹۲ PASS اصلی، صفر FAIL/ERROR/SKIP**.
+- هر محیط: **۱۳۰ PASS تاریخی**، **۲۶ PASS امنیت**، **۸ PASS DPI150** و **۸ PASS DPI200**؛ صفر FAIL/ERROR/SKIP. آزمون‌های DPI تکراری‌اند، نه سناریوهای مستقل جدید. در آزمون اصلی هر محیط یک FutureWarning کتابخانه `fitz` وجود دارد، مخفی نشده است.
+- [JUnit/Artifact Windows #12824227966](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304/artifacts/12824227966) و [JUnit/Artifact Linux #12823343969](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304/artifacts/12823343969).
+- نتایج دقیق از خلاصه JUnit GitHub: Linux اصلی 492 PASS در ۱۲۳٫۶۴ ثانیه؛ Windows اصلی 492 PASS در ۴۷۷٫۶۳ ثانیه. SHA256 JUnit اصلی Windows `1c5e36840de1e3d6a03acd0bd3b2b3c80045b05cbf6f63a01fcc4b974ccf637d` و Linux `bccd354afabeda8adc3141292d84b3cbbfe8473b5ae90f47ef2297cf3b41a1ed`.
+- **گیت تخصصی E4 CAS:** [CI #40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) هر دو محیط ۴۰ PASS و JUnit واقعی؛ تأیید مستقل دارد.
+- برای گیت گسترده کلِ همین source، [CI #40707200358](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40707200358) به‌وسیله Commit workflow `b68f739c061b63c738bb9f2ebe886c6bd0d4f880` راه‌اندازی شد؛ checkout Linux و سه Windows shard و Union روی source `c10b929...` پین شده‌اند. **تا اعلام نتیجه و بررسی JUnit همین run، گیت گسترده source جدید باز است؛ موفقیت پیشین #40683854260 فقط برای source قدیمی `48a85f...` معتبر است.**
+- قراردادهای فاقد شواهد DWG و مقصدهای تخصصی E4، مالکیت مشترک E6، W1/IFC MEP و A2 تجاری همچنان PARTIAL/BLOCKED. PR #33/#34 Draft/Open/Unmerged؛ main و Release بدون تغییر.
+
 ## نتیجه قطعی گیت E4 دو‌سیستمی (پس از اجرای Workflow)
 - **CI:** [#40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) با وضعیت `completed/success`، روی Workflow `8138fe730819db694df4fdd3146e4f994a3d4a81` و **source checkout دقیقاً `c10b9291cb443431287d656fcf00c4b26e71e196`**.
 - **Ubuntu 24.04 / Qt offscreen:** **۴۰ PASS، صفر FAIL/ERROR/SKIP**؛ [JUnit اصلی Artifact #12822768913](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682/artifacts/12822768913)، مدت اجرای pytest **۶٫۴۴ ثانیه**.
