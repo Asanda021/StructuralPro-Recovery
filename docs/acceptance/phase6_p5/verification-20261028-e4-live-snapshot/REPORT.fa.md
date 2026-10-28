@@ -1,3 +1,11 @@
+## نتیجه قطعی گیت E4 دو‌سیستمی (پس از اجرای Workflow)
+- **CI:** [#40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) با وضعیت `completed/success`، روی Workflow `8138fe730819db694df4fdd3146e4f994a3d4a81` و **source checkout دقیقاً `c10b9291cb443431287d656fcf00c4b26e71e196`**.
+- **Ubuntu 24.04 / Qt offscreen:** **۴۰ PASS، صفر FAIL/ERROR/SKIP**؛ [JUnit اصلی Artifact #12822768913](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682/artifacts/12822768913)، مدت اجرای pytest **۶٫۴۴ ثانیه**.
+- **Windows Server 2022 / Qt native:** **۴۰ PASS، صفر FAIL/ERROR/SKIP**؛ [JUnit اصلی Artifact #12823108378](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682/artifacts/12823108378)، مدت اجرای pytest **۳۱٫۵۰ ثانیه**.
+- این **۴۰ سناریوی یکتای تکرارشده در دو سیستم** هستند، نه ۸۰ قابلیت یا ۸۰ سناریوی مستقل. سه مورد تازه باعث حفاظت از همان مسیرهای stale شده‌اند؛ قابلیت گسترده‌تر E4 همچنان صرفاً PARTIAL است.
+- [CI پذیرش کامل‌تر E3-E6 #40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) به‌طور مستقل اجرا شده؛ Linux `completed/success`، Windows در لحظه آخرین بررسی `in_progress`. نتیجه کل آن هنوز تعیین‌کننده است؛ به این ۴۰ PASS اضافه یا جایگزینشان نمی‌شود.
+- هیچ Merge، Release، تغییر main، تضعیف گیت مالی یا تغییر وزن ۸۵٪ صورت نگرفت.
+
 # P6-5 | E4: محافظ نسخه زنده در ناوبری واقعی Qt
 
 **تاریخ:** ۲۸ اکتبر ۲۰۲۶ | **مخزن:** `Asanda021/StructuralPro-Recovery` | **شاخه:** `feature/phase6-p5-workspace-e3-e6-20261027` | **PR:** #34 Draft/Open/Unmerged

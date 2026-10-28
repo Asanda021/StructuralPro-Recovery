@@ -1,3 +1,7 @@
+## گیت قطعی دو‌سیستمی E4 CAS | ۲۸ اکتبر ۲۰۲۶
+- [CI #40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) completed/success: **۴۰ PASS Linux + ۴۰ PASS Windows**، صفر FAIL/ERROR/SKIP؛ source قفل‌شده `c10b9291cb443431287d656fcf00c4b26e71e196`. [JUnit Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682/artifacts/12822768913) و [JUnit Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682/artifacts/12823108378).
+- [گزارش نهایی محدوده اصلاح E4](verification-20261028-e4-live-snapshot/REPORT.fa.md). CI گسترده‌تر E3-E6 [#40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) مستقل و Windows در زمان ثبت همچنان باز. E4 کل دامنه هنوز PARTIAL؛ PR33/34 Draft/Open/Unmerged، main و Release بدون تغییر، ۸ فاز/۸۵٪ ثابت.
+
 ## E4 CAS stale navigation | ۲۸ اکتبر ۲۰۲۶
 - کد و ۳ آزمون جدید Qt: `c10b9291cb443431287d656fcf00c4b26e71e196`؛ جلوگیری از استفاده از Snapshot قدیمی در جست‌وجو، کلیک رکورد و callback تخصصی IFC، بدون تغییر BOQ.
 - CI هدفمند Windows/Linux [#40705393682](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705393682) و CI پذیرش P6-5 [#40705265304](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40705265304) **در لحظه ثبت در حال اجرا**؛ تا JUnit واقعی و اعلام دو سیستم، E4 صرفاً اصلاح ثبت‌شده و P6-5 PARTIAL.
