@@ -37,4 +37,21 @@
 - P6-4/P6-5 هنوز **PARTIAL**: قراردادهای E6 مالکیت مشترک/Crosswalk، W1 IFC MEP، E4 ناوبری تخصصی/DWG، Windows UAT فیزیکی و A2 تجاری همچنان در وضعیت قبلی `BLOCKED/NOT VERIFIED` هستند.
 - `main` در زمان کنترل `9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95` بوده است. برنامه دقیقاً ۸ فاز و پیشرفت ثبت‌شده ۸۵٪ ثابت می‌ماند.
 
-**گام بعدی پذیرش:** استخراج اسامی ۵ SKIP از JUnit، در صورت نیاز اجرای هدفمند Windows برای موارد بومی، سپس بررسی قراردادهای تخصصی باقی‌مانده، بدون تبدیل `BLOCKED` به `PASS` بدون مدارک مهندسی.
+## تکمیل بازبینی ۵ SKIP با JUnit اصلی Windows
+
+Artifact رگرسیون Linux `p6-broad-current-linux-7cbeac9b2455` دانلود و XML اصلی آن خوانده شد. هر دو آزمون baseline، یعنی `test_actual_shell_navigation_calendar_and_ribbon` و `test_qt_glyph_capability_and_render_diagnostics`، واقعاً در JUnit با نتیجه PASS ثبت شده‌اند. پنج SKIP صرفاً این موارد Windows-only بودند:
+
+1. `tests/test_phase4_sqlite_windows_native.py::test_windows_live_connection_blocks_rename_and_preserves_committed_revisions`، قفل NTFS و تاریخچه SQLite.
+2. `tests/test_phase4_sqlite_windows_native.py::test_windows_closed_database_can_be_moved_then_reopened_safely`، انتقال بانک بسته و Reopen.
+3. `tests/test_phase5_p3_trusted_identity_store.py::test_windows_identity_is_read_from_the_live_access_token`، هویت واقعی Access Token.
+4. `tests/test_phase5_unified_packaging.py::test_windows_single_edition_validate_only_does_not_build`، پیش‌ارزیابی PowerShell بدون ساخت EXE.
+5. `tests/test_phase5_windows_native_acceptance.py::test_current_windows_token_principal_reaches_projectstore_and_real_qt_workspace`، SID و ProjectStore و Qt واقعی.
+
+برای پنج مورد بالا یک [Run مستقل Windows #40651198197](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40651198197) روی source-SHA ثابت `7cbeac9b245586bf83922bc4dbf2783de56214ad` اجرا شد؛ commit راه‌انداز فقط Workflow `0bba70c2c7c89e22f2da604b2698e1e7ebe7cc14` است.
+
+نتیجه JUnit و JSON اصلی `p6-windows-five-7cbeac9b2455`: **۵ PASS، ۰ FAIL، ۰ ERROR، ۰ SKIP، exit=0 و overall_green=true**. منبع در Disposable با `active_workflows=0` و ۱۹۳ YAML قرنطینه اعتبارسنجی شد. هیچ Release/EXE/Installer تولید نشد.
+
+این اجرا فقط **۵ مورد ویندوزی** را می‌بندد، نه کل رگرسیون ۸٬۳۷۵تایی ویندوز یا Windows UAT فیزیکی. Snapshot نهایی ترکیبی: Linux full current `8370 PASS + 5 SKIP`، Windows targeted skips `5 PASS`، CI اختصاصی PR34 روی هر دو سیستم `463 PASS`. هر سه پوشش مجزا هستند و جمع آن‌ها ادعای یک اجرای کامل Windows نیست.
+
+**گام بعدی پذیرش:** بررسی قراردادهای تخصصی و شواهد مالک E6 Crosswalk/مالکیت مشترک، W1 IFC MEP، E4 هویت مقصدهای تخصصی و UAT فیزیکی Windows؛ هیچ یک با PASS این پنج آزمون خودکار تأیید نمی‌شوند.
+
