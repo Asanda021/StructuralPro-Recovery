@@ -1,0 +1,40 @@
+{
+  "execution": "current",
+  "run_utc": "2026-10-28T01:19:53.396276+00:00",
+  "source_checkout": "/workspace/StructuralPro-Gates-P5",
+  "disposable_source_policy": {
+    "active_workflows": 0,
+    "verified_quarantined_workflows": 193
+  },
+  "historical_modules_excluded_from_current": [
+    "tests/test_binary_build_security_contract.py",
+    "tests/test_owner_approved_binary_build_workflows.py",
+    "tests/test_p37_real_product_deployment.py",
+    "tests/test_p37_release_gate_separation.py",
+    "tests/test_p61_p70_release_delivery.py",
+    "tests/test_priority_10_compliance.py",
+    "tests/test_priority_10_release.py",
+    "tests/test_priority_10_release_integrity.py",
+    "tests/test_priority_17_reports_excel_pdf.py",
+    "tests/test_priority_38_pre_release_freeze.py",
+    "tests/test_priority_41_ci_dependency_parity.py",
+    "tests/test_priority_42_windows_runtime_smoke.py",
+    "tests/test_priority_43_release_artifact_integrity.py",
+    "tests/test_priority_49_windows_installer_acceptance.py",
+    "tests/test_priority_9_qa.py"
+  ],
+  "source_active_workflows": 16,
+  "source_active_workflows_copied": 0,
+  "historical_workflows_copied_to_temp_only": 0,
+  "github_actions_used": false,
+  "build_or_release_performed": false,
+  "windows_gui_validated": false,
+  "junit_report_written": false,
+  "pytest_exit_code": -15,
+  "timed_out": false,
+  "timeout_seconds": 900.0,
+  "stats": {
+    "error": "JUnit report missing"
+  },
+  "overall_green": false
+}

@@ -1,0 +1,6 @@
+{
+  "test": "tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports",
+  "exit_code": 124,
+  "timed_out": true,
+  "timeout_seconds": 75
+}

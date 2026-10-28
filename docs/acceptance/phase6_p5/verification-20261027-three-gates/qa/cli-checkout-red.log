@@ -1,0 +1,23 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+__________ test_cli_setup_failure_is_visible_and_never_a_green_report __________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-22/test_cli_setup_failure_is_visi0')
+
+    def test_cli_setup_failure_is_visible_and_never_a_green_report(tmp_path):
+        import subprocess, sys, json
+        r=fixture_repo(tmp_path)
+        (r/'recovery/workflow_sha256.json').write_text('{}')
+        report=tmp_path/'status.json'; log=tmp_path/'trace.log'; junit=tmp_path/'actual.xml'
+        junit.write_text('stale, not this execution')
+        proc=subprocess.run([sys.executable,str(SCRIPT),'--root',str(r),'--json',str(report),
+            '--log',str(log),'--junit',str(junit)],capture_output=True,text=True,timeout=30)
+        assert proc.returncode==1
+>       assert '::error title=Quarantined QA setup::' in proc.stdout
+E       assert '::error title=Quarantined QA setup::' in ''
+E        +  where '' = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '/workspace/StructuralPro-Gates-P5/script...aise RuntimeError("Quarantined workflow integrity mismatch")\nRuntimeError: Quarantined workflow integrity mismatch\n').stdout
+
+tests/test_recovery_quarantined_workflow_qa.py:297: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_cli_setup_failure_is_visible_and_never_a_green_report
+1 failed, 1 passed, 24 deselected in 0.20s

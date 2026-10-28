@@ -1,0 +1,29 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_boq_navigation_selects_exact_stored_row_without_financial_recalc[False] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-20/test_boq_navigation_selects_ex1')
+row_selection = False
+
+    @pytest.mark.parametrize("row_selection", [True, False])
+    def test_boq_navigation_selects_exact_stored_row_without_financial_recalc(tmp_path, row_selection):
+        from PySide6.QtWidgets import QApplication,QTableWidget
+        from app.project_search_panel import display_verified_boq_row
+        qt=QApplication.instance() or QApplication([])
+        table=QTableWidget(0,6)
+        project={"id":"P","boq":[
+            {"row_id":"B1","description":"دیوار","quantity":"13.00","unit":"m2"},
+            {"row_id":"B2","description":"سقف","quantity":"2.50","unit":"m3"},
+        ]}
+        before=repr(project)
+        if not row_selection: table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectColumns)
+        assert display_verified_boq_row(project,"B2",table)==1
+>       assert table.currentRow()==1
+E       assert -1 == 1
+E        +  where -1 = <built-in method currentRow of PySide6.QtWidgets.QTableWidget object at 0x7f3cd3f896c0>()
+E        +    where <built-in method currentRow of PySide6.QtWidgets.QTableWidget object at 0x7f3cd3f896c0> = <PySide6.QtWidgets.QTableWidget(0x2bd6e340) at 0x7f3cd3f896c0>.currentRow
+
+tests/test_phase6_p5_e4_ui.py:127: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_phase6_p5_e4_ui.py::test_boq_navigation_selects_exact_stored_row_without_financial_recalc[False]
+1 failed, 1 passed, 12 deselected in 0.29s

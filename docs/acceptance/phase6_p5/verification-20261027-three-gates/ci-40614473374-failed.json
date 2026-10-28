@@ -1,0 +1,83 @@
+{
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40614473374",
+  "code_commit": "5e657ed0b8695058a45b2043ae343632d13726c1",
+  "status": "Failure",
+  "reports": [
+    {
+      "file": "p6-qa-security-offscreen.xml",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "288173b5e59d97fe162bf9531af0704cb65547ead0de9ceb83cb7f4ac6b61deb",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-offscreen.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "befb4bcd8f9447e798ccee0c59d2f8f41173443b8415f02c8f977bb2f3817864",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "179b605f5a923ecccc11e72e2e67a14453315a5df0126716ce2fadde354558c2",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "9433ba1930afc7b13a64dfaf93096492ef088350b647bdf5b952581e9c38c16c",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-offscreen.xml",
+      "tests": 448,
+      "passed": 448,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "ed92fa29dabbfba19a1ec9535a9813556a1a58bad77c2786ae404a207bfadcfa",
+      "pytest_warning_count": 1
+    },
+    {
+      "file": "p6-qa-security-windows.xml",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e7487fda214a97f868e6bb1943e051bf4c005cd72911cc1d1c5a9e187937ac0c",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-windows.xml",
+      "tests": 448,
+      "passed": 448,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d4144780ff3fb8caf2a81abfd562d765c319731a702258c2b75f86974c8cfd56",
+      "pytest_warning_count": 1
+    }
+  ],
+  "missing_windows_reports": [
+    "p6-historical-windows.xml",
+    "p6-p5-dpi150-windows.xml",
+    "p6-p5-dpi-windows.xml"
+  ],
+  "interpretation": "Windows main448 and security24 passed; historical setup failed beforeJUnit; DPI did not execute due prior failure. Not full green. Followup preserves checkout bytes and emits actual setup exception evidence."
+}

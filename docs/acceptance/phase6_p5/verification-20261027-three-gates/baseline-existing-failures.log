@@ -1,0 +1,133 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_actual_shell_navigation_calendar_and_ribbon _______________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_actual_shell_navigation_c0')
+
+    def test_actual_shell_navigation_calendar_and_ribbon(tmp_path):
+        if importlib.util.find_spec('PySide6') is None:
+            pytest.skip('Desktop dependency is exercised by comprehensive CI and Windows verification')
+        script = r'''
+    import sys
+    from pathlib import Path
+    from PySide6.QtCore import QCalendar, QDate, QLocale, Qt
+    from PySide6.QtWidgets import QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QTreeWidget, QDialog, QCalendarWidget
+    Path.home = classmethod(lambda cls: Path(sys.argv[1]))
+    from app.main import main
+    original_exec = QApplication.exec
+    calendar_seen = []
+    def inspect_calendar(dialog):
+        calendar = dialog.findChild(QCalendarWidget)
+        assert calendar.calendar().name() == 'Jalali'
+        assert calendar.selectedDate() == QDate.currentDate()
+        assert calendar.locale().language() == QLocale.Language.Persian
+        calendar_seen.append(True)
+        return 0
+    QDialog.exec = inspect_calendar
+    def inspect_shell(app):
+        window = next(w for w in app.topLevelWidgets() if isinstance(w, QMainWindow))
+        tabs = window.findChild(QTabBar, 'MainNavigationTabs')
+        pages = window.findChild(QStackedWidget)
+        assert tabs and pages
+        assert tabs.count() == pages.count() == 23
+        assert tabs.layoutDirection() == Qt.LayoutDirection.RightToLeft
+        assert not window.findChildren(QTreeWidget)
+        assert window.findChild(QPushButton, 'RibbonPrimary')
+        targets = [tabs.tabData(i) for i in range(tabs.count())]
+        assert set(targets) == set(range(pages.count()))
+        for i, target in enumerate(targets):
+            tabs.setCurrentIndex(i)
+            assert pages.currentIndex() == target
+            assert tabs.tabToolTip(i)
+        for target in reversed(targets):
+            pages.setCurrentIndex(target)
+            assert tabs.tabData(tabs.currentIndex()) == target
+        date = window.findChild(QPushButton, 'SystemPersianDate')
+        locale = QLocale(QLocale.Language.Persian, QLocale.Country.Iran)
+        assert date.text() == locale.toString(QDate.currentDate(), QLocale.FormatType.LongFormat, QCalendar(QCalendar.System.Jalali))
+        date.click()
+        assert calendar_seen == [True]
+        return original_exec()
+    QApplication.exec = inspect_shell
+    raise SystemExit(main())
+    '''
+        environment = os.environ.copy()
+        environment.update(QT_QPA_PLATFORM='offscreen', STRUCTURALPRO_SMOKE='1')
+        result = subprocess.run([sys.executable, '-c', script, str(tmp_path)],
+                                cwd=Path(__file__).resolve().parents[1], env=environment,
+                                capture_output=True, text=True, timeout=60)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-28 01:26:46 | CRITICAL | structuralpro | Unhandled application exception
+E         Traceback (most recent call last):
+E           File "<string>", line 43, in <module>
+E           File "/workspace/StructuralPro-P5/app/main.py", line 1296, in main
+E             result = app.exec()
+E                      ^^^^^^^^^^
+E           File "<string>", line 25, in inspect_shell
+E         AssertionError
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', "\nimport sys\nfrom pathlib import ...ain\n    result = app.exec()\n             ^^^^^^^^^^\n  File "<string>", line 25, in inspect_shell\nAssertionError\n').returncode
+
+tests/test_master13_desktop_shell_runtime.py:63: AssertionError
+_______________ test_qt_glyph_capability_and_render_diagnostics ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_qt_glyph_capability_and_r0')
+
+    def test_qt_glyph_capability_and_render_diagnostics(tmp_path):
+        pytest.importorskip("PySide6")
+        code = r"""
+    import json, os, sys
+    from pathlib import Path
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QFont, QFontDatabase, QFontMetrics, QImage, QPainter, QRawFont
+    from PySide6.QtWidgets import QApplication, QLabel
+    from app.desktop_preferences import _preferred_persian_font
+    app=QApplication([])
+    selected, arabic_supported = _preferred_persian_font()
+    raw=QRawFont.fromFont(QFont(selected, 16))
+    characters='StructuralPro 1234 کارگاه متره'
+    font=QFont(selected, 18)
+    metrics=QFontMetrics(font)
+    glyphs={ch: bool(raw.supportsCharacter(ord(ch))) for ch in set(characters) if not ch.isspace()}
+    result=dict(platform=sys.platform, qpa=os.environ.get('QT_QPA_PLATFORM'), family=selected,
+                arabic_supported=arabic_supported, glyphs=glyphs,
+                raw_valid=raw.isValid(), font_metrics_width=metrics.horizontalAdvance(characters),
+                available_fonts=QFontDatabase.families()[:100])
+    print('PHASE6_FONT_DIAGNOSTIC '+json.dumps(result,ensure_ascii=False),flush=True)
+    assert selected and raw.isValid()
+    assert all(glyphs.values()), 'Qt selected font lacks printable glyphs, see diagnostic'
+    dest=Path(os.environ.get('STRUCTURALPRO_P6_FONT_DIR', '.'))
+    dest.mkdir(parents=True,exist_ok=True)
+    image=QImage(680,140,QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.white)
+    painter=QPainter(image)
+    painter.setPen(Qt.GlobalColor.black);painter.setFont(font)
+    painter.drawText(12,70,characters);painter.end()
+    assert image.save(str(dest/'font-direct.png'))
+    label=QLabel(characters)
+    label.setFont(font);label.resize(680,140)
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.show()
+    assert label.grab().save(str(dest/'font-label.png'))
+    """
+        env={**os.environ,'STRUCTURALPRO_P6_FONT_DIR':str(tmp_path)}
+        result=subprocess.run([sys.executable,"-c",code],cwd=ROOT,env=env,
+                              capture_output=True,text=True,timeout=55)
+        print(result.stdout)
+>       assert result.returncode==0, result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "<string>", line 21, in <module>
+E         AssertionError: Qt selected font lacks printable glyphs, see diagnostic
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', "\nimport json, os, sys\nfrom pathl...:\n  File "<string>", line 21, in <module>\nAssertionError: Qt selected font lacks printable glyphs, see diagnostic\n').returncode
+
+tests/test_phase6_p1_font_diagnostics.py:60: AssertionError
+----------------------------- Captured stdout call -----------------------------
+PHASE6_FONT_DIAGNOSTIC {"platform": "linux", "qpa": "offscreen", "family": "Noto Sans Arabic", "arabic_supported": true, "glyphs": {"ه": true, "4": true, "S": false, "l": false, "t": false, "م": true, "c": false, "u": false, "2": true, "گ": true, "ر": true, "P": false, "ت": true, "r": false, "a": false, "1": true, "3": true, "ا": true, "ک": true, "o": false}, "raw_valid": true, "font_metrics_width": 312, "available_fonts": ["Bitstream Charter", "C059 [UKWN]", "C059 [urw]", "cmex10", "cmmi10", "cmr10", "cmsy10", "Courier", "D050000L [urw]", "D050000L [URW ]", "DejaVu Math TeX Gyre", "DejaVu Sans", "DejaVu Sans Condensed", "DejaVu Sans Mono", "DejaVu Serif", "DejaVu Serif Condensed", "dsrom10", "esint10", "eufm10", "Latin Modern Math", "Latin Modern Mono", "Latin Modern Mono Caps", "Latin Modern Mono Light", "Latin Modern Mono Light Cond", "Latin Modern Mono Prop", "Latin Modern Mono Prop Light", "Latin Modern Mono Slanted", "Latin Modern Roman", "Latin Modern Roman Caps", "Latin Modern Roman Demi", "Latin Modern Roman Dunhill", "Latin Modern Roman Slanted", "Latin Modern Roman Unslanted", "Latin Modern Sans", "Latin Modern Sans Demi Cond", "Latin Modern Sans Quotation", "Liberation Mono", "Liberation Sans", "Liberation Serif", "LM Mono 10", "LM Mono 12", "LM Mono 8", "LM Mono 9", "LM Mono Caps 10", "LM Mono Light 10", "LM Mono Light Cond 10", "LM Mono Prop 10", "LM Mono Prop Light 10", "LM Mono Slanted 10", "LM Roman 10", "LM Roman 12", "LM Roman 17", "LM Roman 5", "LM Roman 6", "LM Roman 7", "LM Roman 8", "LM Roman 9", "LM Roman Caps 10", "LM Roman Demi 10", "LM Roman Dunhill 10", "LM Roman Slanted 10", "LM Roman Slanted 12", "LM Roman Slanted 17", "LM Roman Slanted 8", "LM Roman Slanted 9", "LM Roman Unslanted 10", "LM Sans 10", "LM Sans 12", "LM Sans 17", "LM Sans 8", "LM Sans 9", "LM Sans Demi Cond 10", "LM Sans Quot 8", "Monospace", "msam10", "msbm10", "Nimbus Mono PS [urw]", "Nimbus Mono PS [UKWN]", "Nimbus Roman [urw]", "Nimbus Roman [UKWN]", "Nimbus Sans [URW ]", "Nimbus Sans [UKWN]", "Nimbus Sans [urw]", "Nimbus Sans Narrow [urw]", "Nimbus Sans Narrow [UKWN]", "Noto Color Emoji", "Noto Kufi Arabic", "Noto Looped Lao", "Noto Looped Thai", "Noto Mono", "Noto Music", "Noto Naskh Arabic", "Noto Nastaliq Urdu", "Noto Rashi Hebrew", "Noto Sans", "Noto Sans Adlam", "Noto Sans Adlam Unjoined", "Noto Sans Anatolian Hieroglyphs", "Noto Sans Arabic", "Noto Sans Armenian"]}
+
+=========================== short test summary info ============================
+FAILED tests/test_master13_desktop_shell_runtime.py::test_actual_shell_navigation_calendar_and_ribbon
+FAILED tests/test_phase6_p1_font_diagnostics.py::test_qt_glyph_capability_and_render_diagnostics
+2 failed in 1.91s

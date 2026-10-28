@@ -1,0 +1,23 @@
+{
+  "commit": "ed0e28acc2fd4f3e2f22f674755a8f94ad9b4732",
+  "tree": "2d5be7e281f7e1c4bf74412b4877383b6994ed87",
+  "tracked_worktree_clean": false,
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "python": "3.12.14",
+  "reports": [
+    {
+      "file": "docs/acceptance/phase6_p5/verification-20261027-three-gates/linux-latest-workflow.xml",
+      "sha256": "f21facd8da1adc43eda70a8607202213d385fe045b8f197327912a0281ea8edf",
+      "tests": 461,
+      "passed": 461,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failures": [],
+      "pytest_warning_count": 1
+    }
+  ],
+  "missing": [],
+  "warning_count": null,
+  "warning_note": "JUnit does not encode the pytest warning count; inspect the original job log."
+}

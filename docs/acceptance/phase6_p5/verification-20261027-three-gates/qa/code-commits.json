@@ -1,0 +1,26 @@
+[
+  {
+    "sha": "b9e2b0a4e095192d1ebb6a6a8d49244c2dab8831",
+    "subject": "fix(qa): isolate historical workflow contracts from active acceptance source"
+  },
+  {
+    "sha": "42f21d269c4280277b66b4a682eedf6413e9f209",
+    "subject": "fix(qa): revalidate original quarantine after historical fixture caching"
+  },
+  {
+    "sha": "eb1ff85b2f62364dbb501eb978f3d6d93c801e0d",
+    "subject": "feat(qa): persist actual pytest JUnit with stale-report protection"
+  },
+  {
+    "sha": "0bca42804b802c9b486ffe7144a24fc55c81ab3e",
+    "subject": "test(qa): answer required bulk-edit confirmation through native Qt"
+  },
+  {
+    "sha": "baf93109d772cff30002d8668ca912986d258925",
+    "subject": "fix(qa): retain live subprocess output while verification runs"
+  },
+  {
+    "sha": "34a73c6d8036573646c6397f358558c804a112fa",
+    "subject": "test(qa): confirm native bulk unit editing before asserting quantity"
+  }
+]

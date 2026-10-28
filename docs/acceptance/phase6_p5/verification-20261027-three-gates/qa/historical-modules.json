@@ -1,0 +1,17 @@
+{
+  "tests.test_binary_build_security_contract": 25,
+  "tests.test_owner_approved_binary_build_workflows": 6,
+  "tests.test_p37_real_product_deployment": 2,
+  "tests.test_p37_release_gate_separation": 21,
+  "tests.test_p61_p70_release_delivery": 4,
+  "tests.test_priority_10_compliance": 3,
+  "tests.test_priority_10_release": 3,
+  "tests.test_priority_10_release_integrity": 7,
+  "tests.test_priority_17_reports_excel_pdf": 38,
+  "tests.test_priority_38_pre_release_freeze": 4,
+  "tests.test_priority_41_ci_dependency_parity": 2,
+  "tests.test_priority_42_windows_runtime_smoke": 2,
+  "tests.test_priority_43_release_artifact_integrity": 2,
+  "tests.test_priority_49_windows_installer_acceptance": 2,
+  "tests.test_priority_9_qa": 9
+}

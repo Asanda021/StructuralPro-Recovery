@@ -1,0 +1,31 @@
+{
+  "pr33_code": "04e2e61151013a09f31e92aa943978b5de8bf188",
+  "pr34_code": "ed0e28acc2fd4f3e2f22f674755a8f94ad9b4732",
+  "files": [
+    {
+      "file": "app/beam_detail_panel.py",
+      "pr33_blob": "d29fce7b3433f57ff2eb6d8a013888f0137143e4",
+      "pr34_blob": "d29fce7b3433f57ff2eb6d8a013888f0137143e4",
+      "identical": true
+    },
+    {
+      "file": "app/roof_detail_editor.py",
+      "pr33_blob": "320b4898a86a7f04a502d48d4f4cdfb0fd8c601a",
+      "pr34_blob": "320b4898a86a7f04a502d48d4f4cdfb0fd8c601a",
+      "identical": true
+    },
+    {
+      "file": "app/architecture_detail_editor.py",
+      "pr33_blob": "534240936bc8a76f720dfc95df191e5c1b312c04",
+      "pr34_blob": "534240936bc8a76f720dfc95df191e5c1b312c04",
+      "identical": true
+    },
+    {
+      "file": "tests/test_phase6_p4_contextual_takeoff.py",
+      "pr33_blob": "e8ccf5fb9a6ee00f7e9aad5820473f52de5fb46e",
+      "pr34_blob": "e8ccf5fb9a6ee00f7e9aad5820473f52de5fb46e",
+      "identical": true
+    }
+  ],
+  "notes": "GraphicalTakeoffDialog also retains PR34 E4 integrations; no whole-file replacement."
+}

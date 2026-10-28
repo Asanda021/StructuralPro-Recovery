@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.311" timestamp="2026-10-27T17:26:54.091614+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_ifc_inverse_cannot_rewind_a_migrated_crosswalk_without_its_own_contract" time="1.032"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-108/test_ifc_inverse_cannot_rewind0')
+
+    def test_ifc_inverse_cannot_rewind_a_migrated_crosswalk_without_its_own_contract(tmp_path):
+        app,args,_,_=case(tmp_path,crosswalks='dxf')
+        proof=tmp_path/'crosswalk-group.json'
+        app.migrate_ifc_crosswalk_group('P',lineage_id=args['lineage_id'],evidence_path=str(proof),
+            evidence_sha256=sha256(proof.read_bytes()).hexdigest(),author='author',reviewer='reviewer',
+            expected_digest=app.store.current_digest('P'))
+        transfer=app.apply_ifc_quantity_transfer('P',**dict(args,expected_digest=app.store.current_digest('P')))
+        before=deepcopy(app.open_project('P'));token=app.store.current_digest('P')
+        try:
+&gt;           with pytest.raises(ValueError):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:245: Failed</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,19 @@
+
+==================================== ERRORS ====================================
+________ ERROR collecting tests/test_binary_build_security_contract.py _________
+tests/test_binary_build_security_contract.py:8: in <module>
+    HISTORY = historical_root()  # Isolated historical contract, never active Actions.
+              ^^^^^^^^^^^^^^^^^
+tests/historical_contracts.py:31: in historical_root
+    checkout, temporary = _fixture()
+                          ^^^^^^^^^^
+tests/historical_contracts.py:22: in _fixture
+    checkout = prepare_fixture(source, disposable)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts/run_quarantined_workflow_qa.py:100: in prepare_fixture
+    raise RuntimeError("Disposable fixture must not overlap the original checkout")
+E   RuntimeError: Disposable fixture must not overlap the original checkout
+=========================== short test summary info ============================
+ERROR tests/test_binary_build_security_contract.py - RuntimeError: Disposable...
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+no tests collected, 1 error in 0.33s

@@ -1,0 +1,160 @@
+......FFFFFFF                                                            [100%]
+=================================== FAILURES ===================================
+____________ test_disposable_source_excludes_active_actions_and_git ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_exclude0')
+
+    def test_disposable_source_excludes_active_actions_and_git(tmp_path):
+        r = fixture_repo(tmp_path)
+        import hashlib, json
+        files = sorted((r / 'recovery/disabled_workflows').iterdir())
+        (r / 'recovery/workflow_sha256.json').write_text(json.dumps({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in files}))
+        (r / '.github/workflows').mkdir(parents=True)
+        (r / '.github/workflows/acceptance.yml').write_text('name: acceptance\n')
+        (r / '.git').write_text('gitdir: /outside/worktree')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+>       staged = module.prepare_source(r, d)
+                 ^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:81: AttributeError
+________________ test_disposable_source_rejects_links[.github] _________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_rejects0')
+linked = '.github'
+
+    @pytest.mark.parametrize('linked', ['.github', '.github/workflows', 'recovery', 'recovery/disabled_workflows', 'README.md'])
+    def test_disposable_source_rejects_links(tmp_path, linked):
+        r = fixture_repo(tmp_path)
+        path = r / linked
+        if path.exists():
+            import shutil
+            if path.is_dir(): shutil.rmtree(path)
+            else: path.unlink()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.symlink_to(tmp_path / 'outside')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+        with pytest.raises(RuntimeError, match='[Ll]ink'):
+>           module.prepare_source(r, d)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:104: AttributeError
+___________ test_disposable_source_rejects_links[.github/workflows] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_rejects1')
+linked = '.github/workflows'
+
+    @pytest.mark.parametrize('linked', ['.github', '.github/workflows', 'recovery', 'recovery/disabled_workflows', 'README.md'])
+    def test_disposable_source_rejects_links(tmp_path, linked):
+        r = fixture_repo(tmp_path)
+        path = r / linked
+        if path.exists():
+            import shutil
+            if path.is_dir(): shutil.rmtree(path)
+            else: path.unlink()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.symlink_to(tmp_path / 'outside')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+        with pytest.raises(RuntimeError, match='[Ll]ink'):
+>           module.prepare_source(r, d)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:104: AttributeError
+________________ test_disposable_source_rejects_links[recovery] ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_rejects2')
+linked = 'recovery'
+
+    @pytest.mark.parametrize('linked', ['.github', '.github/workflows', 'recovery', 'recovery/disabled_workflows', 'README.md'])
+    def test_disposable_source_rejects_links(tmp_path, linked):
+        r = fixture_repo(tmp_path)
+        path = r / linked
+        if path.exists():
+            import shutil
+            if path.is_dir(): shutil.rmtree(path)
+            else: path.unlink()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.symlink_to(tmp_path / 'outside')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+        with pytest.raises(RuntimeError, match='[Ll]ink'):
+>           module.prepare_source(r, d)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:104: AttributeError
+______ test_disposable_source_rejects_links[recovery/disabled_workflows] _______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_rejects3')
+linked = 'recovery/disabled_workflows'
+
+    @pytest.mark.parametrize('linked', ['.github', '.github/workflows', 'recovery', 'recovery/disabled_workflows', 'README.md'])
+    def test_disposable_source_rejects_links(tmp_path, linked):
+        r = fixture_repo(tmp_path)
+        path = r / linked
+        if path.exists():
+            import shutil
+            if path.is_dir(): shutil.rmtree(path)
+            else: path.unlink()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.symlink_to(tmp_path / 'outside')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+        with pytest.raises(RuntimeError, match='[Ll]ink'):
+>           module.prepare_source(r, d)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:104: AttributeError
+_______________ test_disposable_source_rejects_links[README.md] ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_rejects4')
+linked = 'README.md'
+
+    @pytest.mark.parametrize('linked', ['.github', '.github/workflows', 'recovery', 'recovery/disabled_workflows', 'README.md'])
+    def test_disposable_source_rejects_links(tmp_path, linked):
+        r = fixture_repo(tmp_path)
+        path = r / linked
+        if path.exists():
+            import shutil
+            if path.is_dir(): shutil.rmtree(path)
+            else: path.unlink()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.symlink_to(tmp_path / 'outside')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+        with pytest.raises(RuntimeError, match='[Ll]ink'):
+>           module.prepare_source(r, d)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:104: AttributeError
+______________ test_disposable_source_manifest_and_overlap_guards ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_disposable_source_manifes0')
+
+    def test_disposable_source_manifest_and_overlap_guards(tmp_path):
+        r = fixture_repo(tmp_path)
+        (r / 'recovery/workflow_sha256.json').write_text('{}')
+        inside = r / 'disposable'
+        inside.mkdir()
+        with pytest.raises(RuntimeError, match='overlap'):
+>           module.prepare_source(r, inside)
+            ^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'historical_workflow_qa' has no attribute 'prepare_source'. Did you mean: 'prepare_fixture'?
+
+tests/test_recovery_quarantined_workflow_qa.py:113: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_excludes_active_actions_and_git
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_rejects_links[.github]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_rejects_links[.github/workflows]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_rejects_links[recovery]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_rejects_links[recovery/disabled_workflows]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_rejects_links[README.md]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_disposable_source_manifest_and_overlap_guards
+7 failed, 6 passed in 0.25s

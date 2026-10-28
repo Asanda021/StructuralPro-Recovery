@@ -1,3 +1,9 @@
+## Final root followup
+
+E4 native destination/search suite now31PASS, zero fail/error/skip, zero warnings. Full regression exposed current BOQ row-1 despite requested B2. A native SelectColumns table independently reproduces this exact failure (1RED). Commit80ecbaf explicitly sets current cell and ClearAndSelect|Rows in the existing Qt selection model. The table's stored row/quantity/unapproved amount and original project repr remain unchanged; only presentation selection changes. Probes for Ctrl and NoSelection passed and are not claimed as RED. Final local combined workflow449PASS; independent Linux/Windows CI is pinned in parent final-source.json/ci-measured.json. All destination blockers below remain.
+
+---
+
 # E4 canonical drawing-session destination — 2026-10-27
 
 Status: PARTIAL. Code/test commit `2f56a2e`. No push, merge, release, EXE, or main changes.

@@ -1,0 +1,20 @@
+{
+  "full-collection.log": {
+    "artifact": "full-collection.log.gz",
+    "uncompressed_sha256": "c23ec930c869d6dc2bcb9083bc33fc0191275fe69688fb7cee3130965fec9b4f",
+    "uncompressed_bytes": 5042728,
+    "compressed_bytes": 111603
+  },
+  "full-collection-followup.log": {
+    "artifact": "full-collection-followup.log.gz",
+    "uncompressed_sha256": "2c46e22758ccca2daea169d190688b6a93b8f5e32cdb1fea8227b544b98aed25",
+    "uncompressed_bytes": 5042958,
+    "compressed_bytes": 111634
+  },
+  "full-collection-junit.log": {
+    "artifact": "full-collection-junit.log.gz",
+    "uncompressed_sha256": "89c067cf6f6a6868c84ee892e2374bd0539022a4b8bb170eb2de74ff415fbf68",
+    "uncompressed_bytes": 5043161,
+    "compressed_bytes": 111673
+  }
+}

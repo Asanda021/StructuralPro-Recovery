@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="1.777" timestamp="2026-10-27T17:12:56.424731+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_native_ifc_history_apply_rechecks_live_viewer_context[project]" time="0.766"><failure message="AssertionError: assert 'd5b86fa4cb86...b093fa50a97c0' == 'c10aaf26045f...117a94ce345d6'&#10;  &#10;  - c10aaf26045ff45758eecfc05a9fa7a662508faeba76d4a507d117a94ce345d6&#10;  + d5b86fa4cb869f2fecb96f950ff89e86376ed6cc04732fd32d0b093fa50a97c0">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-83/test_native_ifc_history_apply_0')
+change = 'project'
+
+    @pytest.mark.parametrize('change', ['project', 'revision', 'source'])
+    def test_native_ifc_history_apply_rechecks_live_viewer_context(tmp_path, change):
+        from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QScrollArea
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app, args, _, _ = case(tmp_path)
+        app.apply_ifc_quantity_transfer('P', **args)
+        qt = QApplication.instance() or QApplication([])
+        source = app.open_project('P')['ifc_identity_reviews'][-1]['document']['source_path']
+        view = GraphicalTakeoffDialog(app_service=app, project_id='P'); view.show()
+        view.open_drawing(source); view.ifc_revision.setText('R2')
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button); qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        try:
+            dialog.findChild(QLineEdit, 'ifc_author').setText('author')
+            dialog.findChild(QLineEdit, 'ifc_history_reason').setText('Synthetic inverse')
+            click('ifc_history_preview')
+            token = app.store.current_digest('P'); before = deepcopy(app.open_project('P'))
+            if change == 'project': view.project_id_input.setText('OTHER')
+            elif change == 'revision': view.ifc_revision.setText('R99')
+            else: view.open_drawing(str(tmp_path / 'beams-R1.ifc'))
+            click('ifc_group_confirm'); click('ifc_history_apply')
+&gt;           assert app.store.current_digest('P') == token
+E           AssertionError: assert 'd5b86fa4cb86...b093fa50a97c0' == 'c10aaf26045f...117a94ce345d6'
+E             
+E             - c10aaf26045ff45758eecfc05a9fa7a662508faeba76d4a507d117a94ce345d6
+E             + d5b86fa4cb869f2fecb96f950ff89e86376ed6cc04732fd32d0b093fa50a97c0
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:207: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_native_ifc_history_apply_rechecks_live_viewer_context[revision]" time="0.401"><failure message="AssertionError: assert '8f958643ab77...920167f7362aa' == '3d7c5cb5fe43...ebd34fd99c9ca'&#10;  &#10;  - 3d7c5cb5fe43226b8c0c3d960ea4afd167dc8b37bce0e88bc16ebd34fd99c9ca&#10;  + 8f958643ab77cb16c03a6b46885c1d83d8633da1146b5f4e38f920167f7362aa">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-83/test_native_ifc_history_apply_1')
+change = 'revision'
+
+    @pytest.mark.parametrize('change', ['project', 'revision', 'source'])
+    def test_native_ifc_history_apply_rechecks_live_viewer_context(tmp_path, change):
+        from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QScrollArea
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app, args, _, _ = case(tmp_path)
+        app.apply_ifc_quantity_transfer('P', **args)
+        qt = QApplication.instance() or QApplication([])
+        source = app.open_project('P')['ifc_identity_reviews'][-1]['document']['source_path']
+        view = GraphicalTakeoffDialog(app_service=app, project_id='P'); view.show()
+        view.open_drawing(source); view.ifc_revision.setText('R2')
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button); qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        try:
+            dialog.findChild(QLineEdit, 'ifc_author').setText('author')
+            dialog.findChild(QLineEdit, 'ifc_history_reason').setText('Synthetic inverse')
+            click('ifc_history_preview')
+            token = app.store.current_digest('P'); before = deepcopy(app.open_project('P'))
+            if change == 'project': view.project_id_input.setText('OTHER')
+            elif change == 'revision': view.ifc_revision.setText('R99')
+            else: view.open_drawing(str(tmp_path / 'beams-R1.ifc'))
+            click('ifc_group_confirm'); click('ifc_history_apply')
+&gt;           assert app.store.current_digest('P') == token
+E           AssertionError: assert '8f958643ab77...920167f7362aa' == '3d7c5cb5fe43...ebd34fd99c9ca'
+E             
+E             - 3d7c5cb5fe43226b8c0c3d960ea4afd167dc8b37bce0e88bc16ebd34fd99c9ca
+E             + 8f958643ab77cb16c03a6b46885c1d83d8633da1146b5f4e38f920167f7362aa
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:207: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_native_ifc_history_apply_rechecks_live_viewer_context[source]" time="0.405"><failure message="AssertionError: assert '230e4c524997...502f38d4d1ad8' == 'e8aa2c2f6568...013cebe026553'&#10;  &#10;  - e8aa2c2f65685ac55d5629cf451540db1cd75c255c344ead36f013cebe026553&#10;  + 230e4c52499702060ff15d14cd6b632df7ef632e35ba432efa2502f38d4d1ad8">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-83/test_native_ifc_history_apply_2')
+change = 'source'
+
+    @pytest.mark.parametrize('change', ['project', 'revision', 'source'])
+    def test_native_ifc_history_apply_rechecks_live_viewer_context(tmp_path, change):
+        from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QScrollArea
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app, args, _, _ = case(tmp_path)
+        app.apply_ifc_quantity_transfer('P', **args)
+        qt = QApplication.instance() or QApplication([])
+        source = app.open_project('P')['ifc_identity_reviews'][-1]['document']['source_path']
+        view = GraphicalTakeoffDialog(app_service=app, project_id='P'); view.show()
+        view.open_drawing(source); view.ifc_revision.setText('R2')
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+        def click(name):
+            button = dialog.findChild(QPushButton, name)
+            dialog.findChild(QScrollArea).ensureWidgetVisible(button); qt.processEvents()
+            QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        try:
+            dialog.findChild(QLineEdit, 'ifc_author').setText('author')
+            dialog.findChild(QLineEdit, 'ifc_history_reason').setText('Synthetic inverse')
+            click('ifc_history_preview')
+            token = app.store.current_digest('P'); before = deepcopy(app.open_project('P'))
+            if change == 'project': view.project_id_input.setText('OTHER')
+            elif change == 'revision': view.ifc_revision.setText('R99')
+            else: view.open_drawing(str(tmp_path / 'beams-R1.ifc'))
+            click('ifc_group_confirm'); click('ifc_history_apply')
+&gt;           assert app.store.current_digest('P') == token
+E           AssertionError: assert '230e4c524997...502f38d4d1ad8' == 'e8aa2c2f6568...013cebe026553'
+E             
+E             - e8aa2c2f65685ac55d5629cf451540db1cd75c255c344ead36f013cebe026553
+E             + 230e4c52499702060ff15d14cd6b632df7ef632e35ba432efa2502f38d4d1ad8
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:207: AssertionError</failure></testcase></testsuite></testsuites>

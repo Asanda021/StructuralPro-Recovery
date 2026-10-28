@@ -1,0 +1,13 @@
+{
+  "final_code_commit": "ed0e28acc2fd4f3e2f22f674755a8f94ad9b4732",
+  "final_code_tree": "2d5be7e281f7e1c4bf74412b4877383b6994ed87",
+  "broad_current_source": "005a55f8eb757e544af79b31e1329369aeb845e0",
+  "broad_current_tree": "f646b9eca878871c78bf7cf2b7a703f0b98a2061",
+  "only_followup_change": "12 parsed-IFC roof/wall negative cases added to existing test; product app/core/scripts/workflow unchanged from005a55f",
+  "pr33_code": "04e2e61151013a09f31e92aa943978b5de8bf188",
+  "pr33_code_tree": "dc7078d441dd0d9e231ebc0d6f1c005178aee29f",
+  "broad_current_report": "current-final.json",
+  "pr33_docs_head": "c859cebccf83a43e456e73377bb2dea764e00823",
+  "local_broad_working_tree_note": "Broad current8351PASS/2FAIL/10SKIP is source005a55f. Final ed0e28a adds12 test-only cases; these are independently covered by final main CI, not claimed in that broad JUnit. Acceptance docs/evidence are working-tree extras.",
+  "product_paths_identical_to_broad_source": true
+}

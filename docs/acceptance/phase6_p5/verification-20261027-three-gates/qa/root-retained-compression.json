@@ -1,0 +1,27 @@
+[
+  {
+    "original": "full-collection-final.log",
+    "gzip": "full-collection-final.log.gz",
+    "original_bytes": 5043161
+  },
+  {
+    "original": "full-collection-streaming.log",
+    "gzip": "full-collection-streaming.log.gz",
+    "original_bytes": 5043274
+  },
+  {
+    "original": "current-streamed.log",
+    "gzip": "current-streamed.log.gz",
+    "original_bytes": 4901886
+  },
+  {
+    "original": "nonwidget.log",
+    "gzip": "nonwidget.log.gz",
+    "original_bytes": 4769322
+  },
+  {
+    "original": "nonwidget.json",
+    "gzip": "nonwidget.json.gz",
+    "original_bytes": 5014150
+  }
+]

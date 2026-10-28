@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="0.433" timestamp="2026-10-27T17:25:57.133238+00:00" hostname="0e67912856eb"><testcase classname="tests.test_manual_structured_units" name="test_native_bulk_unit_control" time="0.255" /></testsuite></testsuites>

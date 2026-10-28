@@ -1,0 +1,97 @@
+[
+  {
+    "commit": "05020d5cb42a8a24831d726184843302f34f78f7",
+    "tree": "a80f3fdc71d96e475cbb56bc8204977baaeb5411",
+    "subject": "Add reviewed append-only IFC ownership Undo and Redo with SQLite CAS"
+  },
+  {
+    "commit": "26dfb082bef646b4214fd9d0cfbba094edfab1af",
+    "tree": "2ea67693bccdcaf1804bb7565277066bb91bd751",
+    "subject": "Bind IFC history confirmation to live viewer project source and revision"
+  },
+  {
+    "commit": "335b414dacbabef87181a20e576e443f9c0709bf",
+    "tree": "07ea7e1e3427407ff489184615b6d7ae1f945bfd",
+    "subject": "Port independently validated PR33 specialist source and mutation guards"
+  },
+  {
+    "commit": "46b96fb4efdffbb0633bca95c12b23f6a527ff04",
+    "tree": "244f0adf530c8e5867c8263908b09f8a221982de",
+    "subject": "feat(search): open verified canonical drawing sessions in original viewer"
+  },
+  {
+    "commit": "fd47ed290cbf83272ea98e6556674acb50939336",
+    "tree": "b1918b1f78c1b58a481ece438888212b492a86c5",
+    "subject": "fix(qa): isolate historical workflow contracts from active acceptance source"
+  },
+  {
+    "commit": "030c9480c5b59d06c8add338578cc416260fcff8",
+    "tree": "f045dbd81878208e9a919e4258bab5efa99a423f",
+    "subject": "fix(qa): revalidate original quarantine after historical fixture caching"
+  },
+  {
+    "commit": "0a0e2d49c3704d0ac805ceb4a745deac57a5273c",
+    "tree": "883d5762fa045dd5028d225e8b2e14431f6df1e4",
+    "subject": "feat(qa): persist actual pytest JUnit with stale-report protection"
+  },
+  {
+    "commit": "d4c66da5d318b8fe03270e27a3edbde9b1e0f423",
+    "tree": "a68f972dfeb3f44a8166dbd3bb25ae36b51fa4dd",
+    "subject": "test(qa): answer required bulk-edit confirmation through native Qt"
+  },
+  {
+    "commit": "a41e5917da0ab31e1eea31fe9979a6375d4e9379",
+    "tree": "ba99c4d8730f8b63ccbc5c808458a2717f170462",
+    "subject": "fix(qa): retain live subprocess output while verification runs"
+  },
+  {
+    "commit": "1bf786b54ecd2b9b696230f5e58dad765c8b6b65",
+    "tree": "c910b877ed733113109645a9f3b0677745b1d9f0",
+    "subject": "test(qa): confirm native bulk unit editing before asserting quantity"
+  },
+  {
+    "commit": "3e95c039ba1930dec61f5d4e675bd92a79c5ca61",
+    "tree": "caa35cca820602b15e23c29775686db04a761c9e",
+    "subject": "fix(p5): port validated W1 IFC specialist lifecycle from PR33"
+  },
+  {
+    "commit": "4a7d31290a55fe5cdb32d311e289617a6281fa9f",
+    "tree": "f2d651f6bee0efe0ffae6d34856d2a14ebff92c8",
+    "subject": "fix(e6): guard crosswalk inversion and verify measured area and volume"
+  },
+  {
+    "commit": "f09c85d1ac18cfb554ce4726633c3bfbb976e073",
+    "tree": "c55dfd406b53bd10ffcb873c197fe05db988cef7",
+    "subject": "ci(p5): verify IFC ownership and quarantined QA on Linux and Windows"
+  },
+  {
+    "commit": "0bb08b09ba456ff610d2dbf8a35eac7ca3ec1845",
+    "tree": "a1dc1bbf351b26b5895b2e081cf6d2ca1f743bd3",
+    "subject": "test(p5): retain active native modal identity in broad regression"
+  },
+  {
+    "commit": "5e657ed0b8695058a45b2043ae343632d13726c1",
+    "tree": "0432063a6bc289efe6ede89c2f061f37705d26c0",
+    "subject": "ci(p5): trigger acceptance for all IFC and transferred W1 regressions"
+  },
+  {
+    "commit": "80ecbafcb430a16e510e7d78c19e92f311417e31",
+    "tree": "56120e1a8aa84106d8cc1b7a0deb6dd01e902f0a",
+    "subject": "fix(e4): explicitly select the verified BOQ row across table modes"
+  },
+  {
+    "commit": "a7d2fbdad3cb6dedd28a9defcabbdce426852209",
+    "tree": "ac2ec0005ead6bc6a0c82a7d07ffa5b1c283c929",
+    "subject": "fix(qa): retain setup failure evidence and verify byte-exact Git checkout"
+  },
+  {
+    "commit": "005a55f8eb757e544af79b31e1329369aeb845e0",
+    "tree": "f646b9eca878871c78bf7cf2b7a703f0b98a2061",
+    "subject": "ci(p5): preserve archive bytes and run DPI independently on Windows"
+  },
+  {
+    "commit": "ed0e28acc2fd4f3e2f22f674755a8f94ad9b4732",
+    "tree": "2d5be7e281f7e1c4bf74412b4877383b6994ed87",
+    "subject": "test(p5): port parsed IFC roof and wall fail-closed mutation coverage"
+  }
+]

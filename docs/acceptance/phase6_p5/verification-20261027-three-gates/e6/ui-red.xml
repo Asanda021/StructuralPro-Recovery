@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.083" timestamp="2026-10-27T17:02:24.785764+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_native_ifc_history_requires_preview_confirmation_and_displays_owners" time="0.819"><failure message="AssertionError: versioned IFC Undo/Redo has no real review controls&#10;assert None is not None">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-67/test_native_ifc_history_requir0')
+
+    def test_native_ifc_history_requires_preview_confirmation_and_displays_owners(tmp_path):
+        from PySide6.QtWidgets import QApplication, QPushButton, QLineEdit, QComboBox, QScrollArea, QLabel
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from app.graphical_takeoff import GraphicalTakeoffDialog
+        app, args, _, _ = case(tmp_path)
+        transfer = app.apply_ifc_quantity_transfer('P', **args)
+        qt = QApplication.instance() or QApplication([])
+        source = app.open_project('P')['ifc_identity_reviews'][-1]['document']['source_path']
+        view = GraphicalTakeoffDialog(app_service=app, project_id='P'); view.show()
+        view.open_drawing(source); view.ifc_revision.setText('R2')
+        QTest.mouseClick(view.ifc_inspect_button, Qt.MouseButton.LeftButton)
+        dialog = view._ifc_inspector
+        try:
+            preview = dialog.findChild(QPushButton, 'ifc_history_preview')
+&gt;           assert preview is not None, 'versioned IFC Undo/Redo has no real review controls'
+E           AssertionError: versioned IFC Undo/Redo has no real review controls
+E           assert None is not None
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:130: AssertionError</failure></testcase></testsuite></testsuites>

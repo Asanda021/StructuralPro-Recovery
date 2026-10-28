@@ -1,0 +1,9 @@
+{
+  "actual_acceptance_source_policy_rejected": "Active or linked GitHub Actions path detected: refusing test checkout",
+  "staged_source_policy": {
+    "active_workflows": 0,
+    "verified_quarantined_workflows": 193
+  },
+  "staged_git_present": false,
+  "staged_active_path_present": false
+}

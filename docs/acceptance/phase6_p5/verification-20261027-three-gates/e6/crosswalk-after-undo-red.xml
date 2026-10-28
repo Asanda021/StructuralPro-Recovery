@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.019" timestamp="2026-10-28T01:12:00.884036+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_crosswalk_migration_rejects_effectively_undone_quantity_ownership" time="0.808"><failure message="Failed: DID NOT RAISE ValueError">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-4/test_crosswalk_migration_rejec0')
+
+    def test_crosswalk_migration_rejects_effectively_undone_quantity_ownership(tmp_path):
+        app,args,_,_=case(tmp_path,crosswalks='dxf')
+        transfer=app.apply_ifc_quantity_transfer('P',**args)
+        app.undo_ifc_quantity_transfer('P',transfer_id=transfer['id'],expected_revision=1,
+            author='author',reviewer='reviewer',reason='Restore original owners',
+            expected_digest=app.store.current_digest('P'))
+        before=deepcopy(app.open_project('P'));token=app.store.current_digest('P')
+        proof=tmp_path/'crosswalk-group.json'
+        try:
+&gt;           with pytest.raises(ValueError):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE ValueError
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:289: Failed</failure></testcase></testsuite></testsuites>

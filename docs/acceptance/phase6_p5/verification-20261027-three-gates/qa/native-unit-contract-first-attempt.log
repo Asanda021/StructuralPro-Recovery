@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________ test_native_bulk_unit_control _________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-104/test_native_bulk_unit_control0')
+
+    def test_native_bulk_unit_control(tmp_path):
+     from PySide6.QtWidgets import QApplication
+     from PySide6.QtCore import Qt
+     from PySide6.QtTest import QTest
+     from app.manual_takeoff import ManualTakeoffDialog
+     global _qt
+     _qt=QApplication.instance() or QApplication([]);s=StructuralProApp(tmp_path);s.create_project('مصنوعی','P');s.save_manual_formula('P','A',typed(),expected_revision=0,reason='ثبت')
+     d=ManualTakeoffDialog(s,'P');d.show();d.manual_tabs.setCurrentIndex(1);_qt.processEvents()
+     assert hasattr(d,'formula_bulk_unit'),'واحد ویرایش گروهی به رابط متصل نیست'
+     d.table.setCurrentCell(0,0);d.formula_bulk_name.setText('length');d.formula_bulk_value.setText('1000');d.formula_reason.setText('واحد و مقدار صریح');combo=d.formula_bulk_unit;combo.setCurrentIndex(combo.findData('mm'))
+     confirmations=[];expired=[]
+>    responder=QTimer();responder.setInterval(10)
+               ^^^^^^
+E    NameError: name 'QTimer' is not defined
+
+tests/test_manual_structured_units.py:193: NameError
+----------------------------- Captured stderr call -----------------------------
+Fontconfig error: No writable cache directories
+This plugin does not support propagateSizeHints()
+=========================== short test summary info ============================
+FAILED tests/test_manual_structured_units.py::test_native_bulk_unit_control
+1 failed in 0.46s

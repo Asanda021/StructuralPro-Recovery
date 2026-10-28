@@ -1,0 +1,62 @@
+...................FF                                                    [100%]
+=================================== FAILURES ===================================
+______ test_cached_historical_root_rechecks_original_quarantine[workflow] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-74/test_cached_historical_root_re0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb26a06d010>
+tampered = 'workflow'
+
+    @pytest.mark.parametrize('tampered', ['workflow', 'manifest'])
+    def test_cached_historical_root_rechecks_original_quarantine(tmp_path, monkeypatch, tampered):
+        from tests import historical_contracts as contracts
+        r = fixture_repo(tmp_path)
+        (r / '.github/workflows').mkdir(parents=True)
+        (r / '.github/workflows/acceptance.yml').write_text('name: acceptance')
+        contracts._fixture.cache_clear()
+        monkeypatch.setattr(contracts, 'SOURCE_ROOT', r)
+        temporary = None
+        try:
+            historical = contracts.historical_root()
+            _, temporary = contracts._fixture()
+            assert len(list((historical / '.github/workflows').iterdir())) == 193
+            if tampered == 'workflow':
+                (r / 'recovery/disabled_workflows/w000.yml').write_text('tampered after cache')
+            else:
+                (r / 'recovery/workflow_sha256.json').write_text('{}')
+>           with pytest.raises(RuntimeError, match='integrity'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_recovery_quarantined_workflow_qa.py:213: Failed
+______ test_cached_historical_root_rechecks_original_quarantine[manifest] ______
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-74/test_cached_historical_root_re1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb26a064aa0>
+tampered = 'manifest'
+
+    @pytest.mark.parametrize('tampered', ['workflow', 'manifest'])
+    def test_cached_historical_root_rechecks_original_quarantine(tmp_path, monkeypatch, tampered):
+        from tests import historical_contracts as contracts
+        r = fixture_repo(tmp_path)
+        (r / '.github/workflows').mkdir(parents=True)
+        (r / '.github/workflows/acceptance.yml').write_text('name: acceptance')
+        contracts._fixture.cache_clear()
+        monkeypatch.setattr(contracts, 'SOURCE_ROOT', r)
+        temporary = None
+        try:
+            historical = contracts.historical_root()
+            _, temporary = contracts._fixture()
+            assert len(list((historical / '.github/workflows').iterdir())) == 193
+            if tampered == 'workflow':
+                (r / 'recovery/disabled_workflows/w000.yml').write_text('tampered after cache')
+            else:
+                (r / 'recovery/workflow_sha256.json').write_text('{}')
+>           with pytest.raises(RuntimeError, match='integrity'):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           Failed: DID NOT RAISE RuntimeError
+
+tests/test_recovery_quarantined_workflow_qa.py:213: Failed
+=========================== short test summary info ============================
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_cached_historical_root_rechecks_original_quarantine[workflow]
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_cached_historical_root_rechecks_original_quarantine[manifest]
+2 failed, 19 passed in 1.07s

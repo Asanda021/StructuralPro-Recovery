@@ -1,0 +1,19 @@
+.............F..                                                         [100%]
+=================================== FAILURES ===================================
+___________________ test_fixture_rejects_tampered_quarantine ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-35/test_fixture_rejects_tampered_0')
+
+    def test_fixture_rejects_tampered_quarantine(tmp_path):
+        r = fixture_repo(tmp_path)
+        (r / 'recovery/disabled_workflows/w000.yml').write_text('tampered')
+        d = tmp_path / 'disposable'
+        d.mkdir()
+>       with pytest.raises(RuntimeError, match='integrity'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RuntimeError
+
+tests/test_recovery_quarantined_workflow_qa.py:126: Failed
+=========================== short test summary info ============================
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_fixture_rejects_tampered_quarantine
+1 failed, 15 passed in 0.76s

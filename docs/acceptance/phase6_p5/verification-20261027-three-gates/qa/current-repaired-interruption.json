@@ -1,0 +1,13 @@
+{
+  "execution": "current-repaired snapshot0bca428",
+  "interrupted_for_diagnosis": true,
+  "timeout": false,
+  "overall_green": false,
+  "signal": "SIGTERM",
+  "signal_number": 15,
+  "pytest_pid": 21817,
+  "elapsed_seconds_before_signal": 429.4299999999994,
+  "cpu_seconds_before_signal": 213.89,
+  "state_before_signal": "S",
+  "interrupted_utc": "2026-10-27T17:23:17.997739+00:00"
+}

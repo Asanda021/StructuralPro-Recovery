@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.551" timestamp="2026-10-27T16:56:31.013949+00:00" hostname="0e67912856eb"><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_ifc_transfer_undo_redo_preserves_history_quantities_and_reopen[split]" time="0.690"><failure message="AssertionError: canonical IFC transfer has no versioned Undo&#10;assert False&#10; +  where False = hasattr(&lt;core.platform.application.StructuralProApp object at 0x7fc64d49a6c0&gt;, 'undo_ifc_quantity_transfer')">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-44/test_ifc_transfer_undo_redo_pr0')
+mode = 'split'
+
+    @pytest.mark.parametrize('mode', ['split', 'merge'])
+    def test_ifc_transfer_undo_redo_preserves_history_quantities_and_reopen(tmp_path, mode):
+        app, args, _, _ = case(tmp_path, mode)
+        original = deepcopy(app.open_project('P'))
+        transfer = app.apply_ifc_quantity_transfer('P', **args)
+&gt;       assert hasattr(app, 'undo_ifc_quantity_transfer'), 'canonical IFC transfer has no versioned Undo'
+E       AssertionError: canonical IFC transfer has no versioned Undo
+E       assert False
+E        +  where False = hasattr(&lt;core.platform.application.StructuralProApp object at 0x7fc64d49a6c0&gt;, 'undo_ifc_quantity_transfer')
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:14: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p5_e6_ifc_transfer_history" name="test_ifc_transfer_undo_redo_preserves_history_quantities_and_reopen[merge]" time="0.351"><failure message="AssertionError: canonical IFC transfer has no versioned Undo&#10;assert False&#10; +  where False = hasattr(&lt;core.platform.application.StructuralProApp object at 0x7fc64d86d5e0&gt;, 'undo_ifc_quantity_transfer')">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-44/test_ifc_transfer_undo_redo_pr1')
+mode = 'merge'
+
+    @pytest.mark.parametrize('mode', ['split', 'merge'])
+    def test_ifc_transfer_undo_redo_preserves_history_quantities_and_reopen(tmp_path, mode):
+        app, args, _, _ = case(tmp_path, mode)
+        original = deepcopy(app.open_project('P'))
+        transfer = app.apply_ifc_quantity_transfer('P', **args)
+&gt;       assert hasattr(app, 'undo_ifc_quantity_transfer'), 'canonical IFC transfer has no versioned Undo'
+E       AssertionError: canonical IFC transfer has no versioned Undo
+E       assert False
+E        +  where False = hasattr(&lt;core.platform.application.StructuralProApp object at 0x7fc64d86d5e0&gt;, 'undo_ifc_quantity_transfer')
+
+tests/test_phase6_p5_e6_ifc_transfer_history.py:14: AssertionError</failure></testcase></testsuite></testsuites>

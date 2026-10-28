@@ -1,0 +1,37 @@
+................FF                                                       [100%]
+=================================== FAILURES ===================================
+____________________ test_junit_reports_every_test_outcome _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-37/test_junit_reports_every_test_0')
+
+    def test_junit_reports_every_test_outcome(tmp_path):
+        report = tmp_path / 'result.xml'
+        report.write_text('<testsuite><testcase classname="first" name="yes"/><testcase classname="second" name="no"><failure message="failed"/></testcase><testcase classname="third" name="later"><skipped/></testcase></testsuite>')
+>       assert module.junit_summary(report)['results'] == [
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            {'name': 'first::yes', 'outcome': 'passed'},
+            {'name': 'second::no', 'outcome': 'failed'},
+            {'name': 'third::later', 'outcome': 'skipped'},
+        ]
+E       KeyError: 'results'
+
+tests/test_recovery_quarantined_workflow_qa.py:159: KeyError
+______________ test_official_runner_reports_timeout_without_green ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-37/test_official_runner_reports_t0')
+
+    def test_official_runner_reports_timeout_without_green(tmp_path):
+        import json
+        r = fixture_repo(tmp_path)
+        (r / 'tests').mkdir()
+        (r / 'tests/test_current.py').write_text('import time\ndef test_slow(): time.sleep(2)\n')
+        output = tmp_path / 'result.json'
+>       status = module.run(r, output=output, mode='current', timeout=0.1)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: run() got an unexpected keyword argument 'timeout'
+
+tests/test_recovery_quarantined_workflow_qa.py:172: TypeError
+=========================== short test summary info ============================
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_junit_reports_every_test_outcome
+FAILED tests/test_recovery_quarantined_workflow_qa.py::test_official_runner_reports_timeout_without_green
+2 failed, 16 passed in 1.12s

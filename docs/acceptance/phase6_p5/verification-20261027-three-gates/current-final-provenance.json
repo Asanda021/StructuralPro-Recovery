@@ -1,0 +1,17 @@
+{
+  "code_commit": "005a55f8eb757e544af79b31e1329369aeb845e0",
+  "code_tree": "f646b9eca878871c78bf7cf2b7a703f0b98a2061",
+  "population": 8363,
+  "passed": 8351,
+  "failed": 2,
+  "errors": 0,
+  "skipped": 10,
+  "pytest_warnings": 3,
+  "seconds": 568.71,
+  "pytest_exit_code": 1,
+  "timed_out": false,
+  "junit_is_original_pytest_xml": true,
+  "junit_sha256": "713045e28d63384fbf88e571a79b131ec8c593e41536a186812ca51d7d5a0a1a",
+  "overall_green": false,
+  "interpretation": "Two old failures independently reproduced on original4bdb; ten Windows/PowerShell-only skips on Linux. All E4 current-row cases now pass. No failed/skipped case is counted as PASS."
+}

@@ -1,0 +1,113 @@
+{
+  "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40615793724",
+  "status": "Success",
+  "code_commit": "005a55f8eb757e544af79b31e1329369aeb845e0",
+  "code_tree": "f646b9eca878871c78bf7cf2b7a703f0b98a2061",
+  "reports": [
+    {
+      "file": "p6-qa-security-offscreen.xml",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e23f20b6ffcb2348d542dd381a80fc62a2f5fd0161b2c2261e77453ce2615de7",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-offscreen.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "1b9bdb05b4333c133e2ba70e211843b9d121f86c0d68ec92b0058e1b49c22e0d",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "9b4591dab757c7ef8e3222fe7e7ca5a334d1631db6ad3782184397c5335c1494",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "140d4678acf1f6f3eb4ae285a9e77d55a3011ab3b2b08169750dc75cd0adbc98",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-offscreen.xml",
+      "tests": 449,
+      "passed": 449,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "3b1db5815fdb6cda0624ef4e50ad40aabaf014f2984ea1470864dbffb6fbb5fc",
+      "pytest_warning_count": 1
+    },
+    {
+      "file": "p6-qa-security-windows.xml",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "999e6f1cbf18e862811cd298bed6cf8767dcc86b2d5d6f294ade3e8f4eb37a72",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-windows.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "d16300fdc32c821b0e0bef360806229b387dfb7155dac7b895f686eddef6bd58",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-windows.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "f0f90c993d70d82cae7085bd382e953e5c43f3af2ccad3da3cdb89adb2ad24cf",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-windows.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "003843e354e637022c942a8e81c65b0b3c8375493f5973819c40c9bfd5439333",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-windows.xml",
+      "tests": 449,
+      "passed": 449,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "551530f3fd64e51693b4fbd8b9e86502f41e18e57283acc2ccbe993e1cb75221",
+      "pytest_warning_count": 1
+    }
+  ],
+  "artifact_sha256": [
+    "44cb4583b8d19d4eec3bd503d2cbe8f8170f143466453b62709d2b1527f89b25",
+    "9042cf0c059273c9f1d9e873e1f1cdaf360c1a6b1bebcb91cda199b509b6908c"
+  ],
+  "provenance": "Actual public CI JUnit notices/artifact metadata; native artifact ZIP not downloaded. Historical130/security26/extraDPI8+8 PASS eachOS; main449 eachOS."
+}

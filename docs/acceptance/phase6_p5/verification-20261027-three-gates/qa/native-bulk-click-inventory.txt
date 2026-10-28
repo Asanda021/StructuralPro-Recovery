@@ -1,0 +1,4 @@
+tests/test_manual_structured_units.py:208: try:QTest.mouseClick(d.formula_bulk_button,Qt.LeftButton);_qt.processEvents()
+tests/test_manual_formula_qt_closure.py:27: assert hasattr(d,'formula_bulk_button'),'ویرایش گروهی به فرم متصل نیست'
+tests/test_manual_formula_qt_closure.py:61: try:click(d.formula_bulk_button)
+tests/test_phase6_p5_e6_bulk_preview.py:73:        QTest.mouseClick(dialog.formula_bulk_button, Qt.MouseButton.LeftButton)

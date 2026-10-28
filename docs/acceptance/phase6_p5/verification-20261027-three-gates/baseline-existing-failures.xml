@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.905" timestamp="2026-10-28T01:26:44.699075+00:00" hostname="5e47ba5881ec"><testcase classname="tests.test_master13_desktop_shell_runtime" name="test_actual_shell_navigation_calendar_and_ribbon" time="1.619"><failure message="AssertionError: 2026-10-28 01:26:46 | CRITICAL | structuralpro | Unhandled application exception&#10;  Traceback (most recent call last):&#10;    File &quot;&lt;string&gt;&quot;, line 43, in &lt;module&gt;&#10;    File &quot;/workspace/StructuralPro-P5/app/main.py&quot;, line 1296, in main&#10;      result = app.exec()&#10;               ^^^^^^^^^^&#10;    File &quot;&lt;string&gt;&quot;, line 25, in inspect_shell&#10;  AssertionError&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', &quot;\nimport sys\nfrom pathlib import ...ain\n    result = app.exec()\n             ^^^^^^^^^^\n  File &quot;&lt;string&gt;&quot;, line 25, in inspect_shell\nAssertionError\n').returncode">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_actual_shell_navigation_c0')
+
+    def test_actual_shell_navigation_calendar_and_ribbon(tmp_path):
+        if importlib.util.find_spec('PySide6') is None:
+            pytest.skip('Desktop dependency is exercised by comprehensive CI and Windows verification')
+        script = r'''
+    import sys
+    from pathlib import Path
+    from PySide6.QtCore import QCalendar, QDate, QLocale, Qt
+    from PySide6.QtWidgets import QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QTreeWidget, QDialog, QCalendarWidget
+    Path.home = classmethod(lambda cls: Path(sys.argv[1]))
+    from app.main import main
+    original_exec = QApplication.exec
+    calendar_seen = []
+    def inspect_calendar(dialog):
+        calendar = dialog.findChild(QCalendarWidget)
+        assert calendar.calendar().name() == 'Jalali'
+        assert calendar.selectedDate() == QDate.currentDate()
+        assert calendar.locale().language() == QLocale.Language.Persian
+        calendar_seen.append(True)
+        return 0
+    QDialog.exec = inspect_calendar
+    def inspect_shell(app):
+        window = next(w for w in app.topLevelWidgets() if isinstance(w, QMainWindow))
+        tabs = window.findChild(QTabBar, 'MainNavigationTabs')
+        pages = window.findChild(QStackedWidget)
+        assert tabs and pages
+        assert tabs.count() == pages.count() == 23
+        assert tabs.layoutDirection() == Qt.LayoutDirection.RightToLeft
+        assert not window.findChildren(QTreeWidget)
+        assert window.findChild(QPushButton, 'RibbonPrimary')
+        targets = [tabs.tabData(i) for i in range(tabs.count())]
+        assert set(targets) == set(range(pages.count()))
+        for i, target in enumerate(targets):
+            tabs.setCurrentIndex(i)
+            assert pages.currentIndex() == target
+            assert tabs.tabToolTip(i)
+        for target in reversed(targets):
+            pages.setCurrentIndex(target)
+            assert tabs.tabData(tabs.currentIndex()) == target
+        date = window.findChild(QPushButton, 'SystemPersianDate')
+        locale = QLocale(QLocale.Language.Persian, QLocale.Country.Iran)
+        assert date.text() == locale.toString(QDate.currentDate(), QLocale.FormatType.LongFormat, QCalendar(QCalendar.System.Jalali))
+        date.click()
+        assert calendar_seen == [True]
+        return original_exec()
+    QApplication.exec = inspect_shell
+    raise SystemExit(main())
+    '''
+        environment = os.environ.copy()
+        environment.update(QT_QPA_PLATFORM='offscreen', STRUCTURALPRO_SMOKE='1')
+        result = subprocess.run([sys.executable, '-c', script, str(tmp_path)],
+                                cwd=Path(__file__).resolve().parents[1], env=environment,
+                                capture_output=True, text=True, timeout=60)
+&gt;       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: 2026-10-28 01:26:46 | CRITICAL | structuralpro | Unhandled application exception
+E         Traceback (most recent call last):
+E           File "&lt;string&gt;", line 43, in &lt;module&gt;
+E           File "/workspace/StructuralPro-P5/app/main.py", line 1296, in main
+E             result = app.exec()
+E                      ^^^^^^^^^^
+E           File "&lt;string&gt;", line 25, in inspect_shell
+E         AssertionError
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', "\nimport sys\nfrom pathlib import ...ain\n    result = app.exec()\n             ^^^^^^^^^^\n  File "&lt;string&gt;", line 25, in inspect_shell\nAssertionError\n').returncode
+
+tests/test_master13_desktop_shell_runtime.py:63: AssertionError</failure></testcase><testcase classname="tests.test_phase6_p1_font_diagnostics" name="test_qt_glyph_capability_and_render_diagnostics" time="0.183"><failure message="AssertionError: Traceback (most recent call last):&#10;    File &quot;&lt;string&gt;&quot;, line 21, in &lt;module&gt;&#10;  AssertionError: Qt selected font lacks printable glyphs, see diagnostic&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', &quot;\nimport json, os, sys\nfrom pathl...:\n  File &quot;&lt;string&gt;&quot;, line 21, in &lt;module&gt;\nAssertionError: Qt selected font lacks printable glyphs, see diagnostic\n').returncode">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_qt_glyph_capability_and_r0')
+
+    def test_qt_glyph_capability_and_render_diagnostics(tmp_path):
+        pytest.importorskip("PySide6")
+        code = r"""
+    import json, os, sys
+    from pathlib import Path
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QFont, QFontDatabase, QFontMetrics, QImage, QPainter, QRawFont
+    from PySide6.QtWidgets import QApplication, QLabel
+    from app.desktop_preferences import _preferred_persian_font
+    app=QApplication([])
+    selected, arabic_supported = _preferred_persian_font()
+    raw=QRawFont.fromFont(QFont(selected, 16))
+    characters='StructuralPro 1234 کارگاه متره'
+    font=QFont(selected, 18)
+    metrics=QFontMetrics(font)
+    glyphs={ch: bool(raw.supportsCharacter(ord(ch))) for ch in set(characters) if not ch.isspace()}
+    result=dict(platform=sys.platform, qpa=os.environ.get('QT_QPA_PLATFORM'), family=selected,
+                arabic_supported=arabic_supported, glyphs=glyphs,
+                raw_valid=raw.isValid(), font_metrics_width=metrics.horizontalAdvance(characters),
+                available_fonts=QFontDatabase.families()[:100])
+    print('PHASE6_FONT_DIAGNOSTIC '+json.dumps(result,ensure_ascii=False),flush=True)
+    assert selected and raw.isValid()
+    assert all(glyphs.values()), 'Qt selected font lacks printable glyphs, see diagnostic'
+    dest=Path(os.environ.get('STRUCTURALPRO_P6_FONT_DIR', '.'))
+    dest.mkdir(parents=True,exist_ok=True)
+    image=QImage(680,140,QImage.Format.Format_ARGB32)
+    image.fill(Qt.GlobalColor.white)
+    painter=QPainter(image)
+    painter.setPen(Qt.GlobalColor.black);painter.setFont(font)
+    painter.drawText(12,70,characters);painter.end()
+    assert image.save(str(dest/'font-direct.png'))
+    label=QLabel(characters)
+    label.setFont(font);label.resize(680,140)
+    label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    label.show()
+    assert label.grab().save(str(dest/'font-label.png'))
+    """
+        env={**os.environ,'STRUCTURALPRO_P6_FONT_DIR':str(tmp_path)}
+        result=subprocess.run([sys.executable,"-c",code],cwd=ROOT,env=env,
+                              capture_output=True,text=True,timeout=55)
+        print(result.stdout)
+&gt;       assert result.returncode==0, result.stderr
+E       AssertionError: Traceback (most recent call last):
+E           File "&lt;string&gt;", line 21, in &lt;module&gt;
+E         AssertionError: Qt selected font lacks printable glyphs, see diagnostic
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/workspace/StructuralPro-Recovery/.venv/bin/python', '-c', "\nimport json, os, sys\nfrom pathl...:\n  File "&lt;string&gt;", line 21, in &lt;module&gt;\nAssertionError: Qt selected font lacks printable glyphs, see diagnostic\n').returncode
+
+tests/test_phase6_p1_font_diagnostics.py:60: AssertionError</failure></testcase></testsuite></testsuites>

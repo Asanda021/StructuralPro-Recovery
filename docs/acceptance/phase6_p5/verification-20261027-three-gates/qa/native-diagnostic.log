@@ -1,0 +1,53 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.7.0 -- /workspace/StructuralPro-Recovery/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /tmp/structuralpro_native_diagnostic_rzg6q50c/source
+configfile: pytest.ini
+collecting ... collected 1 item
+
+tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports 
+Fontconfig error: No writable cache directories
+This plugin does not support propagateSizeHints()
+Timeout (0:00:30)!
+Thread 0x00007f978cc7f740 (most recent call first):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py", line 354 in raw_decode
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py", line 338 in decode
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py", line 346 in loads
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/core/takeoff/manual_formula_register.py", line 20 in catalog
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/core/takeoff/manual_formula_register.py", line 37 in clean
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/core/takeoff/manual_formula_register.py", line 98 in verified
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/core/takeoff/manual_formula_register.py", line 239 in load
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/core/platform/application.py", line 878 in load_manual_formulas
+  File "/tmp/structuralpro_native_diagnostic_rzg6q50c/source/tests/test_manual_formula_fivefloor_closure.py", line 55 in test_real_qt_fourteen_operations_five_floors_and_all_reports
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/python.py", line 167 in pytest_pyfunc_call
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/python.py", line 1707 in runtest
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 184 in pytest_runtest_call
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 250 in <lambda>
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 361 in from_call
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 249 in call_and_report
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 139 in runtestprotocol
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/runner.py", line 118 in pytest_runtest_protocol
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/main.py", line 408 in pytest_runtestloop
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/main.py", line 384 in _main
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/main.py", line 330 in wrap_session
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/main.py", line 377 in pytest_cmdline_main
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_execution.py", line 147 in _multicall
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_manager.py", line 183 in _hookexec
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pluggy/_caller.py", line 197 in __call__
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 229 in _main
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py", line 253 in _console_main
+  File "/workspace/StructuralPro-Recovery/.venv/lib/python3.12/site-packages/pytest/__main__.py", line 9 in <module>
+  File "<frozen runpy>", line 88 in _run_code
+  File "<frozen runpy>", line 198 in _run_module_as_main
