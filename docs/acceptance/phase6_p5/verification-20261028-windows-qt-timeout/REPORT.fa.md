@@ -13,3 +13,7 @@
 ## رگرسیون محلی نسخه میانی
 
 رگرسیون جاری محلی روی کد میانی1a37ec0 (پیش از کنترل والد در74cc37d) تکمیل شد:۸۳۷۱PASS،۱FAIL،۰ERROR،۱۰SKIP،۳warning؛۶۰۵٫۱۸ثانیه،بدونtimeout. شکست `tests/test_beam_historical_migration.py::test_migration_two_process_sqlite_cas[False]` از نوع `_queue.Empty` است. اجرای مستقل مجدد همان مورد۱PASS در۰٫۸۰ثانیه داشت؛ این نتیجه جداگانه، شکست full را حذف یا علت قطعی آن را ثابت نمی‌کند. XML/JSON/log اصلی و JUnit بازآزمایی در همین پوشه‌اند. این snapshot جای CI کد نهایی را نمی‌گیرد.
+
+## CI پذیرش نهایی
+
+[CI40668037315](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037315) SUCCESS: هر سیستم Linux و Windows native،۴۷۳PASS اصلی،۱۳۰تاریخی،۲۶security و۸+۸تکرارDPI، همگی صفرFAIL/ERROR/SKIP؛۱هشدارfitz در اصلی و۰ در دیگر مراحل. نسخه workflow b423fcf و کد/آزمون74cc37d یکسان‌اند؛ این بسته شامل آزمون واقعی شمع اصلاح‌شده است. هش JUnitهای واقعی از notices و artifact metadata در acceptance-ci-measured.json ثبت شده‌اند. رگرسیون گسترده هنوز باید جداگانه تمام شود؛ اینCIجای آن را نمی‌گیرد.

@@ -1,0 +1,112 @@
+{
+  "run": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40668037315",
+  "workflow_head": "b423fcf178a16a1242599ed2d7b898d910f482ce",
+  "tested_code": "74cc37d68c35a0a113643e7538d9dce3378e3597",
+  "status": "Success",
+  "reports": [
+    {
+      "file": "p6-qa-security-offscreen.xml",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "1adff4463adab839d07047e13bcf4fc1ece7cd65a4a7fbcb2b60eec71d317700",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-offscreen.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "4af1bd29155f913a8c9368f3a59ec7619a163d62be44e80217c4f459348c247f",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "a09076482efa60303e0fcea145156b23c388385e396a756924070705ad0b882f",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-offscreen.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "4a55876e594862c89fa5d7a7167e848474459c44b12d6a7d9696e70a6edd92de",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-offscreen.xml",
+      "tests": 473,
+      "passed": 473,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e8fc7b1c51b7da7549954af1cf5e94de8358949f6aeb1d1ea732de0377f8e8ab",
+      "pytest_warning_count": 1
+    },
+    {
+      "file": "p6-qa-security-windows.xml",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "50f088155fb4b10ad449b9ba3d99f6e866e489a4f86f822fecc7777999c795a5",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-historical-windows.xml",
+      "tests": 130,
+      "passed": 130,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "e300cba8df63d4e357f27e87d0788c4e4e126ebd4ce304c4ed8e157ae9c8c64b",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi150-windows.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "25127109677b93053371072106fb8cac02b23d19d232b0296b59f0258c230914",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-dpi-windows.xml",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "86e27a157ea58d3ee1a988a545297d6cf7b4325bce85c7933c9b6fb837de98a3",
+      "pytest_warning_count": 0
+    },
+    {
+      "file": "p6-p5-windows.xml",
+      "tests": 473,
+      "passed": 473,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "sha256": "a9eb5d034df4e9e33e7fc29230ef4e5737c0bbc45cbb1456d44d9a4f11c25966",
+      "pytest_warning_count": 1
+    }
+  ],
+  "artifact_sha256": [
+    "1da80f4e5a702f1cbfa0fe86af62bfde1bcbc41b84a54cbfedf53af349a637fd",
+    "c58d3351c225b7d77552b8c8a3a6da7b1b44ec7c02f3f792ef1998f2e12d438d"
+  ]
+}
