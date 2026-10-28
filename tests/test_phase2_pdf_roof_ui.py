@@ -156,20 +156,51 @@ def test_oversized_pdf_renders_lower_resolution_in_same_scene_coordinates(qt,tmp
 
 def test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt):
     from PySide6.QtCore import QEventLoop
-    from PySide6.QtWidgets import QDialog
+    from PySide6.QtWidgets import QDialog,QDialogButtonBox
     seen=[]
     roof=QDialog();roof.setObjectName('RoofDetailEditor')
+    buttons=QDialogButtonBox(QDialogButtonBox.Close,roof)
+    buttons.rejected.connect(roof.reject)
     loop=QEventLoop()
     errors=[]
-    timer,state=_await_roof_modal(qt,lambda dialog:seen.append(dialog),errors,timeout=1.0)
+    def observe_and_close(dialog):
+        assert dialog is roof and dialog.objectName()=='RoofDetailEditor'
+        close=buttons.button(QDialogButtonBox.Close)
+        assert close is not None and close.isVisible() and close.isEnabled()
+        seen.append(dialog)
+        QTest.mouseClick(close,Qt.LeftButton)
+    timer,state=_await_roof_modal(qt,observe_and_close,errors,timeout=1.0)
+    # Deterministically model a busy native event loop: the first observation
+    # occurs after the old 20 ms self-dismissal would have run.
+    timer.setInterval(120)
+    cleanup=QTimer(qt);cleanup.setSingleShot(True)
+    def expired():
+        errors.append('Roof observation did not complete before its deadline')
+        active=qt.activeModalWidget()
+        if isinstance(active,QDialog):QDialog.done(active,QDialog.Rejected)
+        QDialog.done(roof,QDialog.Rejected)
+        loop.quit()
+    cleanup.timeout.connect(expired);cleanup.start(1000)
     def open_roof():
-        QTimer.singleShot(20,roof.reject)
         roof.exec()
+        loop.quit()
     QTimer.singleShot(80,open_roof)
-    QTimer.singleShot(180,loop.quit)
-    loop.exec();timer.stop();timer.deleteLater()
+    try:loop.exec()
+    finally:
+        timer.stop();timer.deleteLater()
+        cleanup.stop();cleanup.deleteLater();roof.close()
     assert state['started'] and not errors
     assert seen==[roof], 'the actual roof modal was not observed'
+
+
+def test_delayed_roof_observation_fails_bounded_when_another_modal_obscures_it(qt):
+    nested=QDialog();nested.setObjectName('UnexpectedNestedModal')
+    QTimer.singleShot(100,nested.exec)
+    try:
+        with pytest.raises(AssertionError):
+            test_delayed_roof_modal_is_seen_even_if_construction_is_slow(qt)
+        assert qt.activeModalWidget() is None, 'the known roof modal remained blocked'
+    finally:nested.close()
 
 
 def test_unexpected_roof_modal_is_bounded_and_reported(qt):
