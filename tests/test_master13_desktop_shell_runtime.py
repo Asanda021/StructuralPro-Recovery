@@ -15,7 +15,7 @@ def test_actual_shell_navigation_calendar_and_ribbon(tmp_path):
 import sys
 from pathlib import Path
 from PySide6.QtCore import QCalendar, QDate, QLocale, Qt
-from PySide6.QtWidgets import QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QTreeWidget, QDialog, QCalendarWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QTreeWidget, QDockWidget, QDialog, QCalendarWidget
 Path.home = classmethod(lambda cls: Path(sys.argv[1]))
 from app.main import main
 original_exec = QApplication.exec
@@ -35,7 +35,15 @@ def inspect_shell(app):
     assert tabs and pages
     assert tabs.count() == pages.count() == 23
     assert tabs.layoutDirection() == Qt.LayoutDirection.RightToLeft
-    assert not window.findChildren(QTreeWidget)
+    # The primary navigation is horizontal. E5's member tree is a legitimate
+    # docked project inspector, not a permanent global navigation sidebar.
+    shell_layout = window.centralWidget().layout().itemAt(1).layout()
+    assert shell_layout is not None and shell_layout.count() == 1
+    content = shell_layout.itemAt(0).widget()
+    assert content is not None and content.findChild(QStackedWidget) is pages
+    inspector = window.findChild(QDockWidget, 'P6E5VerifiedProjectInspector')
+    assert inspector is not None
+    assert inspector.findChild(QTreeWidget, 'E5ProjectTree') is not None
     assert window.findChild(QPushButton, 'RibbonPrimary')
     targets = [tabs.tabData(i) for i in range(tabs.count())]
     assert set(targets) == set(range(pages.count()))
