@@ -1,5 +1,13 @@
 # رگرسیون جاری فاز ۶ روی آخرین کد تأییدشده E4 | ۲۸ اکتبر ۲۰۲۶
 
+## پس از اصلاح مودال واقعی: CI محدود دو‌سیستمی موفق
+- **کد و تست اصلاح‌شده:** `6990c9259eb23de25cad96a641f57413f6306609`؛ پیام خطای شمع `QMessageBox` واقعی با `DontUseNativeDialog` و `RTL`، آزمون صریح `QTest` با polling کنترل‌شده، بدون حذف/Skip.
+- [CI #40659709412](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40659709412): **completed/success** هر دو Job `ubuntu-24.04` و `windows-2022`. هر کدام ۴۷۰ PASS اصلی، ۱۳۰ historical، ۲۶ security، ۸+۸ DPI؛ صفر FAIL/ERROR/SKIP در تمام بسته‌ها. یک هشدار غیرمسدودکننده `fitz` در بسته اصلی. DPI همان آزمون‌های Dock تکراری است.
+- JUnit اصلی Linux SHA256 `cb79ed4251c22dc907ea7dc4fbf8b461dd8bbc9245ad912bfdcd2d950e0f9a13` و Windows SHA256 `f55d8295fa57fd0669afd6df36b80444901ba28ffa97fd404ca23dfbf4a4dca5`؛ Artifactها Linux `12803327667` و Windows `12804475174` از همین Run.
+- **رگرسیون گسترده روی کد اصلاح‌شده هنوز نهایی نیست**: [Run #40661082617](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40661082617) روی workflow commit `e85fcfbdf990e82d89f28e95a1185821af369c7a`، کد دقیق `6990c925...` را در Linux و Windows native با همان محدودیت ۱۲۰۰/۱۵۰۰ ثانیه آزمون می‌کند. فقط بعد از JUnit/نتیجه دو Job می‌توان PASS/FAIL قطعی داد.
+- شکست Run #40656152367 روی کد قدیمی `76969a29...` حفظ و به PASS تبدیل نمی‌شود. UAT فیزیکی Windows، E4 تخصصی بدون قرارداد، E6 مالکیت مشترک، IFC MEP و A2 همچنان بازند؛ نقشه راه ۸ فاز و ۸۵٪ ثابت.
+
+
 ## مبنا
 - مخزن: `Asanda021/StructuralPro-Recovery`؛ PR #34، Open/Draft/Unmerged.
 - **کد محصول و تست واقعاً اجراشده:** `76969a29d29588b4b0a1b1cbf43a81a319958fdf`؛ محافظ تغییر SHA در هر دو Job فعال.
