@@ -1,5 +1,15 @@
 # رگرسیون جاری فاز ۶ روی آخرین کد تأییدشده E4 | ۲۸ اکتبر ۲۰۲۶
 
+## آخرین شاهد رگرسیون کامل اصلاح مودال، Run #40661082617
+- **Source SHA آزموده‌شده:** `6990c9259eb23de25cad96a641f57413f6306609`، workflow trigger `e85fcfbdf990e82d89f28e95a1185821af369c7a`؛ قفل source در Checkout و assert فعال است.
+- **Linux completed/success** در [Run #40661082617](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40661082617)؛ JUnit/JSON واقعی: **۸۳۸۰ collected، ۸۳۷۵ PASS، ۰ FAIL، ۵ SKIP مختص Windows**؛ `pytest_exit_code=0`، `timed_out=false`، `overall_green=true`.
+- Artifact اصلی `p6-broad-current-linux-6990c9259eb2`، ID `12804826259`، حاوی XML/JSON/Log؛ در زمان کنترل موجود و منقضی‌نشده. SHA256 ZIP برابر `b4fbd77b41079ddf5a4e864d14ca61dfb9b6b3f85a016a1f63cfba919fe6219a` در لاگ رسمی.
+- **Windows native در لحظه ثبت همچنان in_progress و JUnit نهایی ندارد**؛ PASS، تعداد آزمون و گیت دو‌سیستمی از آن ادعا نشود. نتیجه شکست/timeout قدیمی Run #40656152367 مربوط به کد `76969a29...` است و پاک یا بازنویسی نمی‌شود.
+- CI محدود اصلاح روی `6990c925...` با **۴۷۰ PASS هر محیط** در Run #40659709412 موفق شده، اما جای رگرسیون گسترده Windows و UAT فیزیکی را نمی‌گیرد.
+- P6-4/P6-5 هنوز PARTIAL؛ قرارداد تخصصی DWG/IFC، E6 مالکیت مشترک، A2 تجاری و UAT واقعی Windows بازند. ۸ فاز و ۸۵٪ رسمی ثابت؛ PR33/34 باز و Draft؛ main بدون تغییر، بدون Merge/ForcePush/Release/EXE.
+
+
+
 ## پس از اصلاح مودال واقعی: CI محدود دو‌سیستمی موفق
 - **کد و تست اصلاح‌شده:** `6990c9259eb23de25cad96a641f57413f6306609`؛ پیام خطای شمع `QMessageBox` واقعی با `DontUseNativeDialog` و `RTL`، آزمون صریح `QTest` با polling کنترل‌شده، بدون حذف/Skip.
 - [CI #40659709412](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40659709412): **completed/success** هر دو Job `ubuntu-24.04` و `windows-2022`. هر کدام ۴۷۰ PASS اصلی، ۱۳۰ historical، ۲۶ security، ۸+۸ DPI؛ صفر FAIL/ERROR/SKIP در تمام بسته‌ها. یک هشدار غیرمسدودکننده `fitz` در بسته اصلی. DPI همان آزمون‌های Dock تکراری است.
