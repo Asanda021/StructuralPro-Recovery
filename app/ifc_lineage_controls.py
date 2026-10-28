@@ -71,13 +71,22 @@ def install_ifc_lineage_controls(dialog,layout,viewer,service,pid,author,reviewe
                 if not confirm.isChecked():raise ValueError('تأیید صریح بازبین مستقل لازم است')
                 path=Path(document.text());service.migrate_ifc_crosswalk_group(pid,lineage_id=lineages.currentData(),evidence_path=str(path),evidence_sha256=sha256(path.read_bytes()).hexdigest(),author=author.text(),reviewer=reviewers.currentData(),expected_digest=service.store.current_digest(pid));refresh()
             elif action=='history_preview':
+                # Previous evidence/consent belongs to its original CAS token.
+                # A failed or concurrently invalidated preview must not leave
+                # a previously confirmed inverse transfer actionable.
+                state.clear()
+                confirm.setChecked(False)
+                table.setRowCount(0)
+                token=service.store.current_digest(pid)
                 project=service.open_project(pid)
+                if service.store.current_digest(pid)!=token:
+                    raise RuntimeError('نسخه پروژه هنگام خواندن تاریخچه مالکیت تغییر کرد؛ پیش‌نمایش دوباره لازم است')
                 roots=[x for x in project.get('manual_formula_amendments',{}).values()
                     if x.get('kind')==IFC_TRANSFER and not x.get('transfer_root') and x.get('lineage_id')==lineages.currentData()]
                 if len(roots)!=1:raise ValueError('انتقال اصلی یکتا برای واگرد موجود نیست')
                 root,head=ifc_transfer_head(project,roots[0]['id'])
                 args=dict(transfer_id=root['id'],action=history_action.currentData(),expected_revision=head['group_revision'],
-                    expected_digest=service.store.current_digest(pid),author=author.text(),reviewer=reviewers.currentData(),reason=history_reason.text())
+                    expected_digest=token,author=author.text(),reviewer=reviewers.currentData(),reason=history_reason.text())
                 result=service.preview_ifc_quantity_transfer_step(pid,**args)
                 state.clear();state.update(history_args=args,history_lineage=lineages.currentData())
                 table.setRowCount(0)
