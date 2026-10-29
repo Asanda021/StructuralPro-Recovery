@@ -52,10 +52,10 @@ def junit(path: Path) -> dict | None:
 def sanitize(raw: str) -> dict:
     # CDB echoes the startup command containing MARKER even on clean exits.
     # Accept ONLY a standalone .echo output line, never a substring of command text.
-    marker_lines = list(re.finditer(r"(?m)^\\s*" + re.escape(MARKER) + r"\\s*$", raw))
+    marker_lines = list(re.finditer(r"(?m)^\s*" + re.escape(MARKER) + r"\s*$", raw))
     crash = bool(marker_lines)
     section = raw[marker_lines[-1].end():] if crash else ""
-    code_in_section = bool(re.search(r"(?i)\\b(?:0x)?c0000005\\b", section))
+    code_in_section = bool(re.search(r"(?i)\b(?:0x)?c0000005\b", section))
     frames = []
     for line in section.splitlines():
         if len(frames) == 32:
