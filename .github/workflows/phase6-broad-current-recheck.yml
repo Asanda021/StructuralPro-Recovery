@@ -10,6 +10,7 @@ on:
       - pytest.ini
       - app/ifc_site_viewport.py
       - app/ifc_existing_reference_viewport.py
+      - app/graphical_takeoff.py
       - core/drawings/site_context.py
       - core/drawings/existing_building_reference.py
       - tests/test_phase6_g2_spatial_readonly_guards.py
