@@ -30,6 +30,10 @@ SOURCES = [
          url="https://zenodo.org/records/6685810/files/BIM4EEB_DEMONSTRATION_BLDG_POL.ifc?download=1",
          md5="a68daae380a352dbc9d31cb2501f3891",
          provenance="BIM4EEB EU-funded building renovation demonstrator DOI 10.5281/zenodo.6685810"),
+    dict(id="existing_ita",kind="renovation_existing_building_demonstrator",
+         url="https://zenodo.org/records/6685810/files/BIM4EEB_DEMONSTRATION_BLDG_ITA.ifc?download=1",
+         md5="2b653f05e8fd5819cf803ece82329a5d",
+         provenance="BIM4EEB EU-funded building renovation demonstrator DOI 10.5281/zenodo.6685810"),
 ]
 LIMIT=16*1024*1024
 
