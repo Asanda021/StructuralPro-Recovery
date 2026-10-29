@@ -443,6 +443,14 @@ class GraphicalTakeoffDialog(QDialog):
         self.site_context_button.setToolTip('انتخاب فایل زمین IfcSite برای نمایش جداگانه؛ بدون متره و BOQ')
         self.site_context_button.clicked.connect(self.open_ifc_site_context)
         revision_row.addWidget(self.site_context_button)
+        self.existing_reference_button = QPushButton('وضع موجود IFC2X3 (مرجع تصویری)')
+        self.existing_reference_button.setObjectName('OpenExistingBuildingVisualReference')
+        self.existing_reference_button.setToolTip('فقط مشاهده وضع موجود منتشرشده؛ بدون متره و BOQ و بدون ادعای تایید بازسازی')
+        self.existing_reference_button.clicked.connect(self.open_existing_building_reference)
+        revision_row.addWidget(self.existing_reference_button)
+        self._existing_reference_job = None
+        self._existing_reference_token = 0
+        self._existing_reference_dialog = None
         self._site_context_loader = None
         self._site_context_token = 0
         self._site_context_dialog = None
@@ -1572,6 +1580,69 @@ class GraphicalTakeoffDialog(QDialog):
             window.set_batch_busy(False)
         self.status.setText('بارگذاری سه‌بعدی لغو شد؛ هندسهٔ نیمه‌کاره ثبت یا نمایش داده نشد.')
         return True
+
+    def open_existing_building_reference(self, path=None):
+        """Load real legacy IFC2X3 visual-only source in a cancellable worker."""
+        from app.ifc_existing_reference_viewport import ExistingReferenceLoadJob
+        from core.drawings.site_context import file_digest
+        if not isinstance(path, (str, Path)):
+            path, _ = QFileDialog.getOpenFileName(
+                self, 'انتخاب IFC وضع موجود؛ فقط نمایش', '', 'IFC (*.ifc)')
+        if not path:
+            return False
+        try:
+            source = Path(path)
+            if not source.is_file() or source.suffix.lower() != '.ifc':
+                raise ValueError('فایل IFC وضع موجود یافت نشد.')
+            revision = self.ifc_revision.text().strip()
+            if not revision:
+                raise ValueError('Revision مدل وضع موجود لازم است.')
+            if self._existing_reference_job is not None:
+                self._existing_reference_job.cancel()
+            self._existing_reference_token += 1
+            token = self._existing_reference_token
+            job = ExistingReferenceLoadJob(
+                token=token, path=str(source), revision=revision,
+                expected_sha256=file_digest(source))
+            self._existing_reference_job = job
+            self.existing_reference_button.setEnabled(False)
+            self.status.setText('در حال بررسی هندسه IFC2X3 فقط مرجع؛ نشست متره دست‌نخورده است.')
+            job.signals.completed.connect(self._existing_reference_ready)
+            job.signals.failed.connect(self._existing_reference_failed)
+            QThreadPool.globalInstance().start(job)
+            return True
+        except Exception as exc:
+            self.status.setText('نمای وضع موجود باز نشد: ' + str(exc))
+            return False
+
+    def _existing_reference_failed(self, token, message):
+        if token != self._existing_reference_token or self._existing_reference_job is None:
+            return
+        self._existing_reference_job = None
+        self.existing_reference_button.setEnabled(True)
+        self.status.setText('منبع وضع موجود در مسیر نمایشی رد شد: ' + message)
+
+    def _existing_reference_ready(self, token, scene):
+        if token != self._existing_reference_token or self._existing_reference_job is None:
+            return
+        self._existing_reference_job = None
+        self.existing_reference_button.setEnabled(True)
+        try:
+            from app.ifc_existing_reference_viewport import ExistingBuildingReferenceDialog
+            if self.ifc_revision.text().strip() != scene.revision:
+                raise ValueError('Revision حین بارگذاری تغییر کرده است.')
+            scene.validate_source()
+            win = ExistingBuildingReferenceDialog(scene,self)
+            win.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            old = self._existing_reference_dialog
+            self._existing_reference_dialog = win
+            if old is not None:
+                from shiboken6 import isValid
+                if isValid(old): old.close()
+            win.show()
+            self.status.setText('نمای وضع موجود فقط برای مقایسه بصری باز شد؛ BOQ و متره تغییر نکرد.')
+        except Exception as exc:
+            self.status.setText('پذیرش نمای وضع موجود متوقف شد: ' + str(exc))
 
     def open_ifc_site_context(self, path=None):
         """Open an independent Qt site-context window without touching takeoff."""
