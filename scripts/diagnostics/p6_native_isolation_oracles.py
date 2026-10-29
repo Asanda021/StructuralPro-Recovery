@@ -314,3 +314,93 @@ def test_native_real_manual_dialog_review_commit_70_rows(tmp_path):
         assert len(reopened.open_project("P")["boq"]) == 70
     finally:
         reopened.store.close()
+
+
+def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
+    """Lifecycle diagnostic: real Qt dialogs and SQLite reopened between five 14-row batches.
+
+    All engineering values are from the unchanged synthetic fivefloor oracle.
+    This is diagnostic coverage, not proof that the intermittent AV is repaired.
+    """
+    from PySide6.QtCore import Qt, QCoreApplication, QEvent
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from shiboken6 import isValid
+    from app.manual_takeoff import ManualTakeoffDialog
+    from core.platform.application import StructuralProApp
+
+    db = tmp_path / "db"
+    keys = _seed_draft_fivefloor(db)
+    assert len(keys) == 70
+    app = QApplication.instance() or QApplication([])
+    destroyed_notifications = []
+    for cycle in range(5):
+        service = StructuralProApp(db)
+        dialog = None
+        try:
+            assert len(service.load_manual_formulas("P")) == 70
+            assert len(service.open_project("P")["boq"]) == 14 * cycle
+            dialog = ManualTakeoffDialog(service, "P")
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
+            # Keep observer callback independent of the dialog object.
+            dialog.destroyed.connect(
+                lambda *_args, i=cycle: destroyed_notifications.append(i)
+            )
+            dialog.show()
+            dialog.manual_tabs.setCurrentIndex(1)
+            app.processEvents()
+            assert dialog.formula_table.rowCount() == 70
+            assert isValid(dialog)
+            dialog.formula_reviewer.setText("مهندس مصنوعی")
+            dialog.formula_review_note.setText("مرجع مستقل هر فرمول و واحد کنترل شد")
+            chunk = keys[14 * cycle:14 * (cycle + 1)]
+            assert len(chunk) == 14
+            for offset, key in enumerate(chunk, start=1):
+                _select_real_formula_row(dialog, key, app)
+                QTest.mouseClick(dialog.formula_review_button, Qt.MouseButton.LeftButton)
+                app.processEvents()
+                assert service.load_manual_formulas("P")[key]["status"] == "reviewed"
+                _select_real_formula_row(dialog, key, app)
+                QTest.mouseClick(dialog.formula_commit_button, Qt.MouseButton.LeftButton)
+                app.processEvents()
+                assert service.load_manual_formulas("P")[key]["status"] == "committed"
+                assert len(service.open_project("P")["boq"]) == 14 * cycle + offset
+            # Exercise real refresh/sort/search after the last UI write.
+            dialog.formula_table.sortItems(0, Qt.SortOrder.DescendingOrder)
+            dialog.formula_search.setText("طبقه" + str(cycle + 1))
+            app.processEvents()
+            dialog.formula_search.clear()
+            dialog.refresh_formula_rows()
+            app.processEvents()
+            assert dialog.formula_table.rowCount() == 70
+        finally:
+            if dialog is not None:
+                dialog.close()
+                dialog.deleteLater()
+                QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+                app.processEvents()
+                assert not isValid(dialog), "Native dialog wrapper survived DeferredDelete"
+                assert destroyed_notifications.count(cycle) == 1, "Dialog destroyed != exactly once"
+            service.store.close()
+        # Reopen SQLite after widget and store teardown, before next UI construction.
+        reopened = StructuralProApp(db)
+        try:
+            project = reopened.open_project("P")
+            assert len(project["takeoffs"]) == len(project["boq"]) == 14 * (cycle + 1)
+            reg = reopened.load_manual_formulas("P")
+            assert sum(row["status"] == "committed" for row in reg.values()) == 14 * (cycle + 1)
+        finally:
+            reopened.store.close()
+    assert destroyed_notifications == [0, 1, 2, 3, 4]
+    final = StructuralProApp(db)
+    try:
+        project = final.open_project("P")
+        assert len(project["boq"]) == len(project["takeoffs"]) == 70
+        assert len({r["source_id"] for r in project["boq"]}) == 70
+        for label, family, unit, formula, variables, expected in _original_cases():
+            matching = [row for row in project["boq"] if row["description"] == label]
+            assert len(matching) == 5
+            assert sum(Decimal(str(row["quantity"])) for row in matching) == Decimal(expected) * 5
+        assert all(row["status"] == "committed" for row in final.load_manual_formulas("P").values())
+    finally:
+        final.store.close()
