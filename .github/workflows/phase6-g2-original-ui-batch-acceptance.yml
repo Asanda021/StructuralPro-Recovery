@@ -1,0 +1,69 @@
+name: P6 G2 original GUI large IFC batching, selection and async swap
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-g2-original-ui-batch-acceptance.yml
+      - app/graphical_takeoff.py
+      - app/ifc_3d_viewport.py
+      - app/ifc_3d_loader.py
+      - core/drawings/viewer_model.py
+      - tests/test_phase6_g2_integrated_batch_switch.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  qt-original-gui:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONFAULTHANDLER: '1'
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:core/drawings/bim_adapter.py)" = "48462b5e3689b2158f9565372d93a3603b15cea0"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - name: Install project and IFC source dependencies
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8"
+      - name: Compile all modified original GUI components
+        run: python -m py_compile app/graphical_takeoff.py app/ifc_3d_viewport.py app/ifc_3d_loader.py core/drawings/viewer_model.py tests/test_phase6_g2_integrated_batch_switch.py
+      - name: Verify main GUI actual worker and batch switches, existing G2 contracts
+        shell: bash
+        run: |
+          python -m pytest -q \
+            tests/test_phase6_g2_integrated_batch_switch.py \
+            tests/test_phase6_g2_partial_display_ledger.py \
+            tests/test_phase6_multidiscipline_ifc4_geometry.py \
+            tests/test_phase6_g2_axis_orthogonality.py \
+            --junitxml=p6-g2-real-ui-junit.xml
+      - name: Upload original JUnit even if blocked
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-g2-real-ui-${{ matrix.os }}
+          path: p6-g2-real-ui-junit.xml
+          if-no-files-found: warn
+          retention-days: 14
