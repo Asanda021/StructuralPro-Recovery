@@ -1,0 +1,59 @@
+name: P6 G2 authentic EU existing-building IFC2X3 read-only native Qt acceptance
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-g2-renovation-existing-native.yml
+      - core/drawings/existing_building_reference.py
+      - app/ifc_existing_reference_viewport.py
+      - scripts/diagnostics/p6_g2_existing_renovation_visual_native.py
+      - app/graphical_takeoff.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-existing-visual-qt:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONFAULTHANDLER: '1'
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:core/drawings/bim_adapter.py)" = "a6f31bba51bd3d5338b8c424e8bf3519cd9324cb"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - run: python -m compileall -q core/drawings/existing_building_reference.py app/ifc_existing_reference_viewport.py scripts/diagnostics/p6_g2_existing_renovation_visual_native.py
+      - name: Real source MD5 and original GUI visual-only existing building tests
+        run: python scripts/diagnostics/p6_g2_existing_renovation_visual_native.py --output original-existing-bim4eeb-evidence
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-g2-existing-visual-native-${{ matrix.os }}
+          path: original-existing-bim4eeb-evidence/summary.json
+          retention-days: 14
+          if-no-files-found: warn
