@@ -75,7 +75,13 @@ class DeepIFCAdapter:
         settings.set("use-world-coords", True)
         meshes, omitted, identities = [], [], set()
         triangle_count = 0
-        candidates = [obj for obj in model.by_type("IfcProduct")
+        # The verified identity document below enumerates IfcElement only.
+        # IFC spatial context (IfcSpace, IfcSite, etc.) may itself carry
+        # tessellated display shapes, but it is NOT an approved member and
+        # must never be published as one or poison the whole 3D model.
+        # Keep every actual representable IfcElement, including the
+        # architectural, MEP and geographic IFC subclasses.
+        candidates = [obj for obj in model.by_type("IfcElement")
                       if getattr(obj, "Representation", None)]
         count = len(candidates)
         for index, obj in enumerate(candidates, 1):
