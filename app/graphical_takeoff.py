@@ -436,6 +436,16 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
         self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح مدرک PDF یا IFC')
         revision_row=QHBoxLayout();revision_row.addWidget(QLabel('نسخه مدرک:'));revision_row.addWidget(self.ifc_revision)
+        # Site-only IFC4 is spatial context, not an IfcElement or a source of BOQ.
+        # Keep its file picker visible even before a normal IFC drawing is open.
+        self.site_context_button = QPushButton('زمین IFC4 (فقط نمایش)')
+        self.site_context_button.setObjectName('OpenIFCSiteSpatialContext')
+        self.site_context_button.setToolTip('انتخاب فایل زمین IfcSite برای نمایش جداگانه؛ بدون متره و BOQ')
+        self.site_context_button.clicked.connect(self.open_ifc_site_context)
+        revision_row.addWidget(self.site_context_button)
+        self._site_context_loader = None
+        self._site_context_token = 0
+        self._site_context_dialog = None
         toolbar_rows.addLayout(revision_row)
         self.ifc_inspect_button=QPushButton('طبقات، هویت و کمیت IFC')
         self.ifc_inspect_button.clicked.connect(self.open_ifc_inspector)
@@ -1562,6 +1572,68 @@ class GraphicalTakeoffDialog(QDialog):
             window.set_batch_busy(False)
         self.status.setText('بارگذاری سه‌بعدی لغو شد؛ هندسهٔ نیمه‌کاره ثبت یا نمایش داده نشد.')
         return True
+
+    def open_ifc_site_context(self, path=None):
+        """Open an independent Qt site-context window without touching takeoff."""
+        from app.ifc_site_viewport import SiteLoadJob
+        from core.drawings.site_context import file_digest
+        # QPushButton.clicked passes bool; do not treat it as a filename.
+        if not isinstance(path, (str, Path)):
+            path, _ = QFileDialog.getOpenFileName(
+                self, 'انتخاب فایل زمین IFC4', '', 'IFC4 (*.ifc)')
+        if not path:
+            return False
+        try:
+            source = Path(path)
+            if not source.is_file() or source.suffix.lower() != '.ifc':
+                raise ValueError('فایل IFC4 زمین قابل دسترس نیست.')
+            revision = self.ifc_revision.text().strip()
+            if not revision:
+                raise ValueError('Revision صریح فایل زمین الزامی است.')
+            if self._site_context_loader is not None:
+                self._site_context_loader.cancel()
+            self._site_context_token += 1
+            token = self._site_context_token
+            job = SiteLoadJob(token=token, path=str(source), revision=revision,
+                              expected_sha256=file_digest(source))
+            self._site_context_loader = job
+            self.site_context_button.setEnabled(False)
+            self.status.setText('در حال خواندن IfcSite در Worker؛ متره و BOQ بدون تغییر.')
+            job.signals.completed.connect(self._site_context_ready)
+            job.signals.failed.connect(self._site_context_failed)
+            QThreadPool.globalInstance().start(job)
+            return True
+        except Exception as exc:
+            self.status.setText('نمای زمین باز نشد: ' + str(exc))
+            return False
+
+    def _site_context_failed(self, token, message):
+        if token != self._site_context_token or self._site_context_loader is None:
+            return
+        self._site_context_loader = None
+        self.site_context_button.setEnabled(True)
+        self.status.setText('زمین IFC4 رد شد؛ نشست قبلی محفوظ است: ' + message)
+
+    def _site_context_ready(self, token, scene):
+        if token != self._site_context_token or self._site_context_loader is None:
+            return
+        self._site_context_loader = None
+        self.site_context_button.setEnabled(True)
+        try:
+            from app.ifc_site_viewport import SiteTerrainDialog
+            scene.validate_source()
+            existing = self._site_context_dialog
+            new_window = SiteTerrainDialog(scene, self)
+            new_window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+            self._site_context_dialog = new_window
+            if existing is not None:
+                from shiboken6 import isValid
+                if isValid(existing):
+                    existing.close()
+            new_window.show()
+            self.status.setText('زمین IfcSite باز شد؛ فقط زمینه مکانی، بدون عضو یا متره.')
+        except Exception as exc:
+            self.status.setText('نمای زمین هنگام اعتبارسنجی بسته شد: ' + str(exc))
 
     def open_ifc_3d(self):
         """Start the validated 3D IFC conversion without blocking the GUI thread."""
