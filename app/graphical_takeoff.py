@@ -1692,6 +1692,8 @@ class GraphicalTakeoffDialog(QDialog):
         self.site_context_button.setEnabled(True)
         try:
             from app.ifc_site_viewport import SiteTerrainDialog
+            if self.ifc_revision.text().strip() != scene.revision:
+                raise ValueError('Revision زمین حین بارگذاری تغییر کرده است.')
             scene.validate_source()
             existing = self._site_context_dialog
             new_window = SiteTerrainDialog(scene, self)
