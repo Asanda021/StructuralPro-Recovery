@@ -83,9 +83,11 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
     evidence = {"model": model_name, "status": "NOT_ACCEPTED", "quantity_authority": False,
                 "model_is_real_published_reference": True, "full_simultaneous_geometry_accepted": False}
     started = time.monotonic()
+    stage = "SOURCE_DIGEST"
     try:
         if hashlib.sha256(source.read_bytes()).hexdigest() != expected_sha:
             raise ValueError("DOWNLOADED_SOURCE_SHA_MISMATCH")
+        stage = "IFC_PARSE_INDEPENDENT"
         independent = ifcopenshell.open(str(source))
         if str(independent.schema) != "IFC4":
             raise ValueError("SOURCE_SCHEMA_NOT_IFC4")
@@ -94,14 +96,18 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
         represented = {obj.GlobalId for obj in elements if getattr(obj, "Representation", None)}
         if not ids or len(ids) != len(elements) or len(represented) < 2:
             raise ValueError("SOURCE_HAS_NO_UNIQUE_REPRESENTED_ELEMENTS")
+        stage = "SOURCE_CLASS_CENSUS"
         types = Counter(obj.is_a() for obj in elements if obj.GlobalId in represented)
+        stage = "GUI_CREATE"
         gui = GraphicalTakeoffDialog()
         gui.ifc_revision.setText("RWTH-REAL-" + REV[:12])
+        stage = "NORMAL_FILE_PICKER_QPROCESS"
         gui.open_cad_async(source)  # genuine user file-picker/QProcess path
         if not pump(app, lambda: gui._cad_job is None):
             raise RuntimeError("IFC_NORMAL_FILE_PICKER_TIMEOUT")
         if gui.viewer.kind != "ifc":
             raise ValueError("IFC_FILE_PICKER_DID_NOT_LOAD")
+        stage = "IFC_DRAWING_CONTRACT"
         drawing = gui.viewer.ifc_document
         if drawing is None or drawing.source_sha256 != expected_sha:
             raise ValueError("DRAWING_SOURCE_MISMATCH")
@@ -109,10 +115,12 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
         if ({gid for gid, _ in roster} != ids or
                 {gid for gid, flag in roster if flag} != represented):
             raise ValueError("CROSS_PARSER_FULL_SOURCE_CENSUS_MISMATCH")
+        stage = "IFC_DRAWING_PREVIEW"
         if not drawing.meshes or not all(m.global_id in represented for m in drawing.meshes):
             raise ValueError("NO_GENUINE_DRAWING_PREVIEW_GEOMETRY")
         if sum(len(m.triangles) for m in drawing.meshes) > MAX_TRIANGLES:
             raise ValueError("DRAWING_PREVIEW_OVER_CAP")
+        stage = "INITIAL_3D_WORKER"
         gui.open_ifc_3d()
         if not pump(app, lambda: gui._ifc_3d_loader is None):
             raise RuntimeError("IFC_INITIAL_3D_TIMEOUT")
@@ -129,12 +137,14 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
         view.canvas.choose_member(old_gid)
         if view.canvas.selected_id != old_gid:
             raise ValueError("ORIGINAL_MEMBER_CANNOT_BE_SELECTED")
+        stage = "FULL_SOURCE_3D_LEDGER"
         full = before.display_catalog["members"]
         if ({e["global_id"] for e in full} != ids or
                 {e["global_id"] for e in full if e["status"] == "without_geometry"} != ids - represented):
             raise ValueError("SOURCE_LEDGER_LOST_MEMBERS")
         # Select another real SOURCE member, not a placeholder. A distinct floor
         # is preferred when available. The filter/pager must find that identity.
+        stage = "BATCH_FILTER_SELECTION"
         candidates = [row for row in full
                       if row["global_id"] in represented and row["global_id"] != old_gid]
         candidates.sort(key=lambda row: (
@@ -155,6 +165,7 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
             raise ValueError("FILTER_HID_ACTUAL_SOURCE_ID")
         page = candidates_from_controls.index(target["global_id"]) + 1
         view.batch_page.setValue(page)
+        stage = "SECOND_BATCH_WORKER"
         if not view.request_selected_batch():
             raise ValueError("REAL_GUI_DID_NOT_DISPATCH_SELECTED_BATCH")
         if not pump(app, lambda: gui._ifc_3d_loader is None):
@@ -169,12 +180,14 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
             raise ValueError("NEW_SOURCE_BACKED_BATCH_INVALID")
         if view.canvas.selected_id is not None:
             raise ValueError("STALE_PICK_NOT_REVOKED")
+        stage = "ATOMIC_SCENE_AND_SOURCE_COUNTS"
         counts = after.display_catalog["counts"]
         if counts != {"displayed": 1, "not_loaded": len(represented) - 1,
                       "without_geometry": len(ids) - len(represented)}:
             raise ValueError("INCOMPLETE_GLOBAL_SOURCE_COVERAGE_DISCLOSURE")
         if gui.session.items:
             raise ValueError("UNAUTHORIZED_BOQ_OR_TAKEOFF_WRITE")
+        stage = "ACCEPTED"
         evidence.update({
             "status": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
             "source_sha256_matches": True,
@@ -195,6 +208,14 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
     except Exception as exc:
         evidence["status"] = "BLOCKED_OR_FAILED"
         evidence["error_class"] = type(exc).__name__
+        evidence["failed_stage"] = stage
+        # Safe category only, never original paths, names or exception strings.
+        safe = str(exc)
+        evidence["error_category"] = ("NO_REPRESENTED_GEOMETRY" if "NO_UNIQUE_REPRESENTED" in safe
+            else "SOURCE_IDENTITY_MISMATCH" if "SOURCE_CENSUS" in safe or "LOST_MEMBERS" in safe
+            else "GEOMETRY_OR_CAPACITY" if "هندسه" in safe or "ظرفیت" in safe or "triangle" in safe.lower()
+            else "FILE_PICKER_REJECTION" if "IFC_FILE_PICKER_DID_NOT_LOAD" in safe
+            else "RUNTIME_OR_CONTRACT_ERROR")
         # Never publish free-text error, source filenames, GUIDs, vertices,
         # authors, individual model properties, sensitive SQL or QTO.
     finally:
