@@ -1,0 +1,51 @@
+name: P6 validate native CDB crash capture with isolated synthetic control
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-native-cdb-control.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify-cdb-synthetic-av-only:
+    runs-on: windows-2022
+    timeout-minutes: 9
+    env:
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: windows
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Confirm source oracle unchanged before any synthetic test
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = "4e3750a0e797073d40bacb395e448da4f14b6c56"
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = "07e8ce4567eec5122253cd220a49fed6e2e27d9e"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+      - name: Validate sanitization and compiler-free CDB control
+        run: |
+          python -m py_compile scripts/diagnostics/p6_native_cdb_trace.py scripts/diagnostics/p6_native_cdb_control.py
+          python scripts/diagnostics/p6_native_cdb_trace.py --self-check
+      - name: Verify real second-chance crash capture without dump or product code
+        run: python scripts/diagnostics/p6_native_cdb_control.py --output cdb-control-evidence
+      - name: Show control status and keep RED on control failure
+        if: always()
+        shell: pwsh
+        run: |
+          if (!(Test-Path cdb-control-evidence/control.json)) { throw 'CDB_CONTROL_NOT_EXECUTED' }
+          $d = Get-Content -Raw -Encoding UTF8 cdb-control-evidence/control.json | ConvertFrom-Json
+          Write-Host "Control=$($d.status) second_chance=$($d.control_second_chance_marked) exception_code=$($d.exception_code_verified) stack=$($d.native_stack_available)"
+          if (!$d.test_control_passed) { throw 'CDB_CRASH_CAPTURE_NOT_VERIFIED' }
+      - name: Preserve sanitized synthetic marker and symbols only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-native-cdb-synthetic-control-no-dump
+          path: cdb-control-evidence/control.json
+          retention-days: 14
+          if-no-files-found: warn
