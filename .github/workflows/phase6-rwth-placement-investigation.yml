@@ -5,11 +5,15 @@ on:
     paths:
       - .github/workflows/phase6-rwth-placement-investigation.yml
       - scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - tests/test_phase6_g2_axis_orthogonality.py
+      - core/drawings/bim_adapter.py
   push:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
     paths:
       - .github/workflows/phase6-rwth-placement-investigation.yml
       - scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - tests/test_phase6_g2_axis_orthogonality.py
+      - core/drawings/bim_adapter.py
   workflow_dispatch:
 permissions:
   contents: read
@@ -37,17 +41,31 @@ jobs:
       - shell: bash
         run: |
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
-          test "$(git rev-parse HEAD:core/drawings/bim_adapter.py)" = "574b96b68c826c9a2fcf63eb55ba32dd421dd298"
+          test "$(git rev-parse HEAD:core/drawings/bim_adapter.py)" = "48462b5e3689b2158f9565372d93a3603b15cea0"
           test "$(git rev-parse HEAD:core/bim/ifc.py)" = "8f99bdf2fc06d503eff021ec0937bbf040a391a9"
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.12'
       - name: Install original pinned source IFC parser
-        run: python -m pip install -q "ifcopenshell>=0.8"
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8"
       - name: Check diagnostic Python syntax
         run: python -m py_compile scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - name: Regression of near-orthogonal direction roundoff, skew and source security
+        run: python -m pytest -q tests/test_phase6_g2_axis_orthogonality.py
       - name: Analyze independently published MIT IFC4, aggregate evidence only
         run: python scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - name: Require original independent-source placement contract acceptance
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          record=json.loads(Path("p6-placement-diagnostic/summary.json").read_text(encoding="utf-8"))
+          assert record["original_contract"]=="ACCEPTED", record["normalized_error"]
+          assert record["source_blob_and_size_verified"] is True
+          assert record["map_conversion_count"]==1
+          assert record["quantity_authority"] is False
+          PY
       - name: Preserve sanitized placement summary only
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
