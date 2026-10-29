@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, Signal, QTimer, QObject, QRunnable, QThreadPool, 
 from PySide6.QtGui import QColor, QBrush, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QPushButton,
-    QVBoxLayout, QWidget, QDoubleSpinBox, QLineEdit,
+    QVBoxLayout, QWidget, QDoubleSpinBox, QLineEdit, QSpinBox,
 )
 from PySide6.QtCore import QPointF
 
@@ -196,6 +196,7 @@ class IFC3DCanvas(QWidget):
 
 class IFC3DDialog(QDialog):
     memberSelected = Signal(str)
+    requestBatch = Signal(object)
 
     def __init__(self, scene: VerifiedScene3D, parent=None, *,
                  app_service=None, project_id=""):
@@ -244,6 +245,37 @@ class IFC3DDialog(QDialog):
         self.hide_floor = QCheckBox('پنهان‌کردن طبقه انتخابی')
         tools.addWidget(self.hide_floor)
         outer.addLayout(tools)
+        # These load controls use identities from the *entire verified source*
+        # catalog, not merely the meshes already visible in the viewport.
+        self.batch_row = QWidget(self)
+        self.batch_row.setObjectName("IFC3DBatchRow")
+        batch_layout = QHBoxLayout(self.batch_row)
+        self.batch_storey = QComboBox(self.batch_row)
+        self.batch_storey.setObjectName("IFC3DBatchStorey")
+        self.batch_type = QComboBox(self.batch_row)
+        self.batch_type.setObjectName("IFC3DBatchType")
+        self.batch_page = QSpinBox(self.batch_row)
+        self.batch_page.setObjectName("IFC3DBatchPage")
+        self.batch_page.setMinimum(1)
+        self.batch_page.setMaximum(1)
+        self.batch_page.setPrefix("صفحه ")
+        self.batch_size = QSpinBox(self.batch_row)
+        self.batch_size.setObjectName("IFC3DBatchSize")
+        self.batch_size.setRange(1, 32)
+        self.batch_size.setValue(8)
+        self.batch_load = QPushButton("بارگذاری بستهٔ انتخاب‌شده", self.batch_row)
+        self.batch_load.setObjectName("IFC3DLoadSelectedBatch")
+        for widget in (QLabel("طبقهٔ منبع:"), self.batch_storey,
+                       QLabel("نوع عضو:"), self.batch_type,
+                       QLabel("عضو در بسته:"), self.batch_size,
+                       self.batch_page, self.batch_load):
+            batch_layout.addWidget(widget)
+        outer.addWidget(self.batch_row)
+        self.batch_load.clicked.connect(self.request_selected_batch)
+        self.batch_storey.currentIndexChanged.connect(self._update_batch_pages)
+        self.batch_type.currentIndexChanged.connect(self._update_batch_pages)
+        self.batch_size.valueChanged.connect(self._update_batch_pages)
+        self._init_batch_catalog()
         self.section.toggled.connect(self._section)
         self.section_height.valueChanged.connect(self._section)
         self.transparency.toggled.connect(self._transparency)
@@ -268,6 +300,7 @@ class IFC3DDialog(QDialog):
             f"Revision: {scene.revision}\n"
             f"SHA-256: {scene.source_sha256} | فقط نمایش انتخاب‌شده؛ "
             f"عضو بارگذاری‌نشده متره و هندسه تأییدشده ندارد.")
+        self.provenance = status
         status.setObjectName("IFC3DProvenance")
         status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         outer.addWidget(status)
@@ -295,6 +328,136 @@ class IFC3DDialog(QDialog):
         self.isolate.toggled.connect(self._isolate)
         reset.clicked.connect(self.canvas.reset_camera)
         self.canvas.memberSelected.connect(self.memberSelected)
+
+    def _init_batch_catalog(self):
+        catalog = getattr(self.scene, "display_catalog", None)
+        self.batch_row.setVisible(catalog is not None)
+        if catalog is None:
+            return
+        members = catalog["members"]
+        with QSignalBlocker(self.batch_storey), QSignalBlocker(self.batch_type):
+            self.batch_storey.clear()
+            self.batch_type.clear()
+            self.batch_storey.addItem("همهٔ طبقات", None)
+            self.batch_type.addItem("همهٔ انواع", None)
+            for floor in sorted({r["storey_id"] for r in members
+                                 if r["storey_id"] is not None}):
+                self.batch_storey.addItem(floor, floor)
+            for kind in sorted({r["ifc_type"] for r in members}):
+                self.batch_type.addItem(kind, kind)
+        self._update_batch_pages()
+
+    def _filtered_batch_ids(self):
+        catalog = getattr(self.scene, "display_catalog", None)
+        if catalog is None:
+            return ()
+        floor = self.batch_storey.currentData()
+        kind = self.batch_type.currentData()
+        return tuple(sorted(
+            r["global_id"] for r in catalog["members"]
+            if r["status"] != "without_geometry"
+            and (floor is None or r["storey_id"] == floor)
+            and (kind is None or r["ifc_type"] == kind)
+        ))
+
+    def _update_batch_pages(self, *_):
+        ids = self._filtered_batch_ids()
+        size = self.batch_size.value()
+        pages = max(1, (len(ids) + size - 1) // size)
+        with QSignalBlocker(self.batch_page):
+            self.batch_page.setMaximum(pages)
+            if self.batch_page.value() > pages:
+                self.batch_page.setValue(pages)
+        self.batch_load.setEnabled(bool(ids))
+        self.batch_load.setToolTip(
+            f"{len(ids)} عضو واقعیِ دارای Representation؛ "
+            "اگر بسته بیش از ۴۰هزار مثلث باشد، تعویض رد و نمای قبلی محفوظ می‌ماند.")
+
+    def request_selected_batch(self):
+        ids = self._filtered_batch_ids()
+        start = (self.batch_page.value() - 1) * self.batch_size.value()
+        requested = list(ids[start:start + self.batch_size.value()])
+        if not requested:
+            self.session_status.setText("در این طبقه و نوع، عضو هندسه‌دار موجود نیست.")
+            return False
+        try:
+            self.scene.validate_source()
+        except ValueError as exc:
+            self.canvas.source_error = str(exc)
+            self.canvas.selected_id = None
+            self.canvas.update()
+            self.session_status.setText("منبع IFC تغییر کرده؛ بارگذاری بسته رد شد.")
+            return False
+        self.session_status.setText(
+            f"درخواست هندسه واقعی برای {len(requested)} عضو؛ نمای قبلی تا تأیید محفوظ است.")
+        self.requestBatch.emit(requested)
+        return True
+
+    def replace_scene(self, next_scene):
+        """Atomic GUI commit after the worker validated every requested mesh."""
+        self.scene.validate_source()
+        next_scene.validate_source()
+        if (self.scene.source_sha256 != next_scene.source_sha256 or
+                self.scene.revision != next_scene.revision or
+                self.scene.source_path != next_scene.source_path or
+                next_scene.display_catalog is None):
+            raise ValueError("بسته جدید با منبع و Revision معتبر یکسان نیست.")
+        before = getattr(self.scene, "display_catalog", None)
+        if (before is not None and (
+                before["source_member_count"] != next_scene.display_catalog["source_member_count"]
+                or {r["global_id"] for r in before["members"]}
+                != {r["global_id"] for r in next_scene.display_catalog["members"]})):
+            raise ValueError("فهرست کل هویت‌های مدل هنگام تعویض بسته تغییر کرده است.")
+        selection = self.canvas.selected_id
+        shown_ids = {m.global_id for m in next_scene.meshes}
+        # No member is implied to exist in the currently displayed batch.
+        selection_lost = bool(selection and selection not in shown_ids)
+        floor = self.batch_storey.currentData()
+        kind = self.batch_type.currentData()
+        page = self.batch_page.value()
+        self.scene = next_scene
+        self.canvas.scene = next_scene
+        self.canvas.storey_id = None
+        self.canvas.selected_id = None if selection_lost else selection
+        self.storey.blockSignals(True)
+        try:
+            self.storey.clear()
+            self.storey.addItem("تمام طبقات مستند", None)
+            for st in next_scene.storeys:
+                self.storey.addItem(st, st)
+        finally:
+            self.storey.blockSignals(False)
+        with QSignalBlocker(self.type_filter):
+            self.type_filter.clear()
+            self.type_filter.addItem("تمام انواع مستند", None)
+            for typ in sorted({m.ifc_type for m in next_scene.meshes}):
+                self.type_filter.addItem(typ, typ)
+        self.hide_floor.setChecked(False)
+        self.hide_floor.setEnabled(False)
+        self._init_batch_catalog()
+        with QSignalBlocker(self.batch_storey), QSignalBlocker(self.batch_type):
+            self.batch_storey.setCurrentIndex(max(0, self.batch_storey.findData(floor)))
+            self.batch_type.setCurrentIndex(max(0, self.batch_type.findData(kind)))
+        self._update_batch_pages()
+        self.batch_page.setValue(min(page, self.batch_page.maximum()))
+        c = next_scene.display_catalog["counts"]
+        self.provenance.setText(
+            f"IFC واقعی | کل اعضای منبع: {next_scene.display_catalog['source_member_count']} | "
+            f"نمایش داده‌شده: {c['displayed']} | بارگذاری‌نشده: {c['not_loaded']} | "
+            f"فاقد هندسه در منبع: {c['without_geometry']} | Revision: {next_scene.revision}\\n"
+            f"SHA-256: {next_scene.source_sha256} | متره از تصویر ممنوع.")
+        self.canvas.update()
+        if selection_lost:
+            self.memberSelected.emit("")
+        self.session_status.setText("بستهٔ جدید با هویت منبع معتبر بارگذاری شد؛ BOQ تغییر نکرد.")
+        return True
+
+    def set_batch_busy(self, on):
+        self.batch_load.setEnabled(not on and bool(self._filtered_batch_ids()))
+        self.batch_storey.setEnabled(not on)
+        self.batch_type.setEnabled(not on)
+        self.batch_size.setEnabled(not on)
+        self.batch_page.setEnabled(not on)
 
     def save_e2_view(self):
         if not self.app_service or not self.project_id:
