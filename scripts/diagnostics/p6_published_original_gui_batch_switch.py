@@ -54,7 +54,9 @@ def child(path: Path, expected_sha: str, name: str, out: Path) -> int:
         state["source_verified"] = True
         main = GraphicalTakeoffDialog()
         main.ifc_revision.setText("RWTH-BATCH-" + REV[:12])
-        main.open_drawing(path)
+        main.open_cad_async(path)
+        if not _until(app, lambda: main._cad_job is None, 115):
+            raise RuntimeError("NORMAL_FILE_PICKER_SUBPROCESS_TIMEOUT")
         if main.viewer.kind != "ifc":
             raise ValueError("ORIGINAL_DRAWING_SOURCE_NOT_IFC")
         document = main.viewer.ifc_document
