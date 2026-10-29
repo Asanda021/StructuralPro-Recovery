@@ -1,0 +1,29 @@
+{
+  "source_sha": "2d41667121c3b2e1adbd57c904a80bedabfc36b5",
+  "repetition": 2,
+  "elapsed_seconds": 87.98401910000007,
+  "exit_code": 0,
+  "timed_out": false,
+  "access_violation": false,
+  "junit": {
+    "collected": 1,
+    "passed": 1,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "last_checkpoint": {
+    "run_id": "40839501658",
+    "repetition": 2,
+    "sequence": 1361,
+    "row_index": 70,
+    "operation_index": 9,
+    "event": "CASE_DONE",
+    "monotonic_ns": 1277881458600,
+    "completed": true,
+    "call_id": null
+  },
+  "unfinished": [],
+  "sqlite": "valid",
+  "boq": "valid"
+}

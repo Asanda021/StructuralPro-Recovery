@@ -1,0 +1,11 @@
+{
+  "run_id": "40839501658",
+  "repetition": 1,
+  "sequence": 1361,
+  "row_index": 70,
+  "operation_index": 7,
+  "event": "CASE_DONE",
+  "monotonic_ns": 3768257091500,
+  "completed": true,
+  "call_id": null
+}

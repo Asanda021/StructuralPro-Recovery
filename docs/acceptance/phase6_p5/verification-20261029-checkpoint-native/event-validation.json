@@ -1,0 +1,74 @@
+[
+  {
+    "repetition": 1,
+    "event_counts": {
+      "CASE_START": 1,
+      "READ_ENTER": 468,
+      "READ_EXIT": 468,
+      "ROW_SELECTED": 141,
+      "REVIEW_ENTER": 70,
+      "REVIEW_EXIT": 70,
+      "COMMIT_ENTER": 70,
+      "COMMIT_EXIT": 70,
+      "SQLITE_VERIFY": 1,
+      "BOQ_VERIFY": 1,
+      "CASE_DONE": 1
+    },
+    "selected_rows": 70,
+    "operation_indices": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "events_sha256": "733d10bc8a4d7ac8310cb425ee82d246e758d1bc600220b6b4a0c092cd447f27",
+    "artifact_id": 12881768355,
+    "zip_sha256": "3f408fa273e044b10ef444d981a1ccf8915cdfa1a4cf3d6fecf8b8dfe2ed7022"
+  },
+  {
+    "repetition": 2,
+    "event_counts": {
+      "CASE_START": 1,
+      "READ_ENTER": 468,
+      "READ_EXIT": 468,
+      "ROW_SELECTED": 141,
+      "REVIEW_ENTER": 70,
+      "REVIEW_EXIT": 70,
+      "COMMIT_ENTER": 70,
+      "COMMIT_EXIT": 70,
+      "SQLITE_VERIFY": 1,
+      "BOQ_VERIFY": 1,
+      "CASE_DONE": 1
+    },
+    "selected_rows": 70,
+    "operation_indices": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14
+    ],
+    "events_sha256": "a82e2159b6d924e0b56dc6af83a1a599b9c9b07bedab5bbd04cb00fab07b7dc2",
+    "artifact_id": 12882147579,
+    "zip_sha256": "16b2934fa186e83b7513a2a057f20c28a3ede59ce448ac726a969fefccddacf0"
+  }
+]

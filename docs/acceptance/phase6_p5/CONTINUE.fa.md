@@ -1,3 +1,8 @@
+## آخرین مأموریت تشخیصی عملیاتی — ۲۹ اکتبر ۲۰۲۶
+دو اجرای مستقل بدون Debugger در Windows روی کد `2d41667121c3b2e1adbd57c904a80bedabfc36b5` در [Run40839501658](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40839501658) هرکدام۱PASS باJUnitواقعی،exit0،بدونtimeout/AccessViolation ثبت کردند. هرکدام۱۳۶۱checkpoint،۷۰Reviewو۷۰Commit،SQLITE integrity وBOQ oracle/Reopen اصلی معتبر بود. [گزارش وManifest](verification-20261029-checkpoint-native/REPORT.fa.md). مأموریت تشخیصی COMPLETE در دامنه دو اجرا، ولی رفع کرش تاریخی OPEN و P6-5 PARTIAL است. کد محصول و آزمون اصلی تغییر نکرده‌اند؛ فقط Runnerوworkflow مستقل اضافه شدند. در صورت کرش بعدی journal آخرین ENTER/EXIT همان اجرا را تحلیل کنید؛ موفقیت دو نمونه را رفع علت ننامید.
+
+---
+
 ## نتیجه قطعی E6 history-preview CAS | ۲۸ اکتبر ۲۰۲۶
 - نقص پیش‌نمایش stale در تاریخچه IFC: [RED #40760620857](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40760620857) هر OS **۲FAIL/۳۸PASS**، [GREEN #40760971622](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40760971622) هر OS **۴۰PASS/۰FAIL/ERROR/SKIP** روی source `4e6fdc26c4da545e29608f4c121f73e856aedc04`؛ JUnit [Linux](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40760971622/artifacts/12848680540) و [Windows](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40760971622/artifacts/12848052922).
 - [گزارش مستقل با RED/GREEN و گیت‌های باز](verification-20261028-e6-history-preview-cas/REPORT.fa.md). P6-5 همچنان PARTIAL؛ E6 سهم‌های فاقد مدرک و Crosswalk معکوس BLOCKED؛ P6-6 آغاز نشده؛ PR33/34 Draft/Unmerged، main/Release ثابت، ۸ فاز/۸۵٪ ثابت.
