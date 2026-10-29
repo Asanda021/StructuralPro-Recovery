@@ -181,6 +181,10 @@ def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_sec
         ]
         env = os.environ.copy()
         env["PYTHONFAULTHANDLER"] = "1"
+        if test_node == ARMS["dialog_lifecycle"] and os.environ.get("P6_LIFECYCLE_CHECKPOINTS") == "1":
+            env["P6_LIFECYCLE_CHECKPOINT_DIR"] = str(output / f"checkpoints-{i}")
+        else:
+            env.pop("P6_LIFECYCLE_CHECKPOINT_DIR", None)
         timed_out = False
         max_observed_rss = 0.0
         last_cpu = 0.0
