@@ -151,3 +151,166 @@ def test_native_qt_table_events_without_service_or_sqlite():
         table.close()
         table.deleteLater()
         app.processEvents()
+
+
+
+def _seed_draft_fivefloor(directory):
+    """Same 14 original synthetic cases and 70 revisioned rows, without a Qt event loop."""
+    from PySide6.QtCore import QCoreApplication
+    from core.platform.application import StructuralProApp
+    from core.takeoff.manual_form_fields import canonical, expression
+    from core.takeoff.manual_formula_register import catalog
+    assert QCoreApplication.instance() is None
+    assert len(catalog()) == 85
+    s = StructuralProApp(directory)
+    try:
+        s.create_project("ساختمان پنج‌طبقه کاملاً مصنوعی", "P")
+        units = {"طول": "m", "عرض": "m", "ارتفاع": "m", "ضخامت": "m",
+                 "تعداد": "عدد", "وزن": "kg/m", "بازشو": "m2"}
+        for i, (label, family, unit, formula, variables, expected) in enumerate(_original_cases()):
+            data = {
+                "family": family, "title": label, "floor": "طبقه۱",
+                "member": "عضو-" + label, "unit": unit,
+                "expression": expression(formula),
+                "variables": {canonical(k): v for k, v in variables.items()},
+                "variable_units": {canonical(k): units[k] for k in variables},
+                "unit_policy": "dimensional_decimal_v1",
+                "references": {}, "source_id": "synthetic:fivefloor:A" + str(i),
+                "basis": "مصنوعی؛ ابعاد متر، تعداد عدد، وزن واحد کیلوگرم بر متر؛ بدون پرت یا دیتایل حدسی",
+                "deductions": [],
+            }
+            actual = s.save_manual_formula("P", "A" + str(i), data,
+                                           expected_revision=0, reason="ورود صریح مصنوعی")
+            assert Decimal(str(actual["quantity"])) == Decimal(expected)
+        keys = ["A" + str(i) for i in range(14)]
+        for floor in ("طبقه۲", "طبقه۳", "طبقه۴", "طبقه۵"):
+            versions = s.load_manual_formulas("P")
+            s.copy_manual_formulas(
+                "P", keys, floor=floor,
+                expected_revisions={key: versions[key]["revision"] for key in keys},
+                reason="تکرار صریح اعضای مستقل در طبقه جدید",
+            )
+        reg = s.load_manual_formulas("P")
+        assert len(reg) == 70
+        assert all(r["status"] == "draft" for r in reg.values())
+        assert not s.open_project("P")["boq"]
+        return sorted(reg)
+    finally:
+        s.store.close()
+
+
+def _select_real_formula_row(dialog, key, app):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    table = dialog.formula_table
+    positions = [
+        n for n in range(table.rowCount())
+        if table.item(n, 0) is not None and table.item(n, 0).text() == key
+    ]
+    assert len(positions) == 1, f"Expected exactly one visible real formula row: {key}"
+    row = positions[0]
+    assert not table.isRowHidden(row)
+    item = table.item(row, 0)
+    assert item.data(Qt.ItemDataRole.UserRole) == "formula"
+    table.scrollToItem(item)
+    app.processEvents()
+    rect = table.visualItemRect(item)
+    assert rect.isValid(), key
+    QTest.mouseClick(table.viewport(), Qt.MouseButton.LeftButton, pos=rect.center())
+    app.processEvents()
+    selected = table.selectionModel().selectedRows()
+    assert selected and table.item(selected[0].row(), 0).text() == key
+
+
+def test_native_real_manual_dialog_readonly_70_rows(tmp_path):
+    """Native production dialog, real SQLite and 70 draft rows, no review/commit mutations."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import QApplication
+    from app.manual_takeoff import ManualTakeoffDialog
+    from core.platform.application import StructuralProApp
+
+    db = tmp_path / "db"
+    keys = _seed_draft_fivefloor(db)
+    app = QApplication.instance() or QApplication([])
+    service = StructuralProApp(db)
+    dialog = None
+    try:
+        before = service.store.current_digest("P")
+        dialog = ManualTakeoffDialog(service, "P")
+        dialog.show()
+        dialog.manual_tabs.setCurrentIndex(1)
+        app.processEvents()
+        assert dialog.formula_table.rowCount() == 70
+        for iteration in range(2):
+            dialog.formula_table.sortItems(
+                0, Qt.SortOrder.AscendingOrder if iteration == 0
+                else Qt.SortOrder.DescendingOrder
+            )
+            app.processEvents()
+            for key in keys:
+                _select_real_formula_row(dialog, key, app)
+            dialog.refresh_formula_rows()
+            app.processEvents()
+            assert dialog.formula_table.rowCount() == 70
+        assert service.store.current_digest("P") == before, "View-only test changed persisted data"
+        assert len(service.load_manual_formulas("P")) == 70
+        assert not service.open_project("P")["boq"]
+    finally:
+        if dialog is not None:
+            dialog.close()
+            dialog.deleteLater()
+            app.processEvents()
+        service.store.close()
+
+
+def test_native_real_manual_dialog_review_commit_70_rows(tmp_path):
+    """Native review and commit buttons, preseeded 70 rows, no Qt edit/copy during setup."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from app.manual_takeoff import ManualTakeoffDialog
+    from core.platform.application import StructuralProApp
+
+    db = tmp_path / "db"
+    keys = _seed_draft_fivefloor(db)
+    app = QApplication.instance() or QApplication([])
+    service = StructuralProApp(db)
+    dialog = None
+    try:
+        dialog = ManualTakeoffDialog(service, "P")
+        dialog.show()
+        dialog.manual_tabs.setCurrentIndex(1)
+        app.processEvents()
+        assert dialog.formula_table.rowCount() == 70
+        dialog.formula_reviewer.setText("مهندس مصنوعی")
+        dialog.formula_review_note.setText("مرجع مستقل هر فرمول و واحد کنترل شد")
+        for number, key in enumerate(keys, start=1):
+            _select_real_formula_row(dialog, key, app)
+            QTest.mouseClick(dialog.formula_review_button, Qt.MouseButton.LeftButton)
+            app.processEvents()
+            assert service.load_manual_formulas("P")[key]["status"] == "reviewed", key
+            _select_real_formula_row(dialog, key, app)
+            QTest.mouseClick(dialog.formula_commit_button, Qt.MouseButton.LeftButton)
+            app.processEvents()
+            assert service.load_manual_formulas("P")[key]["status"] == "committed", key
+            assert len(service.open_project("P")["boq"]) == number
+        project = service.open_project("P")
+        assert len(project["takeoffs"]) == len(project["boq"]) == 70
+        assert len({r["source_id"] for r in project["boq"]}) == 70
+        for label, family, unit, formula, variables, expected in _original_cases():
+            matching = [r for r in project["boq"] if r["description"] == label]
+            assert len(matching) == 5
+            assert sum(Decimal(str(row["quantity"])) for row in matching) == Decimal(expected) * 5
+    finally:
+        if dialog is not None:
+            dialog.close()
+            dialog.deleteLater()
+            app.processEvents()
+        service.store.close()
+    reopened = StructuralProApp(db)
+    try:
+        assert len(reopened.load_manual_formulas("P")) == 70
+        assert all(row["status"] == "committed" for row in reopened.load_manual_formulas("P").values())
+        assert len(reopened.open_project("P")["boq"]) == 70
+    finally:
+        reopened.store.close()
