@@ -116,7 +116,9 @@ class SiteTerrainDialog(QDialog):
         self.caption=QLabel(
             "هندسهٔ واقعی IfcSite | زمینهٔ مکانی، نه IfcElement و نه عضو متره\n"
             "انتخاب عضو، محاسبه مقدار، BOQ و تبدیل GIS مجاز نیست.\n"
-            "Revision: "+scene.revision+" | SHA-256: "+scene.source_sha256)
+            + ("هشدار: GlobalId زمین غیرکانونی است؛ هویت تنها با SHA فایل است و اتصال عضو ممنوع است.\n"
+               if not scene.site_identity_canonical else "")
+            + "Revision: "+scene.revision+" | SHA-256: "+scene.source_sha256)
         self.caption.setObjectName("IFCSiteSpatialProvenance")
         self.caption.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.caption.setWordWrap(True)
