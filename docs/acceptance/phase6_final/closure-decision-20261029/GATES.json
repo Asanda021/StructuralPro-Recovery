@@ -229,10 +229,11 @@
     },
     {
       "id": "G5",
-      "name": "one_windows_edition_and_ai_provenance",
-      "status": "PENDING_RELEASE_DEPENDENCY",
-      "reason": "Old edition/tier machinery remains; local GGUF manifest includes unverified model path, SHA and license and commercial_use false. Rule-only fallback tested, not validated commercial AI execution. Respect Phase-5 A1 / Phase-6 A2 responsibilities.",
-      "reference": "core/ai/model_manifest.json"
+      "name": "one_windows_edition",
+      "status": "PENDING_WINDOWS_EDITION_RELEASE_DECISION",
+      "reason": "The one-final-Windows-edition policy and legacy tier mechanics are a release packaging decision. The owner has clarified AI is NONCOMMERCIAL; commercial-use AI model licensing/monetization is NOT a Phase 6 acceptance requirement. The existing GGUF manifest has only placeholder path, SHA-256, license and architecture and commercial_use=false: do not claim a verified installed model or permitted redistribution. The already-tested rule-only fail-closed fallback remains the valid bounded capability; optional noncommercial GGUF use requires checking the actual model identity and its applicable license if added.",
+      "reference": "core/ai/model_manifest.json",
+      "ai_noncommercial_correction_applied": true
     }
   ],
   "other_gates": [
@@ -250,10 +251,17 @@
       "id": "W6_clash_detection",
       "status": "OPTIONAL_NONBLOCKING",
       "closure_blocker_for_phase6": false
+    },
+    {
+      "id": "local_ai_gguf",
+      "status": "PLACEHOLDER_NOT_AN_ACTIVE_MODEL",
+      "closure_blocker_for_phase6": false,
+      "commercial_ai_required": false,
+      "note": "AI is noncommercial, offline, GGUF-compatible; commercial license/commercial-use model is not a Phase-6 gate. A future actual local GGUF must have verified SHA, license and no invented weights; fail closed when unavailable."
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_FULL_MODEL_SOURCE_BACKED_PARTIAL_SELECTION_LIMITED_GREEN",
+  "last_decision": "NO_GO_G1_G2_G4_BROAD_REGRESSION_G5_WINDOWS_EDITION;_NONCOMMERCIAL_AI_NOT_PHASE6_BLOCKER",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -265,5 +273,6 @@
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
   "last_evidence_run": 40897560690,
   "last_source_verified_commit": "a0f59826b9037c0203487605eec09131aef2b8b6",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-limited-source-backed-ifc-view/REPORT.fa.md"
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-limited-source-backed-ifc-view/REPORT.fa.md",
+  "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6."
 }
