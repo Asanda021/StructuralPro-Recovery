@@ -47,7 +47,17 @@
 - [CI گیت‌های fail-closed #40949948916](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40949948916): Windows ۷ PASS، Linux ۷ PASS، صفر FAIL/ERROR/SKIP؛ اصل JUnit هر دو سیستم مستقل خوانده شد.
 - [CI مسیر اصلی انتخاب و تعویض اعضای IFC4 #40949293742](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40949293742): SUCCESS در هر دو سیستم؛ Workflow با pin قدیمی `BIMAdapter` اصلاح و دوباره اجرا شد. شکست‌های قبلی آن پیش از pytest و صرفاً ناشی از pin نامعتبر ثبت شده‌اند.
 - [CI ارتباط چهارطرفه #40949293865](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40949293865): SUCCESS در هر دو سیستم؛ مسیر مهندسی پیشین دست‌نخورده.
-- رگرسیون جامع آخرین کد محصول `683e2ad428d62e4980daa702438060621c845150` در [#40949336798](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40949336798) اجرا شده است. **تا انتشار و بررسی تمام JUnitها نباید PASS یا COMPLETE اعلام شود.** آخرین commitهای بعدی فقط Workflow و شواهدند، نه کد app/core.
+- **رگرسیون جامع نسخهٔ جدید: PASS تأییدشده.** [GitHub Actions #40949336798](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40949336798) روی آخرین HEAD کد محصول `683e2ad428d62e4980daa702438060621c845150`، تمام **۵ Job موفق**: Linux **۸٬۴۵۸ PASS / ۵ SKIP / ۰ FAIL/ERROR/Timeout** و Windows جمع یکتای سه shard **۸٬۴۵۶ PASS / ۷ SKIP / ۰ FAIL/ERROR/Timeout**. هر دو سیستم **۸٬۴۶۳ testcase از ۷۱۷ ماژول فعال**. کنترل JUnit union تأیید کرد تست اضافه/گم‌شده/تکراری وجود ندارد؛ MANIFEST SHA256 `b659af82c169aec6ca617cf98636dda447f84462a6088df344a105e807d5fbb0`. ۱۵ ماژول قراردادهای Historical/Release از این شمارش مستثنی‌اند و PASSهای قدیمی بدون اجرا روی این نسخه به شمارش اضافه نمی‌شوند.
+
+| شاهد اصل JUnit | Artifact ID | SHA256 فایل ZIP |
+|---|---:|---|
+| Linux کامل | `12931407341` | `ef72fa7fb9a8c42a43c5ccecf1809cd251eba034f3eda9cdb5b53ba6a6a789ef` |
+| Windows shard 0 | `12932041377` | `bbafc267892b9db6a3348d023b7882403d0829e0516c425ec240988398ec7f85` |
+| Windows shard 1 | `12931731830` | `deeb11c2517feb79664ca3d6182c857465b76f1a4dd74ae005e99c5772aacfe0` |
+| Windows shard 2 | `12931732416` | `c10021f1a304c824fc5b40b8fb0903cb6eaf11ae5fde871c91c4c71c3dfd43b1` |
+| Verified JUnit union | `12930863520` | `3d2f99959aa5dbfe76d2babc20cab23bfd2222aab1b42b29ca00c89938bc57b5` |
+
+تمام JSONهای Runner اصلی بر روی HEAD آزموده‌شده با `pytest_exit_code=0`، `timed_out=false` و `overall_green=true` مستقلاً بازبینی شدند؛ union `verified=true`. آخرین commitهای بعدی فقط Workflowهای تشخیصی و شواهد هستند، نه تغییر در کد app/core یا تست‌های رجعتی.
 
 ## ۳. مرز پذیرش و NO-GO
 
@@ -60,7 +70,7 @@ G2 طبق مصوبهٔ «نمایش زندهٔ چندرشته‌ای» در ای
 ## خلاصه وضعیت پروژه و این چت
 
 - G1: پذیرش خودکار محدود؛ ریشه کرش تاریخی قطعی اثبات نشده.
-- G2: نمایش `IfcGeographicElement` قبلاً پذیرفته؛ این نوبت `IfcSite` IFC4 و IFC2X3 وضع موجود در دامنهٔ *فقط بصری* پذیرفته شدند؛ پس از آخرین رگرسیون باید وضعیت گیت به‌صورت دقیق ثبت شود.
+- G2: نمایش `IfcGeographicElement` قبلاً پذیرفته؛ این نوبت `IfcSite` IFC4 و IFC2X3 وضع موجود در دامنهٔ *فقط بصری* پذیرفته شدند؛ رگرسیون جامع نهایی نیز موفق و در ماتریس گیت‌ها ثبت شد؛ این پذیرش همچنان فقط دامنهٔ نمایش بصریِ منبع‌محور است.
 - G3: فاقد قرارداد مستقل مصوب، NONBLOCKING.
 - G4: آزمایش چندمانیتور/GPU/Sleep-Resume روی Windows واقعی مالک و امضای او انجام نشده.
 - G5: تنها یک نسخهٔ واحد Windows مصوب، بیلد/EXE/Release انجام نشده.
