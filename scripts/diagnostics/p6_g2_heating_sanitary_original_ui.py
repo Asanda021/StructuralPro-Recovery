@@ -78,7 +78,7 @@ def pump(app, predicate, limit=115):
     return bool(predicate())
 
 
-def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> int:
+def examine(source: Path, expected_sha: str, model_name: str, record: Path, *, preferred_target_type: str | None = None) -> int:
     import ifcopenshell
     from PySide6.QtWidgets import QApplication
     from app.graphical_takeoff import GraphicalTakeoffDialog
@@ -151,7 +151,10 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
         # is preferred when available. The filter/pager must find that identity.
         stage = "BATCH_FILTER_SELECTION"
         candidates = [row for row in full
-                      if row["global_id"] in represented and row["global_id"] != old_gid]
+                      if row["global_id"] in represented and row["global_id"] != old_gid
+                      and (preferred_target_type is None or row["ifc_type"] == preferred_target_type)]
+        if not candidates:
+            raise ValueError("NO_OTHER_MEMBER_WITH_REQUIRED_SOURCE_CLASS")
         candidates.sort(key=lambda row: (
             0 if row["storey_id"] and row["storey_id"] != before.meshes[0].storey_id else 1,
             row["ifc_type"], row["global_id"]))
@@ -202,6 +205,8 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
             "different_real_source_member_selected": True,
             "different_storey_selected": target["storey_id"] != before.meshes[0].storey_id,
             "different_type_selected": target_type != before.meshes[0].ifc_type,
+            "required_target_type_verified": target_type == preferred_target_type
+                if preferred_target_type is not None else None,
             "represented_source_class_count": len(types),
             "represented_source_classes": sorted(types),
             "scene_member_count_after_swap": len(after.meshes),
