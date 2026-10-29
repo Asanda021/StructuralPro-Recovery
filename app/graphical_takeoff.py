@@ -1418,6 +1418,12 @@ class GraphicalTakeoffDialog(QDialog):
                 raise ValueError('عضو در نمای دوبعدی وجود ندارد.')
             self.highlight_ifc_member(gid,origin='tree')
         except (ValueError,RuntimeError,PermissionError) as exc:
+            # A failed tree/BOQ navigation must revoke an older 2D/3D pick.
+            panel=getattr(self,'_verified_selection_panel',None)
+            if panel is not None:
+                panel._fail_stale(exc)
+            else:
+                self.highlight_ifc_member('')
             self.status.setText('انتخاب مستند انجام نشد: '+str(exc))
 
     def _ifc_scene_selection(self):
@@ -1432,6 +1438,18 @@ class GraphicalTakeoffDialog(QDialog):
         panel=getattr(self,'_verified_selection_panel',None)
         holder=getattr(self,'_verified_selection_dialog',None)
         bridge=getattr(self,'_verified_project_selection',None)
+        view3d=getattr(self,'_ifc_3d_dialog',None)
+        if gid and view3d is not None and isValid(view3d):
+            try:
+                view3d.scene.validate_source()
+            except ValueError as exc:
+                # Do not leave a new 2D highlight beside a stale 3D source.
+                if panel is not None and holder is not None and isValid(holder):
+                    panel._fail_stale(exc)
+                else:
+                    self.highlight_ifc_member('')
+                self.status.setText('انتخاب چهارطرفه رد شد؛ منشأ سه‌بعدی نامعتبر است: '+str(exc))
+                return
         if panel is not None and holder is not None and isValid(holder) and bridge is not None and gid:
             doc=self.viewer.ifc_document
             try:
@@ -1455,12 +1473,23 @@ class GraphicalTakeoffDialog(QDialog):
         finally:self.canvas.scene.blockSignals(False)
         if panel is not None and holder is not None and isValid(holder):
             if gid:
-                panel.select_from_geometry(gid,origin='3d' if origin=='3d' else '2d')
+                selection=panel.select_from_geometry(
+                    gid,origin='3d' if origin=='3d' else '2d')
+                if selection is None:
+                    # Panel already revoked all four views on a stale context.
+                    return
             else:
                 panel.clear_selection(notify=False)
-        view3d=getattr(self,'_ifc_3d_dialog',None)
         if view3d is not None and isValid(view3d):
-            view3d.canvas.choose_member(gid or None)
+            shown_ids={mesh.global_id for mesh in view3d.scene.meshes}
+            if gid and gid not in shown_ids:
+                # IFC may contain a reviewed GlobalId with no renderable
+                # geometry. Do not invent a 3D shape or keep the previous pick.
+                view3d.canvas.choose_member(None)
+                self.status.setText(
+                    'عضو در 2D/درخت/BOQ مشخص شد اما هندسه واقعی قابل‌نمایش در 3D ندارد.')
+            else:
+                view3d.canvas.choose_member(gid or None)
         dialog=getattr(self,'_ifc_inspector',None)
         if dialog is not None and isValid(dialog) and not getattr(self,'_ifc_tree_syncing',False):
             self._ifc_tree_syncing=True
@@ -1579,7 +1608,12 @@ class GraphicalTakeoffDialog(QDialog):
                 if (self.viewer.kind != 'ifc' or self.viewer.ifc_document is None or
                     str(self.viewer.path) != str(source) or
                     self.viewer.ifc_document.source_sha256 != scene.source_sha256):
+                    self.highlight_ifc_member('')
                     self.status.setText('نسخه IFC تغییر کرده؛ انتخاب سه‌بعدی اعمال نشد.')
+                    return
+                if self.ifc_revision.text().strip() != scene.revision:
+                    self.highlight_ifc_member('')
+                    self.status.setText('Revision سه‌بعدی با مدل فعال متفاوت است؛ انتخاب پاک شد.')
                     return
                 try:
                     scene.validate_source()
