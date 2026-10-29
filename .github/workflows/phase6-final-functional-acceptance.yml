@@ -1,0 +1,137 @@
+name: Phase 6 final functional acceptance P1 to P5 UI and persistence
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-final-functional-acceptance.yml
+      - scripts/diagnostics/p6_phase6_final_acceptance_gate.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  phase6-functional-and-persistence:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+            kind: linux
+          - os: windows-2022
+            qpa: windows
+            kind: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 27
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      STRUCTURALPRO_P6_SCREENSHOT_DIR: phase6-final-screenshots
+      STRUCTURALPRO_E5_SCREENSHOTS: phase6-final-e5-screenshots
+    steps:
+      - name: Prevent Windows auto-conversion of tracked originals
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Guard exact source and unchanged original high-stress test
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = "4e3750a0e797073d40bacb395e448da4f14b6c56"
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = "07e8ce4567eec5122253cd220a49fed6e2e27d9e"
+          test "$(git rev-parse HEAD:core/projects/store.py)" = "0aa448bcc0f67bab12c37592f7abf01fd0e1765d"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install Linux Qt renderer dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - name: Install unchanged Windows/Linux application test requirements
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Compile current GUI, session, persistence and evidence gate
+        run: python -m compileall -q app/graphical_takeoff.py app/verified_selection_panel.py app/ifc_3d_viewport.py app/workspace_docks.py core/drawings/project_selection_bridge.py core/projects/store.py scripts/diagnostics/p6_phase6_final_acceptance_gate.py
+      - name: Real UI P1 P2 P3 E2 and native 2D 3D Tree BOQ dock acceptance
+        continue-on-error: true
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-views.xml
+          tests/test_phase6_p1_shell.py
+          tests/test_phase6_p2_source_mesh3d.py
+          tests/test_phase6_p2_real_ifc_3d.py
+          tests/test_phase6_p2_e2_restore.py
+          tests/test_phase6_p3_four_view_final.py
+          tests/test_phase6_p3_full_verified_boq.py
+          tests/test_phase6_p3_real_project_bridge.py
+          tests/test_phase6_p5_e5_docks.py
+      - name: P4 P5 operation workflows and saved source-backed histories
+        continue-on-error: true
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-operations.xml
+          tests/test_phase6_p4_contextual_takeoff.py
+          tests/test_phase6_p4_model_isolation.py
+          tests/test_phase6_p5_e3_templates.py
+          tests/test_phase6_p5_e3_ui.py
+          tests/test_phase6_p5_e4_sessions.py
+          tests/test_phase6_p5_e4_snapshot_race.py
+          tests/test_phase6_p5_e6_ifc_transfer_history.py
+          tests/test_phase6_p5_e6_live_context.py
+      - name: Real SQLite restore, backup, fail-closed recovery and PDF XLSX DOCX CSV
+        continue-on-error: true
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-persistence.xml
+          tests/test_phase5_backup_recovery.py
+          tests/test_phase4_sqlite_open_integrity.py
+          tests/test_phase4_sqlite_rescue.py
+          tests/test_phase1_manual_report_formats.py
+          tests/test_manual_formula_reports.py
+          tests/test_recovery_office_export_contract.py
+      - name: Native Windows SQLite open file-lock and reopen semantics
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-win-db.xml
+          tests/test_phase4_sqlite_windows_native.py
+      - name: Native Windows Qt 150-percent high DPI shell and dock
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        env:
+          QT_SCALE_FACTOR: '1.5'
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-win-dpi150.xml
+          tests/test_phase6_p5_e5_docks.py
+          tests/test_phase6_p1_shell.py
+      - name: Native Windows Qt 200-percent high DPI shell and dock
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        env:
+          QT_SCALE_FACTOR: '2'
+        run: >
+          python -m pytest -q --maxfail=1 -o faulthandler_timeout=0
+          --junitxml=p6-final-win-dpi200.xml
+          tests/test_phase6_p5_e5_docks.py
+          tests/test_phase6_p1_shell.py
+      - name: Fail closed on ANY missing, skipped, failed or invalid required JUnit
+        if: always()
+        run: python scripts/diagnostics/p6_phase6_final_acceptance_gate.py --platform ${{ matrix.kind }} --output p6-final-acceptance-${{ matrix.kind }}.json
+      - name: Preserve verifiable original JUnits and exact source SHA
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-final-acceptance-${{ matrix.os }}
+          path: |
+            p6-final-*.xml
+            p6-final-acceptance-*.json
+            phase6-final-screenshots/
+            phase6-final-e5-screenshots/
+          if-no-files-found: warn
+          retention-days: 14
