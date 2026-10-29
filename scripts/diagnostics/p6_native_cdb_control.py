@@ -18,7 +18,7 @@ import subprocess
 import sys
 import tempfile
 
-from p6_native_cdb_trace import debugger, sanitize, persist, MARKER
+from p6_native_cdb_trace import (debugger, sanitize, persist, MARKER, MODULE_BEGIN, MODULE_END, NEAR_BEGIN, NEAR_END, STACK_BEGIN)
 
 NATIVE_C_SOURCE = """
 int main(void) {
@@ -105,7 +105,7 @@ def control(output: Path) -> int:
     output.mkdir(parents=True, exist_ok=False)
     cdb = debugger()
     state = {
-        "kind": "p6_synthetic_second_chance_av_no_dump_calibration_v3",
+        "kind": "p6_synthetic_second_chance_av_pc_module_calibration_v4",
         "synthetic_only": True,
         "production_source_executed": False,
         "original_oracle_unchanged": True,
@@ -133,7 +133,13 @@ def control(output: Path) -> int:
             print(json.dumps({"status": state["status"], "build": build}), flush=True)
             return 3
         # sxd: ignore first chance, break on second chance. No .dump commands.
-        commands = f'sxd -c2 ".echo {MARKER}; .lastevent; .ecxr; kn 32; q" av; g'
+        crash_commands = (
+            f".echo {MARKER}; .lastevent; .ecxr; "
+            f".echo {MODULE_BEGIN}; lm a @rip; .echo {MODULE_END}; "
+            f".echo {NEAR_BEGIN}; ln @rip; .echo {NEAR_END}; "
+            f".echo {STACK_BEGIN}; kn 32; q"
+        )
+        commands = f'sxd -c2 "{crash_commands}" av; g'
         raw = root / "unredacted-debugger-output.txt"
         with raw.open("wb") as stream:
             process = subprocess.Popen(
@@ -155,11 +161,16 @@ def control(output: Path) -> int:
         "exception_code_verified": observed["exception_codes"] == ["0xC0000005"],
         "native_stack_symbols": observed["native_stack_symbols"][:20],
         "native_stack_available": observed["native_stack_available"],
+        "pc_module": observed["native_pc_module"],
+        "pc_module_proven_by_lm_address": observed["native_pc_module_proven_by_lm_address"],
+        "pc_nearest_symbol": observed["native_pc_nearest_symbol"],
         "finished_utc": datetime.now(timezone.utc).isoformat(),
     })
     state["test_control_passed"] = bool(
         not timed_out and state["control_second_chance_marked"]
         and state["exception_code_verified"] and state["native_stack_available"]
+        and state["pc_module"] == "synthetic_fault"
+        and state["pc_module_proven_by_lm_address"]
     )
     state["status"] = "CONTROL_PASS" if state["test_control_passed"] else "CONTROL_RED"
     persist(output / "control.json", state)
@@ -168,6 +179,8 @@ def control(output: Path) -> int:
         "second_chance": state["control_second_chance_marked"],
         "code_verified": state["exception_code_verified"],
         "stack_available": state["native_stack_available"],
+        "pc_module": state["pc_module"],
+        "pc_nearest_symbol": state["pc_nearest_symbol"],
         "symbols": state["native_stack_symbols"][:8],
     }), flush=True)
     return 0 if state["test_control_passed"] else 1
