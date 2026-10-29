@@ -66,15 +66,20 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "NOT_FULLY_VERIFIED",
+      "status": "PARTIAL_SOURCE_BACKED_14_IFC_ELEMENT_TYPES_VERIFIED",
       "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
-      "scope_source": "PR #24 approved eight-phase master, phase 6"
+      "scope_source": "PR #24 approved eight-phase master, phase 6",
+      "evidence_run": 40874887085,
+      "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
+      "automated_passes_per_platform": 30,
+      "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
+      "remaining_scope": "Commercial real varied geometry and full architecture/finishes/MEP/renovation/site detail, large capacity and owner Windows UAT not verified."
     },
     {
       "id": "G3",
       "name": "P6-6_scope_and_acceptance",
-      "status": "NO_ACCEPTANCE_EVIDENCE",
-      "reason": "Previous P6-5 reports explicitly keep P6-6 pending; no accepted P6-6 implementation/test report was found in the current PR. Do not manufacture a new priority or a completion claim."
+      "status": "PENDING_NO_SEPARATELY_DEFINED_ACCEPTANCE_CONTRACT",
+      "reason": "Existing reports label P6-6 as pending, but the available approved 8-phase master does not supply an explicit distinct P6-6 input/output/test contract. Do not invent scope or falsely claim P6-6 completion. Source-backed 3D correction was delivered under the already mandated Phase6 G2."
     },
     {
       "id": "G4",
@@ -109,7 +114,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_PHASE6_CLOSURE",
+  "last_decision": "NO_GO_PHASE6_CLOSURE_WITH_G2_PARTIAL_DEFECT_FIXED",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -118,5 +123,8 @@
   "allow_exe": false,
   "allow_main_change": false,
   "require_new_test_run": false,
-  "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision."
+  "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
+  "last_evidence_run": 40874887085,
+  "last_source_verified_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-multidiscipline-ifc4/REPORT.fa.md"
 }
