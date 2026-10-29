@@ -1,0 +1,145 @@
+{
+  "product_source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "native_ci_source_sha": "e012f0acf1f2dd475f79e49fc43552c10850b47e",
+  "official_progress_percent": 85,
+  "roadmap_phases": 8,
+  "phase6_decision": "PHASE 6 PARTIAL / NO-GO",
+  "files": {
+    "CI_VERIFIED.json": {
+      "bytes": 8115,
+      "sha256": "d3dc62eab17a447361168ad45fe13c96788b5dfd857f893950167219331e8613"
+    },
+    "G2_ENGINEERING.fa.md": {
+      "bytes": 7947,
+      "sha256": "13d5abab31ee76a24063772685b9910c21e58584bc88a82a93760dff9cd68755"
+    },
+    "REPORT.fa.md": {
+      "bytes": 17300,
+      "sha256": "d662b4e00c239ce2bf541364565947cec3bc45bf232d8422e39bdd835cea0336"
+    },
+    "RTL_EXPORTS.fa.md": {
+      "bytes": 6743,
+      "sha256": "a3c76c7cf5f589175588fc6639949fe09c6c26bbf25d230ba57849a7e5505638"
+    },
+    "WINDOWS_OWNER_UAT.fa.md": {
+      "bytes": 2427,
+      "sha256": "7cac6a637595bfefd44077889c5883e883003f750f2d918f86ade94bfb8b704c"
+    },
+    "additional-covering-original-gui.json": {
+      "bytes": 275,
+      "sha256": "5b020f7b2f6109ded5612cbc8cc72aa75622974cd3586aa3ca4beda2fb89e1cc"
+    },
+    "additional-independent-sources.json": {
+      "bytes": 2693,
+      "sha256": "fbf844f57e9e977743d06e660d6d729b7ae0942ff4c48fe53a4900d5dc61a075"
+    },
+    "additional-probe-harness-failures.json": {
+      "bytes": 368,
+      "sha256": "e9cea25d11d9891b0cadd469878f333bb6e398af656a6216ae23be3e60647a5a"
+    },
+    "additional-project-original-gui.json": {
+      "bytes": 1013,
+      "sha256": "07b3d525865e1274a48725762d34310535c264595c3783cd3b7e469299bab5dd"
+    },
+    "additional-reference-download.py": {
+      "bytes": 1665,
+      "sha256": "d5b0615f73791d301ea812a20e9a0ed1a017e96e3a29fe1938332743fdf72ae4"
+    },
+    "additional-reference-engineering.py": {
+      "bytes": 1746,
+      "sha256": "831bcdbe791ab5802b5ab33933a051be0fd52d7b5978d38306e70db17b3d7323"
+    },
+    "additional-reference-gui.py": {
+      "bytes": 2160,
+      "sha256": "1476eed3f10e186826842a4d3d3972ce04a0f1700dea6b82f7bcb76d55cb9989"
+    },
+    "artifact-inventory.json": {
+      "bytes": 3286,
+      "sha256": "ab3b3d5477f8cab4c0f8bc8610968ef2901bca57e5229583ce7fcae05125eaa7"
+    },
+    "build-axes-green.log": {
+      "bytes": 99,
+      "sha256": "8b031ea2020cb0faeb68e774f5aef7ef8c834c93991117711f8578201cecfe91"
+    },
+    "build-axes-green.xml": {
+      "bytes": 2482,
+      "sha256": "08080d70a2807c8e500d2d13b82287af9474b065d24f2f19f4981964edc42eb7"
+    },
+    "build-axes-red.log": {
+      "bytes": 12057,
+      "sha256": "aade17019a3d71035d72b373e8b4fec19f31635a6053cfabf9ab905a35b943f6"
+    },
+    "build-axes-red.xml": {
+      "bytes": 12963,
+      "sha256": "da8aa1baa8c448da6e2fc689a51ff49302db1fa654054921d0a3d3c9b1dc0878"
+    },
+    "font-probe-invalid-attempts.json": {
+      "bytes": 368,
+      "sha256": "bd45ab4d988429300e58b636b9e28793e79175ddba67fed4acc5caca5fa97d15"
+    },
+    "historical-local.json": {
+      "bytes": 23358,
+      "sha256": "31d6efa1110708d8583cea0ed0c27b8c91b4f9e574159d83f3439b7254d2101f"
+    },
+    "historical-local.log": {
+      "bytes": 16614,
+      "sha256": "135a252e9fe6d28864949bde47a34922f99db6e30761d9e150b9a3783758d208"
+    },
+    "historical-local.xml": {
+      "bytes": 19849,
+      "sha256": "003ff688e5864a980b8e76da8e4e9b8dc2bcb9b2e428fd5d9c4f953f3f9a38b7"
+    },
+    "local-original-gui-sources.json": {
+      "bytes": 4261,
+      "sha256": "8f1094f53e78bb6edcfaadafd15cf8c51a5675dc56ac6a2d24554bf3c17d1f17"
+    },
+    "native-font-100.json": {
+      "bytes": 1249,
+      "sha256": "405bb91ef09b6af60c29b24b511cdf87fb8a52266f1a45018ff0927b037952d8"
+    },
+    "native-font-150.json": {
+      "bytes": 1249,
+      "sha256": "229123b1e88900f60b80b77f8f20ad39f7a1d8772356ea690dc2bc25e0b99b87"
+    },
+    "native-font-200.json": {
+      "bytes": 1249,
+      "sha256": "ab4c0dc062900b5e6e1eeddfa0bfa6a7d1733c2893a1caee283a5ba403b79ab9"
+    },
+    "native-shell-artifacts.json": {
+      "bytes": 1526,
+      "sha256": "3b1f540bb8fb29f7e36faf6aa375e4b92f8cc670f8ae42c43774f8ddf6943a9c"
+    },
+    "native-shell-red-ci-dependency.json": {
+      "bytes": 894,
+      "sha256": "dde17e142428d551a65d1dd822f63270016abf03c14bde15fe65536f3c404225"
+    },
+    "native-shell-verified.json": {
+      "bytes": 1145,
+      "sha256": "d262f1f14909520283ebda3802602c43d107aa247e87e1e975e8e8e8523183b1"
+    },
+    "original-ci-junit-json-logs.tar.gz": {
+      "bytes": 757328,
+      "sha256": "f08c4bdc51bcc2222cf83e5fc5f0afa78b659a269a5cf9fd3b019e17c6b654d5"
+    },
+    "original-native-font-shell-evidence.tar.gz": {
+      "bytes": 199351,
+      "sha256": "2f6fb2516cf27fa037541f9e2fe6480b04983bdb8f30df1810d4ec1de729b73d"
+    },
+    "post-product-workflow-only-compare.json": {
+      "bytes": 1764,
+      "sha256": "1b8c68faa14536d064d866b92167be53e47ca13967afe46da14fe71399e590c0"
+    },
+    "san-placement-numerical.json": {
+      "bytes": 54516,
+      "sha256": "fc9c94694fe708b256d80ef69a81c4f8237581e732c7780f824f5e06f841b51b"
+    },
+    "targeted-local.log": {
+      "bytes": 110,
+      "sha256": "41c7e63a7ec1640ca63b837991f2e480018ee3daeb10b9ae8935fffb3789d7ff"
+    },
+    "targeted-local.xml": {
+      "bytes": 7104,
+      "sha256": "016a3b565992593efca65000d1596e140293ac5a776ae47fae5ae51134156603"
+    }
+  }
+}

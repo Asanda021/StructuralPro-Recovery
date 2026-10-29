@@ -1,0 +1,558 @@
+{
+  "execution": "historical",
+  "run_utc": "2026-10-29T18:14:43.265721+00:00",
+  "disposable_source_policy": {
+    "active_workflows": 0,
+    "verified_quarantined_workflows": 193
+  },
+  "historical_modules_excluded_from_current": [],
+  "source_active_workflows": 57,
+  "source_active_workflows_copied": 0,
+  "historical_workflows_copied_to_temp_only": 193,
+  "github_actions_used": false,
+  "build_or_release_performed": false,
+  "windows_gui_validated": false,
+  "junit_report_written": true,
+  "shard_count": 1,
+  "shard_index": 0,
+  "current_test_modules_total": 0,
+  "current_test_modules_in_shard": 0,
+  "current_test_manifest_sha256": null,
+  "pytest_faulthandler_timeout": 0,
+  "pytest_exit_code": 0,
+  "timed_out": false,
+  "timeout_seconds": 300.0,
+  "stats": {
+    "collected": 130,
+    "passed": 130,
+    "failed": 0,
+    "skipped": 0,
+    "blocked_pdf_dependency": 0,
+    "blocked_pyside6_dependency": 0,
+    "unexpected_failures": [],
+    "failures": [],
+    "results": [
+      {
+        "name": "tests.test_binary_build_security_contract::test_mobile_contract_automatic_and_android_binary_manual",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_p37_disables_all_automatic_release_and_build_triggers",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_p100_owner_main_only_with_isolated_publish_permissions",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>0]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>1]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>2]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>3]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>4]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>5]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>6]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>7]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>8]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mutated_android_policy_must_fail_closed[<lambda>9]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[push-Asanda021-True-refs/heads/main-Asanda021/StructuralPro-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[pull_request-Asanda021-True-refs/heads/main-Asanda021/StructuralPro-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[release-Asanda021-True-refs/heads/main-Asanda021/StructuralPro-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[workflow_dispatch-Asanda021-False-refs/heads/main-Asanda021/StructuralPro-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[workflow_dispatch-Asanda021-True-refs/tags/v1-Asanda021/StructuralPro-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[workflow_dispatch-Asanda021-True-refs/heads/main-attacker/fork-True-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[workflow_dispatch-Asanda021-True-refs/heads/main-Asanda021/StructuralPro-False-True]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_mock_authorization_denies_invalid_requests[workflow_dispatch-Asanda021-True-refs/heads/main-Asanda021/StructuralPro-True-False]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_indirect_build_script_is_caught",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_reusable_workflow_needs_review_not_certified",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_upload_without_identified_build_is_reviewed_not_assumed_binary",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_binary_build_security_contract::test_local_guard_presence_never_proves_actual_github_environment",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/windows-release.yml]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/edition-builds.yml]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/android-build.yml]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_binary_build_requires_explicit_owner_dispatch[.github/workflows/p37-real-product-deployment.yml]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_every_binary_producer_has_an_owner_approval_gate",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_owner_approved_binary_build_workflows::test_automatic_cad_smoke_runs_only_unit_tests_without_compiling_exe",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_real_product_deployment::test_p37_deployment_contract_is_complete",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_real_product_deployment::test_p37_is_desktop_first_and_does_not_fake_cloud_deployment",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_build_and_release_jobs_separate",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_unapproved_release_default_false",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_release_artifact_bound_to_same_run_and_validated_before_publish",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>0]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>1]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>2]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>3]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>4]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>5]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>6]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>7]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>8]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_publish_mutations_rejected[<lambda>9]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_release_version_is_not_interpolated_into_powershell_source",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[condition]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[environment]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[secret]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[needs]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[write_permission]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[preflight]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p37_release_gate_separation::test_auditor_marks_mutated_publication_unprotected[publish_approval]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p61_p70_release_delivery::test_p61_p70_are_runtime_implemented_but_customer_release_is_fail_closed",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p61_p70_release_delivery::test_release_contracts_cover_all_delivery_stages",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p61_p70_release_delivery::test_release_notes_match_canonical_version",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_p61_p70_release_delivery::test_windows_release_workflow_contains_required_delivery_gates",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_compliance::test_compliance_inventory_exists_and_has_no_license_claims_without_evidence",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_compliance::test_requirements_are_explicit_and_optional_integrations_are_not_hidden",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_compliance::test_release_workflow_has_deterministic_artifact_inputs",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release::test_windows_release_script_uses_canonical_version",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release::test_installer_paths_are_valid_in_template",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release::test_release_workflow_validates_payload_and_installer",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_installer_uses_stable_version_placeholder",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_build_script_rejects_version_drift",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_release_workflow_has_stable_placeholder_injection",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_release_workflow_enforces_tag_version_consistency",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_release_workflow_generates_traceability_manifest",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_release_manifest_script_contains_source_to_artifact_chain",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_10_release_integrity::test_checksum_script_requires_all_release_artifacts",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_has_deterministic_rtl_columns_and_validation",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_xlsx_export_has_rtl_detail_summary_and_info_sheets",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_pdf_export_is_non_empty_and_valid",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_pdf_persian_text_is_shaped_and_visual_rtl",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_multi_page_pdf_repeats_table_and_has_page_footer",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_ci_jobs_install_canonical_pdf_dependencies",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_csv_export_keeps_persian_bom_and_named_headers",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-quantity]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-unit_price]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-total]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-\\u0645\\u0642\\u062f\\u0627\\u0631]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-\\u0628\\u0647\\u0627\\u06cc \\u0648\\u0627\\u062d\\u062f]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[True-\\u0645\\u0628\\u0644\\u063a]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-quantity]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-unit_price]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-total]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-\\u0645\\u0642\\u062f\\u0627\\u0631]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-\\u0628\\u0647\\u0627\\u06cc \\u0648\\u0627\\u062d\\u062f]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[-1-\\u0645\\u0628\\u0644\\u063a]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-quantity]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-unit_price]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-total]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-\\u0645\\u0642\\u062f\\u0627\\u0631]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-\\u0628\\u0647\\u0627\\u06cc \\u0648\\u0627\\u062d\\u062f]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[nan-\\u0645\\u0628\\u0644\\u063a]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-quantity]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-unit_price]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-total]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-\\u0645\\u0642\\u062f\\u0627\\u0631]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-\\u0628\\u0647\\u0627\\u06cc \\u0648\\u0627\\u062d\\u062f]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[inf-\\u0645\\u0628\\u0644\\u063a]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-quantity]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-unit_price]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-total]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-\\u0645\\u0642\\u062f\\u0627\\u0631]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-\\u0628\\u0647\\u0627\\u06cc \\u0648\\u0627\\u062d\\u062f]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_report_rejects_invalid_numbers_in_both_schemas[\\u0646\\u0627\\u0645\\u0639\\u062a\\u0628\\u0631-\\u0645\\u0628\\u0644\\u063a]",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_17_reports_excel_pdf::test_persian_report_rejects_empty_description_and_duplicate_row_numbers",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_38_pre_release_freeze::test_version_is_canonical",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_38_pre_release_freeze::test_no_release_blocker_markers_in_core",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_38_pre_release_freeze::test_release_surfaces_remain_present",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_38_pre_release_freeze::test_freeze_smoke_project",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_41_ci_dependency_parity::test_ci_workflows_install_canonical_runtime_requirements",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_41_ci_dependency_parity::test_ci_workflows_keep_test_runner_explicit",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_42_windows_runtime_smoke::test_app_has_ci_runtime_smoke_exit_path",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_42_windows_runtime_smoke::test_windows_workflow_executes_application_smoke",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_43_release_artifact_integrity::test_release_workflow_validates_manifest_artifact_hashes",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_43_release_artifact_integrity::test_release_manifest_contains_artifact_integrity_fields",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_49_windows_installer_acceptance::test_windows_release_runs_installed_application_smoke",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_49_windows_installer_acceptance::test_installer_smoke_validates_payload_and_version",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_import_all_core_modules",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_project_integrity_edge_cases",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_export_is_canonical_and_round_trip_is_lossless",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_history_failed_mutation_is_atomic",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_revision_snapshots_are_isolated_and_invalid_restore_is_rejected",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_backup_package_rejects_tampering",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_audit_records_are_append_only_snapshots",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_workflow_health_has_structured_qc",
+        "outcome": "passed"
+      },
+      {
+        "name": "tests.test_priority_9_qa::test_priority9_regression_surface_files_exist",
+        "outcome": "passed"
+      }
+    ]
+  },
+  "overall_green": true
+}

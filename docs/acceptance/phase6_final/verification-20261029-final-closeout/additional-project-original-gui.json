@@ -1,0 +1,39 @@
+{
+  "model": "community-project-location",
+  "status": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
+  "quantity_authority": false,
+  "model_is_real_published_reference": true,
+  "full_simultaneous_geometry_accepted": false,
+  "source_sha256_matches": true,
+  "source_element_count": 550,
+  "source_represented_count": 522,
+  "source_unrepresented_count": 28,
+  "different_real_source_member_selected": true,
+  "different_storey_selected": true,
+  "different_type_selected": true,
+  "represented_source_class_count": 13,
+  "represented_source_classes": [
+    "IfcBeam",
+    "IfcBuildingElementProxy",
+    "IfcColumn",
+    "IfcCovering",
+    "IfcDoor",
+    "IfcFurniture",
+    "IfcMember",
+    "IfcOpeningElement",
+    "IfcRoof",
+    "IfcSanitaryTerminal",
+    "IfcSlab",
+    "IfcWall",
+    "IfcWindow"
+  ],
+  "scene_member_count_after_swap": 1,
+  "catalog": {
+    "displayed": 1,
+    "not_loaded": 521,
+    "without_geometry": 28
+  },
+  "old_pick_revoked": true,
+  "boq_written": false,
+  "duration_seconds": 20.29
+}

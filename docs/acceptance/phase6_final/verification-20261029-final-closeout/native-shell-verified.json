@@ -1,0 +1,44 @@
+{
+  "run": 40933689980,
+  "source_sha": "e012f0acf1f2dd475f79e49fc43552c10850b47e",
+  "product_equivalent_to": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "all_3_jobs_success": true,
+  "rows": [
+    {
+      "artifact_id": 12924785017,
+      "scale": "2",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "native_qpa": "windows",
+      "child_qpa": "windows",
+      "junit_sha256": "ee300756709f2565ccc3887ac75fa9ec3944d49eb04f808acf3246ed195419f0"
+    },
+    {
+      "artifact_id": 12924191585,
+      "scale": "1",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "native_qpa": "windows",
+      "child_qpa": "windows",
+      "junit_sha256": "19ffbed5c03a50d4bb9fdb79e09ff7d7559aeadb4ce3ac9990202bd4692778bd"
+    },
+    {
+      "artifact_id": 12923133912,
+      "scale": "1.5",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "native_qpa": "windows",
+      "child_qpa": "windows",
+      "junit_sha256": "14631869f1595dcb3daebf33cf65d695e6042bbb35dfece7e6e75d1ea20e5933"
+    }
+  ]
+}

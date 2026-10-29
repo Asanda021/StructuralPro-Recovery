@@ -1,0 +1,130 @@
+{
+  "kind": "phase6_g2_real_published_ifc4_heating_sanitary_original_gui",
+  "upstream": "RWTH-E3D/DigitalHub",
+  "source_pinned_commit": "36565d529b4dadeca625de2b793d7e16700171e9",
+  "tested_product_sha": "34a1b81237cbbe813f6979e169c70db7ddc93089",
+  "models_are_same_published_project_not_independent_buildings": true,
+  "source_files_uploaded": false,
+  "boq_authority": false,
+  "all_source_categories_accepted": false,
+  "reports": [
+    {
+      "model": "heating",
+      "status": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
+      "pinned_blob_verified": true,
+      "child_exit_code": 0,
+      "quantity_authority": false,
+      "model_is_real_published_reference": true,
+      "full_simultaneous_geometry_accepted": false,
+      "source_sha256_matches": true,
+      "source_element_count": 1795,
+      "source_represented_count": 1795,
+      "source_unrepresented_count": 0,
+      "different_real_source_member_selected": true,
+      "different_storey_selected": true,
+      "different_type_selected": true,
+      "represented_source_class_count": 8,
+      "represented_source_classes": [
+        "IfcPipeFitting",
+        "IfcPipeSegment",
+        "IfcPump",
+        "IfcSensor",
+        "IfcSpaceHeater",
+        "IfcTank",
+        "IfcUnitaryEquipment",
+        "IfcValve"
+      ],
+      "scene_member_count_after_swap": 1,
+      "catalog": {
+        "displayed": 1,
+        "not_loaded": 1794,
+        "without_geometry": 0
+      },
+      "old_pick_revoked": true,
+      "boq_written": false,
+      "duration_seconds": 32.45,
+      "pinned_source_sha256": "a5603e8f6aa4cbf63aece92f92f503e9a578702d8fe96a6d4661490f1843710d"
+    },
+    {
+      "model": "sanitary",
+      "status": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
+      "pinned_blob_verified": true,
+      "child_exit_code": 0,
+      "quantity_authority": false,
+      "model_is_real_published_reference": true,
+      "full_simultaneous_geometry_accepted": false,
+      "source_sha256_matches": true,
+      "source_element_count": 1034,
+      "source_represented_count": 1034,
+      "source_unrepresented_count": 0,
+      "different_real_source_member_selected": true,
+      "different_storey_selected": true,
+      "different_type_selected": true,
+      "represented_source_class_count": 9,
+      "represented_source_classes": [
+        "IfcFilter",
+        "IfcFlowMeter",
+        "IfcOpeningElement",
+        "IfcPipeFitting",
+        "IfcPipeSegment",
+        "IfcSanitaryTerminal",
+        "IfcUnitaryEquipment",
+        "IfcValve",
+        "IfcWasteTerminal"
+      ],
+      "scene_member_count_after_swap": 1,
+      "catalog": {
+        "displayed": 1,
+        "not_loaded": 1033,
+        "without_geometry": 0
+      },
+      "old_pick_revoked": true,
+      "boq_written": false,
+      "duration_seconds": 32.42,
+      "pinned_source_sha256": "0b1d6b0abd8d4cc3f5f798c7581bed2b39b40110ba6348d5470bbef646cfed79"
+    },
+    {
+      "model": "sanitary_v1",
+      "status": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
+      "pinned_blob_verified": true,
+      "child_exit_code": 0,
+      "quantity_authority": false,
+      "model_is_real_published_reference": true,
+      "full_simultaneous_geometry_accepted": false,
+      "source_sha256_matches": true,
+      "source_element_count": 1012,
+      "source_represented_count": 1012,
+      "source_unrepresented_count": 0,
+      "different_real_source_member_selected": true,
+      "different_storey_selected": true,
+      "different_type_selected": true,
+      "represented_source_class_count": 8,
+      "represented_source_classes": [
+        "IfcFilter",
+        "IfcFlowMeter",
+        "IfcPipeFitting",
+        "IfcPipeSegment",
+        "IfcSanitaryTerminal",
+        "IfcUnitaryEquipment",
+        "IfcValve",
+        "IfcWasteTerminal"
+      ],
+      "scene_member_count_after_swap": 1,
+      "catalog": {
+        "displayed": 1,
+        "not_loaded": 1011,
+        "without_geometry": 0
+      },
+      "old_pick_revoked": true,
+      "boq_written": false,
+      "duration_seconds": 23.33,
+      "pinned_source_sha256": "5d6b7998d9060626132f56010a75c238ebc00ed6b0f937f2c1db0ac46fbff87a"
+    }
+  ],
+  "selected_models": [
+    "heating",
+    "sanitary",
+    "sanitary_v1"
+  ],
+  "status": "PASS_SELECTED_PINNED_SOURCE_BATCH_LIMITED_SCOPE"
+}

@@ -1,0 +1,12 @@
+[
+  {
+    "attempt": 1,
+    "error": "AttributeError",
+    "cause": "Diagnostic harness incorrectly referenced _cad_process instead of real _cad_job; no product failure proven."
+  },
+  {
+    "attempt": 2,
+    "error": "AttributeError",
+    "cause": "Diagnostic harness omitted explicit source Revision, so guarded 3D dialog was absent; no product patch applied."
+  }
+]

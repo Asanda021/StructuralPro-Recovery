@@ -1,0 +1,9 @@
+{
+  "status": "PASS_REAL_IFCCOVERING_BATCH_AND_PICK",
+  "source_sha256": "2c12c00c675e43fb872af8bec583c29e887e75a40c614d8585abcc2baf7590ed",
+  "source_member_count": 550,
+  "source_covering_count": 16,
+  "displayed": 1,
+  "quantity_authority": false,
+  "boq_written": false
+}

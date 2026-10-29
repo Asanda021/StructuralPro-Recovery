@@ -1,0 +1,116 @@
+{
+  "source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "run_id": 40929200449,
+  "artifacts": [
+    {
+      "id": 12923575447,
+      "name": "p6-broad-current-windows-1",
+      "digest": "sha256:8ff4e343742b87d9f596a456b5e033542b52ad610cf7c6fb6bc034d426560938",
+      "size": 142436
+    },
+    {
+      "id": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "digest": "sha256:35f667d016e018f16b38ecef7ac06ee5895f55304e7b33a3c134bc1a078b7b10",
+      "size": 132010
+    },
+    {
+      "id": 12922802946,
+      "name": "p6-broad-current-windows-0",
+      "digest": "sha256:f3c887b94e8b1b1ac89e9d08657669240c568a6394a395ba0f8c375346bea3d0",
+      "size": 113163
+    },
+    {
+      "id": 12922558861,
+      "name": "p6-broad-shard-union-verification",
+      "digest": "sha256:f285de99bdd81035989dfbff3c66808078321a86572e99917cb5b17ba92ef89f",
+      "size": 4248
+    },
+    {
+      "id": 12922407211,
+      "name": "p6-broad-current-linux",
+      "digest": "sha256:ffb1fc9c8b63107c18f103ac155ddbec3479aa4e49ee4c1961631ccb59777743",
+      "size": 353370
+    },
+    {
+      "id": 12921902346,
+      "name": "p6-closeout-engineering-windows-2022",
+      "digest": "sha256:cb1c1c5fdc8c5d894df27160725aaef2cefb01acdc8065ed88033a726e32b882",
+      "size": 15594
+    },
+    {
+      "id": 12921797451,
+      "name": "p6-closeout-engineering-ubuntu-24.04",
+      "digest": "sha256:eba647f3eab1d2fb0989ed5ac84c27b25afe5cd6f6d01df86274677256d9b8b2",
+      "size": 15505
+    },
+    {
+      "id": 12921539419,
+      "name": "p6-broad-current-windows-2",
+      "digest": "sha256:802d059e2e0c8fa163c720766d7fff11a9cdb303b88e0fa3c52d5a697de306b9",
+      "size": 119744
+    },
+    {
+      "id": 12921114084,
+      "name": "p6-final-acceptance-ubuntu-24.04",
+      "digest": "sha256:502bd8e0ce9f7b07cc3172fc516bdd43c4a14039c491ac691d07b4b22cad5b98",
+      "size": 106004
+    }
+  ],
+  "jobs": [
+    {
+      "id": 123642791712,
+      "name": "current-suite-linux",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792077,
+      "name": "current-suite-windows (0)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792154,
+      "name": "phase6-functional-and-persistence (windows-2022, windows, windows)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792178,
+      "name": "current-suite-windows (2)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792290,
+      "name": "phase6-functional-and-persistence (ubuntu-24.04, offscreen, linux)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792390,
+      "name": "current-suite-windows (1)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792420,
+      "name": "source-engineering-audit (ubuntu-24.04, offscreen)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123642792644,
+      "name": "source-engineering-audit (windows-2022, windows)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123652792563,
+      "name": "verify-full-union",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

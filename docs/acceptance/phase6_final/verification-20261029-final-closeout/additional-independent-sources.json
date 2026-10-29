@@ -1,0 +1,78 @@
+[
+  {
+    "source_repository": "buildingsmart-community/Community-Sample-Test-Files",
+    "source_commit": "7ddf57a201f88a0c213d5322b02ed15e94a60a40",
+    "source_path": "IFC 4.0.2.1 (IFC 4)/Example project location/example project location.ifc",
+    "source_license": "CC BY 4.0",
+    "status": "PINNED_LFS_BYTES_VERIFIED",
+    "sha256": "2c12c00c675e43fb872af8bec583c29e887e75a40c614d8585abcc2baf7590ed",
+    "bytes": 2959580,
+    "pointer_git_blob_sha1": "a92907767b710f716aa86d3bba3ba83233106bcd",
+    "schema": "IFC4",
+    "element_count": 550,
+    "types": {
+      "IfcBeam": 3,
+      "IfcBuildingElementProxy": 13,
+      "IfcColumn": 30,
+      "IfcCovering": 16,
+      "IfcCurtainWall": 27,
+      "IfcDoor": 21,
+      "IfcMember": 186,
+      "IfcRoof": 2,
+      "IfcSlab": 24,
+      "IfcWall": 78,
+      "IfcWindow": 69,
+      "IfcSanitaryTerminal": 22,
+      "IfcOpeningElement": 58,
+      "IfcFurniture": 1
+    },
+    "site_count": 1,
+    "engineering_contract": "ACCEPTED",
+    "source_ledger_count": 550,
+    "contract_status": "REJECTED",
+    "error_class": "ValueError",
+    "reason": "GEOMETRY_CAPACITY"
+  },
+  {
+    "source_repository": "buildingsmart-community/Community-Sample-Test-Files",
+    "source_commit": "7ddf57a201f88a0c213d5322b02ed15e94a60a40",
+    "source_path": "IFC 4.0.2.1 (IFC 4)/ISO Spec archive/wall-with-opening-and-window.ifc",
+    "source_license": "CC BY 4.0",
+    "status": "PINNED_LFS_BYTES_VERIFIED",
+    "sha256": "f1cfe45b18968f2edb925549219f3d62331246c84c48770b20cfd0ce66307351",
+    "bytes": 12586,
+    "pointer_git_blob_sha1": "897db4e36c3387613224cf2f5457fc0c718e6222",
+    "schema": "IFC4",
+    "element_count": 3,
+    "types": {
+      "IfcWallStandardCase": 1,
+      "IfcWindow": 1,
+      "IfcOpeningElement": 1
+    },
+    "site_count": 1,
+    "engineering_contract": "ACCEPTED",
+    "source_ledger_count": 3,
+    "display_contract": "ACCEPTED_BOUNDED",
+    "quantity_authority": false
+  },
+  {
+    "source_repository": "buildingsmart-community/Community-Sample-Test-Files",
+    "source_commit": "7ddf57a201f88a0c213d5322b02ed15e94a60a40",
+    "source_path": "IFC 4.0.2.1 (IFC 4)/ISO Spec archive/surface-model.ifc",
+    "source_license": "CC BY 4.0",
+    "status": "PINNED_LFS_BYTES_VERIFIED",
+    "sha256": "194a9d979a32f36a92dc3494d46a19a14db230b7be7ac3dbab8e3a8b496db13d",
+    "bytes": 6259,
+    "pointer_git_blob_sha1": "09a536692bbf76aa6cb5978e39355cf050597fce",
+    "schema": "IFC4",
+    "element_count": 1,
+    "types": {
+      "IfcBuildingElementProxy": 1
+    },
+    "site_count": 0,
+    "engineering_contract": "ACCEPTED",
+    "source_ledger_count": 1,
+    "display_contract": "ACCEPTED_BOUNDED",
+    "quantity_authority": false
+  }
+]

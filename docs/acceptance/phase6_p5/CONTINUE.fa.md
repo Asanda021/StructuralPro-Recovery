@@ -1,3 +1,15 @@
+## تصمیم جاری پایان فنی فاز ۶ — ۲۹ اکتبر ۲۰۲۶
+
+**PHASE 6 PARTIAL / NO-GO**؛ نه CLOSED. ایراد SAN با اثبات استاندارد IFC4 IfcBuildAxes و RED→GREEN اصلاح شد؛ داده منبع بازنویسی و تلرانس 1e-12 افزایش نیافت. Source محصول `efaab3c5dc335012ef6b8fec89a041247b509207`؛ [رگرسیون 40929200449](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40929200449) هر ۹ Job سبز: Linux8454PASS/5SKIP، Windows8452PASS/7SKIP، 8459شناسه یکتا/716ماژول، صفر تکرار/مفقود/Timeout. ۱۵ قرارداد تاریخی جدا، هر سیستم۱۳۰PASS؛ نه افزوده به آمار فعال.
+
+SAN v1/v2 و گرمایش در Qt/QProcess/Worker واقعی هر دو OS پذیرفته در دامنه دو بسته؛ ۳منبع مستقل دیگر و IfcCovering واقعی محلی بررسی شدند؛ پذیرش مستقل محوطه/بازسازی هنوز NOT VERIFIED و G2 کلی BLOCKED. G1 محدود پذیرفته با علت تاریخی اثبات‌نشده؛ G3 بدون قرارداد مستقل مانع نیست؛ G5 یک Windows جامع unified قطعی، بدون EXE/Release؛ G4 UAT فیزیکی مالک باز.
+
+تصویر مربع‌های shell متعلق به child offscreen بود، نه backend واقعی windows. متغیر backend CI اصلاح و [40933689980](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40933689980) در ۱۰۰/۱۵۰/۲۰۰٪ هرکدام۱۱PASS بومی با JUnit ثبت شد؛ تصویر native۲۰۰ خواناست. Source مکمل CI `e012f0acf1f2dd475f79e49fc43552c10850b47e` فقط۴Workflow با Source broad تفاوت دارد؛ محصول/تست‌ها ثابت‌اند. همه شکست‌های harness/وابستگیCI و تشخیصی قدیمی حفظ و از PASS محصول جدا ثبت شده‌اند.
+
+[گزارش نهایی، اصل شواهد، گیت‌ها و چک‌لیست مالک](../phase6_final/verification-20261029-final-closeout/REPORT.fa.md). تنها گام بعد: پذیرش مستند باقی‌مانده G2 محوطه/بازسازی در همان دامنه؛ UAT مالک مستقل است. ۸فاز/۸۵٪ ثابت؛ PR34 Open/Draft/Unmerged؛ بدون Merge/main/ForcePush/EXE/Release/فاز۷.
+
+---
+
 ## وضعیت جاری مقایسه تایمر — ۲۹ اکتبر ۲۰۲۶
 
 Source `ed56c430c64fce32eca0a27c0b4b06a34ea59e85`؛ Tree `bd64133456d3bc6ea3a946d311544949b7aad2cb`؛ [Run 40853080441](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40853080441) FAILURE واقعی: ترتیب A45–C0–C0–A45 روی یک Windows Runner، یک AV در A اول بدون JUnit و سه PASS معتبر. آخرین Marker شکست CONSTRUCT_ENTER،seq196،cycle1،۱۴ Commit؛ PC=python312.dll،nearest=Py_DumpTracebackThreads. Probe واقعی Handler/plugin را در هر چهار اجرا فعال و timeoutها را ۴۵/۰/۰/۴۵ تأیید کرد. [گزارش و Manifest](verification-20261029-faulthandler-timer/REPORT.fa.md) شامل Artifact بازدریافت‌شده، سه JUnit، چهار Probe و ژورنال‌هاست.

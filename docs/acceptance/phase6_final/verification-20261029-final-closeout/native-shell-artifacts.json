@@ -1,0 +1,58 @@
+{
+  "red_run": 40933291757,
+  "green_run": 40933689980,
+  "red": [
+    {
+      "id": 12924245688,
+      "name": "p6-final-native-shell-1.5",
+      "digest": "sha256:86126771eb364363444f2cd48f54868600bf05250a5c94add5425a076a9f8087"
+    },
+    {
+      "id": 12923228403,
+      "name": "p6-final-native-shell-1",
+      "digest": "sha256:b720df576d45de8903647d0067f95f7cd56448d321ba97383b0feb66ec8f6aae"
+    },
+    {
+      "id": 12922054880,
+      "name": "p6-final-native-shell-2",
+      "digest": "sha256:49553592b2f63940efc7df8e1045c53e64e3047b5eee70442fb96c4775ca8989"
+    }
+  ],
+  "green": [
+    {
+      "id": 12924785017,
+      "name": "p6-final-native-shell-2",
+      "digest": "sha256:1f51340b678666e6082d22c285b3e2d330e58a2712ada4daed4cdc584e7f7e94"
+    },
+    {
+      "id": 12924191585,
+      "name": "p6-final-native-shell-1",
+      "digest": "sha256:792f6b356571611f76dd181a4c41ec97db5ca2046133a6ee6854f1a5fdeb1cb7"
+    },
+    {
+      "id": 12923133912,
+      "name": "p6-final-native-shell-1.5",
+      "digest": "sha256:bc1dd387c70b0abd5ec071be87d87a04df6e8e27acff1acfdb368993ad437c5a"
+    }
+  ],
+  "green_jobs": [
+    {
+      "id": 123658507272,
+      "name": "native-shell (2)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123658507858,
+      "name": "native-shell (1)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 123658507913,
+      "name": "native-shell (1.5)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ]
+}

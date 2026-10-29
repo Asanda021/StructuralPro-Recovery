@@ -1,0 +1,55 @@
+{
+  "source_sha": "3c04bf14042dc3bcad96bffe9157258252457f40",
+  "chosen": "Tahoma",
+  "verified": true,
+  "family_count": 138,
+  "candidates": {
+    "Tahoma": {
+      "requested_family": "Tahoma",
+      "resolved_family": "Tahoma",
+      "raw_family": "Tahoma",
+      "raw_valid": true,
+      "missing": 0,
+      "zero_glyphs": 0
+    },
+    "Segoe UI": {
+      "requested_family": "Segoe UI",
+      "resolved_family": "Segoe UI",
+      "raw_family": "Segoe UI",
+      "raw_valid": true,
+      "missing": 0,
+      "zero_glyphs": 0
+    },
+    "Arial": {
+      "requested_family": "Arial",
+      "resolved_family": "Arial",
+      "raw_family": "Arial",
+      "raw_valid": true,
+      "missing": 0,
+      "zero_glyphs": 0
+    }
+  },
+  "application_properties": {
+    "family": "Tahoma",
+    "arabic": true
+  },
+  "app_font": {
+    "requested_family": "Tahoma",
+    "resolved_family": "Tahoma",
+    "raw_family": "Tahoma",
+    "raw_valid": true,
+    "missing": 0,
+    "zero_glyphs": 0
+  },
+  "brand_font": {
+    "requested_family": "Tahoma",
+    "resolved_family": "Tahoma",
+    "raw_family": "Tahoma",
+    "raw_valid": true,
+    "missing": 0,
+    "zero_glyphs": 0
+  },
+  "brand_text_matches": true,
+  "artifact_id": 12923271753,
+  "scale_percent": 100
+}

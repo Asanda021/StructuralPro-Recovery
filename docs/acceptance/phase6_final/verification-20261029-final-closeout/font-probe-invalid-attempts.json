@@ -1,0 +1,12 @@
+[
+  {
+    "run": 40931594948,
+    "result": "FAILURE_DIAGNOSTIC_HARNESS",
+    "reason": "Two QApplication singletons; no valid glyph evidence or artifact."
+  },
+  {
+    "run": 40931909188,
+    "result": "FAILURE_DIAGNOSTIC_HARNESS",
+    "reason": "Incorrect static exec invocation; temporary database cleanup error followed. No valid glyph evidence or artifact."
+  }
+]

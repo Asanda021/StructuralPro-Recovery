@@ -4,9 +4,9 @@
   "repository": "Asanda021/StructuralPro-Recovery",
   "pr_number": 34,
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
-  "audited_product_head": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-  "latest_targeted_acceptance_source_sha": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-  "source_difference_since_acceptance": "Since broad regression PASS at product source 6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee, only new diagnostic script, its GitHub workflow and evidence documents have been added. Original BIMAdapter orthogonality contract unchanged (blob 48462b5e3689b2158f9565372d93a3603b15cea0); the new G2 model suite RED because real sanitary v1/v2 are rejected, while the heating source case passes on both OS.",
+  "audited_product_head": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "latest_targeted_acceptance_source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "source_difference_since_acceptance": "Product IFC4 RefDirection projection corrected by IfcBuildAxes semantics; positive RED reproduction and negative conditioning tests preserved. New complete active regression is run 40929200449 at efaab3c5dc335012ef6b8fec89a041247b509207; report-only changes after this source must not be described as new tested product code.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -14,7 +14,9 @@
       "id": "P6-1",
       "title": "RTL shell, functional ribbon and Windows DPI",
       "status": "ACCEPTED_AUTOMATED_SCOPE",
-      "evidence_run": 40870775780
+      "evidence_run": 40870775780,
+      "latest_native_run": 40933689980,
+      "latest_native_passes_per_dpi": 11
     },
     {
       "id": "P6-2",
@@ -60,15 +62,15 @@
     },
     {
       "id": "P6_CURRENT_BROAD_715",
-      "title": "Whole active current regression Linux and Windows with 3-shard exact JUnit union",
+      "title": "Whole active regression: 716 modules, exact JUnit union",
       "status": "ACCEPTED_AUTOMATED_ACTIVE_SUITE",
-      "evidence_run": 40907806582,
-      "tested_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-      "modules": 715,
-      "cases_per_os": 8451,
-      "linux_pass": 8446,
+      "evidence_run": 40929200449,
+      "tested_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
+      "modules": 716,
+      "cases_per_os": 8459,
+      "linux_pass": 8454,
       "linux_skip": 5,
-      "windows_pass": 8444,
+      "windows_pass": 8452,
       "windows_skip": 7,
       "failures": 0,
       "timeouts": 0
@@ -150,14 +152,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_ALL_MANDATORY_SOURCES_WITH_ARCH_VENT_HEATING_GUI_BATCH_ACCEPTED_SANITARY_V1_V2_REJECTED",
-      "reason": "Three same-project public IFC4 discipline source datasets have real source-backed bounded original GUI acceptance: architecture 957 source elements, ventilation 1310 and heating 1795 (8 distinct represented types); sanitary v1/v2 source-pinned files are refused by original engineering BIMAdapter at rigid placement orthogonality predicate (bim_adapter.py:152, abs(dot)>1e-12). Do not relax approved placement tolerance or claim this source validated. Remaining architectural/site/renovation/finish source-class and independent-building diversity not proven.",
+      "status": "BLOCKED_REMAINING_SOURCE_CLASS_ACCEPTANCE_SANITARY_PLACEMENT_DEFECT_CORRECTED",
+      "reason": "SAN v1/v2 original input orthogonality rejection was a BIMAdapter semantics defect: IFC4 RefDirection may be nonorthogonal; IfcBuildAxes projects it onto plane normal to Axis. Both original pinned sources now accepted in native Windows/Linux original GUI two-batch checks, all 1012/1034 source identities retained. Remaining source-class acceptance for renovation/site and final independent-source evidence remains incomplete; do not treat a generic IfcSite container or proxy as verified site/renovation geometry.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Source-backed full engineering 3D validation of sanitary IFC4 with valid orthogonal placements, independent buildings for site/renovation/finishes, and source-diversity acceptance. Native Qt GUI batching works in tested 3 source disciplines but not all mandatory source classes; whole G2 remains BLOCKED. Real hardware UAT G4 remains independent. No tolerance relaxation or fabricated G2 pass.",
+      "remaining_scope": "Existing mandatory source-class acceptance for site/renovation remains NOT VERIFIED; 16 real IfcCovering identities and one selected covering batch passed locally in additional independent 550-member project, not yet a Windows independent-source UAT.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -416,35 +418,68 @@
         "unit_contract_relaxed": false,
         "product_bim_adapter_modified": false,
         "report": "docs/acceptance/phase6_final/verification-20261029-g2-heating-sanitary-independent-source/REPORT.fa.md"
+      },
+      "sanitary_resolution": {
+        "source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+        "run": 40929200449,
+        "v1_source_elements": 1012,
+        "v2_source_elements": 1034,
+        "problem_placements_per_version": 48,
+        "input_tolerance_increased": false,
+        "root_cause": "Incorrect requirement that input RefDirection be orthogonal to Axis; IFC4 IfcBuildAxes derives an orthogonal basis by projection.",
+        "conditioning_guard": "projection length of normalized reference direction must exceed 1e-12",
+        "raw_source_modified": false,
+        "boq_authority": false,
+        "report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/G2_ENGINEERING.fa.md"
       }
     },
     {
       "id": "G3",
       "name": "P6-6_scope_and_acceptance",
-      "status": "PENDING_NO_SEPARATELY_DEFINED_ACCEPTANCE_CONTRACT",
-      "reason": "Existing reports label P6-6 as pending, but the available approved 8-phase master does not supply an explicit distinct P6-6 input/output/test contract. Do not invent scope or falsely claim P6-6 completion. Source-backed 3D correction was delivered under the already mandated Phase6 G2."
+      "status": "NONBLOCKING_NO_SEPARATE_APPROVED_CONTRACT",
+      "reason": "No distinct approved input/output/test acceptance contract was found for a separate P6-6. No invented additional acceptance gate is added; this is not a claim that an unspecified feature was implemented.",
+      "closure_blocker_for_phase6": false
     },
     {
       "id": "G4",
       "name": "physical_windows_owner_uat",
-      "status": "NOT_VERIFIED",
+      "status": "OWNER_PHYSICAL_UAT_NOT_EXECUTED",
       "reason": "Multimonitor mixed-DPI, disconnect/reconnect, sleep/resume, GPU/driver, usability and owner's sign-off not executed.",
-      "reference": "docs/acceptance/phase6_p5/verification-20261027-three-gates/WINDOWS_UAT.fa.md"
+      "reference": "docs/acceptance/phase6_final/verification-20261029-final-closeout/WINDOWS_OWNER_UAT.fa.md",
+      "automated_visual_font_issue": "Initial shell screenshot was offscreen because a child-specific backend variable was absent. Native windows glyph probes at 100/150/200 show Tahoma with zero missing glyphs and readable screenshots. CI child backend now corrected; physical UAT still not executed.",
+      "native_backend_correction_run": 40933689980,
+      "native_backend_results": {
+        "scales": [
+          100,
+          150,
+          200
+        ],
+        "passed_each": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "physical_hardware_uat": false
+      }
     },
     {
       "id": "G5",
       "name": "one_windows_edition",
-      "status": "PENDING_WINDOWS_EDITION_RELEASE_DECISION",
-      "reason": "The one-final-Windows-edition policy and legacy tier mechanics are a release packaging decision. The owner has clarified AI is NONCOMMERCIAL; commercial-use AI model licensing/monetization is NOT a Phase 6 acceptance requirement. The existing GGUF manifest has only placeholder path, SHA-256, license and architecture and commercial_use=false: do not claim a verified installed model or permitted redistribution. The already-tested rule-only fail-closed fallback remains the valid bounded capability; optional noncommercial GGUF use requires checking the actual model identity and its applicable license if added.",
+      "status": "ACCEPTED_SINGLE_UNIFIED_WINDOWS_POLICY_NO_BUILD",
+      "reason": "Owner explicitly selected one comprehensive final Windows edition. Existing unified product profile covers all features, unified marker is authoritative, build_windows_edition.ps1 accepts unified only and owner-gates binaries/installer. Legacy edition readers are compatibility only, not new deliverables. No binary, installer or model weights produced; actual release readiness remains phase8 and explicit owner approval.",
       "reference": "core/ai/model_manifest.json",
-      "ai_noncommercial_correction_applied": true
+      "ai_noncommercial_correction_applied": true,
+      "release_packaging_reference": "packaging/README.md",
+      "commercial_ai_required": false,
+      "real_installed_gguf_verified": false
     }
   ],
   "other_gates": [
     {
       "id": "broad_regression",
-      "status": "NO_SAME_HEAD_FULL_GREEN_EVIDENCE",
-      "note": "716 targeted PASS does not represent entire ~8k test suite."
+      "status": "ACCEPTED_EXACT_PRODUCT_SOURCE",
+      "note": "8459 unique cases per OS, 716 modules, no duplicate/missing/extra. JUnit counts and original artifacts independently verified. Workflow-only font diagnostic commits follow; product app/core/tests unchanged.",
+      "evidence_run": 40929200449,
+      "tested_commit": "efaab3c5dc335012ef6b8fec89a041247b509207"
     },
     {
       "id": "office_desktop_physical_print",
@@ -465,7 +500,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "G2_EXPANDED_ARCH_VENT_HEATING_3_DISCIPLINES_PASS_IN_BOUNDED_GUI;_SANITARY_V1_V2_FAIL_CLOSED_PLACEMENT;_PHASE6_PARTIAL",
+  "last_decision": "PHASE 6 PARTIAL / NO-GO",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -473,13 +508,62 @@
   "allow_merge": false,
   "allow_exe": false,
   "allow_main_change": false,
-  "require_new_test_run": true,
+  "require_new_test_run": false,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40907806582,
-  "last_source_verified_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g2-heating-sanitary-independent-source/REPORT.fa.md",
+  "last_evidence_run": 40929200449,
+  "last_source_verified_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
+    "status": "ACCEPTED_ALL_ACTIVE_MODULES_EXACT_SOURCE",
+    "run": 40929200449,
+    "tested_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
+    "ci_conclusion": "success",
+    "all_nine_jobs_success": true,
+    "modules": 716,
+    "cases_per_os": 8459,
+    "linux": {
+      "passed": 8454,
+      "skipped": 5,
+      "failed": 0,
+      "errors": 0,
+      "timed_out": false,
+      "artifact_id": 12922407211
+    },
+    "windows": {
+      "passed": 8452,
+      "skipped": 7,
+      "failed": 0,
+      "errors": 0,
+      "timed_out": false,
+      "shard_count": 3,
+      "artifact_ids": [
+        12922802946,
+        12923575447,
+        12921539419
+      ]
+    },
+    "unique_shard_union_verified": true,
+    "union_artifact_id": 12922558861,
+    "archived_release_contract_modules": 15,
+    "historical_cases_per_os": 130,
+    "historical_in_current_pass_counts": false,
+    "ci_verified_report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/CI_VERIFIED.json"
+  },
+  "final_closeout_mission": {
+    "initial_head": "34a1b81237cbbe813f6979e169c70db7ddc93089",
+    "source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+    "run": 40929200449,
+    "result": "TECHNICAL_SAN_FIX_AND_ACTIVE_BROAD_AND_NATIVE_DPI_ACCEPTED;_G2_SOURCE_CLASSES_AND_G4_OWNER_UAT_REMAIN",
+    "no_merge": true,
+    "no_main_change": true,
+    "no_force_push": true,
+    "no_exe_release": true,
+    "phase7_started": false,
+    "additional_native_shell_source": "e012f0acf1f2dd475f79e49fc43552c10850b47e",
+    "additional_native_shell_run": 40933689980
+  },
+  "previous_broad_current_regression": {
     "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
     "run": 40907806582,
     "tested_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
@@ -519,5 +603,27 @@
       "Root cause of historical native AV not proven",
       "No EXE/build/release/merge authorized"
     ]
+  },
+  "visual_font_readability": {
+    "status": "ACCEPTED_AUTOMATED_NATIVE_GLYPH_AND_EXISTING_GUI_TEST_SCOPE",
+    "unreadable_source_artifact": 12923515112,
+    "normal_dpi_probe_run": 40932291857,
+    "normal_dpi_probe_artifact": 12923271753,
+    "normal_dpi_chosen_font": "Tahoma",
+    "normal_dpi_missing_glyphs": 0,
+    "product_font_patch_applied": false,
+    "physical_uat_verified": false,
+    "dpi_probe_run": 40932828838,
+    "native_probe_dpi": [
+      100,
+      150,
+      200
+    ],
+    "missing_glyphs_each": 0,
+    "unreadable_screenshot_backend": "offscreen child override, not the real windows shell",
+    "native_gui_run": 40933689980,
+    "tests_per_dpi": 11,
+    "all_native_gui_junit_pass": true,
+    "original_issue": "Offscreen child override in consolidated test workflow; dedicated child QPA environment corrected."
   }
 }

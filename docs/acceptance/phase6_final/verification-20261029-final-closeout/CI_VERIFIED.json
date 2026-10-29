@@ -1,0 +1,284 @@
+{
+  "source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "run_id": 40929200449,
+  "all_9_jobs_success": true,
+  "active_modules": 716,
+  "unique_cases_per_os": 8459,
+  "no_duplicate_missing_extra": true,
+  "suites": [
+    {
+      "artifact": 12923575447,
+      "name": "p6-broad-current-windows-1",
+      "junit": "phase6-broad-current-windows.xml",
+      "tests": 3266,
+      "passed": 3265,
+      "failure": 0,
+      "error": 0,
+      "skipped": 1,
+      "skips": [
+        {
+          "id": "tests.test_phase5_p3_trusted_identity_store::test_posix_identity_comes_from_kernel_uid_not_spoofable_environment",
+          "reason": "POSIX identity assertion"
+        }
+      ],
+      "junit_seconds": 871.8
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-views.xml",
+      "tests": 50,
+      "passed": 50,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 65.256
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-operations.xml",
+      "tests": 275,
+      "passed": 275,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 440.032
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-win-db.xml",
+      "tests": 2,
+      "passed": 2,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 0.938
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-win-dpi200.xml",
+      "tests": 10,
+      "passed": 10,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 9.086
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-persistence.xml",
+      "tests": 22,
+      "passed": 22,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 6.123
+    },
+    {
+      "artifact": 12923515112,
+      "name": "p6-final-acceptance-windows-2022",
+      "junit": "p6-final-win-dpi150.xml",
+      "tests": 10,
+      "passed": 10,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 8.699
+    },
+    {
+      "artifact": 12922802946,
+      "name": "p6-broad-current-windows-0",
+      "junit": "phase6-broad-current-windows.xml",
+      "tests": 2483,
+      "passed": 2480,
+      "failure": 0,
+      "error": 0,
+      "skipped": 3,
+      "skips": [
+        {
+          "id": "tests.test_phase4_reports::test_figure_persian_has_single_bidi_pass",
+          "reason": "Native complex text oracle unavailable"
+        },
+        {
+          "id": "tests.test_phase4_sqlite_startup_replacement::test_replacement_during_connect_cannot_pin_replacement_inode",
+          "reason": "POSIX rename of an open SQLite file is needed for this fault injection"
+        },
+        {
+          "id": "tests.test_phase4_sqlite_startup_replacement::test_replacement_during_startup_commit_refused",
+          "reason": "POSIX rename of an open SQLite file is needed for this fault injection"
+        }
+      ],
+      "junit_seconds": 962.76
+    },
+    {
+      "artifact": 12922407211,
+      "name": "p6-broad-current-linux",
+      "junit": "phase6-broad-current.xml",
+      "tests": 8459,
+      "passed": 8454,
+      "failure": 0,
+      "error": 0,
+      "skipped": 5,
+      "skips": [
+        {
+          "id": "tests.test_phase4_sqlite_windows_native::test_windows_live_connection_blocks_rename_and_preserves_committed_revisions",
+          "reason": "Windows NTFS file-sharing semantics"
+        },
+        {
+          "id": "tests.test_phase4_sqlite_windows_native::test_windows_closed_database_can_be_moved_then_reopened_safely",
+          "reason": "Windows NTFS file-sharing semantics"
+        },
+        {
+          "id": "tests.test_phase5_p3_trusted_identity_store::test_windows_identity_is_read_from_the_live_access_token",
+          "reason": "Windows Native only"
+        },
+        {
+          "id": "tests.test_phase5_unified_packaging::test_windows_single_edition_validate_only_does_not_build",
+          "reason": "native PowerShell required"
+        },
+        {
+          "id": "tests.test_phase5_windows_native_acceptance::test_current_windows_token_principal_reaches_projectstore_and_real_qt_workspace",
+          "reason": "requires native Windows"
+        }
+      ],
+      "junit_seconds": 664.616
+    },
+    {
+      "artifact": 12921902346,
+      "name": "p6-closeout-engineering-windows-2022",
+      "junit": "targeted.xml",
+      "tests": 46,
+      "passed": 46,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 10.616
+    },
+    {
+      "artifact": 12921902346,
+      "name": "p6-closeout-engineering-windows-2022",
+      "junit": "historical.xml",
+      "tests": 130,
+      "passed": 130,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 18.594
+    },
+    {
+      "artifact": 12921797451,
+      "name": "p6-closeout-engineering-ubuntu-24.04",
+      "junit": "targeted.xml",
+      "tests": 46,
+      "passed": 45,
+      "failure": 0,
+      "error": 0,
+      "skipped": 1,
+      "skips": [
+        {
+          "id": "tests.test_phase5_unified_packaging::test_windows_single_edition_validate_only_does_not_build",
+          "reason": "native PowerShell required"
+        }
+      ],
+      "junit_seconds": 3.812
+    },
+    {
+      "artifact": 12921797451,
+      "name": "p6-closeout-engineering-ubuntu-24.04",
+      "junit": "historical.xml",
+      "tests": 130,
+      "passed": 130,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 8.099
+    },
+    {
+      "artifact": 12921539419,
+      "name": "p6-broad-current-windows-2",
+      "junit": "phase6-broad-current-windows.xml",
+      "tests": 2710,
+      "passed": 2707,
+      "failure": 0,
+      "error": 0,
+      "skipped": 3,
+      "skips": [
+        {
+          "id": "tests.test_phase4_sqlite_parent_directory_safety::test_parent_replaced_with_different_db_fails_closed",
+          "reason": "requires POSIX directory renames and hard links"
+        },
+        {
+          "id": "tests.test_phase4_sqlite_parent_directory_safety::test_parent_swap_with_same_database_inode_must_still_be_rejected",
+          "reason": "requires POSIX directory renames and hard links"
+        },
+        {
+          "id": "tests.test_phase4_sqlite_parent_directory_safety::test_same_inode_parent_swap_during_connect_must_reject_open",
+          "reason": "requires POSIX directory renames and hard links"
+        }
+      ],
+      "junit_seconds": 463.566
+    },
+    {
+      "artifact": 12921114084,
+      "name": "p6-final-acceptance-ubuntu-24.04",
+      "junit": "p6-final-views.xml",
+      "tests": 50,
+      "passed": 50,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 10.026
+    },
+    {
+      "artifact": 12921114084,
+      "name": "p6-final-acceptance-ubuntu-24.04",
+      "junit": "p6-final-operations.xml",
+      "tests": 275,
+      "passed": 275,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 72.396
+    },
+    {
+      "artifact": 12921114084,
+      "name": "p6-final-acceptance-ubuntu-24.04",
+      "junit": "p6-final-persistence.xml",
+      "tests": 22,
+      "passed": 22,
+      "failure": 0,
+      "error": 0,
+      "skipped": 0,
+      "skips": [],
+      "junit_seconds": 2.784
+    }
+  ],
+  "pipeline_union": {
+    "verified": true,
+    "shards": 3,
+    "modules": 716,
+    "case_count": 8459,
+    "module_manifest_sha256": "a8351bb71b1566f7ad1b13b98c62c65cf60eb93a2f2c469f6fa31940bde4a882",
+    "windows_passed": 8452,
+    "windows_skipped": 7,
+    "linux_passed": 8454,
+    "linux_skipped": 5
+  },
+  "native_crash_observed_in_final_run": false,
+  "product_root_cause_historical_av_proven": false
+}
