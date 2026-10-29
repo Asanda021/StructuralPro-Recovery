@@ -1,8 +1,8 @@
-name: P6 validate native CDB crash capture with isolated synthetic control
+name: P6 native MSVC AV deterministic CDB calibration
 on:
   push:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
-    paths: [.github/workflows/phase6-native-cdb-control.yml]
+    paths: [.github/workflows/phase6-native-cdb-control.yml, scripts/diagnostics/p6_native_cdb_control.py]
   workflow_dispatch:
 permissions:
   contents: read
