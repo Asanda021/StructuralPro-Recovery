@@ -1,0 +1,48 @@
+name: P6 Windows native compiler capability audit
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-native-compiler-capability.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-compiler-discovery:
+    runs-on: windows-2022
+    timeout-minutes: 5
+    steps:
+      - name: Inspect installed Microsoft Visual Studio and LLVM capabilities without paths
+        shell: pwsh
+        run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $hasVswhere = Test-Path $vswhere
+          $latestInstall = $null
+          if ($hasVswhere) {
+            $latestInstall = (& $vswhere -latest -products "*" -property installationPath 2>$null | Select-Object -First 1)
+          }
+          $vcvars = $null
+          if ($latestInstall) { $vcvars = Join-Path $latestInstall 'VC\Auxiliary\Build\vcvars64.bat' }
+          $report = @{
+            kind = 'native_msvc_compiler_capability_only'
+            vswhere_present = [bool]$hasVswhere
+            visual_studio_detected = [bool]$latestInstall
+            vcvars64_present = [bool]($vcvars -and (Test-Path $vcvars))
+            cl_on_unmodified_path = [bool](Get-Command cl.exe -ErrorAction SilentlyContinue)
+            clangcl_on_unmodified_path = [bool](Get-Command clang-cl.exe -ErrorAction SilentlyContinue)
+            clang_on_unmodified_path = [bool](Get-Command clang.exe -ErrorAction SilentlyContinue)
+            msbuild_on_unmodified_path = [bool](Get-Command msbuild.exe -ErrorAction SilentlyContinue)
+            cdb_already_available = [bool](Test-Path "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe")
+            no_paths_credentials_or_dumps = $true
+            product_code_unchanged = $true
+          }
+          New-Item -ItemType Directory -Force compiler-probe | Out-Null
+          $report | ConvertTo-Json | Set-Content -Encoding utf8 compiler-probe/capability.json
+          Write-Host "VS=$($report.visual_studio_detected) vcvars=$($report.vcvars64_present) cl=$($report.cl_on_unmodified_path) clangcl=$($report.clangcl_on_unmodified_path) clang=$($report.clang_on_unmodified_path)"
+      - name: Archive allowlisted capability booleans only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-native-compiler-capability
+          path: compiler-probe/capability.json
+          if-no-files-found: warn
+          retention-days: 7
