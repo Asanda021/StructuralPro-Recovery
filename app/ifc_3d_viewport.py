@@ -76,8 +76,14 @@ class IFC3DCanvas(QWidget):
         self.update()
 
     def choose_member(self, global_id):
+        # Revocation must remain safe when the source was moved/replaced.
+        # Selecting a nonempty member still requires fully verified provenance.
+        if global_id is None:
+            self.selected_id = None
+            self.update()
+            return
         self.scene.validate_source()
-        if global_id is not None and global_id not in {m.global_id for m in self.scene.meshes}:
+        if global_id not in {m.global_id for m in self.scene.meshes}:
             raise ValueError("عضو انتخابی در IFC موجود نیست.")
         self.selected_id = global_id
         self.update()
