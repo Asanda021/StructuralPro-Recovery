@@ -29,6 +29,7 @@ ARMS = {
     "qt": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_qt_table_events_without_service_or_sqlite",
     "dialog_read": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_manual_dialog_readonly_70_rows",
     "dialog_commit": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_manual_dialog_review_commit_70_rows",
+    "dialog_lifecycle": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_dialog_destroy_reopen_every_fourteen_commits",
 }
 
 
