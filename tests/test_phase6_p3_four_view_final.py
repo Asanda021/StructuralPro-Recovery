@@ -93,7 +93,11 @@ def test_real_native_qt_2d_3d_tree_boq_clicks_clear_and_revision(tmp_path):
         panel_holder.raise_()
         panel_holder.activateWindow()
         panel.members.setFocus()
-        node = panel.members.topLevelItem(0)
+        node = next(
+            panel.members.topLevelItem(i)
+            for i in range(panel.members.topLevelItemCount())
+            if panel.members.topLevelItem(i).text(0) == "C1"
+        )
         panel.members.scrollToItem(node)
         app.processEvents()
         clicked, propagated = [], []
