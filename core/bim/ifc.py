@@ -47,7 +47,8 @@ def _level(obj):
 class DeepIFCAdapter:
     extensions=(".ifc",)
     def read_display_meshes(self, path, *, max_triangles=100_000,
-                            cancel_event=None, on_progress=None, batch_size=64):
+                            cancel_event=None, on_progress=None, batch_size=64,
+                            selected_global_ids=None):
         """World-coordinate meshes for display only; never quantity evidence."""
         if type(max_triangles) is not int or max_triangles <= 0:
             raise ValueError("ظرفیت نمایش باید عدد صحیح مثبت باشد.")
@@ -81,8 +82,26 @@ class DeepIFCAdapter:
         # must never be published as one or poison the whole 3D model.
         # Keep every actual representable IfcElement, including the
         # architectural, MEP and geographic IFC subclasses.
-        candidates = [obj for obj in model.by_type("IfcElement")
-                      if getattr(obj, "Representation", None)]
+        all_elements = model.by_type("IfcElement")
+        source_roster = tuple((str(getattr(obj, "GlobalId", "") or ""),
+                               bool(getattr(obj, "Representation", None)))
+                              for obj in all_elements)
+        if selected_global_ids is not None:
+            if not isinstance(selected_global_ids, (tuple, list)) or not selected_global_ids:
+                raise ValueError("انتخاب اعضای IFC باید فهرست غیرخالی باشد.")
+            if (any(not isinstance(gid, str) or not gid.strip()
+                    for gid in selected_global_ids)
+                    or len(set(selected_global_ids)) != len(selected_global_ids)):
+                raise ValueError("شناسه انتخابی خالی یا تکراری است.")
+            known_ids = {gid for gid, _ in source_roster}
+            if not set(selected_global_ids) <= known_ids:
+                raise ValueError("انتخاب حاوی شناسه ناموجود در منبع IFC است.")
+            selected = set(selected_global_ids)
+        else:
+            selected = None
+        candidates = [obj for obj in all_elements
+                      if getattr(obj, "Representation", None)
+                      and (selected is None or obj.GlobalId in selected)]
         count = len(candidates)
         for index, obj in enumerate(candidates, 1):
             if cancel_event is not None and cancel_event.is_set():
@@ -125,10 +144,11 @@ class DeepIFCAdapter:
                 if cancel_event is not None and cancel_event.is_set():
                     raise InterruptedError("بررسی IFC لغو شد.")
                 digest.update(block)
-        return IFCDisplayDocument(str(p), digest.hexdigest(), tuple(meshes), tuple(omitted))
+        return IFCDisplayDocument(str(p), digest.hexdigest(), tuple(meshes), tuple(omitted), source_roster)
 
     def read_display_contract(self, path, *, revision, max_triangles=100_000,
-                              cancel_event=None, on_progress=None, batch_size=64):
+                              cancel_event=None, on_progress=None, batch_size=64,
+                              selected_global_ids=None):
         """Recoverable SI geometry with validated IFC provenance, never quantity rights.
 
         Mesh tessellation is display-only. Original placement/QTO validation is
@@ -144,11 +164,20 @@ class DeepIFCAdapter:
             raise InterruptedError("پردازش IFC لغو شد.")
         display = self.read_display_meshes(
             p, max_triangles=max_triangles, cancel_event=cancel_event,
-            on_progress=on_progress, batch_size=batch_size)
+            on_progress=on_progress, batch_size=batch_size,
+            selected_global_ids=selected_global_ids)
         digest = document['source_sha256']
         if display.source_sha256 != digest or hashlib.sha256(p.read_bytes()).hexdigest() != digest:
             raise ValueError("منبع IFC هنگام آماده‌سازی هندسه تغییر کرده است.")
         elements = {item['global_id']: item for item in document['elements']}
+        if selected_global_ids is not None:
+            if max_triangles > 40_000:
+                raise ValueError("ظرفیت هر بخش IFC حداکثر ۴۰هزار مثلث است.")
+            requested = set(selected_global_ids)
+            if not requested <= set(elements):
+                raise ValueError("شناسه انتخابی در قرارداد معتبر IFC وجود ندارد.")
+            if set(display.omitted_ids) & requested:
+                raise ValueError("بخشی از هندسه انتخاب‌شده قابل تولید نیست.")
         records = []
         for mesh in display.meshes:
             if mesh.global_id not in elements:
@@ -173,6 +202,44 @@ class DeepIFCAdapter:
             'tessellation_authority': 'display only; no engineering error bound',
             'omitted_ids': list(display.omitted_ids),
         }
+        if selected_global_ids is not None:
+            # This roster is authoritative about what was *not* loaded.
+            # No unrepresented IFC source member may disappear from the ledger.
+            loaded = {mesh.global_id for mesh in display.meshes}
+            selected = set(selected_global_ids)
+            roster = dict(display.source_roster)
+            if (len(roster) != len(display.source_roster) or
+                    set(roster) != set(elements)):
+                raise ValueError("فهرست هویت‌های IFC ناقص یا تکراری است.")
+            statuses = []
+            for gid in sorted(elements):
+                if not roster[gid]:
+                    status = 'without_geometry'
+                elif gid in loaded:
+                    status = 'displayed'
+                elif gid in selected:
+                    raise ValueError("عضو انتخاب‌شده بدون هندسه معتبر باقی ماند.")
+                else:
+                    status = 'not_loaded'
+                statuses.append({
+                    'global_id': gid,
+                    'ifc_type': elements[gid]['ifc_type'],
+                    'storey_id': elements[gid]['storey_id'],
+                    'status': status,
+                })
+            counts = {status: sum(s['status'] == status for s in statuses)
+                      for status in ('displayed', 'not_loaded', 'without_geometry')}
+            if sum(counts.values()) != len(elements) or counts['displayed'] != len(records):
+                raise ValueError("جمع وضعیت‌های هندسه IFC با منبع برابر نیست.")
+            result['display_catalog'] = {
+                'policy': 'ifc_partial_display_catalog_v1',
+                'source_sha256': digest, 'revision': revision,
+                'source_member_count': len(elements),
+                'counts': counts, 'members': statuses,
+                'complete_model_displayed': counts['not_loaded'] == 0
+                    and counts['without_geometry'] == 0,
+                'selected_global_ids': list(selected_global_ids),
+            }
         # JSON interchange is the existing project persistence boundary.
         return json.loads(json.dumps(result, allow_nan=False))
 
@@ -235,3 +302,4 @@ class IFCDisplayDocument:
     source_sha256: str
     meshes: tuple[IFCDisplayMesh, ...]
     omitted_ids: tuple[str, ...]
+    source_roster: tuple[tuple[str, bool], ...] = ()
