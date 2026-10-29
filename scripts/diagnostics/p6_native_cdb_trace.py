@@ -20,6 +20,7 @@ import xml.etree.ElementTree as ET
 TESTS = {
     "integrated": "tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports",
     "dialog_commit": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_manual_dialog_review_commit_70_rows",
+    "dialog_lifecycle": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_dialog_destroy_reopen_every_fourteen_commits",
 }
 MARKER = "P6_AV_SECOND_CHANCE"
 MODULE_BEGIN = "P6_FAULT_PC_MODULE_BEGIN"
@@ -177,6 +178,10 @@ def run(output: Path, arm: str, repetitions: int, timeout: int) -> int:
         ]
         env = os.environ.copy()
         env["PYTHONFAULTHANDLER"] = "1"
+        if arm == "dialog_lifecycle" and os.environ.get("P6_LIFECYCLE_CHECKPOINTS") == "1":
+            env["P6_LIFECYCLE_CHECKPOINT_DIR"] = str(output / f"checkpoints-{attempt}")
+        else:
+            env.pop("P6_LIFECYCLE_CHECKPOINT_DIR", None)
         start = time.monotonic()
         timed_out = False
         # Unredacted debugger output only exists in a transient directory,
