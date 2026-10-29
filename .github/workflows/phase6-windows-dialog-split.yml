@@ -1,0 +1,74 @@
+name: P6 P5 real Qt 70-row dialog read versus commit isolation
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-windows-dialog-split.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-native-real-dialog-split:
+    runs-on: windows-2022
+    timeout-minutes: 38
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      QT_QPA_PLATFORM: windows
+      PYTHONPATH: .
+    steps:
+      - name: Preserve original Windows files
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify real source and original test unchanged
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = "4e3750a0e797073d40bacb395e448da4f14b6c56"
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = "07e8ce4567eec5122253cd220a49fed6e2e27d9e"
+          test "$(git rev-parse HEAD:app/manual_takeoff.py)" = "12828195669dc2586cc3d5300e0781cf93183135"
+          test "$(git rev-parse HEAD:core/projects/store.py)" = "0aa448bcc0f67bab12c37592f7abf01fd0e1765d"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install original dependencies on one Windows runner
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Validate both new diagnostic tests and runner without starting Qt
+        run: |
+          python -m py_compile scripts/diagnose_windows_native_crash.py scripts/diagnostics/p6_native_isolation_oracles.py
+          python scripts/diagnose_windows_native_crash.py --self-check
+      - name: Save sanitized versions and native DLL fingerprints
+        run: python scripts/inspect_windows_native_environment.py --output dialog-split-evidence/environment.json
+      - name: A actual production Qt dialog 70-row read selection and refresh without writes
+        continue-on-error: true
+        run: python scripts/diagnose_windows_native_crash.py --arm dialog_read --repeats 2 --timeout-seconds 480 --sample-seconds 5 --output dialog-split-evidence/read_only
+      - name: B actual production Qt dialog 70-row review and BOQ commit with SQLite
+        continue-on-error: true
+        run: python scripts/diagnose_windows_native_crash.py --arm dialog_commit --repeats 2 --timeout-seconds 480 --sample-seconds 5 --output dialog-split-evidence/commit
+      - name: Assert both pairs of authentic JUnit and never conceal native crashes
+        if: always()
+        shell: pwsh
+        run: |
+          $allPass = $true
+          foreach ($arm in @('read_only', 'commit')) {
+            $p = "dialog-split-evidence/$arm/summary.json"
+            if (!(Test-Path $p)) { Write-Host "$arm missing summary: RED"; $allPass = $false; continue }
+            $s = Get-Content -Raw -Encoding UTF8 $p | ConvertFrom-Json
+            Write-Host "$arm attempts=$($s.runs.Count) green=$($s.overall_green) source=$($s.source_test)"
+            foreach ($r in $s.runs) {
+              Write-Host "$arm attempt=$($r.attempt) exit=$($r.exit_hex) wall=$($r.wall_seconds) junit=$($r.junit.passed) fail=$($r.junit.failed) error=$($r.junit.errors) skipped=$($r.junit.skipped) native=$($r.access_violation) timeout=$($r.timed_out)"
+            }
+            if (!$s.overall_green -or $s.runs.Count -ne 2) { $allPass = $false }
+          }
+          if (!$allPass) { throw 'REAL_DIALOG_SPLIT_RED: preserve evidence; native cause not proven' }
+      - name: Preserve all original JUnit evidence and sanitized runtime
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-native-real-dialog-read-vs-commit
+          path: dialog-split-evidence/
+          if-no-files-found: warn
+          retention-days: 14
