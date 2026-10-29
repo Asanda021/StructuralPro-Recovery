@@ -4,6 +4,7 @@ on:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
     paths:
       - .github/workflows/phase6-p5-final-bounded-native-timer-zero.yml
+      - scripts/diagnostics/p6_native_timer_zero_decision.py
   workflow_dispatch:
 permissions:
   contents: read
