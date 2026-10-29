@@ -1,0 +1,53 @@
+name: P6 G2 investigate pinned RWTH HVAC placement contract without modifying product
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-rwth-placement-investigation.yml
+      - scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-placement-diagnosis:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+          - os: windows-2022
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: '1'
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:core/drawings/bim_adapter.py)" = "574b96b68c826c9a2fcf63eb55ba32dd421dd298"
+          test "$(git rev-parse HEAD:core/bim/ifc.py)" = "8f99bdf2fc06d503eff021ec0937bbf040a391a9"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install original pinned source IFC parser
+        run: python -m pip install -q "ifcopenshell>=0.8"
+      - name: Check diagnostic Python syntax
+        run: python -m py_compile scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - name: Analyze independently published MIT IFC4, aggregate evidence only
+        run: python scripts/diagnostics/p6_rwth_placement_contract_investigation.py
+      - name: Preserve sanitized placement summary only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-rwth-hvac-placement-${{ matrix.os }}
+          path: p6-placement-diagnostic/summary.json
+          if-no-files-found: warn
+          retention-days: 14
