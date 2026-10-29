@@ -328,13 +328,16 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
     from shiboken6 import isValid
     from app.manual_takeoff import ManualTakeoffDialog
     from core.platform.application import StructuralProApp
+    from scripts.diagnostics.p6_lifecycle_checkpoint import mark as checkpoint
 
     db = tmp_path / "db"
     keys = _seed_draft_fivefloor(db)
     assert len(keys) == 70
+    checkpoint("CASE_READY")
     app = QApplication.instance() or QApplication([])
     destroyed_notifications = []
     for cycle in range(5):
+        checkpoint("DIALOG_ENTER", cycle=cycle, committed=14 * cycle)
         service = StructuralProApp(db)
         dialog = None
         try:
@@ -351,6 +354,7 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
             app.processEvents()
             assert dialog.formula_table.rowCount() == 70
             assert isValid(dialog)
+            checkpoint("DIALOG_READY", cycle=cycle, committed=14 * cycle)
             dialog.formula_reviewer.setText("مهندس مصنوعی")
             dialog.formula_review_note.setText("مرجع مستقل هر فرمول و واحد کنترل شد")
             chunk = keys[14 * cycle:14 * (cycle + 1)]
@@ -365,24 +369,34 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
                 app.processEvents()
                 assert service.load_manual_formulas("P")[key]["status"] == "committed"
                 assert len(service.open_project("P")["boq"]) == 14 * cycle + offset
+            checkpoint("BATCH_COMMITTED", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("SORT_FILTER_ENTER", cycle=cycle, committed=14 * (cycle + 1))
             # Exercise real refresh/sort/search after the last UI write.
             dialog.formula_table.sortItems(0, Qt.SortOrder.DescendingOrder)
             dialog.formula_search.setText("طبقه" + str(cycle + 1))
             app.processEvents()
             dialog.formula_search.clear()
+            checkpoint("SORT_FILTER_EXIT", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("REFRESH_ENTER", cycle=cycle, committed=14 * (cycle + 1))
             dialog.refresh_formula_rows()
             app.processEvents()
             assert dialog.formula_table.rowCount() == 70
+            checkpoint("REFRESH_EXIT", cycle=cycle, committed=14 * (cycle + 1))
         finally:
             if dialog is not None:
+                checkpoint("DIALOG_DELETE_ENTER", cycle=cycle, committed=14 * (cycle + 1))
                 dialog.close()
                 dialog.deleteLater()
                 QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
                 app.processEvents()
                 assert not isValid(dialog), "Native dialog wrapper survived DeferredDelete"
                 assert destroyed_notifications.count(cycle) == 1, "Dialog destroyed != exactly once"
+                checkpoint("DIALOG_DELETE_EXIT", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("STORE_CLOSE_ENTER", cycle=cycle, committed=14 * (cycle + 1))
             service.store.close()
+            checkpoint("STORE_CLOSE_EXIT", cycle=cycle, committed=14 * (cycle + 1))
         # Reopen SQLite after widget and store teardown, before next UI construction.
+        checkpoint("REOPEN_ENTER", cycle=cycle, committed=14 * (cycle + 1))
         reopened = StructuralProApp(db)
         try:
             project = reopened.open_project("P")
@@ -391,6 +405,7 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
             assert sum(row["status"] == "committed" for row in reg.values()) == 14 * (cycle + 1)
         finally:
             reopened.store.close()
+        checkpoint("REOPEN_EXIT", cycle=cycle, committed=14 * (cycle + 1))
     assert destroyed_notifications == [0, 1, 2, 3, 4]
     final = StructuralProApp(db)
     try:
@@ -404,3 +419,4 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
         assert all(row["status"] == "committed" for row in final.load_manual_formulas("P").values())
     finally:
         final.store.close()
+    checkpoint("ALL_DONE", cycle=4, committed=70)
