@@ -1,0 +1,76 @@
+{
+  "kind": "original_fivefloor_windows_native_crash_diagnostic",
+  "source_test": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_dialog_destroy_reopen_every_fourteen_commits",
+  "diagnostic_arm": "dialog_lifecycle",
+  "original_test_unmodified": true,
+  "product_unchanged": true,
+  "cprofile_or_pytest_instrumentation": false,
+  "application_windows_event_id": 1000,
+  "samples_not_true_peak_memory": true,
+  "captured_memory_or_dumps": false,
+  "python": "3.12.10",
+  "platform": "win32",
+  "qt_qpa": "windows",
+  "started_utc": "2026-10-29T08:55:43.834798+00:00",
+  "runs": [
+    {
+      "attempt": 1,
+      "started_local": "2026-10-29T08:55:43.834798+00:00",
+      "ended_local": "2026-10-29T08:57:08.909460+00:00",
+      "wall_seconds": 85.08,
+      "exit_code": 0,
+      "exit_hex": "0x00000000",
+      "access_violation": false,
+      "timed_out": false,
+      "junit": {
+        "collected": 1,
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "valid_original_test_pass": true,
+      "max_observed_sampled_rss_mib": 121.516,
+      "last_sampled_cpu_seconds": 57.25,
+      "event": {
+        "status": "not_queried"
+      },
+      "files": [
+        "run-1.log",
+        "run-1.xml",
+        "run-1-samples.jsonl"
+      ]
+    },
+    {
+      "attempt": 2,
+      "started_local": "2026-10-29T08:57:08.909460+00:00",
+      "ended_local": "2026-10-29T08:58:28.972094+00:00",
+      "wall_seconds": 80.06,
+      "exit_code": 0,
+      "exit_hex": "0x00000000",
+      "access_violation": false,
+      "timed_out": false,
+      "junit": {
+        "collected": 1,
+        "passed": 1,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "valid_original_test_pass": true,
+      "max_observed_sampled_rss_mib": 116.973,
+      "last_sampled_cpu_seconds": 56.125,
+      "event": {
+        "status": "not_queried"
+      },
+      "files": [
+        "run-2.log",
+        "run-2.xml",
+        "run-2-samples.jsonl"
+      ]
+    }
+  ],
+  "overall_green": true,
+  "native_root_cause_proven": false,
+  "finished_utc": "2026-10-29T08:58:28.972094+00:00"
+}

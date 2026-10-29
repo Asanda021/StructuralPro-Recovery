@@ -1,0 +1,9 @@
+{
+  "sequence": 359,
+  "event": "REVIEW_CLICK_ENTER",
+  "cycle": 1,
+  "committed_rows": 27,
+  "monotonic_ns": 1237265000000,
+  "data_values_logged": false,
+  "memory_dump_saved": false
+}

@@ -1,3 +1,8 @@
+## آخرین تشخیص چرخه دوم — ۲۹ اکتبر۲۰۲۶
+Run40845502382 رویsource7d6bc31dd146e4d88c273417b950cf34708827b6:دوPASSعادی،یکPASSزیرCDBویکAVزیرCDBبدونJUnit. آخرینcheckpoint=REVIEW_CLICK_ENTER،sequence359،cycle1،۲۷Commit؛PCmodulepython312،نمادنزدیکPy_DumpTracebackThreads. علتثابتنشده،WindowsREDوP6-5PARTIAL. [گزارش/Manifest/شواهد](verification-20261029-lifecycle-detailed/REPORT.fa.md). قدمبعدیفقطکنترلهم‌منبعfaulthandlerزیرCDB؛محصولتغییرنکند.
+
+---
+
 ## آخرین مأموریت تشخیصی عملیاتی — ۲۹ اکتبر ۲۰۲۶
 دو اجرای مستقل بدون Debugger در Windows روی کد `2d41667121c3b2e1adbd57c904a80bedabfc36b5` در [Run40839501658](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40839501658) هرکدام۱PASS باJUnitواقعی،exit0،بدونtimeout/AccessViolation ثبت کردند. هرکدام۱۳۶۱checkpoint،۷۰Reviewو۷۰Commit،SQLITE integrity وBOQ oracle/Reopen اصلی معتبر بود. [گزارش وManifest](verification-20261029-checkpoint-native/REPORT.fa.md). مأموریت تشخیصی COMPLETE در دامنه دو اجرا، ولی رفع کرش تاریخی OPEN و P6-5 PARTIAL است. کد محصول و آزمون اصلی تغییر نکرده‌اند؛ فقط Runnerوworkflow مستقل اضافه شدند. در صورت کرش بعدی journal آخرین ENTER/EXIT همان اجرا را تحلیل کنید؛ موفقیت دو نمونه را رفع علت ننامید.
 
