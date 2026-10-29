@@ -34,8 +34,7 @@ def compile_native_control(private: Path) -> Path | None:
     if not vswhere.is_file():
         return None
     lookup = subprocess.run(
-        [str(vswhere), "-latest", "-products", "*", "-requires",
-         "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"],
+        [str(vswhere), "-latest", "-products", "*", "-property", "installationPath"],
         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
         text=True, encoding="utf-8", errors="replace", timeout=20, check=False,
     )
@@ -48,6 +47,14 @@ def compile_native_control(private: Path) -> Path | None:
     source.write_text(NATIVE_C_SOURCE, encoding="ascii")
     command = 'call "' + str(vcvars) + '" >NUL && cl.exe /nologo /Od /TC /W3 /Fe:"' + str(executable) + '" "' + str(source) + '" >NUL'
     result = subprocess.run(["cmd.exe", "/d", "/s", "/c", command],
+                            cwd=private, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            timeout=70, check=False)
+    if result.returncode == 0 and executable.is_file():
+        return executable
+    # Clang-cl is preinstalled on the same trusted Windows runner; it uses the
+    # already-initialized Microsoft Windows SDK/linker from vcvars64.bat.
+    fallback = command.replace("cl.exe /nologo", "clang-cl.exe /nologo")
+    result = subprocess.run(["cmd.exe", "/d", "/s", "/c", fallback],
                             cwd=private, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                             timeout=70, check=False)
     return executable if result.returncode == 0 and executable.is_file() else None
