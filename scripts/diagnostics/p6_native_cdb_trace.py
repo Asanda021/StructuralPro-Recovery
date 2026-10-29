@@ -22,6 +22,11 @@ TESTS = {
     "dialog_commit": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_manual_dialog_review_commit_70_rows",
 }
 MARKER = "P6_AV_SECOND_CHANCE"
+MODULE_BEGIN = "P6_FAULT_PC_MODULE_BEGIN"
+MODULE_END = "P6_FAULT_PC_MODULE_END"
+NEAR_BEGIN = "P6_FAULT_PC_NEAREST_BEGIN"
+NEAR_END = "P6_FAULT_PC_NEAREST_END"
+STACK_BEGIN = "P6_FAULT_STACK_BEGIN"
 SYM = re.compile(r"\b([A-Za-z_][A-Za-z0-9_.-]{0,70})!([A-Za-z_?$@][A-Za-z0-9_?$@.:+<>-]{0,115})")
 
 
@@ -56,8 +61,45 @@ def sanitize(raw: str) -> dict:
     crash = bool(marker_lines)
     section = raw[marker_lines[-1].end():] if crash else ""
     code_in_section = bool(re.search(r"(?i)\b(?:0x)?c0000005\b", section))
+    lines = section.splitlines()
+
+    def marked(start: str, end: str | None) -> list[str]:
+        # Require a full standalone output line; CDB echoes its initial commands.
+        indices = [i for i, line in enumerate(lines) if line.strip() == start]
+        if not indices:
+            return []
+        index = indices[-1] + 1
+        stop = next((i for i in range(index, len(lines))
+                     if end and lines[i].strip() == end), len(lines))
+        return lines[index:stop]
+
+    # lm a @rip maps the exception-context PC to the loaded PE module.
+    # Do not infer the faulting module from later stack frames.
+    module_output = marked(MODULE_BEGIN, MODULE_END) if crash else []
+    pc_module = None
+    for line in module_output:
+        m = re.match(
+            r"^\s*[0-9A-Fa-f\x60]{8,24}\s+[0-9A-Fa-f\x60]{8,24}\s+([A-Za-z_][A-Za-z0-9_.-]{0,70})(?:\s|$)",
+            line,
+        )
+        if m:
+            pc_module = m.group(1).lower()
+            break
+
+    near_output = marked(NEAR_BEGIN, NEAR_END) if crash else []
+    pc_symbol = None
+    for line in near_output:
+        m = SYM.search(line)
+        if m and pc_module and m.group(1).lower() == pc_module:
+            pc_symbol = m.group(1).lower() + "!" + m.group(2).split("+0x", 1)[0]
+            break
+
+    stack_output = marked(STACK_BEGIN, None) if crash else []
+    # Only legacy parser self-check fixtures lack phase markers.
+    if crash and not stack_output and STACK_BEGIN not in section:
+        stack_output = lines
     frames = []
-    for line in section.splitlines():
+    for line in stack_output:
         if len(frames) == 32:
             break
         if not re.match(r"^\s*[0-9A-Fa-f]{1,2}\s+", line):
@@ -71,6 +113,9 @@ def sanitize(raw: str) -> dict:
         "second_chance_marker": crash,
         "exception_codes": ["0xC0000005"] if crash and code_in_section else [],
         "exception_code_observed": code_in_section,
+        "native_pc_module": pc_module,
+        "native_pc_module_proven_by_lm_address": bool(pc_module),
+        "native_pc_nearest_symbol": pc_symbol,
         "native_stack_symbols": frames,
         "native_stack_available": bool(frames),
         "root_cause_proven": False,
@@ -105,7 +150,7 @@ def run(output: Path, arm: str, repetitions: int, timeout: int) -> int:
         "raw_logs_uploaded": False,
         "memory_dumps_uploaded": False,
         "native_root_cause_proven": False,
-        "marker_parser": "standalone_echo_line_v2",
+        "marker_parser": "exception_pc_lm_address_v3",
         "status": "RUNNING" if cdb else "BLOCKED_NO_DEBUGGER",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "attempts": [],
@@ -118,7 +163,12 @@ def run(output: Path, arm: str, repetitions: int, timeout: int) -> int:
         xml = output / f"attempt-{attempt}.xml"
         # CDB catches *second-chance* AV only, not handled first-chance exceptions.
         # kn prints call-stack symbols, not memory/registers/function arguments.
-        crash_commands = f".echo {MARKER}; .lastevent; .ecxr; kn 32; q"
+        crash_commands = (
+            f".echo {MARKER}; .lastevent; .ecxr; "
+            f".echo {MODULE_BEGIN}; lm a @rip; .echo {MODULE_END}; "
+            f".echo {NEAR_BEGIN}; ln @rip; .echo {NEAR_END}; "
+            f".echo {STACK_BEGIN}; kn 32; q"
+        )
         startup = f'sxd -c2 "{crash_commands}" av; g'
         args = [
             str(cdb), "-G", "-c", startup,
@@ -186,6 +236,19 @@ def main() -> int:
         assert clean["second_chance_marker"] and clean["exception_codes"] == ["0xC0000005"]
         assert len(clean["native_stack_symbols"]) == 2 and "Hidden" not in json.dumps(clean)
         assert not sanitize("first-chance access violation")["second_chance_marker"]
+        synthetic = (
+            f"{MARKER}\\nExceptionCode: c0000005\\n"
+            f"{MODULE_BEGIN}\\n00000000`01000000 00000000`01005000 synthetic_fault (deferred)\\n"
+            f"{MODULE_END}\\n{NEAR_BEGIN}\\n"
+            "(00000000`01000100) synthetic_fault!main+0x4\\n"
+            f"{NEAR_END}\\n{STACK_BEGIN}\\n"
+            "00 0011223344556677 00000000 kernel32!BaseThreadInitThunk+0x1\\n"
+        )
+        native = sanitize(synthetic)
+        assert native["native_pc_module"] == "synthetic_fault"
+        assert native["native_pc_module_proven_by_lm_address"]
+        assert native["native_pc_nearest_symbol"] == "synthetic_fault!main"
+        assert not sanitize(f'0:000> .echo {MODULE_BEGIN}; lm a @rip; .echo {MODULE_END}')["native_pc_module"]
         assert not sanitize(f'0:000> sxd -c2 ".echo {MARKER}; .lastevent" av; g')["second_chance_marker"]
         assert junit(Path("file-does-not-exist.xml")) is None
         print("CDB sanitizer self-check PASS")
