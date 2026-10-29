@@ -165,3 +165,35 @@ def test_main_ui_uses_worker_for_floor_and_type_batch_changes(tmp_path):
             view.close()
         main.close()
         app.processEvents()
+
+
+def test_normal_file_picker_subprocess_preserves_full_source_roster(tmp_path):
+    """The user's ordinary IFC file-open path must use the same 3D catalog."""
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app = _app()
+    source = tmp_path / "opened-through-worker.ifc"
+    make_ifc_floors(source, 5)
+    main = GraphicalTakeoffDialog()
+    try:
+        main.ifc_revision.setText("SUBPROCESS-R1")
+        main.open_cad_async(source)
+        assert _await(app, lambda: main._cad_job is None, 30)
+        assert main.viewer.kind == "ifc", main.status.text()
+        doc = main.viewer.ifc_document
+        assert len(doc.source_roster) == 20
+        assert len(doc.meshes) == 20
+        assert doc.source_sha256 == hashlib.sha256(source.read_bytes()).hexdigest()
+        main.open_ifc_3d()
+        assert _await(app, lambda: main._ifc_3d_loader is None, 30)
+        window = main._ifc_3d_dialog
+        assert window is not None
+        assert window.scene.display_catalog["source_member_count"] == 20
+        assert window.batch_load.isEnabled()
+    finally:
+        main.cancel_ifc_3d_loading()
+        main.cancel_cad_loading()
+        window = getattr(main, "_ifc_3d_dialog", None)
+        if window is not None:
+            window.close()
+        main.close()
+        app.processEvents()
