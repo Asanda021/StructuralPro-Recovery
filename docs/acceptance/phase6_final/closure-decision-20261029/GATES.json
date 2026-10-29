@@ -6,7 +6,7 @@
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
   "latest_targeted_acceptance_source_sha": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-  "source_difference_since_acceptance": "The broad active test suite was run at source commit 6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee. After it, only this acceptance report and gate JSON were updated; product and test runtime code were not modified.",
+  "source_difference_since_acceptance": "Since broad regression PASS at product source 6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee, only new diagnostic script, its GitHub workflow and evidence documents have been added. Original BIMAdapter orthogonality contract unchanged (blob 48462b5e3689b2158f9565372d93a3603b15cea0); the new G2 model suite RED because real sanitary v1/v2 are rejected, while the heating source case passes on both OS.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -150,14 +150,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_FOR_ALL_MANDATED_SOURCE_CLASSES_WITH_ORIGINAL_GUI_BATCHING_ACCEPTED",
-      "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
+      "status": "BLOCKED_ALL_MANDATORY_SOURCES_WITH_ARCH_VENT_HEATING_GUI_BATCH_ACCEPTED_SANITARY_V1_V2_REJECTED",
+      "reason": "Three same-project public IFC4 discipline source datasets have real source-backed bounded original GUI acceptance: architecture 957 source elements, ventilation 1310 and heating 1795 (8 distinct represented types); sanitary v1/v2 source-pinned files are refused by original engineering BIMAdapter at rigid placement orthogonality predicate (bim_adapter.py:152, abs(dot)>1e-12). Do not relax approved placement tolerance or claim this source validated. Remaining architectural/site/renovation/finish source-class and independent-building diversity not proven.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "The functional original GUI floor/type/size/page source-backed batching and safe atomic scene swap is accepted. Full product G2 remains unverified across all mandatory independent real-world architectural, site, renovation, MEP, finish source categories; full 340900/159072 triangles not displayed concurrently under 40000 cap; map conversion remains unsupported. Native crash G1, broad latest-HEAD regression and physical UAT G4 remain separate open gates.",
+      "remaining_scope": "Source-backed full engineering 3D validation of sanitary IFC4 with valid orthogonal placements, independent buildings for site/renovation/finishes, and source-diversity acceptance. Native Qt GUI batching works in tested 3 source disciplines but not all mandatory source classes; whole G2 remains BLOCKED. Real hardware UAT G4 remains independent. No tolerance relaxation or fabricated G2 pass.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -355,6 +355,67 @@
           "Source 3D/2D active geometry not loaded for all source GlobalIDs; status disclosed",
           "Native crash and physical owner UAT are independent blockers"
         ]
+      },
+      "extra_verified_source_probe": {
+        "source": "RWTH-E3D/DigitalHub",
+        "pinned_commit": "36565d529b4dadeca625de2b793d7e16700171e9",
+        "different_buildings_claimed": false,
+        "heating": {
+          "source_version": "v2",
+          "source_members": 1795,
+          "source_represented": 1795,
+          "represented_type_count": 8,
+          "represented_types": [
+            "IfcPipeFitting",
+            "IfcPipeSegment",
+            "IfcPump",
+            "IfcSensor",
+            "IfcSpaceHeater",
+            "IfcTank",
+            "IfcUnitaryEquipment",
+            "IfcValve"
+          ],
+          "full_model_loaded_concurrently": false,
+          "batch_size_verified": 1,
+          "distinct_source_batches_passed_both_os": true,
+          "old_selection_revoked": true,
+          "quantity_authority": false,
+          "boq_written": false,
+          "source_blob_sha1": "46fddf2f6a0b3a3855e701dede61adcb359c2031",
+          "source_sha256": "a5603e8f6aa4cbf63aece92f92f503e9a578702d8fe96a6d4661490f1843710d",
+          "linux_and_windows_row_result": "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI",
+          "run": 40922202092
+        },
+        "sanitary_v2": {
+          "source_blob_sha1": "5725d3f84ff71eac57bde5e69a422f23a855ffd5",
+          "source_sha256": "0b1d6b0abd8d4cc3f5f798c7581bed2b39b40110ba6348d5470bbef646cfed79",
+          "run": 40922202092,
+          "linux_and_windows_row_result": "BLOCKED_OR_FAILED",
+          "error_type": "ValueError",
+          "bim_contract_source": "bim_adapter.py:152",
+          "contract_predicate": "abs(normalized_axis_dot)>Decimal('1e-12')",
+          "read_only_preview_pass": true,
+          "accepted": false
+        },
+        "sanitary_v1": {
+          "source_blob_sha1": "6fe0d15f8e139da47b33111431d9cff72a0b1c85",
+          "source_sha256": "5d6b7998d9060626132f56010a75c238ebc00ed6b0f937f2c1db0ac46fbff87a",
+          "run": 40922863501,
+          "linux_and_windows_row_result": "BLOCKED_OR_FAILED",
+          "error_type": "ValueError",
+          "bim_contract_source": "bim_adapter.py:152",
+          "contract_predicate": "abs(normalized_axis_dot)>Decimal('1e-12')",
+          "read_only_preview_pass": true,
+          "accepted": false
+        },
+        "two_red_overall_runs": {
+          "v2": 40922202092,
+          "v1": 40922863501
+        },
+        "phase6_gate_status": "BLOCKED",
+        "unit_contract_relaxed": false,
+        "product_bim_adapter_modified": false,
+        "report": "docs/acceptance/phase6_final/verification-20261029-g2-heating-sanitary-independent-source/REPORT.fa.md"
       }
     },
     {
@@ -404,7 +465,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "FULL_ACTIVE_CURRENT_BROAD_REGRESSION_ACCEPTED_8451_UNIQUE_JUNIT_CASES_LINUX_WINDOWS;_PHASE6_STILL_NO_GO_G2_FULL_SOURCE_G4_PHYSICAL_OWNER_G5_ONE_WINDOWS_EDITION",
+  "last_decision": "G2_EXPANDED_ARCH_VENT_HEATING_3_DISCIPLINES_PASS_IN_BOUNDED_GUI;_SANITARY_V1_V2_FAIL_CLOSED_PLACEMENT;_PHASE6_PARTIAL",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -412,11 +473,11 @@
   "allow_merge": false,
   "allow_exe": false,
   "allow_main_change": false,
-  "require_new_test_run": false,
+  "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
   "last_evidence_run": 40907806582,
   "last_source_verified_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-broad-regression-head/REPORT.fa.md",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g2-heating-sanitary-independent-source/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
     "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
