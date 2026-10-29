@@ -58,15 +58,15 @@ def test_ifc_placement_accepts_only_bounded_axis_roundoff_and_orthogonalizes(tmp
     assert scene.omitted_ids == ()
 
 
-@pytest.mark.parametrize("ratio", [1e-9, 0.1])
-def test_ifc_placement_rejects_material_skew_instead_of_guessing_transform(tmp_path, ratio):
+@pytest.mark.parametrize("ratio", [1e13, 1e15])
+def test_ifc_placement_rejects_ill_conditioned_axes_instead_of_guessing_transform(tmp_path, ratio):
     from core.drawings.bim_adapter import BIMAdapter
     from core.bim.ifc import DeepIFCAdapter
 
     path, _ = _source_with_axis_error(tmp_path, ratio)
-    with pytest.raises(ValueError, match="متعامد"):
+    with pytest.raises(ValueError, match="موازی"):
         BIMAdapter().read_document(path, revision="P6-G2-SKEW")
-    with pytest.raises(ValueError, match="متعامد"):
+    with pytest.raises(ValueError, match="موازی"):
         DeepIFCAdapter().read_display_contract(path, revision="P6-G2-SKEW")
 
 
@@ -82,7 +82,7 @@ def test_ifc_placement_rejects_collinear_axes_and_preserves_display_capacity_gua
         "IfcDirection", DirectionRatios=(0.0, 0.0, 1.0)
     )
     model.write(str(path))
-    with pytest.raises(ValueError, match="متعامد"):
+    with pytest.raises(ValueError, match="موازی"):
         BIMAdapter().read_document(path, revision="P6-G2-COLLINEAR")
     good, _ = _source_with_axis_error(tmp_path, 1e-13)
     with pytest.raises(ValueError, match="ظرفیت"):

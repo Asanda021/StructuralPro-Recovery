@@ -142,17 +142,16 @@ class BIMAdapter:
             if len(pos)!=3 or any(abs(x)>Decimal('1e12') for x in pos):raise ValueError('مختصات خارج از دامنه معتبر است')
             z=vector(r.Axis,(Decimal(0),Decimal(0),Decimal(1)))
             x=vector(r.RefDirection,(Decimal(1),Decimal(0),Decimal(0)))
-            # IFC direction ratios are parser-exposed binary floating-point
-            # scalars. Their decimal representation can contain near-zero
-            # dot-product noise (independently observed in RWTH IFC4 HVAC).
-            # Accept only <= 1e-12 angular non-orthogonality, then construct
-            # an explicitly orthonormal rigid basis. Larger skew, collinearity
-            # and unsupported placements remain fail-closed.
+            # IFC4 ADD2 IfcAxis2Placement3D derives P with IfcBuildAxes:
+            # RefDirection is an approximate X and need NOT be orthogonal to Z.
+            # Project onto the plane normal to Z; this is a normative transform,
+            # not an increased tolerance or a repair of malformed source bytes.
+            # Keep 1e-12 as a conditioning guard on the projection magnitude.
             deviation=sum(a*b for a,b in zip(x,z))
-            if abs(deviation)>Decimal('1e-12'):raise ValueError('جهت محورهای Placement متعامد نیست')
             x_proj=tuple(x[i]-deviation*z[i] for i in range(3))
             x_length=sum(v*v for v in x_proj).sqrt()
-            if not x_length:raise ValueError('جهت محورهای Placement متعامد نیست')
+            if x_length<=Decimal('1e-12'):
+                raise ValueError('محورهای Placement موازی یا نزدیک به موازی‌اند؛ جهت عمود پایدار قابل محاسبه نیست')
             x=tuple(v/x_length for v in x_proj)
             y=(z[1]*x[2]-z[2]*x[1],z[2]*x[0]-z[0]*x[2],z[0]*x[1]-z[1]*x[0])
             local=tuple(tuple((x[i],y[i],z[i],pos[i])) for i in range(3))+((Decimal(0),Decimal(0),Decimal(0),Decimal(1)),)
@@ -238,5 +237,5 @@ class BIMAdapter:
             'buildings':[{'global_id':x.GlobalId,'name':x.Name or ''} for x in model.by_type('IfcBuilding')],
             'unit_factors_si':{k:str(v) for k,v in units.items()},'storeys':storeys,'elements':elements,
             'map_conversion_supported':False,'map_conversion_present':bool(model.by_type('IfcMapConversion')),
-            'numeric_policy':'Decimal80; exact QTO STEP scalars <=64 significant digits; placement over parser scalars; rigid placements <=1e12m; orthogonality 1e-24; minimum nonzero quantity 1e-24',
+            'numeric_policy':'Decimal80; exact QTO STEP scalars <=64 significant digits; placement over parser scalars; rigid placements <=1e12m; IFC4 IfcBuildAxes projection; conditioning guard 1e-12; minimum nonzero quantity 1e-24',
             'ready':False,'commit_allowed':False,'payable_rows':[]}

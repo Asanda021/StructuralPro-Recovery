@@ -1,0 +1,193 @@
+FFFF....                                                                 [100%]
+=================================== FAILURES ===================================
+____________ test_ifc_refdirection_is_projected_not_rejected[1e-09] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_ifc_refdirection_is_proje0')
+ratio = 1e-09
+
+    @pytest.mark.parametrize('ratio', [1e-9, 0.1, 5.0])
+    def test_ifc_refdirection_is_projected_not_rejected(tmp_path, ratio):
+        from core.drawings.bim_adapter import BIMAdapter
+        path, gid = _source_with_axis_error(tmp_path, ratio)
+>       document = BIMAdapter().read_document(path, revision='BUILD-AXES')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase6_ifc_build_axes_contract.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+core/drawings/bim_adapter.py:196: in read_document
+    sid,bid,reason=spatial(obj);mat=placement(obj.ObjectPlacement);quantities=[];qnames=set();warnings=[]
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pl = #19=IfcLocalPlacement(#14,#18), depth = 0
+
+    def placement(pl,depth=0):
+        if pl is None:return I
+        if depth>64 or pl.id() in active:raise ValueError('چرخه یا عمق نامعتبر Placement')
+        if pl.id() in cache:return cache[pl.id()]
+        if not pl.is_a('IfcLocalPlacement'):raise ValueError('نوع Placement پشتیبانی نمی‌شود')
+        active.add(pl.id())
+        r=pl.RelativePlacement
+        if not r.is_a('IfcAxis2Placement3D'):raise ValueError('Placement باید سه‌بعدی صریح باشد')
+        pos=tuple(number(x,'مختصات')*units['LENGTHUNIT'] for x in r.Location.Coordinates)
+        if len(pos)!=3 or any(abs(x)>Decimal('1e12') for x in pos):raise ValueError('مختصات خارج از دامنه معتبر است')
+        z=vector(r.Axis,(Decimal(0),Decimal(0),Decimal(1)))
+        x=vector(r.RefDirection,(Decimal(1),Decimal(0),Decimal(0)))
+        # IFC direction ratios are parser-exposed binary floating-point
+        # scalars. Their decimal representation can contain near-zero
+        # dot-product noise (independently observed in RWTH IFC4 HVAC).
+        # Accept only <= 1e-12 angular non-orthogonality, then construct
+        # an explicitly orthonormal rigid basis. Larger skew, collinearity
+        # and unsupported placements remain fail-closed.
+        deviation=sum(a*b for a,b in zip(x,z))
+>       if abs(deviation)>Decimal('1e-12'):raise ValueError('جهت محورهای Placement متعامد نیست')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: جهت محورهای Placement متعامد نیست
+
+core/drawings/bim_adapter.py:152: ValueError
+_____________ test_ifc_refdirection_is_projected_not_rejected[0.1] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_ifc_refdirection_is_proje1')
+ratio = 0.1
+
+    @pytest.mark.parametrize('ratio', [1e-9, 0.1, 5.0])
+    def test_ifc_refdirection_is_projected_not_rejected(tmp_path, ratio):
+        from core.drawings.bim_adapter import BIMAdapter
+        path, gid = _source_with_axis_error(tmp_path, ratio)
+>       document = BIMAdapter().read_document(path, revision='BUILD-AXES')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase6_ifc_build_axes_contract.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+core/drawings/bim_adapter.py:196: in read_document
+    sid,bid,reason=spatial(obj);mat=placement(obj.ObjectPlacement);quantities=[];qnames=set();warnings=[]
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pl = #19=IfcLocalPlacement(#14,#18), depth = 0
+
+    def placement(pl,depth=0):
+        if pl is None:return I
+        if depth>64 or pl.id() in active:raise ValueError('چرخه یا عمق نامعتبر Placement')
+        if pl.id() in cache:return cache[pl.id()]
+        if not pl.is_a('IfcLocalPlacement'):raise ValueError('نوع Placement پشتیبانی نمی‌شود')
+        active.add(pl.id())
+        r=pl.RelativePlacement
+        if not r.is_a('IfcAxis2Placement3D'):raise ValueError('Placement باید سه‌بعدی صریح باشد')
+        pos=tuple(number(x,'مختصات')*units['LENGTHUNIT'] for x in r.Location.Coordinates)
+        if len(pos)!=3 or any(abs(x)>Decimal('1e12') for x in pos):raise ValueError('مختصات خارج از دامنه معتبر است')
+        z=vector(r.Axis,(Decimal(0),Decimal(0),Decimal(1)))
+        x=vector(r.RefDirection,(Decimal(1),Decimal(0),Decimal(0)))
+        # IFC direction ratios are parser-exposed binary floating-point
+        # scalars. Their decimal representation can contain near-zero
+        # dot-product noise (independently observed in RWTH IFC4 HVAC).
+        # Accept only <= 1e-12 angular non-orthogonality, then construct
+        # an explicitly orthonormal rigid basis. Larger skew, collinearity
+        # and unsupported placements remain fail-closed.
+        deviation=sum(a*b for a,b in zip(x,z))
+>       if abs(deviation)>Decimal('1e-12'):raise ValueError('جهت محورهای Placement متعامد نیست')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: جهت محورهای Placement متعامد نیست
+
+core/drawings/bim_adapter.py:152: ValueError
+_____________ test_ifc_refdirection_is_projected_not_rejected[5.0] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_ifc_refdirection_is_proje2')
+ratio = 5.0
+
+    @pytest.mark.parametrize('ratio', [1e-9, 0.1, 5.0])
+    def test_ifc_refdirection_is_projected_not_rejected(tmp_path, ratio):
+        from core.drawings.bim_adapter import BIMAdapter
+        path, gid = _source_with_axis_error(tmp_path, ratio)
+>       document = BIMAdapter().read_document(path, revision='BUILD-AXES')
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase6_ifc_build_axes_contract.py:13: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+core/drawings/bim_adapter.py:196: in read_document
+    sid,bid,reason=spatial(obj);mat=placement(obj.ObjectPlacement);quantities=[];qnames=set();warnings=[]
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pl = #19=IfcLocalPlacement(#14,#18), depth = 0
+
+    def placement(pl,depth=0):
+        if pl is None:return I
+        if depth>64 or pl.id() in active:raise ValueError('چرخه یا عمق نامعتبر Placement')
+        if pl.id() in cache:return cache[pl.id()]
+        if not pl.is_a('IfcLocalPlacement'):raise ValueError('نوع Placement پشتیبانی نمی‌شود')
+        active.add(pl.id())
+        r=pl.RelativePlacement
+        if not r.is_a('IfcAxis2Placement3D'):raise ValueError('Placement باید سه‌بعدی صریح باشد')
+        pos=tuple(number(x,'مختصات')*units['LENGTHUNIT'] for x in r.Location.Coordinates)
+        if len(pos)!=3 or any(abs(x)>Decimal('1e12') for x in pos):raise ValueError('مختصات خارج از دامنه معتبر است')
+        z=vector(r.Axis,(Decimal(0),Decimal(0),Decimal(1)))
+        x=vector(r.RefDirection,(Decimal(1),Decimal(0),Decimal(0)))
+        # IFC direction ratios are parser-exposed binary floating-point
+        # scalars. Their decimal representation can contain near-zero
+        # dot-product noise (independently observed in RWTH IFC4 HVAC).
+        # Accept only <= 1e-12 angular non-orthogonality, then construct
+        # an explicitly orthonormal rigid basis. Larger skew, collinearity
+        # and unsupported placements remain fail-closed.
+        deviation=sum(a*b for a,b in zip(x,z))
+>       if abs(deviation)>Decimal('1e-12'):raise ValueError('جهت محورهای Placement متعامد نیست')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: جهت محورهای Placement متعامد نیست
+
+core/drawings/bim_adapter.py:152: ValueError
+___ test_ifc_projection_then_parent_composition_has_hand_calculated_rotation ___
+
+tmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_ifc_projection_then_paren0')
+
+    def test_ifc_projection_then_parent_composition_has_hand_calculated_rotation(tmp_path):
+        import ifcopenshell
+        from core.drawings.bim_adapter import BIMAdapter
+        path, gid = _source_with_axis_error(tmp_path, 0.0)
+        model = ifcopenshell.open(str(path))
+        beam = model.by_guid(gid)
+        beam.ObjectPlacement.RelativePlacement.RefDirection.DirectionRatios = (3., 4., 5.)
+        # Identity parent makes the independent exact local basis visible in world axes.
+        beam.ObjectPlacement.PlacementRelTo = None
+        model.write(str(path))
+>       row = next(x for x in BIMAdapter().read_document(path, revision='BUILD-AXES')['elements'] if x['global_id'] == gid)
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_phase6_ifc_build_axes_contract.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+core/drawings/bim_adapter.py:196: in read_document
+    sid,bid,reason=spatial(obj);mat=placement(obj.ObjectPlacement);quantities=[];qnames=set();warnings=[]
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+pl = #19=IfcLocalPlacement($,#18), depth = 0
+
+    def placement(pl,depth=0):
+        if pl is None:return I
+        if depth>64 or pl.id() in active:raise ValueError('چرخه یا عمق نامعتبر Placement')
+        if pl.id() in cache:return cache[pl.id()]
+        if not pl.is_a('IfcLocalPlacement'):raise ValueError('نوع Placement پشتیبانی نمی‌شود')
+        active.add(pl.id())
+        r=pl.RelativePlacement
+        if not r.is_a('IfcAxis2Placement3D'):raise ValueError('Placement باید سه‌بعدی صریح باشد')
+        pos=tuple(number(x,'مختصات')*units['LENGTHUNIT'] for x in r.Location.Coordinates)
+        if len(pos)!=3 or any(abs(x)>Decimal('1e12') for x in pos):raise ValueError('مختصات خارج از دامنه معتبر است')
+        z=vector(r.Axis,(Decimal(0),Decimal(0),Decimal(1)))
+        x=vector(r.RefDirection,(Decimal(1),Decimal(0),Decimal(0)))
+        # IFC direction ratios are parser-exposed binary floating-point
+        # scalars. Their decimal representation can contain near-zero
+        # dot-product noise (independently observed in RWTH IFC4 HVAC).
+        # Accept only <= 1e-12 angular non-orthogonality, then construct
+        # an explicitly orthonormal rigid basis. Larger skew, collinearity
+        # and unsupported placements remain fail-closed.
+        deviation=sum(a*b for a,b in zip(x,z))
+>       if abs(deviation)>Decimal('1e-12'):raise ValueError('جهت محورهای Placement متعامد نیست')
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: جهت محورهای Placement متعامد نیست
+
+core/drawings/bim_adapter.py:152: ValueError
+=========================== short test summary info ============================
+FAILED tests/test_phase6_ifc_build_axes_contract.py::test_ifc_refdirection_is_projected_not_rejected[1e-09]
+FAILED tests/test_phase6_ifc_build_axes_contract.py::test_ifc_refdirection_is_projected_not_rejected[0.1]
+FAILED tests/test_phase6_ifc_build_axes_contract.py::test_ifc_refdirection_is_projected_not_rejected[5.0]
+FAILED tests/test_phase6_ifc_build_axes_contract.py::test_ifc_projection_then_parent_composition_has_hand_calculated_rotation
+4 failed, 4 passed in 0.38s
