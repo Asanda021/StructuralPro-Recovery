@@ -118,6 +118,43 @@ class VerifiedScene3D:
                 raise ValueError("رشته یا نوع عضو IFC مشخص نیست.")
             meshes.append(SourceMesh3D(identity, ifc_type, floor,
                                        tuple(new_vertices), tuple(new_faces)))
+        # Partial viewer contracts must preserve the entire IFC member roster,
+        # including unrepresented and intentionally not-loaded members.
+        catalog = contract.get("display_catalog")
+        if catalog is not None:
+            if (not isinstance(catalog, dict) or
+                    catalog.get("policy") != "ifc_partial_display_catalog_v1" or
+                    catalog.get("source_sha256") != sha or
+                    catalog.get("revision") != revision):
+                raise ValueError("فهرست نمایش جزئی با منبع و نسخه IFC تطابق ندارد.")
+            roster = catalog.get("members")
+            if not isinstance(roster, list) or not roster:
+                raise ValueError("فهرست اعضای منبع IFC معتبر نیست.")
+            roster_ids = set()
+            status_counts = {"displayed": 0, "not_loaded": 0, "without_geometry": 0}
+            shown_ids = set()
+            for item in roster:
+                if not isinstance(item, dict):
+                    raise ValueError("رکورد وضعیت منبع IFC معتبر نیست.")
+                gid = item.get("global_id")
+                status = item.get("status")
+                if (not isinstance(gid, str) or not gid or
+                        gid in roster_ids or status not in status_counts or
+                        not isinstance(item.get("ifc_type"), str)):
+                    raise ValueError("هویت یا وضعیت عضو IFC نامعتبر است.")
+                roster_ids.add(gid)
+                status_counts[status] += 1
+                if status == "displayed":
+                    shown_ids.add(gid)
+            if (shown_ids != identities or
+                    catalog.get("counts") != status_counts or
+                    catalog.get("source_member_count") != len(roster) or
+                    catalog.get("complete_model_displayed") is not (
+                        status_counts["not_loaded"] == 0 and
+                        status_counts["without_geometry"] == 0
+                    )):
+                raise ValueError("وضعیت بارگذاری اعضای IFC با هندسه موجود مغایرت دارد.")
+        self.display_catalog = catalog
         self.meshes = tuple(meshes)
         self.revision = revision
         self.source_sha256 = sha
