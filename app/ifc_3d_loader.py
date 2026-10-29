@@ -41,12 +41,15 @@ class IFC3DLoadSignals(QObject):
 class IFC3DLoadJob(QRunnable):
     """One immutable request, tied to a token and a user-selectable cancellation."""
 
-    def __init__(self, *, token: int, path: str, revision: str, expected_sha: str):
+    def __init__(self, *, token: int, path: str, revision: str, expected_sha: str,
+                 selected_global_ids=None):
         super().__init__()
         self.token = token
         self.path = str(path)
         self.revision = str(revision)
         self.expected_sha = str(expected_sha)
+        self.selected_global_ids = (None if selected_global_ids is None
+                                    else tuple(selected_global_ids))
         self.cancellation = Event()
         self.signals = IFC3DLoadSignals()
 
@@ -68,6 +71,7 @@ class IFC3DLoadJob(QRunnable):
             self.signals.stage.emit(self.token, "خواندن هندسه واقعی IFC در پس‌زمینه…")
             contract = DeepIFCAdapter().read_display_contract(
                 source, revision=self.revision, max_triangles=40_000,
+                selected_global_ids=self.selected_global_ids,
                 cancel_event=self.cancellation, batch_size=32,
                 on_progress=lambda done, total: self.signals.progress.emit(
                     self.token, done, total))
