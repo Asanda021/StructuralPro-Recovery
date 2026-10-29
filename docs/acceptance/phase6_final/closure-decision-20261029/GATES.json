@@ -4,9 +4,9 @@
   "repository": "Asanda021/StructuralPro-Recovery",
   "pr_number": 34,
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
-  "audited_product_head": "1bdf488bfde364987586bea0563df07c0fbed6ee",
-  "latest_targeted_acceptance_source_sha": "7f39ebd00eddb29cc54f04027c2d75473cdd2c53",
-  "source_difference_since_acceptance": "G1 native timeout-zero Windows acceptance at original product source 40d8e18326b9c2e80e79f4dc6524dcf527205d16: 4 lifecycle, 3 integrated, 2 CDB all JUnit PASS. Only diagnostic/pytest timeout policy changed; no product code changed for G1. G2 full mandatory source coverage, broad same-head regression and G4 physical Windows owner UAT remain not accepted.",
+  "audited_product_head": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
+  "latest_targeted_acceptance_source_sha": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
+  "source_difference_since_acceptance": "The broad active test suite was run at source commit 6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee. After it, only this acceptance report and gate JSON were updated; product and test runtime code were not modified.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -57,6 +57,21 @@
       "evidence_run": 40902096586,
       "independent_model_count": 2,
       "original_gui_unit_test_run": 40902062802
+    },
+    {
+      "id": "P6_CURRENT_BROAD_715",
+      "title": "Whole active current regression Linux and Windows with 3-shard exact JUnit union",
+      "status": "ACCEPTED_AUTOMATED_ACTIVE_SUITE",
+      "evidence_run": 40907806582,
+      "tested_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
+      "modules": 715,
+      "cases_per_os": 8451,
+      "linux_pass": 8446,
+      "linux_skip": 5,
+      "windows_pass": 8444,
+      "windows_skip": 7,
+      "failures": 0,
+      "timeouts": 0
     }
   ],
   "closure_blockers": [
@@ -389,7 +404,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "G1_AUTOMATED_NATIVE_EXIT_ACCEPTED_LIMITED;_G2_MANDATORY_SOURCE_COVERAGE_G4_PHYSICAL_WINDOWS_AND_BROAD_REGRESSION_REMAIN_NO_GO",
+  "last_decision": "FULL_ACTIVE_CURRENT_BROAD_REGRESSION_ACCEPTED_8451_UNIQUE_JUNIT_CASES_LINUX_WINDOWS;_PHASE6_STILL_NO_GO_G2_FULL_SOURCE_G4_PHYSICAL_OWNER_G5_ONE_WINDOWS_EDITION",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -397,10 +412,51 @@
   "allow_merge": false,
   "allow_exe": false,
   "allow_main_change": false,
-  "require_new_test_run": true,
+  "require_new_test_run": false,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40905485780,
-  "last_source_verified_commit": "40d8e18326b9c2e80e79f4dc6524dcf527205d16",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g1-native-windows-timer-zero/REPORT.fa.md",
-  "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6."
+  "last_evidence_run": 40907806582,
+  "last_source_verified_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-broad-regression-head/REPORT.fa.md",
+  "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
+  "broad_current_regression": {
+    "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
+    "run": 40907806582,
+    "tested_commit": "6d0ee784c1ef58ee13e0dfbe25d858b75e3cb8ee",
+    "ci_conclusion": "success",
+    "five_jobs_success": true,
+    "modules": 715,
+    "cases_per_os": 8451,
+    "linux": {
+      "passed": 8446,
+      "skipped": 5,
+      "failed": 0,
+      "errors": 0,
+      "timed_out": false,
+      "artifact_id": 12912813506
+    },
+    "windows": {
+      "passed": 8444,
+      "skipped": 7,
+      "failed": 0,
+      "errors": 0,
+      "timed_out": false,
+      "shard_count": 3,
+      "artifact_ids": [
+        12913790846,
+        12913157815,
+        12912139812
+      ]
+    },
+    "unique_shard_union_verified": true,
+    "union_artifact_id": 12913940689,
+    "module_manifest_sha256": "7e77a4c82c9fbd62d945a4a7c0844dd3977df44f42bde741456364935dcfc342",
+    "excluded_archived_release_contract_modules": 15,
+    "archived_release_contracts_not_in_current_coverage": true,
+    "gate_limitations": [
+      "Physical Windows owner UAT not verified",
+      "G2 full mandatory source classes not accepted",
+      "Root cause of historical native AV not proven",
+      "No EXE/build/release/merge authorized"
+    ]
+  }
 }
