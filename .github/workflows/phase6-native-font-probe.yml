@@ -37,7 +37,7 @@ jobs:
           def probe(font):
               raw=QRawFont.fromFont(font)
               return {'requested_family':font.family(),'resolved_family':QFontInfo(font).family(),'raw_family':raw.familyName(),'raw_valid':raw.isValid(),'missing':sum(not raw.supportsCharacter(ord(c)) for c in text if c!=' '),'zero_glyphs':sum(i==0 for i in raw.glyphIndexesForString(text))}
-          with tempfile.TemporaryDirectory() as temp:
+          with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as temp:
               Path.home=classmethod(lambda cls:Path(temp))
               from app.main import main
               def inspect(app):
@@ -55,7 +55,7 @@ jobs:
               real=QApplication.exec
               def test_exec(app):
                   QTimer.singleShot(150,lambda:inspect(app))
-                  return real(app)
+                  return real()
               QApplication.exec=test_exec
               main()
           print(json.dumps(result,ensure_ascii=False))
