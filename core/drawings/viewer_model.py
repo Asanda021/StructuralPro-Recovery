@@ -61,7 +61,31 @@ class DrawingViewerModel:
             new_page_count = 1
         elif ext == ".ifc":
             from core.bim.ifc import DeepIFCAdapter
-            new_ifc_document = DeepIFCAdapter().read_display_meshes(p)
+            try:
+                new_ifc_document = DeepIFCAdapter().read_display_meshes(p)
+            except ValueError as exc:
+                if "ظرفیت نمایش مثلث‌ها" not in str(exc):
+                    raise
+                # A full-scene failure must not prevent controlled access to
+                # a large verified IFC. Preview one REAL member, never imply
+                # all source members have been loaded in the 2D projection.
+                try:
+                    import ifcopenshell
+                except ImportError:
+                    raise
+                source = ifcopenshell.open(str(p))
+                candidates = [m for m in source.by_type("IfcElement")
+                              if getattr(m, "Representation", None)]
+                candidates.sort(key=lambda m: (
+                    0 if m.is_a() == "IfcWall" else 1, m.GlobalId
+                ))
+                if not candidates:
+                    raise ValueError("مدل IFC فاقد عضو قابل نمایش است.") from exc
+                new_ifc_document = DeepIFCAdapter().read_display_meshes(
+                    p, max_triangles=40_000,
+                    selected_global_ids=[candidates[0].GlobalId])
+                if len(new_ifc_document.source_roster) <= len(new_ifc_document.meshes):
+                    raise ValueError("پیش‌نمایش محدود باید شامل هشدار پوشش ناقص باشد.")
             new_kind = "ifc"
             new_page_count = 1
         else:
