@@ -338,12 +338,15 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
     destroyed_notifications = []
     for cycle in range(5):
         checkpoint("DIALOG_ENTER", cycle=cycle, committed=14 * cycle)
+        committed = 14 * cycle
         service = StructuralProApp(db)
         dialog = None
         try:
             assert len(service.load_manual_formulas("P")) == 70
             assert len(service.open_project("P")["boq"]) == 14 * cycle
+            checkpoint("CONSTRUCT_ENTER", cycle=cycle, committed=committed)
             dialog = ManualTakeoffDialog(service, "P")
+            checkpoint("CONSTRUCT_EXIT", cycle=cycle, committed=committed)
             dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
             # Keep observer callback independent of the dialog object.
             dialog.destroyed.connect(
@@ -351,52 +354,75 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
             )
             dialog.show()
             dialog.manual_tabs.setCurrentIndex(1)
+            checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
             app.processEvents()
+            checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
             assert dialog.formula_table.rowCount() == 70
             assert isValid(dialog)
-            checkpoint("DIALOG_READY", cycle=cycle, committed=14 * cycle)
+            checkpoint("DIALOG_READY", cycle=cycle, committed=committed)
             dialog.formula_reviewer.setText("مهندس مصنوعی")
             dialog.formula_review_note.setText("مرجع مستقل هر فرمول و واحد کنترل شد")
             chunk = keys[14 * cycle:14 * (cycle + 1)]
             assert len(chunk) == 14
             for offset, key in enumerate(chunk, start=1):
+                checkpoint("SELECT_ENTER", cycle=cycle, committed=committed)
                 _select_real_formula_row(dialog, key, app)
+                checkpoint("SELECT_EXIT", cycle=cycle, committed=committed)
+                checkpoint("REVIEW_CLICK_ENTER", cycle=cycle, committed=committed)
                 QTest.mouseClick(dialog.formula_review_button, Qt.MouseButton.LeftButton)
+                checkpoint("REVIEW_CLICK_EXIT", cycle=cycle, committed=committed)
+                checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
                 app.processEvents()
+                checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
                 assert service.load_manual_formulas("P")[key]["status"] == "reviewed"
+                checkpoint("SELECT_ENTER", cycle=cycle, committed=committed)
                 _select_real_formula_row(dialog, key, app)
+                checkpoint("SELECT_EXIT", cycle=cycle, committed=committed)
+                checkpoint("COMMIT_CLICK_ENTER", cycle=cycle, committed=committed)
                 QTest.mouseClick(dialog.formula_commit_button, Qt.MouseButton.LeftButton)
+                checkpoint("COMMIT_CLICK_EXIT", cycle=cycle, committed=committed)
+                checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
                 app.processEvents()
+                checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
                 assert service.load_manual_formulas("P")[key]["status"] == "committed"
                 assert len(service.open_project("P")["boq"]) == 14 * cycle + offset
-            checkpoint("BATCH_COMMITTED", cycle=cycle, committed=14 * (cycle + 1))
-            checkpoint("SORT_FILTER_ENTER", cycle=cycle, committed=14 * (cycle + 1))
+                committed = 14 * cycle + offset
+            checkpoint("BATCH_COMMITTED", cycle=cycle, committed=committed)
+            checkpoint("SORT_FILTER_ENTER", cycle=cycle, committed=committed)
             # Exercise real refresh/sort/search after the last UI write.
             dialog.formula_table.sortItems(0, Qt.SortOrder.DescendingOrder)
             dialog.formula_search.setText("طبقه" + str(cycle + 1))
+            checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
             app.processEvents()
+            checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
             dialog.formula_search.clear()
-            checkpoint("SORT_FILTER_EXIT", cycle=cycle, committed=14 * (cycle + 1))
-            checkpoint("REFRESH_ENTER", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("SORT_FILTER_EXIT", cycle=cycle, committed=committed)
+            checkpoint("REFRESH_ENTER", cycle=cycle, committed=committed)
             dialog.refresh_formula_rows()
+            checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
             app.processEvents()
+            checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
             assert dialog.formula_table.rowCount() == 70
-            checkpoint("REFRESH_EXIT", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("REFRESH_EXIT", cycle=cycle, committed=committed)
         finally:
             if dialog is not None:
-                checkpoint("DIALOG_DELETE_ENTER", cycle=cycle, committed=14 * (cycle + 1))
+                checkpoint("DIALOG_DELETE_ENTER", cycle=cycle, committed=committed)
                 dialog.close()
                 dialog.deleteLater()
+                checkpoint("DEFERRED_ENTER", cycle=cycle, committed=committed)
                 QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+                checkpoint("DEFERRED_EXIT", cycle=cycle, committed=committed)
+                checkpoint("EVENTS_ENTER", cycle=cycle, committed=committed)
                 app.processEvents()
+                checkpoint("EVENTS_EXIT", cycle=cycle, committed=committed)
                 assert not isValid(dialog), "Native dialog wrapper survived DeferredDelete"
                 assert destroyed_notifications.count(cycle) == 1, "Dialog destroyed != exactly once"
-                checkpoint("DIALOG_DELETE_EXIT", cycle=cycle, committed=14 * (cycle + 1))
-            checkpoint("STORE_CLOSE_ENTER", cycle=cycle, committed=14 * (cycle + 1))
+                checkpoint("DIALOG_DELETE_EXIT", cycle=cycle, committed=committed)
+            checkpoint("STORE_CLOSE_ENTER", cycle=cycle, committed=committed)
             service.store.close()
-            checkpoint("STORE_CLOSE_EXIT", cycle=cycle, committed=14 * (cycle + 1))
+            checkpoint("STORE_CLOSE_EXIT", cycle=cycle, committed=committed)
         # Reopen SQLite after widget and store teardown, before next UI construction.
-        checkpoint("REOPEN_ENTER", cycle=cycle, committed=14 * (cycle + 1))
+        checkpoint("REOPEN_ENTER", cycle=cycle, committed=committed)
         reopened = StructuralProApp(db)
         try:
             project = reopened.open_project("P")
@@ -405,7 +431,7 @@ def test_native_real_dialog_destroy_reopen_every_fourteen_commits(tmp_path):
             assert sum(row["status"] == "committed" for row in reg.values()) == 14 * (cycle + 1)
         finally:
             reopened.store.close()
-        checkpoint("REOPEN_EXIT", cycle=cycle, committed=14 * (cycle + 1))
+        checkpoint("REOPEN_EXIT", cycle=cycle, committed=committed)
     assert destroyed_notifications == [0, 1, 2, 3, 4]
     final = StructuralProApp(db)
     try:
