@@ -34,18 +34,15 @@ jobs:
           root=Path('font-evidence');root.mkdir()
           text='StructuralPro 0123456789 ۰۱۲۳۴۵۶۷۸۹ کارگاه متره'
           result={'source_sha':__import__('subprocess').check_output(['git','rev-parse','HEAD'],text=True).strip()}
-          app=QApplication([])
-          family,supported=_preferred_persian_font()
           def probe(font):
               raw=QRawFont.fromFont(font)
               return {'requested_family':font.family(),'resolved_family':QFontInfo(font).family(),'raw_family':raw.familyName(),'raw_valid':raw.isValid(),'missing':sum(not raw.supportsCharacter(ord(c)) for c in text if c!=' '),'zero_glyphs':sum(i==0 for i in raw.glyphIndexesForString(text))}
-          result.update(chosen=family,verified=supported,family_count=len(QFontDatabase.families()),candidates={n:probe(QFont(n,16)) for n in ('Tahoma','Segoe UI','Arial',family)})
-          app.quit()
-          del app
           with tempfile.TemporaryDirectory() as temp:
               Path.home=classmethod(lambda cls:Path(temp))
               from app.main import main
               def inspect(app):
+                  family,supported=_preferred_persian_font()
+                  result.update(chosen=family,verified=supported,family_count=len(QFontDatabase.families()),candidates={n:probe(QFont(n,16)) for n in ('Tahoma','Segoe UI','Arial',family)})
                   win=next(x for x in app.topLevelWidgets() if isinstance(x,QMainWindow))
                   app.processEvents()
                   brand=win.findChild(QLabel,'BrandTitle')
