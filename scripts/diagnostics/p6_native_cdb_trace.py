@@ -137,13 +137,14 @@ def persist(path: Path, data: dict) -> None:
     tmp.replace(path)
 
 
-def run(output: Path, arm: str, repetitions: int, timeout: int, faulthandler_mode="enabled") -> int:
+def run(output: Path, arm: str, repetitions: int, timeout: int, faulthandler_mode="enabled", dump_timeout=45) -> int:
     output.mkdir(parents=True, exist_ok=False)
     cdb = debugger()
     state = {
         "kind": "p6_native_windows_cdb_live_exception_no_dump",
         "arm": arm,
         "faulthandler_mode": faulthandler_mode,
+        "dump_timeout": dump_timeout,
         "source_test": TESTS[arm],
         "debugger_available": cdb is not None,
         "debugger_kind": "Microsoft CDB",
@@ -175,18 +176,20 @@ def run(output: Path, arm: str, repetitions: int, timeout: int, faulthandler_mod
         args = [
             str(cdb), "-G", "-c", startup,
             sys.executable, "-m", "pytest", "-q", "--disable-warnings",
-            *(["-o", "faulthandler_timeout=45"] if faulthandler_mode=="enabled" else ["-p", "no:faulthandler"]),
+            *(["-o", f"faulthandler_timeout={dump_timeout}"] if faulthandler_mode=="enabled" else ["-p", "no:faulthandler"]),
             "-p", "scripts.diagnostics.p6_faulthandler_probe", f"--junitxml={xml}", TESTS[arm],
         ]
         env = os.environ.copy()
         if faulthandler_mode=="enabled": env["PYTHONFAULTHANDLER"] = "1"
         else: env.pop("PYTHONFAULTHANDLER",None)
         env["P6_EXPECT_FAULTHANDLER"] = faulthandler_mode
+        env["P6_EXPECT_DUMP_TIMEOUT"] = str(dump_timeout)
         env["P6_FH_PROBE"] = str(output / f"faulthandler-{attempt}.json")
         if arm == "dialog_lifecycle" and os.environ.get("P6_LIFECYCLE_CHECKPOINTS") == "1":
             env["P6_LIFECYCLE_CHECKPOINT_DIR"] = str(output / f"checkpoints-{attempt}")
         else:
             env.pop("P6_LIFECYCLE_CHECKPOINT_DIR", None)
+        process_started_utc = datetime.now(timezone.utc).isoformat()
         start = time.monotonic()
         timed_out = False
         # Unredacted debugger output only exists in a transient directory,
@@ -202,6 +205,7 @@ def run(output: Path, arm: str, repetitions: int, timeout: int, faulthandler_mod
                     proc.kill()
                     exit_code = proc.wait(timeout=15)
             native = sanitize(raw_path.read_bytes()[:12_000_000].decode("utf-8", errors="replace"))
+        process_ended_utc = datetime.now(timezone.utc).isoformat()
         result = junit(xml)
         valid = bool(
             exit_code == 0 and not timed_out and not native["second_chance_marker"]
@@ -209,6 +213,8 @@ def run(output: Path, arm: str, repetitions: int, timeout: int, faulthandler_mod
         )
         state["attempts"].append({
             "attempt": attempt,
+            "process_started_utc": process_started_utc,
+            "process_ended_utc": process_ended_utc,
             "wall_seconds": round(time.monotonic() - start, 2),
             "debugger_exit_code": exit_code,
             "timed_out": timed_out,
@@ -237,6 +243,7 @@ def main() -> int:
     parser.add_argument("--timeout", type=int, default=420)
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--faulthandler", choices=("enabled","disabled"), default="enabled")
+    parser.add_argument("--dump-timeout", type=int, choices=(0,45), default=45)
     opts = parser.parse_args()
     if opts.self_check:
         fake = (f"{MARKER}\nExceptionCode: c0000005\n"
@@ -268,7 +275,7 @@ def main() -> int:
         parser.error("Native Windows Qt is required")
     if opts.output is None or not 1 <= opts.repeats <= 3 or not 90 <= opts.timeout <= 500:
         parser.error("Unsupported diagnostic bounds")
-    return run(opts.output, opts.arm, opts.repeats, opts.timeout, opts.faulthandler)
+    return run(opts.output, opts.arm, opts.repeats, opts.timeout, opts.faulthandler, opts.dump_timeout)
 
 
 if __name__ == "__main__":
