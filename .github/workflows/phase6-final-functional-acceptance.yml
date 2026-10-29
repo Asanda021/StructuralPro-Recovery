@@ -27,6 +27,7 @@ jobs:
       PYTHONPATH: .
       PYTHONUTF8: '1'
       PYTHONFAULTHANDLER: '1'
+      STRUCTURALPRO_P6_QPA_PLATFORM: ${{ matrix.qpa }}
       STRUCTURALPRO_P6_SCREENSHOT_DIR: phase6-final-screenshots
       STRUCTURALPRO_E5_SCREENSHOTS: phase6-final-e5-screenshots
     steps:
