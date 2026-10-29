@@ -53,6 +53,10 @@ jobs:
           tests/test_phase6_multidiscipline_ifc4_geometry.py
           tests/test_phase6_p2_real_ifc_3d.py
           tests/test_phase6_p2_visibility_pick.py
+          tests/test_phase6_p2_background_loader.py
+          tests/test_phase6_p2_member_batches.py
+          tests/test_phase6_p2_benchmark_ifc100.py
+          tests/test_phase6_p2_e2_restore.py
           tests/test_phase6_p3_four_view_final.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
