@@ -237,12 +237,12 @@ def main() -> int:
         assert len(clean["native_stack_symbols"]) == 2 and "Hidden" not in json.dumps(clean)
         assert not sanitize("first-chance access violation")["second_chance_marker"]
         synthetic = (
-            f"{MARKER}\\nExceptionCode: c0000005\\n"
-            f"{MODULE_BEGIN}\\n00000000`01000000 00000000`01005000 synthetic_fault (deferred)\\n"
-            f"{MODULE_END}\\n{NEAR_BEGIN}\\n"
-            "(00000000`01000100) synthetic_fault!main+0x4\\n"
-            f"{NEAR_END}\\n{STACK_BEGIN}\\n"
-            "00 0011223344556677 00000000 kernel32!BaseThreadInitThunk+0x1\\n"
+            f"{MARKER}\nExceptionCode: c0000005\n"
+            f"{MODULE_BEGIN}\n00000000`01000000 00000000`01005000 synthetic_fault (deferred)\n"
+            f"{MODULE_END}\n{NEAR_BEGIN}\n"
+            "(00000000`01000100) synthetic_fault!main+0x4\n"
+            f"{NEAR_END}\n{STACK_BEGIN}\n"
+            "00 0011223344556677 00000000 kernel32!BaseThreadInitThunk+0x1\n"
         )
         native = sanitize(synthetic)
         assert native["native_pc_module"] == "synthetic_fault"
