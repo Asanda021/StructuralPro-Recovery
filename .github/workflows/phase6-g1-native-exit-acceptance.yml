@@ -1,0 +1,135 @@
+name: Phase 6 G1 exact native Windows crash oracle and timer-zero acceptance
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-g1-native-exit-acceptance.yml
+      - scripts/diagnose_windows_native_crash.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lifecycle:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      PYTHONPATH: .
+      QT_QPA_PLATFORM: windows
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+          test "$(git rev-parse HEAD:app/manual_takeoff.py)" = "12828195669dc2586cc3d5300e0781cf93183135"
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = "07e8ce4567eec5122253cd220a49fed6e2e27d9e"
+          test "$(git rev-parse HEAD:core/projects/store.py)" = "0aa448bcc0f67bab12c37592f7abf01fd0e1765d"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -q -r requirements.txt PySide6==6.12.0 ifcopenshell psutil
+      - name: Verify original oracle and timer-zero observer
+        run: |
+          python -m py_compile scripts/diagnostics/p6_native_timer_zero_decision.py
+          python scripts/diagnose_windows_native_crash.py --self-check
+      - name: Four original 70-row native Qt dialog lifecycle runs with exit and SQLite integrity gates
+        run: |
+          python scripts/diagnostics/p6_native_timer_zero_decision.py --output g1-lifecycle-a
+          python scripts/diagnostics/p6_native_timer_zero_decision.py --output g1-lifecycle-b
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: g1-original-lifecycle-timer0-windows
+          path: |
+            g1-lifecycle-*/summary.json
+            g1-lifecycle-*/attempt-*.xml
+            g1-lifecycle-*/faulthandler-*.json
+            g1-lifecycle-*/checkpoints-*/last.json
+          retention-days: 14
+          if-no-files-found: warn
+  integrated:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      PYTHONPATH: .
+      QT_QPA_PLATFORM: windows
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = "4e3750a0e797073d40bacb395e448da4f14b6c56"
+          test "$(git rev-parse HEAD:core/projects/store.py)" = "0aa448bcc0f67bab12c37592f7abf01fd0e1765d"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -q -r requirements.txt PySide6==6.12.0 ifcopenshell psutil
+      - name: Three complete original five-floor GUI, SQLite and report tests with timer zero
+        run: python scripts/diagnose_windows_native_crash.py --arm integrated --repeats 3 --timeout-seconds 440 --sample-seconds 5 --faulthandler-timeout 0 --output g1-integrated
+      - name: Require 3 original JUnit PASS, clean native process exit and no timeout
+        run: >
+          python -c "import json,pathlib; s=json.loads(pathlib.Path('g1-integrated/summary.json').read_text(encoding='utf-8')); assert s['pytest_faulthandler_timeout']==0 and s['overall_green'] and len(s['runs'])==3; assert all(x['valid_original_test_pass'] and x['exit_hex']=='0x00000000' and not x['access_violation'] and not x['timed_out'] and x['junit']['passed']==1 for x in s['runs']); print('G1_INTEGRATED_PASS_3')"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: g1-original-integrated-timer0-windows
+          path: |
+            g1-integrated/summary.json
+            g1-integrated/run-*.xml
+          retention-days: 14
+          if-no-files-found: warn
+  cdb:
+    runs-on: windows-2022
+    timeout-minutes: 29
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      PYTHONPATH: .
+      QT_QPA_PLATFORM: windows
+      P6_LIFECYCLE_CHECKPOINTS: '1'
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -q -r requirements.txt PySide6==6.12.0 ifcopenshell psutil
+      - name: Verify actual Microsoft CDB debugger
+        shell: pwsh
+        run: |
+          $debugger = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10\Debuggers\x64\cdb.exe'
+          if (!(Test-Path $debugger)) { throw 'CDB_MISSING' }
+          if ((Get-Item $debugger).VersionInfo.CompanyName -notmatch 'Microsoft') { throw 'CDB_UNTRUSTED' }
+          Add-Content -Path $env:GITHUB_ENV -Value "CDB_PATH=$debugger"
+      - run: python scripts/diagnostics/p6_native_cdb_trace.py --self-check
+      - name: Two original 70-row native Qt lifecycle tests, second-chance exceptions under CDB
+        run: python scripts/diagnostics/p6_native_cdb_trace.py --arm dialog_lifecycle --repeats 2 --timeout 450 --faulthandler enabled --dump-timeout 0 --output g1-cdb-zero
+      - name: Require CDB second-chance-negative and JUnit-positive results
+        run: >
+          python -c "import json,pathlib; s=json.loads(pathlib.Path('g1-cdb-zero/summary.json').read_text(encoding='utf-8')); assert s['dump_timeout']==0 and len(s['attempts'])==2 and s['all_valid']; assert all(x['valid_test_pass'] and not x['second_chance_marker'] and x['junit']['valid'] and not x['timed_out'] for x in s['attempts']); print('G1_CDB_PASS_2')"
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: g1-native-cdb-timer0-windows
+          path: |
+            g1-cdb-zero/summary.json
+            g1-cdb-zero/attempt-*.xml
+            g1-cdb-zero/faulthandler-*.json
+          retention-days: 14
+          if-no-files-found: warn
