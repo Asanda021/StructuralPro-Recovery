@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/phase6-g1-native-exit-acceptance.yml
       - scripts/diagnose_windows_native_crash.py
+      - pytest.ini
   workflow_dispatch:
 permissions:
   contents: read
