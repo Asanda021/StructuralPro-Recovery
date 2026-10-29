@@ -41,3 +41,21 @@
 - **فاز ۶، P6-5 PARTIAL**، گیت کلی پایداری Windows باز.
 - PR #34 باید Open/Draft/Unmerged باقی بماند؛ بدون Merge، ForcePush، تغییر main، ساخت EXE یا ورود به P6-6/فاز ۷.
 - در این چت، استخراج نام ماژول دقیق PC کالیبره شد؛ اصلاح کد محصول انجام نشد و منشأ کرش تاریخی نرم‌افزار همچنان نامعلوم است.
+
+
+## بازآزمایی واقعی StructuralPro با parser کالیبره‌شده
+- [GitHub Actions Run #40831568037](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40831568037)، Source SHA `130b2bb6cb92af707a9bd0832b4004b1b5f2100a`، **completed/success**.
+- Artifact `p6-live-native-cdb-exception-no-dumps`، ID `12879670460`، ZIP SHA-256 `45c7cade98fdc5d7c09d2a693c128d328fb42fc96842e05b0d37072acee2b354`.
+- فایل‌های اصلی JUnit و `summary.json` هر دو بازو از ZIP واقعی خوانده و شمارش شدند:
+
+| بازو | تکرار ۱ | تکرار ۲ | وضعیت |
+|---|---:|---:|---|
+| Original Qt + SQLite پنج‌طبقه | ۱۶۰٫۹۷ ثانیه | ۱۴۴٫۵۸ ثانیه | هر دو JUnit **۱ PASS** |
+| Real ManualTakeoffDialog Review/Commit ۷۰ ردیف | ۱۳۲٫۸۱ ثانیه | ۱۲۲٫۹۵ ثانیه | هر دو JUnit **۱ PASS** |
+
+در هر چهار اجرا `debugger_exit_code=0`، `timed_out=false`، `junit.total=1`، `passed=1`، و `failure=error=skipped=0` ثبت شده است؛ `second_chance_marker=false`، `native_pc_module=null` چون در این اجرای واقعی هیچ استثنای Native بازتولید نشد. **مقدار null در این Run یعنی رویدادی برای نگاشت ماژول وجود نداشته، نه اینکه ابزار نگاشت ماژول شکست خورده باشد.**
+
+**حکم نهایی پس از دو Run:** ابزار `lm a @rip` با خطای مصنوعی واقعی، نام `synthetic_fault` را به‌درستی نشان داد؛ چهار اجرای موردی StructuralPro بدون کرش و با JUnit معتبر PASS شدند. با توجه به وقوع قطعی `0xC0000005` در Runهای تاریخی، **ROOT CAUSE NOT PROVEN، Windows stability OPEN و P6-5 PARTIAL** بدون تغییر می‌ماند.
+
+## خلاصه به‌روزشدهٔ این صفحه
+در این نوبت، نخست نام ماژول PC از یک Crash مصنوعی Native روی Windows با کد `0xC0000005` تأیید شد؛ سپس آزمون مرجع و بازوی Commit پنجره واقعی، مجموعاً چهار PASS واقعی زیر همان parser ثبت کردند. هیچ اصلاح محصول، تغییر main، Merge، ForcePush یا انتشار EXE رخ نداد؛ پیشرفت رسمی پروژه **۸۵٪** و نقشه‌راه **۸ فاز** ثابت است. گام بعدی همان P6-5، تمرکز بر **بازتولید ایمن و محدودِ کرش بدون Debugger همراه با checkpointهای مرزی Read/Review/Commit** است؛ هیچ بهینه‌سازی حدسی `catalog()` یا `verified()` به‌عنوان رفع Native AV پذیرفته نیست.
