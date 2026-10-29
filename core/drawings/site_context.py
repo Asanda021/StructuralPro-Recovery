@@ -45,8 +45,18 @@ def verified_site_context(path, *, revision: str, expected_sha256: str | None = 
         raise ValueError("مدل باید دقیقاً یک IfcSite دارای هندسهٔ صریح داشته باشد.")
     site = sites[0]
     identity = str(getattr(site, "GlobalId", "") or "")
-    if len(identity) != 22 or ifcopenshell.guid.compress(ifcopenshell.guid.expand(identity)) != identity:
-        raise ValueError("شناسهٔ مکانی IfcSite نامعتبر است.")
+    # A site is spatial context, NOT an IfcElement. Some official terrain
+    # publishers use noncanonical site GUIDs. Keep the real source SHA and
+    # explicitly discard such GUIDs from the read-only context identity.
+    # The strict engineering/member GlobalId gate remains untouched.
+    try:
+        canonical_site_id = (
+            len(identity) == 22 and
+            ifcopenshell.guid.compress(ifcopenshell.guid.expand(identity)) == identity)
+    except (ValueError, RuntimeError):
+        canonical_site_id = False
+    if not canonical_site_id:
+        identity = None
     units = model.by_type("IfcProject")[0].UnitsInContext
     lengths = [u for u in getattr(units, "Units", ()) if getattr(u, "UnitType", None) == "LENGTHUNIT"]
     if len(lengths) != 1:
@@ -70,16 +80,19 @@ def verified_site_context(path, *, revision: str, expected_sha256: str | None = 
     if file_digest(path) != sha:
         raise ValueError("منبع زمین هنگام بارگذاری تغییر کرده است.")
     return SiteTerrainScene(source_path=str(path), source_sha256=sha, revision=revision,
-                            site_global_id=identity, vertices=vertices, triangles=faces)
+                            site_global_id=identity, site_identity_canonical=canonical_site_id,
+                            vertices=vertices, triangles=faces)
 
 
 class SiteTerrainScene:
     """Independent visualization; deliberately does NOT implement .pick or .meshes."""
 
     def __init__(self, *, source_path, source_sha256, revision,
-                 site_global_id, vertices, triangles):
+                 site_global_id, site_identity_canonical, vertices, triangles):
         self.source_path, self.source_sha256, self.revision = source_path, source_sha256, revision
         self.site_global_id = site_global_id
+        self.site_identity_canonical = site_identity_canonical
+        self.site_identity_not_for_member_linking = True
         self.vertices = vertices
         self.triangles = triangles
         self.quantity_authority = False
