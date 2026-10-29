@@ -31,6 +31,11 @@ def mark(event: str, *, cycle: int = -1, committed: int = 0) -> None:
     folder = os.environ.get("P6_LIFECYCLE_CHECKPOINT_DIR")
     if not folder:
         return
+    expected=os.environ.get("P6_EXPECT_FAULTHANDLER")
+    if expected in ("enabled","disabled"):
+        import faulthandler
+        if faulthandler.is_enabled() != (expected=="enabled"):
+            raise RuntimeError("FAULTHANDLER_STATE_CHANGED_DURING_CASE")
     if event not in EVENTS or not -1 <= cycle < 5 or not 0 <= committed <= 70:
         raise ValueError("Invalid bounded diagnostic checkpoint")
     global _counter

@@ -1,0 +1,21 @@
+"""Diagnostic pytest probe. Does not enable or disable faulthandler itself."""
+import os
+import faulthandler
+from pathlib import Path
+import pytest
+from scripts.diagnose_windows_native_crash import atomic_json
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_call(item):
+    expected=os.environ['P6_EXPECT_FAULTHANDLER']=='enabled'
+    plugin=item.config.pluginmanager.hasplugin('faulthandler')
+    state={'expected_enabled':expected,'before_test':faulthandler.is_enabled(),
+           'pytest_plugin_present':plugin,'environment_present':'PYTHONFAULTHANDLER' in os.environ,
+           'faulthandler_timeout':item.config.getini('faulthandler_timeout') if plugin else None}
+    path=Path(os.environ['P6_FH_PROBE']);atomic_json(path,state)
+    assert state['before_test']==expected
+    assert plugin==expected
+    assert state['environment_present']==expected
+    yield
+    state['after_test']=faulthandler.is_enabled();atomic_json(path,state)
+    assert state['after_test']==expected
