@@ -88,11 +88,25 @@ def test_real_native_qt_2d_3d_tree_boq_clicks_clear_and_revision(tmp_path):
 
         # A real Qt click on the actual project member tree.
         panel.clear_selection()
+        # The 3D document was the active top-level window. A real user first
+        # brings the reviewed tree document forward before clicking its row.
+        panel_holder.raise_()
+        panel_holder.activateWindow()
+        panel.members.setFocus()
         node = panel.members.topLevelItem(0)
         panel.members.scrollToItem(node)
         app.processEvents()
+        clicked, propagated = [], []
+        panel.members.itemClicked.connect(lambda *_: clicked.append(True))
+        panel.oneGlobalIdSelected.connect(propagated.append)
         QTest.mouseClick(panel.members.viewport(), Qt.MouseButton.LeftButton,
                          pos=panel.members.visualItemRect(node).center())
+        app.processEvents()
+        assert clicked, "Tree view did not dispatch a real Qt itemClicked event"
+        assert propagated == [gid], (
+            "Tree click was not resolved through the approved IFC index",
+            panel.detail.text(), window.status.text(),
+        )
         _all_selected(window, model, panel, gid, "C1", 3)
 
         # A real Qt click on an independently committed, persisted BOQ row.
