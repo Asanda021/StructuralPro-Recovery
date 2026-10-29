@@ -1,0 +1,40 @@
+name: P6 Windows native CDB capability probe
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-native-cdb-capability.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cdb-installation-check:
+    runs-on: windows-2022
+    timeout-minutes: 7
+    steps:
+      - name: Inspect only known Microsoft debugging tools installation locations
+        shell: pwsh
+        run: |
+          $paths = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe",
+            "$env:ProgramFiles\Windows Kits\10\Debuggers\x64\cdb.exe"
+          )
+          $found = @($paths | Where-Object { Test-Path $_ })
+          $result = @{
+            kind = 'native_debugger_capability_probe'
+            windows_2022 = $true
+            cdb_present = $found.Count -gt 0
+            cdb_vendor = 'Microsoft Windows SDK' 
+            memory_dumps_generated = $false
+            root_cause_proven = $false
+          }
+          New-Item -ItemType Directory -Force native-cdb-probe | Out-Null
+          $result | ConvertTo-Json -Depth 3 | Set-Content -Encoding UTF8 native-cdb-probe/capability.json
+          Write-Host "CDB_PRESENT=$($result.cdb_present)"
+      - name: Archive safe capability only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-native-cdb-installed-capability
+          path: native-cdb-probe/capability.json
+          if-no-files-found: warn
+          retention-days: 7
