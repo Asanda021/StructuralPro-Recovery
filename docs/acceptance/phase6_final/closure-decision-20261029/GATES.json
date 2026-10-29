@@ -66,14 +66,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_BY_INDEPENDENT_PUBLIC_IFC4_CAPACITY",
+      "status": "BLOCKED_BY_DOCUMENTED_GEOMETRY_CAPACITY_AND_MISSING_MODEL_GEOMETRY",
       "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Source-backed RWTH HVAC IFC4 near-orthogonal placement correction independently passes Linux/Windows (6+6 new test PASS, original 1310-element contract ACCEPTED). Map conversion still unsupported for georeferencing. Both published architecture and ventilation IFC4 models remain blocked by explicit 40000-triangle geometry safety capacity on Linux and Windows; total triangle count unmeasured, geometry streaming/LOD and real owner UAT not accepted. No silent omission or guessed conversion.",
+      "remaining_scope": "Independent full-tessellation census is consistent on Linux/Windows: architecture 340900 triangles across all 949 represented members but 8 of 957 IfcElement have no Representation; ventilation 159072 triangles across all 1310 elements. Both exceed 40000 triangle product display safety gate. No full-scene memory/UI/selection acceptances, no silent omissions, MapConversion remains unproven. Design of transparent selection-bounded batches required. Native G1 and owner UAT remain open.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -118,6 +118,45 @@
         "architecture": "CAPACITY_40000_TRIANGLES both OS",
         "ventilation": "CAPACITY_40000_TRIANGLES both OS",
         "release_ready": false
+      },
+      "geometry_capacity_measurement": {
+        "status": "MEASURED_ALL_REPRESENTED_ELEMENTS_BOTH_OS_NOT_G2_ACCEPTANCE",
+        "run": 40889225489,
+        "run_conclusion": "failure",
+        "source_sha": "b76a23d03f79757bfcc654785a69a023cff76e96",
+        "archive_linux": {
+          "id": 12904366548,
+          "zip_sha256": "195300e6d94237bee6dc858be9d30ef788f32abfef5a3172c9e02e09bba17cd3"
+        },
+        "archive_windows": {
+          "id": 12903896882,
+          "zip_sha256": "82f86fd2c7e8a268791b0c8f81520d5443f0ab1deb33bbe4e225a3e233411be6"
+        },
+        "architecture": {
+          "ifc_element_count": 957,
+          "represented_element_count": 949,
+          "missing_representation_count": 8,
+          "meshed_count": 949,
+          "meshing_errors": 0,
+          "triangles": 340900,
+          "max_member_triangles": 13156,
+          "sampled_peak_rss_linux_bytes": 217014272,
+          "sampled_peak_rss_windows_bytes": 148992000,
+          "coverage": "INCOMPLETE_8_UNREPRESENTED_SOURCE_MEMBERS"
+        },
+        "ventilation": {
+          "ifc_element_count": 1310,
+          "represented_element_count": 1310,
+          "missing_representation_count": 0,
+          "meshed_count": 1310,
+          "meshing_errors": 0,
+          "triangles": 159072,
+          "max_member_triangles": 4340,
+          "sampled_peak_rss_linux_bytes": 238096384,
+          "sampled_peak_rss_windows_bytes": 172826624,
+          "coverage": "COMPLETE_ALL_SOURCE_MEMBERS_MEASURED"
+        },
+        "note": "Source-pinned aggregate diagnostic only. Measured peak child RSS is per-member tessellation, NOT resident full-scene viewer memory. CLI run failure is intentional for architecture source completeness gate, no JUnit for published models."
       }
     },
     {
@@ -159,7 +198,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_PHASE6_CLOSURE_GEOMETRY_CAPACITY_AND_NATIVE_STABILITY_OPEN",
+  "last_decision": "NO_GO_PHASE6_CAPACITY_OVER_40000_AND_8_ARCHITECTURE_MEMBERS_WITHOUT_GEOMETRY",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -169,7 +208,7 @@
   "allow_main_change": false,
   "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40886865995,
-  "last_source_verified_commit": "61e99aac3e83c0ace44f8f163d21b58107e5f3c7",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-rwth-hvac-axis-and-capacity/REPORT.fa.md"
+  "last_evidence_run": 40889225489,
+  "last_source_verified_commit": "b76a23d03f79757bfcc654785a69a023cff76e96",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-independent-geometry-capacity/REPORT.fa.md"
 }
