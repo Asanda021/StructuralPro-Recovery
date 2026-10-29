@@ -1,8 +1,8 @@
-name: P6 native CDB second chance crash-site diagnostic without dumps
+name: P6 native CDB confirmed exception-site v2 without dumps
 on:
   push:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
-    paths: [.github/workflows/phase6-windows-cdb-native-trace.yml]
+    paths: [.github/workflows/phase6-windows-cdb-native-trace.yml, scripts/diagnostics/p6_native_cdb_trace.py]
   workflow_dispatch:
 permissions:
   contents: read
