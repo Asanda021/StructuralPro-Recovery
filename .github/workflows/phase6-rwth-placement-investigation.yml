@@ -1,5 +1,10 @@
 name: P6 G2 investigate pinned RWTH HVAC placement contract without modifying product
 on:
+  pull_request:
+    branches: [feature/phase6-p4-contextual-wizard-20261026]
+    paths:
+      - .github/workflows/phase6-rwth-placement-investigation.yml
+      - scripts/diagnostics/p6_rwth_placement_contract_investigation.py
   push:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
     paths:
