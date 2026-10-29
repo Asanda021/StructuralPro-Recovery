@@ -147,7 +147,7 @@ foreach ($e in $records | Select-Object -First 5) {
             "event_id": 1000, "events": events, "event_query_exit": result.returncode}
 
 
-def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float, test_node: str = TEST) -> int:
+def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float, test_node: str = TEST, faulthandler_timeout: int = 45) -> int:
     output.mkdir(parents=True, exist_ok=False)
     state = {
         "kind": "original_fivefloor_windows_native_crash_diagnostic",
@@ -166,6 +166,8 @@ def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_sec
         "runs": [],
         "overall_green": False,
         "native_root_cause_proven": False,
+        "pytest_faulthandler_timeout": faulthandler_timeout,
+        "safety_note": "The 45-second dump timer remains the historical default; zero is an explicit diagnostic mitigation, not proof of native crash root cause.",
     }
     summary = output / "summary.json"
     atomic_json(summary, state)
@@ -177,7 +179,7 @@ def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_sec
         start = time.monotonic()
         command = [
             sys.executable, "-m", "pytest", "-q", "--disable-warnings",
-            "-o", "faulthandler_timeout=45", f"--junitxml={junit}", test_node,
+            "-o", f"faulthandler_timeout={faulthandler_timeout}", f"--junitxml={junit}", test_node,
         ]
         env = os.environ.copy()
         env["PYTHONFAULTHANDLER"] = "1"
@@ -266,6 +268,7 @@ def main() -> int:
     parser.add_argument("--sample-seconds", type=float, default=5)
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--arm", choices=tuple(ARMS), default="integrated")
+    parser.add_argument("--faulthandler-timeout", type=int, choices=(0,45), default=45)
     args = parser.parse_args()
     if args.self_check:
         assert exit_hex(3221225477) == "0xC0000005"
@@ -280,7 +283,8 @@ def main() -> int:
         parser.error("Windows native diagnostic requires win32")
     if os.environ.get("QT_QPA_PLATFORM") != "windows":
         parser.error("Qt must use native windows platform; offscreen is not accepted")
-    return run_repeats(args.output, args.repeats, args.timeout_seconds, args.sample_seconds, test_node=ARMS[args.arm])
+    return run_repeats(args.output, args.repeats, args.timeout_seconds, args.sample_seconds,
+                       test_node=ARMS[args.arm], faulthandler_timeout=args.faulthandler_timeout)
 
 
 if __name__ == "__main__":
