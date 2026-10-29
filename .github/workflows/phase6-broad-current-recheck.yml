@@ -1,4 +1,4 @@
-# Dedicated, source-SHA-pinned broad regression. No build, release or merge.
+# Complete active suite on new read-only G2 spatial/renovation code; no build, release or merge.
 name: P6 current broad regression on verified source
 on:
   push:
@@ -8,6 +8,11 @@ on:
       - .github/workflows/phase6-broad-current-recheck.yml
       - scripts/run_quarantined_workflow_qa.py
       - pytest.ini
+      - app/ifc_site_viewport.py
+      - app/ifc_existing_reference_viewport.py
+      - core/drawings/site_context.py
+      - core/drawings/existing_building_reference.py
+      - tests/test_phase6_g2_spatial_readonly_guards.py
   workflow_dispatch:
 permissions:
   contents: read
