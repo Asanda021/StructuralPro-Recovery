@@ -114,7 +114,7 @@ def main():
                                                 "مدل زمین از ظرفیت ۴۰ هزار مثلث فراتر است.",
                                                 "مدل باید دقیقاً یک IfcSite دارای هندسهٔ صریح داشته باشد.",
                                                 "نمای زمین فقط IFC4 با پروژهٔ یکتا را می‌پذیرد.",
-                                                "واحد طول منبع زمین باید یکتا باشد.") else "SOURCE_SHAPE_OR_NATIVE")}
+                                                "واحد طول منبع زمین باید یکتا باشد.") else "SOURCE_SHAPE_OR_NATIVE"}
             finally:
                 QFileDialog.getOpenFileName=old_picker
                 if mainwin is not None:
