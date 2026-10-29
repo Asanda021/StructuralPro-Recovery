@@ -1,0 +1,54 @@
+name: P6 same-runner dump timer A-C-C-A under CDB
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-faulthandler-timer.yml]
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    env:
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+      QT_QPA_PLATFORM: windows
+      P6_LIFECYCLE_CHECKPOINTS: '1'
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -q -r requirements.txt PySide6==6.12.0 ifcopenshell psutil
+      - name: Verify trusted CDB
+        shell: pwsh
+        run: |
+          $debugger = "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe"
+          if (!(Test-Path $debugger)) { throw 'NO_MICROSOFT_CDB' }
+          if ((Get-Item $debugger).VersionInfo.CompanyName -notmatch 'Microsoft') { throw 'UNRECOGNIZED_DEBUGGER' }
+          Add-Content -Path $env:GITHUB_ENV -Value "CDB_PATH=$debugger"
+      - run: python scripts/inspect_windows_native_environment.py --output fh-evidence/environment.json
+      - name: Calibrate exception PC mapping with isolated native control
+        run: python scripts/diagnostics/p6_native_cdb_control.py --output fh-evidence/control
+      - name: Four independent processes on this runner in symmetric order
+        shell: pwsh
+        run: |
+          $failed = $false
+          $timers = @(45, 0, 0, 45)
+          for ($i=0; $i -lt 4; $i++) {
+            $label = if ($timers[$i] -eq 45) { 'A' } else { 'C' }
+            $slot = "$($i+1)-$label"
+            python scripts/diagnostics/p6_native_cdb_trace.py --arm dialog_lifecycle --repeats 1 --timeout 450 --faulthandler enabled --dump-timeout $timers[$i] --output "fh-evidence/$slot"
+            if ($LASTEXITCODE -ne 0) { $failed = $true }
+          }
+          if ($failed) { exit 1 }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: p6-faulthandler-timer-ACCA
+          path: fh-evidence/
+          if-no-files-found: error
+          retention-days: 14
