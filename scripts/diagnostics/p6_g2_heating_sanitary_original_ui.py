@@ -209,6 +209,35 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
         evidence["status"] = "BLOCKED_OR_FAILED"
         evidence["error_class"] = type(exc).__name__
         evidence["failed_stage"] = stage
+        if stage == "NORMAL_FILE_PICKER_QPROCESS":
+            # Compare the two exact components used by the child QProcess:
+            # independent BIM validation and the read-only drawing viewer.
+            # Persist no original model details or raw free-form exceptions.
+            import traceback
+            from core.drawings.bim_adapter import BIMAdapter
+            from core.drawings.viewer_model import DrawingViewerModel
+            diagnosis = {}
+            for label, attempt in (
+                ("verified_bim_contract",
+                 lambda: BIMAdapter().read_document(source, revision="diagnostic-only")),
+                ("read_only_ifc_preview",
+                 lambda: DrawingViewerModel().open(source)),
+            ):
+                try:
+                    attempt()
+                    diagnosis[label] = {"status": "PASS"}
+                except Exception as component_exc:
+                    frames = traceback.extract_tb(component_exc.__traceback__)
+                    last = frames[-1] if frames else None
+                    # Only controlled source filename basename + numeric lineno,
+                    # not local directory, GUID, model name or exception contents.
+                    diagnosis[label] = {
+                        "status": "BLOCKED",
+                        "error_type": type(component_exc).__name__,
+                        "last_module": Path(last.filename).name if last else None,
+                        "last_line": last.lineno if last else None,
+                    }
+            evidence["failure_isolation"] = diagnosis
         # Safe category only, never original paths, names or exception strings.
         safe = str(exc)
         evidence["error_category"] = ("NO_REPRESENTED_GEOMETRY" if "NO_UNIQUE_REPRESENTED" in safe
