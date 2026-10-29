@@ -6,7 +6,7 @@
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "1bdf488bfde364987586bea0563df07c0fbed6ee",
   "latest_targeted_acceptance_source_sha": "7f39ebd00eddb29cc54f04027c2d75473cdd2c53",
-  "source_difference_since_acceptance": "documentation-only commit 1bdf488bfde364987586bea0563df07c0fbed6ee",
+  "source_difference_since_acceptance": "Updated source after 7f39ebd includes independently tested core/bim/ifc.py IFC element filtering and core/drawings/bim_adapter.py bounded angular correction; 716 earlier functional PASS do not represent a current-HEAD broad run.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -66,20 +66,20 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_BY_INDEPENDENT_PUBLIC_IFC4_MODELS",
+      "status": "BLOCKED_BY_INDEPENDENT_PUBLIC_IFC4_CAPACITY",
       "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Independent MIT IFC4 reference models FAIL: architectural model exceeds 40000-triangle safety ceiling and HVAC model fails verified placement; exact ventilation subtype pending evidence. No silent omissions or guessed conversions. G2 cannot close.",
+      "remaining_scope": "Source-backed RWTH HVAC IFC4 near-orthogonal placement correction independently passes Linux/Windows (6+6 new test PASS, original 1310-element contract ACCEPTED). Map conversion still unsupported for georeferencing. Both published architecture and ventilation IFC4 models remain blocked by explicit 40000-triangle geometry safety capacity on Linux and Windows; total triangle count unmeasured, geometry streaming/LOD and real owner UAT not accepted. No silent omission or guessed conversion.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
         "source_license": "MIT",
         "source_status": "SHA1_VERIFIED",
-        "evidence_run": 40876168743,
+        "evidence_run": 40886865995,
         "result_linux": "RED",
         "result_windows": "RED",
         "cases": [
@@ -93,9 +93,31 @@
             "name": "ventilation",
             "ifc_element_count": 1310,
             "ifc_space_count": 0,
-            "result": "SOURCE_PLACEMENT_CONTRACT"
+            "result": "CAPACITY_40000_TRIANGLES_AFTER_PLACEMENT_CONTRACT_ACCEPTED"
           }
         ]
+      },
+      "placement_correction": {
+        "status": "ACCEPTED_BOUNDED_CONTRACT_ONLY",
+        "tested_sha": "4b127b6263f81c21f33caa015a171f250faa3206",
+        "run": 40886466903,
+        "tests_linux_pass": 6,
+        "tests_windows_pass": 6,
+        "linux_zip_sha256": "8c693ae5f1d59e0f6d99b6f33a0eb7b5ef581a3a03a853b844d0c7e269c402b6",
+        "windows_zip_sha256": "ecb8a4e250e545956b042d1655ce0875e797626e2bde57772517b5c5c3a7fa9f",
+        "bounded_dot_product_tolerance": "1e-12",
+        "failure_cases_rejected": "skew > 1e-12 and collinear axes",
+        "ifc_map_conversion_supported": false
+      },
+      "geometry_retest": {
+        "status": "RED_SAFE_CAPACITY",
+        "source_sha": "61e99aac3e83c0ace44f8f163d21b58107e5f3c7",
+        "run": 40886865995,
+        "linux_zip_sha256": "8f2e9126449941cd3b7a3cf17236230b64549e6539c128aaa55043341cd9be7e",
+        "windows_zip_sha256": "2719fccc76b18bcd428efcf3b053d8d094c604dd484487871727dbbbad16d009",
+        "architecture": "CAPACITY_40000_TRIANGLES both OS",
+        "ventilation": "CAPACITY_40000_TRIANGLES both OS",
+        "release_ready": false
       }
     },
     {
@@ -137,7 +159,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_PHASE6_CLOSURE_EXTERNAL_MODELS_RED",
+  "last_decision": "NO_GO_PHASE6_CLOSURE_GEOMETRY_CAPACITY_AND_NATIVE_STABILITY_OPEN",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -145,9 +167,9 @@
   "allow_merge": false,
   "allow_exe": false,
   "allow_main_change": false,
-  "require_new_test_run": false,
+  "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40876168743,
-  "last_source_verified_commit": "d48613c71247159f07156d43f5140d36690fcd22",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-independent-rwth-ifc4/REPORT.fa.md"
+  "last_evidence_run": 40886865995,
+  "last_source_verified_commit": "61e99aac3e83c0ace44f8f163d21b58107e5f3c7",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-rwth-hvac-axis-and-capacity/REPORT.fa.md"
 }
