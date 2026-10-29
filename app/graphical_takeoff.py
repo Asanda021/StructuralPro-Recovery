@@ -628,8 +628,20 @@ class GraphicalTakeoffDialog(QDialog):
                 self.canvas.scene=scene
                 if hasattr(doc,'_ifc_header'):
                     from core.bim.ifc import IFCDisplayDocument
-                    source,sha,omitted=doc._ifc_header
-                    job['ifc_document']=IFCDisplayDocument(source,sha,tuple(doc.entities),tuple(omitted))
+                    header = doc._ifc_header
+                    if len(header) == 3:
+                        source, sha, omitted = header
+                        roster = ()
+                    elif len(header) == 4:
+                        source, sha, omitted, roster = header
+                    else:
+                        raise ValueError('سرآیند منبع IFC در Worker معتبر نیست.')
+                    if (roster and (len({gid for gid, _ in roster}) != len(roster)
+                                    or {m.global_id for m in doc.entities}
+                                    - {gid for gid, _ in roster})):
+                        raise ValueError('هویت‌های IFC در بسته Worker با منبع تطابق ندارند.')
+                    job['ifc_document']=IFCDisplayDocument(
+                        source, sha, tuple(doc.entities), tuple(omitted), tuple(roster))
                     job['old_ifc_items']=getattr(self,'_ifc_handle_items',{})
                     job['steps']=self._render_ifc_steps(job['ifc_document'])
                 else:
@@ -652,6 +664,11 @@ class GraphicalTakeoffDialog(QDialog):
                     self.session.source_sha256=job['ifc_document'].source_sha256 if 'ifc_document' in job else self.cad_document.source_sha256
                     self.canvas.session=self.session;self.persisted_session_id=None;self.persisted_session_revision=None
                 if 'ifc_document' in job:
+                    from shiboken6 import isValid
+                    old_view=getattr(self,'_ifc_3d_dialog',None)
+                    if old_view is not None and isValid(old_view):
+                        old_view.close()
+                        self._ifc_3d_dialog=None
                     self.viewer.path=Path(path);self.viewer.kind='ifc';self.viewer.page_count=1;self.viewer.current_page=1
                     self.viewer.ifc_document=job['ifc_document'];self.viewer.cad_document=None;self.cad_document=None
                     self.page=1;self.canvas.read_only_model=True;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
@@ -872,6 +889,12 @@ class GraphicalTakeoffDialog(QDialog):
         previous_path=str(self.viewer.path) if self.viewer.path else None
         # Open first: if parsing fails, retain the currently displayed drawing/session.
         self.viewer.open(candidate)
+        if previous_path and previous_path != str(self.viewer.path):
+            from shiboken6 import isValid
+            old_view=getattr(self,'_ifc_3d_dialog',None)
+            if old_view is not None and isValid(old_view):
+                old_view.close()
+                self._ifc_3d_dialog=None
         if pdf_sha is not None:
             with open(candidate,'rb') as source_file:
                 if hashlib.file_digest(source_file,'sha256').hexdigest()!=pdf_sha:
