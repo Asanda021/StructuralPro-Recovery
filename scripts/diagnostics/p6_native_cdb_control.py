@@ -18,12 +18,48 @@ import time
 from p6_native_cdb_trace import debugger, sanitize, persist, MARKER
 
 
+NATIVE_C_SOURCE = r"""#include <windows.h>
+int main(void) {
+    volatile unsigned char * volatile invalid_pointer = (volatile unsigned char *)1;
+    *invalid_pointer = 7;
+    return 9;
+}
+"""
+
+
+def compile_native_control(private: Path) -> Path | None:
+    """Use only installed Microsoft Visual C++ compiler; never download tools."""
+    root = Path(os.environ.get("ProgramFiles(x86)", r"C:\\Program Files (x86)"))
+    vswhere = root / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
+    if not vswhere.is_file():
+        return None
+    lookup = subprocess.run(
+        [str(vswhere), "-latest", "-products", "*", "-requires",
+         "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"],
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        text=True, encoding="utf-8", errors="replace", timeout=20, check=False,
+    )
+    install = Path(lookup.stdout.strip()) if lookup.returncode == 0 and lookup.stdout.strip() else None
+    vcvars = (install / "VC" / "Auxiliary" / "Build" / "vcvars64.bat") if install else None
+    if vcvars is None or not vcvars.is_file():
+        return None
+    source = private / "synthetic_fault.c"
+    executable = private / "synthetic_fault.exe"
+    source.write_text(NATIVE_C_SOURCE, encoding="ascii")
+    command = 'call "' + str(vcvars) + '" >NUL && cl.exe /nologo /Od /TC /W3 /Fe:"' + str(executable) + '" "' + str(source) + '" >NUL'
+    result = subprocess.run(["cmd.exe", "/d", "/s", "/c", command],
+                            cwd=private, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            timeout=70, check=False)
+    return executable if result.returncode == 0 and executable.is_file() else None
+
+
 def control(output: Path) -> int:
     output.mkdir(parents=True, exist_ok=False)
     exe = debugger()
     state = {
         "kind": "synthetic_second_chance_access_violation_cdb_control",
         "synthetic_only": True,
+        "synthetic_method": "native_msvc_write_address_one",
         "production_source_executed": False,
         "debugger_available": bool(exe),
         "expected_code": "0xC0000005",
@@ -37,18 +73,16 @@ def control(output: Path) -> int:
         state["status"]="BLOCKED_CDB_ABSENT"
         persist(output/"control.json",state)
         return 2
-    # A deliberately unhandled, NONCONTINUABLE Windows SEH access violation.
-    # ctypes makes the documented kernel32 RaiseException call; the process
-    # is isolated under the debugger, never in the active CI Python process.
-    code = ("import ctypes; "
-            "ctypes.windll.kernel32.RaiseException("
-            "ctypes.c_ulong(0xC0000005), ctypes.c_ulong(1), "
-            "ctypes.c_ulong(0), None); "
-            "raise SystemExit('control did not fault')")
+    # Native MSVC binary deliberately faults at address 1 in a separate process.
     command = f'sxd -c2 ".echo {MARKER}; .lastevent; .ecxr; kn 32; q" av; g'
-    cmd = [str(exe), "-G", "-c", command, sys.executable, "-c", code]
     with tempfile.TemporaryDirectory(prefix="p6-cdb-control-private-") as private:
+        executable = compile_native_control(Path(private))
+        if executable is None:
+            state["status"] = "BLOCKED_NO_TRUSTED_MSVC_COMPILER"
+            persist(output/"control.json", state)
+            return 3
         raw = Path(private)/"private.txt"
+        cmd = [str(exe), "-G", "-c", command, str(executable)]
         with raw.open("wb") as stream:
             child = subprocess.Popen(cmd, stdout=stream, stderr=subprocess.STDOUT)
             try:
