@@ -4,6 +4,10 @@ on:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
     paths:
       - .github/workflows/phase6-p3-final-four-view-acceptance.yml
+      - tests/test_phase6_p3_four_view_final.py
+      - app/verified_selection_panel.py
+      - app/graphical_takeoff.py
+      - app/ifc_3d_viewport.py
   workflow_dispatch:
 permissions:
   contents: read
