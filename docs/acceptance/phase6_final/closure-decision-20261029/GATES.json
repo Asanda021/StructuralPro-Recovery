@@ -6,7 +6,7 @@
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "efaab3c5dc335012ef6b8fec89a041247b509207",
   "latest_targeted_acceptance_source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
-  "source_difference_since_acceptance": "Product IFC4 RefDirection projection corrected by IfcBuildAxes semantics; positive RED reproduction and negative conditioning tests preserved. New complete active regression is run 40929200449 at efaab3c5dc335012ef6b8fec89a041247b509207; report-only changes after this source must not be described as new tested product code.",
+  "source_difference_since_acceptance": "Current original product functional regression remains independently accepted at efaab3c5dc335012ef6b8fec89a041247b509207 and native shell tests at e012f0acf1f2dd475f79e49fc43552c10850b47e. This G2 expansion only added diagnostic scripts, CI, acceptance evidence; no app/core product change and no EXE/merge/release. Landscaping source UI native run 40944167672 passed both OS, but overall mandatory source G2 remains NO-GO.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -152,14 +152,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_REMAINING_SOURCE_CLASS_ACCEPTANCE_SANITARY_PLACEMENT_DEFECT_CORRECTED",
-      "reason": "SAN v1/v2 original input orthogonality rejection was a BIMAdapter semantics defect: IFC4 RefDirection may be nonorthogonal; IfcBuildAxes projects it onto plane normal to Axis. Both original pinned sources now accepted in native Windows/Linux original GUI two-batch checks, all 1012/1034 source identities retained. Remaining source-class acceptance for renovation/site and final independent-source evidence remains incomplete; do not treat a generic IfcSite container or proxy as verified site/renovation geometry.",
+      "status": "BLOCKED_IFCSITE_ONLY_TERRAIN_AND_INDEPENDENT_RENOVATION_IFC4_WITH_LANDSCAPING_IFCGEOGRAPHICELEMENT_ACCEPTED",
+      "reason": "Source-pinned independent published IFC4 building/infra landscaping examples successfully passed real Qt QProcess, source SHA/revision, 3D batch swap and IfcGeographicElement selection on Windows and Linux (run 40944167672; no BOQ writes). But official swisstopo real IFC4 terrain sample is represented in IfcSite-only context (zero IfcElement) not implemented as a separate selectable non-BOQ spatial display layer. Three authentic EU BIM4EEB renovation-as-built datasets are IFC2X3, outside the approved IFC4 source contract; no original independent renovation IFC4 source passed. Neither gap can be declared covered by proxy or synthetic IFC.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Existing mandatory source-class acceptance for site/renovation remains NOT VERIFIED; 16 real IfcCovering identities and one selected covering batch passed locally in additional independent 550-member project, not yet a Windows independent-source UAT.",
+      "remaining_scope": "A. Accept real original IFC4 terrain model with only IfcSite geometry in a separate read-only spatial context (never impersonate IfcElement or confer quantity authority), with original Windows/Linux GUI and fail-closed ledger. B. Accept an independently published real renovation IFC4 model within approved IFC4 path, or obtain explicit owner scope decision for adding verified IFC2X3 before claiming renovation model acceptance. Preserve real physical G4 Windows UAT as separate.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -431,7 +431,112 @@
         "raw_source_modified": false,
         "boq_authority": false,
         "report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/G2_ENGINEERING.fa.md"
-      }
+      },
+      "landscaping_source_expansion": {
+        "status": "ACCEPTED_IFCGEOGRAPHICELEMENT_INTEROPERABILITY_EXAMPLES_ORIGINAL_GUI_BOTH_OS_NOT_REAL_SITE_UAT",
+        "run": 40944167672,
+        "tested_head": "f5f4c816a796c9e1c4f2b619971143996ea4c782",
+        "publisher": "BIMvoice/ifcsamples, buildingSMART certification sample redistribution",
+        "pinned_commit": "7a7eb6bdeab3e630eeef0e923a908d0c6af07cd2",
+        "license": "CC-BY-4.0",
+        "sources": [
+          {
+            "id": "Building-Landscaping.ifc",
+            "elements": 6,
+            "represented": 6,
+            "ifc_geographic_element_represented": 4,
+            "sha256": "937dc9c0e013b0dbbf56dc0fa0dc435efe16a2234cd364af820d2cf1deaa3d7f",
+            "source_blob_sha1": "fd0a9aaa9343e7b164081edfcb1f77e6359e54fa",
+            "counts_after_swap": {
+              "displayed": 1,
+              "not_loaded": 5,
+              "without_geometry": 0
+            }
+          },
+          {
+            "id": "Infra-Landscaping.ifc",
+            "elements": 111,
+            "represented": 101,
+            "ifc_geographic_element_represented": 76,
+            "sha256": "aefdccddd57d9c73d7395b0caaface371e548b4dad08cca4f415b3e1c291396b",
+            "source_blob_sha1": "e29a81536698cd4b024c8b85b5e7eb9b445228b8",
+            "counts_after_swap": {
+              "displayed": 1,
+              "not_loaded": 100,
+              "without_geometry": 10
+            }
+          }
+        ],
+        "linux": {
+          "artifact_id": 12928670986,
+          "zip_sha256": "aa713636aa0da145fb465baea2705606dd7912c5cf44354f401efb92a6e73f4c",
+          "status": "SUCCESS"
+        },
+        "windows": {
+          "artifact_id": 12928113462,
+          "zip_sha256": "fb491613d2e9b62a528b4df43264e5ccae46734d503b157d55b75de2d4a3c801",
+          "status": "SUCCESS"
+        },
+        "batch_member_type": "IfcGeographicElement",
+        "no_boq_write": true,
+        "full_scene_simultaneous_accepted": false,
+        "actual_asbuilt_geodata_accepted": false
+      },
+      "renovation_independent_source_attempt": {
+        "status": "BLOCKED_SOURCE_SCHEMA_IFC2X3_NOT_APPROVED_IFC4",
+        "run": 40944705589,
+        "upstream": "BIM4EEB EU-funded renovation demonstration, Zenodo 10.5281/zenodo.6685810",
+        "source_md5_checked": true,
+        "raw_source_modified": false,
+        "cases": [
+          {
+            "name": "FIN",
+            "schema": "IFC2X3",
+            "elements": 939,
+            "represented": 939,
+            "sha256": "dc58869b12b33b322dbd14a22559aa6b54614baa516288a4c10e60f50bfbc6ab"
+          },
+          {
+            "name": "POL",
+            "schema": "IFC2X3",
+            "elements": 362,
+            "represented": 356,
+            "sha256": "e3e452604ce83836e395c57fe0f6eb2b2340e97d46a5e5057d27c612b0aa57f3"
+          },
+          {
+            "name": "ITA",
+            "schema": "IFC2X3",
+            "elements": 2778,
+            "represented": 2778
+          }
+        ],
+        "ifc4_accepted": false
+      },
+      "swisstopo_official_site_source_attempt": {
+        "status": "DISCOVERY_ONLY_NOT_G2_ACCEPTANCE",
+        "run": 40944658112,
+        "publisher": "Swiss Federal Office of Topography",
+        "source_zip_sha256": "6e2a370ca56a0a09e4baf52cbe008a88d9f39b97dc1e0bf66c8073d445f3d189",
+        "terrain_samples": [
+          {
+            "schema": "IFC4",
+            "elements": 0,
+            "site_context_count": 1
+          },
+          {
+            "schema": "IFC4",
+            "elements": 0,
+            "site_context_count": 1
+          }
+        ],
+        "building_sample": {
+          "schema": "IFC4",
+          "elements": 69,
+          "contract": "REJECTED_STRICT_GLOBAL_ID_GATE"
+        },
+        "no_raw_data_distributed": true
+      },
+      "source_class_evidence_report": "docs/acceptance/phase6_final/verification-20261029-g2-site-renovation-source-expansion/REPORT.fa.md"
     },
     {
       "id": "G3",
@@ -500,7 +605,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "PHASE 6 PARTIAL / NO-GO",
+  "last_decision": "PHASE_6_PARTIAL_NO_GO_G2_IFCSITE_ONLY_TERRAIN_AND_RENOVATION_IFC4_SOURCE_G4_OWNER_UAT",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -510,9 +615,9 @@
   "allow_main_change": false,
   "require_new_test_run": false,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40929200449,
+  "last_evidence_run": 40944167672,
   "last_source_verified_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/REPORT.fa.md",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g2-site-renovation-source-expansion/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
     "status": "ACCEPTED_ALL_ACTIVE_MODULES_EXACT_SOURCE",
