@@ -6,7 +6,7 @@
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "1bdf488bfde364987586bea0563df07c0fbed6ee",
   "latest_targeted_acceptance_source_sha": "7f39ebd00eddb29cc54f04027c2d75473cdd2c53",
-  "source_difference_since_acceptance": "Updated source after 7f39ebd includes independently tested core/bim/ifc.py IFC element filtering and core/drawings/bim_adapter.py bounded angular correction; 716 earlier functional PASS do not represent a current-HEAD broad run.",
+  "source_difference_since_acceptance": "Batched original GUI, source-wide roster, QProcess import, independent source-backed two-batch swap accepted on product source commit 0686998c9bc00c8d36e2b3180a36ca13d75f8b31; original safety cap 40000 unchanged; broad entire-suite head green and all source classes unverified.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -49,6 +49,14 @@
       "status": "ACCEPTED_LIMITED_NOT_NATIVE_FIX",
       "evidence_run": 40866225297,
       "passes": 2
+    },
+    {
+      "id": "P6-2-INTERACTIVE-BATCHES",
+      "title": "Functional source-backed batch selection by floor/type/page, original QProcess file-picker, cancellable worker and atomic 3D swap",
+      "status": "ACCEPTED_AUTOMATED_SCOPE_NOT_FULL_ALL_GEOMETRY_TYPES",
+      "evidence_run": 40902096586,
+      "independent_model_count": 2,
+      "original_gui_unit_test_run": 40902062802
     }
   ],
   "closure_blockers": [
@@ -66,14 +74,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_FULL_MODEL_PARTIAL_SOURCE_SELECTION_ACCEPTED",
+      "status": "BLOCKED_FOR_ALL_MANDATED_SOURCE_CLASSES_WITH_ORIGINAL_GUI_BATCHING_ACCEPTED",
       "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Bounded selected source-backed IFC mesh + full explicit ledger of displayed/not_loaded/without_geometry accepted on two independent published RWTH IFC4 reference models on both OS. This is a single selected source element, not full-model rendering or actual user-controlled floor/type batching. Full model geometry 340900/159072 triangles remains beyond unchanged 40000 cap. 8 architecture elements have no Representation; map conversion and physical owner UAT not accepted. Interactive batch selection/worker/swap and regression of full application remain pending.",
+      "remaining_scope": "The functional original GUI floor/type/size/page source-backed batching and safe atomic scene swap is accepted. Full product G2 remains unverified across all mandatory independent real-world architectural, site, renovation, MEP, finish source categories; full 340900/159072 triangles not displayed concurrently under 40000 cap; map conversion remains unsupported. Native crash G1, broad latest-HEAD regression and physical UAT G4 remain separate open gates.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -210,8 +218,67 @@
         },
         "map_conversion_supported": false,
         "quantity_authority": false,
-        "interactive_batch_ui_and_worker_complete": false,
-        "full_model_3d_accepted": false
+        "interactive_batch_ui_and_worker_complete": true,
+        "full_model_3d_accepted": false,
+        "original_file_picker_process_verified": true,
+        "original_2d_3d_ui_batch_accepted": true
+      },
+      "original_gui_batch_acceptance": {
+        "status": "ACCEPTED_AUTOMATED_FUNCTIONAL_SCOPE",
+        "qa_run": 40902062802,
+        "qa_test_commit": "018596ee0383f5ec4525af81cf3ee8419cefec4f",
+        "junit_linux_pass": 19,
+        "junit_windows_pass": 19,
+        "junit_artifacts": {
+          "linux": {
+            "id": 12910017157,
+            "sha256": "fad3e26bd66ad644d6640644a8070c4fd471a3c052670451fc97d5a26aa40a25"
+          },
+          "windows": {
+            "id": 12909447932,
+            "sha256": "9ceaf6dc1b714848f5a9fbe17fceb440aad1d27c43e6421db1bab71a20933968"
+          }
+        },
+        "independent_published_original_file_picker_run": 40902096586,
+        "independent_test_commit": "0686998c9bc00c8d36e2b3180a36ca13d75f8b31",
+        "independent_results": {
+          "architecture": {
+            "source_members": 957,
+            "displayed": 1,
+            "not_loaded": 948,
+            "without_geometry": 8,
+            "two_distinct_real_member_batches_each_os": true
+          },
+          "ventilation": {
+            "source_members": 1310,
+            "displayed": 1,
+            "not_loaded": 1309,
+            "without_geometry": 0,
+            "two_distinct_real_member_batches_each_os": true
+          }
+        },
+        "independent_artifacts": {
+          "linux": {
+            "id": 12910450628,
+            "sha256": "3d627d4c264452913bee66b3703bba129a6d96707a0b923fabdd31963893087e"
+          },
+          "windows": {
+            "id": 12910655306,
+            "sha256": "5aca9ac726356c9eada079daaeffbdd9d9c311699d49a8b3ef32f3c636ab5684"
+          }
+        },
+        "four_way_regression": {
+          "run": 40902000246,
+          "commit": "165e2c39fca70ee3d01e1d927dfa08069b50f810",
+          "linux_pass": 42,
+          "windows_pass": 42
+        },
+        "nonclaims": [
+          "Full model concurrent geometry acceptance NOT obtained",
+          "Only two independent models, two one-member source-backed batches each, not all mandatory domains",
+          "Source 3D/2D active geometry not loaded for all source GlobalIDs; status disclosed",
+          "Native crash and physical owner UAT are independent blockers"
+        ]
       }
     },
     {
@@ -261,7 +328,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_G1_G2_G4_BROAD_REGRESSION_G5_WINDOWS_EDITION;_NONCOMMERCIAL_AI_NOT_PHASE6_BLOCKER",
+  "last_decision": "P6_G2_BATCH_UI_FUNCTIONAL_SCOPE_ACCEPTED;_PHASE6_CLOSE_NO_GO_NATIVE_BROAD_UAT_AND_MANDATORY_SOURCE_COVERAGE",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -271,8 +338,8 @@
   "allow_main_change": false,
   "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40897560690,
-  "last_source_verified_commit": "a0f59826b9037c0203487605eec09131aef2b8b6",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-limited-source-backed-ifc-view/REPORT.fa.md",
+  "last_evidence_run": 40902096586,
+  "last_source_verified_commit": "0686998c9bc00c8d36e2b3180a36ca13d75f8b31",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-original-ui-batch-closure/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6."
 }
