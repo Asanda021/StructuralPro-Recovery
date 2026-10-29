@@ -31,6 +31,11 @@ EXTRA_MODELS = {
         "git_blob_sha1": "5725d3f84ff71eac57bde5e69a422f23a855ffd5",
         "size": 25178864,
     },
+    "sanitary_v1": {
+        "path": "Version_1/FM_SAN_DigitalHub_v1.ifc",
+        "git_blob_sha1": "6fe0d15f8e139da47b33111431d9cff72a0b1c85",
+        "size": 16846052,
+    },
 }
 MAX_SOURCE_BYTES = 30 * 1024 * 1024
 MAX_TRIANGLES = 40_000
@@ -263,7 +268,7 @@ def examine(source: Path, expected_sha: str, model_name: str, record: Path) -> i
     return 0 if evidence["status"].startswith("PASS_") else 1
 
 
-def parent(output: Path) -> int:
+def parent(output: Path, only: str | None = None) -> int:
     output.mkdir(parents=True, exist_ok=False)
     summary = {
         "kind": "phase6_g2_real_published_ifc4_heating_sanitary_original_gui",
@@ -275,12 +280,13 @@ def parent(output: Path) -> int:
         "boq_authority": False,
         "all_source_categories_accepted": False,
         "reports": [],
+        "selected_models": [only] if only else list(EXTRA_MODELS),
         "status": "IN_PROGRESS",
     }
     save_json(output / "summary.json", summary)
     with tempfile.TemporaryDirectory(prefix="p6-g2-new-source-", ignore_cleanup_errors=True) as temp:
         folder = Path(temp)
-        for model in EXTRA_MODELS:
+        for model in ([only] if only else EXTRA_MODELS):
             row = {"model": model, "status": "SOURCE_NOT_VERIFIED"}
             summary["reports"].append(row)
             source = folder / (model + ".ifc")
@@ -311,12 +317,12 @@ def parent(output: Path) -> int:
             print(json.dumps({"model": model, "status": row["status"],
                               "element_count": row.get("source_element_count"),
                               "child_exit": row.get("child_exit_code")}), flush=True)
-    ok = len(summary["reports"]) == len(EXTRA_MODELS) and all(
+    ok = len(summary["reports"]) == len(summary["selected_models"]) and all(
         r.get("status") == "PASS_TWO_REAL_BATCHES_IN_ORIGINAL_QT_UI"
         and r.get("pinned_blob_verified") is True
         and r.get("child_exit_code") == 0
         for r in summary["reports"])
-    summary["status"] = "PASS_NEW_INDEPENDENT_DISCIPLINES_LIMITED_SOURCE" if ok else "G2_SOURCE_COVERAGE_PARTIAL_OR_RED"
+    summary["status"] = "PASS_SELECTED_PINNED_SOURCE_BATCH_LIMITED_SCOPE" if ok else "G2_SOURCE_COVERAGE_PARTIAL_OR_RED"
     save_json(output / "summary.json", summary)
     return 0 if ok else 1
 
@@ -324,6 +330,7 @@ def parent(output: Path) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--only", choices=tuple(EXTRA_MODELS), default=None)
     parser.add_argument("--child", action="store_true")
     parser.add_argument("--source", type=Path)
     parser.add_argument("--model", choices=tuple(EXTRA_MODELS))
@@ -336,4 +343,4 @@ if __name__ == "__main__":
         raise SystemExit(examine(args.source, args.expected_sha, args.model, args.report))
     if args.output is None:
         parser.error("--output required")
-    raise SystemExit(parent(args.output))
+    raise SystemExit(parent(args.output, args.only))
