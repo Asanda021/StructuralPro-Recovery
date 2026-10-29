@@ -1,0 +1,82 @@
+name: P6 compare original Windows crash baseline under matched Qt runtime
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-windows-matched-native-comparison.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  same-runner-same-dependencies-old-vs-current:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      QT_QPA_PLATFORM: windows
+      PYTHONPATH: .
+    steps:
+      - name: Preserve the same original source bytes on Windows
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: diagnostics
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: historic
+          ref: 5fb5c69cec5751bbbecf7018c843c5e921128bb2
+          persist-credentials: false
+      - name: Prove identical original product Qt DB and acceptance test blobs
+        shell: bash
+        run: |
+          test "$(git -C diagnostics rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git -C historic rev-parse HEAD)" = "5fb5c69cec5751bbbecf7018c843c5e921128bb2"
+          for path in core/takeoff/manual_formula_register.py app/manual_formula_controls.py core/projects/store.py core/platform/revisions.py tests/test_manual_formula_fivefloor_closure.py requirements.txt; do
+            a="$(git -C historic rev-parse "HEAD:$path")"
+            b="$(git -C diagnostics rev-parse "HEAD:$path")"
+            test "$a" = "$b" || { echo "Mismatch: $path"; exit 1; }
+            echo "$path $a" 
+          done
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install one dependency set shared between both historical and current snapshots
+        run: python -m pip install -q -r diagnostics/requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Validate diagnostic runner without executing Qt test
+        run: |
+          python -m py_compile diagnostics/scripts/diagnose_windows_native_crash.py diagnostics/scripts/inspect_windows_native_environment.py
+          python diagnostics/scripts/diagnose_windows_native_crash.py --self-check
+      - name: Capture allowed native Python Qt SQLite runtime and loaded DLL hashes
+        run: python diagnostics/scripts/inspect_windows_native_environment.py --output native-matched-evidence/environment.json
+      - name: Historic unchanged original five-floor scenario twice
+        working-directory: historic
+        continue-on-error: true
+        run: python ../diagnostics/scripts/diagnose_windows_native_crash.py --repeats 2 --timeout-seconds 360 --sample-seconds 5 --output ../native-matched-evidence/historic
+      - name: Current unchanged original five-floor scenario twice
+        working-directory: diagnostics
+        continue-on-error: true
+        run: python scripts/diagnose_windows_native_crash.py --repeats 2 --timeout-seconds 360 --sample-seconds 5 --output ../native-matched-evidence/current
+      - name: Print both authentic summaries and require every original JUnit
+        if: always()
+        shell: pwsh
+        run: |
+          $allPass = $true
+          foreach ($arm in @('historic','current')) {
+            $p = Join-Path 'native-matched-evidence' "$arm/summary.json"
+            if (!(Test-Path $p)) { Write-Host "$arm MISSING summary"; $allPass = $false; continue }
+            $s = Get-Content -Raw $p | ConvertFrom-Json
+            Write-Host "$arm test-count=$($s.runs.Count) test-green=$($s.overall_green) root-proven=$($s.native_root_cause_proven)"
+            foreach ($r in $s.runs) { Write-Host "$arm attempt=$($r.attempt) exit=$($r.exit_hex) wall=$($r.wall_seconds) JUnit=$($r.junit.passed)" }
+            if (!$s.overall_green -or $s.runs.Count -ne 2) { $allPass = $false }
+          }
+          if (!$allPass) { throw 'ORIGINAL_WINDOWS_ORACLE_RED: preserve failure and inspect evidence; no product fix inferred' }
+      - name: Upload environment manifest and original JUnit logs even after failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-matched-windows-old-current-native-diagnostic
+          path: native-matched-evidence/
+          retention-days: 14
+          if-no-files-found: warn
