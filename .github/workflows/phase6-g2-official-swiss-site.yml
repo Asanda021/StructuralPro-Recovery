@@ -1,0 +1,41 @@
+name: P6 G2 official real Swiss IFC4 site terrain independent source probe
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths:
+      - .github/workflows/phase6-g2-official-swiss-site.yml
+      - scripts/diagnostics/p6_g2_swisstopo_official_ifc4_terrain.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  official-swiss-ifc4:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - shell: bash
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+          python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Probe official public terrain sample without copying raw IFC
+        run: python scripts/diagnostics/p6_g2_swisstopo_official_ifc4_terrain.py --output official-site-ifc4-audit
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-g2-official-swisstopo-terrain-source
+          path: official-site-ifc4-audit/summary.json
+          retention-days: 14
+          if-no-files-found: error
