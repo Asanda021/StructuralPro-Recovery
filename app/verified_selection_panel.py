@@ -101,6 +101,19 @@ class VerifiedSelectionPanel(QWidget):
         if notify:
             self.selectionCleared.emit()
 
+    def _clear_unresolved(self, message):
+        """Revoke the previous four-view highlight before reporting an unlinked row.
+
+        This is a user-initiated tree/BOQ navigation failure, not a geometry
+        inspection. No previously verified member may remain active.
+        """
+        with QSignalBlocker(self.members), QSignalBlocker(self.boq):
+            self.members.clearSelection()
+            self.boq.clearSelection()
+        self.selectionCleared.emit()
+        self.detail.setText(message)
+        self.selectionUnresolved.emit(message)
+
     def _lookup(self, origin, identifier):
         try:
             result=self._resolve(origin,identifier)
@@ -109,14 +122,12 @@ class VerifiedSelectionPanel(QWidget):
             return None
         if result.status != 'linked':
             message = 'ارتباط تأییدشده با نقشه/BOQ وجود ندارد؛ انتخاب حدسی ممنوع است.'
-            self.detail.setText(message)
-            self.selectionUnresolved.emit(message)
+            self._clear_unresolved(message)
             return result
         if len(result.global_ids) != 1:
             persian_count = str(len(result.global_ids)).translate(str.maketrans('0123456789','۰۱۲۳۴۵۶۷۸۹'))
             message = f'این ردیف به {persian_count} عضو معتبر مرتبط است؛ عضو مشخص را انتخاب کنید.'
-            self.detail.setText(message)
-            self.selectionUnresolved.emit(message)
+            self._clear_unresolved(message)
             return result
         if self.verified_project is not None:
             self.detail.setText(self.verified_project.inspector_text(result))
@@ -138,6 +149,13 @@ class VerifiedSelectionPanel(QWidget):
             value = self.boq.item(rows[0].row(), 0)
             if value is not None:
                 self._lookup('boq', value.data(Qt.ItemDataRole.UserRole) or value.text())
+        elif len(rows) > 1:
+            # A multi-selection is not a single unambiguous navigation origin.
+            # Never leave a previous 2D/3D highlight as if it described all rows.
+            self._clear_unresolved('برای ناوبری چهارطرفه فقط یک ردیف BOQ انتخاب کنید.')
+        else:
+            # Clearing a BOQ selection revokes the old geometry selection, too.
+            self.selectionCleared.emit()
 
     def select_from_geometry(self, global_id: str, *, origin='2d'):
         """2D or 3D selection highlights existing rows without selection loops."""
