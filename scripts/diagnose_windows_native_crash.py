@@ -23,6 +23,11 @@ import psutil
 
 TEST = "tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports"
 ACCESS_VIOLATION_UNSIGNED = 0xC0000005
+ARMS = {
+    "integrated": TEST,
+    "core": "scripts/diagnostics/p6_native_isolation_oracles.py::test_core_sqlite_full_fivefloor_without_qapplication",
+    "qt": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_qt_table_events_without_service_or_sqlite",
+}
 
 
 def atomic_json(path: Path, data: dict) -> None:
@@ -139,11 +144,12 @@ foreach ($e in $records | Select-Object -First 5) {
             "event_id": 1000, "events": events, "event_query_exit": result.returncode}
 
 
-def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float) -> int:
+def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float, test_node: str = TEST) -> int:
     output.mkdir(parents=True, exist_ok=False)
     state = {
         "kind": "original_fivefloor_windows_native_crash_diagnostic",
-        "source_test": TEST,
+        "source_test": test_node,
+        "diagnostic_arm": next((k for k, v in ARMS.items() if v == test_node), "unknown"),
         "original_test_unmodified": True,
         "product_unchanged": True,
         "cprofile_or_pytest_instrumentation": False,
@@ -168,7 +174,7 @@ def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_sec
         start = time.monotonic()
         command = [
             sys.executable, "-m", "pytest", "-q", "--disable-warnings",
-            "-o", "faulthandler_timeout=45", f"--junitxml={junit}", TEST,
+            "-o", "faulthandler_timeout=45", f"--junitxml={junit}", test_node,
         ]
         env = os.environ.copy()
         env["PYTHONFAULTHANDLER"] = "1"
@@ -252,6 +258,7 @@ def main() -> int:
     parser.add_argument("--timeout-seconds", type=int, default=360)
     parser.add_argument("--sample-seconds", type=float, default=5)
     parser.add_argument("--self-check", action="store_true")
+    parser.add_argument("--arm", choices=tuple(ARMS), default="integrated")
     args = parser.parse_args()
     if args.self_check:
         assert exit_hex(3221225477) == "0xC0000005"
@@ -266,7 +273,7 @@ def main() -> int:
         parser.error("Windows native diagnostic requires win32")
     if os.environ.get("QT_QPA_PLATFORM") != "windows":
         parser.error("Qt must use native windows platform; offscreen is not accepted")
-    return run_repeats(args.output, args.repeats, args.timeout_seconds, args.sample_seconds)
+    return run_repeats(args.output, args.repeats, args.timeout_seconds, args.sample_seconds, test_node=ARMS[args.arm])
 
 
 if __name__ == "__main__":
