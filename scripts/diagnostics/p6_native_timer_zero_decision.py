@@ -86,6 +86,7 @@ def test_run(output: Path) -> int:
         "product_code_unchanged": True,
         "raw_logs_uploaded": False,
         "memory_dumps_saved": False,
+        "temporary_windows_cleanup": "best_effort_locked_synthetic_db_not_uploaded",
         "root_cause_proven": False,
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "attempts": [],
@@ -110,7 +111,11 @@ def test_run(output: Path) -> int:
             NODE,
         ]
         start = time.monotonic()
-        with tempfile.TemporaryDirectory(prefix="p6-timer0-private-") as private:
+        # On Windows, AV/Defender or SQLite file locks may persist briefly
+        # after the child process exits. An ephemeral cleanup error must not
+        # erase JUnit/checkpoint evidence or masquerade as a native crash.
+        # Files remain on the disposable GitHub runner only, never artifacts.
+        with tempfile.TemporaryDirectory(prefix="p6-timer0-private-", ignore_cleanup_errors=True) as private:
             # All original pytest console output and private test database remain
             # transient. Artifact only receives JUnit and sanitized checkpoints.
             command.insert(-1, "--basetemp=" + str((Path(private) / "pytest").resolve()))
