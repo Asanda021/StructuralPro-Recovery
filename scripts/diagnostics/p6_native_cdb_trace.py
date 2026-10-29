@@ -50,8 +50,12 @@ def junit(path: Path) -> dict | None:
 
 
 def sanitize(raw: str) -> dict:
-    crash = MARKER in raw
-    section = raw.rsplit(MARKER, 1)[-1] if crash else ""
+    # CDB echoes the startup command containing MARKER even on clean exits.
+    # Accept ONLY a standalone .echo output line, never a substring of command text.
+    marker_lines = list(re.finditer(r"(?m)^\\s*" + re.escape(MARKER) + r"\\s*$", raw))
+    crash = bool(marker_lines)
+    section = raw[marker_lines[-1].end():] if crash else ""
+    code_in_section = bool(re.search(r"(?i)\\b(?:0x)?c0000005\\b", section))
     frames = []
     for line in section.splitlines():
         if len(frames) == 32:
@@ -65,7 +69,8 @@ def sanitize(raw: str) -> dict:
                 frames.append(f)
     return {
         "second_chance_marker": crash,
-        "exception_codes": ["0xC0000005"] if crash else [],
+        "exception_codes": ["0xC0000005"] if crash and code_in_section else [],
+        "exception_code_observed": code_in_section,
         "native_stack_symbols": frames,
         "native_stack_available": bool(frames),
         "root_cause_proven": False,
@@ -100,6 +105,7 @@ def run(output: Path, arm: str, repetitions: int, timeout: int) -> int:
         "raw_logs_uploaded": False,
         "memory_dumps_uploaded": False,
         "native_root_cause_proven": False,
+        "marker_parser": "standalone_echo_line_v2",
         "status": "RUNNING" if cdb else "BLOCKED_NO_DEBUGGER",
         "started_utc": datetime.now(timezone.utc).isoformat(),
         "attempts": [],
@@ -180,6 +186,7 @@ def main() -> int:
         assert clean["second_chance_marker"] and clean["exception_codes"] == ["0xC0000005"]
         assert len(clean["native_stack_symbols"]) == 2 and "Hidden" not in json.dumps(clean)
         assert not sanitize("first-chance access violation")["second_chance_marker"]
+        assert not sanitize(f'0:000> sxd -c2 ".echo {MARKER}; .lastevent" av; g')["second_chance_marker"]
         assert junit(Path("file-does-not-exist.xml")) is None
         print("CDB sanitizer self-check PASS")
         return 0
