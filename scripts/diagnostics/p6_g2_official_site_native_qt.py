@@ -97,6 +97,24 @@ def main():
             except Exception as exc:
                 row.update(status="FAIL",error_class=type(exc).__name__,
                            error_category=str(exc) if str(exc).isupper() and len(str(exc))<80 else "MODEL_OR_UI_REJECTED")
+                row["status_kind"] = (
+                    "QT_MODEL_REJECTED" if mainwin and "رد شد" in mainwin.status.text()
+                    else "QT_LOAD_PENDING_OR_FAILED")
+                try:
+                    import traceback
+                    direct=verified_site_context(source, revision="SITE-DIRECT-PROBE",
+                                                 expected_sha256=expected)
+                    row["direct_geometry"]={"status":"PASS","triangles":len(direct.triangles)}
+                except Exception as direct_exc:
+                    frame=traceback.extract_tb(direct_exc.__traceback__)[-1]
+                    row["direct_geometry"]={"status":"BLOCKED","error_class":type(direct_exc).__name__,
+                                            "module":pathlib.Path(frame.filename).name,"line":frame.lineno,
+                                            "safe_category":str(direct_exc) if str(direct_exc) in (
+                                                "شبکهٔ مثلثی IfcSite قابل نمایش نیست.",
+                                                "مدل زمین از ظرفیت ۴۰ هزار مثلث فراتر است.",
+                                                "مدل باید دقیقاً یک IfcSite دارای هندسهٔ صریح داشته باشد.",
+                                                "نمای زمین فقط IFC4 با پروژهٔ یکتا را می‌پذیرد.",
+                                                "واحد طول منبع زمین باید یکتا باشد.") else "SOURCE_SHAPE_OR_NATIVE")}
             finally:
                 QFileDialog.getOpenFileName=old_picker
                 if mainwin is not None:
