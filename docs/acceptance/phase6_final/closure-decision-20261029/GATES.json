@@ -6,7 +6,7 @@
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "1bdf488bfde364987586bea0563df07c0fbed6ee",
   "latest_targeted_acceptance_source_sha": "7f39ebd00eddb29cc54f04027c2d75473cdd2c53",
-  "source_difference_since_acceptance": "Batched original GUI, source-wide roster, QProcess import, independent source-backed two-batch swap accepted on product source commit 0686998c9bc00c8d36e2b3180a36ca13d75f8b31; original safety cap 40000 unchanged; broad entire-suite head green and all source classes unverified.",
+  "source_difference_since_acceptance": "G1 native timeout-zero Windows acceptance at original product source 40d8e18326b9c2e80e79f4dc6524dcf527205d16: 4 lifecycle, 3 integrated, 2 CDB all JUnit PASS. Only diagnostic/pytest timeout policy changed; no product code changed for G1. G2 full mandatory source coverage, broad same-head regression and G4 physical Windows owner UAT remain not accepted.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -63,13 +63,74 @@
     {
       "id": "G1",
       "name": "native_windows_stability",
-      "status": "OPEN",
+      "status": "ACCEPTED_AUTOMATED_NATIVE_EXIT_SCOPE_ROOT_CAUSE_NOT_PROVEN",
       "evidence_failure_runs": [
         40845502382,
         40853080441
       ],
-      "reason": "Historical genuine second-chance 0xC0000005 and missing JUnit; origin not fixed. A 45-second faulthandler dump timer is a possible contributor, not proven cause.",
-      "release_implication": "Do not claim production Windows crash resolved."
+      "reason": "The historical CDB second-chance 0xC0000005 fault occurred at python312!Py_DumpTracebackThreads/Py_AtExit during the explicitly configured 45s faulthandler timed watchdog experiment. A-C-C-A historical evidence correlates but does not prove causality. The default diagnostic and pytest timed watchdog are now explicitly zero while faulthandler remains active. Original source-hash-pinned Windows Native Qt lifecycle, full 70-row integrated SQLite/report test and CDB second-chance checks all passed on final tested source: 4+3+2 independent JUnit and process exit validations. Root cause not definitively proven and G4 human physical Windows UAT remains independent.",
+      "release_implication": "G1 automated native-exit acceptance completed in the historically failing bounded scenario only, NOT a warranty across all Windows hardware. Full release/phase6 remains NO-GO until other G2/broad regression/G4 gates and owner signoff.",
+      "mitigation": {
+        "pytest_ini_timer_seconds": 0,
+        "diagnostic_safe_default_seconds": 0,
+        "faulthandler_enabled": true,
+        "legacy_45_seconds_requires_explicit_opt_in": true,
+        "product_code_modified_for_g1": false
+      },
+      "verified_stress": {
+        "run": 40905485780,
+        "tested_commit": "40d8e18326b9c2e80e79f4dc6524dcf527205d16",
+        "result": "SUCCESS_ALL_THREE_WINDOWS_JOBS",
+        "os": "Windows Server 2022 native Qt",
+        "python": "3.12.10",
+        "pyside6": "6.12.0",
+        "lifecycle": {
+          "attempts": 4,
+          "all_original_junit_green": true,
+          "sqlite_integrity": "VALID_PRAGMA_INTEGRITY_CHECK",
+          "last_checkpoint": "ALL_DONE",
+          "fault_handler_enabled": true,
+          "timeout_zero_confirmed": true,
+          "artifact_id": 12912246494,
+          "zip_sha256": "dc809d161ad56f5e5dee3c5c7a60a77f2ed65d66af4d75e77c731aeecd7a6b1d"
+        },
+        "integrated": {
+          "attempts": 3,
+          "original_test_unchanged": true,
+          "junit_green": 3,
+          "exit_code": "0x00000000",
+          "artifact_id": 12911153459,
+          "zip_sha256": "2fc8ae78eb3fee174e25879d712b2549bd21e7afbd8b2cb8c54105236db5d518"
+        },
+        "cdb": {
+          "attempts": 2,
+          "second_chance_av_count": 0,
+          "junit_green": 2,
+          "microsoft_debugger": true,
+          "artifact_id": 12911048959,
+          "zip_sha256": "0710a30658c4c4b4abfc1dd0ae62f1ef2be675d3a8188e72a7bd19f2e005559a"
+        },
+        "all_nine_passed": true,
+        "native_exit_error_recurrence_observed": false,
+        "root_cause_proven": false
+      },
+      "historical_cdb_control": {
+        "run": 40853080441,
+        "sequence_faulthandler_dump_timeout_seconds": [
+          45,
+          0,
+          0,
+          45
+        ],
+        "results": [
+          "AV_0XC0000005",
+          "PASS",
+          "PASS",
+          "PASS"
+        ],
+        "native_fault_symbol": "python312!Py_DumpTracebackThreads",
+        "interpretation": "correlation, not determinism or causal proof"
+      }
     },
     {
       "id": "G2",
@@ -328,7 +389,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "P6_G2_BATCH_UI_FUNCTIONAL_SCOPE_ACCEPTED;_PHASE6_CLOSE_NO_GO_NATIVE_BROAD_UAT_AND_MANDATORY_SOURCE_COVERAGE",
+  "last_decision": "G1_AUTOMATED_NATIVE_EXIT_ACCEPTED_LIMITED;_G2_MANDATORY_SOURCE_COVERAGE_G4_PHYSICAL_WINDOWS_AND_BROAD_REGRESSION_REMAIN_NO_GO",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -338,8 +399,8 @@
   "allow_main_change": false,
   "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40902096586,
-  "last_source_verified_commit": "0686998c9bc00c8d36e2b3180a36ca13d75f8b31",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-original-ui-batch-closure/REPORT.fa.md",
+  "last_evidence_run": 40905485780,
+  "last_source_verified_commit": "40d8e18326b9c2e80e79f4dc6524dcf527205d16",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g1-native-windows-timer-zero/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6."
 }
