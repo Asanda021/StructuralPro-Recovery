@@ -1132,10 +1132,18 @@ class GraphicalTakeoffDialog(QDialog):
 
     def _ifc_status(self):
         doc = self.viewer.ifc_document
+        full_count = len(getattr(doc, "source_roster", ()))
+        without_geometry = sum(not represented for _, represented
+                               in getattr(doc, "source_roster", ()))
+        unrepresented_in_preview = max(
+            0, full_count - without_geometry - len(doc.meshes))
         self.status.setText(
-            f"نمای ایزومتریک مدل | {len(doc.meshes)} عنصر | "
-            f"نمایش‌داده‌نشده: {len(doc.omitted_ids)} عنصر | "
-            "متره از تصویر مدل مجاز نیست؛ کمیت‌های مدل در بخش بررسی نقشه بازبینی می‌شوند."
+            f"نمای ایزومتریک IFC | کل اعضای منبع: {full_count or len(doc.meshes)} | "
+            f"نمایش داده‌شده: {len(doc.meshes)} | "
+            f"بارگذاری‌نشده: {unrepresented_in_preview} | "
+            f"فاقد هندسه: {without_geometry} | "
+            f"شکست هندسه: {len(doc.omitted_ids)} | "
+            "پیش‌نمایش ناقص است؛ متره از هندسه مدل مجاز نیست."
         )
 
     def _render_ifc(self):
