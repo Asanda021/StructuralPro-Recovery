@@ -7,10 +7,15 @@ permissions:
   contents: read
 jobs:
   font-proof:
+    strategy:
+      fail-fast: false
+      matrix:
+        scale: ['1.5', '2']
     runs-on: windows-2022
     timeout-minutes: 10
     env:
       QT_QPA_PLATFORM: windows
+      QT_SCALE_FACTOR: ${{ matrix.scale }}
       PYTHONPATH: .
       PYTHONUTF8: '1'
     steps:
@@ -64,6 +69,6 @@ jobs:
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: p6-native-font-diagnostic
+          name: p6-native-font-diagnostic-${{ matrix.scale }}
           path: font-evidence/
           retention-days: 14
