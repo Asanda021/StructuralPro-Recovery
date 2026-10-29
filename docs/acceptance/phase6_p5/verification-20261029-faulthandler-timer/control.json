@@ -1,0 +1,43 @@
+{
+  "kind": "p6_synthetic_second_chance_av_pc_module_calibration_v4",
+  "synthetic_only": true,
+  "production_source_executed": false,
+  "original_oracle_unchanged": true,
+  "debugger_present": true,
+  "expected_code": "0xC0000005",
+  "memory_dump_written": false,
+  "raw_debugger_logs_uploaded": false,
+  "native_root_cause_proven_for_product": false,
+  "test_control_passed": true,
+  "started_utc": "2026-10-29T09:54:01.114351+00:00",
+  "build": {
+    "kind": "native_no_crt_headerless_compile",
+    "compiler": "clang-cl",
+    "linker": "lld-link",
+    "compiler_present": true,
+    "linker_present": true,
+    "compile_return_code": 0,
+    "link_return_code": 0,
+    "compiler_error_codes": [],
+    "linker_error_codes": [],
+    "compile_object_exists": true,
+    "linked_executable_exists": true,
+    "includes_windows_headers": false,
+    "uses_crt": false,
+    "raw_build_output_saved": false
+  },
+  "debugger_exit_code": 0,
+  "timed_out": false,
+  "control_second_chance_marked": true,
+  "exception_code_verified": true,
+  "native_stack_symbols": [
+    "kernel32!BaseThreadInitThunk",
+    "ntdll!RtlUserThreadStart"
+  ],
+  "native_stack_available": true,
+  "pc_module": "synthetic_fault",
+  "pc_module_proven_by_lm_address": true,
+  "pc_nearest_symbol": null,
+  "finished_utc": "2026-10-29T09:54:10.089519+00:00",
+  "status": "CONTROL_PASS"
+}

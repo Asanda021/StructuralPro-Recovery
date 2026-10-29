@@ -1,3 +1,11 @@
+## وضعیت جاری مقایسه تایمر — ۲۹ اکتبر ۲۰۲۶
+
+Source `ed56c430c64fce32eca0a27c0b4b06a34ea59e85`؛ Tree `bd64133456d3bc6ea3a946d311544949b7aad2cb`؛ [Run 40853080441](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40853080441) FAILURE واقعی: ترتیب A45–C0–C0–A45 روی یک Windows Runner، یک AV در A اول بدون JUnit و سه PASS معتبر. آخرین Marker شکست CONSTRUCT_ENTER،seq196،cycle1،۱۴ Commit؛ PC=python312.dll،nearest=Py_DumpTracebackThreads. Probe واقعی Handler/plugin را در هر چهار اجرا فعال و timeoutها را ۴۵/۰/۰/۴۵ تأیید کرد. [گزارش و Manifest](verification-20261029-faulthandler-timer/REPORT.fa.md) شامل Artifact بازدریافت‌شده، سه JUnit، چهار Probe و ژورنال‌هاست.
+
+مقایسه محدود تمام شد؛ علت NOT PROVEN، رفع کرش OPEN و P6-5 PARTIAL. کد محصول و آزمون مرجع تغییر نکردند. مقایسه Faulthandler بیشتری بدون شاهد تازه نساز. تنها قدم بعدی بررسی هدفمند و فقط‌خواندنی تعامل Threadهای Native Python/Qt و callback/QObject در ساخت پنجره چرخه دوم پس از DeferredDelete است؛ بدون اصلاح حدسی محصول. وضعیت نهایی SQLite اجرای کرش NOT VERIFIED؛ Reopen۱۴ردیف پیش از کرش موفق بوده است. ۸فاز،۸۵٪،Draft/Open/Unmerged،بدون P6-6/فاز۷/Merge/main/Release/EXE/ForcePush.
+
+---
+
 ## مقایسهFaulthandlerواقعی — ۲۹اکتبر۲۰۲۶
 [Run40848792075](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40848792075) رویe11607d23b845e2f747e7561736fcd42365be05e:دوPASSباFHفعال،دوPASSباFHغیرفعال،صفرAV/timeout؛چهارJUnitوprobeواقعیبررسیشدند. محیطBواقعاًفاقدمتغیرenvوافزونهpytestبودوis_enabled=falseماند. [گزارش/Manifest](verification-20261029-faulthandler-comparison/REPORT.fa.md). رفعکرشOPENوعلتNOT PROVEN؛P6-5PARTIAL. قدمبعدیفقطکنترلtimer0درحالتFHفعالبدونتغییرمحصول.
 

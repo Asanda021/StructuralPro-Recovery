@@ -1,0 +1,50 @@
+{
+  "kind": "p6_native_windows_cdb_live_exception_no_dump",
+  "arm": "dialog_lifecycle",
+  "faulthandler_mode": "enabled",
+  "dump_timeout": 0,
+  "source_test": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_dialog_destroy_reopen_every_fourteen_commits",
+  "debugger_available": true,
+  "debugger_kind": "Microsoft CDB",
+  "original_test_unchanged": true,
+  "product_code_unchanged": true,
+  "raw_logs_uploaded": false,
+  "memory_dumps_uploaded": false,
+  "native_root_cause_proven": false,
+  "marker_parser": "exception_pc_lm_address_v3",
+  "status": "PASS_LIMITED",
+  "started_utc": "2026-10-29T09:55:29.088399+00:00",
+  "attempts": [
+    {
+      "attempt": 1,
+      "process_started_utc": "2026-10-29T09:55:29.088399+00:00",
+      "process_ended_utc": "2026-10-29T09:58:19.720610+00:00",
+      "wall_seconds": 170.63,
+      "debugger_exit_code": 0,
+      "timed_out": false,
+      "junit": {
+        "total": 1,
+        "failure": 0,
+        "error": 0,
+        "skipped": 0,
+        "passed": 1,
+        "valid": true
+      },
+      "valid_test_pass": true,
+      "second_chance_marker": false,
+      "exception_codes": [],
+      "exception_code_observed": false,
+      "native_pc_module": null,
+      "native_pc_module_proven_by_lm_address": false,
+      "native_pc_nearest_symbol": null,
+      "native_stack_symbols": [],
+      "native_stack_available": false,
+      "root_cause_proven": false,
+      "raw_debugger_output_saved": false,
+      "memory_dump_saved": false,
+      "file_paths_saved": false
+    }
+  ],
+  "all_valid": true,
+  "ended_utc": "2026-10-29T09:58:19.720610+00:00"
+}

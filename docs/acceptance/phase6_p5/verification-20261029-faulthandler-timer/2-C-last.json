@@ -1,0 +1,9 @@
+{
+  "sequence": 967,
+  "event": "ALL_DONE",
+  "cycle": 4,
+  "committed_rows": 70,
+  "monotonic_ns": 673015000000,
+  "data_values_logged": false,
+  "memory_dump_saved": false
+}

@@ -1,0 +1,9 @@
+{
+  "sequence": 196,
+  "event": "CONSTRUCT_ENTER",
+  "cycle": 1,
+  "committed_rows": 14,
+  "monotonic_ns": 469859000000,
+  "data_values_logged": false,
+  "memory_dump_saved": false
+}

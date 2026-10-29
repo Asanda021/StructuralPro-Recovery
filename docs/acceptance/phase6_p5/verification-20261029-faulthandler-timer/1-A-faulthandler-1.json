@@ -1,0 +1,9 @@
+{
+  "test_started_utc": "2026-10-29T09:54:11.669294+00:00",
+  "test_started_monotonic_ns": 425375000000,
+  "expected_enabled": true,
+  "before_test": true,
+  "pytest_plugin_present": true,
+  "environment_present": true,
+  "faulthandler_timeout": 45.0
+}
