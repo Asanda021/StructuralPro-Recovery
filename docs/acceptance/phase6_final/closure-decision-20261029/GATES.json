@@ -66,14 +66,14 @@
     {
       "id": "G2",
       "name": "mandatory_multidiscipline_live3d",
-      "status": "BLOCKED_BY_DOCUMENTED_GEOMETRY_CAPACITY_AND_MISSING_MODEL_GEOMETRY",
+      "status": "BLOCKED_FULL_MODEL_PARTIAL_SOURCE_SELECTION_ACCEPTED",
       "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
       "scope_source": "PR #24 approved eight-phase master, phase 6",
       "evidence_run": 40874887085,
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Independent full-tessellation census is consistent on Linux/Windows: architecture 340900 triangles across all 949 represented members but 8 of 957 IfcElement have no Representation; ventilation 159072 triangles across all 1310 elements. Both exceed 40000 triangle product display safety gate. No full-scene memory/UI/selection acceptances, no silent omissions, MapConversion remains unproven. Design of transparent selection-bounded batches required. Native G1 and owner UAT remain open.",
+      "remaining_scope": "Bounded selected source-backed IFC mesh + full explicit ledger of displayed/not_loaded/without_geometry accepted on two independent published RWTH IFC4 reference models on both OS. This is a single selected source element, not full-model rendering or actual user-controlled floor/type batching. Full model geometry 340900/159072 triangles remains beyond unchanged 40000 cap. 8 architecture elements have no Representation; map conversion and physical owner UAT not accepted. Interactive batch selection/worker/swap and regression of full application remain pending.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -157,6 +157,61 @@
           "coverage": "COMPLETE_ALL_SOURCE_MEMBERS_MEASURED"
         },
         "note": "Source-pinned aggregate diagnostic only. Measured peak child RSS is per-member tessellation, NOT resident full-scene viewer memory. CLI run failure is intentional for architecture source completeness gate, no JUnit for published models."
+      },
+      "bounded_source_selection": {
+        "status": "ACCEPTED_LIMITED_SCOPE_ONLY",
+        "source_sha": "2269101eb3f48efadb9a0072d9e7fe7d4d959e0e",
+        "qt_test_run": 40897008517,
+        "linux_pass": 14,
+        "windows_pass": 14,
+        "qt_artifacts": [
+          {
+            "os": "windows-2022",
+            "artifact_id": 12907566439,
+            "zip_sha256": "91fff02b2d474ad891460039ff0b1d94bbc663563bf805723cae2ae8ae12d681"
+          },
+          {
+            "os": "ubuntu-24.04",
+            "artifact_id": 12907153296,
+            "zip_sha256": "e55d7cea7f5dad07e310575a19bc917b1bbfe4dfb68aa0f9879551257526a2fe"
+          }
+        ],
+        "independent_source_run": 40897560690,
+        "independent_source_sha": "a0f59826b9037c0203487605eec09131aef2b8b6",
+        "independent_artifacts": [
+          {
+            "os": "windows-2022",
+            "artifact_id": 12907672902,
+            "zip_sha256": "f8f39f6145c8d64f5ea2744de936429bdf7fa2b67d97a87c5f0c2aeeb72e95d0"
+          },
+          {
+            "os": "ubuntu-24.04",
+            "artifact_id": 12907207839,
+            "zip_sha256": "2b5c1c8f3bf30db22fc048ba425a8c50fd1dfcaddf0569853a769998ab8ffb94"
+          }
+        ],
+        "source_models": {
+          "architecture": {
+            "source_members": 957,
+            "displayed": 1,
+            "not_loaded": 948,
+            "without_geometry": 8,
+            "selected_class": "IfcWall",
+            "selected_triangles": 48
+          },
+          "ventilation": {
+            "source_members": 1310,
+            "displayed": 1,
+            "not_loaded": 1309,
+            "without_geometry": 0,
+            "selected_class": "IfcDuctSegment",
+            "selected_triangles": 12
+          }
+        },
+        "map_conversion_supported": false,
+        "quantity_authority": false,
+        "interactive_batch_ui_and_worker_complete": false,
+        "full_model_3d_accepted": false
       }
     },
     {
@@ -198,7 +253,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "NO_GO_PHASE6_CAPACITY_OVER_40000_AND_8_ARCHITECTURE_MEMBERS_WITHOUT_GEOMETRY",
+  "last_decision": "NO_GO_FULL_MODEL_SOURCE_BACKED_PARTIAL_SELECTION_LIMITED_GREEN",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -208,7 +263,7 @@
   "allow_main_change": false,
   "require_new_test_run": true,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40889225489,
-  "last_source_verified_commit": "b76a23d03f79757bfcc654785a69a023cff76e96",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-independent-geometry-capacity/REPORT.fa.md"
+  "last_evidence_run": 40897560690,
+  "last_source_verified_commit": "a0f59826b9037c0203487605eec09131aef2b8b6",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-limited-source-backed-ifc-view/REPORT.fa.md"
 }
