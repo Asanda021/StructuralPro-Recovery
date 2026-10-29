@@ -1,0 +1,8 @@
+{
+  "expected_enabled": true,
+  "before_test": true,
+  "pytest_plugin_present": true,
+  "environment_present": true,
+  "faulthandler_timeout": 45.0,
+  "after_test": true
+}

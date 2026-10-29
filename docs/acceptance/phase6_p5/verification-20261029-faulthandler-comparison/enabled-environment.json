@@ -1,0 +1,110 @@
+{
+  "kind": "windows_native_qt_dependency_fingerprint_v1",
+  "python": "3.12.10",
+  "python_implementation": "CPython",
+  "python_arch": "64bit",
+  "windows_version": "10.0.20348",
+  "windows_release": "2022Server",
+  "platform": "win32",
+  "sqlite_version": "3.49.1",
+  "sqlite_module_version": "2.6.0",
+  "pyside_version": "6.12.0",
+  "qt_runtime_version": "6.12.0",
+  "qt_library_paths_count": 2,
+  "qt_plugins_path_exists": true,
+  "packages": {
+    "PySide6": "6.12.0",
+    "PySide6-Addons": "6.12.0",
+    "PySide6-Essentials": "6.12.0",
+    "shiboken6": "6.12.0",
+    "pytest": "9.2.0",
+    "ifcopenshell": "0.9.0.post1",
+    "psutil": "7.2.2",
+    "pypdf": "6.21.4",
+    "PyMuPDF": "2.0",
+    "openpyxl": "3.1.5",
+    "reportlab": "5.1.0",
+    "python-docx": "1.2.0",
+    "ezdxf": "1.4.5"
+  },
+  "loaded_allowlist_native_modules": {
+    "qwindows.dll": {
+      "file_name": "qwindows.dll",
+      "sha256": "ddd5cf6a96f058cfafcbc901ddeb5df010d755f0716beacfb557f8b27b733afe",
+      "size_bytes": 1001784
+    },
+    "qtgui.pyd": {
+      "file_name": "QtGui.pyd",
+      "sha256": "9ac544d1bcf8a26c408c63090d05506f8382d5378ee3a204e29a3ac5449c5b2b",
+      "size_bytes": 3936056
+    },
+    "qt6gui.dll": {
+      "file_name": "Qt6Gui.dll",
+      "sha256": "abd20026e190e8cc69667d1bea042db05cd353cc05e7da74b063c20b7da3f6cd",
+      "size_bytes": 9683256
+    },
+    "qt6widgets.dll": {
+      "file_name": "Qt6Widgets.dll",
+      "sha256": "2f62cbe2869fff4e20df7369c2786e1ec7ec290d5a63d1371b7f70cf06909c3f",
+      "size_bytes": 6520120
+    },
+    "qtwidgets.pyd": {
+      "file_name": "QtWidgets.pyd",
+      "sha256": "a8e323e56a93c1a8a70981c36a409c0a2546e7a08da5be8ca4e03dfd27febc2a",
+      "size_bytes": 4911416
+    },
+    "qt6core.dll": {
+      "file_name": "Qt6Core.dll",
+      "sha256": "f57ed38afd95d0306cca9d88d997f639f70c7628a4f1f064eae291d579487121",
+      "size_bytes": 10472760
+    },
+    "qtcore.pyd": {
+      "file_name": "QtCore.pyd",
+      "sha256": "6486f6f0a2fec42fc8c652c0b76bb3ad0d44eaccad9c72e577116a075681eebb",
+      "size_bytes": 3521336
+    },
+    "python312.dll": {
+      "file_name": "python312.dll",
+      "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120",
+      "size_bytes": 6945272
+    },
+    "pyside6.abi3.dll": {
+      "file_name": "pyside6.abi3.dll",
+      "sha256": "d5b87ccb0a7c305854bd120242b0a75002d0b50a35532d0f6171e4ed0f3cc82a",
+      "size_bytes": 262968
+    },
+    "msvcp140.dll": {
+      "file_name": "msvcp140.dll",
+      "sha256": "1ba4d7c0a95d375da138a057a57593b33510ad5bda6c5e2686afd68faa5b4231",
+      "size_bytes": 549176
+    },
+    "shiboken6.abi3.dll": {
+      "file_name": "shiboken6.abi3.dll",
+      "sha256": "07c318c02be5a3a9f1475f5a2d0cd438f4d4ea3288c28e2e10bc5ebbbec8de86",
+      "size_bytes": 399672
+    },
+    "sqlite3.dll": {
+      "file_name": "sqlite3.dll",
+      "sha256": "8daa45684bf6688fca28d956b2e8942f2fa98f656675ce68e6d61dd869848a7a",
+      "size_bytes": 1583608
+    },
+    "_sqlite3.pyd": {
+      "file_name": "_sqlite3.pyd",
+      "sha256": "64b51df2805c58b023a875e8ae3be7ac7f61ef664f32ca6c90f6315da47ef0bc",
+      "size_bytes": 126184
+    },
+    "vcruntime140_1.dll": {
+      "file_name": "vcruntime140_1.dll",
+      "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8",
+      "size_bytes": 49776
+    },
+    "vcruntime140.dll": {
+      "file_name": "vcruntime140.dll",
+      "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4",
+      "size_bytes": 120400
+    }
+  },
+  "raw_environment_variables_included": false,
+  "full_paths_or_secrets_included": false,
+  "memory_dumps_included": false
+}

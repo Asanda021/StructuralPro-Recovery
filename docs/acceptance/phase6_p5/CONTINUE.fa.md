@@ -1,3 +1,8 @@
+## مقایسهFaulthandlerواقعی — ۲۹اکتبر۲۰۲۶
+[Run40848792075](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/40848792075) رویe11607d23b845e2f747e7561736fcd42365be05e:دوPASSباFHفعال،دوPASSباFHغیرفعال،صفرAV/timeout؛چهارJUnitوprobeواقعیبررسیشدند. محیطBواقعاًفاقدمتغیرenvوافزونهpytestبودوis_enabled=falseماند. [گزارش/Manifest](verification-20261029-faulthandler-comparison/REPORT.fa.md). رفعکرشOPENوعلتNOT PROVEN؛P6-5PARTIAL. قدمبعدیفقطکنترلtimer0درحالتFHفعالبدونتغییرمحصول.
+
+---
+
 ## آخرین تشخیص چرخه دوم — ۲۹ اکتبر۲۰۲۶
 Run40845502382 رویsource7d6bc31dd146e4d88c273417b950cf34708827b6:دوPASSعادی،یکPASSزیرCDBویکAVزیرCDBبدونJUnit. آخرینcheckpoint=REVIEW_CLICK_ENTER،sequence359،cycle1،۲۷Commit؛PCmodulepython312،نمادنزدیکPy_DumpTracebackThreads. علتثابتنشده،WindowsREDوP6-5PARTIAL. [گزارش/Manifest/شواهد](verification-20261029-lifecycle-detailed/REPORT.fa.md). قدمبعدیفقطکنترلهم‌منبعfaulthandlerزیرCDB؛محصولتغییرنکند.
 
