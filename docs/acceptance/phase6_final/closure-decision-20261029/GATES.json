@@ -4,9 +4,9 @@
   "repository": "Asanda021/StructuralPro-Recovery",
   "pr_number": 34,
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
-  "audited_product_head": "efaab3c5dc335012ef6b8fec89a041247b509207",
-  "latest_targeted_acceptance_source_sha": "efaab3c5dc335012ef6b8fec89a041247b509207",
-  "source_difference_since_acceptance": "Product code updated with isolated IFC4 IfcSite spatial viewer and IFC2X3 existing-building read-only reference; exact native Windows/Linux original UI and source SHA CI succeeded. Full active regression final product SHA 683e2ad428d62e4980daa702438060621c845150 is running at workflow 40949336798. Newer commits only workflow diagnostics/docs; no EXE/merge/release. Overall phase6 remains partial until final regression decision and physical owner G4.",
+  "audited_product_head": "683e2ad428d62e4980daa702438060621c845150",
+  "latest_targeted_acceptance_source_sha": "683e2ad428d62e4980daa702438060621c845150",
+  "source_difference_since_acceptance": "Full active suite verified at exact 683e2ad428d62e4980daa702438060621c845150: 717 active modules, 8463 unique JUnit tests per OS, five successful jobs; subsequent commits affect only CI diagnostic workflow and acceptance documentation, not original app/core/tests. Full original native source G2 target checks succeeded on latest product and existing Windows owner UAT remains required.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -167,7 +167,7 @@
       "evidence_commit": "11c4c8112fcd7ac754fd5ea33e1e260e5bb94581",
       "automated_passes_per_platform": 30,
       "evidence_scope": "Real IFC4-format synthetic fixture includes 14 distinct IfcElement types and spatial-context IfcSpace excluded from member identities; read-only native Qt type-filter picking, E2, 100-floor synthetic regression passed.",
-      "remaining_scope": "Mandatory visual read-only site and real existing-building source cases now automated accepted. IFC2X3 engineering/QTO/renovation intervention approvals and full simultaneous 3D are explicitly NOT accepted; engineering renovation source integration requires separate approved evidence and is NOT replaced by visual-only proof. Full active Linux/Windows regression run 40949336798 is pending as of this GATES update. Physical G4 owner UAT remains an independent hard NO-GO.",
+      "remaining_scope": "Native Linux/Windows G2 visual source acceptance AND full active regression complete. Engineering IFC2X3 conversion, QTO, as-built renovation intervention/phase authorization, full scene 3D for all members, true GIS mapping and real construction plans are not validated or accepted by the visual viewer. Phase6 physical owner G4 UAT and final release remain NO-GO. Do not claim all engineering renovation needs are complete.",
       "independent_dataset": {
         "repo": "RWTH-E3D/DigitalHub",
         "commit": "36565d529b4dadeca625de2b793d7e16700171e9",
@@ -549,7 +549,7 @@
         "source_product_commit": "13df854f56b8e5bdc85074669fe48777843251b8",
         "head_of_complete_current_regression": "683e2ad428d62e4980daa702438060621c845150",
         "full_active_regression_run": 40949336798,
-        "full_active_regression_status": "IN_PROGRESS_NOT_ACCEPTED_YET",
+        "full_active_regression_status": "ACCEPTED_ALL_ACTIVE_MODULES_LINUX_WINDOWS",
         "swiss_site": {
           "ci_run": 40949293755,
           "result_linux": "SUCCESS",
@@ -619,7 +619,57 @@
           "all_3D_geometry_at_once",
           "real_hardware_UAT",
           "BOQ_write_from_spatial_or_legacy_reference"
-        ]
+        ],
+        "full_active_regression": {
+          "run": 40949336798,
+          "tested_source_sha": "683e2ad428d62e4980daa702438060621c845150",
+          "ci_conclusion": "success",
+          "jobs": 5,
+          "modules": 717,
+          "unique_testcases_per_os": 8463,
+          "linux": {
+            "passed": 8458,
+            "skipped": 5,
+            "failed": 0,
+            "errors": 0,
+            "timed_out": false,
+            "artifact_id": 12931407341,
+            "zip_sha256": "ef72fa7fb9a8c42a43c5ccecf1809cd251eba034f3eda9cdb5b53ba6a6a789ef"
+          },
+          "windows": {
+            "passed": 8456,
+            "skipped": 7,
+            "failed": 0,
+            "errors": 0,
+            "timed_out": false,
+            "shards": 3,
+            "artifacts": [
+              {
+                "id": 12932041377,
+                "zip_sha256": "bbafc267892b9db6a3348d023b7882403d0829e0516c425ec240988398ec7f85"
+              },
+              {
+                "id": 12931731830,
+                "zip_sha256": "deeb11c2517feb79664ca3d6182c857465b76f1a4dd74ae005e99c5772aacfe0"
+              },
+              {
+                "id": 12931732416,
+                "zip_sha256": "c10021f1a304c824fc5b40b8fb0903cb6eaf11ae5fde871c91c4c71c3dfd43b1"
+              }
+            ]
+          },
+          "union": {
+            "verified": true,
+            "missing": 0,
+            "extra": 0,
+            "duplicates": 0,
+            "artifact_id": 12930863520,
+            "zip_sha256": "3d2f99959aa5dbfe76d2babc20cab23bfd2222aab1b42b29ca00c89938bc57b5",
+            "manifest_sha256": "b659af82c169aec6ca617cf98636dda447f84462a6088df344a105e807d5fbb0"
+          },
+          "excluded_historical_contract_modules": 15,
+          "release_authorized": false
+        }
       }
     },
     {
@@ -689,7 +739,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "G2_READONLY_VISUAL_SOURCE_CLASSES_ACCEPTED_BOUNDED;_FULL_CURRENT_REGRESSION_PENDING;_ENGINEERING_RENOVATION_UNAUTHORIZED;_G4_OWNER_UAT_REQUIRED;_PHASE6_PARTIAL_NO_GO",
+  "last_decision": "P6_G2_VISUAL_SOURCE_SCOPE_AUTOMATED_ACCEPTED_AND_BROAD_FINAL_8463_TESTS_BOTH_OS;_RENOVATION_ENGINEERING_NOT_AUTHORIZED;_G4_OWNER_HARDWARE_UAT_NOT_EXECUTED;_PHASE6_PARTIAL_NO_GO",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -699,45 +749,42 @@
   "allow_main_change": false,
   "require_new_test_run": false,
   "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40949948916,
-  "last_source_verified_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
+  "last_evidence_run": 40949336798,
+  "last_source_verified_commit": "683e2ad428d62e4980daa702438060621c845150",
   "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g2-ifcsite-renovation-native/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
-    "status": "ACCEPTED_ALL_ACTIVE_MODULES_EXACT_SOURCE",
-    "run": 40929200449,
-    "tested_commit": "efaab3c5dc335012ef6b8fec89a041247b509207",
+    "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
+    "run": 40949336798,
+    "tested_commit": "683e2ad428d62e4980daa702438060621c845150",
     "ci_conclusion": "success",
-    "all_nine_jobs_success": true,
-    "modules": 716,
-    "cases_per_os": 8459,
+    "jobs_success": 5,
+    "modules": 717,
+    "cases_per_os": 8463,
     "linux": {
-      "passed": 8454,
+      "passed": 8458,
       "skipped": 5,
       "failed": 0,
       "errors": 0,
-      "timed_out": false,
-      "artifact_id": 12922407211
+      "timed_out": false
     },
     "windows": {
-      "passed": 8452,
+      "passed": 8456,
       "skipped": 7,
       "failed": 0,
       "errors": 0,
       "timed_out": false,
-      "shard_count": 3,
-      "artifact_ids": [
-        12922802946,
-        12923575447,
-        12921539419
-      ]
+      "shard_count": 3
     },
     "unique_shard_union_verified": true,
-    "union_artifact_id": 12922558861,
-    "archived_release_contract_modules": 15,
-    "historical_cases_per_os": 130,
-    "historical_in_current_pass_counts": false,
-    "ci_verified_report": "docs/acceptance/phase6_final/verification-20261029-final-closeout/CI_VERIFIED.json"
+    "union_artifact_id": 12930863520,
+    "module_manifest_sha256": "b659af82c169aec6ca617cf98636dda447f84462a6088df344a105e807d5fbb0",
+    "excluded_archived_release_contract_modules": 15,
+    "gate_limitations": [
+      "Full physical Windows UAT (G4) still not performed",
+      "IFC2X3 visual reference does not authorize engineering IFC2X3 or retrofitting",
+      "No EXE/build/release/merge authorized"
+    ]
   },
   "final_closeout_mission": {
     "initial_head": "34a1b81237cbbe813f6979e169c70db7ddc93089",
