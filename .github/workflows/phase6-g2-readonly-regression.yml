@@ -42,11 +42,11 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
       - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
       - name: Original source/quantity strict guards and real site context fails closed
-        run: |
-          python -m pytest -q -o faulthandler_timeout=0 \
-            tests/test_phase6_g2_spatial_readonly_guards.py \
-            tests/test_phase6_multidiscipline_ifc4_geometry.py \
-            --junitxml=p6-g2-spatial-readonly-junit.xml
+        run: >
+          python -m pytest -q -o faulthandler_timeout=0
+          tests/test_phase6_g2_spatial_readonly_guards.py
+          tests/test_phase6_multidiscipline_ifc4_geometry.py
+          --junitxml=p6-g2-spatial-readonly-junit.xml
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
