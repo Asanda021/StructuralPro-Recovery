@@ -147,7 +147,7 @@ foreach ($e in $records | Select-Object -First 5) {
             "event_id": 1000, "events": events, "event_query_exit": result.returncode}
 
 
-def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float, test_node: str = TEST, faulthandler_timeout: int = 45) -> int:
+def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_seconds: float, test_node: str = TEST, faulthandler_timeout: int = 0) -> int:
     output.mkdir(parents=True, exist_ok=False)
     state = {
         "kind": "original_fivefloor_windows_native_crash_diagnostic",
@@ -167,7 +167,7 @@ def run_repeats(output: Path, repetitions: int, timeout_seconds: int, sample_sec
         "overall_green": False,
         "native_root_cause_proven": False,
         "pytest_faulthandler_timeout": faulthandler_timeout,
-        "safety_note": "The 45-second dump timer remains the historical default; zero is an explicit diagnostic mitigation, not proof of native crash root cause.",
+        "safety_note": "Timer zero is the safe native Windows diagnostic default. Legacy timer45 requires explicit opt-in and can reproduce a CDB second-chance Python exit fault; product root cause is not proven.",
     }
     summary = output / "summary.json"
     atomic_json(summary, state)
@@ -268,7 +268,7 @@ def main() -> int:
     parser.add_argument("--sample-seconds", type=float, default=5)
     parser.add_argument("--self-check", action="store_true")
     parser.add_argument("--arm", choices=tuple(ARMS), default="integrated")
-    parser.add_argument("--faulthandler-timeout", type=int, choices=(0,45), default=45)
+    parser.add_argument("--faulthandler-timeout", type=int, choices=(0,45), default=0)
     args = parser.parse_args()
     if args.self_check:
         assert exit_hex(3221225477) == "0xC0000005"
