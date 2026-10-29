@@ -1,0 +1,194 @@
+"""Read-only CDB second-chance crash capture for StructuralPro P6-5.
+
+Never upload raw debugger output, process arguments, user paths, register
+values, local variables, or memory dumps. Only native module!symbol names and
+exception code survive sanitization. A real single-test JUnit is mandatory.
+"""
+from __future__ import annotations
+import argparse
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+import tempfile
+import time
+import xml.etree.ElementTree as ET
+
+TESTS = {
+    "integrated": "tests/test_manual_formula_fivefloor_closure.py::test_real_qt_fourteen_operations_five_floors_and_all_reports",
+    "dialog_commit": "scripts/diagnostics/p6_native_isolation_oracles.py::test_native_real_manual_dialog_review_commit_70_rows",
+}
+MARKER = "P6_AV_SECOND_CHANCE"
+SYM = re.compile(r"\b([A-Za-z_][A-Za-z0-9_.-]{0,70})!([A-Za-z_?$@][A-Za-z0-9_?$@.:+<>-]{0,115})")
+
+
+def debugger() -> Path | None:
+    options = [
+        Path(os.environ.get("CDB_PATH", "")),
+        Path(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")) / "Windows Kits/10/Debuggers/x64/cdb.exe",
+        Path(os.environ.get("ProgramFiles", r"C:\Program Files")) / "Windows Kits/10/Debuggers/x64/cdb.exe",
+    ]
+    return next((p for p in options if p.is_file() and p.name.lower() == "cdb.exe"), None)
+
+
+def junit(path: Path) -> dict | None:
+    if not path.exists():
+        return None
+    try:
+        cases = list(ET.parse(path).getroot().iter("testcase"))
+    except (OSError, ET.ParseError):
+        return {"valid": False, "reason": "INVALID_JUNIT"}
+    result = {"total": len(cases)}
+    for tag in ("failure", "error", "skipped"):
+        result[tag] = sum(c.find(tag) is not None for c in cases)
+    result["passed"] = sum(all(c.find(tag) is None for tag in ("failure", "error", "skipped")) for c in cases)
+    result["valid"] = result["total"] == result["passed"] == 1
+    return result
+
+
+def sanitize(raw: str) -> dict:
+    crash = MARKER in raw
+    section = raw.rsplit(MARKER, 1)[-1] if crash else ""
+    frames = []
+    for line in section.splitlines():
+        if len(frames) == 32:
+            break
+        if not re.match(r"^\s*[0-9A-Fa-f]{1,2}\s+", line):
+            continue
+        m = SYM.search(line)
+        if m:
+            f = m.group(1).lower() + "!" + m.group(2).split("+0x", 1)[0]
+            if f not in frames:
+                frames.append(f)
+    return {
+        "second_chance_marker": crash,
+        "exception_codes": ["0xC0000005"] if crash else [],
+        "native_stack_symbols": frames,
+        "native_stack_available": bool(frames),
+        "root_cause_proven": False,
+        "raw_debugger_output_saved": False,
+        "memory_dump_saved": False,
+        "file_paths_saved": False,
+    }
+
+
+def persist(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".partial")
+    with tmp.open("w", encoding="utf-8") as handle:
+        json.dump(data, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+    tmp.replace(path)
+
+
+def run(output: Path, arm: str, repetitions: int, timeout: int) -> int:
+    output.mkdir(parents=True, exist_ok=False)
+    cdb = debugger()
+    state = {
+        "kind": "p6_native_windows_cdb_live_exception_no_dump",
+        "arm": arm,
+        "source_test": TESTS[arm],
+        "debugger_available": cdb is not None,
+        "debugger_kind": "Microsoft CDB",
+        "original_test_unchanged": True,
+        "product_code_unchanged": True,
+        "raw_logs_uploaded": False,
+        "memory_dumps_uploaded": False,
+        "native_root_cause_proven": False,
+        "status": "RUNNING" if cdb else "BLOCKED_NO_DEBUGGER",
+        "started_utc": datetime.now(timezone.utc).isoformat(),
+        "attempts": [],
+    }
+    persist(output / "summary.json", state)
+    if not cdb:
+        print("CDB_NOT_AVAILABLE: cannot claim a passing native diagnostic", flush=True)
+        return 2
+    for attempt in range(1, repetitions + 1):
+        xml = output / f"attempt-{attempt}.xml"
+        # CDB catches *second-chance* AV only, not handled first-chance exceptions.
+        # kn prints call-stack symbols, not memory/registers/function arguments.
+        crash_commands = f".echo {MARKER}; .lastevent; .ecxr; kn 32; q"
+        startup = f'sxd -c2 "{crash_commands}" av; g'
+        args = [
+            str(cdb), "-G", "-c", startup,
+            sys.executable, "-m", "pytest", "-q", "--disable-warnings",
+            "-o", "faulthandler_timeout=45", f"--junitxml={xml}", TESTS[arm],
+        ]
+        env = os.environ.copy()
+        env["PYTHONFAULTHANDLER"] = "1"
+        start = time.monotonic()
+        timed_out = False
+        # Unredacted debugger output only exists in a transient directory,
+        # never the GitHub artifact directory or the public step log.
+        with tempfile.TemporaryDirectory(prefix="p6-cdb-ephemeral-") as private_dir:
+            raw_path = Path(private_dir) / "unredacted-debugger-output.txt"
+            with raw_path.open("wb") as fh:
+                proc = subprocess.Popen(args, stdout=fh, stderr=subprocess.STDOUT, env=env)
+                try:
+                    exit_code = proc.wait(timeout=timeout)
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                    proc.kill()
+                    exit_code = proc.wait(timeout=15)
+            native = sanitize(raw_path.read_bytes()[:12_000_000].decode("utf-8", errors="replace"))
+        result = junit(xml)
+        valid = bool(
+            exit_code == 0 and not timed_out and not native["second_chance_marker"]
+            and result is not None and result.get("valid")
+        )
+        state["attempts"].append({
+            "attempt": attempt,
+            "wall_seconds": round(time.monotonic() - start, 2),
+            "debugger_exit_code": exit_code,
+            "timed_out": timed_out,
+            "junit": result,
+            "valid_test_pass": valid,
+            **native,
+        })
+        state["all_valid"] = all(x["valid_test_pass"] for x in state["attempts"])
+        persist(output / "summary.json", state)
+        print(json.dumps({
+            "arm": arm, "attempt": attempt, "valid_junit": valid,
+            "second_chance_av": native["second_chance_marker"],
+            "native_stack": native["native_stack_symbols"][:12]
+        }), flush=True)
+    state["status"] = "PASS_LIMITED" if state["all_valid"] else "RED_OR_INCOMPLETE"
+    state["ended_utc"] = datetime.now(timezone.utc).isoformat()
+    persist(output / "summary.json", state)
+    return 0 if state["all_valid"] else 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--arm", choices=tuple(TESTS), default="integrated")
+    parser.add_argument("--repeats", type=int, default=2)
+    parser.add_argument("--timeout", type=int, default=420)
+    parser.add_argument("--self-check", action="store_true")
+    opts = parser.parse_args()
+    if opts.self_check:
+        fake = (f"{MARKER}\nExceptionCode: c0000005\n"
+                "00 0011223344556677 00000000 Qt6Widgets!QWidget::event+0x4\n"
+                "01 0011223344556677 00000000 python312!PyEval_EvalFrameDefault+0x3\n"
+                "PRIVATE=C:\\Users\\Hidden\\secret\n")
+        clean = sanitize(fake)
+        assert clean["second_chance_marker"] and clean["exception_codes"] == ["0xC0000005"]
+        assert len(clean["native_stack_symbols"]) == 2 and "Hidden" not in json.dumps(clean)
+        assert not sanitize("first-chance access violation")["second_chance_marker"]
+        assert junit(Path("file-does-not-exist.xml")) is None
+        print("CDB sanitizer self-check PASS")
+        return 0
+    if sys.platform != "win32" or os.environ.get("QT_QPA_PLATFORM") != "windows":
+        parser.error("Native Windows Qt is required")
+    if opts.output is None or not 1 <= opts.repeats <= 3 or not 90 <= opts.timeout <= 500:
+        parser.error("Unsupported diagnostic bounds")
+    return run(opts.output, opts.arm, opts.repeats, opts.timeout)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
