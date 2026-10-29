@@ -1525,6 +1525,10 @@ class GraphicalTakeoffDialog(QDialog):
         self._ifc_3d_loader = None
         job.cancel()
         self._set_ifc_3d_busy(False)
+        from shiboken6 import isValid
+        window = getattr(self, '_ifc_3d_dialog', None)
+        if window is not None and isValid(window):
+            window.set_batch_busy(False)
         self.status.setText('بارگذاری سه‌بعدی لغو شد؛ هندسهٔ نیمه‌کاره ثبت یا نمایش داده نشد.')
         return True
 
@@ -1547,8 +1551,18 @@ class GraphicalTakeoffDialog(QDialog):
                 raise ValueError('منبع IFC معتبر در دسترس نیست.')
             self._ifc_3d_token += 1
             token = self._ifc_3d_token
+            # Even a large 2D source can open the validated 3D viewer:
+            # never attempt a >40k all-member scene as the initial batch.
+            # Every source identity remains present in the partial catalog.
+            total_faces = sum(len(mesh.triangles) for mesh in document.meshes)
+            selected_ids = [mesh.global_id for mesh in document.meshes]
+            if total_faces > 40_000:
+                selected_ids = selected_ids[:1]
+            if not selected_ids:
+                raise ValueError('مدل IFC فاقد هندسه واقعی برای شروع سه‌بعدی است.')
             job = IFC3DLoadJob(token=token, path=str(source),
-                               revision=revision, expected_sha=document.source_sha256)
+                               revision=revision, expected_sha=document.source_sha256,
+                               selected_global_ids=selected_ids)
             self._ifc_3d_loader = job
             self._set_ifc_3d_busy(True)
             self.status.setText('بارگذاری سه‌بعدی در پس‌زمینه آغاز شد؛ متره تغییری نمی‌کند.')
@@ -1564,6 +1578,56 @@ class GraphicalTakeoffDialog(QDialog):
             self.status.setText('نمای سه‌بعدی باز نشد: ' + str(exc))
         return None
 
+    def load_ifc_3d_batch(self, ids):
+        """Replace a 3D batch without publishing any partial worker result."""
+        from shiboken6 import isValid
+        window = getattr(self, '_ifc_3d_dialog', None)
+        if (window is None or not isValid(window) or self.viewer.kind != 'ifc'
+                or self.cad_loading):
+            self.status.setText('نمای سه‌بعدی معتبر برای تعویض بسته وجود ندارد.')
+            return False
+        if self._ifc_3d_loader is not None:
+            self.status.setText('بارگذاری قبلی هنوز در جریان است.')
+            return False
+        try:
+            window.scene.validate_source()
+            doc = self.viewer.ifc_document
+            revision = self.ifc_revision.text().strip()
+            if (doc is None or not revision or str(self.viewer.path) != window.scene.source_path
+                    or revision != window.scene.revision
+                    or doc.source_sha256 != window.scene.source_sha256):
+                raise ValueError('منبع یا Revision تغییر کرده است.')
+            if (not isinstance(ids, (list, tuple)) or not ids or
+                    len(ids) != len(set(ids)) or len(ids) > 32):
+                raise ValueError('بسته انتخابی باید ۱ تا ۳۲ شناسه یکتا داشته باشد.')
+            catalog = window.scene.display_catalog
+            if catalog is None:
+                raise ValueError('فهرست مستند اعضای منبع در دسترس نیست.')
+            allowed = {r['global_id'] for r in catalog['members']
+                       if r['status'] != 'without_geometry'}
+            if not set(ids) <= allowed:
+                raise ValueError('بسته شامل عضو فاقد هندسه یا شناسه ناشناخته است.')
+            from app.ifc_3d_loader import IFC3DLoadJob
+            self._ifc_3d_token += 1
+            token = self._ifc_3d_token
+            job = IFC3DLoadJob(token=token, path=str(self.viewer.path),
+                               revision=revision, expected_sha=doc.source_sha256,
+                               selected_global_ids=tuple(ids))
+            self._ifc_3d_loader = job
+            self._set_ifc_3d_busy(True)
+            window.set_batch_busy(True)
+            job.signals.stage.connect(self._ifc_3d_stage)
+            job.signals.progress.connect(self._ifc_3d_progress)
+            job.signals.failed.connect(self._ifc_3d_failed)
+            job.signals.cancelled.connect(self._ifc_3d_cancelled)
+            job.signals.finished.connect(self._ifc_3d_ready)
+            self.status.setText('بسته هندسه واقعی در Worker آماده می‌شود؛ نمای قبلی محفوظ است.')
+            QThreadPool.globalInstance().start(job)
+            return True
+        except Exception as exc:
+            self.status.setText('تعویض بسته انجام نشد: ' + str(exc))
+            return False
+
     def _ifc_3d_stage(self, token, stage):
         if token == self._ifc_3d_token and self._ifc_3d_loader is not None:
             self.status.setText(stage)
@@ -1578,6 +1642,11 @@ class GraphicalTakeoffDialog(QDialog):
             return
         self._ifc_3d_loader = None
         self._set_ifc_3d_busy(False)
+        from shiboken6 import isValid
+        window = getattr(self, '_ifc_3d_dialog', None)
+        if window is not None and isValid(window):
+            window.set_batch_busy(False)
+            window.session_status.setText('بسته جدید رد شد؛ هندسه قبلی بدون تغییر باقی ماند.')
         self.status.setText('نمای سه‌بعدی باز نشد: ' + message)
 
     def _ifc_3d_cancelled(self, token):
@@ -1585,6 +1654,11 @@ class GraphicalTakeoffDialog(QDialog):
             return
         self._ifc_3d_loader = None
         self._set_ifc_3d_busy(False)
+        from shiboken6 import isValid
+        window = getattr(self, '_ifc_3d_dialog', None)
+        if window is not None and isValid(window):
+            window.set_batch_busy(False)
+            window.session_status.setText('بارگذاری بسته لغو شد؛ نمای قبلی محفوظ ماند.')
         self.status.setText('بارگذاری سه‌بعدی لغو شد؛ داده‌ای ثبت نشد.')
 
     def _ifc_3d_ready(self, token, scene):
@@ -1601,6 +1675,16 @@ class GraphicalTakeoffDialog(QDialog):
                 self.ifc_revision.text().strip() != scene.revision):
                 raise ValueError('سند IFC هنگام بارگذاری تغییر کرده؛ نتیجه نمایش داده نشد.')
             scene.validate_source()
+            from shiboken6 import isValid
+            existing = getattr(self, '_ifc_3d_dialog', None)
+            if existing is not None and isValid(existing):
+                try:
+                    existing.replace_scene(scene)
+                finally:
+                    existing.set_batch_busy(False)
+                self.status.setText(
+                    'بسته انتخاب‌شده در نمای سه‌بعدی جایگزین شد؛ BOQ بدون تغییر است.')
+                return
             window = IFC3DDialog(scene, self, app_service=self.app_service,
                                  project_id=self.project_id_input.text().strip())
             window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
@@ -1621,6 +1705,7 @@ class GraphicalTakeoffDialog(QDialog):
                 except ValueError as exc:
                     self.status.setText('انتخاب سه‌بعدی نامعتبر: '+str(exc))
             window.memberSelected.connect(link_back)
+            window.requestBatch.connect(self.load_ifc_3d_batch)
             self._ifc_3d_dialog = window
             selected_gid=getattr(self,"_ifc_selected_global_id",None)
             verified=getattr(self,"_verified_project_selection",None)
@@ -1629,7 +1714,11 @@ class GraphicalTakeoffDialog(QDialog):
                 chosen=verified.resolve(origin="2d",identifier=selected_gid,
                     source_sha256=scene.source_sha256,revision=scene.revision)
                 if chosen.status=="linked" and len(chosen.global_ids)==1:
-                    window.canvas.choose_member(selected_gid)
+                    if selected_gid in {m.global_id for m in scene.meshes}:
+                        window.canvas.choose_member(selected_gid)
+                    else:
+                        window.session_status.setText(
+                            'عضو مرتبط در منبع معتبر است ولی در بسته فعلی بارگذاری نشده.')
             workspace=getattr(self,'_workspace_controller',None)
             if workspace is not None:
                 workspace.attach_view('3d',window,self.project_id_input.text().strip())
