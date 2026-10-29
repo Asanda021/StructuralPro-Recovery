@@ -210,7 +210,10 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
             active_modules, selected_modules, module_manifest_sha = current_test_modules(
                 staged, shard_count=shard_count, shard_index=shard_index)
             command.extend(selected_modules)
-        command.extend(["-o", "faulthandler_timeout=60"])
+        # G1 safety policy: retain Python faulthandler but disable the timed
+        # dump watchdog that correlated with native Windows interpreter exit AV.
+        # A subprocess wall-time budget remains enforced independently below.
+        command.extend(["-o", "faulthandler_timeout=0"])
         environment = dict(os.environ)
         environment["PYTHONPATH"] = str(staged)
         environment.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -249,6 +252,7 @@ def run(root: Path, output: Path | None = None, log: Path | None = None,
                   "current_test_modules_total": len(active_modules),
                   "current_test_modules_in_shard": len(selected_modules),
                   "current_test_manifest_sha256": module_manifest_sha,
+                  "pytest_faulthandler_timeout": 0,
                   "pytest_exit_code": proc.returncode, "timed_out": timed_out, "timeout_seconds": timeout, "stats": stats,
                   "overall_green": proc.returncode == 0 and stats.get("failed") == 0}
         if output:
