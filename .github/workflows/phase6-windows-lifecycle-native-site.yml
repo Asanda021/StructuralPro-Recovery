@@ -1,0 +1,101 @@
+name: P6 native Qt lifecycle checkpoints and calibrated exception-site
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-windows-lifecycle-native-site.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-bounded-checkpoints-and-cdb:
+    runs-on: windows-2022
+    timeout-minutes: 32
+    env:
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+      PYTHONPATH: .
+      QT_QPA_PLATFORM: windows
+      P6_LIFECYCLE_CHECKPOINTS: '1'
+    steps:
+      - name: Preserve original source bytes
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify original source and test blobs unchanged
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          test "$(git rev-parse HEAD:app/manual_takeoff.py)" = "12828195669dc2586cc3d5300e0781cf93183135"
+          test "$(git rev-parse HEAD:app/manual_formula_controls.py)" = "07e8ce4567eec5122253cd220a49fed6e2e27d9e"
+          test "$(git rev-parse HEAD:core/takeoff/manual_formula_register.py)" = "4e3750a0e797073d40bacb395e448da4f14b6c56"
+          test "$(git rev-parse HEAD:core/projects/store.py)" = "0aa448bcc0f67bab12c37592f7abf01fd0e1765d"
+          test "$(git rev-parse HEAD:tests/test_manual_formula_fivefloor_closure.py)" = "f81c979051bcbaaf00015fa411314e28f370b291"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify Microsoft CDB is installed and trusted
+        shell: pwsh
+        run: |
+          $debugger = "${env:ProgramFiles(x86)}\Windows Kits\10\Debuggers\x64\cdb.exe"
+          if (!(Test-Path $debugger)) { throw 'NO_MICROSOFT_CDB: blocked, not passed' }
+          if ((Get-Item $debugger).VersionInfo.CompanyName -notmatch 'Microsoft') { throw 'UNRECOGNIZED_DEBUGGER' }
+          Add-Content -Path $env:GITHUB_ENV -Value "CDB_PATH=$debugger"
+          Write-Host 'Trusted Microsoft CDB present; no memory dumps are permitted'
+      - name: Install exact matching Python and Windows Qt dependencies
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Validate Python diagnostics and privacy-safe checkpoint self-test
+        run: |
+          python -m py_compile scripts/diagnostics/p6_lifecycle_checkpoint.py scripts/diagnostics/p6_native_isolation_oracles.py scripts/diagnostics/p6_native_cdb_trace.py scripts/diagnose_windows_native_crash.py
+          python scripts/diagnostics/p6_lifecycle_checkpoint.py
+          python scripts/diagnostics/p6_native_cdb_trace.py --self-check
+          python scripts/diagnose_windows_native_crash.py --self-check
+      - name: Record allowlisted runtime and native module file digests
+        run: python scripts/inspect_windows_native_environment.py --output lifecycle-site-evidence/environment.json
+      - name: Native real dialog lifecycle twice without debugger and with durable markers
+        continue-on-error: true
+        run: python scripts/diagnose_windows_native_crash.py --arm dialog_lifecycle --repeats 2 --timeout-seconds 450 --sample-seconds 5 --output lifecycle-site-evidence/normal
+      - name: Same real Qt lifecycle twice under calibrated Microsoft CDB
+        continue-on-error: true
+        run: python scripts/diagnostics/p6_native_cdb_trace.py --arm dialog_lifecycle --repeats 2 --timeout 450 --output lifecycle-site-evidence/cdb
+      - name: Print safely parsed markers and fail closed on any missing JUnit
+        if: always()
+        shell: pwsh
+        run: |
+          $green = $true
+          foreach ($mode in @('normal','cdb')) {
+            $sumfile = "lifecycle-site-evidence/$mode/summary.json"
+            if (!(Test-Path $sumfile)) { Write-Host "$mode NO SUMMARY: RED"; $green = $false; continue }
+            $summary = Get-Content -Raw -Encoding UTF8 $sumfile | ConvertFrom-Json
+            $results = if ($mode -eq 'normal') { @($summary.runs) } else { @($summary.attempts) }
+            if ($results.Count -ne 2) { $green = $false }
+            foreach ($run in $results) {
+              $attempt = [int]$run.attempt
+              $lastpath = "lifecycle-site-evidence/$mode/checkpoints-$attempt/last.json"
+              if (Test-Path $lastpath) {
+                $last = Get-Content -Raw -Encoding UTF8 $lastpath | ConvertFrom-Json
+                Write-Host "$mode attempt=$attempt last=$($last.event) cycle=$($last.cycle) rows=$($last.committed_rows) seq=$($last.sequence)"
+                if ($last.event -ne 'ALL_DONE') { $green = $false }
+              } else {
+                Write-Host "$mode attempt=$attempt missing checkpoints"
+                $green = $false
+              }
+              if ($mode -eq 'normal') {
+                Write-Host "$mode attempt=$attempt exit=$($run.exit_hex) AV=$($run.access_violation) junit=$($run.junit.passed) timeout=$($run.timed_out)"
+                if (!$run.valid_original_test_pass -or $run.access_violation) { $green = $false }
+              } else {
+                Write-Host "$mode attempt=$attempt valid=$($run.valid_test_pass) AV=$($run.second_chance_marker) native_PC_module=$($run.native_pc_module) code=$($run.exception_codes)"
+                if (!$run.valid_test_pass -or $run.second_chance_marker) { $green = $false }
+              }
+            }
+          }
+          if (!$green) { throw 'WINDOWS_NATIVE_STABILITY_RED_OR_MISSING_EVIDENCE' }
+      - name: Upload only sanitized Native findings and durable checkpoint journals
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-lifecycle-native-checkpoints-cdb-without-dumps
+          path: lifecycle-site-evidence/
+          retention-days: 14
+          if-no-files-found: warn
