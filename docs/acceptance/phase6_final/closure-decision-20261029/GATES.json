@@ -1,0 +1,122 @@
+{
+  "schema": "structuralpro.phase6.closure.v1",
+  "decision_date": "2026-10-29",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "pr_number": 34,
+  "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
+  "audited_product_head": "1bdf488bfde364987586bea0563df07c0fbed6ee",
+  "latest_targeted_acceptance_source_sha": "7f39ebd00eddb29cc54f04027c2d75473cdd2c53",
+  "source_difference_since_acceptance": "documentation-only commit 1bdf488bfde364987586bea0563df07c0fbed6ee",
+  "eight_phase_roadmap_unchanged": true,
+  "official_project_progress_percent_unchanged": 85,
+  "accepted_scope": [
+    {
+      "id": "P6-1",
+      "title": "RTL shell, functional ribbon and Windows DPI",
+      "status": "ACCEPTED_AUTOMATED_SCOPE",
+      "evidence_run": 40870775780
+    },
+    {
+      "id": "P6-2",
+      "title": "Real source-backed IFC viewport, camera, picking and E2",
+      "status": "ACCEPTED_TESTED_GEOMETRY_ONLY",
+      "evidence_run": 40870775780
+    },
+    {
+      "id": "P6-3",
+      "title": "Verified 2D-3D-Tree-BOQ read-only sync",
+      "status": "ACCEPTED_TESTED_GEOMETRY_ONLY",
+      "evidence_run": 40868683095,
+      "tests_per_platform": 42
+    },
+    {
+      "id": "P6-4",
+      "title": "W1 and A2 rule-based contextual GUI/fail-closed",
+      "status": "ACCEPTED_RULE_BASED_SCOPE",
+      "evidence_run": 40870775780
+    },
+    {
+      "id": "P6-5",
+      "title": "E3-E6 and functional persistence/export acceptance",
+      "status": "ACCEPTED_AUTOMATED_SCOPE_ONLY",
+      "evidence_run": 40870775780,
+      "linux_passed": 347,
+      "windows_passed": 369
+    },
+    {
+      "id": "Windows_no_debugger_bounded",
+      "title": "Two native Qt lifecycle executions with faulthandler timeout zero",
+      "status": "ACCEPTED_LIMITED_NOT_NATIVE_FIX",
+      "evidence_run": 40866225297,
+      "passes": 2
+    }
+  ],
+  "closure_blockers": [
+    {
+      "id": "G1",
+      "name": "native_windows_stability",
+      "status": "OPEN",
+      "evidence_failure_runs": [
+        40845502382,
+        40853080441
+      ],
+      "reason": "Historical genuine second-chance 0xC0000005 and missing JUnit; origin not fixed. A 45-second faulthandler dump timer is a possible contributor, not proven cause.",
+      "release_implication": "Do not claim production Windows crash resolved."
+    },
+    {
+      "id": "G2",
+      "name": "mandatory_multidiscipline_live3d",
+      "status": "NOT_FULLY_VERIFIED",
+      "reason": "Reviewed IFC meshes and selected IfcWall/IfcDuct cases are verified; no acceptance evidence covering all mandated architecture, surface-finish, MEP, renovation and site geometries from real varied sources; bounded 40000 triangle limit exists.",
+      "scope_source": "PR #24 approved eight-phase master, phase 6"
+    },
+    {
+      "id": "G3",
+      "name": "P6-6_scope_and_acceptance",
+      "status": "NO_ACCEPTANCE_EVIDENCE",
+      "reason": "Previous P6-5 reports explicitly keep P6-6 pending; no accepted P6-6 implementation/test report was found in the current PR. Do not manufacture a new priority or a completion claim."
+    },
+    {
+      "id": "G4",
+      "name": "physical_windows_owner_uat",
+      "status": "NOT_VERIFIED",
+      "reason": "Multimonitor mixed-DPI, disconnect/reconnect, sleep/resume, GPU/driver, usability and owner's sign-off not executed.",
+      "reference": "docs/acceptance/phase6_p5/verification-20261027-three-gates/WINDOWS_UAT.fa.md"
+    },
+    {
+      "id": "G5",
+      "name": "one_windows_edition_and_ai_provenance",
+      "status": "PENDING_RELEASE_DEPENDENCY",
+      "reason": "Old edition/tier machinery remains; local GGUF manifest includes unverified model path, SHA and license and commercial_use false. Rule-only fallback tested, not validated commercial AI execution. Respect Phase-5 A1 / Phase-6 A2 responsibilities.",
+      "reference": "core/ai/model_manifest.json"
+    }
+  ],
+  "other_gates": [
+    {
+      "id": "broad_regression",
+      "status": "NO_SAME_HEAD_FULL_GREEN_EVIDENCE",
+      "note": "716 targeted PASS does not represent entire ~8k test suite."
+    },
+    {
+      "id": "office_desktop_physical_print",
+      "status": "DEFERRED_TO_PHASE8",
+      "closure_blocker_for_phase6": false
+    },
+    {
+      "id": "W6_clash_detection",
+      "status": "OPTIONAL_NONBLOCKING",
+      "closure_blocker_for_phase6": false
+    }
+  ],
+  "human_owner_signoff": "NOT_PROVIDED",
+  "last_decision": "NO_GO_PHASE6_CLOSURE",
+  "phase6_status": "PARTIAL",
+  "allow_phase7_start": false,
+  "allow_phase6_close": false,
+  "allow_release": false,
+  "allow_merge": false,
+  "allow_exe": false,
+  "allow_main_change": false,
+  "require_new_test_run": false,
+  "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision."
+}
