@@ -249,10 +249,25 @@ class IFC3DDialog(QDialog):
         self.transparency.toggled.connect(self._transparency)
         self.type_filter.currentIndexChanged.connect(self._type_filter)
         self.hide_floor.toggled.connect(self._hide_floor)
+        catalog = getattr(scene, "display_catalog", None)
+        if catalog:
+            counts = catalog["counts"]
+            coverage = (
+                f"کل اعضای منبع: {catalog['source_member_count']} | "
+                f"نمایش داده‌شده: {counts['displayed']} | "
+                f"بارگذاری‌نشده: {counts['not_loaded']} | "
+                f"فاقد هندسه در منبع: {counts['without_geometry']}"
+            )
+        else:
+            coverage = (
+                f"{len(scene.meshes)} عضو | "
+                f"{len(scene.omitted_ids)} عضو نمایش‌داده‌نشده"
+            )
         status = QLabel(
-            f"IFC واقعی | {len(scene.meshes)} عضو | {len(scene.storeys)} طبقه دارای هندسه | "
-            f"{len(scene.omitted_ids)} عضو نمایش‌داده‌نشده | Revision: {scene.revision}\n"
-            f"SHA-256: {scene.source_sha256} | هندسه فقط برای نمایش است؛ متره خودکار ممنوع.")
+            f"IFC واقعی | {coverage} | {len(scene.storeys)} طبقه دارای هندسه | "
+            f"Revision: {scene.revision}\n"
+            f"SHA-256: {scene.source_sha256} | فقط نمایش انتخاب‌شده؛ "
+            f"عضو بارگذاری‌نشده متره و هندسه تأییدشده ندارد.")
         status.setObjectName("IFC3DProvenance")
         status.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         outer.addWidget(status)
