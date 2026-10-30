@@ -63,6 +63,9 @@ def test_source_pdf_vector_overlay_preserves_exact_member_identity_and_source(tm
     assert manifest["svg_sha256"] == sha256(result["svg"].encode()).hexdigest()
     root = ET.fromstring(result["svg"])
     assert len(list(root.iter("{http://www.w3.org/2000/svg}path"))) == 1
+    labels = list(root.iter("{http://www.w3.org/2000/svg}text"))
+    assert len(labels) == 1 and labels[0].text == "W1"
+    assert float(labels[0].attrib["font-size"]) > 0
 
 
 def test_deducted_opening_is_drawn_as_hole_without_inventing_boq(tmp_path):
