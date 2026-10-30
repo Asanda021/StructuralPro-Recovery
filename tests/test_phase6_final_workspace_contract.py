@@ -18,14 +18,16 @@ def test_existing_report_and_revision_panels_keep_identity_across_docking_and_re
         assert hasattr(ctrl,'register_panel'), 'E5 original report/revision panels are not dockable'
         a=ctrl.register_panel('report',report,tabs,0,'گزارش',invalidate=report.clear)
         b=ctrl.register_panel('revision',revision,tabs,1,'اصلاحیه')
-        assert tabs.count()==2 and tabs.widget(0) is not report and tabs.widget(1) is not revision
+        assert tabs.count()==2 and tabs.widget(0) is report and tabs.widget(1) is revision
         a.show();b.show();a.setFloating(True);qt.processEvents()
+        assert tabs.widget(0) is not report and tabs.widget(1) is not revision
         assert a.widget().widget() is report and b.widget().widget() is revision
         assert report.text()=='existing report input' and revision.text()=='existing revision input'
         assert ctrl.save() and ctrl.restore()
         ctrl.reset();qt.processEvents()
         assert not a.isFloating() and not a.isVisible() and not b.isVisible()
-        tabs.setCurrentIndex(1);qt.processEvents();assert b.isVisible()
+        tabs.setCurrentIndex(1);qt.processEvents()
+        assert tabs.widget(1) is revision and not b.isVisible()
         assert service.store.current_digest('P')==before
         service.add_project_floor('P','Explicit new floor',level='F1')
         after=service.store.current_digest('P')
@@ -55,3 +57,17 @@ def test_four_presets_navigate_original_pages_and_never_create_project_data(tmp_
         current[0]='missing';assert not ctrl.apply_preset('manual')
         assert service.store.current_digest('P')==before
     finally:window.close();service.store.close();qt.processEvents()
+
+
+def test_shutdown_layout_save_does_not_read_destroyed_qt_widgets(tmp_path):
+    import shiboken6
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('Shutdown fixture','P')
+    window=QMainWindow();edit=QLineEdit('P',window)
+    ctrl=WorkspaceDockController(window,QSettings(str(tmp_path/'ui.ini'),QSettings.IniFormat),service,edit.text)
+    before=service.store.current_digest('P')
+    assert ctrl.save_on_shutdown()
+    shiboken6.delete(window)
+    assert ctrl.save_on_shutdown() is False
+    assert service.store.current_digest('P')==before
+    service.store.close();qt.processEvents()

@@ -1,0 +1,43 @@
+name: P6 independent ceiling surface source original Windows and Linux GUI
+on:
+  push:
+    branches: [feature/phase6-p5-workspace-e3-e6-20261027]
+    paths: [.github/workflows/phase6-ceiling-source-evidence.yml, scripts/diagnostics/p6_covering_native_acceptance.py]
+permissions:
+  contents: read
+jobs:
+  independent-ceiling:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8"
+      - name: Actual published IFC4 source picker process and ceiling member selection
+        run: python -m pytest -q -o faulthandler_timeout=0 scripts/diagnostics/p6_covering_native_acceptance.py --junitxml=covering-evidence/original.xml
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-independent-ceiling-${{ matrix.os }}
+          path: covering-evidence/
+          retention-days: 14
+          if-no-files-found: error

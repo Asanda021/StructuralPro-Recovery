@@ -1269,7 +1269,7 @@ def main()->int:
     presentation_row.addWidget(workspace_docks.toggle_button)
     presentation_row.addWidget(workspace_docks.boq_toggle)
     pid.textChanged.connect(lambda *_:workspace_docks.restore())
-    app.aboutToQuit.connect(lambda:workspace_docks.save() if pid.text().strip() else None)
+    app.aboutToQuit.connect(workspace_docks.save_on_shutdown)
     from app.desktop_shell import ContextRibbonController
     ribbon_controller=ContextRibbonController(ribbon_scroll, desktop_preferences, w)
     presentation_row.insertWidget(3, ribbon_controller.toggle_button)

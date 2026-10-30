@@ -109,30 +109,63 @@ class WorkspaceDockController:
             return False
 
     def register_panel(self, kind, panel, host, index, title, *, invalidate=None):
-        """Reparent one original report/revision widget; keep its tab slot stable."""
+        """Dock the original widget on request; normal tabs keep their real form."""
+        from shiboken6 import isValid
+        from PySide6.QtCore import QSignalBlocker
         if kind not in ('report','revision') or kind in self.panels or host.widget(index) is not panel:
             raise ValueError('پنل یا محل واقعی آن معتبر نیست.')
-        placeholder=QWidget();layout=QVBoxLayout(placeholder)
-        layout.addWidget(QLabel(title+' در پنل قابل جابه‌جایی باز می‌شود.'))
-        show=QPushButton('نمایش '+title);layout.addWidget(show)
+        placeholder=QWidget(host);layout=QVBoxLayout(placeholder)
+        layout.addWidget(QLabel(title+' در پنل قابل جابه‌جایی باز است.'))
+        return_button=QPushButton('بازگرداندن '+title+' به تب اصلی');layout.addWidget(return_button)
         dock=QDockWidget(title,self.window);dock.setObjectName('P6E5OriginalPanel'+kind)
         dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        if isinstance(host,QTabWidget):
-            host.removeTab(index);host.insertTab(index,placeholder,title)
-        else:
-            host.removeWidget(panel);host.insertWidget(index,placeholder)
-        scroll=QScrollArea(dock);scroll.setWidgetResizable(True);scroll.setWidget(panel)
-        dock.setWidget(scroll)
+        scroll=QScrollArea(dock);scroll.setWidgetResizable(True);dock.setWidget(scroll)
         self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock);dock.hide()
         self.panels[kind]=(dock,panel,placeholder)
         self._panel_invalidators[kind]=invalidate
         self._panel_context=self._current_panel_context()
-        def reveal():
-            dock.show();dock.raise_();self._clamp_floating()
-        show.clicked.connect(reveal)
-        host.currentChanged.connect(lambda _index:reveal() if host.currentWidget() is placeholder else None)
+        moving=[False]
+        def move_panel(detach):
+            if moving[0] or not all(isValid(x) for x in (host,panel,dock,scroll)):
+                return
+            old=panel if detach else placeholder
+            new=placeholder if detach else panel
+            position=host.indexOf(old)
+            if position<0:return
+            moving[0]=True
+            blocker=QSignalBlocker(host)
+            try:
+                current=host.currentWidget()
+                if not detach:scroll.takeWidget()
+                if isinstance(host,QTabWidget):
+                    host.removeTab(position);host.insertTab(position,new,title)
+                else:
+                    host.removeWidget(old);host.insertWidget(position,new)
+                if current is old:host.setCurrentWidget(new)
+                if detach:scroll.setWidget(panel)
+            finally:
+                del blocker
+                moving[0]=False
+        def back_to_tab():
+            move_panel(False)
+            if isValid(dock):dock.hide()
+        def host_selected(_index):
+            if not moving[0] and isValid(host) and host.currentWidget() is placeholder:
+                back_to_tab()
+        return_button.clicked.connect(back_to_tab)
+        dock.visibilityChanged.connect(lambda visible:move_panel(bool(visible)))
+        host.currentChanged.connect(host_selected)
         self.window.menuBar().addAction(dock.toggleViewAction())
         return dock
+
+    def save_on_shutdown(self):
+        """aboutToQuit may arrive after the main window's C++ children died."""
+        from shiboken6 import isValid
+        if not isValid(self.window) or not isValid(self.status):return False
+        try:
+            return self.save() if self.project_id() else False
+        except RuntimeError:
+            return False
 
     def attach_view(self, kind, view, project_id):
         """Embed the existing viewer instance; docking never reloads its scene."""

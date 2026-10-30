@@ -1,3 +1,4 @@
+# Recheck the original financial/report tab after reversible docking.
 # Includes the final E4 persisted-amendment search correction.
 # Complete active suite on new read-only G2 spatial/renovation code; no build, release or merge.
 name: P6 final technical contract targeted then complete active regression
@@ -57,6 +58,7 @@ jobs:
       - name: Actual contract fixes and original adjacent GUI and security tests
         run: >-
           python -m pytest -q -o faulthandler_timeout=0 --junitxml=technical-targeted.xml
+          tests/test_audit_critical_ui.py
           tests/test_phase6_final_single_edition.py
           tests/test_phase6_final_workspace_contract.py
           tests/test_phase6_final_revision_history.py
