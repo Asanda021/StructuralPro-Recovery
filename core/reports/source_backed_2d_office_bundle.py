@@ -43,7 +43,7 @@ def _svg_png(svg: str) -> bytes:
             png = image.tobytes("png")
     except (RuntimeError, TypeError) as exc:
         raise ValueError("رندر نقشه SVG ناموفق بود") from exc
-    if not png.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+    if png[:8] != bytes((137, 80, 78, 71, 13, 10, 26, 10)):
         raise RuntimeError("خروجی PNG ناقص است")
     return png
 
