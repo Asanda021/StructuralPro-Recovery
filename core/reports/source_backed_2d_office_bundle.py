@@ -113,6 +113,11 @@ def _append_xlsx_image(path: Path, png: bytes, links: list[dict], source_hash: s
     picture.height = 630
     sheet.add_image(picture, f"A{max(8, len(links) + 6)}")
     style_workbook(book, "نقشه مستند متره")
+    # Existing style_workbook sets print_area to occupied CELLS only. Images
+    # extend below those cells, so extend the print area to include the map.
+    sheet.print_area = "A1:L50"
+    sheet.page_setup.fitToWidth = 1
+    sheet.page_setup.fitToHeight = 1
     book.save(path)
 
 
