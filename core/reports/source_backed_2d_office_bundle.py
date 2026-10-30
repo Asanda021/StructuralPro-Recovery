@@ -21,17 +21,17 @@ from core.reports.source_backed_2d_overlay import link_source_backed_2d_overlay_
 
 def _svg_png(svg: str) -> bytes:
     """Render *our validated source overlay*, not an arbitrary input SVG."""
-    from PySide6.QtCore import QBuffer, QIODevice
-    from PySide6.QtGui import QImage, QPainter
+    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+    from PySide6.QtGui import QColor, QImage, QPainter
     from PySide6.QtSvg import QSvgRenderer
 
-    renderer = QSvgRenderer(svg.encode("utf-8"))
+    renderer = QSvgRenderer(QByteArray(svg.encode("utf-8")))
     if not renderer.isValid():
         raise ValueError("نقشه برداری SVG معتبر نیست")
     image = QImage(1200, 900, QImage.Format.Format_ARGB32_Premultiplied)
     if image.isNull():
         raise RuntimeError("تصویر نقشه قابل تولید نیست")
-    image.fill("#ffffff")
+    image.fill(QColor("#ffffff"))
     painter = QPainter(image)
     try:
         renderer.render(painter)
