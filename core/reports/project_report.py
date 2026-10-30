@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable
-import math
+from .decimal_values import decimal_value
 
 DEFAULT_COLUMNS = (
     ("item_no", "ردیف"),
@@ -77,12 +77,11 @@ class ProjectReport:
                     try:
                         if isinstance(row[field], bool):
                             raise ValueError("boolean is not a report number")
-                        value = float(row[field])
+                        value = decimal_value(row[field], field=field, non_negative=True)
                     except (TypeError, ValueError, OverflowError):
                         errors.append(f"row_{index}:invalid_{field}")
                         continue
-                    if not math.isfinite(value) or value < 0:
-                        errors.append(f"row_{index}:invalid_{field}")
+
         return {"valid": not errors, "errors": errors, "line_count": len(self.rows)}
 
     def export(self, path, fmt):
