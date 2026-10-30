@@ -8,6 +8,7 @@ No BOQ writes, quantities, guessed dimensions, new source approval or AI.
 from __future__ import annotations
 
 from decimal import Decimal, localcontext
+from fractions import Fraction
 import hashlib
 from html import escape
 from pathlib import Path
@@ -16,7 +17,7 @@ from core.drawings.takeoff_bridge import (
     session_to_boq_rows, verified_measurement_identities,
 )
 from core.drawings.takeoff_session import DrawingTakeoffSession
-from core.drawings.planar_geometry import region
+from core.drawings.planar_geometry import region, decimal_text
 from core.reports.decimal_values import decimal_value
 
 
@@ -27,7 +28,8 @@ def _id(value, name):
 
 
 def _coordinate(value):
-    number = decimal_value(value, field="source coordinate")
+    number = (Decimal(decimal_text(value)) if isinstance(value, Fraction)
+              else decimal_value(value, field="source coordinate"))
     if abs(number) > Decimal("1e12"):
         raise ValueError("مختصات منبع خارج از محدوده است")
     return number
