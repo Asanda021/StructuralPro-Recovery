@@ -20,10 +20,10 @@
 
 - [اجرای اولیه #41129804958](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41129804958): Linux **۱۰۳ PASS، ۱ FAIL**، علت صرفاً مقایسه Python `"16" == 16` در assertion، نه اختلاف عددی BOQ. Windows همان Commit نیز Failure شد. هیچ آزمونی حذف/Skip نشد.
 - اصلاح Assertion به مقایسه `Decimal("16") == Decimal(str(16))` در Commit `7fe9aa5360df20a0ea27b73a056b06bbbe811e6b`.
-- [اجرای اصلاح‌شده #41129993313](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41129993313): Linux **۱۰۴ PASS، صفر FAIL/ERROR/SKIP**، یک هشدار `fitz` قدیمی. **Windows تا تکمیل گزارش CI هنوز PENDING است**.
+- [اجرای اصلاح‌شده #41129993313](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41129993313): Linux **۱۰۴ PASS، صفر FAIL/ERROR/SKIP**، یک هشدار `fitz` قدیمی. **Windows Native نیز ۱۰۴ PASS، صفر FAIL/ERROR/SKIP**؛ دو Job در Run #41129993313 موفق، JUnitها ذخیره شده‌اند؛ هر محیط یک FutureWarning شناخته‌شده از وابستگی `fitz` دارد.
 
 ## وضعیت و گیت
 
-`P7_P2_PERSISTED_B0Q_CROSSWALK = IMPLEMENTED`؛ `LINUX_TARGETED=PASS`، `WINDOWS_TARGETED=PENDING`، `P7_P2_ALL_ACCEPTANCE=OPEN`.
+`P7_P2_PERSISTED_BOQ_CROSSWALK = IMPLEMENTED_TARGETED_ACCEPTED`؛ `LINUX_TARGETED=PASS_104`، `WINDOWS_TARGETED=PASS_104`، `P7_P2_ALL_ACCEPTANCE=OPEN` تا اتصال چهار قالب و آزمون Golden و جامع.
 
 باقیمانده فاز۷، اولویت۲ مطابق نقشه‌راه مصوب: خروجی واقعی PDF/XLSX/DOCX دارای نقشه و CSV+SVG sidecar، صفحه‌بندی و نمای چندطبقه، آزمون Golden پنج‌طبقه، کیفیت چاپ/فونت، و تطبیق مستقل داده‌ها. این‌ها فاز جدید نیستند. آزمایش واقعی Windows/Office/چاپ و G4 فاز۶ طبق تصمیم مالک در فاز۸ تعیین تکلیف می‌شوند. هیچ Merge/main/EXE/Release انجام نشده است.
