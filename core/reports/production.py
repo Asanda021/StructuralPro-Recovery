@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Iterable
 from core.reports.quality import prepare_rows
+from core.reports.decimal_values import exact_sum
 
 PERSIAN_COLUMNS={"item_no":"ردیف","price_code":"کد","description":"شرح","quantity":"مقدار","unit":"واحد","unit_price":"بهای واحد","total":"مبلغ","source":"منبع"}
 
@@ -12,5 +13,9 @@ def prepare_report(rows:Iterable[dict], language="fa"):
     return normalized
 
 def totals(rows):
-    rows=list(rows); return {"count":len(rows),"quantity":sum(float(r.get("مقدار",r.get("quantity",0)) or 0) for r in rows),
-                             "amount":sum(float(r.get("مبلغ",r.get("total",0)) or 0) for r in rows)}
+    rows=list(rows)
+    return {
+        "count":len(rows),
+        "quantity":exact_sum((r.get("مقدار",r.get("quantity",0)) for r in rows),field="quantity"),
+        "amount":exact_sum((r.get("مبلغ",r.get("total",0)) for r in rows),field="total"),
+    }
