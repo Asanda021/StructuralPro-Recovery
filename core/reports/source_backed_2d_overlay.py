@@ -104,6 +104,14 @@ def build_source_backed_2d_overlay(
         for ring in (outer, *holes):
             all_points.extend((_coordinate(x), _coordinate(y)) for x, y in ring)
         d = _path(outer) + "".join(" " + _path(h) for h in holes)
+        # A visible label for the exported image; source geometry owns no new QTO.
+        with localcontext() as label_ctx:
+            label_ctx.prec = 80
+            outer_x = [_coordinate(x) for x, _ in outer]
+            outer_y = [_coordinate(y) for _, y in outer]
+            label_x = (min(outer_x) + max(outer_x)) / 2
+            label_y = (min(outer_y) + max(outer_y)) / 2
+            label_size = max(max(outer_x)-min(outer_x), max(outer_y)-min(outer_y), Decimal("1")) / 22
         shapes.append({
             "shape_id": "takeoff:" + row["takeoff_id"],
             "takeoff_id": row["takeoff_id"],
@@ -116,6 +124,9 @@ def build_source_backed_2d_overlay(
             "boq_row_id": None,
             "review_status": "requires_project_boq_crosscheck",
             "_svg_path": d,
+            "_label_x": format(label_x, "f"),
+            "_label_y": format(label_y, "f"),
+            "_label_size": format(label_size, "f"),
         })
     if not all_points:
         raise ValueError("هندسه مستند موجود نیست")
@@ -137,6 +148,10 @@ def build_source_backed_2d_overlay(
         'stroke-width="0.7%" fill-rule="evenodd" d="'
         + escape(shape["_svg_path"], quote=True) + '"><title>'
         + escape(shape["member_id"]) + '</title></path>'
+        + '<text text-anchor="middle" font-weight="bold" fill="#17263b" x="'
+        + shape["_label_x"] + '" y="' + shape["_label_y"]
+        + '" font-size="' + shape["_label_size"] + '">'
+        + escape(shape["member_id"]) + '</text>'
         for shape in shapes
     )
     svg = (
@@ -146,7 +161,8 @@ def build_source_backed_2d_overlay(
         + paths + '</svg>'
     )
     for shape in shapes:
-        del shape["_svg_path"]
+        for private_key in ("_svg_path", "_label_x", "_label_y", "_label_size"):
+            del shape[private_key]
     manifest = {
         "schema": "structuralpro.phase7.source-backed-2d-overlay.v1",
         "project_id": project_id,
