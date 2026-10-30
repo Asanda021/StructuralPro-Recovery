@@ -1,12 +1,14 @@
-name: P7 priority2 source-backed SVG preview and original takeoff guards
+name: P7 priority2 source-backed 2D office bundle and original takeoff guards
 on:
   push:
     branches:
       - feature/phase7-p2-source-backed-2d-overlay-20261031
     paths:
       - core/reports/source_backed_2d_overlay.py
+      - core/reports/source_backed_2d_office_bundle.py
       - tests/test_phase7_p2_source_backed_2d_overlay.py
       - tests/test_phase7_p2_persisted_boq_crosswalk.py
+      - tests/test_phase7_p2_office_bundle.py
       - .github/workflows/phase7-p2-source-backed-overlay.yml
   workflow_dispatch:
 permissions:
@@ -46,6 +48,9 @@ jobs:
           --junitxml=p7-p2-source-backed.xml
           tests/test_phase7_p2_source_backed_2d_overlay.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
+          tests/test_phase7_p2_office_bundle.py
+          tests/test_phase7_p1_exact_persian_reports.py
+          tests/test_recovery_office_export_contract.py
           tests/test_phase2_advanced_geometry.py
           tests/test_phase2_advanced_geometry_sqlite.py
           tests/test_real_pdf_vector_takeoff.py
