@@ -3,7 +3,13 @@ name: P6 final reversible native workspace layout at four logical DPI scales
 on:
   push:
     branches: [feature/phase6-p5-workspace-e3-e6-20261027]
-    paths: [.github/workflows/phase6-final-native-layout-regression.yml]
+    paths:
+      - .github/workflows/phase6-final-native-layout-regression.yml
+      - .github/workflows/phase6-final-technical-acceptance.yml
+      - app/responsive_flow_layout.py
+      - app/graphical_takeoff.py
+      - app/ifc_3d_viewport.py
+      - tests/test_phase6_dpi_responsive_viewers.py
 permissions:
   contents: read
 jobs:
@@ -35,6 +41,7 @@ jobs:
           python -m pytest -q --junitxml=native-shell-evidence/native-shell.xml
           tests/test_phase6_p1_shell.py tests/test_phase6_p1_font_diagnostics.py
           tests/test_phase6_p5_e5_docks.py tests/test_phase6_final_workspace_contract.py
+          tests/test_phase6_dpi_responsive_viewers.py
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
