@@ -1,8 +1,8 @@
 name: P7 priority3 native custom report templates and atomic batches
 on:
-  push:
+  pull_request:
     branches:
-      - feature/phase7-p3-versioned-report-batch-20261031
+      - feature/phase7-p2-source-backed-2d-overlay-20261031
     paths:
       - core/reports/custom_batch.py
       - core/reports/exporters.py
@@ -36,7 +36,7 @@ jobs:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
