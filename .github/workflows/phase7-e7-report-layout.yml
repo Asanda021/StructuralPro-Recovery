@@ -1,10 +1,16 @@
-name: P7 E7 exact report layout and adjacent exporter QA
+name: P7 priority1 exact Persian report engine and four exporter QA
 on:
   push:
     branches:
       - feature/phase7-e7-decimal-report-layout-20261031
     paths:
       - core/reports/designer.py
+      - core/reports/decimal_values.py
+      - core/reports/service.py
+      - core/reports/project_report.py
+      - core/reports/production.py
+      - core/reports/formatting.py
+      - tests/test_phase7_p1_exact_persian_reports.py
       - tests/test_phase7_e7_decimal_report_layout.py
       - .github/workflows/phase7-e7-report-layout.yml
   workflow_dispatch:
@@ -45,6 +51,10 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=0
           --junitxml=phase7-e7.xml
           tests/test_phase7_e7_decimal_report_layout.py
+          tests/test_phase7_p1_exact_persian_reports.py
+          tests/test_shared_report_persian.py
+          tests/test_p88_reporting.py
+          tests/test_phase1_manual_report_formats.py
           tests/test_recovery_office_export_contract.py
           tests/test_manual_formula_reports.py
       - name: Record exact source commit
