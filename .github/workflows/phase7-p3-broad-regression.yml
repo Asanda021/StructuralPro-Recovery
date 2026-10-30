@@ -1,0 +1,288 @@
+# Final independently reviewed freshness and canonical BOQ identity fixes.
+# Recheck the original financial/report tab after reversible docking.
+# Includes the final E4 persisted-amendment search correction.
+# Complete active suite on new read-only G2 spatial/renovation code; no build, release or merge.
+name: P7 priority3 complete active Linux Windows regression
+on:
+  push:
+    branches:
+      - feature/phase7-p3-versioned-report-batch-20261031
+    paths:
+      - core/reports/custom_batch.py
+      - core/reports/exporters.py
+      - app/main.py
+      - app/custom_report_dialog.py
+      - tests/test_phase7_p3_custom_batch.py
+      - tests/test_phase7_p3_custom_report_ui.py
+      - core/reports/source_backed_2d_overlay.py
+      - core/reports/source_backed_2d_office_bundle.py
+      - tests/test_phase7_p2_multifloor_bundle.py
+      - tests/test_phase7_p2_source_backed_2d_overlay.py
+      - .github/workflows/phase7-p3-broad-regression.yml
+      - core/reports/decimal_values.py
+      - core/reports/designer.py
+      - core/reports/service.py
+      - core/reports/project_report.py
+      - core/reports/production.py
+      - core/reports/formatting.py
+      - tests/test_phase7_p1_exact_persian_reports.py
+      - tests/test_phase7_e7_decimal_report_layout.py
+      - scripts/run_quarantined_workflow_qa.py
+      - pytest.ini
+      - app/ifc_site_viewport.py
+      - app/ifc_existing_reference_viewport.py
+      - app/graphical_takeoff.py
+      - app/ifc_3d_viewport.py
+      - app/responsive_flow_layout.py
+      - tests/test_phase6_dpi_responsive_viewers.py
+      - core/drawings/site_context.py
+      - core/drawings/existing_building_reference.py
+      - tests/test_phase6_g2_spatial_readonly_guards.py
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p6-technical-final-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  targeted-contract:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      STRUCTURALPRO_P6_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      PYTHONFAULTHANDLER: '1'
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Record exact source and observed runtime versions
+        run: |
+          python -c "import json,sys,platform,sqlite3,subprocess;from PySide6 import __version__;from PySide6.QtCore import qVersion;from pathlib import Path;Path('technical-runtime.json').write_text(json.dumps(dict(source_sha=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),python=sys.version,os=platform.platform(),sqlite=sqlite3.sqlite_version,pyside=__version__,qt=qVersion(),physical_hardware_uat=False),indent=2),encoding='utf-8')"
+      - name: Actual contract fixes and original adjacent GUI and security tests
+        run: >-
+          python -m pytest -q -o faulthandler_timeout=0 --junitxml=technical-targeted.xml
+          tests/test_phase7_p3_custom_batch.py
+          tests/test_phase7_p3_custom_report_ui.py
+          tests/test_audit_critical_ui.py
+          tests/test_phase7_p1_exact_persian_reports.py
+          tests/test_phase7_e7_decimal_report_layout.py
+          tests/test_shared_report_persian.py
+          tests/test_p88_reporting.py
+          tests/test_phase6_final_single_edition.py
+          tests/test_phase6_final_workspace_contract.py
+          tests/test_phase6_final_revision_history.py
+          tests/test_phase6_p1_shell.py
+          tests/test_phase6_p1_font_diagnostics.py
+          tests/test_phase6_p5_e5_docks.py
+          tests/test_phase6_dpi_responsive_viewers.py
+          tests/test_phase6_p5_e4_ui.py
+          tests/test_phase6_p5_e4_snapshot_race.py
+          tests/test_phase6_p4_contextual_takeoff.py
+          tests/test_phase6_p5_e6_bulk_preview.py
+          tests/test_phase6_p5_e6_ifc_transfer_history.py
+          tests/test_local_ai_host_runtime.py
+          tests/test_phase2_priority6.py
+          tests/test_phase5_a1_unified_release.py
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-technical-targeted-${{ matrix.os }}
+          path: |
+            technical-targeted.xml
+            technical-runtime.json
+          retention-days: 14
+          if-no-files-found: error
+
+  current-suite-linux:
+    needs: [targeted-contract]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 29
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+    steps:
+      - name: Checkout latest workflow-triggering code and all tests
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Assert source SHA before broad QA
+        shell: bash
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'Requested source SHA: %s\nActual source SHA: %s\n' '${{ github.sha }}' "$actual"
+          test "$actual" = '${{ github.sha }}'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install native Qt dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - name: Install repository test requirements
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Execute all non-archived current modules, preserve real JUnit and quarantine
+        run: |
+          python scripts/run_quarantined_workflow_qa.py --mode current --timeout 1200 --json phase6-broad-current.json --log phase6-broad-current.log --junit phase6-broad-current.xml
+      - name: Report exact outcome without changing exit status
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"${{ github.sha }}","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+      - name: Surface actual broad failure log for diagnosis
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; j=pathlib.Path("phase6-broad-current.json"); p=pathlib.Path("phase6-broad-current.log"); d=json.loads(j.read_text(encoding="utf-8")) if j.is_file() else {}; t=p.read_text(encoding="utf-8",errors="replace")[-3500:] if p.is_file() else "No actual pytest log was produced"; print("::notice title=Broad failure diagnostic::"+t.replace("%","%25").replace("\r","%0D").replace("\n","%0A")) if d.get("overall_green") is not True else None'
+      - name: Preserve original current-suite logs, JSON and JUnit
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-broad-current-linux
+          path: |
+            phase6-broad-current.json
+            phase6-broad-current.log
+            phase6-broad-current.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+  current-suite-windows:
+    needs: [targeted-contract]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2]
+    runs-on: windows-2022
+    timeout-minutes: 38
+    env:
+      QT_QPA_PLATFORM: windows
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+    steps:
+      - name: Preserve unchanged workflow quarantine bytes on native Windows
+        shell: bash
+        run: git config --global core.autocrlf false
+      - name: Checkout exact current branch head and tests
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Assert pinned current source SHA before broad Windows QA
+        shell: bash
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'Requested source SHA: %s\\nActual source SHA: %s\\n' '${{ github.sha }}' "$actual"
+          test "$actual" = '${{ github.sha }}'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install original Windows test requirements
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Execute disjoint current-module shard from zero-active-workflow source
+        run: |
+          python scripts/run_quarantined_workflow_qa.py --mode current --shard-count 3 --shard-index ${{ matrix.shard }} --timeout 1500 --json phase6-broad-current-windows.json --log phase6-broad-current-windows.log --junit phase6-broad-current-windows.xml
+      - name: Report actual Windows summary without masking failures
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; p=pathlib.Path("phase6-broad-current-windows.json"); d=json.loads(p.read_text()) if p.is_file() else {"error":"No runner JSON was produced"}; print("::notice title=Broad current actual result::" + json.dumps({"source_sha":"${{ github.sha }}","pytest_exit_code":d.get("pytest_exit_code"),"timed_out":d.get("timed_out"),"overall_green":d.get("overall_green"),"stats":{k:v for k,v in (d.get("stats") or {}).items() if k in ("collected","passed","failed","skipped","error","failures")}},ensure_ascii=False)[:9000])'
+      - name: Surface actual broad failure log for diagnosis
+        if: always()
+        shell: bash
+        run: |
+          python -c 'import json,pathlib; j=pathlib.Path("phase6-broad-current-windows.json"); p=pathlib.Path("phase6-broad-current-windows.log"); d=json.loads(j.read_text(encoding="utf-8")) if j.is_file() else {}; t=p.read_text(encoding="utf-8",errors="replace")[-3500:] if p.is_file() else "No actual pytest log was produced"; print("::notice title=Broad failure diagnostic::"+t.replace("%","%25").replace("\r","%0D").replace("\n","%0A")) if d.get("overall_green") is not True else None'
+      - name: Preserve original native Windows JUnit logs and JSON
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-broad-current-windows-${{ matrix.shard }}
+          path: |
+            phase6-broad-current-windows.json
+            phase6-broad-current-windows.log
+            phase6-broad-current-windows.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+
+  verify-full-union:
+    # Even when a shard fails, inspect whichever original JUnit artifacts exist.
+    # Missing artifact/JUnit must FAIL instead of quietly skipping this gate.
+    needs: [current-suite-linux, current-suite-windows]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout current HEAD shard validator
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Download real Linux and all Windows JUnit artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: p6-broad-current-*
+          path: shards
+          merge-multiple: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Validate partition guards then compare complete JUnit union
+        run: |
+          python -m pip install -q pytest
+          python -m pytest -q tests/test_phase6_broad_shard_manifest.py tests/test_phase6_broad_shard_coverage.py
+          python scripts/verify_phase6_broad_shards.py --root shards --shard-count 3 --output broad-union-verified.json
+      - name: Inspect original downloaded JUnit JSON and logs
+        run: |
+          python - <<'PY_EVIDENCE'
+          from pathlib import Path
+          import hashlib, json, xml.etree.ElementTree as ET
+          for folder in sorted(Path("shards").iterdir()):
+              if not folder.is_dir():
+                  continue
+              result = {"artifact": folder.name, "source_sha": "${{ github.sha }}", "files": []}
+              for path in sorted(folder.iterdir()):
+                  raw = path.read_bytes()
+                  file = {"name": path.name, "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)}
+                  if path.suffix == ".xml":
+                      cases = list(ET.fromstring(raw).iter("testcase"))
+                      file.update(tests=len(cases), failed=sum(c.find("failure") is not None for c in cases), errors=sum(c.find("error") is not None for c in cases), skipped=sum(c.find("skipped") is not None for c in cases))
+                      file["skip_reasons"] = sorted({c.find("skipped").get("message", "") for c in cases if c.find("skipped") is not None})
+                  elif path.suffix == ".json":
+                      data = json.loads(raw)
+                      file.update({k: data.get(k) for k in ("pytest_exit_code", "timed_out", "junit_report_written", "overall_green", "current_test_modules_total", "current_test_modules_in_shard")})
+                  elif path.suffix == ".log":
+                      file["tail"] = raw.decode("utf-8", errors="replace")[-650:]
+                  result["files"].append(file)
+              Path("inspected-" + folder.name + ".json").write_text(json.dumps(result, indent=2), encoding="utf-8")
+              print("::notice title=Original broad artifact inspection::" + json.dumps(result, ensure_ascii=False))
+          PY_EVIDENCE
+      - name: Preserve exact union verification
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p6-broad-shard-union-verification
+          path: |
+            broad-union-verified.json
+            inspected-p6-broad-current-*.json
+          retention-days: 14
+          if-no-files-found: warn

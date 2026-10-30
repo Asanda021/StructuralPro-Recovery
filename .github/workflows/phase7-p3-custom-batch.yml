@@ -1,0 +1,87 @@
+name: P7 priority3 native custom report templates and atomic batches
+on:
+  push:
+    branches:
+      - feature/phase7-p3-versioned-report-batch-20261031
+    paths:
+      - core/reports/custom_batch.py
+      - core/reports/exporters.py
+      - core/reports/project_report.py
+      - app/custom_report_dialog.py
+      - app/main.py
+      - tests/test_phase7_p3_custom_batch.py
+      - tests/test_phase7_p3_custom_report_ui.py
+      - .github/workflows/phase7-p3-custom-batch.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  report-templates:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      STRUCTURALPRO_P7_P3_EVIDENCE_DIR: p7-p3-evidence
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Compile actual desktop and report modules
+        run: python -m py_compile core/reports/custom_batch.py core/reports/exporters.py core/reports/project_report.py app/custom_report_dialog.py app/main.py
+      - name: Real source-backed UI, templates, and all prior P2/P1 guards
+        run: >-
+          python -m pytest -q --junitxml=p7-p3-targeted.xml
+          tests/test_phase7_p3_custom_batch.py
+          tests/test_phase7_p3_custom_report_ui.py
+          tests/test_phase7_p2_source_backed_2d_overlay.py
+          tests/test_phase7_p2_persisted_boq_crosswalk.py
+          tests/test_phase7_p2_office_bundle.py
+          tests/test_phase7_p2_five_storey_office_golden.py
+          tests/test_phase7_p2_multifloor_bundle.py
+          tests/test_phase7_p1_exact_persian_reports.py
+          tests/test_phase7_e7_decimal_report_layout.py
+          tests/test_recovery_office_export_contract.py
+          tests/test_aec_ui_functional.py
+          tests/test_shared_report_persian.py
+      - name: Emit real PDF and native UI PNG for independent visual review
+        if: success()
+        shell: python
+        run: |
+          import base64
+          from pathlib import Path
+          import pymupdf
+          folder=Path("p7-p3-evidence")
+          for pdf in sorted((folder/"batch").glob("*.pdf"))[:1]:
+              with pymupdf.open(stream=pdf.read_bytes(),filetype="pdf") as doc:
+                  png=doc[0].get_pixmap(matrix=pymupdf.Matrix(1,1)).tobytes("png")
+              (folder/"report-preview.png").write_bytes(png)
+              print("P3_PDF_PREVIEW_BASE64="+base64.b64encode(png).decode())
+          image=folder/"designer.png"
+          if image.is_file():print("P3_UI_PREVIEW_BASE64="+base64.b64encode(image.read_bytes()).decode())
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p7-p3-targeted-${{ matrix.os }}
+          path: |
+            p7-p3-targeted.xml
+            p7-p3-evidence/
+          retention-days: 14
+          if-no-files-found: error

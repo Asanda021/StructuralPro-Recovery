@@ -40,7 +40,7 @@ def _label(key):
 def _report_metadata(title,metadata,columns=None):
     result={'نام گزارش':title,'تاریخ صدور شمسی':report_date()}
     for key,value in (metadata or {}).items():
-        if key in ('_figures','_phase4_presentation'):continue
+        if key in ('_figures','_phase4_presentation','_page_format','_orientation','_custom_header','_custom_footer'):continue
         if key=='currency':value=FA_UNITS.get(str(value),value)
         label=_label(key)
         # Unknown user-defined metadata is retained verbatim as a value, never lost.
@@ -403,7 +403,15 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
         for attr in ('ascii','hAnsi','cs','eastAsia'):fonts.set(qn('w:'+attr),REPORT_FONT)
         lang=OxmlElement('w:lang');lang.set(qn('w:val'),'fa-IR');lang.set(qn('w:bidi'),'fa-IR');style.element.get_or_add_rPr().append(lang)
     section=d.sections[0];section.left_margin=section.right_margin=Inches(.6)
-    if landscape or len(cols)>6:section.orientation=WD_ORIENT.LANDSCAPE;section.page_width,section.page_height=section.page_height,section.page_width
+    if (metadata or {}).get('_page_format'):
+        from docx.shared import Mm
+        size=(metadata or {})['_page_format'];direction=(metadata or {}).get('_orientation')
+        if size not in ('A4','A3') or direction not in ('portrait','landscape'):raise ValueError('قالب صفحه گزارش نامعتبر است')
+        width,height=(297,420) if size=='A3' else (210,297)
+        if direction=='landscape':width,height=height,width
+        section.orientation=WD_ORIENT.LANDSCAPE if direction=='landscape' else WD_ORIENT.PORTRAIT
+        section.page_width,section.page_height=Mm(width),Mm(height)
+    elif landscape or len(cols)>6:section.orientation=WD_ORIENT.LANDSCAPE;section.page_width,section.page_height=section.page_height,section.page_width
     def write(paragraph,value,technical=False):
         technical=technical or _technical_text(value)
         paragraph.alignment=WD_ALIGN_PARAGRAPH.RIGHT
@@ -443,8 +451,10 @@ def export_docx(rows, path, title="گزارش استراکچرال پرو", summ
             item=OxmlElement('w:'+side);item.set(qn('w:val'),'single');item.set(qn('w:sz'),'4');item.set(qn('w:color'),'D9D9D9');borders.append(item)
         t._tbl.tblPr.append(borders)
         return t
-    write(section.header.paragraphs[0],title)
-    footer=section.footer.paragraphs[0];write(footer,'صفحه ')
+    write(section.header.paragraphs[0],(metadata or {}).get('_custom_header') or title)
+    footer=section.footer.paragraphs[0]
+    if (metadata or {}).get('_custom_footer'):write(footer,(metadata or {})['_custom_footer']+' | ')
+    write(footer,'صفحه ')
     for code in ('PAGE','NUMPAGES'):
         if code=='NUMPAGES':write(footer,' از ')
         field=OxmlElement('w:fldSimple');field.set(qn('w:instr'),code);footer._p.append(field)
@@ -543,13 +553,14 @@ def _pdf_paragraph(value,style,width):
     return Paragraph('<br/>'.join(output),style)
 
 
-def _pdf_page_footer(canvas, doc, font, title="گزارش استراکچرال پرو"):
+def _pdf_page_footer(canvas, doc, font, title="گزارش استراکچرال پرو", footer=""):
     canvas.saveState()
     canvas.setFont(font, 8)
     label = f"صفحه {doc.page}".translate(_PERSIAN_DIGITS)
     from html import unescape
     canvas.drawRightString(doc.pagesize[0] - doc.rightMargin, 16, unescape(_pdf_text(label)))
     canvas.drawString(doc.leftMargin,16,unescape(_pdf_text(report_date())))
+    if footer:canvas.drawCentredString(doc.pagesize[0]/2,27,unescape(_pdf_text(footer)))
     from reportlab.pdfbase import pdfmetrics
     header=str(title)
     while header and pdfmetrics.stringWidth(unescape(_pdf_text(header)),font,8)>doc.width:
@@ -654,7 +665,7 @@ def _pdf_identity(rows, cols):
 
 def export_pdf(rows, path, title="گزارش استراکچرال پرو", summary=None, metadata=None, columns=None, fill_width=True):
     from reportlab.lib.enums import TA_RIGHT
-    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.pagesizes import A4, A3, landscape
     from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
     from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
     from reportlab.lib import colors
@@ -673,7 +684,13 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
     title_style = ParagraphStyle("StructuralProTitle", parent=styles["Title"], fontName=font,
                                  alignment=TA_RIGHT)
     # Landscape keeps professional BOQ tables readable while remaining printable on A4.
-    doc = SimpleDocTemplate(str(path), pagesize=landscape(A4),
+    page_size=landscape(A4)
+    if (metadata or {}).get('_page_format'):
+        size=(metadata or {})['_page_format'];direction=(metadata or {}).get('_orientation')
+        if size not in ('A4','A3') or direction not in ('portrait','landscape'):raise ValueError('قالب صفحه گزارش نامعتبر است')
+        page_size=A3 if size=='A3' else A4
+        if direction=='landscape':page_size=landscape(page_size)
+    doc = SimpleDocTemplate(str(path), pagesize=page_size,
                             rightMargin=24, leftMargin=24, topMargin=38, bottomMargin=34)
     story=[Paragraph(_pdf_text(title),title_style),Spacer(1,16),Paragraph(_pdf_text('مشخصات پروژه و گزارش'),heading)]
     metadata_rows=_report_metadata(title,metadata,cols)
@@ -746,7 +763,7 @@ def export_pdf(rows, path, title="گزارش استراکچرال پرو", summa
         with PillowImage.open(figure['path']) as im:w,h=im.size
         story.append(PageBreak());story.append(Paragraph(_pdf_text(figure['caption']),heading))
         scale=min(doc.width/w,(doc.height-60)/h);story.append(ReportImage(figure['path'],width=w*scale,height=h*scale))
-    footer = lambda canvas, current_doc: _pdf_page_footer(canvas, current_doc, font,title)
+    footer = lambda canvas, current_doc: _pdf_page_footer(canvas, current_doc, font,(metadata or {}).get('_custom_header') or title,(metadata or {}).get('_custom_footer',''))
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return path
 
