@@ -20,31 +20,32 @@ from core.reports.source_backed_2d_overlay import link_source_backed_2d_overlay_
 
 
 def _svg_png(svg: str) -> bytes:
-    """Render *our validated source overlay*, not an arbitrary input SVG."""
-    from PySide6.QtCore import QBuffer, QByteArray, QIODevice
-    from PySide6.QtGui import QColor, QImage, QPainter
-    from PySide6.QtSvg import QSvgRenderer
+    """Rasterize the exact source-backed SVG with existing PyMuPDF.
 
-    renderer = QSvgRenderer(QByteArray(svg.encode("utf-8")))
-    if not renderer.isValid():
+    Unlike QtSvgRenderer text paths, MuPDF does not require a QGuiApplication.
+    PDF, Word, Excel and the PNG sidecar therefore use the *same* map bytes.
+    """
+    import pymupdf
+
+    if not isinstance(svg, str) or not svg.startswith("<svg "):
         raise ValueError("نقشه برداری SVG معتبر نیست")
-    image = QImage(1200, 900, QImage.Format.Format_ARGB32_Premultiplied)
-    if image.isNull():
-        raise RuntimeError("تصویر نقشه قابل تولید نیست")
-    image.fill(QColor("#ffffff"))
-    painter = QPainter(image)
     try:
-        renderer.render(painter)
-    finally:
-        painter.end()
-    output = QBuffer()
-    if not output.open(QIODevice.OpenModeFlag.WriteOnly) or not image.save(output, "PNG"):
-        raise RuntimeError("صدور تصویر نقشه PNG ناموفق بود")
-    png = bytes(output.data())
-    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
+        with pymupdf.open(stream=svg.encode("utf-8"), filetype="svg") as doc:
+            if len(doc) != 1:
+                raise ValueError("نقشه SVG باید دقیقاً یک صفحه باشد")
+            image = doc[0].get_pixmap(
+                matrix=pymupdf.Matrix(1.25, 1.25),
+                colorspace=pymupdf.csRGB,
+                alpha=False,
+            )
+            if image.width <= 0 or image.height <= 0 or image.width > 4096 or image.height > 4096:
+                raise ValueError("ابعاد تصویر SVG خارج از دامنه مجاز است")
+            png = image.tobytes("png")
+    except (RuntimeError, TypeError) as exc:
+        raise ValueError("رندر نقشه SVG ناموفق بود") from exc
+    if not png.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
         raise RuntimeError("خروجی PNG ناقص است")
     return png
-
 
 def _append_pdf_image(path: Path, png: bytes) -> None:
     import pymupdf
