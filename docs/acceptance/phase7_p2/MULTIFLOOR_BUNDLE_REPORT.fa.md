@@ -2,6 +2,20 @@
 
 تاریخ: ۱۴۰۵/۰۸/۰۹. ادامه PR #36 از `568ca3fd23af7d9e82a0b748ba9587430a704b96`؛ بدون ادغام یا تغییر main.
 
+## حکم جاری
+
+**P7-P2 AUTOMATED TECHNICAL ACCEPTED** در دامنه قرارداد مستند این گزارش. کد نهایی واقعاً آزموده: `b4558a50af6b66a856df503226183760f8534207`. این Commit مستندات بعدی فقط شواهد پذیرش اضافه می‌کند.
+
+- [CI هدفمند #41135548812](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41135548812): هر محیط ۱۴۹ PASS، صفر FAIL/ERROR/SKIP؛ یک FutureWarning موجود fitz.
+- [CI جامع #41135548715](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41135548715): هر هفت Job موفق؛ Linux برابر ۸۵۶۰ PASS / ۵ SKIP و Windows برابر ۸۵۵۸ PASS / ۷ SKIP؛ صفر FAIL/ERROR و بدون timeout.
+- Windows shard0: ۲۷۱۶ PASS / ۳ SKIP؛ shard1: ۳۰۴۱ / ۱؛ shard2: ۲۸۰۱ / ۳. گیت مجاور اصلی: هر محیط ۴۰۵ PASS.
+- گیت exact union: ۱۲ PASS، سه shard، ۷۲۸ ماژول، ۸۵۶۵ مورد یکتا؛ هش فهرست `f7aee6510e5b47116c363ce4d48bd2e07bcecffeeaaa857338a787c2d5e938c4`. هر پنج ZIP جامع بازدریافت و هش آرشیو و فایل‌های اصلی تطبیق داده شد؛ union و ۱۲ آزمون نگهبان مستقلاً در همین محیط نیز اجرا شدند و PASS شدند.
+- Skipهای Linux مربوط به Windows/NTFS/PowerShell بومی و Skipهای Windows مربوط به POSIX و oracle متن پیچیده بومی هستند؛ حذف یا پنهان نشده‌اند. هش‌ها، شمارش‌ها و دلیل دقیق در `verification-20261031` محفوظ است.
+- Golden نهایی: PDF لینوکس ۷ صفحه و Windows ۶ صفحه با پنج نقشه در هر دو؛ هر دو Word و Excel شامل پنج تصویر، RTL/bidi، print area و پیوندهای BOQ معتبر؛ تمام ۱۴ فایل هر بسته با SHA/size تطبیق داده شدند. بازبینی تصویری مستقل Poppler روی هر دو PDF، شامل جدول ادامه و بازشوی O3، انجام شد. تفاوت تعداد صفحات ناشی از صفحه‌بندی فونت‌های بومی است؛ افتادگی ردیف یا نقشه مشاهده نشد.
+- قیاس با کد پذیرفته‌شده P1: هیچ تفاوتی در موتورهای Decimal، ReportLayout، ProjectReport، ReportService، production، formatting و آزمون‌های P1 وجود ندارد.
+
+پذیرش فقط فنی خودکار است؛ آزمون فیزیکی Windows/MS Office/چاپ/G4 همچنان فاز ۸ و **NOT VERIFIED** است. کنترل منابع، snapshot با بررسی خوش‌بینانه تازگی است و تراکنش سیستم‌عامل میان برنامه‌های خارجی ادعا نمی‌شود. P3/P4 پس از این گیت مجاز به اجرا هستند؛ P5/P6 در این مأموریت پیاده نمی‌شوند.
+
 ## قرارداد تحویل
 
 `export_verified_2d_multifloor_bundle` بر موتورهای موجود سوار است: snapshot واقعی ProjectStore، Crosswalk اصلی نشست/هندسه/BOQ، همان ProjectReport و همان چهار صادرکننده. انتخاب صریح مجموعه صفحات با نشست، نسخه نشست و شناسه برداشت؛ یک PDF، یک Word، یک Excel و یک CSV و دو sidecar SVG/PNG برای هر صفحه. Manifest نسخه‌دار شامل هش و اندازه تمام خروجی‌ها و رسید مستقل هر صفحه است. انتخاب تکراری ردیف BOQ رد می‌شود. داده‌های مالی تغییر نمی‌کنند.

@@ -1,0 +1,201 @@
+{
+  "source_sha": "b4558a50af6b66a856df503226183760f8534207",
+  "run_id": 41135548812,
+  "physical_office_uat": false,
+  "artifacts": [
+    {
+      "artifact": "p7-p2-source-svg-ubuntu-24.04",
+      "zip_sha256": "36389437b1fc842074458ba21c9649b50e8546ee295eaba01f256b3818551372",
+      "tests": 149,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "golden_files": 14,
+      "file_hashes_and_sizes_verified": true,
+      "pdf_pages": 7,
+      "pdf_map_pages": 5,
+      "word_images": 5,
+      "word_bidi": true,
+      "excel_images": 5,
+      "all_excel_rtl": true,
+      "all_print_areas": true,
+      "excel_boq_links": [
+        "#'ریز متره'!A8",
+        "#'ریز متره'!A9",
+        "#'ریز متره'!A10",
+        "#'ریز متره'!A11",
+        "#'ریز متره'!A12"
+      ],
+      "source_hash_count": 2,
+      "manifest_files": [
+        {
+          "name": "map_001.png",
+          "sha256": "5d37e032274d5d176b47b6649e532e8f14a639d52425b9b41110e65785973497",
+          "size": 11427
+        },
+        {
+          "name": "map_001.svg",
+          "sha256": "ded88661b01efdbffe498556c55858df13dd60e13f8fac28a7ed1c2b556a6a4c",
+          "size": 597
+        },
+        {
+          "name": "map_002.png",
+          "sha256": "1e398cf0827520cf4fab1d89c1ebc918ae6638d845b69e0fdc72a4c8ec38fb08",
+          "size": 11796
+        },
+        {
+          "name": "map_002.svg",
+          "sha256": "1663b4807490a07978108e443ae9105d85c38ec8049eb6c5aadfb0ce2abefee0",
+          "size": 597
+        },
+        {
+          "name": "map_003.png",
+          "sha256": "20ac1086f28820f222ba2a4aedc79f9e47cade092da8343af78a4e09cd2e7cd1",
+          "size": 12656
+        },
+        {
+          "name": "map_003.svg",
+          "sha256": "a43c840a2a00bbc5176fc05f34b9dca9f44ad501a7414b6051a75923a11fee65",
+          "size": 631
+        },
+        {
+          "name": "map_004.png",
+          "sha256": "8dd6a2276d46a1506a92245d981cc0026f147d6d70e5aef667a21b1d11a1ecc2",
+          "size": 11558
+        },
+        {
+          "name": "map_004.svg",
+          "sha256": "e988561f3a9458182d4a6d990b030c39a0e06dd1e71f0e2fd168f06b70c8885b",
+          "size": 597
+        },
+        {
+          "name": "map_005.png",
+          "sha256": "7a99666a987dfe7528e5d11a0edd21f8636f15e382f97f2d376a5f5ec88126cb",
+          "size": 11818
+        },
+        {
+          "name": "map_005.svg",
+          "sha256": "0d95586cfcdcc4e3b0da0e77e234231659ce25bbdd28301c404c72caf600d63c",
+          "size": 597
+        },
+        {
+          "name": "report.csv",
+          "sha256": "e273c132ce65b465c54079df3e3ede5fd2527099458659606ab015ed33c3ed7c",
+          "size": 1109
+        },
+        {
+          "name": "report.docx",
+          "sha256": "3aabaad54c8a8c5c185fffa848cea81823c7f65d11f28bdda816b1e7ecf73da9",
+          "size": 54485
+        },
+        {
+          "name": "report.pdf",
+          "sha256": "2934a5fe0122985c6ffaf3421087d011beaef967ec7b3bc64add2875a8594110",
+          "size": 97691
+        },
+        {
+          "name": "report.xlsx",
+          "sha256": "436640237a14409e6a1f126345e51d2eedf61e015401b6a01574744419c3db94",
+          "size": 34363
+        }
+      ]
+    },
+    {
+      "artifact": "p7-p2-source-svg-windows-2022",
+      "zip_sha256": "de33663e25d6b61f554a6def1cd439eb660e78a8efc95f3178ac257c5131faca",
+      "tests": 149,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "golden_files": 14,
+      "file_hashes_and_sizes_verified": true,
+      "pdf_pages": 6,
+      "pdf_map_pages": 5,
+      "word_images": 5,
+      "word_bidi": true,
+      "excel_images": 5,
+      "all_excel_rtl": true,
+      "all_print_areas": true,
+      "excel_boq_links": [
+        "#'ریز متره'!A8",
+        "#'ریز متره'!A9",
+        "#'ریز متره'!A10",
+        "#'ریز متره'!A11",
+        "#'ریز متره'!A12"
+      ],
+      "source_hash_count": 2,
+      "manifest_files": [
+        {
+          "name": "map_001.png",
+          "sha256": "5d37e032274d5d176b47b6649e532e8f14a639d52425b9b41110e65785973497",
+          "size": 11427
+        },
+        {
+          "name": "map_001.svg",
+          "sha256": "ded88661b01efdbffe498556c55858df13dd60e13f8fac28a7ed1c2b556a6a4c",
+          "size": 597
+        },
+        {
+          "name": "map_002.png",
+          "sha256": "1e398cf0827520cf4fab1d89c1ebc918ae6638d845b69e0fdc72a4c8ec38fb08",
+          "size": 11796
+        },
+        {
+          "name": "map_002.svg",
+          "sha256": "1663b4807490a07978108e443ae9105d85c38ec8049eb6c5aadfb0ce2abefee0",
+          "size": 597
+        },
+        {
+          "name": "map_003.png",
+          "sha256": "20ac1086f28820f222ba2a4aedc79f9e47cade092da8343af78a4e09cd2e7cd1",
+          "size": 12656
+        },
+        {
+          "name": "map_003.svg",
+          "sha256": "a43c840a2a00bbc5176fc05f34b9dca9f44ad501a7414b6051a75923a11fee65",
+          "size": 631
+        },
+        {
+          "name": "map_004.png",
+          "sha256": "8dd6a2276d46a1506a92245d981cc0026f147d6d70e5aef667a21b1d11a1ecc2",
+          "size": 11558
+        },
+        {
+          "name": "map_004.svg",
+          "sha256": "e988561f3a9458182d4a6d990b030c39a0e06dd1e71f0e2fd168f06b70c8885b",
+          "size": 597
+        },
+        {
+          "name": "map_005.png",
+          "sha256": "7a99666a987dfe7528e5d11a0edd21f8636f15e382f97f2d376a5f5ec88126cb",
+          "size": 11818
+        },
+        {
+          "name": "map_005.svg",
+          "sha256": "0d95586cfcdcc4e3b0da0e77e234231659ce25bbdd28301c404c72caf600d63c",
+          "size": 597
+        },
+        {
+          "name": "report.csv",
+          "sha256": "328281f5577f39a26ee8177f85e24b35710f3f6c8dbdd1514df39147c0e6e2ed",
+          "size": 1109
+        },
+        {
+          "name": "report.docx",
+          "sha256": "7ca4cb13221fadf513a82f50ee902c38386c2c06bc7384cb97d63dc653b28a51",
+          "size": 54402
+        },
+        {
+          "name": "report.pdf",
+          "sha256": "adac8801269f83032b75be2baa0bac432fea57a8dd230b6f25ed975caa18547d",
+          "size": 119154
+        },
+        {
+          "name": "report.xlsx",
+          "sha256": "67a074ba631f680f624a84a4e85e2fe669a2a13d4452386f1e3bcdd83d962c36",
+          "size": 34312
+        }
+      ]
+    }
+  ]
+}
