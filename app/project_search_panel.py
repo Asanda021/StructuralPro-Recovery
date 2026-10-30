@@ -203,7 +203,7 @@ class ProjectSearchDialog(QDialog):
                 "route":record["route"],
                 "record":record["data"],
             },ensure_ascii=False,indent=2,default=str))
-            supported=record['route'] in {'projects','boq','drawing','drawing_session','project_controls','manual_formula'}
+            supported=record['route'] in {'projects','boq','drawing','drawing_session','project_controls','manual_formula','manual_amendment'}
             if navigate and self.on_navigate and supported and record["entity_id"]:
                 outcome=self.on_navigate(record["route"],record["project_id"],record["entity_id"])
                 if outcome is False:

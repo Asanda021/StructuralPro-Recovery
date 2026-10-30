@@ -295,3 +295,31 @@ def stored_revision_history(service, project_id):
     if service.store.current_digest(project_id)!=digest:
         raise RuntimeError('نسخه پروژه هنگام خواندن تاریخچه تغییر کرد.')
     return {'old_version':old['version'],'new_version':new['version'],'rows':rows,'project_digest':digest}
+
+
+
+def prepare_verified_amendment_view(service, project_id, amendment_id, parent=None):
+    """Open the existing guarded formula editor with one immutable proposal."""
+    import json
+    from PySide6.QtWidgets import QPlainTextEdit
+    digest=service.store.current_digest(project_id)
+    project=service.open_project(project_id)
+    amendments=(project or {}).get('manual_formula_amendments',{})
+    if not isinstance(amendments,dict) or amendment_id not in amendments:
+        raise ValueError('اصلاحیه معتبر پروژه در دسترس نیست.')
+    row=amendments[amendment_id]
+    if not isinstance(row,dict) or row.get('id')!=amendment_id:
+        raise ValueError('هویت اصلاحیه معتبر نیست.')
+    view=prepare_verified_formula_view(service,project_id,row.get('row_id'),parent)
+    try:
+        view.formula_amend_id.setText(amendment_id)
+        detail=QPlainTextEdit(view);detail.setObjectName('E4StoredAmendment');detail.setReadOnly(True)
+        detail.setPlainText('پیشنهاد ذخیره‌شده؛ ثبت و تأیید فقط از گیت اصلی اصلاحیه.\n'+
+                            json.dumps(row,ensure_ascii=False,indent=2,default=str))
+        view.layout().addWidget(detail)
+        if service.store.current_digest(project_id)!=digest:
+            raise RuntimeError('نسخه پروژه هنگام بازکردن اصلاحیه تغییر کرد.')
+        return view
+    except Exception:
+        view.close()
+        raise

@@ -4,6 +4,21 @@ from core.platform.application import StructuralProApp
 import app.verified_search_navigation as navigation
 
 
+_QT=None
+
+
+@pytest.fixture(scope='module',autouse=True)
+def keep_qt_application_alive():
+    global _QT
+    from PySide6.QtWidgets import QApplication
+    from PySide6.QtCore import QCoreApplication,QEvent
+    qt=QApplication.instance() or QApplication([])
+    _QT=qt
+    yield qt
+    QCoreApplication.sendPostedEvents(None,QEvent.DeferredDelete)
+    qt.processEvents()
+
+
 def project_with_two_versions(tmp_path):
     service=StructuralProApp(tmp_path/'db');service.create_project('Explicit revision fixture','P')
     for quantity,total in [('0.000000000000000001','10000000000000000000.00001'),('0.000000000000000002','10000000000000000000.00002')]:
@@ -80,3 +95,43 @@ raise SystemExit(main())
 '''
     result=subprocess.run([sys.executable,'-c',code,str(tmp_path)],cwd=root,env={**os.environ,'QT_QPA_PLATFORM':os.getenv('QT_QPA_PLATFORM','offscreen'),'STRUCTURALPRO_SMOKE':'0'},capture_output=True,text=True,timeout=90)
     assert result.returncode==0,result.stdout+result.stderr
+
+
+def test_search_opens_exact_persisted_amendment_in_original_guarded_editor(tmp_path):
+    from PySide6.QtWidgets import QApplication,QPlainTextEdit
+    from test_manual_formula_amendments import base,proposal
+    from app.project_search_panel import ProjectSearchDialog
+    qt=QApplication.instance() or QApplication([]);service=base(tmp_path/'amendment-db')
+    amendment=service.create_manual_formula_amendment('P','A',proposal(),expected_revision=1,created_by='synthetic author',reason='Explicit revision search fixture')
+    before=service.store.current_digest('P');opened=[]
+    def navigate(route,pid,aid):
+        opened.append(navigation.prepare_verified_amendment_view(service,pid,aid))
+    search=ProjectSearchDialog(service,'P',initial_query=amendment['id'],on_navigate=navigate)
+    try:
+        assert len(search.results)==1, 'E4 does not index persisted amendment identities'
+        search.list.setCurrentRow(0);assert search.open_record() is not None
+        assert len(opened)==1
+        view=opened[0];assert view._formula_selected=='A'
+        assert view.formula_amend_id.text()==amendment['id']
+        detail=view.findChild(QPlainTextEdit,'E4StoredAmendment')
+        assert detail is not None and detail.isReadOnly() and amendment['id'] in detail.toPlainText()
+        assert service.store.current_digest('P')==before
+    finally:
+        for view in opened:view.close()
+        search.close();service.store.close();qt.processEvents()
+
+
+def test_amendment_search_refuses_stale_selection_without_opening_form(tmp_path):
+    from PySide6.QtWidgets import QApplication
+    from test_manual_formula_amendments import base,proposal
+    from app.project_search_panel import ProjectSearchDialog
+    qt=QApplication.instance() or QApplication([]);service=base(tmp_path/'stale-db')
+    amendment=service.create_manual_formula_amendment('P','A',proposal(),expected_revision=1,created_by='synthetic author',reason='Explicit stale revision fixture')
+    search=ProjectSearchDialog(service,'P',initial_query=amendment['id'])
+    try:
+        assert len(search.results)==1, 'E4 does not index persisted amendment identities'
+        search.list.setCurrentRow(0);service.add_project_floor('P','New version',level='F-new')
+        before=service.store.current_digest('P')
+        assert search.open_record() is None
+        assert service.store.current_digest('P')==before
+    finally:search.close();service.store.close();qt.processEvents()

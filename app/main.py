@@ -710,6 +710,9 @@ def main()->int:
             if route=="manual_formula":
                 from app.verified_search_navigation import prepare_verified_formula_view
                 prepare_verified_formula_view(service,record_project,entity_id,parent=w).exec()
+            if route=="manual_amendment":
+                from app.verified_search_navigation import prepare_verified_amendment_view
+                prepare_verified_amendment_view(service,record_project,entity_id,parent=w).exec()
             if route=="drawing_session":
                 from app.verified_search_navigation import prepare_verified_drawing_session_view
                 view=prepare_verified_drawing_session_view(service,record_project,entity_id,parent=w)

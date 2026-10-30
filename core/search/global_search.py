@@ -84,6 +84,13 @@ def search_project(project, query, *, limit=100):
     for key in ("wbs","activities","work_packages","project_schedule_tasks","project_wbs"):
         for row in rows(project.get(key)):
             rec("wbs",row,keys=("id","title","name","wbs_id"),route="project_controls")
+    for row in rows(project.get('manual_formula_amendments')):
+        rec('amendment',row,keys=('id','row_id','source_id','reason','status','revision'),route='manual_amendment')
+    for row in rows(project.get('takeoff_revision_history')):
+        if isinstance(row,dict):
+            hit('revision','اصلاحیه منبع '+str(row.get('source_id',''))+' | '+
+                str(row.get('from_revision',''))+' → '+str(row.get('to_revision','')),
+                row,source_id=row.get('source_id'),revision=row.get('to_revision'),route='revision_record')
     for row in rows(project.get("reports")):
         rec("report",row,keys=("id","title","name","path"),route="reports")
     for row in rows(project.get("drawing_sessions")):
