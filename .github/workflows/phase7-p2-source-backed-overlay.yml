@@ -6,6 +6,7 @@ on:
     paths:
       - core/reports/source_backed_2d_overlay.py
       - tests/test_phase7_p2_source_backed_2d_overlay.py
+      - tests/test_phase7_p2_persisted_boq_crosswalk.py
       - .github/workflows/phase7-p2-source-backed-overlay.yml
   workflow_dispatch:
 permissions:
@@ -44,6 +45,7 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=0
           --junitxml=p7-p2-source-backed.xml
           tests/test_phase7_p2_source_backed_2d_overlay.py
+          tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase2_advanced_geometry.py
           tests/test_phase2_advanced_geometry_sqlite.py
           tests/test_real_pdf_vector_takeoff.py
