@@ -20,18 +20,18 @@
 - اجرای اولیه [#41126853799](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41126853799) در Linux: **۵۷ PASS، ۳ FAIL** به‌سبب باقی‌ماندن یک ارجاع `subtotal` در انتهای گروه‌بندی؛ خطا حذف یا Skip نشد و با Commit بعدی اصلاح شد.
 - اجرای اصلاح‌شده [#41127034901](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41127034901) در SHA `b55b7da1404742d97a89638215b2c5cd1e71ab17`: **Linux ۶۰ PASS و Windows Native ۶۰ PASS؛ صفر FAIL/ERROR/SKIP**؛ یک `fitz` FutureWarning موجود در هر محیط ثبت شده است.
 - آزمون‌ها رشته فارسی و شناسه صفرابتدایی، ۱۵+ رقم Decimal در XLSX، استخراج Word با bidi، ساخت PDF، CSV با BOM، تاریخ جلالی، صفحه‌بندی، مقادیر نامعتبر/NaN/Infinity، حفظ snapshot داده و نتایج عددی را کنترل می‌کنند. کیفیت بصری تمام صفحات Office/چاپ واقعی با این CI اثبات نمی‌شود.
-- [رگرسیون جامع #41127109963](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41127109963) روی SHA `cf4a446d82e85bc48315d9d7f235b65053684e6f` راه‌اندازی شد. **تا مشاهده JUnit و union آن، نتیجه broad را PENDING ثبت کنید؛ هیچ PASS فرضی نیست.** این SHA نسبت به تست قبلی فقط Workflow گسترده را اضافه کرده است.
+- [رگرسیون جامع #41127109963](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41127109963) روی SHA `cf4a446d82e85bc48315d9d7f235b65053684e6f` راه‌اندازی شد. **۷ Job برابر SUCCESS**؛ Linux: **۸٬۵۱۰ PASS، ۵ SKIP، صفر FAIL/ERROR**، Windows (۳ شارد): **۸٬۵۰۸ PASS، ۷ SKIP، صفر FAIL/ERROR**؛ `verify-full-union`: **۱۲ PASS**، ۷۲۳ ماژول، پوشش دقیق **۸٬۵۱۵ کیس** در هر سیستم، صفر timeout، JUnit و SHA-256 همه Artifactها راستی‌آزمایی شد. این SHA نسبت به تست قبلی فقط Workflow گسترده را اضافه کرده است.
 
 ## تصمیم و مرزهای پذیرش
 - `P7_P1_TARGETED_WINDOWS_LINUX = PASS_60_EACH`.
-- `P7_P1_BROAD_CROSS_MODULE = PENDING_EVIDENCE` تا ختم CI جامع.
+- `P7_P1_BROAD_CROSS_MODULE = PASS_8515_CASES_EACH_OS_UNION_VERIFIED`؛ اجرای #41127109963 (SHA `cf4a446...`) تأیید شد.
 - `PHYSICAL_MS_OFFICE_PRINT = DEFERRED_TO_PHASE8` طبق تصمیم صریح مالک، بدون نتیجه فرضی.
-- `PHASE7_P1 = IMPLEMENTED_AND_TARGETED_VERIFIED_NOT_FULLY_SIGNED_OFF`.
+- `PHASE7_P1_AUTOMATED_TECHNICAL_SCOPE = ACCEPTED`؛ کنترل بصری نهایی MS Office و چاپ فیزیکی در فاز ۸ انجام می‌شود و اکنون PASS فرضی ندارد.
 - هیچ تغییر main، Merge، EXE، Release یا ForcePush انجام نشده؛ PR #35 Draft/Unmerged می‌ماند.
 
 ## وضعیت پروژه و چت این صفحه
 - فازهای ۱ تا ۵: سوابق پذیرش فنی محفوظ.
 - فاز ۶: تحویل فنی خودکار؛ G4 فیزیکی به آزمایش نسخه نهایی در فاز ۸ موکول شده است.
-- فاز ۷: **اولویت ۱ در وضعیت آزمون جامع**؛ اولویت‌های ۲ تا ۶ آغاز نشده‌اند.
+- فاز ۷: **اولویت ۱ از نظر پذیرش فنی خودکار بسته شد**؛ اولویت ۲ در PR #36 شروع شده و خروجی SVG و اتصال نسخه‌دار SQLite ↔ BOQ با آزمون‌های هدفمند وجود دارد؛ اولویت‌های ۳ تا ۶ آغاز نشده‌اند.
 - فاز ۸: پذیرش نهایی، شروع نشده.
 - تعداد فازها دقیقاً ۸ و درصد رسمی اعلام‌شده کل پروژه ۸۵٪ بدون تغییر است.
