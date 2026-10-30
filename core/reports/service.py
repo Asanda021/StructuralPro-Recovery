@@ -2,7 +2,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable
-import math
+from .decimal_values import decimal_value, exact_sum
 from .project_report import ProjectReport
 from .designer import ReportLayout
 from .rtl import report_schema
@@ -11,10 +11,7 @@ REPORT_TYPES={"takeoff","boq","estimate","financial","revision","drawing","audit
 
 def _rows(rows): return [dict(r) for r in rows]
 def _finite(v,n):
-    try: x=float(v)
-    except (TypeError,ValueError) as e: raise ValueError(f"{n} must be numeric") from e
-    if not math.isfinite(x): raise ValueError(f"{n} must be finite")
-    return x
+    return decimal_value(v, field=n)
 
 @dataclass(frozen=True)
 class ReportRequest:
@@ -59,11 +56,11 @@ class ReportService:
         report=ProjectReport(request.title,selected,summary or {},metadata or {})
         validation=report.validate()
         schema=report_schema([label for _,label in report.columns()],request.language,request.rtl,request.decimals,request.currency)
-        amounts=[_finite(r.get("total",0) or 0,"total") for r in selected]
+        amounts=[_finite(r.get("total",0),"total") for r in selected]
         return {"type":request.report_type,"title":request.title,"language":request.language,"rtl":request.rtl,
                 "schema":schema,"columns":report.columns(),"rows":report.as_rows(),"pages":pages,
                 "summary":dict(summary or {}),"metadata":dict(metadata or {}),"validation":validation,
-                "totals":{"line_count":len(selected),"amount":sum(amounts)}}
+                "totals":{"line_count":len(selected),"amount":exact_sum(amounts, field="total")}}
 
     @staticmethod
     def build_audit(request:ReportRequest, *, events:Iterable[dict[str,Any]])->dict[str,Any]:
