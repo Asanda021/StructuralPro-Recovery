@@ -24,10 +24,12 @@
 - [CI اولیه خروجی چهارگانه #41131014911](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131014911): Linux **۱۳۵ PASS**، فایل‌های واقعی بازخوانی شدند؛ Windows پس از راستی‌آزمایی نهایی تعیین می‌شود.
 - [CI اصلاح چاپ Excel #41131137434](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131137434): دو Job Linux و Windows **SUCCESS**؛ کنترل print area.
 - [CI Golden پنج طبقه #41131255692](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131255692): Linux **۱۳۶ PASS**؛ سناریوی پنج طبقه با فایل PDF پنج صفحه‌ای برداری واقعی در تست و ProjectStore واقعی؛ پنج عضو، پنج ردیف BOQ و پنج بسته مجزای طبقه، کنترل عدم تداخل صفحات، عدم تغییر SQLite.
-- [CI برچسب قابل مشاهده و Golden نهایی #41131423252](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131423252) روی Commit `395b9b3bae50f2d9b40b87f92cf8965ebd201134`: **PENDING تا پایان هر دو OS**. هر اجرای قبلی به معنی پذیرش این Commit نیست.
+- [CI با برچسب SVG #41131423252](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131423252) روی SHA `395b9b3...`: **Linux FAIL با exit 134** در رندر متن QtSvgRenderer بدون QGuiApplication. نتیجه شکست ثبت شد و هیچ Skip/حذف تستی انجام نشد.
+- اصلاح: استفاده از **PyMuPDF** موجود برای رندر همان SVG به PNG؛ حذف وابستگی رندر برچسب به QApplication. Commit کد اصلاح‌شده `dc6139f5088eeac349b1aee2435e7ef1f8202f2e`.
+- [CI نهایی #41131653006](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41131653006) روی همان SHA: **Windows Native: ۱۳۶ PASS / ۰ FAIL/ERROR/SKIP**؛ **Linux: ۱۳۶ PASS / ۰ FAIL/ERROR/SKIP**. دو Job موفق؛ یک `fitz FutureWarning` قدیمی در هر محیط. شامل تولید واقعی ۶ فایل، بررسی ZIP/DOCX/XLSX/PDF و PNG، Golden پنج‌طبقه و ۱۰ها آزمون صحت منبع و عدم‌دستکاری داده است.
 
 ## وضعیت و مرزها
-`P7_P2_REAL_OFFICE_BUNDLE=IMPLEMENTED`، `P7_P2_FINAL_TARGETED_CI=PENDING`، `P7_P2_OVERALL=PARTIAL`.
+`P7_P2_REAL_OFFICE_BUNDLE=IMPLEMENTED_TARGETED_ACCEPTED`، `P7_P2_FINAL_TARGETED_CI=PASS_WINDOWS_136_LINUX_136`، `P7_P2_OVERALL=PARTIAL` تا تکمیل الزام‌های باقی‌مانده و رگرسیون جامع همان کد.
 
 این Golden **پنج بسته تک‌طبقه از یک پروژه واقعی نرم‌افزاری** است، نه تولید خودکار پلان معماری تمام طبقات؛ برای صدور دسته‌ای در یک بسته چندصفحه‌ای/چندطبقه، نگهداری و نمایش ابعاد و جزئیات هندسی بیشتر، کنترل کیفیت چاپ/فونت واقعی و بررسی Windows/MS Office مرحله پذیرش باقی است. این‌ها تنها در حدود شش اولویت مصوب فاز ۷ و فاز ۸ هستند.
 
