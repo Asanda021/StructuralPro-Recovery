@@ -14,6 +14,9 @@ on:
       - app/ifc_site_viewport.py
       - app/ifc_existing_reference_viewport.py
       - app/graphical_takeoff.py
+      - app/ifc_3d_viewport.py
+      - app/responsive_flow_layout.py
+      - tests/test_phase6_dpi_responsive_viewers.py
       - core/drawings/site_context.py
       - core/drawings/existing_building_reference.py
       - tests/test_phase6_g2_spatial_readonly_guards.py
@@ -66,6 +69,7 @@ jobs:
           tests/test_phase6_p1_shell.py
           tests/test_phase6_p1_font_diagnostics.py
           tests/test_phase6_p5_e5_docks.py
+          tests/test_phase6_dpi_responsive_viewers.py
           tests/test_phase6_p5_e4_ui.py
           tests/test_phase6_p5_e4_snapshot_race.py
           tests/test_phase6_p4_contextual_takeoff.py
