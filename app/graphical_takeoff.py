@@ -307,6 +307,9 @@ class TakeoffCanvas(QGraphicsView):
             self.on_change()
 
 
+from app.responsive_flow_layout import ResponsiveFlowLayout
+
+
 class GraphicalTakeoffDialog(QDialog):
     def __init__(self, parent=None, pdf_path="", *, app_service=None, project_id=""):
         super().__init__(parent)
@@ -333,7 +336,7 @@ class GraphicalTakeoffDialog(QDialog):
         toolbar = QFrame()
         toolbar.setObjectName("DashboardCard")
         toolbar_rows = QVBoxLayout(toolbar)
-        header = QHBoxLayout()
+        header = ResponsiveFlowLayout()
         toolbar_rows.addLayout(header)
         header.setContentsMargins(12, 10, 12, 10)
 
@@ -408,7 +411,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.undo = QPushButton("↶ واگرد")
         self.redo = QPushButton("↷ تکرار")
         self.delete = QPushButton("حذف انتخاب")
-        actions = QGridLayout()
+        actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
             self.open_pdf, self.prev, self.next, self.page_no,
@@ -417,7 +420,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
             self.load_session_button, self.commit_boq_button, self.export_boq
         ]):
-            actions.addWidget(x, index // 6, index % 6)
+            actions.addWidget(x)
         self.cad_layers=QComboBox();self.cad_layer_toggle=QPushButton('نمایش/پنهان لایه')
         self.cad_handle=QLineEdit();self.cad_handle.setPlaceholderText('Handle یا مسیر بلوک')
         self.cad_find=QPushButton('یافتن جزء CAD');self.cad_select=QPushButton('انتخاب اجزای CAD')
@@ -428,14 +431,14 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_measure=QPushButton('متره جزء CAD');self.cad_review=QPushButton('بازبینی متره CAD')
         self.cad_measure.setToolTip('خط، چندضلعی مستقیم، دایره و کمان تحلیلی یا جمع اجزای بلوک؛ بدون حدس مصالح')
         self._cad_items={};self._cad_handle_items={}
-        cad_row=QHBoxLayout()
+        cad_row=ResponsiveFlowLayout()
         for control in (self.cad_layers,self.cad_layer_toggle,self.cad_handle,self.cad_find,self.cad_select,self.cad_metric,self.cad_measure,self.cad_review,self.cad_cancel,self.cad_unit_button,self.cad_report):cad_row.addWidget(control)
         self.cad_controls=QWidget();self.cad_controls.setLayout(cad_row);self.cad_controls.hide();toolbar_rows.addWidget(self.cad_controls)
         self.cad_layer_toggle.clicked.connect(self.toggle_cad_layer);self.cad_find.clicked.connect(self.find_cad_handle)
         self.cad_select.clicked.connect(lambda:self.canvas.set_mode('cad_select'))
         self.cad_measure.clicked.connect(self.measure_cad_selection);self.cad_review.clicked.connect(self.review_cad_selection)
         self.ifc_revision=QLineEdit();self.ifc_revision.setPlaceholderText('Revision صریح مدرک PDF یا IFC')
-        revision_row=QHBoxLayout();revision_row.addWidget(QLabel('نسخه مدرک:'));revision_row.addWidget(self.ifc_revision)
+        revision_row=ResponsiveFlowLayout();revision_row.addWidget(QLabel('نسخه مدرک:'));revision_row.addWidget(self.ifc_revision)
         # Site-only IFC4 is spatial context, not an IfcElement or a source of BOQ.
         # Keep its file picker visible even before a normal IFC drawing is open.
         self.site_context_button = QPushButton('زمین IFC4 (فقط نمایش)')
@@ -477,7 +480,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.ifc_3d_cancel.setToolTip('لغو و کنارگذاشتن نتیجهٔ مدل سه‌بعدی، بدون تغییر نشست و BOQ')
         self.ifc_3d_cancel.setEnabled(False)
         self.ifc_3d_cancel.clicked.connect(self.cancel_ifc_3d_loading)
-        ifc_row=QHBoxLayout();ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
+        ifc_row=ResponsiveFlowLayout();ifc_row.addWidget(self.ifc_inspect_button);ifc_row.addWidget(self.verified_crossview_button);ifc_row.addWidget(self.ifc_3d_button);ifc_row.addWidget(self.ifc_3d_cancel)
         self.ifc_controls=QWidget();self.ifc_controls.setLayout(ifc_row);self.ifc_controls.hide();toolbar_rows.addWidget(self.ifc_controls)
         toolbar_rows.addWidget(self.source_label)
         root.addWidget(toolbar)
@@ -504,8 +507,8 @@ class GraphicalTakeoffDialog(QDialog):
             self.drawing_workspace.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.beam_dock)
             self.panel_toggle = QPushButton('پنل دیتایل تیر'); self.panel_toggle.setCheckable(True)
             self.panel_float = QPushButton('شناور / اتصال پنل تیر')
-            actions.addWidget(self.panel_toggle, 4, 0, 1, 2)
-            actions.addWidget(self.panel_float, 4, 2, 1, 2)
+            actions.addWidget(self.panel_toggle)
+            actions.addWidget(self.panel_float)
             self.panel_toggle.toggled.connect(self.beam_dock.setVisible)
             def sync_panel(visible):
                 self.panel_toggle.blockSignals(True); self.panel_toggle.setChecked(visible); self.panel_toggle.blockSignals(False)
