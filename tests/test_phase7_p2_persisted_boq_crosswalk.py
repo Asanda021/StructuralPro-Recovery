@@ -45,7 +45,7 @@ def test_real_sqlite_boq_item_links_to_source_svg_without_writes(tmp_path):
         assert link["takeoff_id"] == item.id
         assert link["member_id"] == "P1" and link["floor_id"] == "L1"
         assert link["boq_row_id"] == "boq-item-no:1"
-        assert link["quantity"] == project["boq"][0]["quantity"]
+        assert Decimal(link["quantity"]) == Decimal(str(project["boq"][0]["quantity"]))
         assert link["source_id"] == project["takeoffs"][0]["source_id"]
         assert link["measurement_identity"] == project["takeoffs"][0]["params"]["measurement_identity"]
         assert "not_engineering_approval" in link["review_status"]
