@@ -131,3 +131,38 @@ def test_changed_project_during_render_cannot_publish(building,tmp_path,monkeypa
     with pytest.raises(RuntimeError,match="پروژه"):
         m.export_custom_report_batch(app,project_id="P5",expected_project_version=p["_meta"]["version"],requests=({"template_id":"measures","version":1,"filters":{}},),destination=tmp_path/"changed")
     assert not (tmp_path/"changed").exists()
+
+
+def test_persisted_quantity_and_boq_cannot_disagree_with_source_measurement(building):
+    from copy import deepcopy
+    m=api();app,p,_=building;forged=deepcopy(p)
+    forged["takeoffs"][0]["quantities"][0]["amount"]=40
+    forged["boq"][0]["quantity"]=40
+    with pytest.raises(ValueError,match="منبع|کمیت|متره"):
+        m._source_rows(forged,"boq")
+
+def test_source_change_after_last_preview_is_rejected(building,tmp_path,monkeypatch):
+    m=api();app,p,selections=building;store=m.TemplateStore(app,"P5");store.save(template(),actor="مهندس",reason="مرجع")
+    old=m.preview_custom_report;calls=[]
+    def changing(*args,**kwargs):
+        result=old(*args,**kwargs);calls.append(1)
+        if len(calls)==2:
+            source=Path(p["drawing_sessions"][selections[0]["session_id"]]["drawing_source"])
+            source.write_bytes(source.read_bytes()+b"changed after final preview")
+        return result
+    monkeypatch.setattr(m,"preview_custom_report",changing)
+    with pytest.raises(ValueError,match="منبع"):
+        m.export_custom_report_batch(app,project_id="P5",expected_project_version=p["_meta"]["version"],requests=({"template_id":"measures","version":1,"filters":{}},),destination=tmp_path/"stale_source")
+    assert not (tmp_path/"stale_source").exists()
+
+def test_grand_total_without_grouping_is_in_actual_documents(building,tmp_path):
+    from docx import Document
+    from openpyxl import load_workbook
+    m=api();app,p,_=building;store=m.TemplateStore(app,"P5")
+    t=template();t["layout"]["group_by"]="";store.save(t,actor="مهندس",reason="جمع کل")
+    m.export_custom_report_batch(app,project_id="P5",expected_project_version=p["_meta"]["version"],requests=({"template_id":"measures","version":1,"filters":{}},),destination=tmp_path/"total")
+    doc=Document(tmp_path/"total/report_001.docx")
+    text=" ".join(c.text for tab in doc.tables for row in tab.rows for c in row.cells)
+    assert "جمع مقدار" in text and "99.75" in text
+    book=load_workbook(tmp_path/"total/report_001.xlsx")
+    assert any(str(c.value)=="99.75" for row in book["خلاصه"] for c in row)

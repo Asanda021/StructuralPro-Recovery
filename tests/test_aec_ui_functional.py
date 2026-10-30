@@ -38,15 +38,45 @@ def test_settings_do_not_offer_unimplemented_language_or_unit_switches():
     assert 'unit.addItems(["متر / مترمربع / مترمکعب","سانتی‌متر / میلی‌متر"])' not in MAIN
 
 
-def test_project_documents_are_persisted():
-    assert '"documents"' in MAIN
-    assert "service.store.save(project_id,project)" in MAIN
+def test_project_documents_are_persisted(tmp_path):
+    # Test actual provenance-aware persistence instead of an unrelated string
+    # formerly supplied only by the removed report-layout SQLite mutation.
+    from core.platform.application import StructuralProApp
+    assert "service.add_project_document(project_id,path)" in MAIN
     assert "docbrowse.clicked.connect" in MAIN
+    source=tmp_path/"proof.txt";source.write_text("registered evidence",encoding="utf-8")
+    app=StructuralProApp(tmp_path/"db");app.create_project("اسناد آزمون","DOC")
+    try:
+        app.add_project_document("DOC",str(source))
+        before=app.project_documents("DOC")
+        assert len(before)==1 and before[0]["path"]==str(source)
+    finally:app.store.close()
+    reopened=StructuralProApp(tmp_path/"db")
+    try:assert reopened.project_documents("DOC")==before
+    finally:reopened.store.close()
 
 
-def test_report_layout_is_persisted_in_project():
-    assert 'project["_report_layout"]' in MAIN
-    assert 'service.store.save(project_id,project)' in MAIN
+def test_report_layout_is_persisted_in_project(tmp_path):
+    # Project-scoped presentation templates persist separately from BOQ/CAS.
+    from dataclasses import asdict
+    from core.platform.application import StructuralProApp
+    from core.reports.designer import ReportLayout
+    from core.reports.custom_batch import TemplateStore
+    assert 'project["_report_layout"]' in MAIN  # explicit legacy import
+    assert "CustomReportDialog" in MAIN
+    app=StructuralProApp(tmp_path/"db");app.create_project("قالب آزمون","LAYOUT")
+    before=app.store.current_digest("LAYOUT")
+    template=dict(schema_version=2,template_id="layout",version=1,report_type="boq",layout=asdict(ReportLayout()),
+                  filters={},page_format="A4",orientation="landscape",show_source=True,include_totals=True,logo=None)
+    try:
+        saved=TemplateStore(app,"LAYOUT").save(template,actor="مهندس",reason="قالب")
+        assert app.store.current_digest("LAYOUT")==before
+    finally:app.store.close()
+    reopened=StructuralProApp(tmp_path/"db")
+    try:
+        assert TemplateStore(reopened,"LAYOUT").load("layout",1)==saved
+        assert reopened.store.current_digest("LAYOUT")==before
+    finally:reopened.store.close()
 
 
 def test_removed_static_capability_claim():
