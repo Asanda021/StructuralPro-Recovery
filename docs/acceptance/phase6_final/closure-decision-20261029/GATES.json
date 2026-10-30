@@ -682,7 +682,7 @@
     {
       "id": "G4",
       "name": "physical_windows_owner_uat",
-      "status": "G4_AUTOMATED_SCOPE_ACCEPTED_OWNER_PHYSICAL_UAT_PENDING",
+      "status": "AUTOMATED_ACCEPTED_PHYSICAL_UAT_DEFERRED_BY_OWNER_TO_PHASE8_NOT_TESTED",
       "reason": "Native Windows automated executable scope accepted with original JUnit at 100/125/150/200 logical Qt scale plus 43 additional source GUI, export readback, worker cancellation, revision, SQLite and recovery tests. Physical GPU, multimonitor, real monitor DPI, disconnect/reconnect and sleep/resume not tested; owner signoff still absent.",
       "reference": "docs/acceptance/phase6_final/verification-20261030-g4-cloud/REPORT.fa.md",
       "automated_visual_font_issue": "Initial shell screenshot was offscreen because a child-specific backend variable was absent. Native windows glyph probes at 100/150/200 show Tahoma with zero missing glyphs and readable screenshots. CI child backend now corrected; physical UAT still not executed.",
@@ -742,7 +742,7 @@
         "session_name": null
       },
       "physical_scope": {
-        "status": "NOT_TESTED_PHYSICAL_HARDWARE",
+        "status": "DEFERRED_TO_PHASE8_NOT_TESTED",
         "gpu": false,
         "mixed_dpi_monitors": false,
         "monitor_reconnect": false,
@@ -762,7 +762,8 @@
           "phase6_new_blocker": false,
           "existing_final_acceptance_phase": 8
         }
-      ]
+      ],
+      "deferred_to_phase": 8
     },
     {
       "id": "G5",
@@ -803,9 +804,9 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "G4_AUTOMATED_SCOPE_ACCEPTED_PHYSICAL_OWNER_UAT_PENDING;_PHASE6_PARTIAL_NO_GO",
+  "last_decision": "PHASE6_AUTOMATED_TECHNICAL_SCOPE_ACCEPTED;_G4_PHYSICAL_OWNER_UAT_DEFERRED_TO_PHASE8;_PHASE7_DEVELOPMENT_AUTHORIZED;_FORMAL_PHASE6_PARTIAL;_NO_RELEASE",
   "phase6_status": "PARTIAL",
-  "allow_phase7_start": false,
+  "allow_phase7_start": true,
   "allow_phase6_close": false,
   "allow_release": false,
   "allow_merge": false,
@@ -815,7 +816,7 @@
   "safety_note": "G4 evidence harness and CI added; original app/core/tests unchanged. Automated acceptance is bounded; physical owner UAT, merge, main, binaries, release and phase7 remain unauthorized.",
   "last_evidence_run": 41027220769,
   "last_source_verified_commit": "2ffd9b144613695c2093cce4575021835a6d738f",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261030-g4-cloud/REPORT.fa.md",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261031-technical-handoff/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
     "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
@@ -925,5 +926,36 @@
     "tests_per_dpi": 11,
     "all_native_gui_junit_pass": true,
     "original_issue": "Offscreen child override in consolidated test workflow; dedicated child QPA environment corrected."
+  },
+  "phase6_technical_automated_scope_status": "ACCEPTED_HANDOFF_READY",
+  "owner_uat_scheduling_decision": {
+    "date": "2026-10-31",
+    "decision": "DEFER_PHYSICAL_G4_UAT_TO_FINAL_WINDOWS_CANDIDATE_IN_PHASE8",
+    "authorized_by": "project_owner",
+    "reason": "Physical Windows/GPU/multimonitor and sleep/resume checks will be performed after final candidate is available; do not impede Phase7 engineering development.",
+    "actual_physical_test_result": "NOT_TESTED",
+    "owner_signoff": "NOT_PROVIDED",
+    "release_go": "NO_GO",
+    "phase7_development": "AUTHORIZED",
+    "new_phase_added": false,
+    "note": "This is a schedule deferral, not a PASS, Merge or EXE authorization."
+  },
+  "latest_phase6_regression": {
+    "source_sha": "66022c2dd1476b37399d83480be108a0002cae96",
+    "workflow_run": 41115073037,
+    "windows": {
+      "passed": 8478,
+      "skipped": 7,
+      "failed": 0,
+      "errors": 0
+    },
+    "linux": {
+      "passed": 8480,
+      "skipped": 5,
+      "failed": 0,
+      "errors": 0
+    },
+    "verified_union": true,
+    "physical_owner_uat": false
   }
 }
