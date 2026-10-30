@@ -11,7 +11,7 @@ from pathlib import Path
 import re
 import tempfile
 from core.reports.designer import ReportLayout, _FIELD_MAP
-from core.reports.decimal_values import exact_sum
+from core.reports.decimal_values import exact_sum, decimal_value
 from core.reports.project_report import ProjectReport, DEFAULT_COLUMNS
 from core.reports.bundle import build_bundle_manifest
 
@@ -177,7 +177,20 @@ def _source_rows(p,kind):
         verified_measurement_identities(record,measured);hashes[record["drawing_source"]]=record["source_sha256"]
         for row in measured:
             saved=record_by_source[row["source_id"]]
-            if saved.get("params",{}).get("measurement_identity")!=row.get("measurement_identity"):raise ValueError("رسید منبع متره با نشست همخوان نیست")
+            params=saved.get("params");proof=saved.get("provenance");quantities=saved.get("quantities")
+            if not isinstance(params,dict) or not isinstance(proof,dict) or not isinstance(quantities,list) or len(quantities)!=1:
+                raise ValueError("رسید منبع متره ناقص است")
+            for receipt in (params,proof):
+                if (receipt.get("drawing_session_id")!=sid or receipt.get("source_sha256")!=record["source_sha256"]
+                    or receipt.get("measurement_identity")!=row.get("measurement_identity")
+                    or receipt.get("geometry_evidence")!=row.get("geometry_evidence") or receipt.get("page")!=row["page"]):
+                    raise ValueError("رسید منبع متره با نشست همخوان نیست")
+            if params.get("geometry")!=row["geometry"] or params.get("holes")!=row["holes"]:
+                raise ValueError("هندسه یا کسورات منبع متره ناسازگار است")
+            q=quantities[0]
+            if (q.get("code")!=row["item_code"] or q.get("unit")!=row["unit"] or q.get("source_ref")!=row["source"]
+                or decimal_value(q.get("amount"),field="stored drawing quantity")!=decimal_value(row["quantity"],field="source drawing quantity")):
+                raise ValueError("کمیت، کد یا واحد متره با منبع اصلی تطبیق ندارد")
     source=flatten_takeoffs({**p,"takeoffs":records}) if kind=="takeoff" else deepcopy(p.get("boq",[]))
     result=[]
     for n,row in enumerate(source,1):
@@ -204,6 +217,7 @@ def preview_custom_report(service,*,project_id,expected_project_version,template
     summary={"جمع مقدار ـ "+unit:value for unit,value in quantities.items()} if t["include_totals"] else {}
     if t["include_totals"] and t["report_type"]=="estimate":summary["جمع مبلغ مستند"]=str(exact_sum(r["total"] for r in rows))
     elif t["include_totals"]:summary["وضعیت مبلغ"]="فاقد مبنای قیمت در این گزارش مقداری"
+    if summary:summary={"report_totals":summary,"line_count":len(rows)}
     group=t["layout"]["group_by"]
     if group:
         rows.sort(key=lambda r:str(r.get(group,"")));grouped=[]
@@ -250,6 +264,7 @@ def export_custom_report_batch(service,*,project_id,expected_project_version,req
             if store.load(req["template_id"],req["version"])!=record:raise RuntimeError("قالب پیش از انتشار تغییر کرد")
             latest=preview_custom_report(service,project_id=project_id,expected_project_version=expected_project_version,template=record["template"],filters=req["filters"])
             if latest!=preview:raise RuntimeError("منبع گزارش پیش از انتشار تغییر کرد")
+        _verify_source_files(snapshot,require_pricebook=any(record["template"]["report_type"]=="estimate" for _,record,_ in prepared))
         if service.store.current_digest(project_id)!=before:raise RuntimeError("پروژه در حین انتشار تغییر کرد")
         if target.exists():raise FileExistsError("مسیر بسته حین صدور ایجاد شد")
         os.rename(stage,target)
@@ -288,3 +303,33 @@ def _finalize_and_check(path,fmt,t,logo):
         import csv
         with Path(path).open(encoding="utf-8-sig",newline="") as stream:
             if len(list(csv.reader(stream,strict=True)))<2:raise ValueError("گزارش CSV خالی است")
+
+
+def _verify_source_files(snapshot,*,require_pricebook):
+    """Final two-pass physical source freshness, as in the accepted P2 adapter."""
+    from hashlib import file_digest
+    references={}
+    for takeoff in snapshot.get("takeoffs",[]):
+        if takeoff.get("domain")!="drawing":continue
+        record=snapshot["drawing_sessions"][takeoff["drawing_session_id"]]
+        path=Path(record["drawing_source"]);expected=record["source_sha256"]
+        if path in references and references[path]!=expected:raise ValueError("نسخه‌های منبع مشترک ناسازگارند")
+        references[path]=expected
+    if require_pricebook:
+        review=snapshot.get("user_pricebook_review") or {}
+        path=Path(review["path"]);expected=review["sha256"].lower()
+        if path in references and references[path]!=expected:raise ValueError("هش منبع فهرست‌بها ناسازگار است")
+        references[path]=expected
+    def signature(s):
+        return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+    checked={}
+    try:
+        for path,expected in references.items():
+            with path.open("rb") as stream:
+                before=signature(os.fstat(stream.fileno()));actual=file_digest(stream,"sha256").hexdigest()
+                after=signature(os.fstat(stream.fileno()))
+            if before!=after or signature(path.stat())!=after or actual!=expected:raise ValueError("منبع گزارش هنگام کنترل نهایی تغییر کرده است")
+            checked[path]=after
+        if any(signature(path.stat())!=observed for path,observed in checked.items()):
+            raise ValueError("منبع گزارش در حین کنترل نهایی تغییر کرده است")
+    except OSError as exc:raise ValueError("منبع گزارش پیش از انتشار در دسترس نیست") from exc

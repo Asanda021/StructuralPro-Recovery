@@ -147,6 +147,8 @@ def _summary_items(summary):
     for key, label in statement_labels:
         if key in statement:
             items.append((label, statement.get(key)))
+    for label,value in (summary.get("report_totals",{}) or {}).items():
+        items.append((str(label),value))
     if "period_no" in summary:
         items.insert(0, ("شماره صورت‌وضعیت", summary["period_no"]))
     return items

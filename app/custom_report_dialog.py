@@ -127,7 +127,8 @@ class CustomReportDialog(QDialog):
         keys=candidate["layout"]["columns"];self.preview_table.setColumnCount(len(keys));self.preview_table.setHorizontalHeaderLabels([FIELDS[k] for k in keys]);self.preview_table.setRowCount(len(result["rows"]))
         for i,row in enumerate(result["rows"]):
             for j,key in enumerate(keys):self.preview_table.setItem(i,j,QTableWidgetItem(str(row.get(key) if row.get(key) is not None else "")))
-        self.tabs.setCurrentIndex(1);self.status.setText("پیش‌نمایش داده ثبت‌شده؛ جمع‌ها با تفکیک واحد: "+str(result["summary"]))
+        totals=result["summary"].get("report_totals",{})
+        self.tabs.setCurrentIndex(1);self.status.setText("پیش‌نمایش داده ثبت‌شده؛ "+"، ".join(str(k)+": "+str(v) for k,v in totals.items()))
 
     def _export(self):
         if not self.selected_id or self.template_id.text().strip()!=self.selected_id:raise ValueError("ابتدا قالب را ذخیره یا بازیابی کنید")
