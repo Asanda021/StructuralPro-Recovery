@@ -57,7 +57,6 @@ def main()->int:
         from core.aec.disciplines import all_disciplines, takeoff_domain
         from core.takeoff.units import normalize_unit
         from core.collaboration.workspace import CollaborationWorkspace, Role, User, Assignment, Comment, Review, Notification
-        from core.platform.product import packaged_edition
     except ImportError as exc:
         logger.exception("Required dependency import failed")
         print("StructuralPro dependencies are required:", exc)
@@ -77,9 +76,7 @@ def main()->int:
         except Exception as exc:
             logger.warning("User pricebook cache could not be loaded: %s", exc)
     bundle_dir=Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parents[1]
-    packaged=packaged_edition(bundle_dir, fail_closed=False)
-    current_edition=packaged.value if packaged else "unified"
-    edition_title={"light":"سبک", "standard":"استاندارد", "pro":"حرفه‌ای", "enterprise":"سازمانی", "unified":"کامل"}.get(current_edition,"نامشخص")
+    edition_title="کامل"
     assistant=ProjectAssistant()
     w=QMainWindow(); w.setWindowTitle("StructuralPro — مدیریت مهندسی پروژه"); w.resize(1560,960); w.setMinimumSize(980,680)
 
@@ -761,16 +758,12 @@ def main()->int:
     tools.addTab(qa,"کنترل محصول")
     pages.addWidget(p); idx_tools=pages.count()-1
 
-    # AI — embedded in the same StructuralPro installation; edition controls the AI tier.
+    # One complete desktop product; model availability is checked independently.
     p,v=page("هوش مصنوعی آفلاین",f"نسخه {edition_title} | هوش مصنوعی داخلی و آفلاین")
     apid=QLineEdit(); ago=QPushButton("🤖 بازبینی پروژه"); aout=QTextEdit(); aout.setReadOnly(True)
     v.addWidget(apid); v.addWidget(ago)
-    if current_edition == "light":
-        ago.setEnabled(False)
-        aout.setPlainText("این نسخه فاقد هوش مصنوعی است؛ از نسخه استاندارد، حرفه‌ای یا سازمانی استفاده کنید.")
     v.addWidget(aout)
     def review():
-        if current_edition == "light": return
         project=service.open_project(apid.text().strip())
         if not project: QMessageBox.warning(w,"AI","پروژه پیدا نشد."); return
         r=assistant.review(project)
@@ -783,9 +776,7 @@ def main()->int:
     ai_run=QPushButton("پرسش از مدل محلی"); ai_run.setObjectName("LocalAIRun")
     ai_discard=QPushButton("رد پیشنهاد"); ai_discard.setObjectName("LocalAIDiscard")
     v.addWidget(ai_question); v.addWidget(ai_run); v.addWidget(ai_discard)
-    ai_run.setEnabled(current_edition != "light")
     def run_ai_text():
-        if current_edition == "light": return
         if not assistant.engine.has_llm_model or not assistant.engine.runtime_available:
             aout.setPlainText("مدل متنی یا موتور محلی موجود نیست؛ هیچ مقداری ثبت نشد.")
             return
@@ -800,18 +791,17 @@ def main()->int:
         aout.setPlainText("پیشنهاد رد شد؛ اطلاعات قطعی و BOQ تغییر نکردند.")
     ai_run.clicked.connect(run_ai_text)
     ai_discard.clicked.connect(discard_ai_suggestion)
-    if current_edition in ("pro","enterprise","unified"):
-        image_path=QLineEdit(); image_btn=QPushButton("🖼️ متره هوشمند از تصویر")
-        image_run=QPushButton("تحلیل تصویر")
-        v.addWidget(image_path); v.addWidget(image_btn); v.addWidget(image_run)
-        def choose_ai_image():
-            image_path.setText(QFileDialog.getOpenFileName(w,"انتخاب تصویر نقشه","","Images (*.png *.jpg *.jpeg *.webp);;All files (*)")[0])
-        def run_ai_image():
-            if not image_path.text().strip(): return
-            result=assistant.engine.answer_with_image(image_path.text().strip(),"این تصویر نقشه را برای آیتم‌های قابل متره بررسی کن؛ مقادیر قطعی را فقط در صورت وجود شواهد کافی اعلام کن.")
-            aout.setPlainText("پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\n"+result.text+"\n\nمنشأ: "+result.source)
-        image_btn.clicked.connect(choose_ai_image)
-        image_run.clicked.connect(run_ai_image)
+    image_path=QLineEdit(); image_btn=QPushButton("🖼️ متره هوشمند از تصویر")
+    image_run=QPushButton("تحلیل تصویر")
+    v.addWidget(image_path); v.addWidget(image_btn); v.addWidget(image_run)
+    def choose_ai_image():
+        image_path.setText(QFileDialog.getOpenFileName(w,"انتخاب تصویر نقشه","","Images (*.png *.jpg *.jpeg *.webp);;All files (*)")[0])
+    def run_ai_image():
+        if not image_path.text().strip(): return
+        result=assistant.engine.answer_with_image(image_path.text().strip(),"این تصویر نقشه را برای آیتم‌های قابل متره بررسی کن؛ مقادیر قطعی را فقط در صورت وجود شواهد کافی اعلام کن.")
+        aout.setPlainText("پیشنهاد نیازمند بازبینی انسانی؛ بدون مجوز ثبت BOQ.\n"+result.text+"\n\nمنشأ: "+result.source)
+    image_btn.clicked.connect(choose_ai_image)
+    image_run.clicked.connect(run_ai_image)
     pages.addWidget(p); idx_ai=pages.count()-1
 
     # Commercial statement — persistent numbered period workspace
@@ -1071,16 +1061,22 @@ def main()->int:
     revui=QWidget(); revv=QVBoxLayout(revui); revpid=QLineEdit(); revv.addWidget(QLabel("شناسه پروژه برای تاریخچه تغییرات")); revv.addWidget(revpid)
     revbtn=QPushButton("ساخت تاریخچه تغییرات از آخرین دو نسخه"); revout=QTableWidget(0,6); revout.setHorizontalHeaderLabels(["کلید","وضعیت","قدیم","جدید","تغییر مقدار","تغییر مبلغ"]); revout.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     revv.addWidget(revbtn); revv.addWidget(revout)
+    revstatus=QLabel('تاریخچه فقط از دو نسخه ذخیره‌شده خوانده می‌شود؛ بدون تغییر داده.')
+    revstatus.setWordWrap(True);revv.addWidget(revstatus)
     def refresh_revision_ui():
-        p=service.open_project(revpid.text().strip())
-        if not p: return
-        revisions=p.get("_meta",{}).get("version")
-        rows=p.get("boq",[])
-        old=rows
         revout.setRowCount(0)
-        for i,x in enumerate(compare_rows(old,rows)):
-            revout.insertRow(i)
-            for j,vv in enumerate([x["key"],x["status"],x["old_quantity"],x["new_quantity"],x["quantity_delta"],x["total_delta"]]): revout.setItem(i,j,QTableWidgetItem(str(vv)))
+        try:
+            from app.verified_search_navigation import stored_revision_history
+            result=stored_revision_history(service,revpid.text().strip())
+            for i,row in enumerate(result['rows']):
+                revout.insertRow(i)
+                values=[row['id']+' ['+row['unit']+']',row['status'],row['old_quantity'],
+                        row['new_quantity'],row['quantity_delta'],row['total_delta']]
+                for j,value in enumerate(values):revout.setItem(i,j,QTableWidgetItem(value))
+            revstatus.setText('مقایسه نسخه '+str(result['old_version'])+' با '+str(result['new_version'])+'؛ فقط‌خواندنی')
+        except Exception as exc:
+            revout.setRowCount(0)
+            revstatus.setText('نمایش تاریخچه مجاز نشد: '+str(exc))
     revbtn.clicked.connect(refresh_revision_ui); tools.addTab(revui,"تاریخچه تغییرات")
 
     # Report designer controls are connected to the existing report export path.
@@ -1208,8 +1204,8 @@ def main()->int:
             add_command("✓ کنترل کیفیت", lambda: pages.setCurrentIndex(idx_quality))
             add_command("📎 اسناد", lambda: pages.setCurrentIndex(idx_docs))
         elif index == idx_ai:
-            if current_edition != "light": add_command("🤖 بازبینی پروژه", review, True)
-            if current_edition in ("pro","enterprise","unified"): add_command("🖼️ متره هوشمند", run_ai_image)
+            add_command("🤖 بازبینی پروژه", review, True)
+            add_command("🖼️ متره هوشمند", run_ai_image)
         elif index == idx_docs:
             add_command("📎 افزودن سند", add_doc, True)
             add_command("🗺 نقشه‌ها", lambda: pages.setCurrentIndex(idx_drawing))
@@ -1258,6 +1254,15 @@ def main()->int:
     from app.workspace_docks import WorkspaceDockController
     workspace_docks=WorkspaceDockController(
         w,desktop_preferences.settings,service,lambda:pid.text().strip())
+    def clear_workspace_report():
+        rpid.setText(pid.text().strip());rsummary.clear();rout.clear()
+    def clear_workspace_revision():
+        revpid.setText(pid.text().strip());revout.setRowCount(0)
+        revstatus.setText('پروژه یا نسخه تغییر کرد؛ تاریخچه را دوباره بخوانید.')
+    workspace_docks.register_panel('report',pages.widget(idx_reports),pages,idx_reports,'گزارش',invalidate=clear_workspace_report)
+    workspace_docks.register_panel('revision',revui,tools,tools.indexOf(revui),'تاریخچه تغییرات',invalidate=clear_workspace_revision)
+    preset_pages={'manual':idx_quick,'drawing':idx_drawing,'financial':idx_boq,'report':idx_reports}
+    workspace_docks.configure_presets(lambda mode:pages.setCurrentIndex(preset_pages[mode]))
     presentation_row.addWidget(workspace_docks.toggle_button)
     presentation_row.addWidget(workspace_docks.boq_toggle)
     pid.textChanged.connect(lambda *_:workspace_docks.restore())

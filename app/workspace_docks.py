@@ -4,7 +4,7 @@ Presentation state is saved only in QSettings, never in SQLite or BOQ.
 """
 from PySide6.QtCore import Qt,QByteArray,QTimer
 from PySide6.QtWidgets import (
-    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QScrollArea
+    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QScrollArea,QComboBox,QTabWidget
 )
 
 
@@ -16,6 +16,10 @@ class WorkspaceDockController:
         self.project_provider=project_provider
         self.views={}
         self.view_docks={}
+        self.panels={}
+        self._panel_invalidators={}
+        self._panel_context=None
+        self._preset_navigate=None
         self._view_timer=QTimer(window)
         self._view_timer.setInterval(250)
         self._view_timer.timeout.connect(self.validate_views)
@@ -35,6 +39,13 @@ class WorkspaceDockController:
         self.tree=QTreeWidget();self.tree.setObjectName("E5ProjectTree")
         self.tree.setHeaderLabels(["طبقه / عضو","نوع / شناسه"])
         layout.addWidget(self.tree,1)
+        preset_row=QHBoxLayout();layout.addLayout(preset_row)
+        self.preset=QComboBox();self.preset.setObjectName('E5WorkspacePreset')
+        for key,label in [('manual','متره دستی'),('drawing','نقشه'),('financial','کنترل مالی'),('report','گزارش')]:
+            self.preset.addItem(label,key)
+        self.preset_apply=QPushButton('اعمال چینش');self.preset_apply.setObjectName('E5ApplyPreset')
+        preset_row.addWidget(self.preset);preset_row.addWidget(self.preset_apply)
+        self.preset_apply.clicked.connect(lambda:self.apply_preset(self.preset.currentData()))
         row=QHBoxLayout();layout.addLayout(row)
         self.refresh_button=QPushButton("بازخوانی پروژه")
         self.save_button=QPushButton("ذخیره چینش")
@@ -71,6 +82,57 @@ class WorkspaceDockController:
         self.boq_toggle=QPushButton("نمایش / پنهان‌کردن جدول BOQ")
         self.boq_toggle.setObjectName("E5BoqToggle")
         self.boq_toggle.clicked.connect(self.toggle_boq)
+
+    def configure_presets(self, navigate):
+        self._preset_navigate=navigate
+
+    def apply_preset(self, mode):
+        if mode not in ('manual','drawing','financial','report'):
+            raise ValueError('چینش انتخاب‌شده معتبر نیست.')
+        try:
+            self._key()  # project/permission validation; no write or calculation
+            if self._preset_navigate is None:
+                raise ValueError('مسیر واقعی صفحه برای این چینش متصل نیست.')
+            self._preset_navigate(mode)
+            self.refresh()
+            self.dock.setVisible(mode in ('manual','drawing'))
+            self.boq_dock.setVisible(mode=='financial')
+            for kind,dock in self.view_docks.items():
+                dock.setVisible(mode=='drawing' and kind in self.views)
+            for kind,(dock,_,_) in self.panels.items():
+                dock.setVisible(mode=='report' and kind=='report')
+            self._clamp_floating()
+            self.status.setText('چینش تغییر کرد؛ داده، محاسبه و BOQ تغییر نکردند.')
+            return True
+        except Exception as exc:
+            self.status.setText('اعمال چینش مجاز نشد: '+str(exc))
+            return False
+
+    def register_panel(self, kind, panel, host, index, title, *, invalidate=None):
+        """Reparent one original report/revision widget; keep its tab slot stable."""
+        if kind not in ('report','revision') or kind in self.panels or host.widget(index) is not panel:
+            raise ValueError('پنل یا محل واقعی آن معتبر نیست.')
+        placeholder=QWidget();layout=QVBoxLayout(placeholder)
+        layout.addWidget(QLabel(title+' در پنل قابل جابه‌جایی باز می‌شود.'))
+        show=QPushButton('نمایش '+title);layout.addWidget(show)
+        dock=QDockWidget(title,self.window);dock.setObjectName('P6E5OriginalPanel'+kind)
+        dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        if isinstance(host,QTabWidget):
+            host.removeTab(index);host.insertTab(index,placeholder,title)
+        else:
+            host.removeWidget(panel);host.insertWidget(index,placeholder)
+        scroll=QScrollArea(dock);scroll.setWidgetResizable(True);scroll.setWidget(panel)
+        dock.setWidget(scroll)
+        self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock);dock.hide()
+        self.panels[kind]=(dock,panel,placeholder)
+        self._panel_invalidators[kind]=invalidate
+        self._panel_context=self._current_panel_context()
+        def reveal():
+            dock.show();dock.raise_();self._clamp_floating()
+        show.clicked.connect(reveal)
+        host.currentChanged.connect(lambda _index:reveal() if host.currentWidget() is placeholder else None)
+        self.window.menuBar().addAction(dock.toggleViewAction())
+        return dock
 
     def attach_view(self, kind, view, project_id):
         """Embed the existing viewer instance; docking never reloads its scene."""
@@ -116,7 +178,22 @@ class WorkspaceDockController:
         view.deleteLater()
         if body is not None:body.deleteLater()
 
+    def _current_panel_context(self):
+        pid=self.project_id()
+        try:
+            return (pid,self.service.store.current_digest(pid) if pid else None)
+        except Exception:
+            return (pid,None)
+
     def validate_views(self):
+        if self.panels:
+            context=self._current_panel_context()
+            if context!=self._panel_context:
+                self._panel_context=context
+                for kind,(dock,_,_) in self.panels.items():
+                    dock.hide()
+                    invalidate=self._panel_invalidators[kind]
+                    if invalidate is not None:invalidate()
         for kind,(_,pid,digest) in list(self.views.items()):
             try:
                 valid=(pid==self.project_id() and
@@ -246,7 +323,7 @@ class WorkspaceDockController:
         return False
 
     def _clamp_floating(self):
-        for dock in (self.dock,self.boq_dock,*self.view_docks.values()):
+        for dock in (self.dock,self.boq_dock,*self.view_docks.values(),*(v[0] for v in self.panels.values())):
             if not dock.isFloating():continue
             screen=dock.screen() or self.window.screen()
             if screen is None:continue
@@ -283,9 +360,14 @@ class WorkspaceDockController:
         self.dock.hide()
         self.boq_dock.hide()
         for dock in self.view_docks.values():dock.hide()
+        for dock,_,_ in self.panels.values():dock.hide()
         return False
 
     def reset(self):
+        for dock,_,_ in self.panels.values():
+            dock.setFloating(False)
+            self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock)
+            dock.hide()
         for dock in self.view_docks.values():
             dock.setFloating(False)
             self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock)

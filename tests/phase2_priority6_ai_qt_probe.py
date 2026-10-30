@@ -23,19 +23,14 @@ def drive():
   assert selected
   stack,i,page,button=selected;stack.setCurrentIndex(i);app.processEvents()
   edition=os.environ['STRUCTURALPRO_EDITION']
-  if edition=='light':
-   assert not button.isEnabled()
-   outputs=page.findChildren(QtWidgets.QTextEdit)
-   assert outputs and outputs[0].isVisible() and 'فاقد' in outputs[0].toPlainText()
-  else:
-   page.findChildren(QtWidgets.QLineEdit)[0].setText('P')
-   QTest.mouseClick(button,Qt.LeftButton);app.processEvents()
-   output=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText();assert 'متره' in output
-   assert 'ایراد داده‌ای پیدا نشد.' not in output
-   receipt['output']=output
+  page.findChildren(QtWidgets.QLineEdit)[0].setText('P')
+  QTest.mouseClick(button,Qt.LeftButton);app.processEvents()
+  output=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText();assert 'متره' in output
+  assert 'ایراد داده‌ای پیدا نشد.' not in output
+  receipt['output']=output
   w.grab().save(str(root/'ai-native.png'))
   check=StructuralProApp(root/'.structuralpro');assert check.store.current_digest('P')==before and check.open_project('P')['boq']==[];check.store.close()
-  receipt.update(status='PASS',edition=edition,qt_click=edition!='light',disabled_checked=edition=='light',boq_unchanged=True)
+  receipt.update(status='PASS',edition=edition,qt_click=True,disabled_checked=False,boq_unchanged=True)
  except Exception:receipt.update(status='FAIL',traceback=traceback.format_exc())
  finally:
   (root/'receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2))

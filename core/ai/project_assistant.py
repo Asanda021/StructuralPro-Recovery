@@ -3,7 +3,7 @@ from __future__ import annotations
 from core.ai.local_engine import LocalAIEngine
 from core.ai.takeoff_assistant import LocalTakeoffAssistant
 class ProjectAssistant:
-    def __init__(self): self.engine=LocalAIEngine(); self.takeoff=LocalTakeoffAssistant()
+    def __init__(self): self.engine=LocalAIEngine(edition="unified"); self.takeoff=LocalTakeoffAssistant()
     def review(self,project:dict)->dict:
         response=self.engine.inspect_project(project)
         rows=[{"quantity":q.get("amount"),"unit":q.get("unit"),"price_code":q.get("price_code")}

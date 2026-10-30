@@ -27,29 +27,26 @@ def drive():
   run=page.findChild(QtWidgets.QPushButton,'LocalAIRun')
   discard=page.findChild(QtWidgets.QPushButton,'LocalAIDiscard')
   assert question is not None and run is not None and discard is not None
-  if edition=='light':
-   assert not run.isEnabled()
-  else:
-   question.setText('State why verified source documents and human review are necessary. No numerical examples.')
-   QTest.mouseClick(run,Qt.LeftButton);app.processEvents()
-   text=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
-   if os.environ.get('STRUCTURALPRO_REAL_AI_PROBE'):
-    assert 'local-gguf' in text
-    receipt['model_output']=text
-   else: assert 'موجود نیست' in text
-   if os.environ.get('STRUCTURALPRO_REAL_AI_PROBE') and edition in ('pro','enterprise'):
-    path=page.findChildren(QtWidgets.QLineEdit)[-1]
-    path.setText(os.environ['STRUCTURALPRO_REAL_AI_IMAGE'])
-    image_run=next(b for b in page.findChildren(QtWidgets.QPushButton) if b.text()=='تحلیل تصویر')
-    QTest.mouseClick(image_run,Qt.LeftButton);app.processEvents()
-    image_text=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
-    assert 'local-gguf-vision' in image_text
-    receipt['vision_output']=image_text
-   QTest.mouseClick(discard,Qt.LeftButton);app.processEvents()
-   assert 'رد شد' in page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
+  question.setText('State why verified source documents and human review are necessary. No numerical examples.')
+  QTest.mouseClick(run,Qt.LeftButton);app.processEvents()
+  text=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
+  if os.environ.get('STRUCTURALPRO_REAL_AI_PROBE'):
+   assert 'local-gguf' in text
+   receipt['model_output']=text
+  else: assert 'موجود نیست' in text
+  if os.environ.get('STRUCTURALPRO_REAL_AI_PROBE'):
+   path=page.findChildren(QtWidgets.QLineEdit)[-1]
+   path.setText(os.environ['STRUCTURALPRO_REAL_AI_IMAGE'])
+   image_run=next(b for b in page.findChildren(QtWidgets.QPushButton) if b.text()=='تحلیل تصویر')
+   QTest.mouseClick(image_run,Qt.LeftButton);app.processEvents()
+   image_text=page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
+   assert 'local-gguf-vision' in image_text
+   receipt['vision_output']=image_text
+  QTest.mouseClick(discard,Qt.LeftButton);app.processEvents()
+  assert 'رد شد' in page.findChildren(QtWidgets.QTextEdit)[0].toPlainText()
   w.grab().save(str(root/'ai-native.png'))
   check=StructuralProApp(root/'.structuralpro');assert check.store.current_digest('P')==before and check.open_project('P')['boq']==[];check.store.close()
-  receipt.update(status='PASS',edition=edition,qt_click=edition!='light',disabled_checked=edition=='light',boq_unchanged=True)
+  receipt.update(status='PASS',edition=edition,qt_click=True,disabled_checked=False,boq_unchanged=True)
  except Exception:receipt.update(status='FAIL',traceback=traceback.format_exc())
  finally:
   (root/'receipt.json').write_text(json.dumps(receipt,ensure_ascii=False,indent=2))

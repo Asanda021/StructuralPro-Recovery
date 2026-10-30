@@ -237,3 +237,61 @@ def prepare_verified_drawing_session_view(service, project_id, session_id, paren
     except Exception:
         view.close()
         raise
+
+
+def stored_revision_history(service, project_id):
+    """Read-only UI handoff from two actual SQLite snapshots; never an estimate."""
+    from decimal import Decimal, InvalidOperation, localcontext
+    try:
+        digest=service.store.current_digest(project_id)
+    except KeyError as exc:
+        raise ValueError('پروژه معتبر در دسترس نیست.') from exc
+    project=service.open_project(project_id)
+    if not isinstance(project,dict):
+        raise ValueError('پروژه معتبر در دسترس نیست.')
+    history=service.store.revisions(project_id)
+    if len(history)<2:
+        raise ValueError('برای مقایسه حداقل دو نسخه ذخیره‌شده لازم است.')
+    old,new=history[-2:]
+    if new['version']!=project.get('_meta',{}).get('version'):
+        raise ValueError('تاریخچه و نسخه جاری هماهنگ نیستند.')
+    def index(snapshot):
+        records=snapshot['payload'].get('boq',[])
+        if not isinstance(records,list):raise ValueError('فهرست BOQ نسخه معتبر نیست.')
+        result={}
+        for row in records:
+            if not isinstance(row,dict):raise ValueError('ردیف نسخه معتبر نیست.')
+            key=next((str(row[k]).strip() for k in ('id','row_id','price_code','code') if row.get(k) not in (None,'')), '')
+            if not key or key in result:raise ValueError('هویت ردیف نسخه مفقود یا مبهم است.')
+            result[key]=row
+        return result
+    def number(value):
+        if value is None:return None
+        text=str(value)
+        if len(text)>4096:raise ValueError('عدد برای نمایش تاریخچه بیش از حد طولانی است.')
+        try:result=Decimal(text)
+        except InvalidOperation as exc:raise ValueError('عدد نسخه معتبر نیست.') from exc
+        if not result.is_finite() or abs(result.as_tuple().exponent)>1000 or abs(result.adjusted())>1000:
+            raise ValueError('عدد نسخه برای نمایش معتبر نیست.')
+        return result
+    def delta(a,b):
+        if a is None or b is None:return 'نامشخص'
+        with localcontext() as ctx:
+            ctx.prec=4096
+            return format(b-a,'f')
+    a,b=index(old),index(new);rows=[]
+    for key in dict.fromkeys([*a,*b]):
+        previous,current=a.get(key),b.get(key)
+        pq=number((previous or {}).get('quantity'));nq=number((current or {}).get('quantity'))
+        pt=number((previous or {}).get('total'));nt=number((current or {}).get('total'))
+        unit=(current or previous or {}).get('unit')
+        compatible=previous is not None and current is not None and bool(unit) and previous.get('unit')==current.get('unit')
+        rows.append({'id':key,'unit':str(unit or 'نامشخص'),
+            'status':'افزوده' if previous is None else 'حذف‌شده' if current is None else 'بدون تغییر' if previous==current else 'تغییریافته',
+            'old_quantity':format(pq,'f') if pq is not None else 'نامشخص',
+            'new_quantity':format(nq,'f') if nq is not None else 'نامشخص',
+            'quantity_delta':delta(pq,nq) if compatible else 'واحد ناسازگار',
+            'total_delta':delta(pt,nt)})
+    if service.store.current_digest(project_id)!=digest:
+        raise RuntimeError('نسخه پروژه هنگام خواندن تاریخچه تغییر کرد.')
+    return {'old_version':old['version'],'new_version':new['version'],'rows':rows,'project_digest':digest}
