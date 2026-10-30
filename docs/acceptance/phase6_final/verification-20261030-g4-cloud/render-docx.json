@@ -1,0 +1,20 @@
+{
+  "start_utc": "2026-10-30T08:36:54.129754+00:00",
+  "end_utc": "2026-10-30T08:36:57.437117+00:00",
+  "elapsed_seconds": 3.2970000000000255,
+  "exit_code": 0,
+  "timeout": false,
+  "timeout_seconds": 90,
+  "peak_sampled_process_tree_rss_bytes": 191533056,
+  "maximum_sampled_tree_cpu_seconds": 1.796875,
+  "memory_measurement": "100ms process-tree samples, not leak proof",
+  "command": [
+    "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+    "--headless",
+    "--convert-to",
+    "pdf",
+    "--outdir",
+    "D:\\a\\StructuralPro-Recovery\\StructuralPro-Recovery\\g4-evidence\\libreoffice-docx",
+    "D:\\a\\StructuralPro-Recovery\\StructuralPro-Recovery\\g4-evidence\\test-temp\\test_real_preview_save_reopen_0\\persian_quantities.docx"
+  ]
+}

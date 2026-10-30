@@ -1,0 +1,35 @@
+{
+  "artifact": "p6-broad-current-windows-1",
+  "source_sha": "683e2ad428d62e4980daa702438060621c845150",
+  "files": [
+    {
+      "name": "phase6-broad-current-windows.json",
+      "sha256": "134687a7d61898c7e071a3cacd3649a017a603ab9fc41a8f3de390cea77a37e6",
+      "bytes": 470893,
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "junit_report_written": true,
+      "overall_green": true,
+      "current_test_modules_total": 717,
+      "current_test_modules_in_shard": 239
+    },
+    {
+      "name": "phase6-broad-current-windows.log",
+      "sha256": "4c47eda49ce7a75ec872be1beea4ae72325648ea6bbd0bad110f417acbee71ec",
+      "bytes": 330218,
+      "tail": "issued_financial_integrity.py::test_previous_payment_cannot_be_unknown_or_nonfinite[inf] PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_previous_payment_cannot_be_unknown_or_nonfinite[-1] PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_statement_preview_requires_explicit_period_work PASSED [ 99%]\r\ntests/test_work_issued_financial_integrity.py::test_estimate_report_does_not_invent_unspecified_period_work PASSED [100%]\r\n\r\n- generated xml file: C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\structuralpro_qa_result_8719yv0j\\result.xml -\r\n=========== 2793 passed, 1 skipped, 3 warnings in 636.23s (0:10:36) ===========\r\n"
+    },
+    {
+      "name": "phase6-broad-current-windows.xml",
+      "sha256": "863e8b527ff71bb6e96670bab0da9c441ec788e56126ddcf9ceae9866750c2d1",
+      "bytes": 399633,
+      "tests": 2794,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 1,
+      "skip_reasons": [
+        "POSIX identity assertion"
+      ]
+    }
+  ]
+}

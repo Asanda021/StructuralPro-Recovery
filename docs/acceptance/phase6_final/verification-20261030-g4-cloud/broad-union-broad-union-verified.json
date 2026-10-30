@@ -1,0 +1,11 @@
+{
+  "verified": true,
+  "shards": 3,
+  "modules": 717,
+  "case_count": 8463,
+  "module_manifest_sha256": "b659af82c169aec6ca617cf98636dda447f84462a6088df344a105e807d5fbb0",
+  "windows_passed": 8456,
+  "windows_skipped": 7,
+  "linux_passed": 8458,
+  "linux_skipped": 5
+}

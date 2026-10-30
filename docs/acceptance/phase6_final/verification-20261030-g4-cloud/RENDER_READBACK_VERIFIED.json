@@ -1,0 +1,12 @@
+{
+  "docx": {
+    "all_120_leading_zero_codes_present_in_rendered_pdf": true,
+    "summary_726_present": true,
+    "visual_review": "first and last rendered pages inspected; not all pages or owner approval"
+  },
+  "xlsx": {
+    "all_120_leading_zero_codes_present_in_rendered_pdf": true,
+    "summary_726_present": true,
+    "visual_review": "first and last rendered pages inspected; not all pages or owner approval"
+  }
+}

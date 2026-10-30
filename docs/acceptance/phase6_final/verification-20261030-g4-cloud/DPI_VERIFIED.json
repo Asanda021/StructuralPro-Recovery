@@ -1,0 +1,62 @@
+[
+  {
+    "scale_percent": 100,
+    "run": 40933689980,
+    "artifact": 12924191585,
+    "counts": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "11",
+      "time": "16.782",
+      "timestamp": "2026-10-29T18:45:58.863242+00:00",
+      "hostname": "runnervmnjgfq"
+    }
+  },
+  {
+    "scale_percent": 125,
+    "run": 41025947103,
+    "artifact": 12964320206,
+    "counts": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "11",
+      "time": "16.038",
+      "timestamp": "2026-10-30T08:23:18.448620+00:00",
+      "hostname": "runnervmnjgfq"
+    }
+  },
+  {
+    "scale_percent": 150,
+    "run": 40933689980,
+    "artifact": 12923133912,
+    "counts": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "11",
+      "time": "16.542",
+      "timestamp": "2026-10-29T18:45:57.729089+00:00",
+      "hostname": "runnervmnjgfq"
+    }
+  },
+  {
+    "scale_percent": 200,
+    "run": 40933689980,
+    "artifact": 12924785017,
+    "counts": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "11",
+      "time": "18.008",
+      "timestamp": "2026-10-29T18:46:02.684939+00:00",
+      "hostname": "runnervmnjgfq"
+    }
+  }
+]

@@ -1,0 +1,38 @@
+{
+  "artifact": "p6-broad-current-linux",
+  "source_sha": "683e2ad428d62e4980daa702438060621c845150",
+  "files": [
+    {
+      "name": "phase6-broad-current.json",
+      "sha256": "c7a1c4fd04776e1c1b11c8511d2372ad193de729348daa4ea576b02eca9cd751",
+      "bytes": 1379767,
+      "pytest_exit_code": 0,
+      "timed_out": false,
+      "junit_report_written": true,
+      "overall_green": true,
+      "current_test_modules_total": 717,
+      "current_test_modules_in_shard": 717
+    },
+    {
+      "name": "phase6-broad-current.log",
+      "sha256": "bd6d530e3ab340df575d701cbdce4feb48c8743893e14e9716432624b966dff5",
+      "bytes": 981590,
+      "tail": "67890123456789012345678901e+120] PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_scientific_number_is_measured_as_an_indivisible_number[-1.234567890123456789e-50] PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_summary_number_too_wide_is_rejected PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_unique_later_identity_and_generated_identity_do_not_change_source PASSED [ 99%]\ntests/test_work_pdf_precision.py::test_real_persian_all_pages_and_export_precision PASSED [100%]\n\n----- generated xml file: /tmp/structuralpro_qa_result_2u_jv2ym/result.xml -----\n=========== 8458 passed, 5 skipped, 3 warnings in 838.14s (0:13:58) ============\n"
+    },
+    {
+      "name": "phase6-broad-current.xml",
+      "sha256": "141f358ce9936f16fb79b2c7861329067b33edf115007c2723f7aaf888508d1f",
+      "bytes": 1202863,
+      "tests": 8463,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 5,
+      "skip_reasons": [
+        "Windows NTFS file-sharing semantics",
+        "Windows Native only",
+        "native PowerShell required",
+        "requires native Windows"
+      ]
+    }
+  ]
+}

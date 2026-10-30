@@ -1,0 +1,18 @@
+{
+  "platform": "win32",
+  "qt_preview_save_reopen": true,
+  "actual_validation_warning": [
+    "طبقه یا تراز را مشخص کن."
+  ],
+  "duplicate_save_prevented": true,
+  "incomplete_geometry_not_persisted": true,
+  "sqlite_integrity": "ok",
+  "export_rows": 120,
+  "independent_quantity_sum": 726.0,
+  "pdf_pages_rendered": 6,
+  "xlsx_numeric_sum": 726.0,
+  "docx_rtl": true,
+  "windows_office_visual_acceptance": "PENDING",
+  "windows_acceptance": "NOT_CLAIMED",
+  "owner_visual_review": "PENDING"
+}

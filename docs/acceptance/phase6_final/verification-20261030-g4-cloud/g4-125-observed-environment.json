@@ -1,0 +1,26 @@
+{
+  "PhysicalOwnerHardwareTested": false,
+  "OS": {
+    "Caption": "Microsoft Windows Server 2022 Datacenter",
+    "Version": "10.0.20348",
+    "BuildNumber": "20348"
+  },
+  "SourceSHA": "97b7e8a7939e1bff47bf627d50c6d7a317126fb0",
+  "CPU": {
+    "Name": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "NumberOfCores": 2,
+    "NumberOfLogicalProcessors": 4
+  },
+  "SleepResumeTested": false,
+  "QtLogicalScale": "1.25",
+  "Session": null,
+  "GPU": [
+    {
+      "Name": "Microsoft Hyper-V Video",
+      "DriverVersion": "10.0.20348.1",
+      "CurrentHorizontalResolution": 1024,
+      "CurrentVerticalResolution": 768
+    }
+  ],
+  "PhysicalMonitorDpiChanged": false
+}

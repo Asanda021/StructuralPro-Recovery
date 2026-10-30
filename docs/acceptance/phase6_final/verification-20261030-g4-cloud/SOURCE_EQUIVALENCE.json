@@ -1,0 +1,18 @@
+{
+  "683e2ad428d62e4980daa702438060621c845150": {
+    "app": "7b091787b6eb5ece1405c035dfd681b1ca1cba62",
+    "core": "4838ffbf98c7e08fa891097b2d5d4331716222ce",
+    "tests": "38542d91ee71169b523b3fa6093df82f71929ab5"
+  },
+  "97b7e8a7939e1bff47bf627d50c6d7a317126fb0": {
+    "app": "7b091787b6eb5ece1405c035dfd681b1ca1cba62",
+    "core": "4838ffbf98c7e08fa891097b2d5d4331716222ce",
+    "tests": "38542d91ee71169b523b3fa6093df82f71929ab5"
+  },
+  "shell_files_identical_since_native_dpi_source": true,
+  "2ffd9b144613695c2093cce4575021835a6d738f": {
+    "app": "7b091787b6eb5ece1405c035dfd681b1ca1cba62",
+    "core": "4838ffbf98c7e08fa891097b2d5d4331716222ce",
+    "tests": "38542d91ee71169b523b3fa6093df82f71929ab5"
+  }
+}

@@ -1,12 +1,12 @@
 {
   "schema": "structuralpro.phase6.closure.v1",
-  "decision_date": "2026-10-29",
+  "decision_date": "2026-10-30",
   "repository": "Asanda021/StructuralPro-Recovery",
   "pr_number": 34,
   "branch": "feature/phase6-p5-workspace-e3-e6-20261027",
   "audited_product_head": "683e2ad428d62e4980daa702438060621c845150",
   "latest_targeted_acceptance_source_sha": "683e2ad428d62e4980daa702438060621c845150",
-  "source_difference_since_acceptance": "Full active suite verified at exact 683e2ad428d62e4980daa702438060621c845150: 717 active modules, 8463 unique JUnit tests per OS, five successful jobs; subsequent commits affect only CI diagnostic workflow and acceptance documentation, not original app/core/tests. Full original native source G2 target checks succeeded on latest product and existing Windows owner UAT remains required.",
+  "source_difference_since_acceptance": "Product app/core/tests trees identical to broad source 683e2ad428d62e4980daa702438060621c845150. Subsequent differences are acceptance docs, diagnostic workflows and the G4 evidence harness; no product correction or original-test edits.",
   "eight_phase_roadmap_unchanged": true,
   "official_project_progress_percent_unchanged": 85,
   "accepted_scope": [
@@ -682,9 +682,9 @@
     {
       "id": "G4",
       "name": "physical_windows_owner_uat",
-      "status": "OWNER_PHYSICAL_UAT_NOT_EXECUTED",
-      "reason": "Multimonitor mixed-DPI, disconnect/reconnect, sleep/resume, GPU/driver, usability and owner's sign-off not executed.",
-      "reference": "docs/acceptance/phase6_final/verification-20261029-final-closeout/WINDOWS_OWNER_UAT.fa.md",
+      "status": "G4_AUTOMATED_SCOPE_ACCEPTED_OWNER_PHYSICAL_UAT_PENDING",
+      "reason": "Native Windows automated executable scope accepted with original JUnit at 100/125/150/200 logical Qt scale plus 43 additional source GUI, export readback, worker cancellation, revision, SQLite and recovery tests. Physical GPU, multimonitor, real monitor DPI, disconnect/reconnect and sleep/resume not tested; owner signoff still absent.",
+      "reference": "docs/acceptance/phase6_final/verification-20261030-g4-cloud/REPORT.fa.md",
       "automated_visual_font_issue": "Initial shell screenshot was offscreen because a child-specific backend variable was absent. Native windows glyph probes at 100/150/200 show Tahoma with zero missing glyphs and readable screenshots. CI child backend now corrected; physical UAT still not executed.",
       "native_backend_correction_run": 40933689980,
       "native_backend_results": {
@@ -698,7 +698,71 @@
         "errors": 0,
         "skipped": 0,
         "physical_hardware_uat": false
-      }
+      },
+      "automated_scope": {
+        "status": "PASS_REAL_WINDOWS_AUTOMATED",
+        "run": 41027220769,
+        "tested_source_sha": "2ffd9b144613695c2093cce4575021835a6d738f",
+        "original_junit": {
+          "passed": 43,
+          "failed": 0,
+          "errors": 0,
+          "skipped": 0,
+          "unique_cases": 43
+        },
+        "exit_code": 0,
+        "timed_out": false,
+        "elapsed_process_seconds": 23.20300000000003,
+        "artifact_id": 12963918207,
+        "artifact_zip_sha256": "22241408c0a5c1bd8eda7754acb5814ee04b03e6e5873abe94c835272464edf6",
+        "libreoffice_version": "26.2.6",
+        "docx_rendered_pages": 9,
+        "xlsx_rendered_pages": 7,
+        "original_pdf_rendered_pages": 6,
+        "rendered_docx_xlsx_all_120_codes_and_summary_verified": true,
+        "physical_uat": false,
+        "office_desktop_approval": false,
+        "memory_leak_absence_proven": false
+      },
+      "logical_dpi_125": {
+        "run": 41025947103,
+        "tested_source_sha": "97b7e8a7939e1bff47bf627d50c6d7a317126fb0",
+        "passed": 11,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "artifact_id": 12964320206,
+        "zip_sha256": "8090de6afb3203c99e01a732e7cd1fae88f47f83d4c059d31c268d9944178ffa",
+        "actual_os_dpi_changed": false,
+        "observed_video": "Microsoft Hyper-V Video",
+        "observed_resolution": [
+          1024,
+          768
+        ],
+        "session_name": null
+      },
+      "physical_scope": {
+        "status": "NOT_TESTED_PHYSICAL_HARDWARE",
+        "gpu": false,
+        "mixed_dpi_monitors": false,
+        "monitor_reconnect": false,
+        "sleep_resume": false,
+        "owner_approval": "REQUIRES_OWNER_APPROVAL"
+      },
+      "environment_limits": [
+        {
+          "scope": "actual approved DWG file and configured native converter",
+          "status": "BLOCKED_ENVIRONMENT",
+          "acceptance_claimed": false,
+          "new_phase6_gate": false
+        },
+        {
+          "scope": "Microsoft Office desktop and physical print",
+          "status": "BLOCKED_ENVIRONMENT",
+          "phase6_new_blocker": false,
+          "existing_final_acceptance_phase": 8
+        }
+      ]
     },
     {
       "id": "G5",
@@ -716,9 +780,9 @@
     {
       "id": "broad_regression",
       "status": "ACCEPTED_EXACT_PRODUCT_SOURCE",
-      "note": "8459 unique cases per OS, 716 modules, no duplicate/missing/extra. JUnit counts and original artifacts independently verified. Workflow-only font diagnostic commits follow; product app/core/tests unchanged.",
-      "evidence_run": 40929200449,
-      "tested_commit": "efaab3c5dc335012ef6b8fec89a041247b509207"
+      "note": "8463 unique cases per OS, 717 modules, exact three Windows shard union verified. Linux 8458 pass/5 skip; Windows 8456 pass/7 skip; no failure/error/timeout. app/core/tests trees unchanged on G4 execution source.",
+      "evidence_run": 40949336798,
+      "tested_commit": "683e2ad428d62e4980daa702438060621c845150"
     },
     {
       "id": "office_desktop_physical_print",
@@ -739,7 +803,7 @@
     }
   ],
   "human_owner_signoff": "NOT_PROVIDED",
-  "last_decision": "P6_G2_VISUAL_SOURCE_SCOPE_AUTOMATED_ACCEPTED_AND_BROAD_FINAL_8463_TESTS_BOTH_OS;_RENOVATION_ENGINEERING_NOT_AUTHORIZED;_G4_OWNER_HARDWARE_UAT_NOT_EXECUTED;_PHASE6_PARTIAL_NO_GO",
+  "last_decision": "G4_AUTOMATED_SCOPE_ACCEPTED_PHYSICAL_OWNER_UAT_PENDING;_PHASE6_PARTIAL_NO_GO",
   "phase6_status": "PARTIAL",
   "allow_phase7_start": false,
   "allow_phase6_close": false,
@@ -748,10 +812,10 @@
   "allow_exe": false,
   "allow_main_change": false,
   "require_new_test_run": false,
-  "safety_note": "Evidence matrix only. No automated suite or product code was changed by this decision.",
-  "last_evidence_run": 40949336798,
-  "last_source_verified_commit": "683e2ad428d62e4980daa702438060621c845150",
-  "last_review_report": "docs/acceptance/phase6_final/verification-20261029-g2-ifcsite-renovation-native/REPORT.fa.md",
+  "safety_note": "G4 evidence harness and CI added; original app/core/tests unchanged. Automated acceptance is bounded; physical owner UAT, merge, main, binaries, release and phase7 remain unauthorized.",
+  "last_evidence_run": 41027220769,
+  "last_source_verified_commit": "2ffd9b144613695c2093cce4575021835a6d738f",
+  "last_review_report": "docs/acceptance/phase6_final/verification-20261030-g4-cloud/REPORT.fa.md",
   "ai_scope_correction": "USER_CONFIRMED_NONCOMMERCIAL_AI; manifest commercial_use false; do not add commercial AI procurement/license gate to phase 6.",
   "broad_current_regression": {
     "status": "ACCEPTED_ALL_ACTIVE_CURRENT_MODULES_LINUX_WINDOWS",
