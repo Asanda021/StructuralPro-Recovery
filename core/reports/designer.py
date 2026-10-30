@@ -2,6 +2,8 @@
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 
+from .decimal_values import exact_sum
+
 _FIELD_MAP = {"ردیف": "item_no", "کد": "price_code", "شرح": "description", "مقدار": "quantity", "واحد": "unit", "بهای واحد": "unit_price", "مبلغ": "total", "منبع": "source"}
 
 
@@ -47,15 +49,15 @@ class ReportLayout:
         out = []
         sentinel = object()
         current = sentinel
-        subtotal = Decimal("0")
+        subtotal_values = []
         for source in rows:
             r = self.visible(source)
             g = source.get(key, r.get(key, ""))
             if current is not sentinel and g != current:
-                out.append({key: f"جمع {current}", "مبلغ": subtotal})
+                out.append({key: f"جمع {current}", "مبلغ": exact_sum(subtotal_values)})
             if g != current:
-                current, subtotal = g, Decimal("0")
-            subtotal += _exact_total(r.get("مبلغ", r.get("total", "")))
+                current, subtotal_values = g, []
+            subtotal_values.append(_exact_total(r.get("مبلغ", r.get("total", ""))))
             out.append(r)
         if current is not sentinel:
             out.append({key: f"جمع {current}", "مبلغ": subtotal})
