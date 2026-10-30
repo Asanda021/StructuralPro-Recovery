@@ -343,7 +343,10 @@ def export_verified_2d_multifloor_bundle(
             import pymupdf
             from docx import Document
             from zipfile import ZipFile
-            with pymupdf.open(stage / "report.pdf") as pdf:
+            # MuPDF's failed filename constructor may retain a native handle in
+            # its traceback on Windows. Parse bytes so failure cannot lock the
+            # staging file and prevent atomic cleanup of a rejected package.
+            with pymupdf.open(stream=(stage / "report.pdf").read_bytes(), filetype="pdf") as pdf:
                 if sum(bool(p.get_images()) for p in pdf) != len(pages):
                     raise ValueError("تعداد نقشه‌های PDF با انتخاب تطبیق ندارد")
             with ZipFile(stage / "report.docx") as archive:
