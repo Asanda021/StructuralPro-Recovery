@@ -9,6 +9,7 @@ on:
       - tests/test_phase7_p2_source_backed_2d_overlay.py
       - tests/test_phase7_p2_persisted_boq_crosswalk.py
       - tests/test_phase7_p2_office_bundle.py
+      - tests/test_phase7_p2_five_storey_office_golden.py
       - .github/workflows/phase7-p2-source-backed-overlay.yml
   workflow_dispatch:
 permissions:
@@ -49,6 +50,7 @@ jobs:
           tests/test_phase7_p2_source_backed_2d_overlay.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p2_office_bundle.py
+          tests/test_phase7_p2_five_storey_office_golden.py
           tests/test_phase7_p1_exact_persian_reports.py
           tests/test_recovery_office_export_contract.py
           tests/test_phase2_advanced_geometry.py
