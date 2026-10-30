@@ -87,7 +87,9 @@ def test_original_3d_controls_wrap_while_source_and_no_qto_authority_remain(tmp_
         root = view.layout()
         top = root.itemAt(0).layout()
         assert isinstance(top, ResponsiveFlowLayout)
-        assert top.heightForWidth(480) > top.heightForWidth(1400)
+        # A 480px logical toolbar can already fit this particular Qt font.
+        # Use a genuinely constrained width to assert responsive wrapping.
+        assert top.heightForWidth(220) > top.heightForWidth(1400)
         assert view.provenance.wordWrap() is True
         assert view.batch_row.layout().__class__ is ResponsiveFlowLayout
         assert view.storey.currentData() is None
