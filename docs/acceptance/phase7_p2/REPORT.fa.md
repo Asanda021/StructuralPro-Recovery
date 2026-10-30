@@ -15,7 +15,7 @@
 ## نتیجه تست واقعی
 - [Linux/Windows native CI #41129143799](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41129143799) روی Commit اولیه `94924f28564ce3104bc1008fbd36a19c78ca4fb6`:
   - Linux: **۸۵ PASS، صفر FAIL/ERROR/SKIP** در آزمون‌های جدید + قراردادهای قدیمی برداشت، `1 FutureWarning` از وابستگی قدیمی.
-  - Windows: **در حال اجرا در لحظه این گزارش**. نتیجه تا راستی‌آزمایی Job و JUnit نه PASS است نه FAIL؛ `PENDING`.
+  - Windows Native: **۸۵ PASS، صفر FAIL/ERROR/SKIP**؛ یک FutureWarning شناخته‌شده وابستگی `fitz`. هر دو Job موفق، JUnit در Artifact نگهداری شد.
 - رگرسیون جامع فاز۷ اولویت۱ روی Commit `cf4a446d82e85bc48315d9d7f235b65053684e6f` و [Run #41127109963](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41127109963) هنوز در حال اجرا بود. هیچ پذیرفتن کامل اولویت۱ پیش از union ثبت نمی‌شود.
 
 ## تعهد باقیمانده در همان اولویت ۲
@@ -27,6 +27,6 @@
 ## وضعیت پروژه و چت
 - فازهای ۱ تا ۵: پذیرش فنی سابق محفوظ.
 - فاز ۶: تحویل فنی خودکار پذیرفته؛ G4 فیزیکی با نظر مالک به فاز ۸ موکول شده و PASS فیزیکی نیست.
-- فاز ۷: اولویت۱ با آزمون تخصصی ۶۰ PASS روی هر OS؛ رگرسیون جامع آن هنوز Pending. اولویت۲ `PARTIAL/IMPLEMENTED_BOUNDED`، Linux هدفمند موفق، Windows منتظر. اولویت‌های ۳ تا ۶ شروع نشده‌اند.
+- فاز ۷: اولویت۱ با آزمون تخصصی ۶۰ PASS روی هر OS؛ رگرسیون جامع آن هنوز Pending. اولویت۲ `PARTIAL/IMPLEMENTED_BOUNDED`، آزمون هدفمند Windows/Linux هرکدام ۸۵ PASS و صفر شکست. اولویت‌های ۳ تا ۶ شروع نشده‌اند.
 - فاز ۸: آغاز نشده؛ تمام هشت فاز ثابت و درصد رسمی ۸۵٪ بدون تغییر.
 - PRهای #34/#35/#36 باز، Draft و بدون Merge. هیچ ForcePush/main/EXE/Installer/Release انجام نشده.
