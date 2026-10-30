@@ -151,3 +151,29 @@ def test_missing_selected_item_or_duplicate_selection_fails_closed(tmp_path):
                 session.to_dict(), project_id="P", revision="R1", page=1,
                 selected_takeoff_ids=selected,
             )
+
+
+def test_dense_labels_use_nonoverlapping_external_legend_without_geometry_change(tmp_path):
+    _, session, first = _case(tmp_path, member="LONG-MEMBER-00000001")
+    second = session.add_polygon([Point(x+1,y) for x,y in OUTER], page=1, source="second",
+                                 floor_id="L1", member_id="LONG-MEMBER-00000002",
+                                 quantity_owner="صفحه برداری مستند")
+    out = build_source_backed_2d_overlay(session.to_dict(), project_id="P", revision="R1", page=1,
+                                       selected_takeoff_ids=(first.id, second.id))
+    assert out["manifest"].get("label_mode") == "external_numbered_legend"
+    root = ET.fromstring(out["svg"])
+    texts = list(root.iter("{http://www.w3.org/2000/svg}text"))
+    assert len(texts) == 2
+    x,y,w,h = map(float, root.attrib["viewBox"].split())
+    last_bottom = y
+    for label in texts:
+        lx,ly,size = (float(label.attrib[k]) for k in ("x","y","font-size"))
+        assert lx > 151  # strictly outside all source polygons
+        assert ly-size >= last_bottom
+        assert lx + len(label.text)*size <= x+w
+        assert ly <= y+h
+        last_bottom = ly + size/3
+    paths = list(root.iter("{http://www.w3.org/2000/svg}path"))
+    assert len(paths) == 2
+    assert paths[0].attrib["d"].startswith("M 10 10 L 150 10")
+    assert paths[1].attrib["d"].startswith("M 11 10 L 151 10")

@@ -9,6 +9,7 @@ on:
       - tests/test_phase7_p2_source_backed_2d_overlay.py
       - tests/test_phase7_p2_persisted_boq_crosswalk.py
       - tests/test_phase7_p2_office_bundle.py
+      - tests/test_phase7_p2_multifloor_bundle.py
       - tests/test_phase7_p2_five_storey_office_golden.py
       - .github/workflows/phase7-p2-source-backed-overlay.yml
   workflow_dispatch:
@@ -31,6 +32,7 @@ jobs:
       PYTHONPATH: .
       PYTHONUTF8: '1'
       PYTHONFAULTHANDLER: '1'
+      STRUCTURALPRO_P7_GOLDEN_DIR: p7-p2-golden
     steps:
       - if: runner.os == 'Windows'
         run: git config --global core.autocrlf false
@@ -50,6 +52,7 @@ jobs:
           tests/test_phase7_p2_source_backed_2d_overlay.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p2_office_bundle.py
+          tests/test_phase7_p2_multifloor_bundle.py
           tests/test_phase7_p2_five_storey_office_golden.py
           tests/test_phase7_p1_exact_persian_reports.py
           tests/test_recovery_office_export_contract.py
@@ -61,6 +64,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p7-p2-source-svg-${{ matrix.os }}
-          path: p7-p2-source-backed.xml
+          path: |
+            p7-p2-source-backed.xml
+            p7-p2-golden/
           retention-days: 14
           if-no-files-found: warn

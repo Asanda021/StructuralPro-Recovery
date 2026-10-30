@@ -237,3 +237,148 @@ def export_verified_2d_office_bundle(
             raise FileExistsError("مسیر خروجی حین تهیه بسته ایجاد شده است")
         os.rename(stage, target)
     return {"destination": str(target), "manifest": file_manifest}
+
+
+def export_verified_2d_multifloor_bundle(
+    service, *, project_id: str, expected_project_version: int,
+    revision: str, selections: tuple[dict, ...], destination: str | Path,
+) -> dict:
+    """One read-only report over explicit, independently verified page selections.
+
+    Geometry/BOQ validation and all four exporters are the original engines.
+    Each map retains its session/page/revision identity. Repeated BOQ rows are
+    rejected across pages, never silently summed or attributed twice.
+    """
+    if not isinstance(selections, tuple) or not 1 <= len(selections) <= 100:
+        raise ValueError("انتخاب صریح یک تا صد صفحه مستند الزامی است")
+    required = {"session_id", "expected_session_revision", "page", "selected_takeoff_ids"}
+    selections = deepcopy(selections)
+    if any(not isinstance(s, dict) or set(s) != required for s in selections):
+        raise ValueError("مشخصات انتخاب صفحه نامعتبر است")
+    target = Path(destination)
+    if target.exists() or target.is_symlink():
+        raise FileExistsError("مسیر خروجی از قبل موجود است")
+    if any(p.is_symlink() for p in target.parents):
+        raise ValueError("مسیر نمادین خروجی پذیرفته نیست")
+    digest = service.store.current_digest(project_id)
+    snapshot = service.open_project(project_id)
+    if not isinstance(snapshot, dict) or snapshot.get("id") != project_id:
+        raise ValueError("پروژه معتبر موجود نیست")
+    if service.store.current_digest(project_id) != digest:
+        raise RuntimeError("پروژه هنگام تهیه snapshot تغییر کرد")
+    args = [dict(s, expected_project_version=expected_project_version, revision=revision) for s in selections]
+    sources = [link_source_backed_2d_overlay_to_boq(snapshot, **s) for s in args]
+    seen = set()
+    rows = []
+    for source in sources:
+        links = source["manifest"]["links"]
+        for link in links:
+            if link["boq_row_id"] in seen:
+                raise ValueError("ردیف BOQ در صفحات منتخب تکراری است")
+            seen.add(link["boq_row_id"])
+        rows.extend(_table_rows(snapshot, links))
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="structuralpro_p7_multi_", dir=target.parent) as tmp:
+        stage = Path(tmp) / "package"
+        stage.mkdir()
+        figures, pages, items = [], [], []
+        for n, source in enumerate(sources, 1):
+            svg, png = stage / f"map_{n:03}.svg", stage / f"map_{n:03}.png"
+            svg.write_text(source["svg"], encoding="utf-8")
+            png.write_bytes(_svg_png(source["svg"]))
+            page = deepcopy(source["manifest"])
+            page.update(svg=svg.name, png=png.name, report_page_id=f"map-{n:03}")
+            pages.append(page)
+            refs = " | ".join(
+                f"{l['floor_id']} / {l['member_id']} / {l['boq_row_id']} / "
+                + ("، ".join(l["opening_refs"]) or "بدون بازشوی ثبت‌شده")
+                for l in page["links"]
+            )
+            caption = f"نقشه {n} ـ صفحه منبع {page['page']} ـ نسخه {revision} ـ {refs}"
+            figures.append(dict(path=str(png), caption=caption))
+            items.extend((svg, png))
+        report = build_report("نقشه‌ها و ریزمتره چندطبقه مستند", rows, metadata={
+            "project_id": project_id, "revision": revision,
+            "نسخه پروژه": expected_project_version,
+            "توضیح": "فقط محدوده برداشت معتبر؛ نه پلان کامل ساختمان و نه تأیید طراحی",
+            "_figures": figures,
+        })
+        for fmt in ("pdf", "xlsx", "docx", "csv"):
+            items.append(report.export(stage / f"report.{fmt}", fmt))
+        # An exact, searchable map-to-BOQ index also lives in the workbook.
+        from openpyxl import load_workbook
+        from core.reports.exporters import style_workbook, write_excel_cell
+        book = load_workbook(stage / "report.xlsx")
+        index = book.create_sheet("فهرست نقشه‌ها")
+        index.append(["نقشه", "نشست", "نسخه نشست", "صفحه منبع", "طبقه / عضو / ردیف BOQ", "هش منبع", "پیوند ریزمتره"])
+        detail = book["ریز متره"]
+        number_column = next(i for i, (key, _) in enumerate(report.columns(), 1) if key == "item_no")
+        header_row = next(r for r in range(1, detail.max_row+1) if detail.cell(r, number_column).value == "ردیف")
+        n = 2
+        for page in pages:
+            for link in page["links"]:
+                number = int(link["boq_row_id"].removeprefix("boq-item-no:"))
+                matches = [r for r in range(header_row+1, detail.max_row+1) if detail.cell(r, number_column).value == number]
+                if len(matches) != 1:
+                    raise ValueError("پیوند سطر گزارش با ردیف BOQ یکتا نیست")
+                values = [page["svg"], page["session_id"], page["session_revision"], page["page"],
+                          f"{link['floor_id']} / {link['member_id']} / {link['boq_row_id']}",
+                          page["source_sha256"], link["boq_row_id"]]
+                for col, value in enumerate(values, 1):
+                    write_excel_cell(index.cell(n, col), value)
+                index.cell(n, 1).hyperlink = page["svg"]
+                index.cell(n, 7).hyperlink = f"#'ریز متره'!A{matches[0]}"
+                n += 1
+        # Preserve the existing exporters' image-aware print areas.
+        areas = {s.title: s.print_area for s in book}
+        style_workbook(book, report.project_name)
+        for sheet in book:
+            if areas[sheet.title]: sheet.print_area = areas[sheet.title]
+        book.save(stage / "report.xlsx")
+        manifest = build_bundle_manifest(items, project_id=project_id, revision=revision)
+        manifest.update(schema="structuralpro.phase7.source-backed-2d-multifloor.v1",
+                        snapshot_digest=digest, snapshot_project_version=expected_project_version,
+                        pages=pages, quantity_authority=False, financial_mutation=False,
+                        status="source_verified_not_engineering_approval",
+                        csv_image_mode="separate SVG/PNG sidecars")
+        (stage / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2), encoding="utf-8")
+        if any(not p.is_file() or not p.stat().st_size for p in items):
+            raise RuntimeError("بسته چندطبقه دارای فایل خالی است")
+        if service.store.current_digest(project_id) != digest:
+            raise RuntimeError("پروژه پیش از انتشار تغییر کرده است")
+        latest = service.open_project(project_id)
+        if latest != snapshot:
+            raise RuntimeError("نسخه پروژه پیش از انتشار تغییر کرده است")
+        for options, source in zip(args, sources):
+            if link_source_backed_2d_overlay_to_boq(latest, **options) != source:
+                raise RuntimeError("منبع یا رسید صفحه پیش از انتشار تغییر کرده است")
+        # Crosswalk verification is sequential and may itself be slow. Rehash
+        # every unique physical source after ALL crosswalk checks; retain and
+        # compare file identity/size/timestamps after the hash pass as well.
+        # This is optimistic freshness, not an OS transaction over external apps.
+        from hashlib import file_digest
+        def signature(stat):
+            return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+        checked_sources = {}
+        for page in pages:
+            path = Path(latest["drawing_sessions"][page["session_id"]]["drawing_source"])
+            if path in checked_sources:
+                continue
+            try:
+                with path.open("rb") as stream:
+                    before_stat = os.fstat(stream.fileno())
+                    actual = file_digest(stream, "sha256").hexdigest()
+                    after_stat = os.fstat(stream.fileno())
+                if signature(before_stat) != signature(after_stat) or signature(path.stat()) != signature(after_stat) or actual != page["source_sha256"]:
+                    raise ValueError("منبع نقشه هنگام بررسی نهایی تغییر کرده است")
+                checked_sources[path] = signature(after_stat)
+            except OSError as exc:
+                raise ValueError("منبع نقشه پیش از انتشار در دسترس نیست") from exc
+        if any(signature(path.stat()) != stat for path, stat in checked_sources.items()):
+            raise ValueError("منبع نقشه در حین بررسی نهایی تغییر کرده است")
+        if service.store.current_digest(project_id) != digest:
+            raise RuntimeError("پروژه در حین انتشار تغییر کرده است")
+        if target.exists():
+            raise FileExistsError("مسیر خروجی حین تهیه بسته ایجاد شده است")
+        os.rename(stage, target)
+    return {"destination": str(target), "manifest": manifest}

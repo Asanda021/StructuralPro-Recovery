@@ -118,6 +118,7 @@ def build_source_backed_2d_overlay(
             "member_id": evidence["member_id"],
             "floor_id": evidence["floor_id"],
             "source_ref": row["source"],
+            "opening_refs": list(evidence.get("opening_refs", [])),
             "page": page,
             "quantity": str(row["quantity"]),
             "unit": row["unit"],
@@ -142,16 +143,42 @@ def build_source_backed_2d_overlay(
             min_x-pad, min_y-pad,
             max_x-min_x+2*pad, max_y-min_y+2*pad,
         )
+    # Multiple/long labels use a separate, numbered legend. Source paths stay
+    # in their original coordinate system. Legend rows have disjoint text boxes
+    # and leaders retain the explicit path/label association even for neighbours.
+    external = len(shapes) > 1 or any(len(s["member_id"]) > 22 for s in shapes)
+    if external:
+        if len(shapes) > 40:
+            raise ValueError("برای خوانایی راهنما، حداکثر چهل محدوده در هر صفحه انتخاب کنید")
+        with localcontext() as ctx:
+            ctx.prec = 256
+            size = max(max_x-min_x, max_y-min_y) / 35
+            label_x = max_x + pad * 2
+            longest = 0
+            for number, shape in enumerate(shapes, 1):
+                label = f"{number} | {shape['member_id']} | {shape['floor_id']}"
+                longest = max(longest, len(label))
+                shape["_legend"] = label
+                shape["_leader"] = (shape["_label_x"], shape["_label_y"])
+                shape["_label_x"] = format(label_x, "f")
+                shape["_label_y"] = format(min_y + size * (3 * number), "f")
+                shape["_label_size"] = format(size, "f")
+            box = (min_x-pad, min_y-pad,
+                   label_x + (longest+2)*size - (min_x-pad),
+                   max(max_y+pad, min_y + size*(3*len(shapes)+2)) - (min_y-pad))
     view_box = " ".join(format(v, "f") for v in box)
     paths = "".join(
         '<path fill="#dbeafe" fill-opacity="0.45" stroke="#1d4ed8" '
         'stroke-width="0.7%" fill-rule="evenodd" d="'
         + escape(shape["_svg_path"], quote=True) + '"><title>'
         + escape(shape["member_id"]) + '</title></path>'
-        + '<text text-anchor="middle" font-weight="bold" fill="#17263b" x="'
+        + ('<line stroke="#64748b" stroke-width="0.2%" x1="'
+           + shape["_leader"][0] + '" y1="' + shape["_leader"][1]
+           + '" x2="' + shape["_label_x"] + '" y2="' + shape["_label_y"] + '"/>' if external else '')
+        + '<text text-anchor="' + ('start' if external else 'middle') + '" font-weight="bold" fill="#17263b" x="'
         + shape["_label_x"] + '" y="' + shape["_label_y"]
         + '" font-size="' + shape["_label_size"] + '">'
-        + escape(shape["member_id"]) + '</text>'
+        + escape(shape.get("_legend", shape["member_id"])) + '</text>'
         for shape in shapes
     )
     svg = (
@@ -161,8 +188,8 @@ def build_source_backed_2d_overlay(
         + paths + '</svg>'
     )
     for shape in shapes:
-        for private_key in ("_svg_path", "_label_x", "_label_y", "_label_size"):
-            del shape[private_key]
+        for private_key in ("_svg_path", "_label_x", "_label_y", "_label_size", "_legend", "_leader"):
+            shape.pop(private_key, None)
     manifest = {
         "schema": "structuralpro.phase7.source-backed-2d-overlay.v1",
         "project_id": project_id,
@@ -171,6 +198,7 @@ def build_source_backed_2d_overlay(
         "source_format": source_file.suffix.lower().lstrip("."),
         "page": page,
         "drawing_kind": "measured_region_overlay_not_complete_plan",
+        "label_mode": "external_numbered_legend" if external else "member_center",
         "quantity_authority": False,
         "financial_mutation": False,
         "links": shapes,
