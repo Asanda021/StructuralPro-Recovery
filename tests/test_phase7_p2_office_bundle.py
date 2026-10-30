@@ -63,6 +63,8 @@ def test_office_bundle_uses_real_persisted_boq_and_contains_real_images(tmp_path
         sheet = book["نقشه مستند"]
         assert sheet.sheet_view.rightToLeft
         assert len(sheet._images) == 1
+        assert "'نقشه مستند'!" in sheet.print_area and "$A$1:$L$50" in sheet.print_area
+        assert sheet.page_setup.fitToHeight == 1
         assert sheet["C4"].value == "boq-item-no:1"
         assert sheet["D4"].value == project["takeoffs"][0]["source_id"]
         assert sheet["E4"].value == str(project["boq"][0]["quantity"])
