@@ -60,7 +60,7 @@ class ReportLayout:
             subtotal_values.append(_exact_total(r.get("مبلغ", r.get("total", ""))))
             out.append(r)
         if current is not sentinel:
-            out.append({key: f"جمع {current}", "مبلغ": subtotal})
+            out.append({key: f"جمع {current}", "مبلغ": exact_sum(subtotal_values)})
         return out
 
     def pages(self, rows):
