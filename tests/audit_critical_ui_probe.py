@@ -115,9 +115,21 @@ def exercise(app):
         p=go('برآورد و صورت');entry(p,'شناسه پروژه').setText('F');entry(p,'ضرایب').setText('سربار=0.1,منطقه=0.05');click(p,'بازسازی برآورد')
         assert abs(service.open_project('F')['estimate']['cost']['grand_total']-300.3)<1e-8
         print('Estimate button complete',flush=True)
+        from PySide6.QtTest import QTest
+        projects=go('پروژه‌ها');projects.findChildren(QLineEdit)[0].setText('F')
+        QTest.qWait(350)  # settle the real workspace revision watchdog
         p=go('گزارشات');entry(p,'شناسه پروژه').setText('F');p.findChild(QComboBox).setCurrentText('xlsx')
         QFileDialog.getSaveFileName=lambda *a,**k:(str(home/'financial.xlsx'),'')
         click(p,'ساخت گزارش');assert (home/'financial.xlsx').exists()
+        report_output=p.findChild(QTextEdit)
+        assert 'با موفقیت ساخته شد' in report_output.toPlainText()
+        QTest.qWait(450)
+        assert 'با موفقیت ساخته شد' in report_output.toPlainText(), 'fresh report output was cleared by its own project write'
+        changed=service.open_project('F');changed['revision_watchdog_fixture']='external write after export'
+        service.store.save('F',changed,expected_digest=service.store.current_digest('F'))
+        QTest.qWait(450)
+        assert not report_output.toPlainText(), 'old report display survived an actual later revision'
+
         assert abs(service.open_project('F')['estimate']['cost']['grand_total']-300.3)<1e-8
         print('Report button complete',flush=True)
         p=go('صورت‌وضعیت');entry(p,'شناسه پروژه').setText('F');entry(p,'شماره دوره').setText('1')

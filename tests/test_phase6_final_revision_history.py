@@ -135,3 +135,40 @@ def test_amendment_search_refuses_stale_selection_without_opening_form(tmp_path)
         assert search.open_record() is None
         assert service.store.current_digest('P')==before
     finally:search.close();service.store.close();qt.processEvents()
+
+
+
+def test_real_unpriced_ui_boq_history_uses_canonical_group_identity(tmp_path):
+    import os,subprocess,sys
+    from pathlib import Path
+    root=Path(__file__).resolve().parents[1]
+    result=subprocess.run([sys.executable,str(root/'tests/audit_critical_ui_probe.py'),str(tmp_path),'quick'],
+        cwd=root,env={**os.environ,'QT_QPA_PLATFORM':os.getenv('QT_QPA_PLATFORM','offscreen')},
+        capture_output=True,text=True,timeout=50)
+    assert result.returncode==0,result.stdout+result.stderr
+    service=StructuralProApp(tmp_path/'.structuralpro')
+    try:
+        before=service.store.current_digest('UI')
+        assert service.open_project('UI')['boq'][0].get('price_code') is None
+        history=navigation.stored_revision_history(service,'UI')
+        assert len(history['rows'])==1
+        row=history['rows'][0]
+        assert row['old_quantity']=='2' and row['new_quantity']=='4' and row['quantity_delta']=='2'
+        assert service.store.current_digest('UI')==before
+    finally:service.store.close()
+
+
+def test_canonical_boq_groups_with_same_item_code_are_not_conflated(tmp_path):
+    from core.takeoff.boq import build_boq
+    service=StructuralProApp(tmp_path/'db');service.create_project('Real builder identity fixture','P')
+    try:
+        for q in (1,2):
+            p=service.open_project('P');p['boq']=build_boq([
+                {'item_code':'slab','description':'explicit group A','quantity':q,'unit':'m2','source_id':'A'},
+                {'item_code':'slab','description':'explicit group B','quantity':3,'unit':'m2','source_id':'B'}])
+            service.store.save('P',p,expected_digest=service.store.current_digest('P'))
+        before=service.store.current_digest('P');history=navigation.stored_revision_history(service,'P')
+        assert len(history['rows'])==2 and len({r['id'] for r in history['rows']})==2
+        assert sorted(r['quantity_delta'] for r in history['rows'])==['0','1']
+        assert service.store.current_digest('P')==before
+    finally:service.store.close()

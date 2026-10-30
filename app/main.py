@@ -511,6 +511,7 @@ def main()->int:
             service.recalculate_estimate(project_id)
             period_no=int(rperiod.text()) if rperiod.text().strip() else None
             service.report(project_id,fmt,path,period_no=period_no)
+            report_digest=service.store.current_digest(project_id)
             latest=service.open_project(project_id)
             estimate=latest.get("estimate",{}) or {}
             cost=estimate.get("cost",{}) or {}
@@ -522,6 +523,7 @@ def main()->int:
             )
             rout.setPlainText(("صورت‌وضعیت دوره "+str(period_no) if period_no else "گزارش تجاری جاری")+
                               " با موفقیت ساخته شد.\n"+path+"\n\nمنبع گزارش: داده‌های پروژه و دوره انتخاب‌شده")
+            workspace_docks.acknowledge_panel_snapshot('report',project_id,expected_digest=report_digest)
         except Exception as e: QMessageBox.critical(w,"خطای گزارش",str(e))
     rgo.clicked.connect(make_report)
     def make_cost_report():
@@ -537,9 +539,11 @@ def main()->int:
         if not path:return
         try:
             service.project_cost_report(project_id,fmt,path)
+            report_digest=service.store.current_digest(project_id)
             s=service.project_cost_summary(project_id)
             rsummary.setText(f'گزارش هزینه | موارد: {s["entry_count"]} | مجموع هزینه ثبت‌شده: {s["actual_cost"]:,.0f}')
             rout.setPlainText("گزارش هزینه پروژه با موفقیت ساخته شد.\n"+path+"\n\nتفکیک هزینه‌ها: "+json.dumps(s["by_category"],ensure_ascii=False))
+            workspace_docks.acknowledge_panel_snapshot('report',project_id,expected_digest=report_digest)
         except Exception as e:
             QMessageBox.critical(w,"خطای گزارش هزینه",str(e))
     rcost.clicked.connect(make_cost_report)
@@ -1077,6 +1081,7 @@ def main()->int:
                         row['new_quantity'],row['quantity_delta'],row['total_delta']]
                 for j,value in enumerate(values):revout.setItem(i,j,QTableWidgetItem(value))
             revstatus.setText('مقایسه نسخه '+str(result['old_version'])+' با '+str(result['new_version'])+'؛ فقط‌خواندنی')
+            workspace_docks.acknowledge_panel_snapshot('revision',revpid.text().strip(),expected_digest=result['project_digest'])
         except Exception as exc:
             revout.setRowCount(0)
             revstatus.setText('نمایش تاریخچه مجاز نشد: '+str(exc))

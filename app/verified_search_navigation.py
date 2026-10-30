@@ -255,15 +255,41 @@ def stored_revision_history(service, project_id):
     old,new=history[-2:]
     if new['version']!=project.get('_meta',{}).get('version'):
         raise ValueError('تاریخچه و نسخه جاری هماهنگ نیستند.')
+    labels={}
     def index(snapshot):
+        import json
         records=snapshot['payload'].get('boq',[])
         if not isinstance(records,list):raise ValueError('فهرست BOQ نسخه معتبر نیست.')
         result={}
+        # Exact existing build_boq aggregation identity (quantity/source_ids
+        # deliberately excluded); this is a UI comparison key, not a MemberID.
+        canonical_fields=('item_code','price_code','description','unit','unit_price','factor',
+                          'chapter','category','group','status','waste_percent','source_type')
+        def numeric(value):
+            n=number(value)
+            if n is None:return None
+            if n.is_zero():return '0'
+            text=format(n,'f')
+            return text.rstrip('0').rstrip('.') if '.' in text else text
         for row in records:
             if not isinstance(row,dict):raise ValueError('ردیف نسخه معتبر نیست.')
-            key=next((str(row[k]).strip() for k in ('id','row_id','price_code','code') if row.get(k) not in (None,'')), '')
-            if not key or key in result:raise ValueError('هویت ردیف نسخه مفقود یا مبهم است.')
-            result[key]=row
+            explicit=next((str(row[k]).strip() for k in ('id','row_id') if row.get(k) not in (None,'')), '')
+            if explicit:
+                key=('stored',explicit);label=explicit
+            elif all(k in row for k in canonical_fields):
+                group=(row['item_code'] or row['price_code'] or row['description'],
+                       row['price_code'],row['description'],row['unit'],numeric(row['unit_price']),numeric(row['factor']),
+                       row['chapter'],row['category'],row['group'],row['status'],numeric(row['waste_percent']),row['source_type'])
+                if any(isinstance(v,(dict,list,tuple,set)) for v in group):
+                    raise ValueError('کلید گروه BOQ معتبر نیست.')
+                key=('canonical',*group)
+                label='گروه مقایسه BOQ: '+json.dumps(group,ensure_ascii=False,separators=(',',':'))
+            else:
+                legacy=next((str(row[k]).strip() for k in ('price_code','code') if row.get(k) not in (None,'')), '')
+                if not legacy:raise ValueError('هویت ردیف نسخه مفقود یا مبهم است.')
+                key=('stored',legacy);label=legacy
+            if key in result:raise ValueError('هویت ردیف نسخه مفقود یا مبهم است.')
+            result[key]=row;labels[key]=label
         return result
     def number(value):
         if value is None:return None
@@ -286,7 +312,7 @@ def stored_revision_history(service, project_id):
         pt=number((previous or {}).get('total'));nt=number((current or {}).get('total'))
         unit=(current or previous or {}).get('unit')
         compatible=previous is not None and current is not None and bool(unit) and previous.get('unit')==current.get('unit')
-        rows.append({'id':key,'unit':str(unit or 'نامشخص'),
+        rows.append({'id':labels[key],'unit':str(unit or 'نامشخص'),
             'status':'افزوده' if previous is None else 'حذف‌شده' if current is None else 'بدون تغییر' if previous==current else 'تغییریافته',
             'old_quantity':format(pq,'f') if pq is not None else 'نامشخص',
             'new_quantity':format(nq,'f') if nq is not None else 'نامشخص',

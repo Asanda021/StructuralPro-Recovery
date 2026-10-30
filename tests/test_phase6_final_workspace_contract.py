@@ -71,3 +71,26 @@ def test_shutdown_layout_save_does_not_read_destroyed_qt_widgets(tmp_path):
     assert ctrl.save_on_shutdown() is False
     assert service.store.current_digest('P')==before
     service.store.close();qt.processEvents()
+
+
+def test_fresh_panel_token_preserves_only_its_snapshot_and_rejects_a_later_revision(tmp_path):
+    qt=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'db');service.create_project('Panel snapshot fixture','P')
+    window=QMainWindow();tabs=QTabWidget();window.setCentralWidget(tabs)
+    report=QLineEdit('old report');revision=QLineEdit('old revision');tabs.addTab(report,'گزارش');tabs.addTab(revision,'اصلاحیه')
+    ctrl=WorkspaceDockController(window,QSettings(str(tmp_path/'ui.ini'),QSettings.IniFormat),service,lambda:'P')
+    ctrl.register_panel('report',report,tabs,0,'گزارش',invalidate=report.clear)
+    ctrl.register_panel('revision',revision,tabs,1,'اصلاحیه',invalidate=revision.clear)
+    try:
+        service.add_project_floor('P','New data for report',level='F1')
+        token=service.store.current_digest('P');report.setText('fresh report at F1')
+        assert ctrl.acknowledge_panel_snapshot('report','P',expected_digest=token)
+        ctrl.validate_views()
+        assert report.text()=='fresh report at F1' and revision.text()==''
+        assert service.store.current_digest('P')==token
+        service.add_project_floor('P','Genuine later revision',level='F2')
+        after=service.store.current_digest('P')
+        with pytest.raises(RuntimeError):ctrl.acknowledge_panel_snapshot('report','P',expected_digest=token)
+        ctrl.validate_views();assert report.text()==''
+        assert service.store.current_digest('P')==after
+    finally:window.close();service.store.close();qt.processEvents()

@@ -1,3 +1,4 @@
+# Final independently reviewed freshness and canonical BOQ identity fixes.
 name: P6 final reversible native workspace layout at four logical DPI scales
 on:
   push:

@@ -19,6 +19,7 @@ class WorkspaceDockController:
         self.panels={}
         self._panel_invalidators={}
         self._panel_context=None
+        self._panel_refresh_tokens={}
         self._preset_navigate=None
         self._view_timer=QTimer(window)
         self._view_timer.setInterval(250)
@@ -211,6 +212,17 @@ class WorkspaceDockController:
         view.deleteLater()
         if body is not None:body.deleteLater()
 
+    def acknowledge_panel_snapshot(self, kind, project_id, *, expected_digest):
+        """Keep one freshly rendered result; never bless the other panels."""
+        if kind not in self.panels or not isinstance(expected_digest,str) or not expected_digest:
+            raise ValueError('نشانه نسخه پنل معتبر نیست.')
+        if self.project_id()!=str(project_id).strip():return False
+        actual=self.service.store.current_digest(project_id)
+        if actual!=expected_digest:
+            raise RuntimeError('نسخه پروژه پس از آماده‌شدن خروجی تغییر کرد.')
+        self._panel_refresh_tokens[kind]=(str(project_id).strip(),actual)
+        return True
+
     def _current_panel_context(self):
         pid=self.project_id()
         try:
@@ -224,6 +236,7 @@ class WorkspaceDockController:
             if context!=self._panel_context:
                 self._panel_context=context
                 for kind,(dock,_,_) in self.panels.items():
+                    if self._panel_refresh_tokens.pop(kind,None)==context:continue
                     dock.hide()
                     invalidate=self._panel_invalidators[kind]
                     if invalidate is not None:invalidate()
