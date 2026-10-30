@@ -153,3 +153,16 @@ def test_first_source_changed_during_last_crosswalk_check_is_rejected(building, 
     monkeypatch.setattr(bundle, "link_source_backed_2d_overlay_to_boq", changing)
     with pytest.raises(ValueError, match="منبع"): export(building, tmp_path / "stale")
     assert not (tmp_path / "stale").exists()
+
+
+@pytest.mark.parametrize("corrupt_format", ["pdf", "docx", "csv"])
+def test_nonempty_but_corrupt_exporter_output_is_not_published(building, tmp_path, monkeypatch, corrupt_format):
+    from core.reports.project_report import ProjectReport
+    original = ProjectReport.export
+    def corrupt(self, path, fmt):
+        result = original(self,path,fmt)
+        if fmt == corrupt_format: Path(result).write_bytes(b"not a valid report")
+        return result
+    monkeypatch.setattr(ProjectReport,"export",corrupt)
+    with pytest.raises(ValueError, match="بازخوانی"): export(building,tmp_path / "corrupt")
+    assert not (tmp_path / "corrupt").exists()

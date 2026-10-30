@@ -335,6 +335,31 @@ def export_verified_2d_multifloor_bundle(
         for sheet in book:
             if areas[sheet.title]: sheet.print_area = areas[sheet.title]
         book.save(stage / "report.xlsx")
+        # Successful return/nonzero size from an exporter does not establish a
+        # readable Office file. Validate containers and selected source rows in
+        # staging, before constructing an accepted manifest or publishing.
+        try:
+            import csv
+            import pymupdf
+            from docx import Document
+            from zipfile import ZipFile
+            with pymupdf.open(stage / "report.pdf") as pdf:
+                if sum(bool(p.get_images()) for p in pdf) != len(pages):
+                    raise ValueError("تعداد نقشه‌های PDF با انتخاب تطبیق ندارد")
+            with ZipFile(stage / "report.docx") as archive:
+                if archive.testzip() is not None:
+                    raise ValueError("بسته Word ناقص است")
+            if len(Document(stage / "report.docx").inline_shapes) != len(pages):
+                raise ValueError("تعداد نقشه‌های Word با انتخاب تطبیق ندارد")
+            checked_book = load_workbook(stage / "report.xlsx")
+            if sum(len(s._images) for s in checked_book) != len(pages):
+                raise ValueError("تعداد نقشه‌های Excel با انتخاب تطبیق ندارد")
+            with (stage / "report.csv").open(encoding="utf-8-sig", newline="") as stream:
+                csv_rows = list(csv.reader(stream, strict=True))
+            if any(not any(row["source_id"] in cells for cells in csv_rows) for row in rows):
+                raise ValueError("منابع ریزمتره در CSV بازخوانی نشد")
+        except Exception as exc:
+            raise ValueError("بازخوانی بسته چهارقالبی پیش از انتشار ناموفق بود") from exc
         manifest = build_bundle_manifest(items, project_id=project_id, revision=revision)
         manifest.update(schema="structuralpro.phase7.source-backed-2d-multifloor.v1",
                         snapshot_digest=digest, snapshot_project_version=expected_project_version,
