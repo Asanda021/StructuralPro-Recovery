@@ -138,14 +138,14 @@ class DrawingTakeoffSession:
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
             **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
-            **({"workflow_plan":deepcopy(self.workflow_plan)} if self.workflow_plan is not None else {}),
             "current_page": self.current_page,
             "counter": self._counter,
         }
 
     def _restore(self, state: dict[str, Any]) -> None:
         self.cad_unit_evidence=deepcopy(state.get("cad_unit_evidence"))
-        self.workflow_plan=deepcopy(state.get("workflow_plan"))
+        # Scheduling edits are independent of geometry undo/redo. A GUI refresh
+        # re-links the restored measurement set without losing custom durations.
         raw = state.get("calibration")
         self.calibration = Calibration(**raw) if raw else None
         saved_calibrations = state.get("calibrations")
