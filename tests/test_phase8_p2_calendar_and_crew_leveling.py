@@ -46,10 +46,10 @@ def test_1405_national_holiday_and_site_exception_are_distinct():
     assert q["tasks"][0]["finish_jalali"]=="1405/10/02"
 
 
-def test_beyond_reviewed_calendar_year_and_invalid_inputs_fail_closed():
+def test_cross_year_1405_to_1406_is_supported_but_out_of_1410_fails():
     p={"tasks":[{"id":"T","duration_days":4,"predecessors":[]}]}
-    with pytest.raises(ValueError,match="سال جدید"):
-        calendarize(p,make_calendar(start_date="1405/12/28"))
+    cross=calendarize(p,make_calendar(start_date="1405/12/28"))
+    assert cross["tasks"][0]["finish_jalali"].startswith("1406/")
     for value in ("1411/01/01","1405/13/01","1405/12/30","foo"):
         with pytest.raises(ValueError):make_calendar(start_date=value)
     with pytest.raises(ValueError):
