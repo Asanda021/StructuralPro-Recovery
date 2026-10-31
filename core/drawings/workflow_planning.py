@@ -29,7 +29,8 @@ _STRUCTURE_MARKERS = {
 }
 _STRUCTURE_OPTIONS = frozenset(("unknown", "concrete", "steel", "mixed"))
 _DISCIPLINES = frozenset(("structure", "architecture", "mechanical",
-                          "electrical", "elevator", "fire", "site"))
+                          "electrical", "elevator", "fire", "site",
+                          "wood", "renovation", "restoration"))
 
 # Approximate WORKING DAYS only. These are placeholders to be reviewed against
 # drawings, number of floors, crews, method statement, actual production and
@@ -165,25 +166,8 @@ def _validate_dependencies(tasks):
 
 
 def recompute_schedule(plan: dict) -> dict:
-    """Compute relative workday offsets, not dates or a contractual baseline."""
-    tasks = plan.get("tasks", [])
-    _validate_dependencies(tasks)
-    by_id = {task["id"]: task for task in tasks}
-    ends = {}
-    def end_of(tid):
-        if tid in ends: return ends[tid]
-        task = by_id[tid]
-        duration = task["duration_days"]
-        if type(duration) is not int or not 0 <= duration <= 3650:
-            raise ValueError("مدت فعالیت باید عدد صحیح بین صفر تا ۳۶۵۰ روز کاری باشد")
-        start = max((end_of(d) for d in task["predecessors"]), default=0)
-        task["start_workday_offset"] = start
-        task["end_workday_offset"] = start + duration
-        ends[tid] = start + duration
-        return ends[tid]
-    for task in tasks: end_of(task["id"])
-    plan["indicative_total_workdays"] = max(ends.values(), default=0)
-    return plan
+    from core.projects.precedence_model import calculate_precedence
+    return calculate_precedence(plan)
 
 
 def new_workflow_plan(*, drawing_source: str, source_sha256: str,
@@ -234,6 +218,43 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
             "linked_item_ids": [], "measured": {}, "quantity_reviewed": False,
             "baseline_approved": False,
         })
+    # Optional detailed WBS profiles are zero-duration until a verified,
+    # unit-compatible quantity exists. Their first rates are only planning
+    # heuristics; none may silently add quantities or financial BOQ rows.
+    from core.projects.production_catalog import CATALOG
+    planned = {task["id"] for task in tasks}
+    for profile in CATALOG.values():
+        if profile.discipline not in selected:
+            continue
+        # The frame type is a reviewer choice; don't create fabrication for
+        # steel under a confirmed concrete-only structure.
+        if profile.code.startswith("steel_") and structure=="concrete":
+            continue
+        if profile.code.startswith(("column_","slab_","beam_")) and structure=="steel":
+            continue
+        pred = profile.predecessor if profile.predecessor in planned else (
+            "foundation" if profile.discipline in {"structure", "wood"} else
+            "masonry" if "masonry" in planned else "slabs" if "slabs" in planned else "mobilize"
+        )
+        t={
+            "id":profile.code,"title":profile.title,"discipline":profile.discipline,
+            "duration_days":0,"duration_edited":False,
+            "duration_status":"AWAITING_REVIEWED_QUANTITY",
+            "crew":f"{profile.crews} اکیپ پیشنهادی",
+            "crew_count":profile.crews,"efficiency":"1",
+            "rate_source":profile.rate_source,
+            "rate_unit":profile.unit,
+            "rate_low_per_crew_day":profile.low_per_crew_day,
+            "rate_high_per_crew_day":profile.high_per_crew_day,
+            "predecessors":[pred],"links":[{
+                "predecessor":pred,"type":profile.relation,
+                "lag_days":profile.lag_days,
+            }],
+            "linked_item_ids":[],"measured":{},"quantity_reviewed":False,
+            "baseline_approved":False,
+        }
+        tasks.append(t)
+        planned.add(profile.code)
     result = {
         "schema": "structuralpro.drawing-workflow-v1",
         "status": "DRAFT_UNAPPROVED",
@@ -268,9 +289,22 @@ def sync_measured_items(plan: dict, items) -> dict:
     valid = {task["id"] for task in plan["tasks"]}
     linked = {task["id"]: {} for task in plan["tasks"]}
     unassigned = []
+    from core.projects.production_catalog import matching_profile, productivity_days, CATALOG
+    from decimal import Decimal
     for item in items:
         ident = str(item.id)
-        key = assign_takeoff(item, valid)
+        label = " ".join((str(getattr(item,"label","")),
+                          str(getattr(item,"takeoff_code","")),
+                          str((getattr(item,"cad_evidence",None) or {}).get("layer",""))))
+        key = matching_profile(label,set(plan.get("disciplines",[])))
+        # A label alone does not prove compatible units. Fall back to the
+        # review-only summary WBS mapping without inventing numeric quantities.
+        if key is not None and str(item.unit)!=CATALOG[key].unit:
+            key=None
+        if key not in valid:
+            key=None
+        if key is None:
+            key=assign_takeoff(item,valid)
         if key is None:
             unassigned.append(ident)
             continue
@@ -286,6 +320,21 @@ def sync_measured_items(plan: dict, items) -> dict:
         task["linked_item_ids"] = sorted(observed)
         task["measured"] = observed
         task["quantity_reviewed"] = bool(observed) and all(x["geometry_reviewed"] for x in observed.values())
+        if task["id"] in CATALOG and not task.get("duration_edited"):
+            profile=CATALOG[task["id"]]
+            if observed and all(entry["unit"]==profile.unit for entry in observed.values()):
+                total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
+                rec=productivity_days(task["id"],total,profile.unit,
+                                      crews=task.get("crew_count",profile.crews),
+                                      efficiency=task.get("efficiency","1"))
+                task["duration_days"]=rec["expected_workdays"]
+                task["duration_range"]=[rec["min_workdays"],rec["max_workdays"]]
+                task["duration_status"]="ESTIMATED_REQUIRES_SITE_REVIEW"
+                task["rate_source"]=rec["source"]
+            else:
+                task["duration_days"]=0
+                task["duration_range"]=None
+                task["duration_status"]="AWAITING_REVIEWED_QUANTITY"
     plan["unassigned_item_ids"] = sorted(unassigned)
     return recompute_schedule(plan)
 
