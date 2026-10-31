@@ -171,6 +171,14 @@ class TakeoffCanvas(QGraphicsView):
             return super().mousePressEvent(event)
         p = self.mapToScene(event.position().toPoint())
         page = self.session.current_page
+        # The Window scope also governs manual/PDF measurements. Pan and
+        # annotations remain free, but no count/length/polygon vertex may
+        # originate outside the explicitly selected takeoff rectangle.
+        if (self._selected_region_rect is not None and self.mode != "note"
+                and not self._selected_region_rect.contains(p)):
+            self._announce_tool("این نقطه بیرون محدوده Window متره است؛ فقط محدوده انتخابی قابل برداشت است.")
+            event.accept()
+            return
 
         if self.mode == "note":
             if self.on_note:
