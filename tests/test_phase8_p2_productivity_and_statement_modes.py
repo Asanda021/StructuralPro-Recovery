@@ -157,3 +157,52 @@ def test_contract_rates_do_not_approve_zero_document_or_missing_price(tmp_path,m
     proof=tmp_path/"signed.txt";proof.write_text("contract",encoding="utf-8")
     with pytest.raises(ValueError):
         review_contract_rates(p,proof,"Reviewer")
+
+
+
+def test_renovation_or_fitout_never_invents_foundation_or_new_frame():
+    p=new_workflow_plan(drawing_source="existing.dwg",source_sha256="old",
+        structure="unknown",disciplines=["architecture","mechanical"],
+        project_kind="renovation")
+    by_id={t["id"]:t for t in p["tasks"]}
+    assert "demolition" in by_id and "seismic_retrofit" in by_id
+    assert not any(x in by_id for x in (
+        "earthwork","foundation","concrete_frame","steel_frame","slabs"
+    ))
+    assert by_id["masonry"]["predecessors"]==["mobilize"]
+    assert p["project_kind"]=="renovation"
+    fit=new_workflow_plan(drawing_source="existing.dwg",source_sha256="old",
+        structure="unknown",disciplines=["architecture"],project_kind="fitout")
+    assert "demolition" not in {t["id"] for t in fit["tasks"]}
+    with pytest.raises(ValueError,match="نوع پروژه"):
+        new_workflow_plan(drawing_source="",source_sha256="",structure="unknown",
+                          disciplines=[],project_kind="magic")
+
+
+def test_single_trade_detail_does_not_double_count_coarse_summary_and_handover():
+    plan=new_workflow_plan(drawing_source="p.dwg",source_sha256="sha",
+        structure="concrete",disciplines=["architecture"])
+    item=SimpleNamespace(id="W1",label="دیوار بلوکی",
+                         takeoff_code="",cad_evidence=None,quantity=96,
+                         unit="m2",source_ref="p.dwg#W1")
+    sync_measured_items(plan,[item])
+    tasks={x["id"]:x for x in plan["tasks"]}
+    assert tasks["block_wall"]["duration_days"]==4
+    assert tasks["masonry"]["duration_days"]==0
+    assert tasks["masonry"]["duration_status"]=="SUMMARY_FROM_DETAILED_WBS"
+    assert "block_wall" in tasks["masonry"]["predecessors"]
+    assert tasks["handover"]["start_workday_offset"]>=tasks["block_wall"]["end_workday_offset"]
+
+
+def test_manually_edited_predecessors_are_never_replaced_by_summary_expansion():
+    p=new_workflow_plan(drawing_source="p.dwg",source_sha256="x",
+        structure="concrete",disciplines=["architecture"])
+    p=edit_activity(p,"masonry",predecessors=["slabs"])
+    assert next(t for t in p["tasks"] if t["id"]=="masonry")["predecessors_edited"]
+    item=SimpleNamespace(id="W",label="دیوار بلوکی",
+                         takeoff_code="",cad_evidence=None,quantity=48,
+                         unit="m2",source_ref="x")
+    sync_measured_items(p,[item])
+    wall=next(t for t in p["tasks"] if t["id"]=="masonry")
+    assert wall["duration_days"]==10
+    assert wall["predecessors"]==["slabs"]
