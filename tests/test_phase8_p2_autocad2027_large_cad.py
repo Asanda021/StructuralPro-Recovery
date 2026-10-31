@@ -183,3 +183,95 @@ def test_viewer_uses_readonly_native_for_generic_strict_dwg_failure_only(tmp_pat
         viewer.open(source)
     assert viewer.path == previous
     assert viewer.cad_document is expected
+
+
+
+def test_strict_cad_expansion_no_longer_rejects_more_than_250k_simple_entities():
+    """No giant fixture: source identity is generated one item at a time."""
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import (
+        _expanded_entities, _MAX_EXPANDED_CAD_ENTITIES,
+    )
+    assert _MAX_EXPANDED_CAD_ENTITIES >= 1_000_000
+
+    class Dxf(dict):
+        def __getattr__(self, key):
+            return self[key]
+
+    class Line:
+        is_virtual = False
+
+        def __init__(self, index):
+            self.dxf = Dxf(handle=format(index+1, "X"), layer="A")
+
+        def dxftype(self):
+            return "LINE"
+
+    doc = SimpleNamespace(layers={}, blocks={})
+    extracted = _expanded_entities((Line(i) for i in range(250_001)), doc, [])
+    assert sum(1 for _ in extracted) == 250_001
+
+
+def test_strict_cad_expansion_hard_cap_is_fail_closed(monkeypatch):
+    from types import SimpleNamespace
+    from core.drawings import dwg_takeoff as mod
+
+    class Dxf(dict):
+        def __getattr__(self, key):
+            return self[key]
+
+    class Line:
+        is_virtual = False
+
+        def __init__(self, index):
+            self.dxf = Dxf(handle=format(index+1, "X"), layer="A")
+
+        def dxftype(self):
+            return "LINE"
+
+    monkeypatch.setattr(mod, "_MAX_EXPANDED_CAD_ENTITIES", 3)
+    source = (Line(i) for i in range(4))
+    with pytest.raises(ValueError, match="یک میلیون"):
+        list(mod._expanded_entities(source, SimpleNamespace(layers={}, blocks={}), []))
+
+
+def test_minsert_instances_reach_gui_parser_incrementally():
+    """The second instance cannot be consumed before first child is emitted."""
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import _expanded_entities
+
+    class Dxf(dict):
+        def __getattr__(self, key):
+            return self[key]
+
+    class Line:
+        is_virtual = False
+        dxf = Dxf(handle="B1", layer="0")
+
+        def dxftype(self):
+            return "LINE"
+
+    class Instance:
+        def virtual_entities(self, skipped_entity_callback):
+            yield Line()
+
+    class Insert:
+        is_virtual = False
+        mcount = 2
+        dxf = Dxf(handle="A1", layer="0", name="X", row_count=1, column_count=2,
+                  column_spacing=4.0)
+
+        def dxftype(self):
+            return "INSERT"
+
+        def multi_insert(self):
+            yield Instance()
+            raise AssertionError("Second MINSERT instance was materialized early")
+
+    block = SimpleNamespace(block=SimpleNamespace(is_xref=False, is_xref_overlay=False))
+    document = SimpleNamespace(layers={}, blocks={"X": block})
+    output = _expanded_entities([Insert()], document, [], allow_arrays=True)
+    first = next(output)
+    assert first[1] == "A1"
+    first_child = next(output)
+    assert first_child[1] == "A1@0,0/B1"
