@@ -129,6 +129,11 @@ class DrawingWorkflowIntakeDialog(QDialog):
         self.repeat_floors.setEnabled(False)
         main.addWidget(self.repeat_floors)
         self.only_typical_floor.toggled.connect(self.repeat_floors.setEnabled)
+        self.only_typical_floor.toggled.connect(
+            lambda enabled:self.repeat_floors.setValue(
+                self.building_floors.value() if enabled else 1
+            )
+        )
         self.building_floors.valueChanged.connect(self.repeat_floors.setMaximum)
         self._team=None
         self.supervision_count.currentIndexChanged.connect(self._count_changed)
