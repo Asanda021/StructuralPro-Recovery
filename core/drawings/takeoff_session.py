@@ -569,9 +569,12 @@ class DrawingTakeoffSession:
         session.workflow_plan=deepcopy(data.get("workflow_plan"))
         if session.workflow_plan is not None:
             from core.drawings.workflow_planning import recompute_schedule
-            if (session.workflow_plan.get("schema") != "structuralpro.drawing-workflow-v1"
-                    or session.workflow_plan.get("drawing_source") != str(data.get("drawing_source", ""))):
-                raise ValueError("پیش‌نویس زمان‌بندی با نشست نقشه منطبق نیست")
+            if (not isinstance(session.workflow_plan, dict)
+                    or session.workflow_plan.get("schema") != "structuralpro.drawing-workflow-v1"
+                    or session.workflow_plan.get("status") != "DRAFT_UNAPPROVED"
+                    or session.workflow_plan.get("drawing_source") != str(data.get("drawing_source", ""))
+                    or session.workflow_plan.get("source_sha256") != str(data.get("source_sha256", ""))):
+                raise ValueError("پیش‌نویس زمان‌بندی با منبع/نسخه نشست نقشه منطبق نیست")
             recompute_schedule(session.workflow_plan)
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
