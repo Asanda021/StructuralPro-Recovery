@@ -126,7 +126,7 @@ def test_ifc_dxf_pdf_and_manual_mechanical_electrical_finishing_share_one_persis
         }
         assert len(sources) == len(set(sources))
         assert len({x["source_sha256"] for x in project["drawing_sessions"].values()}) == 2
-        assert sha256(dxf_path.read_bytes()).hexdigest() == crosswalk["drawing"]["source_sha256"]
+        assert sha256(dxf_path.read_bytes()).hexdigest() == project["drawing_sessions"][kw["session_id"]]["source_sha256"]
 
         # Price/statement may never be guessed from the display model or drawings.
         original, digest = deepcopy(project), app.store.current_digest("P")
@@ -152,7 +152,6 @@ def test_ifc_dxf_pdf_and_manual_mechanical_electrical_finishing_share_one_persis
         assert app.open_project("P") == original
         assert app.store.current_digest("P") == digest
 
-        app.store.close()
         reopened = StructuralProApp(tmp_path / "app")
         try:
             assert reopened.open_project("P") == original
@@ -162,7 +161,6 @@ def test_ifc_dxf_pdf_and_manual_mechanical_electrical_finishing_share_one_persis
         finally:
             reopened.store.close()
     finally:
-        # close is harmless if the handle was closed in the reopen section.
         app.store.close()
 
 
