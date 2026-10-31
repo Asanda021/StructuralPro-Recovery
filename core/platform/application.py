@@ -83,6 +83,33 @@ class StructuralProApp:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
         self.store.save(project_id,project); return self.store.get(project_id)
 
+    def audit_legacy_metre_zip(
+        self, zip_path: str | Path, *, bindings: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """Read a user-supplied DWG+metre ZIP locally with strict ZIP/CAD gates.
+
+        Does not write projects/BOQ, copy source drawings, or infer quantities.
+        """
+        from core.drawings.legacy_metre_cad_package import inspect_legacy_metre_package
+        return inspect_legacy_metre_package(zip_path, bindings=bindings)
+
+    def audit_legacy_metre_against_drawing(
+        self, metre_path: str | Path, *,
+        summary_path: str | Path | None = None,
+        drawing_path: str | Path | None = None,
+        bindings: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """P8/P2 read-only legacy metre vs CAD audit.
+
+        No inferred line items, source mapping, user approval, or BOQ/price
+        writes. A missing or unavailable native DWG reader is BLOCKED, not PASS.
+        """
+        from core.drawings.legacy_metre_cad_reconciliation import LegacyMetreCADReconciler
+        return LegacyMetreCADReconciler().inspect(
+            metre_path, summary_path=summary_path,
+            drawing_path=drawing_path, bindings=bindings,
+        )
+
     def preview_project_start(self, template_code: str, *, project_id: str, name: str,
                               floor_count: int, floor_names=None, disciplines=None):
         from core.projects.start_templates import preview_project_start

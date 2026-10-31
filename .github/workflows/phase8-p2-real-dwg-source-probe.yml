@@ -1,0 +1,53 @@
+name: P8 P2 independent historical DWG source acquisition (not engineering acceptance)
+on:
+  push:
+    branches:
+      - test/phase8-p2-engineering-e2e-20261031
+    paths:
+      - scripts/phase8_p2_real_dwg_source_probe.py
+      - tests/test_phase8_p2_real_dwg_source_probe.py
+      - .github/workflows/phase8-p2-real-dwg-source-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p8-p2-real-dwg-source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  provenance-only:
+    name: Read-only DWG public-source probe (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    env:
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - name: Keep exact source SHA and prevent CRLF modifications
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Run offline fail-closed validation unit tests
+        run: python -m unittest discover -s tests -p test_phase8_p2_real_dwg_source_probe.py -v
+      - name: Probe historical engineering DWG and record unsupported version
+        run: python -m scripts.phase8_p2_real_dwg_source_probe --source-id usfs_legacy --output dwg-probe-evidence.json
+      - name: Probe independent CC0 studio DWG for version eligibility only
+        run: python -m scripts.phase8_p2_real_dwg_source_probe --source-id studio_cc0 --output studio-probe-evidence.json
+      - name: Upload bounded evidence JSON (never upload source DWG)
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-dwg-acquisition-${{ matrix.os }}
+          path: |
+            dwg-probe-evidence.json
+            studio-probe-evidence.json
+          if-no-files-found: warn
+          retention-days: 14

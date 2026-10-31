@@ -321,7 +321,10 @@ def _verify_source_files(snapshot,*,require_pricebook):
         if path in references and references[path]!=expected:raise ValueError("هش منبع فهرست‌بها ناسازگار است")
         references[path]=expected
     def signature(s):
-        return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+        # Windows creation/metadata-change time is not durable file identity.
+        # Preserve device, file ID, byte length and mtime; the opened file
+        # must still match the approved SHA-256 on every verification pass.
+        return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)
     checked={}
     try:
         for path,expected in references.items():
@@ -330,6 +333,19 @@ def _verify_source_files(snapshot,*,require_pricebook):
                 after=signature(os.fstat(stream.fileno()))
             if before!=after or signature(path.stat())!=after or actual!=expected:raise ValueError("منبع گزارش هنگام کنترل نهایی تغییر کرده است")
             checked[path]=after
+        # A second physical read is essential on Windows: rewriting same-size
+        # bytes can retain timestamp granularity AND inode. A metadata-only
+        # second pass would falsely accept a source changed after the first
+        # digest. Reopen by its persisted path, hash the new handle and verify
+        # its identity before and after reading. No content/hash bypass.
+        for path,observed in checked.items():
+            with path.open("rb") as stream:
+                before=signature(os.fstat(stream.fileno()))
+                actual=file_digest(stream,"sha256").hexdigest()
+                after=signature(os.fstat(stream.fileno()))
+            if (before!=observed or after!=before or
+                    signature(path.stat())!=after or actual!=references[path]):
+                raise ValueError("منبع گزارش در حین کنترل نهایی تغییر کرده است")
         if any(signature(path.stat())!=observed for path,observed in checked.items()):
             raise ValueError("منبع گزارش در حین کنترل نهایی تغییر کرده است")
     except OSError as exc:raise ValueError("منبع گزارش پیش از انتشار در دسترس نیست") from exc

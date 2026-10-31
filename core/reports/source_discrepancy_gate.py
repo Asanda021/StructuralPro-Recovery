@@ -123,6 +123,49 @@ def inspect_pending_source_discrepancies(
             original_code, original_unit = original["item_code"], original["unit"]
         else:
             evidence = params.get("geometry_evidence")
+            if not isinstance(evidence, dict) and isinstance(params.get("cad_evidence"), dict):
+                # Reviewed CAD line/area takeoffs have *cad_evidence*, not
+                # PDF polygon geometry_evidence. Re-validate their actual
+                # source bytes, entity, review, session and committed amount
+                # before using the documented floor/member as an E8 owner.
+                # Never skip an unverifiable historical CAD claim.
+                prior_sid = rec.get("drawing_session_id")
+                prior_item_id = rec.get("drawing_takeoff_id")
+                prior = sessions.get(prior_sid) if isinstance(sessions, dict) else None
+                if (not isinstance(prior_sid, str) or not prior_sid or
+                    not isinstance(prior_item_id, str) or not prior_item_id or
+                    not isinstance(prior, dict) or prior.get("id") != prior_sid or
+                    prior_item_id not in (prior.get("committed_item_ids") or []) or
+                    params.get("source_sha256") != prior.get("source_sha256") or
+                    params.get("drawing_source") != prior.get("drawing_source")):
+                    raise ValueError("رسید اتصال CAD قبلی به نشست اصلی معتبر نیست")
+                prior_rows = session_to_boq_rows(
+                    prior["session"], session_id=prior_sid,
+                    selected_item_ids=(prior_item_id,),
+                )
+                verified_measurement_identities(prior, prior_rows)
+                if len(prior_rows) != 1 or not isinstance(prior_rows[0].get("cad_evidence"), dict):
+                    raise ValueError("رسید برداشت CAD قبلی قابل احراز نیست")
+                original = prior_rows[0]
+                original_quantity = (rec.get("quantities") or [])
+                if (rec.get("domain") != "drawing" or
+                    rec.get("item") != original["kind"] or
+                    rec.get("source_id") != original["source_id"] or
+                    params.get("measurement_identity") != original["measurement_identity"] or
+                    params.get("cad_evidence") != original["cad_evidence"] or
+                    len(original_quantity) != 1 or
+                    not isinstance(original_quantity[0], dict) or
+                    original_quantity[0].get("code") != original["item_code"] or
+                    original_quantity[0].get("unit") != original["unit"] or
+                    row["item_code"] != original["item_code"] or
+                    row["unit"] != original["unit"] or
+                    decimal_value(original_quantity[0].get("amount"), field="CAD stored amount", non_negative=True) !=
+                    decimal_value(original["quantity"], field="CAD source amount", non_negative=True) or
+                    decimal_value(row["quantity"], field="CAD BOQ amount", non_negative=True) !=
+                    decimal_value(original["quantity"], field="CAD source amount", non_negative=True)):
+                    raise ValueError("هویت یا کمیت CAD قبلی با منبع اصلی مطابقت ندارد")
+                evidence = original["cad_evidence"]
+                original_code, original_unit = original["item_code"], original["unit"]
         if not isinstance(evidence, dict):
             raise ValueError("هویت هندسی برداشت قبلی ناقص است")
         for field in ("floor_id", "member_id"):
