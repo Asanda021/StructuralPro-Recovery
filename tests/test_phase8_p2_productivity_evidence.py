@@ -49,3 +49,41 @@ def test_calibration_needs_real_independent_field_observations(tmp_path):
     records[1]["unit"]="kg"
     with pytest.raises(ValueError,match="واحد"):
         calibrate_productivity("block_wall",records,reviewer="ناظر",project_id="P")
+
+
+
+def test_verified_project_rates_link_to_actual_measured_wall_and_detect_tamper(tmp_path):
+    from types import SimpleNamespace
+    from core.drawings.workflow_planning import (
+        new_workflow_plan,register_project_productivity_calibration,sync_measured_items
+    )
+    records=_observations(tmp_path)
+    evidence=calibrate_productivity("block_wall",records,reviewer="ناظر",
+                                   project_id="P-1")
+    plan=new_workflow_plan(drawing_source="plan.dwg",source_sha256="sha",
+        project_id="P-1",structure="concrete",disciplines=["architecture"])
+    plan=register_project_productivity_calibration(plan,evidence)
+    item=SimpleNamespace(id="1",label="دیوار بلوکی",takeoff_code="",
+        cad_evidence=None,quantity=96,unit="m2",source_ref="source-1")
+    sync_measured_items(plan,[item])
+    task=next(t for t in plan["tasks"] if t["id"]=="block_wall")
+    assert task["duration_days"]==5
+    assert task["duration_status"]=="PROJECT_OBSERVED_REQUIRES_BASELINE_APPROVAL"
+    assert task["rate_source"]=="PROJECT_FIELD_OBSERVATION_SHA_VERIFIED"
+    records[0] and __import__("pathlib").Path(records[0]["source_path"]).write_text(
+        "TAMPER",encoding="utf-8"
+    )
+    with pytest.raises(ValueError,match="تغییر"):
+        sync_measured_items(plan,[item])
+
+
+def test_project_calibration_cannot_transfer_to_different_project(tmp_path):
+    from core.drawings.workflow_planning import (
+        new_workflow_plan,register_project_productivity_calibration
+    )
+    evidence=calibrate_productivity("block_wall",_observations(tmp_path),
+        reviewer="بازبین",project_id="A")
+    plan=new_workflow_plan(drawing_source="p.dxf",source_sha256="sha",
+        project_id="B",structure="concrete",disciplines=["architecture"])
+    with pytest.raises(ValueError,match="پروژه"):
+        register_project_productivity_calibration(plan,evidence)
