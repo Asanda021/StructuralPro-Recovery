@@ -880,8 +880,15 @@ class GraphicalTakeoffDialog(QDialog):
                     QMessageBox.warning(self,"مبنای صورت‌وضعیت پروژه",
                         "انتخاب مالی در پروژه ذخیره نشد؛ فعالیت آغاز نمی‌شود: "+str(exc))
                     return
+            selected_team=dialog.selected_supervision_team()
+            self.session.supervision_team=selected_team
+            start_date=dialog.selected_start_date()
+            building=dialog.selected_building_scope()
             self.session.workflow_preferences={
                 "source_sha256":sha,
+                "project_start_date":start_date,
+                "building_scope":building,
+                "supervision_team":selected_team,
                 "pricing_mode":price_mode,
                 "contract_price_entry":price_entry if price_mode=="contract_rates" else None,
                 "automatic_scheduling":enabled,
@@ -905,12 +912,20 @@ class GraphicalTakeoffDialog(QDialog):
                         project_kind=dialog.selected_project_kind(),
                         project_id=selected_project,
                     )
-                self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+                from core.projects.iran_worksite_calendar import make_calendar,calendarize
+                from core.projects.building_scale import set_building_scope
+                plan=set_building_scope(plan,building)
+                plan=sync_measured_items(plan,self.session.items)
+                plan=calendarize(plan,make_calendar(start_date=start_date))
+                self.session.workflow_plan=plan
+                self.weekly_button.setEnabled(True)
                 self.schedule_button.setEnabled(True)
                 self.status.setText("مبنای مالی انتخاب شد؛ متره + زمان‌بندی پیشنهادی فعال است")
                 self.open_live_schedule()
             else:
                 self.schedule_button.setEnabled(False)
+                self.weekly_button.setEnabled(False)
+                self.session.workflow_plan=None
                 old=self._workflow_schedule_dialog
                 if old is not None:
                     from shiboken6 import isValid
