@@ -39,7 +39,8 @@ def test_1405_national_holiday_and_site_exception_are_distinct():
     assert q["tasks"][0]["finish_jalali"]=="1405/10/03"
     q=calendarize(p,make_calendar(start_date="1405/10/01",
                    extra_holidays=["1405/10/03"]))
-    assert q["tasks"][0]["finish_jalali"]=="1405/10/04"
+    # 1405/10/04 is Friday: the next eligible workday is Saturday 05.
+    assert q["tasks"][0]["finish_jalali"]=="1405/10/05"
     q=calendarize(p,make_calendar(start_date="1405/10/01",
                    holidays=["1405/10/02"]))
     assert q["tasks"][0]["finish_jalali"]=="1405/10/02"
