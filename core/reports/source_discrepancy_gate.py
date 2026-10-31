@@ -80,9 +80,49 @@ def inspect_pending_source_discrepancies(
         rec = records_by_source.get(row["source_id"])
         if rec is None:
             raise ValueError("رسید ریزمتره واقعی یافت نشد")
-        if rec.get("domain") != "drawing":
-            continue  # Out of scope, not treated as independent verified CAD.
-        evidence = (rec.get("params") or {}).get("geometry_evidence")
+        domain = rec.get("domain")
+        if domain not in ("drawing", "drawing_ai"):
+            continue
+        params = rec.get("params")
+        if not isinstance(params, dict):
+            raise ValueError("رسید برداشت قبلی معتبر نیست")
+        original_code, original_unit = row["item_code"], row["unit"]
+        if domain == "drawing_ai":
+            # AI rows predate persisted geometry_evidence. Recover exact
+            # member ownership from the original SHA-verified drawing session.
+            if rec.get("item") != "area":
+                continue
+            source_sid = rec.get("drawing_session_id")
+            source_item = params.get("session_item_id")
+            prior = sessions.get(source_sid) if isinstance(sessions, dict) else None
+            if (not isinstance(source_sid, str) or not source_sid or
+                not isinstance(source_item, str) or not source_item or
+                not isinstance(prior, dict) or prior.get("id") != source_sid or
+                params.get("source_sha256") != prior.get("source_sha256") or
+                params.get("drawing_source") != prior.get("drawing_source") or
+                source_item not in (prior.get("ai_committed_item_ids") or [])):
+                raise ValueError("سند منشأ یا نشست AI قبلی معتبر نیست")
+            verified_rows = session_to_boq_rows(
+                prior["session"], session_id=source_sid,
+                selected_item_ids=(source_item,))
+            verified_measurement_identities(prior, verified_rows)
+            if len(verified_rows) != 1 or verified_rows[0]["kind"] != "area":
+                raise ValueError("نوع هندسه AI قبلی قابل اثبات نیست")
+            original = verified_rows[0]
+            saved_quantities = rec.get("quantities")
+            if (not isinstance(saved_quantities, list) or len(saved_quantities) != 1 or
+                not isinstance(saved_quantities[0], dict) or
+                params.get("measurement_identity") != original["measurement_identity"] or
+                saved_quantities[0].get("unit") != original["unit"] or
+                decimal_value(saved_quantities[0].get("amount"), field="AI source", non_negative=True) !=
+                decimal_value(original["quantity"], field="original source", non_negative=True) or
+                decimal_value(row["quantity"], field="BOQ source", non_negative=True) !=
+                decimal_value(original["quantity"], field="original source", non_negative=True)):
+                raise ValueError("کمیت، هویت یا واحد AI با نقشه اصلی مطابقت ندارد")
+            evidence = original.get("geometry_evidence")
+            original_code, original_unit = original["item_code"], original["unit"]
+        else:
+            evidence = params.get("geometry_evidence")
         if not isinstance(evidence, dict):
             raise ValueError("هویت هندسی برداشت قبلی ناقص است")
         for field in ("floor_id", "member_id"):
@@ -92,8 +132,9 @@ def inspect_pending_source_discrepancies(
             "source_id": row["source_id"],
             "floor_id": evidence["floor_id"],
             "member_id": evidence["member_id"],
-            "item_code": row["item_code"],
-            "unit": row["unit"],
+            "item_code": original_code,
+            "unit": original_unit,
+            "source_mode": domain,
             "quantity": decimal_value(row["quantity"], field="committed quantity", non_negative=True),
             "source_sha256": (rec.get("params") or {}).get("source_sha256"),
             "drawing_session_id": rec.get("drawing_session_id"),
