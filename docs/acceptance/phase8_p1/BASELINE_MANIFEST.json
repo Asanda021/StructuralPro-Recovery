@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "project": "StructuralPro-Recovery",
+  "roadmap": "Fixed 8 phases; Windows-first; one final Windows product",
+  "priority": "P8-P1",
+  "recorded_date": "2026-10-31",
+  "audit_scope": "Read-only source ancestry, PR branch relations, verified CI source pin, selected source freeze; NOT physical Windows or release acceptance",
+  "audit_status": "COMPLETE_ACCEPTED_FROZEN_SOURCE_SCOPE",
+  "release_status": "NO_GO",
+  "repository": "Asanda021/StructuralPro-Recovery",
+  "main_sha": "9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95",
+  "tested_source_sha": "b833d8815a629f9d4d46af1ebe2ebbd072cd28ae",
+  "selected_source_baseline_sha": "626033d17530504dd18d7a6a941a928390f2b36a",
+  "allowed_post_ci_paths": [
+    "docs/acceptance/PROJECT_PROGRESS_METHOD_20261031.fa.md",
+    "docs/acceptance/phase7_p6/REPORT.fa.md",
+    "docs/acceptance/phase8_p1/BASELINE_MANIFEST.json",
+    "docs/acceptance/phase8_p1/REPORT.fa.md",
+    "scripts/phase8_p1_baseline_gate.py",
+    ".github/workflows/phase8-p1-baseline-integrity.yml"
+  ],
+  "post_ci_pre_p8_paths": [
+    "docs/acceptance/PROJECT_PROGRESS_METHOD_20261031.fa.md",
+    "docs/acceptance/phase7_p6/REPORT.fa.md"
+  ],
+  "recorded_open_pr_count": 39,
+  "selected_pr_chain": [
+    18,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    31,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40
+  ],
+  "selected_terminal_pr": 40,
+  "excluded_parallel_prs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    30,
+    32
+  ],
+  "divergent_branch_heads": [
+    {
+      "pr": 28,
+      "head_additions_after_selected_fork": 1,
+      "files": [
+        "docs/acceptance/phase6_p1/REPORT.fa.md"
+      ],
+      "classification": "documentation-only side drift"
+    },
+    {
+      "pr": 30,
+      "head_additions_after_selected_fork": 22,
+      "classification": "alternate P6P3 not an ancestor; selected PR31 is canonical; file equivalence not blanket-asserted"
+    },
+    {
+      "pr": 32,
+      "head_additions_after_selected_fork": 29,
+      "classification": "alternate P6P4 not an ancestor; alternate AI module absent in canonical branch; no automatic cherry-pick"
+    },
+    {
+      "pr": 33,
+      "head_additions_after_selected_fork": 41,
+      "classification": "multiple code files equal by Git blob plus modified follow-up files; downstream code supersession requires targeted functional checks"
+    },
+    {
+      "pr": 34,
+      "head_additions_after_selected_fork": 3,
+      "files": [
+        "docs/acceptance/phase6_final/closure-decision-20261029/GATES.json",
+        "docs/acceptance/phase6_final/verification-20261031-technical-handoff/REPORT.fa.md"
+      ],
+      "classification": "documentation-only side drift"
+    },
+    {
+      "pr": 35,
+      "head_additions_after_selected_fork": 1,
+      "files": [
+        "docs/acceptance/phase7_p1/REPORT.fa.md"
+      ],
+      "classification": "documentation-only side drift"
+    }
+  ],
+  "ci": {
+    "tested_run_id": 41192307983,
+    "url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41192307983",
+    "tests_sha": "b833d8815a629f9d4d46af1ebe2ebbd072cd28ae",
+    "completed_jobs": 7,
+    "successful_jobs": 7,
+    "targeted_linux_pass": 491,
+    "targeted_windows_pass": 491,
+    "linux_pass": 8653,
+    "linux_skip": 5,
+    "windows_pass": 8651,
+    "windows_skip": 7,
+    "claim": "Verified native CI on tested source SHA only, not physical user hardware or Office",
+    "selected_baseline_run_id": 41194735675,
+    "selected_baseline_run_status_at_audit": "IN_PROGRESS_NOT_YET_ACCEPTED"
+  },
+  "protected_actions": {
+    "merge": false,
+    "main_write": false,
+    "exe": false,
+    "installer": false,
+    "release": false,
+    "manual_workflow_dispatch": false
+  },
+  "not_tested": [
+    "Windows owner hardware G4",
+    "Microsoft Office real editing and printing",
+    "actual printer",
+    "AI model licenses and hardware A4",
+    "integrated real UAT",
+    "separately unmerged fork branch semantic parity"
+  ],
+  "percentage_policy": "P8P1 is accepted only within scoped Git source-freeze after native 2/2 gate; (7+1/6)/8=89.6% reporting under equal-phase method. Physical UAT and release remain NO_GO.",
+  "p8p1_gate": {
+    "run_id": 41196096480,
+    "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41196096480",
+    "tested_commit": "6c073265f72966d37fef4170e7df18348f802037",
+    "linux": "PASS",
+    "windows": "PASS",
+    "successful_jobs": 2,
+    "total_jobs": 2,
+    "scope": "read-only source integrity and protected actions only",
+    "original_earlier_incomplete_run_id": 41195981994,
+    "original_earlier_incomplete_run_reason": "audit report was not yet committed at that intermediate SHA; superseded by green final run"
+  },
+  "progress": {
+    "method": "equal-phase reporting (8 phases); 6 equal P8 priorities",
+    "phase8_accepted": 1,
+    "phase8_total": 6,
+    "phase8_percentage": 16.6666667,
+    "overall_percentage": 89.5833333,
+    "release_no_go": true
+  }
+}

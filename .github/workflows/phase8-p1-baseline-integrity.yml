@@ -1,0 +1,41 @@
+name: P8 P1 frozen source integrity (no merge/build/release)
+on:
+  push:
+    branches:
+      - audit/phase8-p1-baseline-integrity-20261031
+  pull_request:
+    branches:
+      - feature/phase7-p6-ai-a3-audit-report-20261031
+    paths:
+      - docs/acceptance/phase8_p1/**
+      - scripts/phase8_p1_baseline_gate.py
+      - .github/workflows/phase8-p1-baseline-integrity.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p8-p1-frozen-source-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-source:
+    name: Native Git integrity (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout immutable audit HEAD and entire ancestry
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify last green source pin and fail on product changes
+        run: python scripts/phase8_p1_baseline_gate.py
