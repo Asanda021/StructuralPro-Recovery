@@ -7,6 +7,8 @@ on:
       - core/drawings/native_dwg_preview.py
       - core/cad/persian_text_v1.py
       - core/drawings/dwg_takeoff.py
+      - core/drawings/dwg_converter.py
+      - tests/test_phase1_5_import_hardening.py
       - core/drawings/cad_import_worker.py
       - app/graphical_takeoff.py
       - tests/test_phase8_p2_window_scope_fonts.py
@@ -51,7 +53,7 @@ jobs:
       - name: Install Windows product dependencies with pinned ready-made DWG reader
         run: python -m pip install -q -r requirements.txt
       - name: Qt drag rectangle and scoped quantity policy
-        run: python -m pytest -q tests/test_phase8_p2_window_scope_fonts.py tests/test_viewport_tools.py tests/test_persian_cad_text_v1.py tests/test_graphical_workflow.py::test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired tests/test_phase1_5_import_hardening.py::test_product_dwg_import_uses_offline_converter_only_when_bridge_unavailable --junitxml=p8p2-window-scope-junit.xml
+        run: python -m pytest -q tests/test_phase8_p2_window_scope_fonts.py tests/test_viewport_tools.py tests/test_persian_cad_text_v1.py tests/test_graphical_workflow.py::test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired tests/test_phase1_5_import_hardening.py --junitxml=p8p2-window-scope-junit.xml
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
