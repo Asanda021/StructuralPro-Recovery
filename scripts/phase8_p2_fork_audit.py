@@ -34,7 +34,9 @@ FORKS = {
   "app/reviewed_aec_manual_editor.py":"SAME",
   "app/reviewed_structural_manual_editor.py":"SAME",
   "app/roof_detail_editor.py":"DIFFERENT",
-  "core/ai/contextual_takeoff.py":"SAME",
+  # P8-P2 explicit source-backed A2 validation is newer than the frozen fork.
+  # The original PR33 blob remains immutable; parity must NOT be asserted.
+  "core/ai/contextual_takeoff.py":"DIFFERENT",
   "core/ai/gguf_runtime_v1.py":"SAME"}),
 }
 
