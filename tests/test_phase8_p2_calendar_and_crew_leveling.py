@@ -50,7 +50,7 @@ def test_beyond_reviewed_calendar_year_and_invalid_inputs_fail_closed():
     p={"tasks":[{"id":"T","duration_days":4,"predecessors":[]}]}
     with pytest.raises(ValueError,match="سال جدید"):
         calendarize(p,make_calendar(start_date="1405/12/28"))
-    for value in ("1406/01/01","1405/13/01","1405/12/30","foo"):
+    for value in ("1411/01/01","1405/13/01","1405/12/30","foo"):
         with pytest.raises(ValueError):make_calendar(start_date=value)
     with pytest.raises(ValueError):
         make_calendar(start_date="1405/08/09",working_weekdays=[])
@@ -156,3 +156,41 @@ def test_every_selected_canonical_aec_family_is_visible_without_invented_rate():
             assert task["duration_status"]=="RATE_AND_TAKEOFF_COVERAGE_REVIEW_REQUIRED"
             assert task["linked_item_ids"]==[]
             assert not task["baseline_approved"]
+
+
+
+def test_jalali_calendar_covers_1405_through_1410_and_1408_leap():
+    from core.projects.iran_worksite_calendar import _YEAR_STARTS
+    assert gregorian_1405("1406/01/01")==date(2027,3,21)
+    assert gregorian_1405("1407/01/01")==date(2028,3,20)
+    assert gregorian_1405("1408/01/01")==date(2029,3,20)
+    assert gregorian_1405("1409/01/01")==date(2030,3,21)
+    assert gregorian_1405("1410/01/01")==date(2031,3,21)
+    assert solar_1405(date(2032,3,19))=="1410/12/29"
+    assert gregorian_1405("1408/12/30")==date(2030,3,20)
+    with pytest.raises(ValueError):
+        gregorian_1405("1407/12/30")
+    assert solar_1405(date(2030,3,20))=="1408/12/30"
+    assert _YEAR_STARTS[1411]==date(2032,3,20)
+
+
+def test_future_movable_holidays_remain_explicitly_unreviewed():
+    cal=make_calendar(start_date="1409/01/01")
+    assert cal["supported_years"]==[1405,1410]
+    assert 1409 in cal["future_holidays_review_required"]
+    assert "1409/01/01" in cal["nationwide_holidays"]
+    assert "1409/06/08" not in cal["nationwide_holidays"]
+    task={"tasks":[{"id":"work","duration_days":2,"predecessors":[]}]}
+    result=calendarize(task,cal)
+    assert result["calendar_approved"] is False
+    assert 1409 in result["unreviewed_holiday_years"]
+    reviewed=make_calendar(start_date="1409/01/01",
+        reviewed_future_holidays={1409:["1409/05/01"]})
+    assert 1409 not in reviewed["future_holidays_review_required"]
+    assert "1409/05/01" in reviewed["nationwide_holidays"]
+
+
+def test_calendar_rejects_work_after_1410_even_if_start_was_valid():
+    data={"tasks":[{"id":"work","duration_days":5,"predecessors":[]}]}
+    with pytest.raises(ValueError,match="۱۴۱۰"):
+        calendarize(data,make_calendar(start_date="1410/12/27"))
