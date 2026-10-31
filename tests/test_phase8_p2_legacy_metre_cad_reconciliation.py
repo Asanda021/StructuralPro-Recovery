@@ -175,3 +175,26 @@ def test_wrong_legacy_headers_rejected_without_price_or_boq_changes(tmp_path):
     wb.close()
     with pytest.raises(ValueError, match="audited source headers"):
         LegacyMetreCADReconciler().inspect(file)
+
+
+
+def test_legacy_metre_accepts_only_authentic_persian_arabic_header_variants(tmp_path):
+    from openpyxl import load_workbook
+    path = legacy_book(tmp_path)
+    book = load_workbook(path)
+    ws = book.worksheets[0]
+    ws["B3"] = "شرح عملیات"
+    ws["L3"] = "قيمت"
+    ws["M3"] = "قیمت کل"
+    book.save(path)
+    book.close()
+    result = LegacyMetreCADReconciler().inspect(path)
+    assert result["priced_rows"] == 3
+    assert result["cad"]["verified_rows"] == 0
+    assert result["boq_rows_committed"] == 0
+    book = load_workbook(path)
+    book.worksheets[0]["M3"] = "قیمت تخمینی"
+    book.save(path)
+    book.close()
+    with pytest.raises(ValueError, match="Legacy metre sheet"):
+        LegacyMetreCADReconciler().inspect(path)
