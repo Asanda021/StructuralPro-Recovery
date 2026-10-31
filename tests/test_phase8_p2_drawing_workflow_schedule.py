@@ -191,3 +191,26 @@ def test_actual_graphical_dialog_prompts_after_dxf_open_and_live_schedule_tracks
     finally:
         dlg.close()
         qapp.processEvents()
+
+
+
+def test_takeoff_undo_redo_never_reverts_user_schedule_edits():
+    session = DrawingTakeoffSession()
+    plan = new_workflow_plan(drawing_source="", source_sha256="",
+                             structure="concrete", disciplines=["architecture"])
+    session.workflow_plan = plan
+    first = session.add_count(1, label="دیوار بلوکی")
+    session.workflow_plan = edit_activity(
+        session.workflow_plan, "masonry", duration_days=29, crew="اکیپ اختصاصی"
+    )
+    second = session.add_count(3, label="دیوار بلوکی", source="second-wall")
+    assert session.undo() is True
+    sync_measured_items(session.workflow_plan, session.items)
+    masonry = next(t for t in session.workflow_plan["tasks"] if t["id"] == "masonry")
+    assert masonry["duration_days"] == 29 and masonry["crew"] == "اکیپ اختصاصی"
+    assert masonry["linked_item_ids"] == [first.id]
+    assert session.redo() is True
+    sync_measured_items(session.workflow_plan, session.items)
+    masonry = next(t for t in session.workflow_plan["tasks"] if t["id"] == "masonry")
+    assert set(masonry["linked_item_ids"]) == {first.id, second.id}
+    assert masonry["duration_days"] == 29
