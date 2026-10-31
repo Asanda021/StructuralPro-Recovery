@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch
 from scripts.phase8_p2_real_dwg_source_probe import (
-    MAX_BYTES, SOURCE, RestrictedRedirect, approved_url, inspect_dwg, probe,
+    MAX_BYTES, SOURCE, STUDIO_SOURCE, SOURCES, RestrictedRedirect, approved_url, inspect_dwg, probe,
 )
 
 
@@ -33,6 +33,11 @@ class CandidateProbeTests(unittest.TestCase):
         legacy = inspect_dwg(b"AC1009" + b"0" * 2000)
         self.assertFalse(legacy["eligible_for_approved_acadsharp_versions"])
         self.assertEqual(legacy["compatibility"], "LEGACY_VERSION_OUTSIDE_APPROVED_BRIDGE")
+
+    def test_both_public_sources_are_whitelisted_but_not_real_site_signoff(self):
+        self.assertEqual(SOURCES["studio_cc0"]["url"], STUDIO_SOURCE)
+        self.assertFalse(SOURCES["studio_cc0"]["independent_real_site"])
+        self.assertTrue(approved_url(STUDIO_SOURCE))
 
     def test_arbitrary_source_cannot_be_substituted(self):
         with self.assertRaises(ValueError):
