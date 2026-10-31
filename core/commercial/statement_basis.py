@@ -29,7 +29,8 @@ def statement_mode(project):
 def choose_statement_mode(project,mode):
     if mode not in MODES:raise ValueError("نوع صورت‌وضعیت معتبر نیست")
     previous=project.get("statement_pricing_mode")
-    if previous and previous!=mode and (
+    effective_previous = previous if previous is not None else "pricebook"
+    if effective_previous!=mode and (
         project.get("statement_periods") or project.get("statement_amendments")
     ):
         raise ValueError("پس از ثبت دوره یا اصلاحیه، مبنای صورت‌وضعیت قابل تغییر نیست")
