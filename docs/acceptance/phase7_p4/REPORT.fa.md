@@ -61,3 +61,18 @@
 **حکم:** `P7_P4_IMPLEMENTED_TECHNICAL_SCOPE = AUTOMATED_ACCEPTED` برای مقایسه Revisionهای مقدارمحور، چهار خروجی واقعی، بسته WBS/کنترل پروژه/سایت و Golden پنج‌طبقه **در دامنه آزموده‌شده**. `P7_P4_OVERALL = PARTIAL` تا تعیین تکلیف موارد باز فهرست‌شده در این گزارش، به‌خصوص اثر مالی فقط با مبنای تأییدشده و پوشش جامع منبع‌ها و یکپارچه‌سازی. `PHYSICAL_MS_OFFICE_WINDOWS_UAT = NOT_TESTED_DEFERRED_PHASE8`.
 
 پذیرش این گیت هیچ تغییری در تعداد **۸ فاز اصلی**، ۶ اولویت از پیش تعیین‌شده فاز۷ یا درصد رسمی **۸۵٪** ایجاد نمی‌کند. PR Draft/Open/Unmerged؛ بدون Merge، main، ForcePush، EXE و Release.
+
+## تکمیل کنترل مشروط اثر مالی Revision (ادامه اولویت ۴، ۳۱ اکتبر ۲۰۲۶)
+
+این بند جایگزین گیت موفق قبلی نمی‌شود. کد جدید **پس از** SHA `62882f1` است و پذیرش آن باید بر اساس Commit خودش ارزیابی شود.
+
+- تغییر `core/reports/technical_office_revision.py`: قابلیت `include_verified_financial_impact` به‌صورت **اختیاری و پیش‌فرض false** اضافه شد. زنجیره اصلی گزارش مقدارمحور تغییر نکرده است.
+- تنها در صورت داشتن فهرست‌بهای **تأییدشده، فرمت عددی exact v2، SHA منبع معتبر، سال/نسخه و currency برابر IRR/IRT در دو Revision واقعی SQLite، نرخ/ضریب ثابت و تفکیک بدون ابهام منبع BOQ**، تغییر مقدار در نرخ و ضریب ضرب می‌شود. مسیر `audit_boq(..., require_pricebook=True)` و `verify_reviewed_rates` موجود دوباره همه ردیف‌ها را اعتبارسنجی می‌کند.
+- **بدون منبع قیمت یا واحد پول معتبر، اثر مالی NULL و وضعیت NOT_DETERMINABLE باقی می‌ماند**؛ اثر مالی موجود به معنی تأیید صورت‌وضعیت، نرخ جدید، تعدیل یا پرداخت نیست.
+- مقدار مالی هر ردیف، بهای واحد مستند، ضریب و currency به ردیف گزارش و جمع مالی به Metadata و Manifest اضافه شد؛ PDF/DOCX/XLSX/CSV همان صادرکننده قبلی هستند.
+- آزمون `tests/test_phase7_p4_approved_price_impact.py` از **ورود واقعی فایل CSV قیمت با بازبین مصنوعی، Revisionهای واقعی ProjectStore، اصلاح متره از ۳۰ به ۳۶ مترمربع و نرخ ۱۰۰ ریال برای اختلاف ۶۰۰ ریال** استفاده می‌کند. نبود currency، دستکاری منبع نرخ، ضریب، قیمت، مبلغ ردیف، خروجی چهارگانه و عدم تغییر SQLite ارزیابی می‌شوند.
+- Commit عملیاتیِ این گام: `14b2bb015fbf3b0da49d4d64372d153e8c2ec8e8`.
+- [CI هدفمند #41173598106](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41173598106): Linux **۱۴۴ PASS، صفر شکست**، Windows هنگام ثبت این سند **PENDING**.
+- [CI جامع #41173598129](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41173598129): **PENDING**؛ تا شواهد ۷ Job و union، پذیرش نهایی این تغییر ثبت نمی‌شود.
+- `P7_P4_NEW_FINANCIAL_GUARD = IMPLEMENTED_LINUX_TARGETED_PASS_WINDOWS_AND_BROAD_PENDING`؛ `P7_P4_OVERALL = PARTIAL`.
+- قبل از بستن گیت نهایی، اگر تغییر دیگری در کد رخ داد، نتیجه آزمون‌ها باید مطابق SHA جدید بازبینی شود. پذیرش فیزیکی Windows/MS Office/چاپ همچنان فاز ۸ و NOT_TESTED است. بدون Merge/main/EXE/Release.
