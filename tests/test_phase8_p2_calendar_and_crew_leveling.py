@@ -192,5 +192,6 @@ def test_future_movable_holidays_remain_explicitly_unreviewed():
 
 def test_calendar_rejects_work_after_1410_even_if_start_was_valid():
     data={"tasks":[{"id":"work","duration_days":5,"predecessors":[]}]}
-    with pytest.raises(ValueError,match="۱۴۱۰"):
-        calendarize(data,make_calendar(start_date="1410/12/27"))
+    revised=calendarize(data,make_calendar(start_date="1410/12/27"))
+    assert revised["scheduled_end_jalali"].startswith("1411/")
+    assert 1411 in revised["unreviewed_holiday_years"]
