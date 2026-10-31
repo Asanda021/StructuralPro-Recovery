@@ -340,7 +340,10 @@ class DWGTakeoffEngine:
 
         from core.drawings.dwg_converter import OfflineDWGConverter
         legacy_converter = OfflineDWGConverter()
-        if not legacy_converter.available:
+        # Older approved offline converter adapters expose convert() but not
+        # the optional available property.  Preserve their existing contract;
+        # only an explicit False should select the strict Python provider.
+        if getattr(legacy_converter, "available", True) is False:
             from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
             optional = StrictPythonDWGProvider()
             if optional.available:
