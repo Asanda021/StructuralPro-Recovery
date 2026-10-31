@@ -765,7 +765,19 @@ class GraphicalTakeoffDialog(QDialog):
                     for control in (self.cad_measure,self.cad_review,self.commit_boq_button,self.finish,self.region_to_takeoff):
                         control.setEnabled(False)
                     self.canvas.set_mode('pan')
-                self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
+                self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False)
+                self.source_label.setText('منبع CAD: '+Path(path).name)
+                self.refresh();self.reset_zoom()
+                from core.drawings.cad_large_scene import cad_coverage_report
+                coverage=cad_coverage_report(self.cad_document)
+                self.status.setText(
+                    f"CAD خوانده شد: {coverage['source_entity_count']} جزء | "
+                    f"فاقد رسم مستقیم: {coverage['not_drawn_count']} | "
+                    f"فاقد متره تأییدشده: {coverage['unmeasurable_count']} | "
+                    f"واحد: {self.cad_document.units}"
+                    + (" | فقط پیش‌نمایش؛ ثبت BOQ ممنوع است"
+                       if self.canvas.read_only_model else " | متره نیازمند بازبینی مهندسی")
+                )
                 job['gc_lease'].release()
             except Exception as exc:failed(str(exc))
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
