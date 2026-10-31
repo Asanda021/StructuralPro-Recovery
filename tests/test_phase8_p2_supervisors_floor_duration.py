@@ -169,3 +169,49 @@ def test_qt_jalali_calendar_picker_returns_selected_project_start():
     finally:
         intake.close()
         app.processEvents()
+
+
+
+@pytest.mark.parametrize("count",[1,4])
+def test_real_qt_cad_intake_assigns_supervisors_and_derives_week_from_wbs(tmp_path,count):
+    import os
+    os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
+    import ezdxf
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app=QApplication.instance() or QApplication(["WBS Weekly Integration"])
+    drawing=tmp_path/f"building_{count}.dxf"
+    dxf=ezdxf.new("R2018")
+    dxf.modelspace().add_line((0,0),(4,4))
+    dxf.saveas(drawing)
+    window=GraphicalTakeoffDialog()
+    try:
+        window.show()
+        window.open_drawing(str(drawing))
+        app.processEvents()
+        dialog=window._workflow_intake_dialog
+        assert dialog is not None and dialog.isVisible()
+        dialog.pricing_mode.setCurrentIndex(1)
+        dialog.automatic_schedule.setCurrentIndex(1)
+        dialog.supervision_count.setCurrentIndex(count-1)
+        dialog.disciplines["architecture"].setChecked(True)
+        dialog.disciplines["mechanical"].setChecked(True)
+        dialog.disciplines["electrical"].setChecked(True)
+        dialog._selected_start_date="1405/08/09"
+        dialog.typical_floor_area.setValue(100)
+        dialog.building_floors.setValue(6)
+        dialog.begin.click()
+        app.processEvents()
+        plan=window.session.workflow_plan
+        assert plan is not None and plan["calendar"]["start_date"]=="1405/08/09"
+        assert plan["building_scope"]["total_floors"]==6
+        assert window.session.supervision_team["count"]==count
+        assert window.weekly_button.isEnabled()
+        window.open_engineer_weekly_plan()
+        app.processEvents()
+        assert len(window.session.engineer_weekly_plans)==count
+        assert all(w["derived_from_wbs"] for w in window.session.engineer_weekly_plans)
+        assert window._engineer_weekly_dialog.table.rowCount()>=7
+    finally:
+        window.close()
+        app.processEvents()
