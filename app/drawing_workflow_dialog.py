@@ -155,6 +155,42 @@ class DrawingWorkflowIntakeDialog(QDialog):
         from copy import deepcopy
         return deepcopy(self._team)
 
+    def _configure_team(self):
+        from core.projects.weekly_ownership import define_team,TRADES
+        people=self._team["people"]
+        names=[]
+        for index,person in enumerate(people):
+            name,ok=QInputDialog.getText(
+                self,"معرفی سرپرستان",f"نام سرپرست {index+1}:",
+                text=person["name"],
+            )
+            if not ok:return
+            names.append(name)
+        owners={}
+        for discipline in TRADES:
+            if len(people)==1:
+                owners[discipline]=0
+                continue
+            choices=[f"{i+1} | {name}" for i,name in enumerate(names)]
+            current=self._team["owners"].get(discipline,"supervisor-1")
+            initial=max(0,min(len(choices)-1,int(current.rsplit("-",1)[1])-1))
+            selected,ok=QInputDialog.getItem(
+                self,"تقسیم رشته‌ها","سرپرست مسئول "+discipline+":",
+                choices,initial,False
+            )
+            if not ok:return
+            owners[discipline]=choices.index(selected)
+        try:
+            revised=define_team(names,owners)
+        except ValueError as exc:
+            QMessageBox.warning(self,"تقسیم مسئولیت",str(exc))
+            return
+        self._team=revised
+        self.supervision_summary.setText(" | ".join(
+            person["name"]+": "+", ".join(person["trades"])
+            for person in revised["people"]
+        ))
+
     def _validate_and_accept(self):
         if self.pricing_mode.currentData() is None or self.automatic_schedule.currentData() is None:
             QMessageBox.warning(self,"انتخاب اولیه نقشه",
