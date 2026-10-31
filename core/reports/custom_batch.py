@@ -321,7 +321,10 @@ def _verify_source_files(snapshot,*,require_pricebook):
         if path in references and references[path]!=expected:raise ValueError("هش منبع فهرست‌بها ناسازگار است")
         references[path]=expected
     def signature(s):
-        return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+        # Windows creation/metadata-change time is not durable file identity.
+        # Preserve device, file ID, byte length and mtime; the opened file
+        # must still match the approved SHA-256 on every verification pass.
+        return (s.st_dev,s.st_ino,s.st_size,s.st_mtime_ns)
     checked={}
     try:
         for path,expected in references.items():
