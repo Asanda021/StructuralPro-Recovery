@@ -167,7 +167,19 @@ def _validate_dependencies(tasks):
 
 def recompute_schedule(plan: dict) -> dict:
     from core.projects.precedence_model import calculate_precedence
-    return calculate_precedence(plan)
+    calculate_precedence(plan)
+    if isinstance(plan.get("calendar"),dict) and plan["calendar"].get("start_date"):
+        from core.projects.iran_worksite_calendar import apply_calendar
+        apply_calendar(plan)
+    else:
+        for task in plan.get("tasks",[]):
+            task.pop("start_jalali",None)
+            task.pop("finish_jalali",None)
+        plan.pop("scheduled_end_jalali",None)
+    if plan.get("resource_limits"):
+        from core.projects.crew_capacity import resource_conflicts
+        plan["resource_conflicts"]=resource_conflicts(plan,plan["resource_limits"])
+    return plan
 
 
 def new_workflow_plan(*, drawing_source: str, source_sha256: str,
@@ -446,10 +458,15 @@ def edit_activity(plan: dict, task_id: str, *, title=None, duration_days=None,
         if not isinstance(crew, str) or not crew.strip() or len(crew) > 100:
             raise ValueError("نام اکیپ معتبر لازم است")
         task["crew"] = crew.strip()
+        # A specifically named crew is an explicit resource pool. Generic
+        # office placeholders must never be treated as real shared resources.
+        task["crew_pool"]=crew.strip()
+        task["crew_demand"]=task.get("crew_count",1)
     if crew_count is not None:
         if type(crew_count) is not int or not 1 <= crew_count <= 100:
             raise ValueError("تعداد اکیپ باید صحیح و بین ۱ تا ۱۰۰ باشد")
         task["crew_count"] = crew_count
+        if task.get("crew_pool"):task["crew_demand"]=crew_count
     if efficiency is not None:
         from decimal import Decimal,InvalidOperation
         try: eff=Decimal(str(efficiency))
@@ -470,4 +487,49 @@ def edit_activity(plan: dict, task_id: str, *, title=None, duration_days=None,
             raise ValueError("روابط تقدم و تأخر باید یک فهرست باشد")
         task["links"]=links
     recompute_schedule(draft)
+    return draft
+
+def add_custom_activity(plan,title,discipline,*,duration_days=0,predecessors=None):
+    """Add user-defined scope to the existing WBS without fictitious takeoff."""
+    from uuid import uuid4
+    if plan.get("status")!="DRAFT_UNAPPROVED":
+        raise ValueError("فقط برنامه پیش‌نویس قابل افزودن است")
+    if not isinstance(title,str) or not title.strip() or len(title)>150:
+        raise ValueError("شرح فعالیت معتبر لازم است")
+    if discipline not in plan.get("disciplines",[]):
+        raise ValueError("رشته فعالیت انتخاب نشده است")
+    if type(duration_days) is not int or not 0<=duration_days<=3650:
+        raise ValueError("مدت فعالیت نامعتبر است")
+    p=deepcopy(plan)
+    ident="user:"+uuid4().hex[:16]
+    p["tasks"].append({
+        "id":ident,"title":title.strip(),"discipline":discipline,
+        "duration_days":duration_days,"duration_edited":True,
+        "duration_status":"USER_DEFINED_REQUIRES_REVIEW",
+        "crew":"تعیین نشده","predecessors":list(predecessors or []),
+        "predecessors_edited":True,
+        "linked_item_ids":[],"measured":{},"quantity_reviewed":False,
+        "baseline_approved":False,
+    })
+    return recompute_schedule(p)
+
+
+def apply_resource_limits(plan,limits,*,level=False):
+    """Validate explicit crew capacities; optionally produce a new draft scenario."""
+    if plan.get("status")!="DRAFT_UNAPPROVED":
+        raise ValueError("برنامه مبنای قطعی قابل دستکاری نیست")
+    from core.projects.crew_capacity import resource_conflicts,level_shared_crew_resources
+    draft=deepcopy(plan)
+    if not isinstance(limits,dict):
+        raise ValueError("ظرفیت اکیپ‌ها باید جدول باشد")
+    # No pooled names should be inferred from rate-catalog crew placeholders.
+    draft["resource_limits"]=dict(limits)
+    if level:
+        draft=level_shared_crew_resources(draft,limits)
+    else:
+        recompute_schedule(draft)
+        draft["resource_conflicts"]=resource_conflicts(draft,limits)
+    if draft.get("calendar",{}).get("start_date"):
+        from core.projects.iran_worksite_calendar import apply_calendar
+        apply_calendar(draft)
     return draft
