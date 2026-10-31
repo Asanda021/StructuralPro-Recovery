@@ -54,6 +54,7 @@ jobs:
           --junitxml=p7-p5-e8-targeted.xml
           tests/test_phase7_p5_source_discrepancy_gate.py
           tests/test_phase7_p5_real_commit_integration.py
+          tests/test_ai_takeoff_persistent_approval.py
           tests/test_phase2_advanced_geometry_sqlite.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p4_technical_office_revision.py
