@@ -30,7 +30,7 @@ def test_real_manual_commit_cannot_transfer_changed_member_without_review(tmp_pa
 def test_manual_commit_path_invokes_e8_and_keeps_atomicity_on_review_gate(tmp_path,monkeypatch):
     # A new, nonconflicting member is normally accepted. Test proves the
     # application actually invokes the E8 source gate before any DB write.
-    app, project, args, _, pending = _two_sessions(tmp_path, member="P2")
+    app, project, args, _, pending = _two_sessions(tmp_path, member="P2", points=[(600,100),(800,100),(800,600),(600,600)])
     original = deepcopy(project)
     digest = app.store.current_digest("P")
     called = []
@@ -54,7 +54,7 @@ def test_manual_commit_path_invokes_e8_and_keeps_atomicity_on_review_gate(tmp_pa
 
 
 def test_distinct_member_source_can_still_commit_after_real_e8_preflight(tmp_path):
-    app, project, args, _, pending = _two_sessions(tmp_path, member="P2")
+    app, project, args, _, pending = _two_sessions(tmp_path, member="P2", points=[(600,100),(800,100),(800,600),(600,600)])
     before = app.store.current_digest("P")
     try:
         committed = app.commit_drawing_takeoff_to_boq(
