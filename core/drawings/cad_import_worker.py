@@ -24,7 +24,10 @@ def main():
    pickle.dump(header,f,protocol=5)
    for start in range(0,len(meshes),100):pickle.dump(meshes[start:start+100],f,protocol=5)
   return
- doc=DWGTakeoffEngine.with_array_support().import_file(sys.argv[1])
+ # Exactly the same strict -> source-native display fallback as the
+ # synchronous Windows viewer; never fabricate payable CAD evidence here.
+ from core.drawings.viewer_model import DrawingViewerModel
+ doc=DrawingViewerModel().open(sys.argv[1]).cad_document
  from collections import Counter
  doc._layer_counts=Counter(e.layer for e in doc.entities);coords=[]
  for e in doc.entities:
