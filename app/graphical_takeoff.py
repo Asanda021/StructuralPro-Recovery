@@ -958,8 +958,11 @@ class GraphicalTakeoffDialog(QDialog):
         dialog.show()
 
     def open_engineer_weekly_plan(self):
-        if not self.viewer.path:
-            self.status.setText("ابتدا نقشه را باز کنید")
+        if not self.viewer.path or not self.session.workflow_plan:
+            self.status.setText("برای برنامه هفتگی باید ابتدا برنامه زمان‌بندی اصلی را فعال کنید")
+            return
+        if not self.session.supervision_team:
+            self.status.setText("ابتدا سرپرستان رشته‌های سازه، معماری، مکانیک و برق را تعیین کنید")
             return
         from app.engineer_weekly_dialog import EngineerWeeklyDialog
         from shiboken6 import isValid
@@ -974,12 +977,30 @@ class GraphicalTakeoffDialog(QDialog):
             if self.session.source_sha256!=sha:
                 raise ValueError("منبع نقشه تغییر کرده است")
             self.session.engineer_weekly_plans=plans
+        from core.projects.weekly_ownership import derive_weeks
+        plan=self.session.workflow_plan
+        week_of=plan.get("calendar",{}).get("start_date")
+        if not week_of:
+            self.status.setText("تاریخ آغاز برنامه زمان‌بندی اصلی مشخص نشده است")
+            return
+        derived=derive_weeks(
+            self.session.supervision_team,plan,week_of,
+            self.session.engineer_weekly_plans,sha,
+        )
+        self.session.engineer_weekly_plans=derived["plans"]
         dialog=EngineerWeeklyDialog(
             lambda:self.session.engineer_weekly_plans,
             update,
             lambda:(self.session.workflow_plan or {}).get("tasks",[]),
             sha,self,
+            get_team=lambda:self.session.supervision_team,
+            get_wbs=lambda:self.session.workflow_plan,
         )
+        person=self.session.supervision_team["people"][0]
+        dialog.engineer_id.setText(person["id"])
+        dialog.engineer_name.setText(person["name"])
+        dialog.week_date.setText(week_of)
+        dialog.refresh()
         self._engineer_weekly_dialog=dialog
         dialog.show()
 
