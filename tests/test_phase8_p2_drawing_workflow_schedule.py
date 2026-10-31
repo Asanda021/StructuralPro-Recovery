@@ -214,3 +214,27 @@ def test_takeoff_undo_redo_never_reverts_user_schedule_edits():
     masonry = next(t for t in session.workflow_plan["tasks"] if t["id"] == "masonry")
     assert set(masonry["linked_item_ids"]) == {first.id, second.id}
     assert masonry["duration_days"] == 29
+
+
+
+def test_queued_post_open_dialog_never_calls_destroyed_qt_window(qapp, tmp_path, monkeypatch):
+    """Regression for GUI close: no stale QTimer popup or deleted-scene access."""
+    from PySide6.QtCore import QCoreApplication, QEvent
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    import sys
+    import ezdxf
+    path = tmp_path / "open_then_close.dxf"
+    drawing = ezdxf.new("R2018")
+    drawing.header["$INSUNITS"] = 6
+    drawing.modelspace().add_line((0, 0), (2, 2))
+    drawing.saveas(path)
+    captured = []
+    monkeypatch.setattr(sys, "excepthook", lambda cls, value, tb: captured.append(str(value)))
+    widget = GraphicalTakeoffDialog()
+    widget.show()
+    widget.open_drawing(str(path))
+    # Kill the underlying C++ widget while its opening workflow is queued.
+    widget.close()
+    QCoreApplication.sendPostedEvents(None, QEvent.DeferredDelete)
+    qapp.processEvents()
+    assert captured == []
