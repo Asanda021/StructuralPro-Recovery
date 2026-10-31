@@ -1020,12 +1020,12 @@ class GraphicalTakeoffDialog(QDialog):
                 self._render_pdf_background()
                 for item in self.session.for_page(self.page):
                     self.canvas._draw_measurement(item)
-            elif model_view:
+            elif self.viewer.kind == "ifc":
                 self._render_ifc()
             else:
                 self._render_cad()
             self.refresh()
-            if model_view:
+            if self.viewer.kind == "ifc":
                 self._ifc_status()
             self.reset_zoom()
         except Exception as exc:
