@@ -1035,6 +1035,25 @@ class StructuralProApp:
         rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=selected)
         rows = verified_measurement_identities(record, rows)
         assert_new_measurements(project, record, rows)
+        # E8 P7-P5: the existing commit guards cannot attribute a changed
+        # source/quantity to the same member automatically. A new independent
+        # review is mandatory for source-backed planar regions only. Legacy
+        # length/count/AI candidates retain their original stricter gates.
+        e8_area_ids = tuple(row["takeoff_id"] for row in rows
+                            if row["kind"] == "area" and row.get("geometry_evidence"))
+        if e8_area_ids:
+            from core.reports.source_discrepancy_gate import require_no_pending_source_discrepancies
+            require_no_pending_source_discrepancies(
+                self, project_id=pid,
+                expected_project_version=project["_meta"]["version"],
+                session_id=sid, selected_item_ids=e8_area_ids,
+            )
+        from core.reports.ifc_crosswalk_source_audit import require_reviewed_ifc_crosswalks_for_boq
+        require_reviewed_ifc_crosswalks_for_boq(
+            self, project_id=pid,
+            expected_project_version=project["_meta"]["version"],
+            session_id=sid, selected_item_ids=tuple(selected),
+        )
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         duplicate_sources = [row["source_id"] for row in rows if row["source_id"] in existing_sources]
         if duplicate_sources:
@@ -1128,6 +1147,23 @@ class StructuralProApp:
         canonical_rows = session_to_boq_rows(record.get("session", {}), session_id=sid, selected_item_ids=list(candidate_item_ids))
         canonical_rows = verified_measurement_identities(record, canonical_rows)
         assert_new_measurements(project, record, canonical_rows)
+        # The explicit user review of an AI proposal does not waive a known
+        # cross-session source clash. Reuse the same E8 gate as manual commit.
+        e8_area_ids = tuple(row["takeoff_id"] for row in canonical_rows
+                            if row["kind"] == "area" and row.get("geometry_evidence"))
+        if e8_area_ids:
+            from core.reports.source_discrepancy_gate import require_no_pending_source_discrepancies
+            require_no_pending_source_discrepancies(
+                self, project_id=pid,
+                expected_project_version=project["_meta"]["version"],
+                session_id=sid, selected_item_ids=e8_area_ids,
+            )
+        from core.reports.ifc_crosswalk_source_audit import require_reviewed_ifc_crosswalks_for_boq
+        require_reviewed_ifc_crosswalks_for_boq(
+            self, project_id=pid,
+            expected_project_version=project["_meta"]["version"],
+            session_id=sid, selected_item_ids=tuple(sorted(candidate_item_ids)),
+        )
         identities = {row["takeoff_id"]: row for row in canonical_rows}
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         new_rows = []
