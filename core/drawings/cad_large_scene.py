@@ -73,7 +73,7 @@ def cad_coverage_report(document):
             not_visible[typ] += 1
         can_draw = (
             typ == "LINE" and data.get("start") is not None and data.get("end") is not None
-            or typ in {"LWPOLYLINE", "POLYLINE", "ARC"} and len(data.get("display_points", data.get("points", ()))) >= 2
+            or typ in {"LWPOLYLINE", "POLYLINE", "ARC", "SPLINE", "ELLIPSE"} and len(data.get("display_points", data.get("points", ()))) >= 2
             or typ == "CIRCLE" and data.get("center") is not None and data.get("radius") is not None
             or typ in {"TEXT", "MTEXT", "DIMENSION"} and bool(data.get("text"))
         )
