@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
     QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QAbstractItemView, QGraphicsScene, QGraphicsView,
-    QLineEdit, QInputDialog,
+    QLineEdit, QInputDialog, QFileDialog,
 )
 
 from core.drawings.workflow_planning import edit_activity
@@ -152,7 +152,10 @@ class DrawingScheduleDialog(QDialog):
         self.crew_level.clicked.connect(lambda:self._crew_constraints(True))
         self.add_task=QPushButton("افزودن فعالیت سفارشی")
         self.add_task.clicked.connect(self._add_task)
-        for w in (self.capacity_input,self.crew_check,self.crew_level,self.add_task):
+        self.rate_calibration=QPushButton("ورود راندمان واقعی اکیپ (CSV)")
+        self.rate_calibration.setObjectName("ImportObservedProductivityCSV")
+        self.rate_calibration.clicked.connect(self._import_site_productivity)
+        for w in (self.capacity_input,self.crew_check,self.crew_level,self.add_task,self.rate_calibration):
             poolbar.addWidget(w)
         layout.addLayout(poolbar)
         self.table = QTableWidget(0, len(self.HEADERS))
@@ -304,6 +307,54 @@ class DrawingScheduleDialog(QDialog):
             self.on_edit(plan)
         except (ValueError,TypeError) as exc:
             QMessageBox.warning(self,"کنترل اکیپ‌ها",str(exc))
+        self.refresh()
+
+    def _import_site_productivity(self):
+        import csv
+        from pathlib import Path
+        from core.projects.production_catalog import CATALOG
+        from core.projects.productivity_evidence import calibrate_productivity
+        from core.drawings.workflow_planning import register_project_productivity_calibration
+        plan=self.get_plan()
+        if not plan.get("project_id"):
+            QMessageBox.warning(self,"راندمان واقعی","ابتدا برنامه را به یک پروژه واقعی ذخیره‌شده متصل کنید")
+            return
+        available=[t["id"] for t in plan["tasks"] if t["id"] in CATALOG]
+        profile,yes=QInputDialog.getItem(
+            self,"فعالیت مبنای راندمان","فعالیت مورد مشاهده:",
+            available,0,False,
+        )
+        if not yes:return
+        path=QFileDialog.getOpenFileName(
+            self,"فایل مشاهدات کارگاه",
+            "","فایل مشاهدات CSV (*.csv)",
+        )[0]
+        if not path:return
+        reviewer,yes=QInputDialog.getText(
+            self,"بازبینی راندمان","نام مهندس بازبین شواهد کارگاه:"
+        )
+        if not yes:return
+        try:
+            file=Path(path)
+            if file.stat().st_size>3*1024*1024:
+                raise ValueError("فایل مشاهدات بزرگ‌تر از حد مجاز است")
+            with file.open("r",encoding="utf-8-sig",newline="") as stream:
+                reader=csv.DictReader(stream)
+                cols={"observed_on","quantity","unit","workdays","crews","source_path"}
+                if not cols.issubset(reader.fieldnames or []):
+                    raise ValueError("ستون‌های لازم CSV موجود نیست")
+                rows=[]
+                for row in reader:
+                    if len(rows)>=100:raise ValueError("حداکثر ۱۰۰ مشاهده در هر فایل")
+                    ref=Path(row["source_path"])
+                    row["source_path"]=str(ref if ref.is_absolute() else file.parent/ref)
+                    rows.append(row)
+            evidence=calibrate_productivity(profile,rows,reviewer=reviewer,
+                     project_id=plan["project_id"])
+            revised=register_project_productivity_calibration(plan,evidence)
+            self.on_edit(revised)
+        except (ValueError,TypeError,OSError,UnicodeError) as exc:
+            QMessageBox.warning(self,"کالیبراسیون راندمان",str(exc))
         self.refresh()
 
     def _add_task(self):
