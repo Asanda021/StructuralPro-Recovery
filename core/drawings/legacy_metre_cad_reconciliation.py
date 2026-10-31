@@ -227,12 +227,15 @@ class LegacyMetreCADReconciler:
                     "verified_rows": 0, "not_verified_rows": len(report["rows"]),
                 }
                 return
-            if not ACadSharpDWGProvider().available and not OfflineDWGConverter().available:
+            from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+            if (not ACadSharpDWGProvider().available and
+                not OfflineDWGConverter().available and
+                not StrictPythonDWGProvider().available):
                 report["cad"] = {
                     "status": "BLOCKED_NATIVE_DWG_CONVERTER_UNAVAILABLE",
                     "source_sha256": src_digest, "dwg_signature": cad_header["code"],
                     "dwg_version": cad_header["version"],
-                    "remediation": "Configure existing authorized ACadSharp bridge or approved offline DWG converter",
+                    "remediation": "Configure an approved ACadSharp/ODA converter or install pinned ezdwg[dxf]==0.17.0 prebuilt wheel; do not approve unconverted DWG",
                     "verified_rows": 0, "not_verified_rows": len(report["rows"]),
                 }
                 return
