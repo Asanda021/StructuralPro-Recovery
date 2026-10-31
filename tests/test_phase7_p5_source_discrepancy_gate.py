@@ -115,3 +115,76 @@ def test_nonexistent_persisted_session_must_not_pass(tmp_path):
             inspect_pending_source_discrepancies(app, **(args | {"session_id": "fabricated"}))
     finally:
         app.store.close()
+
+
+def _ai_area_history(tmp_path):
+    """Stored AI proposal from the real vector-PDF session and SQLite."""
+    app, _, _, _ = fixture(tmp_path)
+    session, original, old = polygon(app, tmp_path / "plan.pdf")
+    proposal = {
+        "drawing_id": old["session_id"],
+        "revision_id": str(old["revision"]),
+        "candidates": [{
+            "source_id": "page-1:area-approved-by-reviewer",
+            "session_item_id": original.id,
+            "page": 1,
+            "kind": "area",
+            "unit": "m2",
+            "quantity": original.quantity,
+            "confidence": 0.98,
+            "label": "سطح PDF به تأیید انسانی رسیده",
+            "formula": original.formula,
+            "evidence": {
+                "source_ref": original.source_ref,
+                "scale_ref": "calibration:page-1",
+                "meters_per_pixel": session.calibrations[1].meters_per_pixel,
+            },
+        }],
+    }
+    app.commit_ai_takeoff_proposal("P", proposal, user_confirmed=True)
+    _, candidate, pending = polygon(app, tmp_path / "plan.pdf")
+    current = app.open_project("P")
+    args = {
+        "project_id": "P",
+        "expected_project_version": current["_meta"]["version"],
+        "session_id": pending["session_id"],
+        "selected_item_ids": (candidate.id,),
+    }
+    return app, current, args
+
+
+def test_historical_ai_area_requires_original_member_evidence(tmp_path):
+    app, snapshot, opts = _ai_area_history(tmp_path)
+    digest = app.store.current_digest("P")
+    try:
+        result = inspect_pending_source_discrepancies(app, **opts)
+        assert result["status"] == "REVIEW_REQUIRED"
+        assert result["source_preflight_clear"] is False
+        assert len(result["conflicts"]) == 1
+        assert result["conflicts"][0]["committed"]["source_mode"] == "drawing_ai"
+        assert result["conflicts"][0]["committed"]["member_id"] == "P1"
+        assert result["conflicts"][0]["code"] == "POTENTIAL_DUPLICATE_MEMBER_SOURCE"
+        with pytest.raises(ValueError, match="مهندس"):
+            require_no_pending_source_discrepancies(app, **opts)
+        assert app.store.current_digest("P") == digest
+        assert app.open_project("P") == snapshot
+    finally:
+        app.store.close()
+
+
+def test_historical_ai_invalid_identity_fails_closed_even_if_boq_looks_normal(tmp_path, monkeypatch):
+    app, snapshot, opts = _ai_area_history(tmp_path)
+    original_open = app.open_project
+
+    def corrupt_cached_read(pid):
+        project = deepcopy(original_open(pid))
+        ai = next(r for r in project["takeoffs"] if r["domain"] == "drawing_ai")
+        ai["params"]["measurement_identity"] = "spoofed-measurement"
+        return project
+
+    monkeypatch.setattr(app, "open_project", corrupt_cached_read)
+    try:
+        with pytest.raises(ValueError):
+            inspect_pending_source_discrepancies(app, **opts)
+    finally:
+        app.store.close()
