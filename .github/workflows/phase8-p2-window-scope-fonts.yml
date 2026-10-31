@@ -5,6 +5,8 @@ on:
     paths:
       - core/drawings/viewport_tools.py
       - core/drawings/native_dwg_preview.py
+      - core/cad/persian_text_v1.py
+      - core/drawings/dwg_takeoff.py
       - core/drawings/cad_import_worker.py
       - app/graphical_takeoff.py
       - tests/test_phase8_p2_window_scope_fonts.py
