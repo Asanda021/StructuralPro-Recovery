@@ -1,0 +1,40 @@
+name: P8 P2 pinned public DWG parser wheel handoff (no user source)
+on:
+  push:
+    branches: [test/phase8-p2-engineering-e2e-20261031]
+    paths:
+      - .github/workflows/phase8-p2-offline-wheel-handoff.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p8p2-public-wheel-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verified-python-wheel:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Download prebuilt fixed-version Linux DWG reader (public PyPI only)
+        run: python -m pip download -q --disable-pip-version-check --no-deps --only-binary=:all: --platform manylinux2014_x86_64 --implementation cp --python-version 3.12 --abi abi3 "ezdwg==0.17.0" -d wheel
+      - name: Check wheel hash against public PyPI before retaining
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          files=list(Path('wheel').glob('ezdwg-0.17.0-cp310-abi3-manylinux*.whl'))
+          assert len(files)==1, files
+          digest=hashlib.sha256(files[0].read_bytes()).hexdigest()
+          assert digest=='8239d8170264ae1612bcee06561ecdc53621c5017d979eaaf35d899dd12de44d', digest
+          print('PUBLIC_SHA256_PIN_OK', digest, files[0].stat().st_size)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pinned-public-ezdwg-wheel-linux-x86-64
+          path: wheel/ezdwg-0.17.0-cp310-abi3-manylinux*.whl
+          if-no-files-found: error
+          retention-days: 3
