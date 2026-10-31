@@ -10,6 +10,9 @@ on:
     paths:
       - core/platform/application.py
       - core/reports/source_discrepancy_gate.py
+      - core/reports/ifc_crosswalk_source_audit.py
+      - tests/test_phase7_p5_ifc_crosswalk_source_audit.py
+      - tests/test_phase7_p5_ifc_boq_commit_gate.py
       - tests/test_phase7_p5_source_discrepancy_gate.py
       - tests/test_phase7_p5_real_commit_integration.py
       - .github/workflows/phase7-p5-broad-regression.yml
@@ -92,6 +95,8 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=0 --junitxml=technical-targeted.xml
           tests/test_phase7_p5_source_discrepancy_gate.py
           tests/test_phase7_p5_real_commit_integration.py
+          tests/test_phase7_p5_ifc_crosswalk_source_audit.py
+          tests/test_phase7_p5_ifc_boq_commit_gate.py
           tests/test_phase7_p4_technical_office_revision.py
           tests/test_phase7_p4_technical_office_dossier.py
           tests/test_phase7_p4_five_storey_site_golden.py
