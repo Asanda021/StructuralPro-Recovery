@@ -44,12 +44,37 @@ class DrawingWorkflowIntakeDialog(QDialog):
         self.setWindowTitle("پس از بازکردن نقشه | چه کاری انجام دهیم؟")
         self.setObjectName("DrawingWorkflowIntakeDialog")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.resize(610, 510)
+        self.resize(680, 690)
         main = QVBoxLayout(self)
         intro = QLabel("از این نقشه چه می‌خواهید؟ ابتدا نوع اسکلت را بررسی کن و رشته‌های متره را انتخاب کن.")
         intro.setWordWrap(True)
         main.addWidget(intro)
         main.addWidget(QLabel("فایل: " + source_name))
+        main.addWidget(QLabel("۱. مبنای صورت‌وضعیت این نقشه را انتخاب کن:"))
+        self.pricing_mode=QComboBox()
+        self.pricing_mode.setObjectName("DrawingInitialStatementBasis")
+        self.pricing_mode.addItem("انتخاب مبنا الزامی است",None)
+        self.pricing_mode.addItem("با فهرست‌بها","pricebook")
+        self.pricing_mode.addItem("بدون فهرست‌بها / نرخ توافقی","contract_rates")
+        main.addWidget(self.pricing_mode)
+        self.contract_price_entry=QComboBox()
+        self.contract_price_entry.setObjectName("DrawingContractPriceEntry")
+        self.contract_price_entry.addItem("مبالغ قرارداد از ابتدا نمایش داده شود","prefilled")
+        self.contract_price_entry.addItem("مبلغ خالی بماند تا اپراتور هنگام بررسی وارد کند","operator_blank")
+        self.contract_price_entry.setEnabled(False)
+        self.pricing_mode.currentIndexChanged.connect(
+            lambda:self.contract_price_entry.setEnabled(
+                self.pricing_mode.currentData()=="contract_rates"
+            )
+        )
+        main.addWidget(self.contract_price_entry)
+        main.addWidget(QLabel("۲. آیا نرم‌افزار برنامه زمان‌بندی خودکار ایجاد کند؟"))
+        self.automatic_schedule=QComboBox()
+        self.automatic_schedule.setObjectName("DrawingAutomaticSchedulingChoice")
+        self.automatic_schedule.addItem("انتخاب کنید",None)
+        self.automatic_schedule.addItem("بله، همراه متره زمان‌بندی پیشنهادی بساز","yes")
+        self.automatic_schedule.addItem("خیر، فقط متره و برنامه هفتگی مهندسان","no")
+        main.addWidget(self.automatic_schedule)
         main.addWidget(QLabel("وضعیت عملیات پروژه (برای جلوگیری از فعالیت‌های غیرمرتبط):"))
         self.project_kind=QComboBox()
         self.project_kind.setObjectName("DrawingWorkflowProjectKind")
@@ -87,15 +112,28 @@ class DrawingWorkflowIntakeDialog(QDialog):
         note.setWordWrap(True)
         main.addWidget(note)
         buttons = QHBoxLayout()
-        self.begin = QPushButton("شروع متره و برنامه زمان‌بندی")
+        self.begin = QPushButton("تأیید انتخاب‌ها و شروع")
         self.begin.setObjectName("DrawingWorkflowStart")
         self.skip = QPushButton("فعلاً فقط مشاهده نقشه")
         self.skip.setObjectName("DrawingWorkflowViewOnly")
-        self.begin.clicked.connect(self.accept)
+        self.begin.clicked.connect(self._validate_and_accept)
         self.skip.clicked.connect(self.reject)
         buttons.addWidget(self.begin)
         buttons.addWidget(self.skip)
         main.addLayout(buttons)
+
+    def _validate_and_accept(self):
+        if self.pricing_mode.currentData() is None or self.automatic_schedule.currentData() is None:
+            QMessageBox.warning(self,"انتخاب اولیه نقشه",
+                "ابتدا مبنای صورت‌وضعیت و سپس فعال یا غیرفعال‌بودن زمان‌بندی را انتخاب کنید")
+            return
+        self.accept()
+
+    def pricing_selection(self):
+        return self.pricing_mode.currentData(),self.contract_price_entry.currentData()
+
+    def automatic_schedule_selected(self):
+        return self.automatic_schedule.currentData()=="yes"
 
     def selection(self) -> tuple[str, list[str]]:
         return self.frame_kind.currentData(), [
@@ -132,10 +170,10 @@ class DrawingScheduleDialog(QDialog):
         controls=QHBoxLayout()
         self.calendar_start=QLineEdit()
         self.calendar_start.setObjectName("WBSJalaliStart")
-        self.calendar_start.setPlaceholderText("شروع شمسی ۱۴۰۵/۰۸/۰۹")
+        self.calendar_start.setPlaceholderText("شروع شمسی ۱۴۰۵ تا ۱۴۱۰، مثل ۱۴۰۷/۰۸/۰۹")
         self.extra_holidays=QLineEdit()
         self.extra_holidays.setObjectName("WBSExtraHolidays")
-        self.extra_holidays.setPlaceholderText("تعطیلی محلی: ۱۴۰۵/۰۸/۱۱، ...")
+        self.extra_holidays.setPlaceholderText("تعطیلی محلی یا موردی: ۱۴۰۷/۰۸/۱۱، ...")
         self.apply_calendar_button=QPushButton("اعمال تقویم شمسی")
         self.apply_calendar_button.clicked.connect(self._calendar_changed)
         controls.addWidget(self.calendar_start)
@@ -283,7 +321,7 @@ class DrawingScheduleDialog(QDialog):
         value=self.calendar_start.text().strip()
         extra=[v.strip() for v in self.extra_holidays.text().replace("،",",").split(",") if v.strip()]
         try:
-            if not value:raise ValueError("تاریخ شروع شمسی ۱۴۰۵ را وارد کنید")
+            if not value:raise ValueError("تاریخ شروع شمسی از ۱۴۰۵ تا ۱۴۱۰ را وارد کنید")
             output=calendarize(self.get_plan(),make_calendar(
                 start_date=value,extra_holidays=extra,
             ))
