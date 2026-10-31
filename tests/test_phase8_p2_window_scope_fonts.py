@@ -65,9 +65,12 @@ def test_real_qt_window_zoom_keeps_scope_when_switching_to_takeoff_selection(qap
         assert rect.width()<8 and rect.height()<8  # raw drawing units are <1
         canvas.set_mode("cad_select")
         assert canvas._selected_region_rect == rect
-        inside=canvas.scene.addLine(.2,.2,.3,.2)
-        cross=canvas.scene.addLine(.55,.25,.8,.25)
-        outside=canvas.scene.addLine(.9,.9,.99,.99)
+        # Assert against the ACTUAL scene rectangle returned by Qt after
+        # integer-pixel drag rounding; Windows/Wayland differ by a pixel.
+        x0,y0,w,h=rect.left(),rect.top(),rect.width(),rect.height()
+        inside=canvas.scene.addLine(x0+.15*w,y0+.3*h,x0+.35*w,y0+.3*h)
+        cross=canvas.scene.addLine(x0+.8*w,y0+.5*h,x0+1.2*w,y0+.5*h)
+        outside=canvas.scene.addLine(x0+1.3*w,y0+1.3*h,x0+1.5*w,y0+1.5*h)
         assert canvas._scope_relation(inside) == "inside"
         assert canvas._scope_relation(cross) == "crossing"
         assert canvas._scope_relation(outside) == "outside"
