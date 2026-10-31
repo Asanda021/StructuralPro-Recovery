@@ -38,6 +38,8 @@ def _xy(v):
     return result
 
 
+_MAX_EXPANDED_CAD_ENTITIES = 1_000_000  # bounded engineering expansion, never silent truncation
+
 _UNIT_FACTORS = {"in": 0.0254, "ft": 0.3048, "mi": 1609.344, "mm": 0.001, "cm": 0.01, "m": 1.0, "km": 1000.0}
 
 
@@ -95,7 +97,7 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
         layer=str(e.dxf.layer)
         if layer=='0' and inherited:layer=inherited
         budget[0]+=1
-        if budget[0]>250000:raise ValueError('تعداد اجزای بازشده از حد ۲۵۰۰۰۰ بیشتر است؛ پردازش متوقف شد')
+        if budget[0]>_MAX_EXPANDED_CAD_ENTITIES:raise ValueError('تعداد اجزای بازشده از سقف ایمن یک میلیون بیشتر است؛ پردازش متوقف شد')
         layer_record=document.layers.get(layer) if layer in document.layers else None
         visible=parent_visible and not bool(e.dxf.get('invisible',0)) and (layer_record is None or not(layer_record.is_off() or layer_record.is_frozen()))
         yield e,'/'.join(identity),layer,visible
@@ -107,14 +109,19 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
             if e.mcount>1:
                 if not allow_arrays:raise ValueError('آرایه MINSERT نیازمند قرارداد توسعه صریح است')
                 rows=e.dxf.row_count;cols=e.dxf.column_count
-                if rows*cols>250000 or any(not math.isfinite(float(e.dxf.get(k,0))) or float(e.dxf.get(k,0))<=0 for k,c in [('row_spacing',rows),('column_spacing',cols)] if c>1):raise ValueError('تعداد یا فاصله آرایه MINSERT نامعتبر است')
-                instances=list(e.multi_insert())
-                if len(instances)!=rows*cols:raise ValueError('نمونه‌های منطبق آرایه مجاز نیستند')
-                for i,instance in enumerate(instances):
+                if rows*cols>_MAX_EXPANDED_CAD_ENTITIES or any(not math.isfinite(float(e.dxf.get(k,0))) or float(e.dxf.get(k,0))<=0 for k,c in [('row_spacing',rows),('column_spacing',cols)] if c>1):raise ValueError('تعداد یا فاصله آرایه MINSERT نامعتبر است')
+                instance_count=0
+                # Do not materialize potentially 1M MINSERT instances before
+                # emitting a single entity; each instance is separately
+                # bounded by the shared expansion budget.
+                for i,instance in enumerate(e.multi_insert()):
+                    instance_count+=1
+                    if instance_count>rows*cols:raise ValueError('تعداد نمونه‌های آرایه با منبع منطبق نیست')
                     cell=identity[:-1]+(handle+'@'+str(i//cols)+','+str(i%cols),)
                     skipped=[];virtual=list(instance.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
                     if skipped:raise ValueError('تبدیل کامل آرایه ممکن نیست')
                     yield from _expanded_entities(virtual,document,warnings,cell,names+(str(e.dxf.name),),layer,budget,visible,allow_arrays)
+                if instance_count!=rows*cols:raise ValueError('تعداد نمونه‌های آرایه با منبع منطبق نیست')
                 continue
             name=e.dxf.name
             if name in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
