@@ -768,7 +768,7 @@ class GraphicalTakeoffDialog(QDialog):
                     for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.region_to_roof,self.commit_boq_button,self.export_boq):control.setEnabled(False)
                     self.canvas.set_mode('pan');self.scale_label.setText('نمای مدل؛ متره از تصویر غیرفعال است')
                     self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release()
-                    QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
+                    self._queue_workflow_intake()
                     return
                 self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
@@ -793,7 +793,7 @@ class GraphicalTakeoffDialog(QDialog):
                        if self.canvas.read_only_model else " | متره نیازمند بازبینی مهندسی")
                 )
                 job['gc_lease'].release()
-                QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
+                self._queue_workflow_intake()
             except Exception as exc:failed(str(exc))
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
 
@@ -802,6 +802,24 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_cad_loading()
         if self.engine is not None:self.engine.close()
         super().closeEvent(event)
+
+    def _queue_workflow_intake(self):
+        """Do not invoke a deleted Qt widget from a queued open-drawing callback.
+
+        Closing a drawing window within the same event cycle previously left
+        QTimer.singleShot callbacks holding dead Qt wrappers (P2/P5 crosswalk).
+        Resolve a weak reference and verify the underlying C++ QObject at
+        dispatch, not at schedule time.
+        """
+        import weakref
+        from shiboken6 import isValid
+        weak_window = weakref.ref(self)
+        def deliver():
+            window = weak_window()
+            if window is None or not isValid(window):
+                return
+            window._offer_workflow_for_open_drawing()
+        QTimer.singleShot(0, deliver)
 
     def _offer_workflow_for_open_drawing(self):
         """Ask once per newly opened source, never while a CAD worker is active."""
@@ -1134,7 +1152,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._cad_scene_origin = None  # Never reuse a prior drawing's CAD coordinate transform.
         self.engine = new_engine
         self.load_page(1)
-        QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
+        self._queue_workflow_intake()
 
     def load_page(self, page):
         if self.cad_loading:return
