@@ -140,6 +140,21 @@ class DrawingWorkflowIntakeDialog(QDialog):
         buttons.addWidget(self.skip)
         main.addLayout(buttons)
 
+    def _count_changed(self):
+        from core.projects.weekly_ownership import recommended_team
+        count=self.supervision_count.currentData() or 1
+        names=(["سرپرست کل پروژه"] if count==1 else
+               [f"سرپرست {i+1}" for i in range(count)])
+        self._team=recommended_team(names)
+        self.supervision_summary.setText(" | ".join(
+            person["name"]+": "+", ".join(person["trades"])
+            for person in self._team["people"]
+        ))
+
+    def selected_supervision_team(self):
+        from copy import deepcopy
+        return deepcopy(self._team)
+
     def _validate_and_accept(self):
         if self.pricing_mode.currentData() is None or self.automatic_schedule.currentData() is None:
             QMessageBox.warning(self,"انتخاب اولیه نقشه",
