@@ -9,7 +9,7 @@ from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QText
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
-    QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QDialog, QTableWidget,
+    QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsEllipseItem, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
     QDoubleSpinBox, QCheckBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication, QTreeWidget, QTreeWidgetItem
 )
@@ -115,12 +115,25 @@ class TakeoffCanvas(QGraphicsView):
         region = self._selected_region_rect
         if region is None:
             return "unrestricted"
-        box = item.sceneBoundingRect()
+        # Qt QGraphicsLineItem.sceneBoundingRect includes the width of the
+        # cosmetic 1-pixel pen. On CAD drawings whose geometry spans <1 raw
+        # unit, that pen can be WIDER than the entire Window Zoom region.
+        # Classify original geometry points, never painted pixels.
+        if isinstance(item, QGraphicsLineItem):
+            line = item.line()
+            a, b = item.mapToScene(line.p1()), item.mapToScene(line.p2())
+            candidate = ViewportRect.from_points(a.x(), a.y(), b.x(), b.y())
+        elif isinstance(item, QGraphicsPathItem):
+            box = item.mapRectToScene(item.path().controlPointRect()).boundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
+        elif isinstance(item, QGraphicsEllipseItem):
+            box = item.mapRectToScene(item.rect()).boundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
+        else:
+            box = item.sceneBoundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
         selected = ViewportRect.from_points(
             region.left(), region.top(), region.right(), region.bottom()
-        )
-        candidate = ViewportRect.from_points(
-            box.left(), box.top(), box.right(), box.bottom()
         )
         return selected.classify_rect(candidate)
 
