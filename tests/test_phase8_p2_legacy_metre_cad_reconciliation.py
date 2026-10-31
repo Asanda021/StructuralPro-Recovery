@@ -32,6 +32,9 @@ def legacy_book(tmp_path):
     a["M6"] = 1
     b = wb.create_sheet("S_7_1")
     b["A1"] = "فرم متره"
+    b["B3"] = "شرح عمليات"
+    b["L3"] = "قیمت"
+    b["M3"] = "قیمت کل"
     b["B5"] = "ميلگرد"
     b["I5"] = 8
     b["L5"] = 100
@@ -162,3 +165,13 @@ def test_dwg_without_native_converter_reports_blocked_not_pass(tmp_path):
     assert report["cad"]["verified_rows"] == 0
     assert all(row["cad_status"].startswith("NOT_VERIFIED") for row in report["rows"])
     assert report["boq_rows_committed"] == 0
+
+
+def test_wrong_legacy_headers_rejected_without_price_or_boq_changes(tmp_path):
+    file = legacy_book(tmp_path)
+    wb = load_workbook(file)
+    wb.worksheets[0]["B3"] = "unrelated workbook"
+    wb.save(file)
+    wb.close()
+    with pytest.raises(ValueError, match="audited source headers"):
+        LegacyMetreCADReconciler().inspect(file)
