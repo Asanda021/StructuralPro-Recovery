@@ -426,7 +426,10 @@ def sync_measured_items(plan: dict, items) -> dict:
                                           efficiency=task.get("efficiency","1"))
                 task["duration_days"]=rec["expected_workdays"]
                 task["duration_range"]=[rec["min_workdays"],rec["max_workdays"]]
-                task["duration_status"]=rec.get("status","ESTIMATED_REQUIRES_SITE_REVIEW")
+                task["duration_status"]=(
+                    "PROJECT_OBSERVED_REQUIRES_BASELINE_APPROVAL"
+                    if calibration is not None else "ESTIMATED_REQUIRES_SITE_REVIEW"
+                )
                 task["rate_source"]=(
                     "PROJECT_FIELD_OBSERVATION_SHA_VERIFIED"
                     if calibration is not None else rec["source"]
