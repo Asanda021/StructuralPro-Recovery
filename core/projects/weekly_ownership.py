@@ -52,3 +52,94 @@ def _working(date,calendar):
     return (jalali_to_gregorian(date).weekday() in
             calendar.get("working_weekdays",(0,1,2,3,5,6))
             and (date not in off or date in calendar.get("working_day_exceptions",[])))
+
+
+def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
+    """Project an existing dated WBS into each supervisor's seven-day plan.
+
+    No activity is independently invented. Preserves signed checks when the
+    source task's date/duration has not changed; otherwise resets approval.
+    """
+    from hashlib import sha256
+    if not isinstance(team,dict) or team.get("schema")!="structuralpro.supervision-team-v1":
+        raise ValueError("ساختار سرپرستی پروژه انتخاب نشده است")
+    if not isinstance(plan,dict) or not plan.get("calendar",{}).get("start_date"):
+        raise ValueError("اول باید تاریخ شروع برنامه زمان‌بندی اصلی مشخص شود")
+    if plan.get("source_sha256")!=source_sha256:
+        raise ValueError("نسخه برنامه با نقشه تطبیق ندارد")
+    if not isinstance(previous_weeks,list):
+        raise ValueError("سوابق هفتگی سرپرستان معتبر نیست")
+    first=week_start_of(reference_date)
+    dates=[day for day,_ in _week_dates(first)]
+    result=deepcopy(previous_weeks)
+    for person in team["people"]:
+        if not any(w.get("engineer_id")==person["id"] and
+                   w.get("week_start")==first for w in result):
+            result=create_engineer_week(
+                result,person["id"],person["name"],first,
+                role="، ".join(TRADE_NAMES[TRADES.index(t)] for t in person["trades"]),
+                source_sha256=source_sha256,
+            )
+    active=set()
+    uncovered=[]
+    changed=[]
+    for activity in plan.get("tasks",[]):
+        if activity.get("duration_days",0)<=0 or not activity.get("start_jalali"):
+            continue
+        trade=owner_discipline(activity)
+        if trade not in team["owners"]:
+            uncovered.append(str(activity.get("id","")))
+            continue
+        person_id=team["owners"][trade]
+        week=next(w for w in result if w["engineer_id"]==person_id
+                  and w["week_start"]==first)
+        begin=jalali_to_gregorian(activity["start_jalali"])
+        finish=jalali_to_gregorian(activity["finish_jalali"])
+        stamp={"activity_id":str(activity["id"]),"start":activity["start_jalali"],
+               "finish":activity["finish_jalali"],
+               "duration":activity["duration_days"]}
+        for day in dates:
+            dt=jalali_to_gregorian(day)
+            if not begin<=dt<=finish or not _working(day,plan["calendar"]):
+                continue
+            uid="EW-SCH-"+sha256(
+                f"{source_sha256}|{person_id}|{activity['id']}|{day}".encode()
+            ).hexdigest()[:20]
+            active.add(uid)
+            day_row=next(d for d in week["days"] if d["jalali"]==day)
+            old=next((v for v in day_row["work_items"] if v["id"]==uid),None)
+            same=old is not None and old.get("schedule_snapshot")==stamp
+            checks=[]
+            for i,title in enumerate(CHECKLIST[trade],1):
+                old_check=(next((v for v in old["checklist"]
+                     if v["id"]==f"check-{i}" and v["text"]==title),None)
+                     if same else None)
+                checks.append({"id":f"check-{i}","text":title,
+                               "done":bool(old_check and old_check["done"]),
+                               "checked_by":(old_check.get("checked_by")
+                                             if old_check and old_check["done"] else None)})
+            row={"id":uid,"title":activity["title"],"activity_id":activity["id"],
+                 "source_ref":", ".join(map(str,activity.get("linked_item_ids",[]))),
+                 "priority":"normal","status":old.get("status","planned") if same else "planned",
+                 "notes":old.get("notes","") if old else "",
+                 "checklist":checks,"completed_by":old.get("completed_by") if same else None,
+                 "origin":"schedule_generated","schedule_snapshot":stamp,
+                 "review_required":not bool(plan.get("calendar_approved"))}
+            if old:
+                if old["status"]=="done" and not same:changed.append(uid)
+                day_row["work_items"].remove(old)
+            day_row["work_items"].append(row)
+    for week in result:
+        if week["week_start"]!=first:continue
+        person=next((p for p in team["people"] if p["id"]==week["engineer_id"]),None)
+        if person is None:continue
+        week["engineer_name"]=person["name"]
+        week["role"]="، ".join(TRADE_NAMES[TRADES.index(t)] for t in person["trades"])
+        week["derived_from_wbs"]=True
+        week["schedule_review_status"]="DRAFT_FROM_MAIN_WBS"
+        for day in week["days"]:
+            day["work_items"]=[item for item in day["work_items"]
+                if item.get("origin")!="schedule_generated" or item["id"] in active]
+    return {"plans":result,"week_start":first,"unassigned_wbs":sorted(set(uncovered)),
+            "invalidated_signed_checks":sorted(set(changed)),
+            "status":"SOURCE_DERIVED_DRAFT"}
