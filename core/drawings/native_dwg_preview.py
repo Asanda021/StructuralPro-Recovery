@@ -57,7 +57,7 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
     raw = ezdwg.read(str(src))
     if raw.version != version:
         raise ValueError("Native parser disagrees with real DWG signature")
-    unit = str(raw.units or "unknown")
+    unit = "unitless" if raw.units is None else str(raw.units)
     known_units = {"millimeters": "mm", "centimeters": "cm", "meters": "m",
                    "feet": "ft", "inches": "in", "kilometers": "km"}
     # Critical: unitless must NEVER be silently changed to metres.
