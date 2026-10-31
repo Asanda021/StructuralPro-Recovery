@@ -48,3 +48,16 @@
 - فاز ۷: P1 و P2 و P3 از نظر فنی خودکار پذیرفته؛ P4 در توسعه و آزمون، P5/P6 خارج مأموریت جاری.
 - فاز ۸: هنوز آغاز نشده. نقشه‌راه کل ۸ فاز و پیشرفت رسمی ۸۵٪ بدون تغییر.
 - PRهای #34 تا #38 Open/Draft/Unmerged؛ هیچ Merge/main/ForcePush/EXE/Installer/Release انجام نشده است.
+
+## راستی‌آزمایی نهایی CI بر SHA عملکردی (۳۱ اکتبر ۲۰۲۶)
+
+نتایج بالای فایل که «PENDING» گزارش شده‌اند، وضعیت تاریخی همان لحظه‌اند. اکنون شواهد نهایی مستقیم از GitHub Actions روی **SHA دقیق** `62882f15ebce7f21214b71091ceb6c88d795dfd2` بازخوانی و تأیید شد:
+
+- [P4 هدفمند #41171489047](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41171489047): دو Job موفق؛ Linux **۱۳۵ PASS / ۰ SKIP** و Windows **۱۳۴ PASS / ۱ SKIP محیطی**؛ صفر FAIL/ERROR. آزمون‌های SQLite Historical Revision، Golden پنج‌طبقه، Office Dossier و نگهبان‌های P1–P3 برقرارند.
+- [P4 جامع #41171488812](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41171488812): هر **۷ Job SUCCESS**؛ Linux **۸٬۶۰۵ PASS / ۵ SKIP**؛ Windows بومی سه شارد به ترتیب **۲٬۹۸۹ + ۲٬۷۲۳ + ۲٬۸۹۱ = ۸٬۶۰۳ PASS / ۷ SKIP**، صفر FAIL/ERROR/timeout.
+- Job `verify-full-union`: **۱۲ PASS**، تطبیق فایل‌ها و SHA/JUnit، مجموعه **۸٬۶۱۰ تست یکتا در ۷۳۳ ماژول**. آزمون‌های skipped دارای دلایل محیطی ثبت‌شده‌اند؛ هیچ ادعای اجرای آن‌ها نیست.
+- اجرای #41171397969 لغو و اجراهای RED قدیمی به‌عنوان موفقیت معرفی نشده‌اند. مبنا فقط runs بالا روی SHA مذکور است.
+
+**حکم:** `P7_P4_IMPLEMENTED_TECHNICAL_SCOPE = AUTOMATED_ACCEPTED` برای مقایسه Revisionهای مقدارمحور، چهار خروجی واقعی، بسته WBS/کنترل پروژه/سایت و Golden پنج‌طبقه **در دامنه آزموده‌شده**. `P7_P4_OVERALL = PARTIAL` تا تعیین تکلیف موارد باز فهرست‌شده در این گزارش، به‌خصوص اثر مالی فقط با مبنای تأییدشده و پوشش جامع منبع‌ها و یکپارچه‌سازی. `PHYSICAL_MS_OFFICE_WINDOWS_UAT = NOT_TESTED_DEFERRED_PHASE8`.
+
+پذیرش این گیت هیچ تغییری در تعداد **۸ فاز اصلی**، ۶ اولویت از پیش تعیین‌شده فاز۷ یا درصد رسمی **۸۵٪** ایجاد نمی‌کند. PR Draft/Open/Unmerged؛ بدون Merge، main، ForcePush، EXE و Release.
