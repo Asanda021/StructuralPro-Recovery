@@ -202,6 +202,12 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
         week["derived_from_wbs"]=True
         week["schedule_review_status"]="DRAFT_FROM_MAIN_WBS"
         for day in week["days"]:
+            for item in day["work_items"]:
+                if (item.get("origin")=="schedule_generated"
+                        and item["id"] not in active
+                        and (item.get("status")=="done" or
+                             any(check.get("done") for check in item.get("checklist",[])))):
+                    changed.append(item["id"])
             day["work_items"]=[item for item in day["work_items"]
                 if item.get("origin")!="schedule_generated" or item["id"] in active]
     return {"plans":result,"week_start":first,"unassigned_wbs":sorted(set(uncovered)),
