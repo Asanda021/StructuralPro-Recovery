@@ -58,16 +58,21 @@ class DrawingViewerModel:
             from core.drawings.dwg_takeoff import DWGTakeoffEngine
             try:
                 new_cad_document = DWGTakeoffEngine.with_array_support().import_file(p)
-            except Exception as error:
-                # The engineering/payable importer remains fail-closed.
-                # Real unitless DWGs or custom SHX conversion defects must
-                # still be viewable for engineering inspection, NEVER payable.
-                from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGError
-                from core.drawings.dwg_converter import DWGConversionError
-                if ext != ".dwg" or not isinstance(error, (StrictPythonDWGError, DWGConversionError)):
+            except (RuntimeError, ValueError) as error:
+                # A validated DWG can contain custom/proxy entities which the
+                # payable importer must reject.  Still allow inspection using
+                # an independent, source-hashed native read-only parser.  That
+                # parser rejects corrupt/unsupported drawings and NEVER turns
+                # an engineering import failure into accepted measurements.
+                # DXF has no DWG-native fallback, so its import error remains.
+                if ext != ".dwg":
                     raise
                 from core.drawings.native_dwg_preview import native_readonly_dwg_preview
                 new_cad_document = native_readonly_dwg_preview(p)
+                new_cad_document.warnings.append(
+                    "Strict payable DWG import failed (" + type(error).__name__
+                    + "); graphical source-native preview only"
+                )
             new_kind = "cad"
             new_page_count = 1
         elif ext == ".ifc":
