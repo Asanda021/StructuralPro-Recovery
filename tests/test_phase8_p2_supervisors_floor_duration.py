@@ -120,3 +120,23 @@ def test_future_1411_calendar_is_not_expired_but_unverified_holidays_are_visible
     assert scheduled["scheduled_end_jalali"].startswith("1411/")
     assert scheduled["calendar_holiday_revision_required"]
     assert scheduled["unreviewed_holiday_years"]==[1411]
+
+
+
+def test_area_and_six_storeys_change_provisional_master_plan_even_without_takeoff():
+    from core.projects.building_scale import scaled_initial_wbs
+    def estimate(floors):
+        p=new_workflow_plan(drawing_source="a.dxf",source_sha256="sha",
+                            structure="concrete",disciplines=["architecture"])
+        size=building_scope(floors,100)
+        return scaled_initial_wbs(p,size)
+    five,six=estimate(5),estimate(6)
+    a=next(t for t in five["tasks"] if t["id"]=="masonry")
+    b=next(t for t in six["tasks"] if t["id"]=="masonry")
+    assert b["duration_days"]>a["duration_days"]
+    assert b["duration_status"]=="AREA_FLOOR_HEURISTIC_UNAPPROVED"
+    assert six["size_reference"]=="5 typical floors × 100 m2 per floor"
+    assert six["size_estimate_status"]=="OFFICE_HEURISTIC_UNAPPROVED"
+    assert next(t for t in five["tasks"] if t["id"]=="foundation")["duration_days"]==next(
+        t for t in six["tasks"] if t["id"]=="foundation"
+    )["duration_days"]
