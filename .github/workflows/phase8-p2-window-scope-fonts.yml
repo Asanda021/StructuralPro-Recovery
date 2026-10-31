@@ -9,10 +9,12 @@ on:
       - core/drawings/dwg_takeoff.py
       - core/drawings/cad_large_scene.py
       - core/drawings/cad_import_worker.py
+      - core/drawings/viewer_model.py
       - tests/test_phase8_p2_autocad2027_large_cad.py
       - core/drawings/dwg_converter.py
       - tests/test_phase1_5_import_hardening.py
       - core/drawings/cad_import_worker.py
+      - core/drawings/viewer_model.py
       - app/graphical_takeoff.py
       - tests/test_phase8_p2_window_scope_fonts.py
       - .github/workflows/phase8-p2-window-scope-fonts.yml
