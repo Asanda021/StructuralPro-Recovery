@@ -780,8 +780,32 @@ class GraphicalTakeoffDialog(QDialog):
         if self.cad_loading or not self.cad_document:return
         dialog=QDialog(self);dialog.setWindowTitle('قرارداد اجزای CAD و هشدار فونت');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(900,500)
         layout=QVBoxLayout(dialog);layout.addWidget(QLabel('نوع پشتیبانی‌نشده، واحد نامعلوم یا مدرک ناقص مجوز BOQ ندارد؛ فونت جایگزین ممکن است چیدمان را تغییر دهد'))
+        from core.drawings.cad_large_scene import cad_coverage_report
+        coverage=cad_coverage_report(self.cad_document)
+        counts=coverage['source_by_type']
+        summary=QLabel(
+            f"اجزای خوانده‌شده: {coverage['source_entity_count']} | "
+            f"فاقد رسم مستقیم: {coverage['not_drawn_count']} | "
+            f"فاقد قرارداد متره: {coverage['unmeasurable_count']} | "
+            f"انواع شناسایی‌شده: {len(counts)}؛ "
+            "نمایش یک فایل معادل تأیید تمام اجزا برای متره نیست"
+        )
+        summary.setWordWrap(True);layout.addWidget(summary)
+        type_table=QTableWidget(len(counts),4)
+        type_table.setHorizontalHeaderLabels(['نوع CAD','تعداد خوانده‌شده','فاقد رسم','فاقد متره'])
+        for index,(typ,count) in enumerate(sorted(counts.items())):
+            for column,value in enumerate((
+                typ,str(count),str(coverage['not_drawn_by_type'].get(typ,0)),
+                str(coverage['unmeasurable_by_type'].get(typ,0))
+            )):
+                type_table.setItem(index,column,QTableWidgetItem(value))
+        type_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(type_table)
         shown=self.cad_document.entities[:200]
-        layout.addWidget(QLabel(f'این گزارش نخستین {len(shown)} جزء از {len(self.cad_document.entities)} را نشان می‌دهد؛ همه اجزا در مدل و جست‌وجوی Handle محفوظ‌اند'))
+        layout.addWidget(QLabel(
+            f'جدول جزئیات فقط نخستین {len(shown)} مورد را نشان می‌دهد؛ '
+            'جمع‌بندی انواع بالا از تمام اجزای خوانده‌شده محاسبه شده است'
+        ))
         table=QTableWidget(len(shown),3);table.setHorizontalHeaderLabels(['نوع جزء','Handle و لایه','وضعیت و علت'])
         for row,e in enumerate(shown):
             reason=e.data.get('unsupported_measurement') or e.data.get('font_notice') or 'هندسه قابل بررسی؛ ثبت فقط پس از مدرک و بازبینی مستقل'
