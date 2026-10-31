@@ -144,14 +144,28 @@ def export_verified_site_controls_dossier(
                 records.append(file.name)
                 items.append(file)
             references.append({"kind": kind, "files": records})
+        # Existing chart providers write PNG figure assets next to exported
+        # Office/PDF files. Include and validate those real sidecars, too.
+        by_format = {p.name for p in items}
+        sidecars = sorted(p for p in stage.iterdir() if p.is_file() and p.name not in by_format)
+        if any(p.suffix.lower() != ".png" for p in sidecars):
+            raise ValueError("پیوست ناشناخته در پوشه صدور گزارش است")
+        if sidecars:
+            from PIL import Image
+            for png in sidecars:
+                with Image.open(png) as image:
+                    if image.format != "PNG" or image.width <= 0 or image.height <= 0:
+                        raise ValueError("نمودار PNG قابل بازخوانی نیست")
+                    image.verify()
         manifest = {
-            **build_bundle_manifest(items, project_id=project_id,
+            **build_bundle_manifest([*items, *sidecars], project_id=project_id,
                                     revision=str(expected_project_version)),
             "schema": "structuralpro.phase7.source-backed-site-controls-dossier.v1",
             "as_of": as_of,
             "project_version": expected_project_version,
             "source_project_digest": digest,
             "reports": references,
+            "figure_sidecars": [p.name for p in sidecars],
             "report_count": len(references),
             "source_status": "original_site_and_project_control_services",
             "physical_office_print_status": "NOT_TESTED",
