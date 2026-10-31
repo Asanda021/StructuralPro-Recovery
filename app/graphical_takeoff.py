@@ -901,7 +901,12 @@ class GraphicalTakeoffDialog(QDialog):
                 or plan.get("drawing_source")!=self.session.drawing_source):
             raise ValueError("نسخه نقشه برای ویرایش برنامه عوض شده است")
         from core.drawings.workflow_planning import sync_measured_items
-        self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+        if plan.get("resource_leveling_status")=="PROPOSED_UNAPPROVED":
+            # Leveling offsets are a temporary reviewed scenario. Calling the
+            # base CPM calculator now would erase every resource adjustment.
+            self.session.workflow_plan=plan
+        else:
+            self.session.workflow_plan=sync_measured_items(plan,self.session.items)
 
     def show_cad_capabilities(self):
         if self.cad_loading or not self.cad_document:return
