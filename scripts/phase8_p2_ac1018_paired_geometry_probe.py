@@ -69,7 +69,7 @@ def run() -> dict:
         if not a or len(a) != len(b):
             raise ValueError("DWG line roster disagrees with independently published DXF")
         if decoded.units != reference.units:
-            raise ValueError("Independent DWG and DXF have incompatible units")
+            raise ValueError(f"Independent paired units differ: dwg={decoded.units!r} dxf={reference.units!r}")
         for (la, qa), (lb, qb) in zip(a, b):
             if la != lb or not math.isclose(qa, qb, rel_tol=1e-9, abs_tol=1e-8):
                 raise ValueError("Line layer/length differs from independent source DXF")
