@@ -46,6 +46,40 @@ def building_scope(floors,typical_area_m2,*,source_scope="whole_building",
                   "برای مدت واقعی باید متره و تعداد اکیپ معتبر موجود باشد",
     }
 
+def scaled_initial_wbs(plan,profile):
+    """Proposal only: scale broad initial tasks by floor count and floor area.
+
+    Engineering baseline reference is explicitly an office seed: 5 floors,
+    100 m2/floor. It is NOT an Iranian normative construction duration.
+    Actual reviewed takeoff quantities always override matched summary work.
+    """
+    from decimal import ROUND_CEILING
+    p=deepcopy(plan)
+    area=Decimal(profile["typical_floor_area_m2"])
+    if area<=0:
+        p["size_estimate_status"]="AWAITING_AREA_OR_QUANTITIES"
+        return p
+    floors=profile["total_floors"]
+    ratio=(area*Decimal(floors))/Decimal(500)
+    # No site or foundation activities based on floor-area alone.
+    fixed={"mobilize","earthwork","foundation","backfill",
+           "site","handover","structure_unknown"}
+    for task in p.get("tasks",[]):
+        if task.get("id") in fixed or task.get("duration_edited"):
+            continue
+        default=task.get("default_duration_days")
+        if type(default) is not int or default<=0:
+            continue
+        task.setdefault("unscaled_default_days",default)
+        days=int((Decimal(task["unscaled_default_days"])*ratio).to_integral_value(
+            rounding=ROUND_CEILING))
+        task["default_duration_days"]=max(1,days)
+        task["duration_days"]=max(1,days)
+        task["duration_status"]="AREA_FLOOR_HEURISTIC_UNAPPROVED"
+    p["size_estimate_status"]="OFFICE_HEURISTIC_UNAPPROVED"
+    p["size_reference"]="5 typical floors × 100 m2 per floor"
+    return p
+
 def set_building_scope(plan,profile):
     from core.drawings.workflow_planning import recompute_schedule
     p=deepcopy(plan)
