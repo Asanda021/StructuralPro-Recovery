@@ -30,3 +30,15 @@ CI هدفمند Windows/Linux شامل P3 و نگهبان‌های اصلی P2/P
 اصلاحات: تطبیق کمیت/واحد/کد و رسید/هندسه با ردیف اندازه‌گیری اصلی؛ بازهش نهایی منابع همراه کنترل دوگذری هویت/اندازه/زمان فایل همانند P2؛ قرارداد صریح report_totals در صادرکننده و بررسی وجود جمع واقعی در Word/Excel.
 دو آزمون قدیمی که صرفاً حضور متن service.store.save را در کل main.py می‌سنجیدند، بدون حذف/Skip، به آزمون واقعی بازگشایی سند و قالب پروژه تبدیل شدند؛ ذخیره چیدمان نمایش نباید CAS/BOQ را تغییر دهد.
 این اصلاحات تا CI جدید پذیرفته نیستند. کنترل فایل همچنان optimistic است؛ قفل یا تراکنش سیستم‌عامل میان برنامه‌های خارجی ادعا نمی‌شود.
+
+## تصمیم پذیرش فنی خودکار نهایی | ۳۱ اکتبر ۲۰۲۶
+
+پس از گزارش اولیه PARTIAL، **گیت فنی اولویت ۳ در دامنه پیاده‌سازی‌شده پذیرفته شد**. متن تاریخی بالای فایل دست‌نخورده باقی است تا RED/GREEN قابل ممیزی بماند. این بند وضعیت نهایی را مشخص می‌کند.
+
+- کد آزموده‌شده دقیقاً `183df00fa0cc4bf20f3ba688006bfd11dd27eda2`. تغییرات بعدی این شاخه فقط زمانی معتبرند که اثر آن‌ها جداگانه بررسی شود.
+- [CI هدفمند #41141103131](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41141103131): دو Job SUCCESS؛ **Linux ۱۴۱ PASS / Windows Native ۱۴۱ PASS**؛ صفر FAIL/ERROR/SKIP. یک هشدار قدیمی `fitz` در هر محیط.
+- [CI جامع #41141103045](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41141103045): هر هفت Job SUCCESS؛ Linux **۸٬۵۸۶ PASS، ۵ SKIP**؛ Windows native (۳ شارد) **۸٬۵۸۴ PASS، ۷ SKIP**؛ صفر FAIL/ERROR/Timeout. Job نهایی verify-full-union موفق؛ **۱۲ PASS** در کنترل قراردادهای union و **۸٬۵۹۱ تست/۷۳۰ ماژول** با تطبیق JUnit و SHA-256.
+- قرارداد E7: قالب‌های نسخه‌دار append-only، UI فارسی RTL، پیش‌نمایش، فیلتر و ترتیب ستون، جمع Decimal، لوگوی محدود و دارای SHA، A4/A3، حفظ سازگاری خروجی PDF/XLSX/DOCX/CSV، batch manifest، source-backed fail-closed و عدم تغییر BOQ/SQLite.
+- بازبینی دستی بصری Microsoft Office، چاپ فیزیکی و سخت‌افزار Windows/G4 طبق تصمیم مالک **NOT_TESTED/DEFERRED_TO_PHASE8** است؛ این گیت مجوز صدور نسخه نهایی، Merge یا EXE نیست.
+- گیت `P7_P3_AUTOMATED_TECHNICAL_SCOPE=ACCEPTED` و `P7_P4_DEVELOPMENT_AUTHORIZED=true`. قرارداد شش اولویت ثابت فاز ۷، هشت فاز کل پروژه و عدم افزایش بدون شواهد پیشرفت رسمی ۸۵٪ پابرجاست.
+- PR #37 باز، Draft و Unmerged باقی می‌ماند؛ بدنه و سوابق PR باید به همین گیت و اجرای دقیق اشاره کنند.
