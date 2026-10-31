@@ -126,3 +126,25 @@ def test_unicode_persian_and_english_are_preserved_without_fake_shx_decoding():
     assert not is_rtl_cad_text("BEAM B-1")
     raw = "`ë¢ f__—¥"   # actual legacy type of encoded source text
     assert normalize_cad_text(raw)==raw  # decoding needs original font mapping
+
+
+
+def test_real_dxf_text_is_normalized_but_original_bilingual_source_is_retained(tmp_path):
+    import ezdxf
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+    path = tmp_path / "bilingual-plan.dxf"
+    drawing = ezdxf.new("R2013")
+    drawing.header["$INSUNITS"] = 6
+    model = drawing.modelspace()
+    model.add_text(r"\U+0633\U+062A\U+0648\U+0646 {A-1}")
+    model.add_mtext(r"{\H2x;ستون A-1}", dxfattribs={"insert": (2, 3)})
+    drawing.saveas(path)
+    imported = DWGTakeoffEngine().import_file(path)
+    entities = [e.data for e in imported.entities if e.entity_type in {"TEXT", "MTEXT"}]
+    assert len(entities) == 2
+    assert entities[0]["text"] == "ستون {A-1}"
+    assert entities[0]["source_text"] == r"\U+0633\U+062A\U+0648\U+0646 {A-1}"
+    assert entities[1]["text"] == "ستون A-1"
+    assert entities[1]["source_text"] == r"{\H2x;ستون A-1}"
+    assert all(x["text_status"] == "UNICODE_NORMALIZED_SHX_GLYPHS_UNVERIFIED" for x in entities)
+    assert imported.units == "m"
