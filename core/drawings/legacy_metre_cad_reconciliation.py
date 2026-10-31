@@ -48,8 +48,12 @@ def _source(path: str | Path) -> tuple[Path, str]:
 def _sheet_rows(ws, *, sheet: str, chapter: int, source_sha: str) -> tuple[list[dict], list[dict]]:
     rows: list[dict] = []
     issues: list[dict] = []
-    if ws.max_row > _MAX_ROWS_PER_SHEET:
+    if ws.max_row and ws.max_row > _MAX_ROWS_PER_SHEET:
         raise ValueError("Workbook sheet exceeds audited row limit")
+    if (str(ws["B3"].value or "").strip() != "شرح عمليات" or
+        str(ws["L3"].value or "").strip() != "قیمت" or
+        str(ws["M3"].value or "").strip() != "قیمت کل"):
+        raise ValueError("Legacy metre sheet does not have the audited source headers")
     # Read cached cell values only. No formulas or external workbooks executed.
     for index, cells in enumerate(ws.iter_rows(min_row=5, max_col=14, values_only=True), 5):
         label = cells[1] if len(cells) > 1 else None
@@ -209,6 +213,29 @@ class LegacyMetreCADReconciler:
         if not src.is_file() or src.suffix.lower() not in {".dwg", ".dxf"}:
             raise ValueError("A real DWG or DXF file is required")
         src_digest = sha256(src.read_bytes()).hexdigest()
+        cad_header = {}
+        if src.suffix.lower() == ".dwg":
+            from core.drawings.dwg_converter import OfflineDWGConverter
+            from core.cad.external_dwg_provider_v1 import ACadSharpDWGProvider
+            try:
+                cad_header = OfflineDWGConverter.inspect_header(src)
+            except (RuntimeError, ValueError) as exc:
+                report["cad"] = {
+                    "status": "BLOCKED_UNSUPPORTED_OR_CORRUPT_DWG_HEADER",
+                    "source_sha256": src_digest,
+                    "reason_type": type(exc).__name__,
+                    "verified_rows": 0, "not_verified_rows": len(report["rows"]),
+                }
+                return
+            if not ACadSharpDWGProvider().available and not OfflineDWGConverter().available:
+                report["cad"] = {
+                    "status": "BLOCKED_NATIVE_DWG_CONVERTER_UNAVAILABLE",
+                    "source_sha256": src_digest, "dwg_signature": cad_header["code"],
+                    "dwg_version": cad_header["version"],
+                    "remediation": "Configure existing authorized ACadSharp bridge or approved offline DWG converter",
+                    "verified_rows": 0, "not_verified_rows": len(report["rows"]),
+                }
+                return
         # No fake DXF, auto-mapping by title, or bypass of the configured reader.
         try:
             doc = DWGTakeoffEngine.with_array_support().import_file(src)
@@ -216,6 +243,8 @@ class LegacyMetreCADReconciler:
             report["cad"] = {
                 "status": "BLOCKED_NATIVE_CAD_IMPORT_NOT_VERIFIED",
                 "source_sha256": src_digest,
+                "dwg_signature": cad_header.get("code"),
+                "dwg_version": cad_header.get("version"),
                 "reason_type": type(exc).__name__,
                 "verified_rows": 0,
                 "not_verified_rows": len(report["rows"]),
