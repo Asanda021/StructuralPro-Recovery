@@ -55,7 +55,9 @@ class ViewportRect:
         Touching the edge counts as contained, but a crossing entity must not
         be counted at full length/area when the user selected only a fragment.
         """
-        if not self.is_usable(0) or not other.is_usable(0):
+        if (not self.is_usable(0) or
+            not all(math.isfinite(v) for v in (other.left,other.top,other.right,other.bottom)) or
+            other.width < 0 or other.height < 0):
             return False
         return (self.left <= other.left <= other.right <= self.right and
                 self.top <= other.top <= other.bottom <= self.bottom)
@@ -63,8 +65,8 @@ class ViewportRect:
     def intersects_rect(self, other: "ViewportRect") -> bool:
         if not self.is_usable(0) or not other.is_usable(0):
             return False
-        return (self.left < other.right and other.left < self.right and
-                self.top < other.bottom and other.top < self.bottom)
+        return (self.left <= other.right and other.left <= self.right and
+                self.top <= other.bottom and other.top <= self.bottom)
 
     def classify_rect(self, other: "ViewportRect") -> str:
         """Safe scope classification: 'inside', 'crossing', 'outside'.
