@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
     QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QAbstractItemView, QGraphicsScene, QGraphicsView,
+    QLineEdit, QInputDialog,
 )
 
 from core.drawings.workflow_planning import edit_activity
@@ -112,6 +113,7 @@ class DrawingScheduleDialog(QDialog):
         "شناسه WBS", "فعالیت", "رشته", "مدت (روز کاری)", "پیش‌نیازها",
         "اکیپ", "تعداد ردیف متره", "مقدار متره (موقت)", "شروع نسبی", "پایان نسبی",
         "تعداد اکیپ", "ضریب بهره‌وری", "رابطه و تأخیر FS/SS/FF/SF",
+        "شروع شمسی", "پایان شمسی",
     )
 
     def __init__(self, get_plan, on_edit, parent=None):
@@ -127,6 +129,32 @@ class DrawingScheduleDialog(QDialog):
         self.note = QLabel()
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
+        controls=QHBoxLayout()
+        self.calendar_start=QLineEdit()
+        self.calendar_start.setObjectName("WBSJalaliStart")
+        self.calendar_start.setPlaceholderText("شروع شمسی ۱۴۰۵/۰۸/۰۹")
+        self.extra_holidays=QLineEdit()
+        self.extra_holidays.setObjectName("WBSExtraHolidays")
+        self.extra_holidays.setPlaceholderText("تعطیلی محلی: ۱۴۰۵/۰۸/۱۱، ...")
+        self.apply_calendar_button=QPushButton("اعمال تقویم شمسی")
+        self.apply_calendar_button.clicked.connect(self._calendar_changed)
+        controls.addWidget(self.calendar_start)
+        controls.addWidget(self.extra_holidays)
+        controls.addWidget(self.apply_calendar_button)
+        layout.addLayout(controls)
+        poolbar=QHBoxLayout()
+        self.capacity_input=QLineEdit()
+        self.capacity_input.setObjectName("WBSResourceCapacities")
+        self.capacity_input.setPlaceholderText("اکیپ مشترک=۱, اکیپ دوم=۲")
+        self.crew_check=QPushButton("کنترل تداخل اکیپ")
+        self.crew_check.clicked.connect(lambda:self._crew_constraints(False))
+        self.crew_level=QPushButton("تراز اکیپ (پیشنهادی)")
+        self.crew_level.clicked.connect(lambda:self._crew_constraints(True))
+        self.add_task=QPushButton("افزودن فعالیت سفارشی")
+        self.add_task.clicked.connect(self._add_task)
+        for w in (self.capacity_input,self.crew_check,self.crew_level,self.add_task):
+            poolbar.addWidget(w)
+        layout.addLayout(poolbar)
         self.table = QTableWidget(0, len(self.HEADERS))
         self.table.setObjectName("DrawingLiveScheduleTable")
         self.table.setHorizontalHeaderLabels(self.HEADERS)
@@ -221,6 +249,7 @@ class DrawingScheduleDialog(QDialog):
                         f"{l['predecessor']}:{l['type']}:{l['lag_days']}"
                         for l in task.get("links",[])
                     ),
+                    task.get("start_jalali",""),task.get("finish_jalali",""),
                 )
                 for col, val in enumerate(cols):
                     cell = QTableWidgetItem(val)
@@ -232,15 +261,65 @@ class DrawingScheduleDialog(QDialog):
                         cell.setToolTip("مقدار فقط از ردیف‌های متره مرتبط آمده و تا بازبینی منبع، قطعی نیست")
                     self.table.setItem(row, col, cell)
             self._render_gantt(plan)
+            conflicts=plan.get("resource_conflicts",[])
             self.total.setText(
                 "مدت شبکه پیشنهادی: " + str(plan.get("indicative_total_workdays", 0))
                 + " روز کاری نسبی | بدون تاریخ قطعی"
                 + " | ردیف‌های متره فاقد تطبیق: "
                 + str(len(plan.get("unassigned_item_ids", [])))
+                + " | تداخل اکیپ: "+str(len(conflicts))
+                + (" | پایان شمسی پیشنهادی: "+plan["scheduled_end_jalali"]
+                   if plan.get("scheduled_end_jalali") else "")
             )
         finally:
             self.table.blockSignals(False)
             self._rendering = False
+
+    def _calendar_changed(self):
+        from core.projects.iran_worksite_calendar import make_calendar,calendarize
+        value=self.calendar_start.text().strip()
+        extra=[v.strip() for v in self.extra_holidays.text().replace("،",",").split(",") if v.strip()]
+        try:
+            if not value:raise ValueError("تاریخ شروع شمسی ۱۴۰۵ را وارد کنید")
+            output=calendarize(self.get_plan(),make_calendar(
+                start_date=value,extra_holidays=extra,
+            ))
+            self.on_edit(output)
+        except (ValueError,TypeError) as exc:
+            QMessageBox.warning(self,"تقویم پروژه",str(exc))
+        self.refresh()
+
+    def _crew_constraints(self,level):
+        from core.drawings.workflow_planning import apply_resource_limits
+        try:
+            limits={}
+            for pair in self.capacity_input.text().replace("،",",").split(","):
+                if not pair.strip():continue
+                if "=" not in pair:raise ValueError("قالب ظرفیت: نام اکیپ=تعداد")
+                key,value=pair.split("=",1)
+                key=key.strip()
+                if not key or key in limits:raise ValueError("نام اکیپ باید یکتا باشد")
+                limits[key]=int(value.strip())
+            plan=apply_resource_limits(self.get_plan(),limits,level=level)
+            self.on_edit(plan)
+        except (ValueError,TypeError) as exc:
+            QMessageBox.warning(self,"کنترل اکیپ‌ها",str(exc))
+        self.refresh()
+
+    def _add_task(self):
+        from core.drawings.workflow_planning import add_custom_activity
+        name,ok=QInputDialog.getText(self,"WBS سفارشی","عنوان فعالیت جدید:")
+        if not ok:return
+        scope,ok=QInputDialog.getItem(
+            self,"رشته فعالیت","رشته جدید:",
+            list(self.get_plan().get("disciplines",[])),0,False,
+        )
+        if not ok:return
+        try:
+            self.on_edit(add_custom_activity(self.get_plan(),name,scope))
+        except (ValueError,TypeError) as exc:
+            QMessageBox.warning(self,"افزودن فعالیت",str(exc))
+        self.refresh()
 
     def _changed(self, cell):
         if self._rendering or cell.column() not in (1, 3, 4, 5, 10, 11, 12):
