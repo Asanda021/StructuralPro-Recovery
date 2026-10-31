@@ -105,6 +105,13 @@ def test_can_select_inside_window_but_not_crossing_or_outside(qapp):
         assert not cross.isSelected()
         pick((340,250))
         assert not outside.isSelected()
+        # A Window must govern manual PDF/count/length clicks as well as CAD.
+        canvas.set_mode("length")
+        assert len(canvas.points)==0
+        pick((340,250))
+        assert len(canvas.points)==0
+        pick((120,100))
+        assert len(canvas.points)==1
     finally:
         canvas.close();canvas.deleteLater()
 
