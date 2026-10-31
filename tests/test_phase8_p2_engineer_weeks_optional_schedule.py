@@ -160,19 +160,13 @@ def test_real_qt_dialog_finance_first_and_optional_auto_wbs(qapp,tmp_path):
         assert widget.session.workflow_preferences["automatic_scheduling"] is False
         assert widget.session.workflow_plan is None
         assert not widget.schedule_button.isEnabled()
-        assert widget.weekly_button.isEnabled()
-        widget.weekly_button.click()
-        qapp.processEvents()
-        weekly=widget._engineer_weekly_dialog
-        assert weekly is not None and weekly.isVisible()
-        weekly.engineer_id.setText("S1")
-        weekly.engineer_name.setText("مهندس سازه")
-        weekly.week_date.setText("1405/08/09")
-        weekly.create_button.click()
-        assert len(widget.session.engineer_weekly_plans)==1
-        assert weekly.table.rowCount()==7
-        assert weekly.table.item(0,0).text()=="شنبه"
-        assert weekly.table.item(0,1).text()=="1405/08/09"
+        # Weekly execution plans must now come from the master schedule,
+        # never from a separate invented task list when WBS was declined.
+        assert not widget.weekly_button.isEnabled()
+        assert widget.session.engineer_weekly_plans==[]
+        assert widget.session.supervision_team is not None
+        assert len(widget.session.supervision_team["people"])==1
+        assert len(widget.session.supervision_team["owners"])==4
     finally:
         widget.close()
         qapp.processEvents()
