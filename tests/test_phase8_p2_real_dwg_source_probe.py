@@ -30,6 +30,9 @@ class CandidateProbeTests(unittest.TestCase):
         proof = inspect_dwg(b"AC1032" + b"0" * 2000)
         self.assertEqual(proof["dwg_signature"], "AC1032")
         self.assertEqual(len(proof["sha256"]), 64)
+        legacy = inspect_dwg(b"AC1009" + b"0" * 2000)
+        self.assertFalse(legacy["eligible_for_approved_acadsharp_versions"])
+        self.assertEqual(legacy["compatibility"], "LEGACY_VERSION_OUTSIDE_APPROVED_BRIDGE")
 
     def test_arbitrary_source_cannot_be_substituted(self):
         with self.assertRaises(ValueError):
