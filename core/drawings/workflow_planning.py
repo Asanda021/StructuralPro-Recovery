@@ -167,6 +167,11 @@ def _validate_dependencies(tasks):
 
 def recompute_schedule(plan: dict) -> dict:
     from core.projects.precedence_model import calculate_precedence
+    # A later quantity or dependency edit invalidates any previously
+    # proposed levelled offsets. Surface new conflicts instead of preserving
+    # an unverified stale resource-feasibility claim.
+    plan.pop("resource_leveling_status",None)
+    plan.pop("resource_conflict_count",None)
     calculate_precedence(plan)
     if isinstance(plan.get("calendar"),dict) and plan["calendar"].get("start_date"):
         from core.projects.iran_worksite_calendar import apply_calendar
