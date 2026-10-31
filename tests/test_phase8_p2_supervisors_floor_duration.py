@@ -140,3 +140,32 @@ def test_area_and_six_storeys_change_provisional_master_plan_even_without_takeof
     assert next(t for t in five["tasks"] if t["id"]=="foundation")["duration_days"]==next(
         t for t in six["tasks"] if t["id"]=="foundation"
     )["duration_days"]
+
+
+def test_qt_jalali_calendar_picker_returns_selected_project_start():
+    import os
+    os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
+    from PySide6.QtCore import QDate,QTimer
+    from PySide6.QtWidgets import QApplication,QCalendarWidget,QPushButton
+    from app.drawing_workflow_dialog import DrawingWorkflowIntakeDialog
+    app=QApplication.instance() or QApplication(["Jalali Project Picker"])
+    intake=DrawingWorkflowIntakeDialog("a.dxf",{"kind":"concrete"})
+    seen=[]
+    def choose_date():
+        modal=app.activeModalWidget()
+        picker=modal.findChild(QCalendarWidget,"VisibleProjectStartCalendar")
+        assert picker is not None
+        assert "Jalali" in picker.calendar().name()
+        picker.setSelectedDate(QDate(2027,3,21))
+        seen.append(picker.selectedDate())
+        for control in modal.findChildren(QPushButton):
+            if "تأیید تاریخ" in control.text():
+                control.click()
+                break
+    try:
+        QTimer.singleShot(0,choose_date)
+        intake._choose_project_date()
+        assert seen and intake.selected_start_date()=="1406/01/01"
+    finally:
+        intake.close()
+        app.processEvents()
