@@ -76,3 +76,16 @@
 - [CI جامع #41173598129](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41173598129): **PENDING**؛ تا شواهد ۷ Job و union، پذیرش نهایی این تغییر ثبت نمی‌شود.
 - `P7_P4_NEW_FINANCIAL_GUARD = IMPLEMENTED_LINUX_TARGETED_PASS_WINDOWS_AND_BROAD_PENDING`؛ `P7_P4_OVERALL = PARTIAL`.
 - قبل از بستن گیت نهایی، اگر تغییر دیگری در کد رخ داد، نتیجه آزمون‌ها باید مطابق SHA جدید بازبینی شود. پذیرش فیزیکی Windows/MS Office/چاپ همچنان فاز ۸ و NOT_TESTED است. بدون Merge/main/EXE/Release.
+
+## تصمیم نهایی پذیرش فنی خودکار اولویت ۴ | ۳۱ اکتبر ۲۰۲۶
+
+به استناد **کد محصول آزموده‌شده** `0cdee9f8a7e1dec70e4da818b27d307d38c014b4` (که نسبت به `14b2bb0` صرفاً مستند پذیرش قبلی به آن افزوده شد) نتیجه‌های مستقل CI دوباره راستی‌آزمایی شد:
+
+- [هدفمند #41173776051](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41173776051): دو Job موفق، Linux **۱۴۴ PASS/۰ SKIP** و Windows Native **۱۴۳ PASS/۱ SKIP محیطی**؛ صفر FAIL/ERROR.
+- [جامع #41173776017](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41173776017): **۷/۷ Job SUCCESS**، Linux **۸٬۶۱۴ PASS/۵ SKIP**، Windows سه شارد **۳٬۰۶۰ + ۲٬۷۲۶ + ۲٬۸۲۶ = ۸٬۶۱۲ PASS/۷ SKIP**، صفر FAIL/ERROR/Timeout. verify-full-union موفق؛ مجموعه **۸٬۶۱۹ تست یکتا در ۷۳۴ ماژول** و انطباق JUnit/SHA تأیید شد.
+- کنترل P4 شامل دو Revision واقعی SQLite، بررسی PDF/DOCX/XLSX/CSV و تاریخچه و منبع، WBS/پیشرفت/منحنی/مصالح/خرید/صورت‌جلسه، Golden پنج‌طبقه مصنوعی و **اثر مالی فقط با فهرست‌بهای نسخه‌دار، دارای SHA و بازبینی‌شده با نرخ/ضریب ثابت و currency صریح** است. حالت فاقد مدارک، NULL باقی می‌ماند.
+- مقدار مالی محاسبه‌شده، **اثر تغییر مقدار با نرخ ثابت** است، نه قیمت‌گذاری مجدد یا سند پرداخت/صورت‌وضعیت صادرشده. موارد بدون قیمت/مبنای تأییدشده به نتیجه مالی مجاز تبدیل نمی‌شوند.
+- **تصمیم:** `P7_P4_AUTOMATED_TECHNICAL_SCOPE=ACCEPTED`؛ گیت توسعه اولویت ۵ باز است. بازرسی واقعی Windows/MS Office/چاپ/چندمانیتور/G4 همچنان `NOT_TESTED_DEFERRED_TO_PHASE8` است؛ نباید با CI یکسان فرض شود.
+- `PR38=OPEN_DRAFT_UNMERGED`، `MERGE/MAIN/INSTALLER/EXE/RELEASE=BLOCKED`، تعداد فازهای مصوب **۸**، تعداد اولویت‌های فاز۷ **۶**، درصد رسمی کل پروژه **۸۵٪ بدون تغییر**.
+
+**بندهای PENDING و PARTIAL بالای فایل شرح وضعیت تاریخی پیش از Run نهایی هستند؛ این تصمیم نهایی در دامنه فنی خودکار، جایگزین آن‌هاست.**
