@@ -348,7 +348,8 @@ def sync_measured_items(plan: dict, items) -> dict:
 
 
 def edit_activity(plan: dict, task_id: str, *, title=None, duration_days=None,
-                  crew=None, predecessors=None) -> dict:
+                  crew=None, predecessors=None, crew_count=None,
+                  efficiency=None, links=None) -> dict:
     draft = deepcopy(plan)
     if draft.get("status") != "DRAFT_UNAPPROVED":
         raise ValueError("ویرایش تنها برای پیش‌نویس برنامه مجاز است")
@@ -367,9 +368,27 @@ def edit_activity(plan: dict, task_id: str, *, title=None, duration_days=None,
         if not isinstance(crew, str) or not crew.strip() or len(crew) > 100:
             raise ValueError("نام اکیپ معتبر لازم است")
         task["crew"] = crew.strip()
+    if crew_count is not None:
+        if type(crew_count) is not int or not 1 <= crew_count <= 100:
+            raise ValueError("تعداد اکیپ باید صحیح و بین ۱ تا ۱۰۰ باشد")
+        task["crew_count"] = crew_count
+    if efficiency is not None:
+        from decimal import Decimal,InvalidOperation
+        try: eff=Decimal(str(efficiency))
+        except (InvalidOperation,ValueError):raise ValueError("ضریب بهره‌وری معتبر نیست")
+        if not eff.is_finite() or not Decimal("0.1")<=eff<=Decimal("2"):
+            raise ValueError("ضریب بهره‌وری باید بین ۰٫۱ تا ۲ باشد")
+        task["efficiency"]=str(eff)
     if predecessors is not None:
         if not isinstance(predecessors, list):
             raise ValueError("پیش‌نیاز باید فهرست شناسه فعالیت باشد")
         task["predecessors"] = predecessors
+        # Replacing predecessor IDs must not retain obsolete relationship
+        # references. The user can supply new FS/SS/FF/SF links in same edit.
+        if links is None:task["links"]=[]
+    if links is not None:
+        if not isinstance(links,list):
+            raise ValueError("روابط تقدم و تأخر باید یک فهرست باشد")
+        task["links"]=links
     recompute_schedule(draft)
     return draft
