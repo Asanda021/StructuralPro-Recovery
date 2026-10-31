@@ -7,6 +7,7 @@ on:
       - core/reports/technical_office_revision.py
       - core/reports/technical_office_dossier.py
       - tests/test_phase7_p4_technical_office_revision.py
+      - tests/test_phase7_p4_approved_price_impact.py
       - tests/test_phase7_p4_technical_office_dossier.py
       - tests/test_phase7_p4_five_storey_site_golden.py
       - .github/workflows/phase7-p4-technical-office.yml
@@ -16,6 +17,7 @@ on:
     paths:
       - core/reports/technical_office_revision.py
       - tests/test_phase7_p4_technical_office_revision.py
+      - tests/test_phase7_p4_approved_price_impact.py
       - .github/workflows/phase7-p4-technical-office.yml
   workflow_dispatch:
 permissions:
@@ -56,6 +58,7 @@ jobs:
           python -m pytest -q
           --junitxml=p7-p4-targeted.xml
           tests/test_phase7_p4_technical_office_revision.py
+          tests/test_phase7_p4_approved_price_impact.py
           tests/test_phase7_p4_technical_office_dossier.py
           tests/test_phase7_p4_five_storey_site_golden.py
           tests/test_phase7_p3_custom_batch.py
