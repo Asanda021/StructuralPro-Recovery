@@ -132,6 +132,14 @@ def exercise(app):
 
         assert abs(service.open_project('F')['estimate']['cost']['grand_total']-300.3)<1e-8
         print('Report button complete',flush=True)
+        # Simulate the user's affirmative choice in the new required pricing
+        # prompt. Do not suppress this prompt in the real product.
+        from PySide6.QtWidgets import QInputDialog
+        def choose_price_basis(parent, title, prompt, choices, current, editable):
+            assert 'فهرست‌بها' in prompt
+            assert any('فهرست‌بها' in choice for choice in choices)
+            return ('فهرست‌بهایی', True)
+        QInputDialog.getItem = choose_price_basis
         p=go('صورت‌وضعیت');entry(p,'شناسه پروژه').setText('F');entry(p,'شماره دوره').setText('1')
         current=entry(p,'کارکرد:');assert current.parent() is not None;current.setText('A=2,B=3')
         p.findChild(QLineEdit,'Statement_retention_rate').setText('0.1')
