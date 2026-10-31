@@ -50,7 +50,7 @@ def test_same_reviewed_member_and_quantity_is_review_only_not_auto_approved(tmp_
         assert conflict["candidate"]["floor_id"] == "L1"
         assert conflict["committed"]["source_id"] != conflict["candidate"]["source_id"]
         assert conflict["candidate"]["source_sha256"] == project["drawing_sessions"][args["session_id"]]["source_sha256"]
-        with pytest.raises(ValueError, match="بازبینی"):
+        with pytest.raises(ValueError, match="مهندس"):
             require_no_pending_source_discrepancies(app, **args)
         assert digest == app.store.current_digest("P")
         assert before == app.open_project("P")
