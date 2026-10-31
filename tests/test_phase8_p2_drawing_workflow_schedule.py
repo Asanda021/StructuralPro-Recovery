@@ -172,6 +172,7 @@ def test_actual_graphical_dialog_prompts_after_dxf_open_and_live_schedule_tracks
         intake.disciplines["architecture"].setChecked(True)
         intake.pricing_mode.setCurrentIndex(1)
         intake.automatic_schedule.setCurrentIndex(1)
+        intake._selected_start_date="1405/08/09"
         intake.begin.click()
         qapp.processEvents()
         plan = dlg.session.workflow_plan
