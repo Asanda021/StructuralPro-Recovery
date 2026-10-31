@@ -33,3 +33,10 @@
 - [CI #41181550663](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41181550663) روی Commit `8a1718923af49446ce2ddc31b0a441f6e64901d6`: Linux **۹۱ PASS، صفر FAIL/ERROR/SKIP**، یک هشدار قدیمی fitz. Windows **PENDING** تا تأیید مستقل نتیجه Job. هیچ PASS فرضی ثبت نشود.
 - آزمون‌ها ۹۱ مورد شامل منشأ واقعی PDF/SQLite، تشخیص احتمال دوباره‌شماری عضو، اختلاف مقدار، عدم جعل تأیید، مغایرت SHA/Revision و قراردادهای قبلی هستند.
 - `P7_P5_INITIAL_SCOPED_CI=LINUX_PASS_WINDOWS_PENDING` و `P7_P5_OVERALL=PARTIAL`. پیش از اجازه هر مسیر commit واقعی، E8 باید داخل همان گیت اصلی پیوند داده و CI جامع جداگانه انجام شود.
+
+
+## نتیجه نهایی آزمون هدفمند بر کد E8
+
+[CI #41181550663](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41181550663)، دقیقاً روی Commit `8a1718923af49446ce2ddc31b0a441f6e64901d6`: **Linux ۹۱ PASS، Windows Native ۹۱ PASS**؛ هر دو Job SUCCESS؛ صفر FAIL/ERROR/SKIP، یک هشدار قدیمی fitz در هر سیستم. هیچ آزمون حذف یا Skip نشده است.
+
+**حکم فنی محدوده فعلی:** `P7_P5_SOURCE_PREFLIGHT_TARGETED=ACCEPTED`. اما `P7_P5_OVERALL=PARTIAL` زیرا اتصال اجباری به تمام نقاط واقعی ثبت متره و BOQ و پوشش IFC/Revision چندمنبعی و CI جامع کد P5 باقی‌اند. موفقیت Preflight هرگز مجوز ثبت نهایی یا تأیید مهندسی نیست. آزمایش Office/Windows سخت‌افزاری همچنان فاز۸ و NOT_TESTED است.
