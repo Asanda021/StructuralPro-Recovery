@@ -16,7 +16,8 @@ CATALOG = "https://www.innerscene.com/tools/library/drawings/cattleguard-foundat
 SOURCE = "https://www.innerscene.com/api/library/cattleguard-foundation-usfs-waw0025a-103df315/download"
 ALLOWED_HOSTS = frozenset({"www.innerscene.com", "files.innerscene.com"})
 MAX_BYTES = 2 * 1024 * 1024
-ALLOWED_SIGNATURES = frozenset({"AC1014", "AC1015", "AC1018", "AC1021", "AC1024", "AC1027", "AC1032"})
+SUPPORTED_BRIDGE_SIGNATURES = frozenset({"AC1014", "AC1015", "AC1018", "AC1021", "AC1024", "AC1027", "AC1032"})
+LEGACY_SIGNATURES = frozenset({"AC1009", "AC1012"})
 
 
 def approved_url(url: str) -> bool:
@@ -38,9 +39,14 @@ def inspect_dwg(data: bytes) -> dict:
         signature = data[:6].decode("ascii")
     except UnicodeDecodeError as exc:
         raise ValueError("DWG has no valid ASCII version signature") from exc
-    if signature not in ALLOWED_SIGNATURES:
-        raise ValueError("Unsupported DWG signature: " + repr(signature))
-    return {"sha256": hashlib.sha256(data).hexdigest(), "dwg_signature": signature, "bytes": len(data)}
+    if signature not in SUPPORTED_BRIDGE_SIGNATURES | LEGACY_SIGNATURES:
+        raise ValueError("Unknown or unsupported DWG signature: " + repr(signature))
+    eligible = signature in SUPPORTED_BRIDGE_SIGNATURES
+    return {
+        "sha256": hashlib.sha256(data).hexdigest(), "dwg_signature": signature,
+        "bytes": len(data), "eligible_for_approved_acadsharp_versions": eligible,
+        "compatibility": "POTENTIAL_VERSION_ONLY_NOT_CONVERTED" if eligible else "LEGACY_VERSION_OUTSIDE_APPROVED_BRIDGE",
+    }
 
 
 def probe(url: str = SOURCE) -> dict:
