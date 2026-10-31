@@ -97,3 +97,89 @@ def test_ellipses_and_splines_render_without_claiming_takeoff(tmp_path):
     coverage = cad_coverage_report(document)
     assert coverage["not_drawn_count"] == 0
     assert coverage["unmeasurable_count"] == 2
+
+
+
+def test_native_large_dwg_limits_are_explicit_and_sources_stay_immutable(tmp_path, monkeypatch):
+    """Exercise exact source-entity cap without allocating a million objects."""
+    from types import SimpleNamespace
+    import sys
+    from core.drawings import native_dwg_preview as preview
+    assert preview._LIMIT_ENTITIES >= 1_000_000
+    assert preview._LIMIT_BYTES >= 100 * 1024 * 1024
+    path = tmp_path / "big-preview.dwg"
+    path.write_bytes(b"AC1032" + b"synthetic-bounded-parser-evidence")
+    before = path.read_bytes()
+
+    class NativeLine:
+        def __init__(self, index):
+            self.dxftype = "LINE"
+            self.handle = format(index+1, "X")
+            self.dxf = {"layer_handle": 99, "start": (index, 0), "end": (index+1, 0)}
+
+    class Model:
+        def __init__(self, count):
+            self.count = count
+
+        def iter_entities(self):
+            return (NativeLine(i) for i in range(self.count))
+
+    class NativeDoc:
+        version = "AC1032"
+        units = "meters"
+        layers = [SimpleNamespace(handle=99, name="A-STRUCT", on=True, frozen=False)]
+
+        def __init__(self, count):
+            self.count = count
+
+        def modelspace(self):
+            return Model(self.count)
+
+    count = [3]
+    monkeypatch.setattr(preview, "_LIMIT_ENTITIES", 3)
+    monkeypatch.setattr(preview.util, "find_spec", lambda name: object())
+    monkeypatch.setattr(preview.metadata, "version", lambda name: preview._EXPECTED_VERSION)
+    monkeypatch.setitem(sys.modules, "ezdwg", SimpleNamespace(read=lambda name: NativeDoc(count[0])))
+    doc = preview.native_readonly_dwg_preview(path)
+    assert len(doc.entities) == 3
+    assert doc.conversion["geometry_approved"] is False
+    assert all("unsupported_measurement" in e.data for e in doc.entities)
+    count[0] = 4
+    with pytest.raises(ValueError, match="count exceeds"):
+        preview.native_readonly_dwg_preview(path)
+    assert path.read_bytes() == before
+
+
+def test_viewer_uses_readonly_native_for_generic_strict_dwg_failure_only(tmp_path, monkeypatch):
+    from core.drawings import native_dwg_preview as preview
+    from core.drawings.viewer_model import DrawingViewerModel
+    source = tmp_path / "proxy-rich.dwg"
+    source.write_bytes(b"AC1032" + b"synthetic-proxy-fallback")
+    expected = DWGDocument(
+        source=str(source), format="DWG_NATIVE_READONLY_PREVIEW",
+        source_sha256="synthetic-sha", dxf_version="AC1032",
+        conversion={"preview_only": True, "geometry_approved": False},
+        entities=[DWGEntity("ACAD_PROXY_ENTITY", "AEC", "A", {
+            "unsupported_measurement": "requires object enabler",
+        })],
+    )
+
+    def strict_fails(self, p):
+        raise RuntimeError("proxy object strict decoder unsupported")
+
+    monkeypatch.setattr(DWGTakeoffEngine, "import_file", strict_fails)
+    monkeypatch.setattr(preview, "native_readonly_dwg_preview", lambda p: expected)
+    viewer = DrawingViewerModel().open(source)
+    assert viewer.cad_document is expected
+    assert viewer.cad_document.conversion["geometry_approved"] is False
+    assert any("Strict payable DWG import failed" in w for w in expected.warnings)
+
+    def native_fails(p):
+        raise ValueError("Native source invalid")
+
+    monkeypatch.setattr(preview, "native_readonly_dwg_preview", native_fails)
+    previous = viewer.path
+    with pytest.raises(ValueError, match="Native source invalid"):
+        viewer.open(source)
+    assert viewer.path == previous
+    assert viewer.cad_document is expected
