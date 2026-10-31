@@ -30,6 +30,9 @@ _DISCIPLINE_LABELS = (
     ("elevator", "آسانسور"),
     ("fire", "اعلام و اطفای حریق"),
     ("site", "محوطه‌سازی"),
+    ("wood", "سازه و نازک‌کاری چوبی"),
+    ("renovation", "بازسازی و مقاوم‌سازی"),
+    ("restoration", "مرمت و احیای ساختمان"),
 )
 
 
@@ -97,6 +100,7 @@ class DrawingScheduleDialog(QDialog):
     HEADERS = (
         "شناسه WBS", "فعالیت", "رشته", "مدت (روز کاری)", "پیش‌نیازها",
         "اکیپ", "تعداد ردیف متره", "مقدار متره (موقت)", "شروع نسبی", "پایان نسبی",
+        "تعداد اکیپ", "ضریب بهره‌وری", "رابطه و تأخیر FS/SS/FF/SF",
     )
 
     def __init__(self, get_plan, on_edit, parent=None):
@@ -163,10 +167,15 @@ class DrawingScheduleDialog(QDialog):
                     task["crew"], str(len(task["linked_item_ids"])),
                     self._quantity_text(task),
                     str(task["start_workday_offset"]), str(task["end_workday_offset"]),
+                    str(task.get("crew_count","")),str(task.get("efficiency","1")),
+                    "; ".join(
+                        f"{l['predecessor']}:{l['type']}:{l['lag_days']}"
+                        for l in task.get("links",[])
+                    ),
                 )
                 for col, val in enumerate(cols):
                     cell = QTableWidgetItem(val)
-                    if col not in (1, 3, 4, 5):
+                    if col not in (1, 3, 4, 5, 10, 11, 12):
                         cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     if col == 3 and task.get("duration_edited"):
                         cell.setToolTip("مدت توسط کاربر اصلاح شده و با به‌روزرسانی متره بازنویسی نمی‌شود")
@@ -184,7 +193,7 @@ class DrawingScheduleDialog(QDialog):
             self._rendering = False
 
     def _changed(self, cell):
-        if self._rendering or cell.column() not in (1, 3, 4, 5):
+        if self._rendering or cell.column() not in (1, 3, 4, 5, 10, 11, 12):
             return
         plan = self.get_plan()
         if not plan or cell.row() >= len(plan["tasks"]):
@@ -199,8 +208,26 @@ class DrawingScheduleDialog(QDialog):
             elif cell.column() == 4:
                 predecessor_ids = [v.strip() for v in text.split(",") if v.strip()]
                 revised = edit_activity(plan, task_id, predecessors=predecessor_ids)
-            else:
+            elif cell.column() == 5:
                 revised = edit_activity(plan, task_id, crew=text)
+            elif cell.column() == 10:
+                revised = edit_activity(plan, task_id, crew_count=int(text))
+            elif cell.column() == 11:
+                revised = edit_activity(plan, task_id, efficiency=text)
+            else:
+                links=[]
+                for token in text.split(";"):
+                    if not token.strip():continue
+                    parts=[v.strip() for v in token.split(":")]
+                    if len(parts)!=3:raise ValueError("فرمت رابطه: شناسه:FS/SS/FF/SF:تاخیر")
+                    links.append({
+                        "predecessor":parts[0],"type":parts[1],
+                        "lag_days":int(parts[2]),
+                    })
+                revised = edit_activity(
+                    plan,task_id,predecessors=[x["predecessor"] for x in links],
+                    links=links,
+                )
             self.on_edit(revised)
         except (ValueError, TypeError) as exc:
             QMessageBox.warning(self, "ویرایش برنامه زمان‌بندی", str(exc))
