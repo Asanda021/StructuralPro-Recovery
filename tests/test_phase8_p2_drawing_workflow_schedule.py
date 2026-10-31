@@ -139,3 +139,55 @@ def test_real_qt_intake_choices_and_schedule_editor(qapp):
         assert state[0]["calendar"]["start_date"] is None
     finally:
         panel.close()
+
+
+
+def test_actual_graphical_dialog_prompts_after_dxf_open_and_live_schedule_tracks_takeoff(qapp, tmp_path):
+    import ezdxf
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+
+    path = tmp_path / "real-geometry-concrete-structure.dxf"
+    doc = ezdxf.new("R2018")
+    doc.header["$INSUNITS"] = 6
+    doc.layers.new("CONCRETE FRAME")
+    model = doc.modelspace()
+    model.add_line((0, 0), (2, 4), dxfattribs={"layer": "CONCRETE FRAME"})
+    model.add_text("RC COLUMN", dxfattribs={"insert": (1, 2)})
+    doc.saveas(path)
+
+    dlg = GraphicalTakeoffDialog()
+    try:
+        dlg.show()
+        dlg.open_drawing(str(path))
+        qapp.processEvents()
+        intake = dlg._workflow_intake_dialog
+        assert intake is not None and intake.isVisible()
+        assert intake.frame_kind.currentData() == "concrete"
+        intake.disciplines["architecture"].setChecked(True)
+        intake.begin.click()
+        qapp.processEvents()
+        plan = dlg.session.workflow_plan
+        assert plan is not None
+        assert plan["source_sha256"] == dlg.session.source_sha256
+        assert plan["structure"] == "concrete"
+        assert "architecture" in plan["disciplines"]
+        assert dlg.schedule_button.isEnabled()
+        schedule = dlg._workflow_schedule_dialog
+        assert schedule is not None and schedule.isVisible()
+
+        row = next(i for i,t in enumerate(plan["tasks"]) if t["id"] == "masonry")
+        schedule.table.item(row,3).setText("23")
+        assert next(t for t in dlg.session.workflow_plan["tasks"] if t["id"] == "masonry")["duration_days"] == 23
+
+        item = dlg.session.add_count(4, label="دیوار بلوکی", source="test-wall")
+        dlg.refresh()
+        linked = next(t for t in dlg.session.workflow_plan["tasks"] if t["id"] == "masonry")
+        assert linked["linked_item_ids"] == [item.id]
+        assert linked["duration_days"] == 23
+        assert "4 عدد" in schedule.table.item(row,7).text()
+        stored = DrawingTakeoffSession.from_dict(dlg.session.to_dict())
+        assert stored.workflow_plan["structure"] == "concrete"
+        assert next(t for t in stored.workflow_plan["tasks"] if t["id"] == "masonry")["duration_days"] == 23
+    finally:
+        dlg.close()
+        qapp.processEvents()
