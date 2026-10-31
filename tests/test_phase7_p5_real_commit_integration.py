@@ -73,3 +73,55 @@ def test_distinct_member_source_can_still_commit_after_real_e8_preflight(tmp_pat
         assert app.store.current_digest("P") != before
     finally:
         app.store.close()
+
+
+def test_confirmed_ai_area_commit_still_obeys_e8(tmp_path, monkeypatch):
+    """Explicit AI user approval never waives physical-source review gate."""
+    from core.drawings.takeoff_session import DrawingTakeoffSession
+
+    app, project, args, _, pending = _two_sessions(
+        tmp_path, member="P2",
+        points=[(600,100),(800,100),(800,600),(600,600)])
+    receipt = app.load_drawing_takeoff_session("P", args["session_id"])
+    session = DrawingTakeoffSession.from_dict(receipt["session"])
+    item = session.find(args["selected_item_ids"][0])
+    proposal = {
+        "drawing_id": args["session_id"],
+        "revision_id": str(pending["revision"]),
+        "candidates": [{
+            "source_id": "page-1:reviewed-area-P2",
+            "session_item_id": item.id,
+            "page": 1,
+            "kind": item.kind,
+            "unit": item.unit,
+            "quantity": item.quantity,
+            "confidence": 0.98,
+            "label": "سطح مستقل مستند P2",
+            "formula": item.formula,
+            "evidence": {
+                "source_ref": item.source_ref,
+                "scale_ref": "calibration:page-1",
+                "meters_per_pixel": session.calibrations[1].meters_per_pixel,
+            },
+        }],
+    }
+    called = []
+    def independent_gate(service, **kwargs):
+        called.append(kwargs)
+        raise ValueError("E8 source review needed")
+    monkeypatch.setattr(
+        source_discrepancy_gate,
+        "require_no_pending_source_discrepancies", independent_gate)
+    before = deepcopy(project)
+    digest = app.store.current_digest("P")
+    try:
+        with pytest.raises(ValueError, match="E8 source review needed"):
+            app.commit_ai_takeoff_proposal(
+                "P", proposal, user_confirmed=True,
+            )
+        assert len(called) == 1
+        assert called[0]["selected_item_ids"] == args["selected_item_ids"]
+        assert app.store.current_digest("P") == digest
+        assert app.open_project("P") == before
+    finally:
+        app.store.close()
