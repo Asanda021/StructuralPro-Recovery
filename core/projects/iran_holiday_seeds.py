@@ -163,6 +163,14 @@ _LUNAR={
 11/18|شهادت امام جعفر صادق
 """,
 }
+OFFICIAL_LUNAR_NAMES={
+    "عید فطر","دوم عید فطر","شهادت امام جعفر صادق",
+    "عید قربان","عید غدیر","تاسوعا","عاشورا","اربعین",
+    "رحلت پیامبر و شهادت امام حسن","شهادت امام رضا",
+    "شهادت امام حسن عسکری","میلاد پیامبر و امام صادق",
+    "شهادت حضرت فاطمه زهرا","ولادت امام علی",
+    "مبعث پیامبر","نیمه شعبان","شهادت امام علی",
+}
 def listed_holidays(year):
     """Returns every named holiday separately; duplicate-date events preserved."""
     if type(year) is not int or year not in YEAR_SOURCE:
@@ -173,6 +181,8 @@ def listed_holidays(year):
              "source":YEAR_SOURCE[year]} for monthday,name in SOLAR_FIXED.items()]
     for line in _LUNAR[year].strip().splitlines():
         date_suffix,name=line.split("|",1)
+        if name.strip() not in OFFICIAL_LUNAR_NAMES:
+            continue  # A religious occasion is not automatically a public holiday.
         events.append({"date":f"{year:04d}/{date_suffix.strip()}",
                        "name":name.strip(),"kind":"lunar",
                        "status":status,"source":YEAR_SOURCE[year]})
