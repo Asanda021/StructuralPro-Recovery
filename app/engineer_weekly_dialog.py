@@ -11,7 +11,7 @@ from core.projects.engineer_weekly_plan import (
 )
 
 class EngineerWeeklyDialog(QDialog):
-    def __init__(self,get_plans,set_plans,get_activities,source_sha256,parent=None):
+    def __init__(self,get_plans,set_plans,get_activities,source_sha256,parent=None,*,get_team=None,get_wbs=None):
         super().__init__(parent)
         self.setWindowTitle("برنامه هفتگی مستقل مهندسان | روز، تاریخ، کارهای قابل انجام و چک‌لیست")
         self.setObjectName("EngineerWeeklyPlanningDialog")
@@ -21,6 +21,8 @@ class EngineerWeeklyDialog(QDialog):
         self._set=set_plans
         self._activities=get_activities
         self._sha=source_sha256
+        self._team=get_team
+        self._wbs=get_wbs
         self._rows=[]
         root=QVBoxLayout(self)
         form=QFormLayout()
@@ -43,7 +45,7 @@ class EngineerWeeklyDialog(QDialog):
         self.show_button.clicked.connect(self.refresh)
         self.engineer_id.editingFinished.connect(self.refresh)
         self.week_date.editingFinished.connect(self.refresh)
-        self.create_button=QPushButton("ایجاد برنامه هفتگی این مهندس")
+        self.create_button=QPushButton("تولید / به‌روزرسانی هفته از زمان‌بندی اصلی")
         self.create_button.setObjectName("CreateEngineerWeek")
         self.create_button.clicked.connect(self._create)
         self.add_button=QPushButton("ثبت کار و چک‌لیست برای روز انتخابی")
@@ -91,10 +93,15 @@ class EngineerWeeklyDialog(QDialog):
 
     def _create(self):
         try:
-            result=create_engineer_week(self._get(),self.engineer_id.text(),
-                self.engineer_name.text(),self.week_date.text(),
-                source_sha256=self._sha)
-            self._set(result)
+            if self._team is not None and self._wbs is not None:
+                from core.projects.weekly_ownership import derive_weeks
+                result=derive_weeks(
+                    self._team(),self._wbs(),self.week_date.text(),
+                    self._get(),self._sha
+                )
+                self._set(result["plans"])
+            else:
+                raise ValueError("برنامه هفتگی باید از زمان‌بندی اصلی استخراج شود")
         except (ValueError,TypeError) as exc:
             QMessageBox.warning(self,"ساخت برنامه مهندس",str(exc))
         self.refresh()
