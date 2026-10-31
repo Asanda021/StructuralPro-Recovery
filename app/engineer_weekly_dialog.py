@@ -38,6 +38,11 @@ class EngineerWeeklyDialog(QDialog):
         form.addRow("تاریخ یکی از روزهای هفته",self.week_date)
         root.addLayout(form)
         bar=QHBoxLayout()
+        self.show_button=QPushButton("نمایش برنامه این مهندس")
+        self.show_button.setObjectName("ShowEngineerWeek")
+        self.show_button.clicked.connect(self.refresh)
+        self.engineer_id.editingFinished.connect(self.refresh)
+        self.week_date.editingFinished.connect(self.refresh)
         self.create_button=QPushButton("ایجاد برنامه هفتگی این مهندس")
         self.create_button.setObjectName("CreateEngineerWeek")
         self.create_button.clicked.connect(self._create)
@@ -50,7 +55,8 @@ class EngineerWeeklyDialog(QDialog):
         self.complete_button=QPushButton("تأیید اتمام فعالیت")
         self.complete_button.setObjectName("CompleteEngineerDailyWork")
         self.complete_button.clicked.connect(self._complete)
-        for widget in (self.create_button,self.add_button,self.check_button,self.complete_button):
+        for widget in (self.show_button,self.create_button,self.add_button,
+                       self.check_button,self.complete_button):
             bar.addWidget(widget)
         root.addLayout(bar)
         self.description=QLabel(
