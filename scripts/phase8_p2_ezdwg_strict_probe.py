@@ -56,19 +56,21 @@ def run() -> dict:
         drawing = DWGTakeoffEngine.with_array_support().import_file(dxf)
         if len(drawing.entities) == 0 or drawing.source_sha256 != sha256(dxf.read_bytes()).hexdigest():
             raise ValueError("StructuralPro CAD engine could not read strict exported DXF")
-        production = DWGTakeoffEngine.with_array_support().import_file(dwg)
-        if not production.format.startswith("DWG") or production.source_sha256 != PIN:
-            raise ValueError("Product DWG importer failed to preserve original binary source identity")
-        if production.conversion.get("provider") != "ezdwg strict Python bridge":
-            raise ValueError("Product did not invoke the intended strict prebuilt Python reader")
-        if production.conversion.get("skipped_entities") != 0:
-            raise ValueError("Product accepted skipped DWG entities")
-        if production.conversion.get("total_entities") != result.total_entities:
-            raise ValueError("Product DWG import entity coverage differs from strict reference")
+        from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGError
+        if source.units is not None:
+            raise ValueError("Public CC0 studio source unexpectedly gained a declared unit")
+        try:
+            DWGTakeoffEngine.with_array_support().import_file(dwg)
+        except StrictPythonDWGError as exc:
+            if "no explicit supported unit" not in str(exc):
+                raise
+            production_gate = "CORRECTLY_BLOCKED_UNITLESS_DWG"
+        else:
+            raise AssertionError("Unitless DWG was incorrectly accepted for engineering measurements")
         if sha256(dwg.read_bytes()).hexdigest() != PIN:
             raise ValueError("Source changed while decoded")
         return {
-            "status": "PUBLIC_CC0_AC1015_EZDWG_STRICT_DWG_TO_DXF_ENGINE_READ_PASS",
+            "status": "PUBLIC_CC0_AC1015_STRICT_CONVERSION_AND_UNITLESS_PRODUCTION_REJECTION_PASS",
             "public_source": STUDIO_SOURCE,
             "source_sha256": PIN,
             "source_dwg_signature": "AC1015",
@@ -79,10 +81,10 @@ def run() -> dict:
             "strict_conversion_skipped": result.skipped_entities,
             "strict_output_sha256": sha256(dxf.read_bytes()).hexdigest(),
             "production_engine_entities": len(drawing.entities),
-            "product_dwg_import_entities": len(production.entities),
-            "product_native_automatic_optional_fallback": True,
-            "product_import_source_sha256": production.source_sha256,
-            "product_decoder_version": production.conversion.get("decoder_version"),
+            "production_cad_derived_dxf_entities": len(drawing.entities),
+            "product_engineering_dwg_gate": production_gate,
+            "source_unit_missing": True,
+            "user_geometry_quantity_verified": False,
             "production_engine_layers": len(drawing.layers),
             "production_engine_document_unit": drawing.units,
             "uploaded_user_dwg_tested": False,
