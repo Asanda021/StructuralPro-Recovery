@@ -255,6 +255,14 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
         }
         tasks.append(t)
         planned.add(profile.code)
+    # Final handover cannot predate selected detailed activities. Zero-duration
+    # unmeasured placeholders add no artificial days and remain transparent.
+    handover=next((task for task in tasks if task["id"]=="handover"),None)
+    if handover is not None:
+        handover["predecessors"]+= [
+            item["id"] for item in tasks
+            if item["id"] in CATALOG and item["id"] not in handover["predecessors"]
+        ]
     result = {
         "schema": "structuralpro.drawing-workflow-v1",
         "status": "DRAFT_UNAPPROVED",
@@ -289,7 +297,7 @@ def sync_measured_items(plan: dict, items) -> dict:
     valid = {task["id"] for task in plan["tasks"]}
     linked = {task["id"]: {} for task in plan["tasks"]}
     unassigned = []
-    from core.projects.production_catalog import matching_profile, productivity_days, CATALOG
+    from core.projects.production_catalog import matching_profile, productivity_days, CATALOG, normalized_production_unit
     from decimal import Decimal
     for item in items:
         ident = str(item.id)
@@ -299,7 +307,7 @@ def sync_measured_items(plan: dict, items) -> dict:
         key = matching_profile(label,set(plan.get("disciplines",[])))
         # A label alone does not prove compatible units. Fall back to the
         # review-only summary WBS mapping without inventing numeric quantities.
-        if key is not None and str(item.unit)!=CATALOG[key].unit:
+        if key is not None and normalized_production_unit(item.unit)!=CATALOG[key].unit:
             key=None
         if key not in valid:
             key=None
@@ -322,7 +330,7 @@ def sync_measured_items(plan: dict, items) -> dict:
         task["quantity_reviewed"] = bool(observed) and all(x["geometry_reviewed"] for x in observed.values())
         if task["id"] in CATALOG and not task.get("duration_edited"):
             profile=CATALOG[task["id"]]
-            if observed and all(entry["unit"]==profile.unit for entry in observed.values()):
+            if observed and all(normalized_production_unit(entry["unit"])==profile.unit for entry in observed.values()):
                 total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
                 rec=productivity_days(task["id"],total,profile.unit,
                                       crews=task.get("crew_count",profile.crews),
