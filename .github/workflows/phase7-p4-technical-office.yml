@@ -8,6 +8,7 @@ on:
       - core/reports/technical_office_dossier.py
       - tests/test_phase7_p4_technical_office_revision.py
       - tests/test_phase7_p4_technical_office_dossier.py
+      - tests/test_phase7_p4_five_storey_site_golden.py
       - .github/workflows/phase7-p4-technical-office.yml
   pull_request:
     branches:
@@ -56,6 +57,7 @@ jobs:
           --junitxml=p7-p4-targeted.xml
           tests/test_phase7_p4_technical_office_revision.py
           tests/test_phase7_p4_technical_office_dossier.py
+          tests/test_phase7_p4_five_storey_site_golden.py
           tests/test_phase7_p3_custom_batch.py
           tests/test_phase7_p3_custom_report_ui.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
