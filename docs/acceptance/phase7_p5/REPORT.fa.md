@@ -26,3 +26,10 @@
 - فاز ۸: آزمون نهایی و تأیید مالک هنوز آغاز نشده.
 - ۸ فاز اصلی و ۶ اولویت مصوب فاز۷ ثابت؛ پیشرفت رسمی کل نرم‌افزار ۸۵٪ بدون تغییر.
 - PRهای اخیر همگی Draft/Open/Unmerged، بدون Merge، main، ForcePush، EXE و Release.
+
+
+## نتیجه اجرای اصلاح‌شده E8 بر SHA آزموده‌شده
+
+- [CI #41181550663](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41181550663) روی Commit `8a1718923af49446ce2ddc31b0a441f6e64901d6`: Linux **۹۱ PASS، صفر FAIL/ERROR/SKIP**، یک هشدار قدیمی fitz. Windows **PENDING** تا تأیید مستقل نتیجه Job. هیچ PASS فرضی ثبت نشود.
+- آزمون‌ها ۹۱ مورد شامل منشأ واقعی PDF/SQLite، تشخیص احتمال دوباره‌شماری عضو، اختلاف مقدار، عدم جعل تأیید، مغایرت SHA/Revision و قراردادهای قبلی هستند.
+- `P7_P5_INITIAL_SCOPED_CI=LINUX_PASS_WINDOWS_PENDING` و `P7_P5_OVERALL=PARTIAL`. پیش از اجازه هر مسیر commit واقعی، E8 باید داخل همان گیت اصلی پیوند داده و CI جامع جداگانه انجام شود.
