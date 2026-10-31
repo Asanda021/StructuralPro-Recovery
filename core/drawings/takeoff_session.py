@@ -559,6 +559,7 @@ class DrawingTakeoffSession:
             **({"workflow_plan":deepcopy(self.workflow_plan)} if self.workflow_plan is not None else {}),
             **({"workflow_preferences":deepcopy(self.workflow_preferences)} if self.workflow_preferences is not None else {}),
             "engineer_weekly_plans":deepcopy(self.engineer_weekly_plans),
+            **({"supervision_team":deepcopy(self.supervision_team)} if self.supervision_team is not None else {}),
             "current_page": self.current_page,
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
