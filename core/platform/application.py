@@ -3388,9 +3388,17 @@ class StructuralProApp:
     def report(self,project_id:str,fmt:str,path,*,period_no:int|None=None):
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
-        from core.reports.aec_office_package import audit_boq
-        audit_boq(p, require_pricebook=True)
-        estimate=p.get("estimate") or self.recalculate_estimate(project_id)
+        from core.commercial.statement_basis import validate_statement_pricing
+        basis=validate_statement_pricing(p)
+        # A reviewed private-contract BOQ does not magically become a
+        # government pricebook.  Avoid calling pricebook-only recalc here.
+        if basis["mode"]=="contract_rates":
+            estimate=p.get("estimate") or {"cost":{
+                "pricing_source":"REVIEWED_CONTRACT_RATES",
+                "source_sha256":basis["agreement_sha256"],
+            }}
+        else:
+            estimate=p.get("estimate") or self.recalculate_estimate(project_id)
         selected=None
         periods=p.get("statement_periods",[])
         if period_no is not None:
@@ -3420,7 +3428,9 @@ class StructuralProApp:
                 "قبلی":row.get("previous_quantity",0),"این دوره":row.get("current_quantity",0),
                 "تجمعی":row.get("cumulative_quantity",0),"قیمت واحد":row.get("unit_price",0),
                 "مبلغ این دوره":row.get("current_amount",0),"مبلغ تجمعی":row.get("completed_amount",0)})
-        summary={**estimate.get("cost",{}), "period_no": selected.get("number") if selected else None,
+        summary={**estimate.get("cost",{}), "statement_pricing_mode":basis["mode"],
+                 "statement_pricing_source":basis["source"],
+                 "period_no": selected.get("number") if selected else None,
                  "statement": {
             "gross_current":statement.get("gross_current",0),
             "retention":statement.get("retention",0),
