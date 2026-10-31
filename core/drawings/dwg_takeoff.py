@@ -253,7 +253,7 @@ class DWGTakeoffEngine:
 
                 if typ in {"CIRCLE", "ARC"}:
                     data["center"] = _xy(e.dxf.center)
-                if typ in {"LWPOLYLINE", "POLYLINE", "ARC"} and not data.get("unsupported_measurement"):
+                if typ in {"LWPOLYLINE", "POLYLINE", "ARC", "SPLINE", "ELLIPSE"} and not data.get("unsupported_measurement"):
                     from ezdxf.path import make_path
                     path = make_path(e)
                     control = list(path.control_vertices())
