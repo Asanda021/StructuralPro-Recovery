@@ -767,7 +767,9 @@ class GraphicalTakeoffDialog(QDialog):
                     self.ifc_controls.show();self.cad_controls.hide()
                     for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.region_to_roof,self.commit_boq_button,self.export_boq):control.setEnabled(False)
                     self.canvas.set_mode('pan');self.scale_label.setText('نمای مدل؛ متره از تصویر غیرفعال است')
-                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release();return
+                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release()
+                    QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
+                    return
                 self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
                 self.page=1;self.canvas.read_only_model=(
