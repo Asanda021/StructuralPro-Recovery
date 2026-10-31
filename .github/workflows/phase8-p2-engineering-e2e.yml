@@ -67,6 +67,8 @@ jobs:
           tests/test_phase8_p2_fivefloor_financial_e2e.py
           tests/test_phase8_p2_multisource_aec_integration.py
           tests/test_phase8_p2_pr32_a2_source_gate.py
+          tests/test_phase8_p2_windows_custom_batch_freshness.py
+          tests/test_phase7_p3_custom_batch.py
           tests/test_golden_five_storey_building.py
           tests/test_recovery_13_finishes_five_floors.py
           tests/test_phase2_priority4_cad.py::test_entity_binding_review_and_boq_are_real
