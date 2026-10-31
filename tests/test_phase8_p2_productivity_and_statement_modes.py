@@ -206,3 +206,54 @@ def test_manually_edited_predecessors_are_never_replaced_by_summary_expansion():
     wall=next(t for t in p["tasks"] if t["id"]=="masonry")
     assert wall["duration_days"]==10
     assert wall["predecessors"]==["slabs"]
+
+
+
+def test_service_numbered_statement_uses_reviewed_contract_rates_not_pricebook(tmp_path,monkeypatch):
+    from core.platform.application import StructuralProApp
+    import core.reports.aec_office_package as office
+    # The independent source/BOQ integrity contract is tested elsewhere.
+    # This isolates how the actual statement service chooses the price basis.
+    def fake_audit(project,require_pricebook=False):
+        if require_pricebook:
+            raise AssertionError("Private-contract period must not require the pricebook")
+        return {"pricing_complete":True,"unpriced_item_numbers":[]}
+    monkeypatch.setattr(office,"audit_boq",fake_audit)
+    service=StructuralProApp(tmp_path/"db")
+    try:
+        service.create_project("پروژه نمونه","P")
+        project=service.open_project("P")
+        project["boq"]=[{
+            "item_code":"WALL","price_code":"CONTRACT-WALL",
+            "description":"اجرای دیوار بلوکی","unit":"m2",
+            "quantity":20,"unit_price":250000,"current_quantity":0,
+            "previous_quantity":0,
+        }]
+        service.store.save("P",project)
+        selected=service.set_statement_pricing_mode("P","contract_rates")
+        assert selected["mode"]=="contract_rates"
+        assert not service.statement_basis_status("P")["ready_for_draft"]
+        proof=tmp_path/"contract-rates.txt"
+        proof.write_text("SIGNED: CONTRACT-WALL price 250000 per m2",encoding="utf-8")
+        evidence=service.review_statement_contract_rates("P",proof,"بازبین فنی")
+        assert evidence["status"]=="reviewed_draft"
+        assert service.statement_basis_status("P")["ready_for_draft"]
+        preview=service.save_statement_period(
+            "P",current_quantities={"CONTRACT-WALL":5},persist=False,
+        )
+        assert preview["statement_pricing_mode"]=="contract_rates"
+        assert not service.statement_periods("P")
+        saved=service.save_statement_period(
+            "P",current_quantities={"CONTRACT-WALL":5},
+        )
+        assert saved["statement_pricing_mode"]=="contract_rates"
+        assert len(service.statement_periods("P"))==1
+        with pytest.raises(ValueError,match="قابل تغییر"):
+            service.set_statement_pricing_mode("P","pricebook")
+        proof.write_text("CHANGED AFTER APPROVAL",encoding="utf-8")
+        with pytest.raises(ValueError,match="تغییر"):
+            service.save_statement_period(
+                "P",current_quantities={"CONTRACT-WALL":1},persist=False,
+            )
+    finally:
+        service.store.close()
