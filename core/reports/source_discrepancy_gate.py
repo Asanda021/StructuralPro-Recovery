@@ -41,6 +41,7 @@ def inspect_pending_source_discrepancies(
     digest = service.store.current_digest(project_id)
     project = service.open_project(project_id)
     if (not isinstance(project, dict) or project.get("id") != project_id or
+        type(expected_project_version) is not int or
         project.get("_meta", {}).get("version") != expected_project_version):
         raise ValueError("نسخه فعلی پروژه تغییر کرده است")
     sessions = project.get("drawing_sessions")
@@ -54,7 +55,10 @@ def inspect_pending_source_discrepancies(
     committed = record.get("committed_item_ids")
     if not isinstance(committed, list):
         raise ValueError("فهرست انتقال‌های BOQ معتبر نیست")
-    if set(selected_item_ids) & set(committed):
+    ai_committed = record.get("ai_committed_item_ids", [])
+    if not isinstance(ai_committed, list):
+        raise ValueError("فهرست انتقال‌های هوشمند BOQ معتبر نیست")
+    if set(selected_item_ids) & (set(committed) | set(ai_committed)):
         raise ValueError("برداشت مورد بررسی قبلاً به BOQ منتقل شده است")
 
     pending = session_to_boq_rows(
@@ -141,6 +145,10 @@ def inspect_pending_source_discrepancies(
                 "reason": "یک عضو/طبقه/کد/واحد با دو رسید مستقل؛ تشخیص هم‌پوشانی نیازمند بررسی مهندس است",
             })
 
+    # Final source-byte validation: a document replaced during review must
+    # never be treated as the unchanged source from the initial read.
+    verified_measurement_identities(record, pending)
+    _source_rows(project, "takeoff")
     if service.store.current_digest(project_id) != digest or service.open_project(project_id) != project:
         raise RuntimeError("پروژه هنگام بررسی مغایرت تغییر کرده است")
     return {
@@ -151,7 +159,8 @@ def inspect_pending_source_discrepancies(
         "source_sha256": record["source_sha256"],
         "scope": "source_verified_uncommitted_drawing_areas_vs_existing_drawing_boq",
         "status": "REVIEW_REQUIRED" if conflicts else "NO_CROSS_SESSION_MEMBER_CONFLICT_FOUND",
-        "allowed_to_commit": not conflicts,
+        "source_preflight_clear": not conflicts,
+        "final_commit_authority": False,
         "approved_for_engineering_release": False,
         "mutation": False,
         "candidates": inspected,
