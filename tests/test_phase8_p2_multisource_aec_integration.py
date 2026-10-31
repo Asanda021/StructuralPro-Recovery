@@ -121,10 +121,8 @@ def test_ifc_dxf_pdf_and_manual_mechanical_electrical_finishing_share_one_persis
             r["item_code"] not in {"wall_tile_material", "wall_tile_procurement"}
             for r in project["boq"]
         )
-        sources = {
-            s for row in project["boq"] for s in row.get("source_ids", [])
-        }
-        assert len(sources) == len(set(sources))
+        sources = [s for row in project["boq"] for s in row.get("source_ids", [])]
+        assert len(sources) == len(set(sources)), "one physical source billed twice"
         assert len({x["source_sha256"] for x in project["drawing_sessions"].values()}) == 2
         assert sha256(dxf_path.read_bytes()).hexdigest() == project["drawing_sessions"][kw["session_id"]]["source_sha256"]
 
@@ -144,10 +142,17 @@ def test_ifc_dxf_pdf_and_manual_mechanical_electrical_finishing_share_one_persis
                 "P", "mechanical", "pipe", source_id="manual:F3:PIPE",
                 system="F3", length=12, count=3,
             )
-        with pytest.raises(ValueError):
+        with pytest.raises(RuntimeError, match="نسخه"):
             app.commit_drawing_takeoff_to_boq(
                 "P", saved_pdf["session_id"], [pdf_item.id],
                 expected_session_revision=saved_pdf["revision"],
+            )
+        current_pdf_revision = app.open_project("P")["drawing_sessions"][saved_pdf["session_id"]]["revision"]
+        assert current_pdf_revision > saved_pdf["revision"]
+        with pytest.raises(ValueError, match="قبلاً"):
+            app.commit_drawing_takeoff_to_boq(
+                "P", saved_pdf["session_id"], [pdf_item.id],
+                expected_session_revision=current_pdf_revision,
             )
         assert app.open_project("P") == original
         assert app.store.current_digest("P") == digest
