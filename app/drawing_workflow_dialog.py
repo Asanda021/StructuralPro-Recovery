@@ -4,6 +4,8 @@ Keeps the CAD canvas available. All detected structural types and initial
 durations are preliminary proposals requiring explicit human review.
 """
 from __future__ import annotations
+from collections import defaultdict
+from decimal import Decimal, InvalidOperation
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -94,7 +96,7 @@ class DrawingScheduleDialog(QDialog):
 
     HEADERS = (
         "شناسه WBS", "فعالیت", "رشته", "مدت (روز کاری)", "پیش‌نیازها",
-        "اکیپ", "تعداد ردیف متره", "شروع نسبی", "پایان نسبی",
+        "اکیپ", "تعداد ردیف متره", "مقدار متره (موقت)", "شروع نسبی", "پایان نسبی",
     )
 
     def __init__(self, get_plan, on_edit, parent=None):
@@ -126,6 +128,19 @@ class DrawingScheduleDialog(QDialog):
         layout.addLayout(bar)
         self.refresh()
 
+    @staticmethod
+    def _quantity_text(task):
+        sums = defaultdict(Decimal)
+        for record in task.get("measured", {}).values():
+            try:
+                qty = Decimal(str(record["quantity"]))
+                if not qty.is_finite():
+                    raise ValueError("nonfinite")
+                sums[str(record["unit"])] += qty
+            except (KeyError, InvalidOperation, ValueError):
+                return "مقدار نامعتبر؛ بازبینی لازم است"
+        return " + ".join(f"{v.normalize()} {unit}" for unit,v in sorted(sums.items())) if sums else "هنوز متره نشده"
+
     def refresh(self):
         plan = self.get_plan()
         if not plan or self._rendering:
@@ -146,6 +161,7 @@ class DrawingScheduleDialog(QDialog):
                     task["id"], task["title"], task["discipline"],
                     str(task["duration_days"]), ", ".join(task["predecessors"]),
                     task["crew"], str(len(task["linked_item_ids"])),
+                    self._quantity_text(task),
                     str(task["start_workday_offset"]), str(task["end_workday_offset"]),
                 )
                 for col, val in enumerate(cols):
@@ -154,6 +170,8 @@ class DrawingScheduleDialog(QDialog):
                         cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
                     if col == 3 and task.get("duration_edited"):
                         cell.setToolTip("مدت توسط کاربر اصلاح شده و با به‌روزرسانی متره بازنویسی نمی‌شود")
+                    if col == 7:
+                        cell.setToolTip("مقدار فقط از ردیف‌های متره مرتبط آمده و تا بازبینی منبع، قطعی نیست")
                     self.table.setItem(row, col, cell)
             self.total.setText(
                 "مدت شبکه پیشنهادی: " + str(plan.get("indicative_total_workdays", 0))
