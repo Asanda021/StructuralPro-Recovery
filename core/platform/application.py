@@ -1048,6 +1048,12 @@ class StructuralProApp:
                 expected_project_version=project["_meta"]["version"],
                 session_id=sid, selected_item_ids=e8_area_ids,
             )
+        from core.reports.ifc_crosswalk_source_audit import require_reviewed_ifc_crosswalks_for_boq
+        require_reviewed_ifc_crosswalks_for_boq(
+            self, project_id=pid,
+            expected_project_version=project["_meta"]["version"],
+            session_id=sid, selected_item_ids=tuple(selected),
+        )
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         duplicate_sources = [row["source_id"] for row in rows if row["source_id"] in existing_sources]
         if duplicate_sources:
@@ -1152,6 +1158,12 @@ class StructuralProApp:
                 expected_project_version=project["_meta"]["version"],
                 session_id=sid, selected_item_ids=e8_area_ids,
             )
+        from core.reports.ifc_crosswalk_source_audit import require_reviewed_ifc_crosswalks_for_boq
+        require_reviewed_ifc_crosswalks_for_boq(
+            self, project_id=pid,
+            expected_project_version=project["_meta"]["version"],
+            session_id=sid, selected_item_ids=tuple(sorted(candidate_item_ids)),
+        )
         identities = {row["takeoff_id"]: row for row in canonical_rows}
         existing_sources = {str(row.get("source_id", "")).strip() for row in project.get("takeoffs", [])}
         new_rows = []
