@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
     QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QAbstractItemView, QGraphicsScene, QGraphicsView,
-    QLineEdit, QInputDialog, QFileDialog, QCalendarWidget, QSpinBox, QDoubleSpinBox,
+    QLineEdit, QInputDialog, QFileDialog, QCalendarWidget, QSpinBox, QDoubleSpinBox, QScrollArea, QWidget,
 )
 
 from core.drawings.workflow_planning import edit_activity
@@ -45,7 +45,14 @@ class DrawingWorkflowIntakeDialog(QDialog):
         self.setObjectName("DrawingWorkflowIntakeDialog")
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.resize(680, 690)
-        main = QVBoxLayout(self)
+        outer=QVBoxLayout(self)
+        scroll=QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setObjectName("DrawingWorkflowIntakeScroll")
+        content=QWidget(scroll)
+        main=QVBoxLayout(content)
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
         intro = QLabel("از این نقشه چه می‌خواهید؟ ابتدا نوع اسکلت را بررسی کن و رشته‌های متره را انتخاب کن.")
         intro.setWordWrap(True)
         main.addWidget(intro)
