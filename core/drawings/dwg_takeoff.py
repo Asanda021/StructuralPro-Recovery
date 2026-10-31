@@ -214,7 +214,14 @@ class DWGTakeoffEngine:
                     sweep = (float(e.dxf.end_angle) - float(e.dxf.start_angle)) % 360
                     data.update(radius=r, length=2 * math.pi * r * sweep / 360, start_angle=float(e.dxf.start_angle), sweep_angle=sweep)
                 elif typ in {"TEXT", "MTEXT"}:
-                    data["text"] = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
+                    from core.cad.persian_text_v1 import normalize_cad_text
+                    source_text = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
+                    # DXF and strict-DWG-to-DXF must display the same normalized
+                    # Unicode labels as native DWG preview.  Keep original bytes'
+                    # decoded text as evidence; no guessed SHX glyph mapping.
+                    data["source_text"] = source_text
+                    data["text"] = normalize_cad_text(source_text)
+                    data["text_status"] = "UNICODE_NORMALIZED_SHX_GLYPHS_UNVERIFIED"
                     data["insert"] = _xy(e.dxf.insert)
                     data["height"] = float(getattr(e.dxf, "height", getattr(e.dxf, "char_height", 1)))
                     data["rotation"]=float(e.get_rotation() if typ=="MTEXT" else e.dxf.rotation)
