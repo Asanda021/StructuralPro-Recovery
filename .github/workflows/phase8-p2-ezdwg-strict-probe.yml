@@ -4,6 +4,9 @@ on:
     branches: [test/phase8-p2-engineering-e2e-20261031]
     paths:
       - scripts/phase8_p2_ezdwg_strict_probe.py
+      - core/cad/optional_strict_python_dwg_provider.py
+      - core/drawings/dwg_takeoff.py
+      - core/drawings/legacy_metre_cad_reconciliation.py
       - .github/workflows/phase8-p2-ezdwg-strict-probe.yml
   pull_request:
     branches: [audit/phase8-p1-baseline-integrity-20261031]
