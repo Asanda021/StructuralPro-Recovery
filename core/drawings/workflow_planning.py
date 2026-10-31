@@ -287,6 +287,44 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
         }
         tasks.append(t)
         planned.add(profile.code)
+    # Canonical AEC coverage bridge: every family in the installed taxonomy
+    # has a visible, review-only placeholder even when no empirical rate or
+    # specialized measurement engine is available. No fictional quantity
+    # or zero-day completion is inferred from the placeholder.
+    from core.aec.disciplines import all_disciplines
+    domain_to_scope={
+        "architecture":"architecture",
+        "structural_concrete":"structure",
+        "structural_steel":"structure",
+        "masonry":"architecture",
+        "timber":"wood",
+        "composite":"structure",
+        "mechanical":"mechanical",
+        "electrical":"electrical",
+        "renovation":"renovation",
+        "historic":"restoration",
+        "site_external":"site",
+    }
+    for taxonomy in all_disciplines():
+        scope=domain_to_scope.get(taxonomy.key)
+        if scope not in selected:continue
+        if structure=="concrete" and taxonomy.key=="structural_steel":continue
+        if structure=="steel" and taxonomy.key=="structural_concrete":continue
+        for family in taxonomy.families:
+            code=f"family:{taxonomy.key}:{family}"
+            if code in planned:continue
+            tasks.append({
+                "id":code,"title":f"خانواده تخصصی {taxonomy.title_fa}: {family}",
+                "discipline":scope,"family":family,
+                "aec_discipline":taxonomy.key,
+                "duration_days":0,
+                "duration_status":"RATE_AND_TAKEOFF_COVERAGE_REVIEW_REQUIRED",
+                "duration_edited":False,"crew":"تعیین نشده",
+                "predecessors":[],
+                "linked_item_ids":[],"measured":{},"quantity_reviewed":False,
+                "baseline_approved":False,"coverage_placeholder":True,
+            })
+            planned.add(code)
     # Final handover cannot predate selected detailed activities. Zero-duration
     # unmeasured placeholders add no artificial days and remain transparent.
     handover=next((task for task in tasks if task["id"]=="handover"),None)
