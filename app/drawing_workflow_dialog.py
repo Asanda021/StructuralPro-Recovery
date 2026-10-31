@@ -8,10 +8,11 @@ from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor, QBrush, QPen
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
     QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
-    QMessageBox, QAbstractItemView,
+    QMessageBox, QAbstractItemView, QGraphicsScene, QGraphicsView,
 )
 
 from core.drawings.workflow_planning import edit_activity
@@ -133,6 +134,13 @@ class DrawingScheduleDialog(QDialog):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.itemChanged.connect(self._changed)
         layout.addWidget(self.table)
+        layout.addWidget(QLabel("گانت نسبیِ روزهای کاری: همپوشانی فعالیت‌ها و مدت‌ها (بدون تاریخ قطعی)"))
+        self.gantt_scene=QGraphicsScene(self)
+        self.gantt_view=QGraphicsView(self.gantt_scene)
+        self.gantt_view.setObjectName("DrawingRelativeGantt")
+        self.gantt_view.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.gantt_view.setMinimumHeight(215)
+        layout.addWidget(self.gantt_view)
         bar = QHBoxLayout()
         self.total = QLabel()
         self.close_button = QPushButton("بستن پنجره (برنامه در نشست محفوظ است)")
@@ -154,6 +162,37 @@ class DrawingScheduleDialog(QDialog):
             except (KeyError, InvalidOperation, ValueError):
                 return "مقدار نامعتبر؛ بازبینی لازم است"
         return " + ".join(f"{v.normalize()} {unit}" for unit,v in sorted(sums.items())) if sums else "هنوز متره نشده"
+
+    def _render_gantt(self,plan):
+        """Bounded relative-working-day visualization, NOT a dated baseline."""
+        scene=self.gantt_scene
+        scene.clear()
+        active=[task for task in plan["tasks"] if task["duration_days"]>0]
+        if not active:
+            scene.addText("فعالیت زمان‌دار وجود ندارد؛ متره یا مدت تأیید شود")
+            scene.setSceneRect(0,0,900,65)
+            return
+        active=active[:120]
+        total=max(1,int(plan.get("indicative_total_workdays",1)))
+        step=max(2.0,min(14.0,750.0/total))
+        origin_x=225
+        y_step=27
+        for i,task in enumerate(active):
+            y=18+i*y_step
+            desc=scene.addText(str(task["title"])[:32])
+            desc.setDefaultTextColor(QColor("#66717d"))
+            desc.setPos(0,y-6)
+            duration=int(task["duration_days"])
+            x=origin_x+int(task["start_workday_offset"])*step
+            color=("#20745d" if task.get("duration_edited") else
+                   "#a96a1e" if task.get("duration_status")=="ESTIMATED_REQUIRES_SITE_REVIEW"
+                   else "#406f9b")
+            scene.addRect(x,y,max(2,duration*step),14,
+                          QPen(Qt.PenStyle.NoPen),QBrush(QColor(color)))
+            note=scene.addText(str(duration)+" روز")
+            note.setDefaultTextColor(QColor("#66717d"))
+            note.setPos(x+duration*step+3,y-8)
+        scene.setSceneRect(0,0,origin_x+total*step+100,35+len(active)*y_step)
 
     def refresh(self):
         plan = self.get_plan()
@@ -192,6 +231,7 @@ class DrawingScheduleDialog(QDialog):
                     if col == 7:
                         cell.setToolTip("مقدار فقط از ردیف‌های متره مرتبط آمده و تا بازبینی منبع، قطعی نیست")
                     self.table.setItem(row, col, cell)
+            self._render_gantt(plan)
             self.total.setText(
                 "مدت شبکه پیشنهادی: " + str(plan.get("indicative_total_workdays", 0))
                 + " روز کاری نسبی | بدون تاریخ قطعی"
