@@ -137,6 +137,10 @@ def test_real_qt_intake_choices_and_schedule_editor(qapp):
         assert next(x for x in state[0]["tasks"] if x["id"] == "masonry")["duration_days"] == 24
         assert next(x for x in state[0]["tasks"] if x["id"] == "masonry")["duration_edited"]
         assert state[0]["calendar"]["start_date"] is None
+        assert panel.gantt_view.objectName()=="DrawingRelativeGantt"
+        assert panel.gantt_scene.items()
+        # Gantt bars are relative working days; no invented completion dates.
+        assert state[0]["status"]=="DRAFT_UNAPPROVED"
     finally:
         panel.close()
 
