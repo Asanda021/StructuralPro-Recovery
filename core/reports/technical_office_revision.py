@@ -137,6 +137,7 @@ def _verified_financial_effect(before: dict, after: dict, indexed_keys):
     # exists in both historical catalogs; no guessing a missing period rate.
     reviewed_rates = b0["rows_by_code"]
     amounts = []
+    priced_rows = {}
     with localcontext() as ctx:
         ctx.prec = 512
         ctx.traps[Inexact] = True
@@ -155,12 +156,16 @@ def _verified_financial_effect(before: dict, after: dict, indexed_keys):
                     return None
                 q_before = left[0] if left else Decimal(0)
                 q_after = right[0] if right else Decimal(0)
-                amounts.append((q_after - q_before) * rate * factor)
+                change_amount = (q_after - q_before) * rate * factor
+                amounts.append(change_amount)
+                priced_rows[key] = {"amount": str(change_amount), "unit_price": str(rate), "factor": str(factor), "price_code": code}
         except DecimalException as exc:
             raise ValueError("دقت محاسبه اثر مالی قابل حفظ نیست") from exc
     return {"amount": str(exact_sum(amounts, field="verified financial delta")),
             "currency": currency,
             "pricebook_sha256": b0["sha256"],
+            "rows": [{"source_id": sid, "item_code": code, "unit": unit, **priced_rows[(sid, code, unit)]}
+                     for sid, code, unit in sorted(priced_rows)],
             "basis": "unchanged_verified_pricebook_rates_and_factors; quantity_only",
             "status": "VERIFIED_QUANTITY_ONLY_EFFECT_NOT_PAYMENT_CERTIFICATE"}
 
@@ -219,8 +224,14 @@ def preview_revision_quantity_changes(service, *, project_id: str,
     effect = (_verified_financial_effect(old, new, set(left) | set(right))
               if include_verified_financial_impact else None)
     if effect is not None:
+        priced = {(r["source_id"], r["item_code"], r["unit"]): r for r in effect["rows"]}
         for row in report_rows:
-            row["notes"] = "اثر مالی مقدارمحور فقط با نرخ و ضریب ثابت و منبع تأییدشده بررسی شده است"
+            linked = priced[(row["source_id"], row["item_code"], row["unit"])]
+            row["اثر مالی مستند"] = linked["amount"]
+            row["بهای واحد مستند"] = linked["unit_price"]
+            row["ضریب ثابت"] = linked["factor"]
+            row["واحد پول"] = effect["currency"]
+            row["notes"] = "اثر مالی فقط تغییر مقدار با نرخ و ضریب ثابت و منبع تأییدشده است"
     return {
         "project_id": project_id,
         "before_version": before_version,
@@ -262,6 +273,8 @@ def export_revision_quantity_package(
             "نسخه جدید": after_version,
             "نسخه جاری": expected_current_version,
             "وضعیت اثر مالی": result["financial_impact_status"],
+            "اثر مالی مستند": (result["financial_impact"]["amount"] if result["financial_impact"] else "غیرقابل تعیین"),
+            "واحد پول": (result["financial_impact"]["currency"] if result["financial_impact"] else "نامشخص"),
             "نوع سند": "گزارش مقدارمحور با منشأ تاریخچه SQLite",
         },
     )
