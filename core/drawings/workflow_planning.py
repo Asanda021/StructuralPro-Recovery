@@ -184,7 +184,8 @@ def recompute_schedule(plan: dict) -> dict:
 
 def new_workflow_plan(*, drawing_source: str, source_sha256: str,
                       structure: str, disciplines, inference=None,
-                      project_kind: str = "new_build") -> dict:
+                      project_kind: str = "new_build",
+                      project_id: str = "") -> dict:
     if project_kind not in {"new_build","renovation","fitout"}:
         raise ValueError("نوع پروژه برای زمان‌بندی معتبر نیست")
     if structure not in _STRUCTURE_OPTIONS:
@@ -297,6 +298,8 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
     result = {
         "schema": "structuralpro.drawing-workflow-v1",
         "status": "DRAFT_UNAPPROVED",
+        "project_id":str(project_id or "").strip(),
+        "production_calibrations":{},
         "drawing_source": str(drawing_source),
         "source_sha256": str(source_sha256),
         "structure": structure,
@@ -364,13 +367,27 @@ def sync_measured_items(plan: dict, items) -> dict:
             profile=CATALOG[task["id"]]
             if observed and all(normalized_production_unit(entry["unit"])==profile.unit for entry in observed.values()):
                 total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
-                rec=productivity_days(task["id"],total,profile.unit,
-                                      crews=task.get("crew_count",profile.crews),
-                                      efficiency=task.get("efficiency","1"))
+                calibration=plan.get("production_calibrations",{}).get(task["id"])
+                if calibration is not None:
+                    from core.projects.productivity_evidence import validate_calibration,calibrated_duration
+                    validate_calibration(calibration,task["id"],plan.get("project_id",""))
+                    rec=calibrated_duration(
+                        calibration,total,crews=task.get("crew_count",profile.crews),
+                        efficiency=task.get("efficiency","1")
+                    ) if total>0 else {"expected_workdays":0,"min_workdays":0,
+                                        "max_workdays":0,
+                                        "status":"PROJECT_OBSERVED_REQUIRES_BASELINE_APPROVAL"}
+                else:
+                    rec=productivity_days(task["id"],total,profile.unit,
+                                          crews=task.get("crew_count",profile.crews),
+                                          efficiency=task.get("efficiency","1"))
                 task["duration_days"]=rec["expected_workdays"]
                 task["duration_range"]=[rec["min_workdays"],rec["max_workdays"]]
-                task["duration_status"]="ESTIMATED_REQUIRES_SITE_REVIEW"
-                task["rate_source"]=rec["source"]
+                task["duration_status"]=rec.get("status","ESTIMATED_REQUIRES_SITE_REVIEW")
+                task["rate_source"]=(
+                    "PROJECT_FIELD_OBSERVATION_SHA_VERIFIED"
+                    if calibration is not None else rec["source"]
+                )
             else:
                 task["duration_days"]=0
                 task["duration_range"]=None
@@ -532,4 +549,20 @@ def apply_resource_limits(plan,limits,*,level=False):
     if draft.get("calendar",{}).get("start_date"):
         from core.projects.iran_worksite_calendar import apply_calendar
         apply_calendar(draft)
+    return draft
+
+
+def register_project_productivity_calibration(plan,calibration):
+    """Attach a source-checked site rate for one item, never mutate global rates."""
+    from core.projects.productivity_evidence import validate_calibration
+    from core.projects.production_catalog import CATALOG
+    code=calibration.get("profile_code") if isinstance(calibration,dict) else None
+    if code not in CATALOG:raise ValueError("کد پروفایل کالیبراسیون معتبر نیست")
+    pid=plan.get("project_id","")
+    if not pid:raise ValueError("اول باید برنامه به پروژه واقعی متصل باشد")
+    validate_calibration(calibration,code,pid)
+    draft=deepcopy(plan)
+    if code not in {t["id"] for t in draft["tasks"]}:
+        raise ValueError("فعالیت کالیبراسیون در برنامه وجود ندارد")
+    draft.setdefault("production_calibrations",{})[code]=deepcopy(calibration)
     return draft
