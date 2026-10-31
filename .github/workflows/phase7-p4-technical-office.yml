@@ -5,7 +5,9 @@ on:
       - feature/phase7-p4-technical-office-reports-20261031
     paths:
       - core/reports/technical_office_revision.py
+      - core/reports/technical_office_dossier.py
       - tests/test_phase7_p4_technical_office_revision.py
+      - tests/test_phase7_p4_technical_office_dossier.py
       - .github/workflows/phase7-p4-technical-office.yml
   pull_request:
     branches:
@@ -47,12 +49,13 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
       - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
       - name: Compile P4 and prior report engines
-        run: python -m py_compile core/reports/technical_office_revision.py core/reports/custom_batch.py core/reports/project_report.py
+        run: python -m py_compile core/reports/technical_office_revision.py core/reports/technical_office_dossier.py core/reports/custom_batch.py core/reports/project_report.py
       - name: Native SQLite history delta, four exporters, controls and original source guards
         run: >-
           python -m pytest -q
           --junitxml=p7-p4-targeted.xml
           tests/test_phase7_p4_technical_office_revision.py
+          tests/test_phase7_p4_technical_office_dossier.py
           tests/test_phase7_p3_custom_batch.py
           tests/test_phase7_p3_custom_report_ui.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
