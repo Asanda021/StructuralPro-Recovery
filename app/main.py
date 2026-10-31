@@ -832,8 +832,10 @@ def main()->int:
     stchoose.setObjectName("ChooseStatementPricingMode")
     stproof=QPushButton("بازبینی نرخ‌های قراردادی")
     stproof.setObjectName("ReviewContractStatementRates")
+    stoperator=QPushButton("ورود مبلغ ردیف توسط اپراتور")
+    stoperator.setObjectName("OperatorEnterContractUnitRate")
     sv.addWidget(QLabel("پروژه")); sv.addWidget(stid,1); sv.addWidget(QLabel("دوره")); sv.addWidget(stperiod)
-    sv.addWidget(stchoose);sv.addWidget(stproof);sv.addWidget(stgo);sv.addWidget(stsave)
+    sv.addWidget(stchoose);sv.addWidget(stoperator);sv.addWidget(stproof);sv.addWidget(stgo);sv.addWidget(stsave)
     v.addWidget(sttools)
     stbasis_label=QLabel("مبنای صورت‌وضعیت انتخاب نشده؛ فهرست‌بهایی یا نرخ قراردادی؟")
     stbasis_label.setWordWrap(True);v.addWidget(stbasis_label)
@@ -881,7 +883,20 @@ def main()->int:
             )
             if not accepted:return False
             selected=modes[labels.index(label)]
-            service.set_statement_pricing_mode(pid,selected)
+            entry="prefilled"
+            if selected=="contract_rates":
+                options=[
+                    "مبالغ قرارداد از ابتدا درج و قابل بررسی باشد",
+                    "مبالغ خالی بماند تا اپراتور هنگام کنترل وارد کند",
+                ]
+                selected_option,ok=QInputDialog.getItem(
+                    w,"ورود مبالغ قراردادی",
+                    "ردیف‌های بدون فهرست‌بها با قیمت باشند یا خانه مبلغ خالی باشد؟",
+                    options,0,False
+                )
+                if not ok:return False
+                entry="operator_blank" if selected_option==options[1] else "prefilled"
+            service.set_statement_pricing_mode(pid,selected,entry)
             statement_mode_confirmed.add(pid)
             state=service.statement_basis_status(pid)
             stbasis_label.setText(
@@ -893,6 +908,49 @@ def main()->int:
         except Exception as exc:
             QMessageBox.critical(w,"مبنای صورت‌وضعیت",str(exc))
             return False
+
+    def operator_enter_contract_unit_rate():
+        pid=stid.text().strip()
+        if not pid:
+            QMessageBox.warning(w,"صورت‌وضعیت","شناسه پروژه را وارد کنید")
+            return
+        try:
+            from core.commercial.statement_basis import statement_mode
+            project=service.open_project(pid)
+            if statement_mode(project)!="contract_rates":
+                raise ValueError("ابتدا حالت بدون فهرست‌بها را انتخاب کنید")
+            boq=project.get("boq") or []
+            if not boq:
+                raise ValueError("ابتدا ردیف‌های BOQ را ثبت کنید")
+            labels=[str(x.get("price_code") or "")+" | "+
+                    str(x.get("description") or x.get("item_code") or "")[:65]+
+                    (" | مبلغ خالی" if x.get("unit_price") is None else
+                     " | مبلغ ثبت‌شده: "+str(x.get("unit_price")))
+                    for x in boq]
+            selection,ok=QInputDialog.getItem(
+                w,"ردیف مبلغ قراردادی","ردیف مورد بررسی:",labels,0,False
+            )
+            if not ok:return
+            row=boq[labels.index(selection)]
+            amount,ok=QInputDialog.getText(
+                w,"ثبت مبلغ قرارداد",
+                "مبلغ واحد واقعی قرارداد (برای ردیف خالی صفر فرض نمی‌شود):"
+            )
+            if not ok:return
+            operator,ok=QInputDialog.getText(
+                w,"اپراتور مسئول","نام اپراتور ثبت‌کننده مبلغ:"
+            )
+            if not ok:return
+            service.record_operator_statement_price(
+                pid,str(row["price_code"]),amount,operator
+            )
+            status=service.statement_operator_price_status(pid)
+            stbasis_label.setText(
+                "قیمت قراردادی ثبت شد و منتظر کنترل سند است | "
+                f"ردیف‌های فاقد مبلغ: {len(status['missing_codes'])}"
+            )
+        except Exception as exc:
+            QMessageBox.critical(w,"ثبت مبلغ قراردادی",str(exc))
 
     def review_contract_statement_rates():
         pid=stid.text().strip()
@@ -960,6 +1018,7 @@ def main()->int:
     stamend.clicked.connect(open_statement_amendments)
     stchoose.clicked.connect(choose_statement_basis)
     stproof.clicked.connect(review_contract_statement_rates)
+    stoperator.clicked.connect(operator_enter_contract_unit_rate)
     stgo.clicked.connect(statement_shortcut)
     stsave.clicked.connect(save_statement_period)
     pages.addWidget(p); idx_statement=pages.count()-1
@@ -1287,6 +1346,7 @@ def main()->int:
             add_command("📊 گزارش", lambda: pages.setCurrentIndex(idx_reports))
         elif index == idx_statement:
             add_command("انتخاب مبنای صورت‌وضعیت", choose_statement_basis, True)
+            add_command("ورود مبلغ اپراتور", operator_enter_contract_unit_rate)
             add_command("بازبینی نرخ قرارداد", review_contract_statement_rates)
             add_command("🧮 محاسبه دوره", statement_shortcut)
             add_command("💾 ذخیره دوره", save_statement_period)
