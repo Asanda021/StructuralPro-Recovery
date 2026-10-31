@@ -71,7 +71,9 @@ def test_engineer_week_and_optout_preferences_persist_without_auto_wbs():
     assert restored.workflow_preferences["automatic_scheduling"] is False
     assert restored.workflow_preferences["pricing_mode"]=="contract_rates"
     assert restored.engineer_weekly_plans[0]["engineer_name"]=="مهندس برق"
-    assert restored.engineer_weekly_plans[0]["week_start"]=="1406/01/01"
+    # 1406/01/01 was a Sunday, so its Saturday-based workweek starts
+    # on the last day of Esfand 1405.
+    assert restored.engineer_weekly_plans[0]["week_start"]=="1405/12/29"
 
 
 def test_blank_price_is_not_zero_and_operator_must_enter_explicit_amount(tmp_path,monkeypatch):
