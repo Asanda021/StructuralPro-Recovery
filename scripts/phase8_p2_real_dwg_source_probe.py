@@ -18,12 +18,14 @@ STUDIO_SOURCE = "https://www.innerscene.com/api/library/studio-floor-plan-193f4e
 SOURCES = {
     "usfs_legacy": {
         "url": SOURCE, "source_id": "USFS-WAW0025A-1995",
+        "expected_sha256": "8875121bf851850520ea9c1c5a125a470dc62c59690d38b796e0ea77b98e7bd5",
         "catalog": CATALOG, "author": "USDA Forest Service (source catalogue)",
         "license": "US federal government work; status outside the US not established",
         "independent_real_site": False,
     },
     "studio_cc0": {
         "url": STUDIO_SOURCE, "source_id": "INNERSCENE-STUDIO-FLOOR-PLAN-2026",
+        "expected_sha256": "e2dd2e3b9b88022dddd73ad3dee88e99986613165393ddf2c6ff70453a4897ce",
         "catalog": "https://www.innerscene.com/tools/library/drawings/studio-floor-plan-193f4ec8",
         "author": "Innerscene (publisher attribution)",
         "license": "CC0 as stated by source page; legal review not performed",
@@ -77,6 +79,8 @@ def probe(url: str = SOURCE) -> dict:
             raise ValueError("DWG response came from an unapproved source")
         data = response.read(MAX_BYTES + 1)
     facts = inspect_dwg(data)
+    if facts["sha256"] != selected["expected_sha256"]:
+        raise ValueError("Public DWG source checksum changed since independent OS readings")
     return {
         "status": "SOURCE_BINARY_PROBED_ONLY_NOT_ENGINEERING_ACCEPTANCE",
         "source_id": selected["source_id"],
@@ -86,6 +90,7 @@ def probe(url: str = SOURCE) -> dict:
         "response_url": final_url,
         "licence_note": selected["license"],
         "independent_real_site_verified": selected["independent_real_site"],
+        "source_sha256_pinned_in_test": True,
         "source_sha256_pinned_independently": False,
         "independent_geometry_oracle_available": False,
         "dwg_to_dxf_native_conversion_tested": False,
