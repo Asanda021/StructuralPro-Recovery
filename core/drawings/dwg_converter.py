@@ -133,8 +133,16 @@ class OfflineDWGConverter:
                     target = matches[0]
         else:
             target.unlink(missing_ok=True)
+            # GNU LibreDWG dwg2dxf accepts -o OUTPUT INPUT; the old
+            # positional INPUT OUTPUT call treats OUTPUT as a second input
+            # and never creates the required DXF.  Use the documented CLI,
+            # without weakening DXF parse/integrity checks below.
+            if "dwg2dxf" in name:
+                command = [self.executable, "-o", str(target), str(src)]
+            else:
+                command = [self.executable, str(src), str(target)]
             proc = self._run(
-                [self.executable, str(src), str(target)],
+                command,
                 capture_output=True,
                 text=True,
                 check=False,
