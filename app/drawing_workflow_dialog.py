@@ -48,6 +48,13 @@ class DrawingWorkflowIntakeDialog(QDialog):
         intro.setWordWrap(True)
         main.addWidget(intro)
         main.addWidget(QLabel("فایل: " + source_name))
+        main.addWidget(QLabel("وضعیت عملیات پروژه (برای جلوگیری از فعالیت‌های غیرمرتبط):"))
+        self.project_kind=QComboBox()
+        self.project_kind.setObjectName("DrawingWorkflowProjectKind")
+        self.project_kind.addItem("احداث ساختمان جدید","new_build")
+        self.project_kind.addItem("بازسازی، بهسازی و مقاوم‌سازی موجود","renovation")
+        self.project_kind.addItem("تکمیل و نازک‌کاری ساختمان موجود","fitout")
+        main.addWidget(self.project_kind)
         main.addWidget(QLabel("تشخیص اولیه جنس اسکلت از نوشته‌ها و لایه‌های نقشه:"))
         self.frame_kind = QComboBox()
         self.frame_kind.setObjectName("DrawingWorkflowStructureType")
@@ -92,6 +99,9 @@ class DrawingWorkflowIntakeDialog(QDialog):
         return self.frame_kind.currentData(), [
             code for code, cb in self.disciplines.items() if cb.isChecked()
         ]
+
+    def selected_project_kind(self) -> str:
+        return self.project_kind.currentData()
 
 
 class DrawingScheduleDialog(QDialog):
