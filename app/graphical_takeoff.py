@@ -863,6 +863,7 @@ class GraphicalTakeoffDialog(QDialog):
                 drawing_source=source,source_sha256=sha,structure=structure,
                 disciplines=disciplines,inference=evidence,
                 project_kind=dialog.selected_project_kind(),
+                project_id=self.persisted_project_id,
             )
             self.session.workflow_plan=sync_measured_items(plan,self.session.items)
             self.schedule_button.setEnabled(True)
