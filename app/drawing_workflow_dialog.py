@@ -7,7 +7,7 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QCalendar, QLocale
 from PySide6.QtGui import QColor, QBrush, QPen
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
