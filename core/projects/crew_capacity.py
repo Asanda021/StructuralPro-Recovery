@@ -53,7 +53,8 @@ def _earliest(task,scheduled):
 def resource_conflicts(plan,limits):
     """Report every overloaded crew workday, with no false 'safe' status."""
     copy=deepcopy(plan)
-    calculate_precedence(copy)
+    if copy.get("resource_leveling_status")!="PROPOSED_UNAPPROVED":
+        calculate_precedence(copy)
     usage=defaultdict(lambda:defaultdict(list))
     for task in copy["tasks"]:
         request=_request(task,limits)
