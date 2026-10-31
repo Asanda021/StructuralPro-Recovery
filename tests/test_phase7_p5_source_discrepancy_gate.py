@@ -38,7 +38,8 @@ def test_same_reviewed_member_and_quantity_is_review_only_not_auto_approved(tmp_
         before = deepcopy(project)
         result = inspect_pending_source_discrepancies(app, **args)
         assert result["status"] == "REVIEW_REQUIRED"
-        assert not result["allowed_to_commit"]
+        assert not result["source_preflight_clear"]
+        assert result["final_commit_authority"] is False
         assert not result["approved_for_engineering_release"]
         assert not result["mutation"]
         assert len(result["conflicts"]) == 1
@@ -65,7 +66,7 @@ def test_same_member_different_measured_quantity_blocks_without_guessing(tmp_pat
         assert len(result["conflicts"]) == 1
         assert result["conflicts"][0]["code"] == "MEMBER_SOURCE_QUANTITY_DISCREPANCY"
         assert Decimal(result["conflicts"][0]["candidate"]["quantity"]) != Decimal(result["conflicts"][0]["committed"]["quantity"])
-        assert not result["allowed_to_commit"]
+        assert not result["source_preflight_clear"]
     finally:
         app.store.close()
 
@@ -75,7 +76,7 @@ def test_distinct_real_floor_member_does_not_invent_conflict(tmp_path):
     try:
         result = require_no_pending_source_discrepancies(app, **args)
         assert result["status"] == "NO_CROSS_SESSION_MEMBER_CONFLICT_FOUND"
-        assert result["allowed_to_commit"]
+        assert result["source_preflight_clear"]
         assert not result["approved_for_engineering_release"]
         assert result["conflicts"] == []
     finally:
