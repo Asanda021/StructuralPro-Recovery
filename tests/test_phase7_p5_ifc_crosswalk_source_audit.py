@@ -97,7 +97,7 @@ def test_reviewer_role_revoked_blocks_reuse_of_old_approved_crosswalk(tmp_path):
     from core.collaboration.workspace import User
     app, model, drawing, opts, crosswalk, project, args = _case(tmp_path)
     try:
-        app.collaboration.add_user(User("reviewer", "بازبین", "viewer"))
+        app.collaboration.users["reviewer"] = User("reviewer", "بازبین", "viewer")
         with pytest.raises(PermissionError):
             inspect_reviewed_ifc_crosswalks(app, **args)
     finally:
