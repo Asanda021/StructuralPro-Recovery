@@ -85,7 +85,7 @@ jobs:
           --junitxml=phase8-p2-fork-p4.xml
           tests/test_phase6_p4_contextual_takeoff.py
           tests/test_phase8_p2_pr32_a2_source_gate.py
-          -k "review_questions or existing_assembly or proposal_revocation or review_ledger or persisted_boq or matching_approved_templates or a2_existing_engineering_assistant or failed_context_refresh or w1_live_identity_change or specialist_fields"
+          -k "review_questions or existing_assembly or proposal_revocation or review_ledger or persisted_boq or matching_approved_templates or a2_existing_engineering_assistant or failed_context_refresh or w1_live_identity_change or specialist_fields or a2_real_active or a2_damaged"
       - name: Preserve original native behavior JUnit
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
