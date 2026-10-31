@@ -332,7 +332,38 @@ class DWGTakeoffEngine:
             return doc
 
         from core.drawings.dwg_converter import OfflineDWGConverter
-        result = OfflineDWGConverter().convert(p)
+        legacy_converter = OfflineDWGConverter()
+        if not legacy_converter.available:
+            from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+            optional = StrictPythonDWGProvider()
+            if optional.available:
+                receipt = optional.convert(p)
+                try:
+                    doc = self._read_dxf(receipt.output)
+                finally:
+                    receipt.output.unlink(missing_ok=True)
+                if doc.source_sha256 != receipt.output_sha256:
+                    raise RuntimeError("Strict DWG output checksum changed")
+                if hashlib.sha256(p.read_bytes()).hexdigest() != original_sha:
+                    raise RuntimeError("DWG source changed during strict Python decoding")
+                doc.conversion = {
+                    "provider": "ezdwg strict Python bridge",
+                    "decoder_version": receipt.decoder_version,
+                    "dwg_signature": receipt.signature,
+                    "source_sha256": receipt.source_sha256,
+                    "output_sha256": receipt.output_sha256,
+                    "total_entities": receipt.total_entities,
+                    "written_entities": receipt.written_entities,
+                    "skipped_entities": receipt.skipped_entities,
+                    "strict": True, "exit_code": 0,
+                }
+                doc.source_sha256 = original_sha
+                doc.source = str(p)
+                doc.format = "DWG→DXF (ezdwg strict)"
+                return doc
+        # A configured external converter may fail: never silently fall back
+        # to the Python backend after its command or output validation failed.
+        result = legacy_converter.convert(p)
         try:
             doc = self._read_dxf(result.output)
         finally:
