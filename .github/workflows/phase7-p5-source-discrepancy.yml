@@ -6,6 +6,7 @@ on:
     paths:
       - core/reports/source_discrepancy_gate.py
       - core/reports/ifc_crosswalk_source_audit.py
+      - tests/test_phase7_p5_ifc_boq_commit_gate.py
       - core/platform/application.py
       - tests/test_phase7_p5_source_discrepancy_gate.py
       - tests/test_phase7_p5_ifc_crosswalk_source_audit.py
@@ -57,6 +58,7 @@ jobs:
           --junitxml=p7-p5-e8-targeted.xml
           tests/test_phase7_p5_source_discrepancy_gate.py
           tests/test_phase7_p5_ifc_crosswalk_source_audit.py
+          tests/test_phase7_p5_ifc_boq_commit_gate.py
           tests/test_phase2_priority5_closure.py
           tests/test_phase7_p5_real_commit_integration.py
           tests/test_ai_takeoff_persistent_approval.py
