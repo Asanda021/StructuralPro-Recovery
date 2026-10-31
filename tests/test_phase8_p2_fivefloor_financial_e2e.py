@@ -99,9 +99,9 @@ def test_two_real_pdf_sources_five_floors_to_boq_price_estimate_statement_and_re
     from openpyxl import load_workbook
     app, project, selections = building
     _independent_boq_assertions(project)
-    assert {str(item["system"]) for item in project["takeoffs"]} == {
-        f"L{n}" for n in range(1, 6)
-    }
+    # The canonical takeoff.system is a *page label*, not a FloorID.
+    # Assert real FloorID from the independently verified map-to-BOQ links
+    # below rather than confusing page numbering with physical floors.
     source_digests = {
         project["drawing_sessions"][x["session_id"]]["source_sha256"] for x in selections
     }
@@ -120,6 +120,9 @@ def test_two_real_pdf_sources_five_floors_to_boq_price_estimate_statement_and_re
     manifest = json.loads((destination / "manifest.json").read_text(encoding="utf-8"))
     assert bundle["manifest"] == manifest
     assert len(manifest["pages"]) == 5
+    assert {link["floor_id"] for page in manifest["pages"] for link in page["links"]} == {
+        f"L{n}" for n in range(1, 6)
+    }
     assert len(manifest["files"]) == 14
     assert all(
         sha256((destination / row["name"]).read_bytes()).hexdigest() == row["sha256"]
