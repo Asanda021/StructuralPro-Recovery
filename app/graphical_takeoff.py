@@ -384,6 +384,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.viewer = DrawingViewerModel()
         self.cad_document = None
         self._cad_scene_origin = None
+        self._workflow_intake_dialog = None
+        self._workflow_schedule_dialog = None
+        self._workflow_prompted_source = None
         self.page = 1
 
         root = QVBoxLayout(self)
@@ -406,6 +409,14 @@ class GraphicalTakeoffDialog(QDialog):
         header.addWidget(self.calibrate)
 
         self.open_pdf = QPushButton("بازکردن نقشه")
+        self.workflow_button = QPushButton("چه چیزی متره شود؟")
+        self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
+        self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
+        self.workflow_button.clicked.connect(self.open_drawing_workflow)
+        self.schedule_button = QPushButton("برنامه زمان‌بندی هم‌زمان")
+        self.schedule_button.setObjectName("OpenDrawingLiveSchedule")
+        self.schedule_button.setEnabled(False)
+        self.schedule_button.clicked.connect(self.open_live_schedule)
         self.prev = QPushButton("صفحه قبلی")
         self.next = QPushButton("صفحه بعدی")
         self.page_no = QSpinBox()
@@ -469,7 +480,8 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.prev, self.next, self.page_no,
+            self.open_pdf, self.workflow_button, self.schedule_button,
+            self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
@@ -779,6 +791,7 @@ class GraphicalTakeoffDialog(QDialog):
                        if self.canvas.read_only_model else " | متره نیازمند بازبینی مهندسی")
                 )
                 job['gc_lease'].release()
+                QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
             except Exception as exc:failed(str(exc))
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
 
@@ -787,6 +800,86 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_cad_loading()
         if self.engine is not None:self.engine.close()
         super().closeEvent(event)
+
+    def _offer_workflow_for_open_drawing(self):
+        """Ask once per newly opened source, never while a CAD worker is active."""
+        if self.cad_loading or not self.viewer.path:
+            return
+        source=str(self.viewer.path)
+        if getattr(self.session,"workflow_plan",None):
+            self.schedule_button.setEnabled(True)
+            return
+        if self._workflow_prompted_source == source:
+            return
+        self._workflow_prompted_source=source
+        self.open_drawing_workflow()
+
+    def open_drawing_workflow(self):
+        if self.cad_loading or not self.viewer.path:
+            self.status.setText("ابتدا نقشه را باز کن تا هدف متره و زمان‌بندی تعیین شود")
+            return
+        from app.drawing_workflow_dialog import DrawingWorkflowIntakeDialog
+        from core.drawings.workflow_planning import infer_structure
+        from shiboken6 import isValid
+        old=self._workflow_intake_dialog
+        if old is not None and isValid(old) and old.isVisible():
+            old.raise_()
+            old.activateWindow()
+            return
+        evidence=infer_structure(self.cad_document if self.viewer.kind=="cad" else None)
+        dialog=DrawingWorkflowIntakeDialog(self.viewer.source_name,evidence,self)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        self._workflow_intake_dialog=dialog
+        source=str(self.viewer.path)
+        sha=str(self.session.source_sha256)
+        def accepted():
+            # An old popup can never bind a fresh drawing to old evidence.
+            if not self.viewer.path or str(self.viewer.path)!=source or self.session.source_sha256!=sha:
+                self.status.setText("نقشه عوض شده؛ انتخاب رشته مجدداً لازم است")
+                return
+            from core.drawings.workflow_planning import new_workflow_plan, sync_measured_items
+            structure,disciplines=dialog.selection()
+            plan=new_workflow_plan(
+                drawing_source=source,source_sha256=sha,structure=structure,
+                disciplines=disciplines,inference=evidence,
+            )
+            self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+            self.schedule_button.setEnabled(True)
+            self.status.setText(
+                "مسیر متره فعال شد؛ اسکلت: "+structure+
+                "؛ برنامه زمانی پیشنهادی و قابل ویرایش است، بدون تاریخ قطعی"
+            )
+            self.open_live_schedule()
+        dialog.accepted.connect(accepted)
+        dialog.show()
+
+    def open_live_schedule(self):
+        if not getattr(self.session,"workflow_plan",None):
+            self.open_drawing_workflow()
+            return
+        from app.drawing_workflow_dialog import DrawingScheduleDialog
+        from shiboken6 import isValid
+        dialog=self._workflow_schedule_dialog
+        if dialog is not None and isValid(dialog):
+            dialog.refresh()
+            dialog.show()
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+        dialog=DrawingScheduleDialog(
+            lambda:getattr(self.session,"workflow_plan",None),
+            self._set_edited_schedule,self,
+        )
+        self._workflow_schedule_dialog=dialog
+        dialog.show()
+
+    def _set_edited_schedule(self, plan):
+        # Validated by edit_activity(); do not overwrite custom durations during
+        # any later takeoff, undo, redraw, source switch or schedule refresh.
+        if (plan.get("source_sha256")!=self.session.source_sha256
+                or plan.get("drawing_source")!=self.session.drawing_source):
+            raise ValueError("نسخه نقشه برای ویرایش برنامه عوض شده است")
+        self.session.workflow_plan=plan
 
     def show_cad_capabilities(self):
         if self.cad_loading or not self.cad_document:return
@@ -1039,6 +1132,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._cad_scene_origin = None  # Never reuse a prior drawing's CAD coordinate transform.
         self.engine = new_engine
         self.load_page(1)
+        QTimer.singleShot(0, self._offer_workflow_for_open_drawing)
 
     def load_page(self, page):
         if self.cad_loading:return
@@ -2767,3 +2861,11 @@ class GraphicalTakeoffDialog(QDialog):
         )
         self.undo.setEnabled(self.session.can_undo)
         self.redo.setEnabled(self.session.can_redo)
+        plan=getattr(self.session, "workflow_plan", None)
+        self.schedule_button.setEnabled(bool(plan))
+        if plan:
+            from core.drawings.workflow_planning import sync_measured_items
+            sync_measured_items(plan, self.session.items)
+            window=self._workflow_schedule_dialog
+            if window is not None and window.isVisible():
+                window.refresh()
