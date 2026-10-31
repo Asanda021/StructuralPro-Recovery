@@ -344,6 +344,8 @@ class DWGTakeoffEngine:
                     receipt.output.unlink(missing_ok=True)
                 if doc.source_sha256 != receipt.output_sha256:
                     raise RuntimeError("Strict DWG output checksum changed")
+                if doc.units != receipt.source_unit:
+                    raise RuntimeError("DWG declared source unit does not match converted DXF unit")
                 if hashlib.sha256(p.read_bytes()).hexdigest() != original_sha:
                     raise RuntimeError("DWG source changed during strict Python decoding")
                 doc.conversion = {
@@ -355,7 +357,12 @@ class DWGTakeoffEngine:
                     "total_entities": receipt.total_entities,
                     "written_entities": receipt.written_entities,
                     "skipped_entities": receipt.skipped_entities,
-                    "strict": True, "exit_code": 0,
+                    "strict": True,
+                    "source_unit": receipt.source_unit,
+                    "source_unit_code": receipt.source_unit_code,
+                    "original_dxf_unit_code": receipt.original_dxf_unit_code,
+                    "unit_metadata_repaired": receipt.source_unit_restored_in_dxf,
+                    "exit_code": 0,
                 }
                 doc.source_sha256 = original_sha
                 doc.source = str(p)
