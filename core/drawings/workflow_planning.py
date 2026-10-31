@@ -216,7 +216,7 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
             "duration_days": default_days,"default_duration_days":default_days,
             "base_predecessors":list(mapped),
             "duration_status":"OFFICE_INITIAL_ASSUMPTION",
-            "duration_edited": False,
+            "duration_edited": False,"predecessors_edited":False,
             "crew": "تعیین نشده", "predecessors": mapped,
             "linked_item_ids": [], "measured": {}, "quantity_reviewed": False,
             "baseline_approved": False,
@@ -390,7 +390,8 @@ def sync_measured_items(plan: dict, items) -> dict:
     for parent in plan["tasks"]:
         if parent["id"] not in groups and parent.get("duration_status")!="SUMMARY_FROM_DETAILED_WBS":
             continue
-        if parent.get("duration_edited") or parent.get("linked_item_ids"):
+        if (parent.get("duration_edited") or parent.get("predecessors_edited")
+                or parent.get("linked_item_ids")):
             continue
         children=groups.get(parent["id"],[])
         parent["duration_days"]=0 if children else parent.get("default_duration_days",0)
@@ -443,6 +444,7 @@ def edit_activity(plan: dict, task_id: str, *, title=None, duration_days=None,
         if not isinstance(predecessors, list):
             raise ValueError("پیش‌نیاز باید فهرست شناسه فعالیت باشد")
         task["predecessors"] = predecessors
+        task["predecessors_edited"]=True
         # Replacing predecessor IDs must not retain obsolete relationship
         # references. The user can supply new FS/SS/FF/SF links in same edit.
         if links is None:task["links"]=[]
