@@ -38,6 +38,7 @@ class ProjectReport:
     rows: list[dict[str, Any]]
     summary: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    selected_columns: list[tuple[str, str]] | None = None
 
     def __post_init__(self):
         self.rows = normalize_report_rows(self.rows)
@@ -48,6 +49,10 @@ class ProjectReport:
         return [dict(row) for row in self.rows]
 
     def columns(self) -> list[tuple[str, str]]:
+        if self.selected_columns is not None:
+            if not self.selected_columns or len({k for k,_ in self.selected_columns}) != len(self.selected_columns):
+                raise ValueError("ستون‌های گزارش خالی یا تکراری است")
+            return list(self.selected_columns)
         return report_columns(self.rows)
 
     def validate(self) -> dict[str, Any]:

@@ -498,6 +498,16 @@ def main()->int:
     rtitle=QLabel("خلاصه خروجی"); rtitle.setObjectName("SectionTitle"); v.addWidget(rtitle)
     rsummary=QLabel("پروژه را وارد کنید و گزارش را بسازید."); rsummary.setWordWrap(True); v.addWidget(rsummary)
     rout=QTextEdit(); rout.setReadOnly(True); v.addWidget(rout,1)
+    rdesigner=QPushButton("گزارش‌ساز و صدور گروهی");rdesigner.setObjectName("OpenCustomReportDesigner");v.addWidget(rdesigner)
+    def open_custom_report():
+        try:
+            project_id=rpid.text().strip();project=service.open_project(project_id)
+            if not project:raise ValueError("ابتدا پروژه معتبر را در گزارشات انتخاب کنید")
+            from app.custom_report_dialog import CustomReportDialog
+            legacy=project["_report_layout"] if "_report_layout" in project else None
+            dialog=CustomReportDialog(service,project_id,w,legacy_layout=legacy);dialog.exec()
+        except Exception as exc:QMessageBox.warning(w,"گزارش‌ساز",str(exc))
+    rdesigner.clicked.connect(open_custom_report)
     def make_report():
         project_id=rpid.text().strip()
         if not project_id: QMessageBox.warning(w,"گزارش","شناسه پروژه را وارد کنید."); return
@@ -1099,9 +1109,10 @@ def main()->int:
         if not project:
             rdstatus.setText("🔴 پروژه پیدا نشد."); return
         layout=ReportLayout(columns=[x.strip() for x in rdcols.text().split(",") if x.strip()],group_by=rdgroup.text().strip())
-        project["_report_layout"]={"columns":layout.columns,"group_by":layout.group_by,"rtl":layout.rtl}
-        service.store.save(project_id,project)
-        rdstatus.setText(f"🟢 چیدمان گزارش برای پروژه ذخیره شد: {len(layout.columns)} ستون | گروه‌بندی: {layout.group_by or 'ندارد'} | RTL: {layout.rtl}")
+        from app.custom_report_dialog import CustomReportDialog
+        from dataclasses import asdict
+        dialog=CustomReportDialog(service,project_id,w,legacy_layout=asdict(layout));dialog.exec()
+        rdstatus.setText("قالب نسخه‌دار در گزارش‌ساز ذخیره می‌شود؛ داده پروژه فقط خوانده شد.")
     rdb.clicked.connect(apply_layout); tools.addTab(rd,"طراحی گزارش")
 
     # Commercial progress and backup are available from the same desktop surface.
@@ -1207,6 +1218,7 @@ def main()->int:
         elif index == idx_reports:
             add_command("📊 گزارش پروژه", make_report, True)
             add_command("💰 گزارش هزینه", make_cost_report)
+            add_command("قالب و صدور گروهی", open_custom_report)
         elif index == idx_tools:
             add_command("🛠 ابزارهای حرفه‌ای", lambda: pages.setCurrentIndex(idx_tools), True)
             add_command("✓ کنترل کیفیت", lambda: pages.setCurrentIndex(idx_quality))
