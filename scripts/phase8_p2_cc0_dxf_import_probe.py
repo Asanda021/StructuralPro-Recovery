@@ -20,6 +20,7 @@ from core.drawings.dwg_takeoff import DWGTakeoffEngine
 CATALOG_URL = "https://www.innerscene.com/tools/library/drawings/school-general-site-plan-1-200-two-building-blocks-0ef5131d"
 SOURCE_URL = "https://www.innerscene.com/api/library/school-general-site-plan-1-200-two-building-blocks-0ef5131d/download"
 MAX_BYTES = 1024 * 1024
+EXPECTED_SHA256 = "420fba86abbe33f49e846915ebb3dc6c1073a48252d3e1d76bd8447ca659a519"
 
 
 def audit_download() -> dict:
@@ -37,6 +38,8 @@ def audit_download() -> dict:
         file = Path(tmp) / "school-site-independent.dxf"
         file.write_bytes(contents)
         original_digest = sha256(contents).hexdigest()
+        if original_digest != EXPECTED_SHA256:
+            raise ValueError("Published CC0 DXF checksum differs from prior independent Linux and Windows evidence")
         imported = DWGTakeoffEngine().import_file(file)
         if imported.source_sha256 != original_digest:
             raise ValueError("DXF production import did not preserve exact source SHA")
@@ -67,6 +70,7 @@ def audit_download() -> dict:
             "response_url": final_url,
             "source_bytes": len(contents),
             "source_sha256": original_digest,
+            "source_sha256_pinned_in_test": True,
             "source_sha256_pinned_independently": False,
             "dxf_version": imported.dxf_version,
             "units": imported.units,
