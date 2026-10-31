@@ -54,7 +54,9 @@ class TakeoffCanvas(QGraphicsView):
             mode = "pan"
         if mode in {"zoom_window", "region_select"} and self.mode not in {"zoom_window", "region_select"}:
             self._previous_mode = self.mode
-        self.cancel_interaction(reset_tool=False, announce=False)
+        # A window is the user's persistent takeoff scope. Changing from
+        # Window Zoom to CAD selection/measurement must not erase that scope.
+        self.cancel_interaction(reset_tool=False, announce=False, preserve_region=True)
         self.mode = mode
         self.points = []
         if mode in {"zoom_window", "region_select"}:
@@ -85,14 +87,16 @@ class TakeoffCanvas(QGraphicsView):
             self._region_overlay = None
         self._selected_region_rect = None
 
-    def cancel_interaction(self, reset_tool: bool = True, announce: bool = True):
+    def cancel_interaction(self, reset_tool: bool = True, announce: bool = True,
+                           preserve_region: bool = False):
         self._selection_origin = None
         self._rubber_band.hide()
         self.points = []
         if self._polygon_preview is not None:
             if self._polygon_preview.scene() is self.scene:self.scene.removeItem(self._polygon_preview)
             self._polygon_preview=None
-        self.clear_region_selection()
+        if not preserve_region:
+            self.clear_region_selection()
         if reset_tool and self.mode in {"zoom_window", "region_select"}:
             self.mode = self._previous_mode
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
@@ -106,13 +110,36 @@ class TakeoffCanvas(QGraphicsView):
     def scale_view(self, factor: float):
         self.scale(factor, factor)
 
+    def _scope_relation(self, item):
+        """CAD geometry must be entirely within the user-drawn takeoff window."""
+        region = self._selected_region_rect
+        if region is None:
+            return "unrestricted"
+        box = item.sceneBoundingRect()
+        selected = ViewportRect.from_points(
+            region.left(), region.top(), region.right(), region.bottom()
+        )
+        candidate = ViewportRect.from_points(
+            box.left(), box.top(), box.right(), box.bottom()
+        )
+        return selected.classify_rect(candidate)
+
     def mousePressEvent(self, event):
         if self.mode=='cad_select':
-            point=event.position().toPoint();hits=[i for i in self.items(QRect(point.x()-4,point.y()-4,9,9)) if i.data(0) and i.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable]
+            point=event.position().toPoint()
+            hits=[i for i in self.items(QRect(point.x()-4,point.y()-4,9,9))
+                  if i.data(0) and i.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable]
             if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:self.scene.clearSelection()
             if hits:
-                hits[0].setSelected(not hits[0].isSelected() if event.modifiers() & Qt.KeyboardModifier.ControlModifier else True)
-                self._announce_tool('جزء CAD انتخاب شد: '+str(hits[0].data(0)))
+                relation=self._scope_relation(hits[0])
+                if relation in {"outside","crossing"}:
+                    self._announce_tool(
+                        "عضو بیرون محدوده متره است" if relation=="outside" else
+                        "عضو از مرز Window عبور می‌کند؛ متره کل عضو به قسمت انتخابی نسبت داده نمی‌شود. محدوده را گسترش دهید یا عضو را با مدرک تفکیک کنید."
+                    )
+                else:
+                    hits[0].setSelected(not hits[0].isSelected() if event.modifiers() & Qt.KeyboardModifier.ControlModifier else True)
+                    self._announce_tool('جزء CAD در محدوده انتخاب شد: '+str(hits[0].data(0)))
             event.accept();return
         if event.button() == Qt.MouseButton.RightButton and self.mode in {"zoom_window", "region_select"}:
             self.cancel_interaction()
@@ -176,7 +203,9 @@ class TakeoffCanvas(QGraphicsView):
             selected = ViewportRect.from_points(
                 top_left.x(), top_left.y(), bottom_right.x(), bottom_right.y()
             ).clamped(ViewportRect(bounds.left(), bounds.top(), bounds.right(), bounds.bottom()))
-            if not selected.is_usable():
+            # 8 pixels is a screen gesture threshold, not 8 CAD drawing
+            # units: original building coordinates can be fractions of metres.
+            if not ViewportRect(0, 0, viewport_rect.width(), viewport_rect.height()).is_usable(8) or not selected.is_usable(0):
                 self._announce_tool("ناحیه خیلی کوچک است؛ مستطیل بزرگ‌تری انتخاب کن یا لغو کن.")
                 return
             scene_rect = QRectF(selected.left, selected.top, selected.width, selected.height)
@@ -184,12 +213,12 @@ class TakeoffCanvas(QGraphicsView):
                 self._set_region_highlight(scene_rect)
                 self.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)
                 self._announce_tool(
-                    f"ناحیه زوم و هایلایت شد | عرض: {selected.width:.2f} | ارتفاع: {selected.height:.2f} واحد نقشه"
+                    f"Window Zoom و محدوده متره فعال شد | عرض: {selected.width:.3f} | ارتفاع: {selected.height:.3f} واحد خام نقشه؛ فقط اعضای کامل در محدوده قابل انتخاب‌اند"
                 )
             else:
                 self._set_region_highlight(scene_rect)
                 self._announce_tool(
-                    f"ناحیه هایلایت شد | عرض: {selected.width:.2f} | ارتفاع: {selected.height:.2f} واحد نقشه"
+                    f"محدوده متره فعال شد | عرض: {selected.width:.3f} | ارتفاع: {selected.height:.3f} واحد خام نقشه؛ برای لغو از دکمه لغو استفاده کنید"
                 )
             return
         return super().mouseReleaseEvent(event)
@@ -700,7 +729,13 @@ class GraphicalTakeoffDialog(QDialog):
                     self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release();return
                 self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
-                self.page=1;self.canvas.read_only_model=False;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
+                self.page=1;self.canvas.read_only_model=(
+                    self.cad_document.format == "DWG_NATIVE_READONLY_PREVIEW"
+                );self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
+                if self.canvas.read_only_model:
+                    for control in (self.cad_measure,self.cad_review,self.commit_boq_button,self.finish,self.region_to_takeoff):
+                        control.setEnabled(False)
+                    self.canvas.set_mode('pan')
                 self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
                 job['gc_lease'].release()
             except Exception as exc:failed(str(exc))
@@ -960,7 +995,11 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas._selected_region_rect = None
             self._cad_scene_origin = None
             self.canvas.points = []
-            model_view = self.viewer.kind == "ifc"
+            model_view = self.viewer.kind == "ifc" or (
+                self.viewer.kind == "cad" and
+                self.cad_document is not None and
+                self.cad_document.format == "DWG_NATIVE_READONLY_PREVIEW"
+            )
             calibration = self.session.calibration
             self.scale_label.setText(
                 "نمای مدل؛ متره از تصویر غیرفعال است" if model_view else
@@ -1019,6 +1058,14 @@ class GraphicalTakeoffDialog(QDialog):
             if {str(i.data(0)) for i in selected}!=expected:root_handle=None
         if len(selected)!=1 and not root_handle:
             self.status.setText('یک جزء CAD را انتخاب کنید؛ هر عضو و مالکیت مستقل ثبت می‌شود');return
+        selected_scope_items=(
+            [self._cad_handle_items[h] for h in self._cad_handle_items
+             if h.startswith(root_handle+'/') or h.startswith(root_handle+'@')]
+            if root_handle else selected
+        )
+        if any(self.canvas._scope_relation(item) in {"outside","crossing"} for item in selected_scope_items):
+            self.status.setText('عضو کامل داخل Window متره نیست؛ ثبت کل عضو ممنوع است. مستطیل را بزرگ‌تر کنید یا عضو را جداگانه مستند کنید.')
+            return False
         values=[]
         for prompt in ('کد عملیات متره','سازنده برداشت','مرجع مستقل هندسه و مالکیت'):
             value,ok=QInputDialog.getText(self,'متره جزء CAD',prompt)
@@ -1056,8 +1103,12 @@ class GraphicalTakeoffDialog(QDialog):
         if item is None:
             children=[item for handle,item in self._cad_handle_items.items() if handle.startswith(key+'/') or handle.startswith(key+'@')]
             if not children:self.status.setText('جزء قابل نمایش یافت نشد؛ XREF حل‌نشده یا نوع پشتیبانی‌نشده مجوز متره ندارد');return
+            if any(self.canvas._scope_relation(child) in {"outside","crossing"} for child in children):
+                self.status.setText('بلوک کامل در محدوده Window نیست؛ انتخاب و متره کل بلوک مسدود است');return
             for child in children:child.setVisible(True);child.setSelected(True)
             self._selected_cad_root=key;self.canvas.centerOn(children[0]);self.status.setText('بلوک انتخاب شد: '+key+'؛ اجزا برای جمع کنترل‌شده بازبینی شوند');return
+        if self.canvas._scope_relation(item) in {"outside","crossing"}:
+            self.status.setText('Handle یافت شد، اما عضو کامل داخل محدوده Window متره نیست؛ انتخاب مسدود است');return
         item.setVisible(True);item.setSelected(True);self.canvas.centerOn(item)
         self.status.setText('جزء CAD: '+key+' | '+str(item.data(1)))
 
@@ -1120,10 +1171,16 @@ class GraphicalTakeoffDialog(QDialog):
                     continue
                 pos = d.get("insert", d.get("start", (0, 0)))
                 height = cad_text_height(d)
+                # The installed UI fonts render genuine Unicode Persian and
+                # English. They cannot reconstruct proprietary legacy SHX
+                # character maps; mark such labels without inventing glyphs.
                 font = QFont("Tahoma")
                 font.setPixelSize(100)
                 item = self.canvas.scene.addText(text, font)
-                item.setDefaultTextColor(QColor(20, 35, 70))
+                item.setDefaultTextColor(
+                    QColor(158, 83, 0) if d.get("text_status") == "LEGACY_SHX_ENCODING_REQUIRES_SOURCE_FONT"
+                    else QColor(20, 35, 70)
+                )
                 option = item.document().defaultTextOption()
                 option.setTextDirection(
                     Qt.LayoutDirection.RightToLeft
@@ -1150,7 +1207,13 @@ class GraphicalTakeoffDialog(QDialog):
                 render_bounds=render_bounds.united(item.sceneBoundingRect())
         yield len(doc.entities)  # Yield before publishing the completed scene.
         self.canvas.setSceneRect(render_bounds)
-        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {unsupported_count} | هشدار: {len(doc.warnings)}")
+        preview = doc.format == "DWG_NATIVE_READONLY_PREVIEW"
+        self.status.setText(
+            f"{'🟠 پیش‌نمایش فقط‌خواندنی' if preview else '🟢 CAD نمایش داده شد'}"
+            f" | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units}"
+            f" | اجزای فاقد قرارداد متره: {unsupported_count} | هشدار: {len(doc.warnings)}"
+            + (" | متن‌های SHX قدیمی نیازمند فونت اصلی هستند؛ BOQ مسدود است" if preview else "")
+        )
 
     def _render_ifc_steps(self,doc):
         """One selectable path per real mesh; all source triangles retained.
