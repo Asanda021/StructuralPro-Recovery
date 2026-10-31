@@ -913,8 +913,9 @@ class GraphicalTakeoffDialog(QDialog):
                         project_id=selected_project,
                     )
                 from core.projects.iran_worksite_calendar import make_calendar,calendarize
-                from core.projects.building_scale import set_building_scope
+                from core.projects.building_scale import set_building_scope,scaled_initial_wbs
                 plan=set_building_scope(plan,building)
+                plan=scaled_initial_wbs(plan,building)
                 plan=sync_measured_items(plan,self.session.items)
                 plan=calendarize(plan,make_calendar(start_date=start_date))
                 self.session.workflow_plan=plan
