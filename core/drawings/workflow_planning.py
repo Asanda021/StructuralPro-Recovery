@@ -55,8 +55,10 @@ _WORK = (
 # Conservative title/layer mapping. Unrecognized takeoffs are left UNASSIGNED
 # and may only be assigned manually, never counted twice from fuzzy matching.
 _ITEM_MARKERS = (
-    ("rebar", "foundation", ("آرماتور", "میلگرد", "خاموت", "REBAR")),
-    ("steel", "steel_frame", ("تیرآهن", "فولادی", "فلزی", "IPE", "STEEL")),
+    # Generic rebar/steel labels cannot establish foundation-vs-column
+    # ownership; leave those rows explicitly unassigned for engineering review.
+    ("rebar", "foundation", ("آرماتور فونداسیون", "میلگرد پی", "FOUNDATION REBAR")),
+    ("steel", "steel_frame", ("اسکلت فولادی", "ستون فولادی", "تیرآهن", "STEEL FRAME", "STEEL COLUMN", "STEEL BEAM")),
     ("concrete", "concrete_frame", ("ستون بتنی", "اسکلت بتنی", "بتن آرمه", "CONCRETE FRAME")),
     ("wall", "masonry", ("دیوار", "بلوک", "تیغه", "MASONRY", "BLOCK WALL")),
     ("roof", "slabs", ("سقف", "دال", "SLAB")),
@@ -199,7 +201,12 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
             if d == "FRAME":
                 mapped.extend(frames)
             elif d == "ROUGH":
-                mapped.extend(x for x in ("rough_mechanical", "rough_electrical") if "mechanical" in selected and x == "rough_mechanical" or "electrical" in selected and x == "rough_electrical")
+                mapped.extend(
+                    task_name for task_name, scope in (
+                        ("rough_mechanical", "mechanical"),
+                        ("rough_electrical", "electrical"),
+                    ) if scope in selected
+                )
                 if not mapped: mapped.append("masonry")
             elif d == "ALL":
                 mapped.extend(t["id"] for t in tasks if t["id"] not in {"mobilize", "earthwork", "foundation"})
