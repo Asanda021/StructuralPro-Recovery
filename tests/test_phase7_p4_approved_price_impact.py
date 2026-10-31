@@ -50,6 +50,10 @@ def test_real_pricebook_quantity_delta_is_only_financial_when_explicitly_request
         effect = reviewed["financial_impact"]
         assert effect["currency"] == "IRR"
         assert effect["amount"] == "600"
+        assert effect["rows"][0]["amount"] == "600"
+        assert effect["rows"][0]["unit_price"] == "100"
+        assert reviewed["rows"][0]["اثر مالی مستند"] == "600"
+        assert reviewed["rows"][0]["واحد پول"] == "IRR"
         assert effect["status"] == "VERIFIED_QUANTITY_ONLY_EFFECT_NOT_PAYMENT_CERTIFICATE"
         assert Decimal(reviewed["rows"][0]["مقدار قبلی"]) == 30
         assert Decimal(reviewed["rows"][0]["مقدار جدید"]) == 36
@@ -74,6 +78,13 @@ def test_approved_money_effect_is_exported_to_manifest_without_sqlite_write(tmp_
         assert manifest == output["manifest"]
         assert manifest["financial_impact"]["amount"] == "600"
         assert manifest["financial_impact"]["currency"] == "IRR"
+        with (dest / "revision_changes.csv").open(encoding="utf-8-sig") as stream:
+            csv_text = stream.read()
+        assert "اثر مالی مستند" in csv_text and "600" in csv_text
+        from openpyxl import load_workbook
+        workbook = load_workbook(dest / "revision_changes.xlsx")
+        assert any(cell.value == "اثر مالی مستند" for sheet in workbook for row in sheet for cell in row)
+        assert any(str(cell.value) == "600" for sheet in workbook for row in sheet for cell in row)
         assert manifest["readonly"] is True
         assert app.store.current_digest("P") == start_digest
     finally:
