@@ -75,3 +75,25 @@ def test_all_source_types_accounted_even_when_not_drawn_or_payable():
     summary = DWGTakeoffEngine().summarize(document)
     assert summary["coverage"] == report
     assert summary["autocad_format_through"] == 2027
+
+
+
+def test_ellipses_and_splines_render_without_claiming_takeoff(tmp_path):
+    import ezdxf
+    drawing = ezdxf.new("R2018")
+    drawing.header["$INSUNITS"] = 6
+    model = drawing.modelspace()
+    model.add_ellipse((0, 0), (4, 0), ratio=0.5)
+    model.add_spline(fit_points=[(0, 0), (2, 4), (5, 0)])
+    path = tmp_path / "2027-curves.dxf"
+    drawing.saveas(path)
+    document = DWGTakeoffEngine().import_file(path)
+    by_type = {e.entity_type: e for e in document.entities}
+    for typ in ("SPLINE", "ELLIPSE"):
+        data = by_type[typ].data
+        assert len(data["display_points"]) > 2
+        assert data["unsupported_measurement"].startswith("نوع جزء")
+        assert "length" not in data and "area" not in data
+    coverage = cad_coverage_report(document)
+    assert coverage["not_drawn_count"] == 0
+    assert coverage["unmeasurable_count"] == 2
