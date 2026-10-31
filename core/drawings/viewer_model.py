@@ -56,7 +56,18 @@ class DrawingViewerModel:
                     raise ValueError("PDF هیچ صفحه قابل‌نمایشی ندارد.")
         elif ext in {".dwg", ".dxf"}:
             from core.drawings.dwg_takeoff import DWGTakeoffEngine
-            new_cad_document = DWGTakeoffEngine.with_array_support().import_file(p)
+            try:
+                new_cad_document = DWGTakeoffEngine.with_array_support().import_file(p)
+            except Exception as error:
+                # The engineering/payable importer remains fail-closed.
+                # Real unitless DWGs or custom SHX conversion defects must
+                # still be viewable for engineering inspection, NEVER payable.
+                from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGError
+                from core.drawings.dwg_converter import DWGConversionError
+                if ext != ".dwg" or not isinstance(error, (StrictPythonDWGError, DWGConversionError)):
+                    raise
+                from core.drawings.native_dwg_preview import native_readonly_dwg_preview
+                new_cad_document = native_readonly_dwg_preview(p)
             new_kind = "cad"
             new_page_count = 1
         elif ext == ".ifc":
