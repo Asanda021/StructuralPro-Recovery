@@ -131,6 +131,9 @@ def apply_calendar(plan):
 def calendarize(plan,calendar):
     out=deepcopy(plan)
     out["calendar"]=deepcopy(calendar)
-    calculate_precedence(out)
+    if out.get("resource_leveling_status")!="PROPOSED_UNAPPROVED":
+        calculate_precedence(out)
+    # Calendar placement must preserve resource-feasible offsets when the
+    # user only changes the calendar/holiday overlay.
     apply_calendar(out)
     return out
