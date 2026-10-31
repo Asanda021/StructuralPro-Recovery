@@ -1663,14 +1663,30 @@ class StructuralProApp:
                 "boq_summary":boq_summary(p.get("boq",[]))}
 
     @exact
-    def set_statement_pricing_mode(self, project_id: str, mode: str):
-        """Explicit choice before a statement; switching posted history blocked."""
+    def set_statement_pricing_mode(self, project_id: str, mode: str, contract_price_entry="prefilled"):
+        """Explicit choice and priced/blank operator style before statement."""
         from core.commercial.statement_basis import choose_statement_mode
         project=self.store.get(project_id)
         if project is None:raise KeyError(project_id)
-        choose_statement_mode(project,mode)
+        choose_statement_mode(project,mode,contract_price_entry)
         self.store.save(project_id,project)
-        return {"mode":mode,"requires_contract_rate_review":mode=="contract_rates"}
+        return {"mode":mode,
+                "contract_price_entry":contract_price_entry if mode=="contract_rates" else None,
+                "requires_contract_rate_review":mode=="contract_rates"}
+
+    def record_operator_statement_price(self,project_id:str,price_code:str,amount,operator:str):
+        from core.commercial.statement_basis import set_operator_contract_price
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        result=set_operator_contract_price(project,price_code,amount,operator)
+        self.store.save(project_id,project)
+        return result
+
+    def statement_operator_price_status(self,project_id:str):
+        from core.commercial.statement_basis import operator_price_status
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        return operator_price_status(project)
 
     def review_statement_contract_rates(self,project_id: str,agreement_path,reviewer):
         from core.commercial.statement_basis import review_contract_rates
