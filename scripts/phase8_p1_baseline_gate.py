@@ -55,7 +55,7 @@ def main() -> int:
             raise ValueError("incorrect priority")
         if len(manifest["selected_pr_chain"]) != len(set(manifest["selected_pr_chain"])):
             raise ValueError("duplicate PR in selected path")
-        if manifest["selected_pr_chain"][-1] != manifest["selected_terminal_pr"] != 40:
+        if not (manifest["selected_pr_chain"][-1] == manifest["selected_terminal_pr"] == 40):
             raise ValueError("terminal PR is not the frozen Phase 7 source")
         if manifest["protected_actions"] != {
             "merge": False, "main_write": False, "exe": False,
