@@ -124,6 +124,8 @@ def test_real_qt_intake_choices_and_schedule_editor(qapp):
         intake.disciplines["architecture"].setChecked(True)
         intake.disciplines["mechanical"].setChecked(True)
         assert intake.selection() == ("steel", ["architecture", "mechanical"])
+        assert intake.pricing_mode.currentData() is None
+        assert intake.automatic_schedule.currentData() is None
     finally:
         intake.close()
     state = [new_workflow_plan(drawing_source="b.dwg", source_sha256="xyz",
@@ -168,6 +170,8 @@ def test_actual_graphical_dialog_prompts_after_dxf_open_and_live_schedule_tracks
         assert intake is not None and intake.isVisible()
         assert intake.frame_kind.currentData() == "concrete"
         intake.disciplines["architecture"].setChecked(True)
+        intake.pricing_mode.setCurrentIndex(1)
+        intake.automatic_schedule.setCurrentIndex(1)
         intake.begin.click()
         qapp.processEvents()
         plan = dlg.session.workflow_plan
