@@ -14,6 +14,7 @@ from math import dist, isfinite, pi
 from pathlib import Path
 from typing import Any
 
+from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text
 from core.drawings.dwg_takeoff import DWGDocument, DWGEntity
 from core.drawings.dwg_converter import OfflineDWGConverter
 
@@ -77,6 +78,7 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
                       "cad_derived_legacy_metre_rows_approved": 0,
                       "requires_strict_financial_reimport": True}
     unsupported = Counter()
+    unresolved_fonts = 0
     seen_handles: set[str] = set()
     for index, obj in enumerate(raw.modelspace().iter_entities()):
         if index >= _LIMIT_ENTITIES:
@@ -107,10 +109,36 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
             if d.get("center") is not None and d.get("radius") is not None:
                 data.update(center=_xy(d["center"]),radius=_positive(d["radius"]))
         elif typ in {"TEXT", "MTEXT", "DIMENSION"}:
-            value = str(d.get("text",""))
-            data["text"] = value
+            raw_text = str(d.get("text", "") or "")
+            value = normalize_cad_text(raw_text)
+            data["text"] = value  # Never invent characters for legacy SHX maps.
             if d.get("insert") is not None:
                 data["insert"] = _xy(d["insert"])
+            if d.get("height") is not None:
+                data["height"] = _positive(d["height"])
+            if d.get("char_height") is not None:
+                data["char_height"] = _positive(d["char_height"])
+            if d.get("rotation") is not None:
+                data["rotation"] = float(d["rotation"])
+            if d.get("width") is not None:
+                data["text_width"] = _positive(d["width"])
+            data["style_handle"] = str(d.get("style_handle") or "")
+            data["text_generation_flag"] = int(d.get("text_generation_flag") or 0)
+            data["font_name"] = "source-style-handle:" + data["style_handle"]
+            # Do not pretend a Windows/Qt font can decode the text of a custom
+            # legacy SHX byte-to-glyph mapping. Keep raw characters inspectable.
+            legacy_like = (
+                data["text_generation_flag"] & 2
+                and not is_rtl_cad_text(value)
+                and sum(1 for c in value if 0xA0 <= ord(c) <= 0x2FFF) >= 2
+            )
+            if legacy_like:
+                unresolved_fonts += 1
+                data["text_status"] = "LEGACY_SHX_ENCODING_REQUIRES_SOURCE_FONT"
+                data["font_notice"] = "متن اصلی محفوظ؛ نگاشت کاراکتر فونت SHX نامشخص است و حدس نمی‌زنیم"
+            else:
+                data["text_status"] = "SOURCE_UNICODE_VISIBLE_FONT_FIDELITY_UNVERIFIED"
+                data["font_notice"] = "فونت جایگزین برای نمایش؛ تطبیق دقیق قلم منبع تأیید نشده"
             if typ == "DIMENSION":
                 data["native_measurement"] = d.get("actual_measurement")
             out.text_labels.append(value)
@@ -130,4 +158,9 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
     out.conversion["source_entity_count"] = len(out.entities)
     out.conversion["primitive_types_not_drawn"] = dict(unsupported)
     out.conversion["text_fidelity"] = "NOT_VERIFIED_LEGACY_SHX_CODEPAGE"
+    out.conversion["legacy_shx_text_candidates"] = unresolved_fonts
+    if unresolved_fonts:
+        out.warnings.append(
+            f"{unresolved_fonts} متن CAD با نویسه‌گذاری قدیمی مشکوک است؛ نصب فونت فارسی به‌تنهایی نگاشت SHX را بازیابی نمی‌کند"
+        )
     return out
