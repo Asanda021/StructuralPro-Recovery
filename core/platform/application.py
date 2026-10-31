@@ -83,6 +83,16 @@ class StructuralProApp:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
         self.store.save(project_id,project); return self.store.get(project_id)
 
+    def audit_legacy_metre_zip(
+        self, zip_path: str | Path, *, bindings: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """Read a user-supplied DWG+metre ZIP locally with strict ZIP/CAD gates.
+
+        Does not write projects/BOQ, copy source drawings, or infer quantities.
+        """
+        from core.drawings.legacy_metre_cad_package import inspect_legacy_metre_package
+        return inspect_legacy_metre_package(zip_path, bindings=bindings)
+
     def audit_legacy_metre_against_drawing(
         self, metre_path: str | Path, *,
         summary_path: str | Path | None = None,
