@@ -73,7 +73,7 @@ class DrawingWorkflowIntakeDialog(QDialog):
         self.automatic_schedule.setObjectName("DrawingAutomaticSchedulingChoice")
         self.automatic_schedule.addItem("انتخاب کنید",None)
         self.automatic_schedule.addItem("بله، همراه متره زمان‌بندی پیشنهادی بساز","yes")
-        self.automatic_schedule.addItem("خیر، فقط متره و برنامه هفتگی مهندسان","no")
+        self.automatic_schedule.addItem("خیر، فقط متره؛ برنامه هفتگی خودکار ساخته نمی‌شود","no")
         main.addWidget(self.automatic_schedule)
         main.addWidget(QLabel("وضعیت عملیات پروژه (برای جلوگیری از فعالیت‌های غیرمرتبط):"))
         self.project_kind=QComboBox()
