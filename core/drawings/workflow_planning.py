@@ -12,15 +12,18 @@ import re
 import unicodedata
 
 _STRUCTURE_MARKERS = {
+    # Reinforcement, foundation concrete, IPE and steel plates may coexist
+    # in either structure system. They are NOT proof of the main frame type.
     "concrete": (
-        "اسکلت بتنی", "بتن آرمه", "آرماتور", "خاموت", "میلگرد",
-        "REINFORCED CONCRETE", "CONCRETE FRAME", "REBAR", "RC COLUMN", "RC BEAM",
-        "RC-COLUMN", "RC-BEAM", "CONC COLUMN", "CONC BEAM",
+        "اسکلت بتنی", "ستون بتنی", "تیر بتنی", "قاب بتنی",
+        "REINFORCED CONCRETE FRAME", "CONCRETE FRAME",
+        "RC COLUMN", "RC BEAM", "RC-COLUMN", "RC-BEAM",
+        "CONC COLUMN", "CONC BEAM",
     ),
     "steel": (
         "اسکلت فولادی", "اسکلت فلزی", "ستون فلزی", "ستون فولادی",
-        "تیرآهن", "بادبند", "ورق اتصال", "STEEL FRAME", "STEEL COLUMN",
-        "STEEL BEAM", "IPE", "HEA", "HEB", "BRACING", "BASE PLATE",
+        "تیر فولادی", "قاب فلزی", "قاب فولادی",
+        "STEEL FRAME", "STEEL COLUMN", "STEEL BEAM",
     ),
 }
 _STRUCTURE_OPTIONS = frozenset(("unknown", "concrete", "steel", "mixed"))
@@ -100,6 +103,7 @@ def infer_structure(document) -> dict:
     # Read layer names and text labels only; generic shape is not an oracle.
     sources = [("لایه", x) for x in getattr(document, "layers", ())]
     sources.extend(("نوشته", x) for x in getattr(document, "text_labels", ()))
+    sources.extend(("بلوک", x) for x in getattr(document, "block_counts", {}))
     for origin, raw in sources:
         txt = _normalize(raw)
         for kind, markers in _STRUCTURE_MARKERS.items():
