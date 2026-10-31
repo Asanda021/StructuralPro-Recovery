@@ -59,7 +59,7 @@ def audit_download() -> dict:
             expected = math.hypot(dx, dy)
             if not math.isfinite(expected) or not math.isclose(expected, raw["length"], rel_tol=1e-12, abs_tol=1e-8):
                 raise ValueError("Independent LINE length mismatch")
-            independent_lines.append({"handle": entity.handle, "length_mm": round(expected, 8)})
+            independent_lines.append({"handle": entity.handle, "length_m": round(expected, 8)})
         if not independent_lines:
             raise ValueError("No dimensionally verifiable 2D LINE entity found")
         # Checksum is learned from the fetched source; not claimed independently pinned.
@@ -74,6 +74,7 @@ def audit_download() -> dict:
             "source_sha256_pinned_independently": False,
             "dxf_version": imported.dxf_version,
             "units": imported.units,
+            "numeric_length_unit_after_normalization": "m",
             "entity_count": len(imported.entities),
             "layer_count": len(imported.layers),
             "line_oracle_count": len(independent_lines),
