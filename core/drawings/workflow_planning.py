@@ -222,7 +222,9 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
         present = {t["id"] for t in tasks}
         mapped = [p for p in dict.fromkeys(mapped) if p in present]
         if not mapped and tasks and task_id not in {"mobilize", "earthwork", "foundation"}:
-            mapped = [frames[-1]] if frames[-1] in present else ["foundation"]
+            mapped = ([frames[-1]] if frames[-1] in present else
+                      ["foundation"] if "foundation" in present else
+                      ["mobilize"] if "mobilize" in present else [])
         tasks.append({
             "id": task_id, "title": title, "discipline": discipline,
             "duration_days": default_days,"default_duration_days":default_days,
