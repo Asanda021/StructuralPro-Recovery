@@ -213,7 +213,10 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
             mapped = [frames[-1]] if frames[-1] in present else ["foundation"]
         tasks.append({
             "id": task_id, "title": title, "discipline": discipline,
-            "duration_days": default_days, "duration_edited": False,
+            "duration_days": default_days,"default_duration_days":default_days,
+            "base_predecessors":list(mapped),
+            "duration_status":"OFFICE_INITIAL_ASSUMPTION",
+            "duration_edited": False,
             "crew": "تعیین نشده", "predecessors": mapped,
             "linked_item_ids": [], "measured": {}, "quantity_reviewed": False,
             "baseline_approved": False,
@@ -343,6 +346,63 @@ def sync_measured_items(plan: dict, items) -> dict:
                 task["duration_days"]=0
                 task["duration_range"]=None
                 task["duration_status"]="AWAITING_REVIEWED_QUANTITY"
+    # Avoid double-counting a broad WBS duration with the exact same work
+    # represented as measured and detailed child activities. The summary
+    # remains in the network with zero duration, waiting on real child work.
+    # Never override a manually edited summary or one with its own takeoffs.
+    parents={
+        "block_wall":"masonry","brick_wall":"masonry","aac_wall":"masonry",
+        "foundation_form":"foundation","foundation_rebar":"foundation",
+        "foundation_concrete":"foundation",
+        "column_rebar":"concrete_frame","column_form":"concrete_frame",
+        "column_concrete":"concrete_frame",
+        "beam_rebar":"slabs","slab_form":"slabs",
+        "slab_rebar":"slabs","slab_concrete":"slabs",
+        "steel_fabrication":"steel_frame","steel_erection":"steel_frame",
+        "steel_welding":"steel_frame","steel_bolting":"steel_frame",
+        "composite_deck":"slabs",
+        "plaster_base":"plaster","finish_plaster":"plaster",
+        "floor_screed":"finishes","waterproofing":"finishes",
+        "floor_tile":"finishes","wall_tile":"finishes","stone_floor":"finishes",
+        "stone_facade":"facade","brick_facade":"facade",
+        "door_install":"doors_windows","aluminum_window":"doors_windows",
+        "upvc_window":"doors_windows",
+        "plumbing_water":"rough_mechanical","sewage_pipe":"rough_mechanical",
+        "gas_pipe":"rough_mechanical","hvac_duct":"rough_mechanical",
+        "hvac_pipe":"rough_mechanical",
+        "conduit":"rough_electrical","wiring":"rough_electrical",
+        "cable_tray":"rough_electrical","data_network":"rough_electrical",
+        "radiator":"mechanical_finish","boiler":"mechanical_finish",
+        "hvac_unit":"mechanical_finish","sanitary":"mechanical_finish",
+        "switch_socket":"electrical_finish","panel_board":"electrical_finish",
+        "lighting":"electrical_finish",
+        "elevator_rail":"elevator","elevator_door":"elevator",
+        "elevator_cabin":"elevator",
+        "fire_alarm":"fire","fire_pipe":"fire","fire_cabinet":"fire",
+        "site_paving":"site","site_kerb":"site","landscape":"site",
+    }
+    from collections import defaultdict
+    groups=defaultdict(list)
+    for child in plan["tasks"]:
+        parent=parents.get(child["id"])
+        if parent and child.get("linked_item_ids") and parent in valid:
+            groups[parent].append(child["id"])
+    for parent in plan["tasks"]:
+        if parent["id"] not in groups and parent.get("duration_status")!="SUMMARY_FROM_DETAILED_WBS":
+            continue
+        if parent.get("duration_edited") or parent.get("linked_item_ids"):
+            continue
+        children=groups.get(parent["id"],[])
+        parent["duration_days"]=0 if children else parent.get("default_duration_days",0)
+        parent["duration_status"]=(
+            "SUMMARY_FROM_DETAILED_WBS" if children else "OFFICE_INITIAL_ASSUMPTION"
+        )
+        parent["predecessors"]=list(dict.fromkeys(
+            parent.get("base_predecessors",parent["predecessors"])+children
+        ))
+        # Existing manual relationship links must not be secretly repointed;
+        # unedited automatically generated summary links use basic FS.
+        parent["links"]=[]
     plan["unassigned_item_ids"] = sorted(unassigned)
     return recompute_schedule(plan)
 
