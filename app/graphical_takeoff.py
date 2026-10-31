@@ -969,6 +969,7 @@ class GraphicalTakeoffDialog(QDialog):
         from shiboken6 import isValid
         old=self._engineer_weekly_dialog
         if old is not None and isValid(old):
+            old._create()  # Regenerate visible week from current master WBS.
             old.show()
             old.raise_()
             old.activateWindow()
@@ -1018,6 +1019,13 @@ class GraphicalTakeoffDialog(QDialog):
             self.session.workflow_plan=plan
         else:
             self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+        for saved_week in self.session.engineer_weekly_plans:
+            saved_week["schedule_review_status"]="WBS_CHANGED_REGENERATE"
+        from shiboken6 import isValid
+        weekly=self._engineer_weekly_dialog
+        if weekly is not None and isValid(weekly) and weekly.isVisible():
+            weekly._create()  # Re-project selected week, retaining valid signed checks.
+            weekly.refresh()
 
     def show_cad_capabilities(self):
         if self.cad_loading or not self.cad_document:return
