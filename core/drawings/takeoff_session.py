@@ -70,6 +70,7 @@ class DrawingTakeoffSession:
         self.cad_unit_evidence=None
         self.workflow_plan=None  # Editable source-bound draft, never BOQ authority.
         self.workflow_preferences=None  # Pricing choice + explicit scheduling opt-in.
+        self.supervision_team=None  # One or multiple trade supervisors.
         self.engineer_weekly_plans=[]  # Independent signed daily checklists per engineer.
         self.current_page = 1
         self._counter = 0
