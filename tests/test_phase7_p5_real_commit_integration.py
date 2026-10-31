@@ -62,9 +62,14 @@ def test_distinct_member_source_can_still_commit_after_real_e8_preflight(tmp_pat
             expected_session_revision=pending["revision"],
         )
         current = app.open_project("P")
-        assert committed["boq_count"] == 2
+        # Canonical BOQ may aggregate two legitimate same-code measurements.
+        # Count stored takeoffs and preserve both source receipts instead of
+        # requiring one BOQ row per source.
         assert len(current["takeoffs"]) == 2
-        assert len(current["boq"]) == 2
+        assert committed["boq_count"] == len(current["boq"]) >= 1
+        expected_sources = {row["source_id"] for row in current["takeoffs"]}
+        actual_sources = {source for boq in current["boq"] for source in boq.get("source_ids", [])}
+        assert expected_sources == actual_sources
         assert app.store.current_digest("P") != before
     finally:
         app.store.close()
