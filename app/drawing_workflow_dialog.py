@@ -7,13 +7,13 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QColor, QBrush, QPen
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QComboBox,
     QCheckBox, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,
     QMessageBox, QAbstractItemView, QGraphicsScene, QGraphicsView,
-    QLineEdit, QInputDialog, QFileDialog,
+    QLineEdit, QInputDialog, QFileDialog, QCalendarWidget, QSpinBox, QDoubleSpinBox,
 )
 
 from core.drawings.workflow_planning import edit_activity
@@ -89,6 +89,40 @@ class DrawingWorkflowIntakeDialog(QDialog):
         self.supervision_summary=QLabel("")
         self.supervision_summary.setWordWrap(True)
         main.addWidget(self.supervision_summary)
+        self.start_date_button=QPushButton("انتخاب تاریخ شروع پروژه از تقویم")
+        self.start_date_button.setObjectName("ChooseProjectStartDateFromCalendar")
+        self.start_date_button.clicked.connect(self._choose_project_date)
+        self.start_date_label=QLabel("تاریخ شروع پروژه انتخاب نشده است")
+        self.start_date_label.setObjectName("SelectedProjectStartDate")
+        self._selected_start_date=None
+        main.addWidget(self.start_date_button)
+        main.addWidget(self.start_date_label)
+        main.addWidget(QLabel("۴. تعداد طبقات و سطح متره برای برآورد زمان:"))
+        self.building_floors=QSpinBox()
+        self.building_floors.setObjectName("BuildingFloorCount")
+        self.building_floors.setRange(1,200)
+        self.building_floors.setValue(1)
+        main.addWidget(self.building_floors)
+        self.typical_floor_area=QDoubleSpinBox()
+        self.typical_floor_area.setObjectName("BuildingTypicalFloorArea")
+        self.typical_floor_area.setRange(0,1000000)
+        self.typical_floor_area.setSuffix(" متر مربع سطح هر طبقه")
+        self.typical_floor_area.setDecimals(2)
+        self.typical_floor_area.setValue(0)
+        main.addWidget(self.typical_floor_area)
+        self.only_typical_floor=QCheckBox(
+            "نقشه و متره فقط یک طبقه تیپ است؛ برای طبقات همسان تکرار شود"
+        )
+        self.only_typical_floor.setObjectName("ConfirmSingleTypicalFloorSource")
+        main.addWidget(self.only_typical_floor)
+        self.repeat_floors=QSpinBox()
+        self.repeat_floors.setObjectName("RepeatedTypicalFloorCount")
+        self.repeat_floors.setRange(1,200)
+        self.repeat_floors.setValue(1)
+        self.repeat_floors.setEnabled(False)
+        main.addWidget(self.repeat_floors)
+        self.only_typical_floor.toggled.connect(self.repeat_floors.setEnabled)
+        self.building_floors.valueChanged.connect(self.repeat_floors.setMaximum)
         self._team=None
         self.supervision_count.currentIndexChanged.connect(self._count_changed)
         self.supervision_edit.clicked.connect(self._configure_team)
@@ -191,11 +225,65 @@ class DrawingWorkflowIntakeDialog(QDialog):
             for person in revised["people"]
         ))
 
+    def _choose_project_date(self):
+        from core.projects.jalali_dates import gregorian_to_jalali
+        picker=QDialog(self)
+        picker.setWindowTitle("انتخاب روز آغاز عملیات پروژه")
+        picker.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        pane=QVBoxLayout(picker)
+        calendar=QCalendarWidget(picker)
+        calendar.setObjectName("VisibleProjectStartCalendar")
+        calendar.setGridVisible(True)
+        current=QDate.currentDate()
+        calendar.setSelectedDate(current)
+        hint=QLabel(gregorian_to_jalali(current.toPython()))
+        calendar.selectionChanged.connect(
+            lambda:hint.setText(gregorian_to_jalali(calendar.selectedDate().toPython()))
+        )
+        pane.addWidget(calendar)
+        pane.addWidget(QLabel("پیش‌نمایش شمسی تاریخ انتخابی:"))
+        pane.addWidget(hint)
+        confirm=QPushButton("تأیید تاریخ شمسی شروع پروژه")
+        confirm.clicked.connect(picker.accept)
+        pane.addWidget(confirm)
+        if picker.exec()==QDialog.DialogCode.Accepted:
+            self._selected_start_date=hint.text()
+            self.start_date_label.setText("شروع پروژه: "+self._selected_start_date)
+
+    def selected_start_date(self):
+        return self._selected_start_date
+
+    def selected_building_scope(self):
+        from core.projects.building_scale import building_scope
+        return building_scope(
+            self.building_floors.value(),
+            self.typical_floor_area.value(),
+            source_scope=(
+                "single_typical_floor" if self.only_typical_floor.isChecked()
+                else "whole_building"
+            ),
+            repeat_floors=(
+                self.repeat_floors.value() if self.only_typical_floor.isChecked() else 1
+            ),
+        )
+
     def _validate_and_accept(self):
         if self.pricing_mode.currentData() is None or self.automatic_schedule.currentData() is None:
             QMessageBox.warning(self,"انتخاب اولیه نقشه",
                 "ابتدا مبنای صورت‌وضعیت و سپس فعال یا غیرفعال‌بودن زمان‌بندی را انتخاب کنید")
             return
+        if self.automatic_schedule.currentData()=="yes" and not self._selected_start_date:
+            QMessageBox.warning(
+                self,"تاریخ شروع پروژه",
+                "برای زمان‌بندی خودکار، تاریخ شروع را از تقویم انتخاب کنید"
+            )
+            return
+        if self.automatic_schedule.currentData()=="yes":
+            try:
+                self.selected_building_scope()
+            except ValueError as exc:
+                QMessageBox.warning(self,"متراژ و طبقات",str(exc))
+                return
         self.accept()
 
     def pricing_selection(self):
