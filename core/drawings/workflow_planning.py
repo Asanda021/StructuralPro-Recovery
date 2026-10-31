@@ -7,6 +7,7 @@ contractual baselines. Engineering review is required.
 from __future__ import annotations
 from collections import Counter
 from copy import deepcopy
+from itertools import chain
 from decimal import Decimal, InvalidOperation
 import re
 import unicodedata
@@ -101,9 +102,13 @@ def infer_structure(document) -> dict:
                 "evidence": [], "reason": "نقشه دارای هندسه/متن CAD قابل بررسی نیست"}
     samples = {"concrete": [], "steel": []}
     # Read layer names and text labels only; generic shape is not an oracle.
-    sources = [("لایه", x) for x in getattr(document, "layers", ())]
-    sources.extend(("نوشته", x) for x in getattr(document, "text_labels", ()))
-    sources.extend(("بلوک", x) for x in getattr(document, "block_counts", {}))
+    # Avoid duplicating 100K+ labels into a temporary list when opening
+    # dense CAD drawings; classify from source identifiers in one pass.
+    sources = chain(
+        (("لایه", x) for x in getattr(document, "layers", ())),
+        (("نوشته", x) for x in getattr(document, "text_labels", ())),
+        (("بلوک", x) for x in getattr(document, "block_counts", {})),
+    )
     for origin, raw in sources:
         txt = _normalize(raw)
         for kind, markers in _STRUCTURE_MARKERS.items():
