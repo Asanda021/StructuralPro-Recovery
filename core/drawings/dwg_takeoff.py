@@ -406,6 +406,8 @@ class DWGTakeoffEngine:
 
     def layer_takeoff(self, doc: DWGDocument, rules: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         """Create review-required layer summaries; never treat raw/unknown units as metres."""
+        if doc.format == "DWG_NATIVE_READONLY_PREVIEW":
+            raise ValueError("نمایش بومی DWG فقط برای مشاهده است؛ متره لایه بدون ورود معتبر مجاز نیست")
         out = []
         for layer, rule in rules.items():
             ents = [e for e in doc.entities if e.layer == layer]
@@ -464,6 +466,8 @@ def cad_entity_children(document,handle):
 
 def cad_entity_geometry(document,handle,metric,origin=(0,0)):
     """Source paths, analytic circles/arcs and disjoint sums, never display chords."""
+    if document.format == "DWG_NATIVE_READONLY_PREVIEW":
+        raise ValueError("DWG بومی در حالت نمایش فقط‌خواندنی است و برای متره مالی معتبر نیست")
     if cad_unit_factor(document.units) is None:raise ValueError('واحد CAD نامشخص است')
     found=[e for e in document.entities if e.handle==handle]
     if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
@@ -511,6 +515,8 @@ def cad_review_digest(item):
 
 
 def verify_cad_item(item,document,*,require_review=True):
+    if document.format == "DWG_NATIVE_READONLY_PREVIEW":
+        raise ValueError("نشست DWG صرفاً نمایشی است و تأیید مالی ندارد")
     meta=item.cad_evidence
     if isinstance(meta,dict) and meta.get('unit_evidence'):document=apply_documented_units(document,meta['unit_evidence'])
     if not isinstance(meta,dict) or meta.get('policy')!='cad_entity_review_v1':raise ValueError('قرارداد منشأ CAD معتبر نیست')
