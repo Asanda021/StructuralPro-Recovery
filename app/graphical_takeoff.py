@@ -899,7 +899,8 @@ class GraphicalTakeoffDialog(QDialog):
         if (plan.get("source_sha256")!=self.session.source_sha256
                 or plan.get("drawing_source")!=self.session.drawing_source):
             raise ValueError("نسخه نقشه برای ویرایش برنامه عوض شده است")
-        self.session.workflow_plan=plan
+        from core.drawings.workflow_planning import sync_measured_items
+        self.session.workflow_plan=sync_measured_items(plan,self.session.items)
 
     def show_cad_capabilities(self):
         if self.cad_loading or not self.cad_document:return
