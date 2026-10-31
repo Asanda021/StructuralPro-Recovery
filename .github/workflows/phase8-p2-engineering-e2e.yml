@@ -5,6 +5,7 @@ on:
       - test/phase8-p2-engineering-e2e-20261031
     paths:
       - tests/test_phase8_p2_fivefloor_financial_e2e.py
+      - tests/test_phase8_p2_multisource_aec_integration.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
   pull_request:
@@ -12,6 +13,7 @@ on:
       - audit/phase8-p1-baseline-integrity-20261031
     paths:
       - tests/test_phase8_p2_fivefloor_financial_e2e.py
+      - tests/test_phase8_p2_multisource_aec_integration.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
 permissions:
@@ -59,6 +61,18 @@ jobs:
         run: >-
           python -m pytest -q -o faulthandler_timeout=0 --junitxml=p8-p2-e2e.xml
           tests/test_phase8_p2_fivefloor_financial_e2e.py
+          tests/test_phase8_p2_multisource_aec_integration.py
+          tests/test_golden_five_storey_building.py
+          tests/test_recovery_13_finishes_five_floors.py
+          tests/test_phase2_priority4_cad.py::test_entity_binding_review_and_boq_are_real
+          tests/test_phase2_priority4_cad.py::test_cad_binding_failures_preserve_sqlite_and_boq
+          tests/test_phase2_priority5_closure.py::test_reviewed_crosswalk_real_sources_sqlite_and_immutable
+          tests/test_phase2_priority5_closure.py::test_cad_committed_first_blocks_ifc_duplicate_quantity
+          tests/test_phase2_priority5_closure.py::test_ifc_qto_existing_formula_register_boq_and_reopen
+          tests/test_phase2_priority5_closure.py::test_crosswalk_negative_atomic
+          tests/test_phase6_multidiscipline_ifc4_geometry.py::test_actual_ifc4_mixed_element_geometry_accepts_spatial_context_without_faking_identity
+          tests/test_takeoff_boq_statement_integrity.py
+          tests/test_phase3_five_floor_finance.py
           tests/test_phase7_p2_multifloor_bundle.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p4_approved_price_impact.py
