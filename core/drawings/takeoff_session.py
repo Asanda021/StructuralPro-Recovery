@@ -575,6 +575,7 @@ class DrawingTakeoffSession:
         session.workflow_plan=deepcopy(data.get("workflow_plan"))
         session.workflow_preferences=deepcopy(data.get("workflow_preferences"))
         session.engineer_weekly_plans=deepcopy(data.get("engineer_weekly_plans",[]))
+        session.supervision_team=deepcopy(data.get("supervision_team"))
         if not isinstance(session.engineer_weekly_plans,list) or len(session.engineer_weekly_plans)>1000:
             raise ValueError("برنامه‌های هفتگی مهندسان معتبر نیست")
         if session.workflow_preferences is not None:
