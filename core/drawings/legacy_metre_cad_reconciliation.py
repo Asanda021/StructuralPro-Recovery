@@ -12,6 +12,7 @@ from hashlib import sha256
 from pathlib import Path
 import re
 from typing import Any
+import unicodedata
 
 _MAX_FILE_SIZE = 25 * 1024 * 1024
 _MAX_SHEETS = 120
@@ -36,6 +37,13 @@ def _normalized_sheet(name: str) -> str:
     return str(name).strip().replace("\u200c", "").replace("\ufeff", "").replace(" ", "")
 
 
+def _legacy_label(value: Any) -> str:
+    """Normalize Arabic/Persian letter variants without accepting a new schema."""
+    return (unicodedata.normalize("NFKC", str(value or ""))
+            .replace("ي", "ی").replace("ك", "ک")
+            .replace("\u200c", "").strip())
+
+
 def _source(path: str | Path) -> tuple[Path, str]:
     p = Path(path)
     if p.suffix.lower() != ".xlsx" or not p.is_file():
@@ -50,9 +58,9 @@ def _sheet_rows(ws, *, sheet: str, chapter: int, source_sha: str) -> tuple[list[
     issues: list[dict] = []
     if ws.max_row and ws.max_row > _MAX_ROWS_PER_SHEET:
         raise ValueError("Workbook sheet exceeds audited row limit")
-    if (str(ws["B3"].value or "").strip() != "شرح عمليات" or
-        str(ws["L3"].value or "").strip() != "قیمت" or
-        str(ws["M3"].value or "").strip() != "قیمت کل"):
+    if (_legacy_label(ws["B3"].value) != "شرح عملیات" or
+        _legacy_label(ws["L3"].value) != "قیمت" or
+        _legacy_label(ws["M3"].value) != "قیمت کل"):
         raise ValueError("Legacy metre sheet does not have the audited source headers")
     # Read cached cell values only. No formulas or external workbooks executed.
     for index, cells in enumerate(ws.iter_rows(min_row=5, max_col=14, values_only=True), 5):
