@@ -166,3 +166,62 @@ def inspect_reviewed_ifc_crosswalks(
         "engineering_accepted": False,
         "readonly": True,
     }
+
+
+def require_reviewed_ifc_crosswalks_for_boq(
+    service, *, project_id: str, expected_project_version: int,
+    session_id: str, selected_item_ids: tuple[str, ...],
+) -> dict:
+    """Mandatory E8 commit boundary for selected source-linked IFC/CAD items.
+
+    The reviewed crosswalk NEVER creates a quantity: any physically competing
+    IFC↔2D reference is a review blocker. Unlinked items retain their existing
+    canonical CAD geometry/physical-owner commit guards.
+    """
+    if (not isinstance(session_id, str) or not session_id or
+        not isinstance(selected_item_ids, tuple) or not selected_item_ids or
+        len(set(selected_item_ids)) != len(selected_item_ids) or
+        any(not isinstance(i, str) or not i for i in selected_item_ids)):
+        raise ValueError("نشست و انتخاب قطعی مدارک IFC/CAD معتبر لازم است")
+    digest = service.store.current_digest(project_id)
+    project = service.open_project(project_id)
+    if (not isinstance(project, dict) or project.get("id") != project_id or
+        type(expected_project_version) is not int or
+        project.get("_meta", {}).get("version") != expected_project_version):
+        raise ValueError("نسخه پروژه تغییر کرده است")
+    links = project.get("ifc_2d_crosswalks", [])
+    if not isinstance(links, list):
+        raise ValueError("دفتر پیوند IFC/CAD نامعتبر است")
+    selected = set(selected_item_ids)
+    linked = [r for r in links if isinstance(r, dict) and
+              r.get("session_id") == session_id and r.get("item_id") in selected]
+    if not linked:
+        if service.store.current_digest(project_id) != digest:
+            raise RuntimeError("پروژه هنگام کنترل منشأ IFC تغییر کرد")
+        return {"scope": "NO_REVIEWED_CROSSWALK_FOR_SELECTED_SOURCE",
+                "readonly": True, "commit_authority": False}
+    # Stale/superseded identity must not be revived by another commit.
+    prior_ids = {r.get("supersedes") for r in links if isinstance(r, dict)}
+    if any(r.get("id") in prior_ids for r in linked):
+        raise ValueError("Crosswalk منسوخ شده است؛ بازبینی نسخه جدید الزامی است")
+    linked_owners = {(r.get("floor_id"), r.get("member_id")) for r in linked}
+    # Inspect the whole relevant physical ownership group, not just the
+    # explicitly selected 2D item, to detect cross-source competing claims.
+    relevant = [r for r in links if isinstance(r, dict) and
+                (r.get("floor_id"), r.get("member_id")) in linked_owners and
+                r.get("id") not in prior_ids]
+    reviewed = inspect_reviewed_ifc_crosswalks(
+        service, project_id=project_id,
+        expected_project_version=expected_project_version,
+        selected_crosswalk_ids=tuple(sorted(r["id"] for r in relevant)),
+    )
+    if reviewed["multiple_physical_claims"] or reviewed["status"] == "REVIEW_REQUIRED":
+        raise ValueError("چند Crosswalk مستقل برای یک عضو فیزیکی وجود دارد؛ تطبیق مهندس الزامی است")
+    if service.store.current_digest(project_id) != digest:
+        raise RuntimeError("نسخه پروژه پیش از ثبت BOQ تغییر کرد")
+    return {
+        "scope": "REVIEWED_IFC_CROSSWALK_SOURCE_PREFLIGHT_ONLY",
+        "verified_crosswalk_ids": sorted(r["id"] for r in linked),
+        "readonly": True, "commit_authority": False,
+        "payable_rows": [],
+    }
