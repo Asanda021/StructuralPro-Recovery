@@ -1207,7 +1207,7 @@ class GraphicalTakeoffDialog(QDialog):
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):
                 a,b=d["start"],d["end"]
                 item=self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
-            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC"} and len(d.get("display_points", d.get("points",[])))>=2:
+            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC", "SPLINE", "ELLIPSE"} and len(d.get("display_points", d.get("points",[])))>=2:
                 pts=[QPointF(sx(x),sy(y)) for x,y in d.get("display_points", d.get("points",[]))]
                 path = QPainterPath(pts[0])
                 for point in pts[1:]:
