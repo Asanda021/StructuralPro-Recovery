@@ -121,6 +121,8 @@ def test_can_select_inside_window_but_not_crossing_or_outside(qapp):
 def test_unicode_persian_and_english_are_preserved_without_fake_shx_decoding():
     assert normalize_cad_text(r"\U+0633\U+062A\U+0648\U+0646 A-1") == "ستون A-1"
     assert is_rtl_cad_text("ستون A-1")
+    assert normalize_cad_text("ستون {A-1} / BEAM {B-2}") == "ستون {A-1} / BEAM {B-2}"
+    assert normalize_cad_text(r"{\H2x;ستون A-1}") == "ستون A-1"
     assert not is_rtl_cad_text("BEAM B-1")
     raw = "`ë¢ f__—¥"   # actual legacy type of encoded source text
     assert normalize_cad_text(raw)==raw  # decoding needs original font mapping
