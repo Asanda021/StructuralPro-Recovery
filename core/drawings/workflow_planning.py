@@ -409,7 +409,14 @@ def sync_measured_items(plan: dict, items) -> dict:
         if task["id"] in CATALOG and not task.get("duration_edited"):
             profile=CATALOG[task["id"]]
             if observed and all(normalized_production_unit(entry["unit"])==profile.unit for entry in observed.values()):
-                total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
+                source_total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
+                from core.projects.building_scale import effective_quantity
+                total,multiplicity=effective_quantity(
+                    task["id"],source_total,
+                    plan.get("building_scope",{"source_scope":"whole_building"})
+                )
+                task["scheduled_quantity"]=str(total)
+                task["quantity_multiplier_evidence"]=multiplicity
                 calibration=plan.get("production_calibrations",{}).get(task["id"])
                 if calibration is not None:
                     from core.projects.productivity_evidence import validate_calibration,calibrated_duration
@@ -437,6 +444,8 @@ def sync_measured_items(plan: dict, items) -> dict:
             else:
                 task["duration_days"]=0
                 task["duration_range"]=None
+                task["scheduled_quantity"]=None
+                task["quantity_multiplier_evidence"]=None
                 task["duration_status"]="AWAITING_REVIEWED_QUANTITY"
     # Avoid double-counting a broad WBS duration with the exact same work
     # represented as measured and detailed child activities. The summary
