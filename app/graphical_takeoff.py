@@ -1175,21 +1175,15 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_controls.show();self._cad_items={};self._cad_handle_items={};self.cad_layers.clear()
         from collections import Counter
         for layer,count in sorted((doc._layer_counts if hasattr(doc,'_layer_counts') else Counter(e.layer for e in doc.entities)).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
-        coords=[]
-        for entity in ([] if hasattr(doc,'_render_bounds') else doc.entities):
-            data=entity.data
-            coords.extend((float(x),float(y)) for x,y in data.get("display_points", data.get("points",[])))
-            if entity.entity_type == "CIRCLE" and data.get("center") and data.get("radius"):
-                x, y = data["center"]; r = data["radius"]
-                coords.extend([(x-r, y-r), (x+r, y+r)])
-            for key in ("start","end","center","insert"):
-                if key in data and data[key] is not None:
-                    coords.append((float(data[key][0]),float(data[key][1])))
-        if not coords and not hasattr(doc,'_render_bounds'):
-            self.canvas.scene.addText("CAD فاقد هندسه قابل نمایش است.")
-            self.canvas.setSceneRect(0,0,1000,700)
-            return
-        min_x,max_x,min_y,max_y=doc._render_bounds if hasattr(doc,'_render_bounds') else (min(x for x,_ in coords),max(x for x,_ in coords),min(y for _,y in coords),max(y for _,y in coords))
+        from core.drawings.cad_large_scene import cad_preview_index
+        # Synchronous CAD loads must follow the same bounded-memory extent
+        # calculation as the worker.  Do not materialize a second list with
+        # every polyline vertex and display-flattening point.
+        bounds=(doc._render_bounds if hasattr(doc,'_render_bounds')
+                else cad_preview_index(doc.entities)[0])
+        min_x,max_x,min_y,max_y=bounds
+        if not all(__import__('math').isfinite(v) for v in bounds):
+            raise ValueError("محدوده CAD دارای مختصات نامعتبر است")
         margin=max(max_x-min_x,max_y-min_y,1.0)*0.05
         min_x-=margin; max_x+=margin; min_y-=margin; max_y+=margin
         # Evidence matching must use the same model -> scene transform as rendering.
