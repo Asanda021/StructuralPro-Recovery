@@ -68,6 +68,7 @@ class DrawingTakeoffSession:
         self.items: list[TakeoffItem] = []
         self.markups = MarkupStore()
         self.cad_unit_evidence=None
+        self.workflow_plan=None  # Editable source-bound draft, never BOQ authority.
         self.current_page = 1
         self._counter = 0
         self._undo: list[dict[str, Any]] = []
@@ -137,12 +138,14 @@ class DrawingTakeoffSession:
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
             **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
+            **({"workflow_plan":deepcopy(self.workflow_plan)} if self.workflow_plan is not None else {}),
             "current_page": self.current_page,
             "counter": self._counter,
         }
 
     def _restore(self, state: dict[str, Any]) -> None:
         self.cad_unit_evidence=deepcopy(state.get("cad_unit_evidence"))
+        self.workflow_plan=deepcopy(state.get("workflow_plan"))
         raw = state.get("calibration")
         self.calibration = Calibration(**raw) if raw else None
         saved_calibrations = state.get("calibrations")
@@ -550,6 +553,7 @@ class DrawingTakeoffSession:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
             **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
+            **({"workflow_plan":deepcopy(self.workflow_plan)} if self.workflow_plan is not None else {}),
             "current_page": self.current_page,
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
@@ -562,6 +566,13 @@ class DrawingTakeoffSession:
     def from_dict(cls, data: dict[str, Any]) -> "DrawingTakeoffSession":
         session = cls()
         session.cad_unit_evidence=deepcopy(data.get("cad_unit_evidence"))
+        session.workflow_plan=deepcopy(data.get("workflow_plan"))
+        if session.workflow_plan is not None:
+            from core.drawings.workflow_planning import recompute_schedule
+            if (session.workflow_plan.get("schema") != "structuralpro.drawing-workflow-v1"
+                    or session.workflow_plan.get("drawing_source") != str(data.get("drawing_source", ""))):
+                raise ValueError("پیش‌نویس زمان‌بندی با نشست نقشه منطبق نیست")
+            recompute_schedule(session.workflow_plan)
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
         session.source_sha256 = str(data.get("source_sha256", ""))
