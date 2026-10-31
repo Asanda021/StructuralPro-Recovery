@@ -171,13 +171,17 @@ def recompute_schedule(plan: dict) -> dict:
 
 
 def new_workflow_plan(*, drawing_source: str, source_sha256: str,
-                      structure: str, disciplines, inference=None) -> dict:
+                      structure: str, disciplines, inference=None,
+                      project_kind: str = "new_build") -> dict:
+    if project_kind not in {"new_build","renovation","fitout"}:
+        raise ValueError("نوع پروژه برای زمان‌بندی معتبر نیست")
     if structure not in _STRUCTURE_OPTIONS:
         raise ValueError("نوع اسکلت انتخابی شناخته‌شده نیست")
     selected = set(disciplines)
     if selected - _DISCIPLINES:
         raise ValueError("رشته انتخابی شناخته‌شده نیست")
     selected.add("structure")
+    if project_kind=="renovation":selected.add("renovation")
     # For mixed frames include both, but keep engineering ambiguity explicit.
     if structure == "mixed":
         frames = ("concrete_frame", "steel_frame")
@@ -186,6 +190,14 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
     tasks = []
     for task_id, title, discipline, default_days, deps in _WORK:
         if discipline not in selected:
+            continue
+        # Do not invent excavation, foundation and new superstructure when
+        # opening an existing building for fitout/renovation. The engineer may
+        # still add specific structural works as documented measured tasks.
+        if project_kind!="new_build" and task_id in {
+            "earthwork","foundation","concrete_frame","steel_frame",
+            "structure_unknown","slabs",
+        }:
             continue
         if task_id in {"concrete_frame", "steel_frame", "structure_unknown"} and task_id not in frames:
             continue
@@ -228,6 +240,8 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
     planned = {task["id"] for task in tasks}
     for profile in CATALOG.values():
         if profile.discipline not in selected:
+            continue
+        if project_kind!="new_build" and profile.discipline=="structure":
             continue
         # The frame type is a reviewer choice; don't create fabrication for
         # steel under a confirmed concrete-only structure.
@@ -272,6 +286,7 @@ def new_workflow_plan(*, drawing_source: str, source_sha256: str,
         "drawing_source": str(drawing_source),
         "source_sha256": str(source_sha256),
         "structure": structure,
+        "project_kind":project_kind,
         "structure_inference": deepcopy(inference) if inference else {},
         "disciplines": sorted(selected),
         "calendar": {"working_days_per_week": 6, "start_date": None},
