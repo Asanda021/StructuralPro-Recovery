@@ -3409,9 +3409,19 @@ class StructuralProApp:
         # A reviewed private-contract BOQ does not magically become a
         # government pricebook.  Avoid calling pricebook-only recalc here.
         if basis["mode"]=="contract_rates":
-            estimate=p.get("estimate") or {"cost":{
+            # Never reuse a cached government-pricebook estimate after the
+            # operator chooses a private contractual rate basis.
+            from decimal import Decimal
+            from core.commercial.exact_values import number
+            contractual_total=sum((
+                Decimal(str(number(row.get("quantity"),"مقدار قرارداد"))) *
+                Decimal(str(number(row.get("unit_price"),"نرخ توافقی")))
+                for row in p.get("boq",[])
+            ),Decimal(0))
+            estimate={"cost":{
                 "pricing_source":"REVIEWED_CONTRACT_RATES",
                 "source_sha256":basis["agreement_sha256"],
+                "grand_total":str(contractual_total),
             }}
         else:
             estimate=p.get("estimate") or self.recalculate_estimate(project_id)
