@@ -404,8 +404,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_in = QPushButton("+")
         self.fit = QPushButton("نمایش کامل")
         self.pan = QPushButton("جابجایی نقشه")
-        self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")
-        self.select_region = QPushButton("انتخاب ناحیه")
+        self.zoom_window = QPushButton("Window Zoom | محدوده متره")
+        self.zoom_window.setToolTip("دو گوشه مستطیل را روی نقشه مشخص کن؛ فقط همان محدوده زوم و برای متره انتخاب می‌شود")
+        self.select_region = QPushButton("انتخاب محدوده بدون زوم")
         self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")
         self.region_to_takeoff = QPushButton("ثبت ناحیه در متره")
         self.region_to_takeoff.setToolTip("فقط متره سطح عمومی؛ برای اجزای سقف از دکمه سقف تخصصی استفاده کنید")
@@ -1184,10 +1185,10 @@ class GraphicalTakeoffDialog(QDialog):
                     continue
                 pos = d.get("insert", d.get("start", (0, 0)))
                 height = cad_text_height(d)
-                # The installed UI fonts render genuine Unicode Persian and
-                # English. They cannot reconstruct proprietary legacy SHX
-                # character maps; mark such labels without inventing glyphs.
-                font = QFont("Tahoma")
+                # Use the actual verified bilingual application font rather
+                # than hardcoding Tahoma and bypassing the user's font choice.
+                # Proprietary SHX glyph mappings still need their source font.
+                font = QFont(QApplication.font())
                 font.setPixelSize(100)
                 item = self.canvas.scene.addText(text, font)
                 item.setDefaultTextColor(
