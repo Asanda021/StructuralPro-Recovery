@@ -16,7 +16,7 @@ def main()->int:
             QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,
             QLabel,QPushButton,QListWidget,QStackedWidget,QStatusBar,QLineEdit,
             QComboBox,QFormLayout,QMessageBox,QTextEdit,QFileDialog,QTableWidget,
-            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QCalendarWidget,QScrollArea
+            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QInputDialog,QCalendarWidget,QScrollArea
         )
         from PySide6.QtCore import Qt, QTimer, QEvent, QCoreApplication, QDate, QCalendar, QLocale
         from PySide6.QtGui import QShortcut, QKeySequence
