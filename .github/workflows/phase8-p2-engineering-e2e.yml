@@ -8,6 +8,7 @@ on:
       - tests/test_phase8_p2_multisource_aec_integration.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
+      - core/reports/source_discrepancy_gate.py
   pull_request:
     branches:
       - audit/phase8-p1-baseline-integrity-20261031
@@ -16,6 +17,7 @@ on:
       - tests/test_phase8_p2_multisource_aec_integration.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
+      - core/reports/source_discrepancy_gate.py
 permissions:
   contents: read
 concurrency:
@@ -77,6 +79,7 @@ jobs:
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p4_approved_price_impact.py
           tests/test_phase7_p5_real_commit_integration.py
+          tests/test_phase7_p5_source_discrepancy_gate.py
           tests/test_phase7_p5_ifc_boq_commit_gate.py
       - name: Keep native JUnit evidence even on failure
         if: always()
