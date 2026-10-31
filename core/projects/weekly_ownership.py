@@ -15,6 +15,70 @@ CHECKLIST={
  "electrical":("کنترل نقشه برق","کنترل ایمنی و مدار","ثبت تست‌ها"),
 }
 
+# Activity-family checks are applied to the exact scheduled work item, not
+# only the engineer's discipline. They are review prompts, not approvals.
+ACTIVITY_CHECKS={
+    "foundation":("کنترل آکس و تراز فونداسیون","کنترل بتن مگر و بستر",
+                  "کنترل آرماتورها/کاور طبق نقشه","کنترل صورتجلسه مجوز بتن‌ریزی"),
+    "rebar":("کنترل قطر، تعداد و طول مهاری میلگرد","کنترل وصله و خاموت",
+             "کنترل کاور و فواصل","تأیید آمادگی قبل بتن‌ریزی"),
+    "concrete":("کنترل قالب و شمع‌بندی","کنترل اسلامپ و نمونه‌گیری مطابق طرح",
+                "کنترل تراکم و ویبره","ثبت عمل‌آوری و محدودیت بارگذاری"),
+    "form":("کنترل ابعاد و تراز قالب","کنترل مهاربندی و ایمنی",
+             "کنترل بازشوها و تأسیسات مدفون"),
+    "steel":("کنترل قطعات و ابعاد ساخت","کنترل اتصالات، پیچ یا جوش",
+              "کنترل شاقولی و پایداری موقت"),
+    "wall":("کنترل محل دیوار و بازشو","کنترل شاقولی و رج‌بندی",
+             "کنترل اتصال‌ها و وال‌پست در صورت الزام نقشه"),
+    "tile":("کنترل آماده‌سازی زیرکار و عایق","کنترل شیب و تراز",
+             "کنترل بندها و کیفیت نصب"),
+    "plaster":("کنترل رطوبت و زیرکار","کنترل ضخامت و تراز اندود",
+                "کنترل کیفیت و ترک‌خوردگی"),
+    "paint":("کنترل رطوبت و آماده‌سازی","کنترل اجرای آستر",
+              "کنترل پوشش نهایی"),
+    "facade":("کنترل جزئیات اتصال و مهار نما","کنترل داربست و ایمنی ارتفاع",
+               "کنترل اجرا و آب‌بندی"),
+    "water":("کنترل لوله، قطر و مسیر","کنترل شیب یا عایق در صورت نیاز",
+              "کنترل تست فشار و ثبت نتیجه"),
+    "sewage":("کنترل مسیر و شیب فاضلاب","کنترل اتصال‌ها و ونت",
+               "کنترل آزمایش آب‌بندی"),
+    "gas":("کنترل مجوز و روش اجرا","کنترل اتصالات مطابق نقشه",
+            "کنترل تست نشتی توسط مجاز"),
+    "hvac":("کنترل کانال و عایق","کنترل تداخل سازه و معماری",
+             "کنترل تست و راه‌اندازی"),
+    "conduit":("کنترل مسیر لوله و قوطی برق","کنترل فاصله و تداخل",
+                "کنترل مسیر کشش سیم قبل پوشش"),
+    "wiring":("کنترل سطح مقطع و نوع سیم","کنترل تست پیوستگی و عایق",
+               "کنترل شناسایی مدارها"),
+    "panel":("کنترل تابلو و شماره مدارها","کنترل ارت و حفاظت",
+              "کنترل تست الکتریکی"),
+    "elevator":("کنترل شاقولی و ریل‌ها","کنترل ایمنی چاه و تجهیزات",
+                 "کنترل تست‌ها توسط مجاز"),
+    "fire":("کنترل نقشه آتش‌نشانی","کنترل تجهیزات و مسیرها",
+             "کنترل تست و تأییدهای لازم"),
+}
+def daily_checklist(activity,trade):
+    """Generate actionable daily inspection points from WBS task identity."""
+    description=" ".join((str(activity.get("id","")),
+                          str(activity.get("title","")),
+                          str(activity.get("family","")))).lower()
+    aliases={
+        "آرماتور":"rebar","میلگرد":"rebar","بتن":"concrete",
+        "قالب":"form","بلوک":"wall","آجر":"wall",
+        "سرامیک":"tile","کاشی":"tile","گچ":"plaster",
+        "رنگ":"paint","نما":"facade","فاضلاب":"sewage",
+        "سیم":"wiring","تابلو":"panel","لوله برق":"conduit",
+        "آسانسور":"elevator","اعلام حریق":"fire",
+        "اطفا":"fire","فونداسیون":"foundation","شناژ":"foundation",
+        "اسکلت فولادی":"steel","تهویه":"hvac",
+    }
+    for label,key in aliases.items():
+        if label in description:
+            return ACTIVITY_CHECKS[key]
+    for key,checks in ACTIVITY_CHECKS.items():
+        if key in description:return checks
+    return CHECKLIST[trade]
+
 def define_team(names, owners):
     if not isinstance(names,list) or not 1<=len(names)<=4:
         raise ValueError("تعداد سرپرستان باید بین ۱ و ۴ نفر باشد")
@@ -95,7 +159,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
                   and w["week_start"]==first)
         begin=jalali_to_gregorian(activity["start_jalali"])
         finish=jalali_to_gregorian(activity["finish_jalali"])
-        stamp={"activity_id":str(activity["id"]),"start":activity["start_jalali"],
+        stamp={"activity_id":str(activity["id"]),"title":activity.get("title",""),"start":activity["start_jalali"],
                "finish":activity["finish_jalali"],
                "duration":activity["duration_days"]}
         for day in dates:
@@ -110,7 +174,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
             old=next((v for v in day_row["work_items"] if v["id"]==uid),None)
             same=old is not None and old.get("schedule_snapshot")==stamp
             checks=[]
-            for i,title in enumerate(CHECKLIST[trade],1):
+            for i,title in enumerate(daily_checklist(activity,trade),1):
                 old_check=(next((v for v in old["checklist"]
                      if v["id"]==f"check-{i}" and v["text"]==title),None)
                      if same else None)
