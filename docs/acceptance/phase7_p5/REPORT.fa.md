@@ -40,3 +40,15 @@
 [CI #41181550663](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41181550663)، دقیقاً روی Commit `8a1718923af49446ce2ddc31b0a441f6e64901d6`: **Linux ۹۱ PASS، Windows Native ۹۱ PASS**؛ هر دو Job SUCCESS؛ صفر FAIL/ERROR/SKIP، یک هشدار قدیمی fitz در هر سیستم. هیچ آزمون حذف یا Skip نشده است.
 
 **حکم فنی محدوده فعلی:** `P7_P5_SOURCE_PREFLIGHT_TARGETED=ACCEPTED`. اما `P7_P5_OVERALL=PARTIAL` زیرا اتصال اجباری به تمام نقاط واقعی ثبت متره و BOQ و پوشش IFC/Revision چندمنبعی و CI جامع کد P5 باقی‌اند. موفقیت Preflight هرگز مجوز ثبت نهایی یا تأیید مهندسی نیست. آزمایش Office/Windows سخت‌افزاری همچنان فاز۸ و NOT_TESTED است.
+
+
+## اتصال اجباری به مسیرهای واقعی ثبت BOQ و گیت هدفمند نهایی
+
+- کد `core/platform/application.py` اکنون قبل از `validate_commit_rows`، `rebuild_project_boq` و `store.save` از کنترل E8 برای **برداشت area دارای مدرک هندسی** در هر دو تابع `commit_drawing_takeoff_to_boq` و `commit_ai_takeoff_proposal` استفاده می‌کند. کنترل‌های موجود `assert_new_measurements` برای هندسه تکراری، هم‌پوشانی، مالکیت مقدار و CAD حذف یا دور زده نشده‌اند.
+- آزمون‌های `tests/test_phase7_p5_real_commit_integration.py` با PDF برداری مصنوعی، نشست واقعی SQLite و دو عضو حقیقی ProjectStore اجرا شدند. موارد مسدودی، عدم‌تغییر digest، ثبت مجاز یک عضو مستقل با حفظ هر دو `source_id` حتی در BOQ تجمیعی، و عدم عبور تأیید صریح AI از کنترل اختلاف را پوشش می‌دهند.
+- [CI هدفمند #41182121023](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41182121023) روی **SHA دقیق `1c558d282e243761323911fbf2f35ed7c5b36129`**: Linux **۹۷ PASS**، Windows Native **۹۷ PASS**؛ هر دو Job موفق؛ صفر FAIL/ERROR/SKIP؛ یک هشدار قبلی fitz در هر سیستم.
+- [رگرسیون جامع همان SHA #41182123771](https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41182123771): هنگام نگارش این سند **PENDING**؛ پذیرش کامل P5 منوط به اتمام موفق تمام Jobها، union و تعیین تکلیف شکاف‌های IFC/AI/Revision چندمنبعی است.
+- `P7_P5_REAL_MANUAL_AI_B0Q_TARGETED=ACCEPTED`؛ `P7_P5_BROAD=PENDING`؛ `P7_P5_OVERALL=PARTIAL`. عبور گیت به معنای تأیید مهندسی یا اجازه خودکار پرداخت نیست.
+
+### تصحیح وضعیت پیشرفت و فاز ۶
+فاز ۶ در دامنه توسعه و CI خودکار **COMPLETE / 100%** است؛ فقط آزمون حضوری Windows/G4 طبق تصمیم مالک به فاز ۸ منتقل شده، نه اینکه فاز ۶ دوباره باز شده باشد. با وزن برابر هشت فاز و شش اولویت در فاز۷ و با شمارش فقط گیت‌های کاملاً پذیرفته‌شده، پیشرفت فعلی **۸۳٫۳٪** است. جدول دقیق و نسبت با رقم تخمینی قدیمی ۸۵٪ در [سند روش محاسبه](../PROJECT_PROGRESS_METHOD_20261031.fa.md) ثبت شده؛ درصد بدون دلیل افزایش نمی‌یابد.
