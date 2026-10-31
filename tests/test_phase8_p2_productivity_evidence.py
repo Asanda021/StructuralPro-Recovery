@@ -45,7 +45,9 @@ def test_calibration_needs_real_independent_field_observations(tmp_path):
     records[1]["observed_on"]=records[0]["observed_on"]
     with pytest.raises(ValueError,match="تاریخ"):
         calibrate_productivity("block_wall",records,reviewer="ناظر",project_id="P")
-    records[1]["observed_on"]="1405/08/02"
+    # After duplicate-date rejection, restore a distinct date before
+    # checking the independently invalid measurement unit.
+    records[1]["observed_on"]="1405/08/03"
     records[1]["unit"]="kg"
     with pytest.raises(ValueError,match="واحد"):
         calibrate_productivity("block_wall",records,reviewer="ناظر",project_id="P")
