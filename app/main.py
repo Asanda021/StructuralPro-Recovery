@@ -945,12 +945,14 @@ def main()->int:
         try:
             from app.statement_amendment import StatementAmendmentDialog
             if not stid.text().strip(): raise ValueError("شناسه پروژه را وارد کنید")
+            if stid.text().strip() not in statement_mode_confirmed and not choose_statement_basis():return
             StatementAmendmentDialog(service, stid.text().strip(), w).exec()
         except Exception as e: QMessageBox.critical(w,"خطای اصلاحیه",str(e))
     def open_financial_workspace():
         try:
             from app.financial_workspace import FinancialWorkspace
             if not stid.text().strip():raise ValueError("شناسه پروژه را وارد کنید")
+            if stid.text().strip() not in statement_mode_confirmed and not choose_statement_basis():return
             FinancialWorkspace(service,stid.text().strip(),w).exec()
         except Exception as exc:QMessageBox.critical(w,"خطای دفتر مالی",str(exc))
     finance_open=QPushButton("گردش رسمی صورت‌وضعیت و دفتر مالی");finance_open.setObjectName("FinancialWorkspaceOpen")
