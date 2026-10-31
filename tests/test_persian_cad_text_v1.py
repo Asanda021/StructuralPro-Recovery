@@ -18,6 +18,8 @@ def test_decodes_common_mtext_line_break_and_symbols():
 
 def test_removes_format_controls_without_dropping_text():
     assert normalize_cad_text(r"{\fTahoma|b0|i0;ستون}") == "ستون"
+    assert normalize_cad_text("ستون {A-1} / BEAM {B-2}") == "ستون {A-1} / BEAM {B-2}"
+    assert normalize_cad_text(r"{\H2x;ستون A-1}") == "ستون A-1"
     assert normalize_cad_text(r"مساحت\~ناخالص") == "مساحت\u00a0ناخالص"
     assert not is_rtl_cad_text("COLUMN A1")
 
