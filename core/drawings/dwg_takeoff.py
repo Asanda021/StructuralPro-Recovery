@@ -397,12 +397,14 @@ class DWGTakeoffEngine:
         return doc
 
     def summarize(self, doc: DWGDocument) -> dict[str, Any]:
-        by_type = {}
-        for e in doc.entities:
-            by_type[e.entity_type] = by_type.get(e.entity_type, 0) + 1
+        from core.drawings.cad_large_scene import cad_coverage_report
+        coverage = cad_coverage_report(doc)
+        by_type = coverage["source_by_type"]
         return {
             "entities": len(doc.entities),
             "by_type": by_type,
+            "coverage": coverage,
+            "autocad_format_through": 2027 if doc.dxf_version in {"AC1032", "AC1032/AutoCAD2018", "AC1032 (AutoCAD 2018)"} else None,
             "layers": doc.layers,
             "blocks": doc.block_counts,
             "text_count": len(doc.text_labels),
