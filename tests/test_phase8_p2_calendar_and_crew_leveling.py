@@ -135,3 +135,23 @@ def test_real_qt_calendar_and_gantt_editor_apply_1405_dates(tmp_path):
     finally:
         window.close()
         app.processEvents()
+
+
+
+def test_every_selected_canonical_aec_family_is_visible_without_invented_rate():
+    from core.aec.disciplines import all_disciplines
+    p=new_workflow_plan(drawing_source="multi.dwg",source_sha256="s",
+        structure="mixed",disciplines=[
+            "architecture","mechanical","electrical","elevator","fire","site",
+            "wood","renovation","restoration"
+        ])
+    family_ids={t["id"] for t in p["tasks"] if t.get("coverage_placeholder")}
+    expected={f"family:{d.key}:{family}" for d in all_disciplines()
+              for family in d.families}
+    assert family_ids==expected
+    for task in p["tasks"]:
+        if task.get("coverage_placeholder"):
+            assert task["duration_days"]==0
+            assert task["duration_status"]=="RATE_AND_TAKEOFF_COVERAGE_REVIEW_REQUIRED"
+            assert task["linked_item_ids"]==[]
+            assert not task["baseline_approved"]
