@@ -37,13 +37,17 @@ jobs:
           python-version: '3.12'
       - name: Run offline fail-closed validation unit tests
         run: python -m unittest discover -s tests -p test_phase8_p2_real_dwg_source_probe.py -v
-      - name: Download official-source-catalogued DWG for header and SHA discovery only
-        run: python -m scripts.phase8_p2_real_dwg_source_probe --output dwg-probe-evidence.json
+      - name: Probe historical engineering DWG and record unsupported version
+        run: python -m scripts.phase8_p2_real_dwg_source_probe --source-id usfs_legacy --output dwg-probe-evidence.json
+      - name: Probe independent CC0 studio DWG for version eligibility only
+        run: python -m scripts.phase8_p2_real_dwg_source_probe --source-id studio_cc0 --output studio-probe-evidence.json
       - name: Upload bounded evidence JSON (never upload source DWG)
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p8p2-dwg-acquisition-${{ matrix.os }}
-          path: dwg-probe-evidence.json
+          path: |
+            dwg-probe-evidence.json
+            studio-probe-evidence.json
           if-no-files-found: warn
           retention-days: 14
