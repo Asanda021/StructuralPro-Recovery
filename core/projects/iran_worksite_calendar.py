@@ -105,9 +105,9 @@ def make_calendar(*,start_date=None,holidays=None,extra_holidays=None,
                 )
                 sources[str(year)]="USER_YEAR_SPECIFIC"
             else:
-                if not forecast_lunar and year>=1408:
+                if not forecast_lunar and year>=1406:
                     records=[x for x in records if x["kind"]=="solar_fixed"]
-                if year>=1408:
+                if year>=1406:
                     review_years.append(year)
                 sources[str(year)]=YEAR_SOURCE[year]
             seeded.extend(x["date"] for x in records)
