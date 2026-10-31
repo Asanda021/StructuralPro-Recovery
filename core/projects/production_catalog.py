@@ -1223,9 +1223,22 @@ CATALOG={x[0]:ProductionProfile(x[0],x[1],x[2],x[3],str(x[4]),str(x[5]),x[6],
        tuple(x[11])) for x in _RAW}
 assert len(CATALOG)==len(_RAW)
 
+def normalized_production_unit(unit):
+    labels={
+        "متر مربع":"m2","مترمربع":"m2","مترمربع ":"m2",
+        "m²":"m2","m2":"m2",
+        "متر مکعب":"m3","مترمکعب":"m3","m³":"m3","m3":"m3",
+        "متر":"m","m":"m","کیلوگرم":"kg","kg":"kg",
+        "تن":"t","ton":"t","t":"t",
+        "عدد":"count","دستگاه":"count","count":"count",
+        "نقطه":"point","point":"point",
+    }
+    return labels.get(str(unit or "").strip().lower(),str(unit or "").strip())
+
 def productivity_days(code,quantity,unit,*,crews=None,efficiency="1"):
     """Quantified tentative whole-workday range; no payable or baseline approval."""
     p=CATALOG[code]
+    unit=normalized_production_unit(unit)
     if unit!=p.unit:raise ValueError("واحد متره با واحد نرخ تولید این فعالیت یکسان نیست")
     if isinstance(quantity,bool):raise ValueError("مقدار متره معتبر نیست")
     try:
