@@ -8,7 +8,7 @@ units, silently losing entities, or declaring quantity acceptance.
 from __future__ import annotations
 
 from collections import Counter
-from hashlib import sha256
+from hashlib import file_digest
 from importlib import metadata, util
 from math import dist, isfinite, pi
 from pathlib import Path
@@ -19,8 +19,11 @@ from core.drawings.dwg_takeoff import DWGDocument, DWGEntity
 from core.drawings.dwg_converter import OfflineDWGConverter
 
 _EXPECTED_VERSION = "0.17.0"
-_LIMIT_BYTES = 50 * 1024 * 1024
-_LIMIT_ENTITIES = 250_000
+# Bounded larger-drawing read-only policy; not a guarantee of UI/performance
+# acceptance for all vendor proxy objects.  Worker isolation and incremental
+# rendering allow controlled growth without silent source-entity truncation.
+_LIMIT_BYTES = 100 * 1024 * 1024
+_LIMIT_ENTITIES = 1_000_000
 _ALLOWED = frozenset({"AC1015", "AC1018", "AC1021", "AC1024", "AC1027", "AC1032"})
 _BLOCK = "بازنمایی مستقیم و فقط‌خواندنی DWG؛ بدون واحد و تبدیل کامل قابل‌تأیید، متره و BOQ مجاز نیست"
 
@@ -53,7 +56,10 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
     if util.find_spec("ezdwg") is None or metadata.version("ezdwg") != _EXPECTED_VERSION:
         raise RuntimeError("Pinned ezdwg==0.17.0 must be installed for native DWG preview")
 
-    digest = sha256(src.read_bytes()).hexdigest()
+    # Streaming hashing: avoid allocating a second full 100MB source buffer
+    # merely to verify the immutable drawing evidence.
+    with src.open("rb") as source_stream:
+        digest = file_digest(source_stream, "sha256").hexdigest()
     import ezdwg
     raw = ezdwg.read(str(src))
     if raw.version != version:
@@ -151,7 +157,9 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
         else:
             unsupported[typ] += 1
         out.entities.append(DWGEntity(typ,name,handle,data))
-    if sha256(src.read_bytes()).hexdigest() != digest:
+    with src.open("rb") as source_stream:
+        final_digest = file_digest(source_stream, "sha256").hexdigest()
+    if final_digest != digest:
         raise ValueError("DWG source changed during preview")
     if not out.entities:
         raise ValueError("No native DWG entities available for preview")
