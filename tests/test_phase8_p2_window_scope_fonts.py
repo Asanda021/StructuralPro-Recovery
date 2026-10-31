@@ -35,6 +35,8 @@ def test_scene_window_handles_small_real_cad_drawing_units():
     assert scope.classify_rect(crossing)=="crossing"
     assert scope.classify_rect(outside)=="outside"
     assert scope.classify_rect(ViewportRect(.3,.25,.55,.25))=="inside"  # LINE with 0-height bbox
+    assert scope.classify_rect(ViewportRect(.55,.25,.9,.25))=="crossing"
+    assert scope.classify_rect(ViewportRect(.4,.15,.4,.3))=="crossing"  # vertical LINE, 0 width
 
 
 def test_invalid_numeric_windows_are_not_accepted():
