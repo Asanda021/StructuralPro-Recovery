@@ -5,7 +5,9 @@ on:
       - feature/phase7-p5-e8-source-discrepancy-20261031
     paths:
       - core/reports/source_discrepancy_gate.py
+      - core/platform/application.py
       - tests/test_phase7_p5_source_discrepancy_gate.py
+      - tests/test_phase7_p5_real_commit_integration.py
       - .github/workflows/phase7-p5-source-discrepancy.yml
   workflow_dispatch:
 permissions:
@@ -43,6 +45,7 @@ jobs:
         run: >-
           python -m py_compile
           core/reports/source_discrepancy_gate.py
+          core/platform/application.py
           core/reports/custom_batch.py
           core/reports/technical_office_revision.py
       - name: Persisted PDF, SHA, BOQ and source clash acceptance
@@ -50,6 +53,7 @@ jobs:
           python -m pytest -q
           --junitxml=p7-p5-e8-targeted.xml
           tests/test_phase7_p5_source_discrepancy_gate.py
+          tests/test_phase7_p5_real_commit_integration.py
           tests/test_phase2_advanced_geometry_sqlite.py
           tests/test_phase7_p2_persisted_boq_crosswalk.py
           tests/test_phase7_p4_technical_office_revision.py
