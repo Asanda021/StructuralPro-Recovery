@@ -176,3 +176,37 @@ def test_real_qt_dialog_finance_first_and_optional_auto_wbs(qapp,tmp_path):
     finally:
         widget.close()
         qapp.processEvents()
+
+
+
+def test_real_project_service_blank_contract_rates_are_not_billable_until_review(tmp_path,monkeypatch):
+    from core.platform.application import StructuralProApp
+    import core.reports.aec_office_package as office
+    monkeypatch.setattr(office,"audit_boq",lambda project,require_pricebook=False:{
+        "pricing_complete":all(x.get("unit_price") is not None for x in project.get("boq",[]))
+    })
+    app=StructuralProApp(tmp_path/"projectdb")
+    try:
+        app.create_project("پروژه غیر فهرست بهایی","NR")
+        p=app.open_project("NR")
+        p["boq"]=[{
+            "price_code":"W1","item_code":"WALL","unit":"m2",
+            "description":"اجرای دیوار بلوکی","quantity":25,
+            "unit_price":"250000",
+        }]
+        app.store.save("NR",p)
+        selected=app.set_statement_pricing_mode("NR","contract_rates","operator_blank")
+        assert selected["contract_price_entry"]=="operator_blank"
+        assert app.open_project("NR")["boq"][0]["unit_price"] is None
+        assert app.statement_operator_price_status("NR")["missing_codes"]==["W1"]
+        assert not app.statement_basis_status("NR")["ready_for_draft"]
+        app.record_operator_statement_price("NR","W1","270000","اپراتور کنترل")
+        assert app.statement_operator_price_status("NR")["missing_codes"]==[]
+        assert not app.statement_basis_status("NR")["ready_for_draft"]
+        doc=tmp_path/"agreement.txt"
+        doc.write_text("contract W1=270000 per m2",encoding="utf-8")
+        app.review_statement_contract_rates("NR",doc,"مهندس دفتر فنی")
+        assert app.statement_basis_status("NR")["ready_for_draft"]
+        assert app.open_project("NR")["boq"][0]["unit_price"]=="270000"
+    finally:
+        app.store.close()
