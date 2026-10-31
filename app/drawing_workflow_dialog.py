@@ -294,6 +294,12 @@ class DrawingWorkflowIntakeDialog(QDialog):
             )
             return
         if self.automatic_schedule.currentData()=="yes":
+            if self.typical_floor_area.value()<=0:
+                QMessageBox.warning(
+                    self,"متراژ پروژه",
+                    "برای برآورد مدت مبتنی بر مقیاس ساختمان، متراژ هر طبقه را وارد کنید"
+                )
+                return
             try:
                 self.selected_building_scope()
             except ValueError as exc:
