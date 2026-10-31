@@ -386,6 +386,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._cad_scene_origin = None
         self._workflow_intake_dialog = None
         self._workflow_schedule_dialog = None
+        self._engineer_weekly_dialog = None
         self._workflow_prompted_source = None
         self.page = 1
 
@@ -417,6 +418,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.schedule_button.setObjectName("OpenDrawingLiveSchedule")
         self.schedule_button.setEnabled(False)
         self.schedule_button.clicked.connect(self.open_live_schedule)
+        self.weekly_button=QPushButton("برنامه هفتگی مهندسان")
+        self.weekly_button.setObjectName("OpenEngineerWeeklyPlan")
+        self.weekly_button.clicked.connect(self.open_engineer_weekly_plan)
         self.prev = QPushButton("صفحه قبلی")
         self.next = QPushButton("صفحه بعدی")
         self.page_no = QSpinBox()
@@ -481,7 +485,7 @@ class GraphicalTakeoffDialog(QDialog):
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
             self.open_pdf, self.workflow_button, self.schedule_button,
-            self.prev, self.next, self.page_no,
+            self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
@@ -826,6 +830,12 @@ class GraphicalTakeoffDialog(QDialog):
         if self.cad_loading or not self.viewer.path:
             return
         source=str(self.viewer.path)
+        preferences=getattr(self.session,"workflow_preferences",None)
+        if preferences and preferences.get("source_sha256")==self.session.source_sha256:
+            self.schedule_button.setEnabled(
+                bool(preferences.get("automatic_scheduling") and self.session.workflow_plan)
+            )
+            return
         if getattr(self.session,"workflow_plan",None):
             self.schedule_button.setEnabled(True)
             return
@@ -853,25 +863,62 @@ class GraphicalTakeoffDialog(QDialog):
         source=str(self.viewer.path)
         sha=str(self.session.source_sha256)
         def accepted():
-            # An old popup can never bind a fresh drawing to old evidence.
+            # Source-bound choices, never silently rebind to a different CAD.
             if not self.viewer.path or str(self.viewer.path)!=source or self.session.source_sha256!=sha:
-                self.status.setText("نقشه عوض شده؛ انتخاب رشته مجدداً لازم است")
+                self.status.setText("نسخه نقشه تغییر کرده؛ انتخاب‌ها مجدداً لازم است")
                 return
-            from core.drawings.workflow_planning import new_workflow_plan, sync_measured_items
+            price_mode,price_entry=dialog.pricing_selection()
+            enabled=dialog.automatic_schedule_selected()
             structure,disciplines=dialog.selection()
-            plan=new_workflow_plan(
-                drawing_source=source,source_sha256=sha,structure=structure,
-                disciplines=disciplines,inference=evidence,
-                project_kind=dialog.selected_project_kind(),
-                project_id=self.persisted_project_id,
-            )
-            self.session.workflow_plan=sync_measured_items(plan,self.session.items)
-            self.schedule_button.setEnabled(True)
-            self.status.setText(
-                "مسیر متره فعال شد؛ اسکلت: "+structure+
-                "؛ برنامه زمانی پیشنهادی و قابل ویرایش است، بدون تاریخ قطعی"
-            )
-            self.open_live_schedule()
+            selected_project=self.project_id_input.text().strip() or self.persisted_project_id
+            if self.app_service is not None and selected_project:
+                try:
+                    self.app_service.set_statement_pricing_mode(
+                        selected_project,price_mode,price_entry
+                    )
+                except Exception as exc:
+                    QMessageBox.warning(self,"مبنای صورت‌وضعیت پروژه",
+                        "انتخاب مالی در پروژه ذخیره نشد؛ فعالیت آغاز نمی‌شود: "+str(exc))
+                    return
+            self.session.workflow_preferences={
+                "source_sha256":sha,
+                "pricing_mode":price_mode,
+                "contract_price_entry":price_entry if price_mode=="contract_rates" else None,
+                "automatic_scheduling":enabled,
+                "structure":structure,"disciplines":list(disciplines),
+                "project_kind":dialog.selected_project_kind(),
+            }
+            if enabled:
+                from core.drawings.workflow_planning import new_workflow_plan,sync_measured_items
+                # Same-source repeated choice must not erase user edits.
+                existing=self.session.workflow_plan
+                if (existing is not None and
+                        existing.get("source_sha256")==sha and
+                        existing.get("structure")==structure and
+                        existing.get("project_kind","new_build")==dialog.selected_project_kind() and
+                        set(existing.get("disciplines",()))==set(disciplines)|{"structure"}):
+                    plan=existing
+                else:
+                    plan=new_workflow_plan(
+                        drawing_source=source,source_sha256=sha,structure=structure,
+                        disciplines=disciplines,inference=evidence,
+                        project_kind=dialog.selected_project_kind(),
+                        project_id=selected_project,
+                    )
+                self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+                self.schedule_button.setEnabled(True)
+                self.status.setText("مبنای مالی انتخاب شد؛ متره + زمان‌بندی پیشنهادی فعال است")
+                self.open_live_schedule()
+            else:
+                self.schedule_button.setEnabled(False)
+                old=self._workflow_schedule_dialog
+                if old is not None:
+                    from shiboken6 import isValid
+                    if isValid(old):old.hide()
+                self.status.setText(
+                    "مبنای مالی انتخاب شد؛ متره بدون زمان‌بندی خودکار فعال است؛ "
+                    "برنامه هفتگی مهندسان مستقل در دسترس است"
+                )
         dialog.accepted.connect(accepted)
         dialog.show()
 
@@ -893,6 +940,32 @@ class GraphicalTakeoffDialog(QDialog):
             self._set_edited_schedule,self,
         )
         self._workflow_schedule_dialog=dialog
+        dialog.show()
+
+    def open_engineer_weekly_plan(self):
+        if not self.viewer.path:
+            self.status.setText("ابتدا نقشه را باز کنید")
+            return
+        from app.engineer_weekly_dialog import EngineerWeeklyDialog
+        from shiboken6 import isValid
+        old=self._engineer_weekly_dialog
+        if old is not None and isValid(old):
+            old.show()
+            old.raise_()
+            old.activateWindow()
+            return
+        sha=self.session.source_sha256
+        def update(plans):
+            if self.session.source_sha256!=sha:
+                raise ValueError("منبع نقشه تغییر کرده است")
+            self.session.engineer_weekly_plans=plans
+        dialog=EngineerWeeklyDialog(
+            lambda:self.session.engineer_weekly_plans,
+            update,
+            lambda:(self.session.workflow_plan or {}).get("tasks",[]),
+            sha,self,
+        )
+        self._engineer_weekly_dialog=dialog
         dialog.show()
 
     def _set_edited_schedule(self, plan):
@@ -2890,7 +2963,10 @@ class GraphicalTakeoffDialog(QDialog):
         self.undo.setEnabled(self.session.can_undo)
         self.redo.setEnabled(self.session.can_redo)
         plan=getattr(self.session, "workflow_plan", None)
-        self.schedule_button.setEnabled(bool(plan))
+        preferences=getattr(self.session,"workflow_preferences",None)
+        self.schedule_button.setEnabled(bool(plan) and (
+            preferences is None or preferences.get("automatic_scheduling",False)
+        ))
         if plan:
             from core.drawings.workflow_planning import sync_measured_items
             sync_measured_items(plan, self.session.items)
