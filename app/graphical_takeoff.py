@@ -1062,6 +1062,15 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.warning(self, "شناسه پروژه", "برای ذخیره دائمی، شناسه پروژه را وارد کنید.")
             return False
         try:
+            settings=getattr(self.session,"workflow_preferences",None)
+            if settings:
+                # The drawing may have been opened without a project ID.
+                # Reconcile the user's original pricing choice when they
+                # subsequently attach and save the source-bound session.
+                self.app_service.set_statement_pricing_mode(
+                    project_id,settings["pricing_mode"],
+                    settings.get("contract_price_entry") or "prefilled",
+                )
             result = self.app_service.save_drawing_takeoff_session(
                 project_id, self.session, session_id=self.persisted_session_id,
                 expected_revision=self.persisted_session_revision,
