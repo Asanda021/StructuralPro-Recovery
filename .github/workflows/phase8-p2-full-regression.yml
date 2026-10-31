@@ -52,6 +52,7 @@ jobs:
           tests/test_phase7_p6_ai_a3_audit_report.py
           tests/test_phase8_p2_fivefloor_financial_e2e.py
           tests/test_phase8_p2_multisource_aec_integration.py
+          tests/test_phase8_p2_pr32_a2_source_gate.py
           tests/test_phase6_p3_full_verified_boq.py
           tests/test_phase6_p3_real_project_bridge.py
           tests/test_phase6_p3_selection_panel.py

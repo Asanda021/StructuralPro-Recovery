@@ -4,6 +4,8 @@ on:
     branches: [test/phase8-p2-engineering-e2e-20261031]
     paths:
       - scripts/phase8_p2_fork_audit.py
+      - core/ai/contextual_takeoff.py
+      - tests/test_phase8_p2_pr32_a2_source_gate.py
       - .github/workflows/phase8-p2-fork-parity.yml
       - docs/acceptance/phase8_p2/**
   pull_request:
@@ -82,6 +84,7 @@ jobs:
           python scripts/run_phase6_pytest.py 500 -q
           --junitxml=phase8-p2-fork-p4.xml
           tests/test_phase6_p4_contextual_takeoff.py
+          tests/test_phase8_p2_pr32_a2_source_gate.py
           -k "review_questions or existing_assembly or proposal_revocation or review_ledger or persisted_boq or matching_approved_templates or a2_existing_engineering_assistant or failed_context_refresh or w1_live_identity_change or specialist_fields"
       - name: Preserve original native behavior JUnit
         if: always()

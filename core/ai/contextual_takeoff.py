@@ -261,8 +261,21 @@ class ContextualTakeoffGuide:
         if isinstance(index,bool) or not isinstance(index,int) or index<0 or index>=len(boq):
             raise ValueError("ردیف واقعی BOQ یافت نشد.")
         row=boq[index]
-        if not isinstance(row,dict) or not row.get("unit"):
+        if not isinstance(row,dict):
             raise ValueError("ردیف BOQ مستند نیست.")
+        # P8-P2 PR32 delta: numeric A2 answers must never cite retired,
+        # untraceable or self-contradictory BOQ rows. Old persisted rows may
+        # omit the status field; an *explicit* non-active status is denied.
+        if row.get("status") not in (None, "active"):
+            raise ValueError("ردیف BOQ غیرفعال قابل استناد نیست.")
+        unit=row.get("unit")
+        if not isinstance(unit,str) or not unit.strip() or unit!=unit.strip():
+            raise ValueError("واحد BOQ مستند نیست.")
+        sources=row.get("source_ids")
+        if (not isinstance(sources,list) or not sources or
+            not all(isinstance(s,str) and s and s==s.strip() for s in sources) or
+            len(set(sources))!=len(sources)):
+            raise ValueError("ردیف BOQ فاقد شناسه منبع معتبر و یکتا است.")
         qty=row.get("quantity")
         if isinstance(qty,bool) or qty is None:
             raise ValueError("مقدار قطعی در ردیف وجود ندارد.")
@@ -270,9 +283,9 @@ class ContextualTakeoffGuide:
             number=Decimal(str(qty))
         except (ValueError,InvalidOperation):
             raise ValueError("مقدار معتبر قابل استناد نیست.")
-        if not number.is_finite():
+        if not number.is_finite() or number<0:
             raise ValueError("مقدار معتبر قابل استناد نیست.")
         return {"source":"persisted_project_boq","project_id":context.project_id,
-                "cas_digest":digest,"quantity":str(number),"unit":row["unit"],
-                "source_ids":tuple(row.get("source_ids") or []),
+                "cas_digest":digest,"quantity":str(number),"unit":unit,
+                "source_ids":tuple(sources),
                 "read_only":True}

@@ -6,6 +6,7 @@ on:
     paths:
       - tests/test_phase8_p2_fivefloor_financial_e2e.py
       - tests/test_phase8_p2_multisource_aec_integration.py
+      - tests/test_phase8_p2_pr32_a2_source_gate.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
       - core/reports/source_discrepancy_gate.py
@@ -15,6 +16,7 @@ on:
     paths:
       - tests/test_phase8_p2_fivefloor_financial_e2e.py
       - tests/test_phase8_p2_multisource_aec_integration.py
+      - tests/test_phase8_p2_pr32_a2_source_gate.py
       - docs/acceptance/phase8_p2/**
       - .github/workflows/phase8-p2-engineering-e2e.yml
       - core/reports/source_discrepancy_gate.py
@@ -64,6 +66,7 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=0 --junitxml=p8-p2-e2e.xml
           tests/test_phase8_p2_fivefloor_financial_e2e.py
           tests/test_phase8_p2_multisource_aec_integration.py
+          tests/test_phase8_p2_pr32_a2_source_gate.py
           tests/test_golden_five_storey_building.py
           tests/test_recovery_13_finishes_five_floors.py
           tests/test_phase2_priority4_cad.py::test_entity_binding_review_and_boq_are_real
