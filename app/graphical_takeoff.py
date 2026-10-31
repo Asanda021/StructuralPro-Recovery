@@ -83,7 +83,11 @@ class TakeoffCanvas(QGraphicsView):
 
     def clear_region_selection(self):
         if self._region_overlay is not None:
-            self.scene.removeItem(self._region_overlay)
+            # Async imports can replace self.scene before the old QGraphicsItem
+            # is removed. Always detach from its own living scene.
+            owner_scene = self._region_overlay.scene()
+            if owner_scene is not None:
+                owner_scene.removeItem(self._region_overlay)
             self._region_overlay = None
         self._selected_region_rect = None
 
@@ -725,6 +729,9 @@ class GraphicalTakeoffDialog(QDialog):
             try:
                 n=next(job['steps']);self.status.setText(f"ساخت نمایش نقشه: {n} از {job['document']._entity_count} جزء؛ متره مسدود است");QTimer.singleShot(0,batch)
             except StopIteration:
+                # A Window from the previous DWG/PDF must never leak into a
+                # different source or silently restrict its takeoff.
+                self.canvas.clear_region_selection()
                 if self.engine is not None:self.engine.close()
                 self.engine=None;self.pdf_path=str(path)
                 if self.session.drawing_source!=str(path):
