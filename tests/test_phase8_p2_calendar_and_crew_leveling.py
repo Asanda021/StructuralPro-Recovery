@@ -107,3 +107,31 @@ def test_calendar_persists_when_editing_duration_and_resource_mismatch_shows():
     p=edit_activity(p,"masonry",duration_days=7)
     assert p["scheduled_end_jalali"].startswith("1405/")
     assert next(t for t in p["tasks"] if t["id"]=="masonry")["duration_days"]==7
+
+
+
+def test_real_qt_calendar_and_gantt_editor_apply_1405_dates(tmp_path):
+    import os
+    os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
+    from PySide6.QtWidgets import QApplication
+    from app.drawing_workflow_dialog import DrawingScheduleDialog
+    app=QApplication.instance() or QApplication(["P8P2 calendar acceptance"])
+    state=[new_workflow_plan(drawing_source="demo.dxf",source_sha256="fixture",
+        structure="concrete",disciplines=["architecture"],project_kind="fitout")]
+    window=DrawingScheduleDialog(lambda:state[0],lambda x:state.__setitem__(0,x))
+    try:
+        assert window.calendar_start.objectName()=="WBSJalaliStart"
+        assert window.gantt_view.objectName()=="DrawingRelativeGantt"
+        window.calendar_start.setText("1405/08/09")
+        window.extra_holidays.setText("1405/08/11")
+        window.apply_calendar_button.click()
+        app.processEvents()
+        assert state[0]["calendar"]["start_date"]=="1405/08/09"
+        assert "1405/08/11" in state[0]["calendar"]["additional_site_holidays"]
+        assert state[0]["scheduled_end_jalali"].startswith("1405/")
+        assert window.table.item(0,13).text().startswith("1405/")
+        assert window.table.item(0,14).text().startswith("1405/")
+        assert window.gantt_scene.items()
+    finally:
+        window.close()
+        app.processEvents()
