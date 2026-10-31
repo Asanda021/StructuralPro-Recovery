@@ -5,7 +5,7 @@
   "priority": "P8-P1",
   "recorded_date": "2026-10-31",
   "audit_scope": "Read-only source ancestry, PR branch relations, verified CI source pin, selected source freeze; NOT physical Windows or release acceptance",
-  "audit_status": "AUDIT_COMPLETED_WITH_EXPLICIT_OPEN_RISKS",
+  "audit_status": "COMPLETE_ACCEPTED_FROZEN_SOURCE_SCOPE",
   "release_status": "NO_GO",
   "repository": "Asanda021/StructuralPro-Recovery",
   "main_sha": "9d92fd6236bb2fcaf9a1850a8a26d8a4e03ffe95",
@@ -136,5 +136,25 @@
     "integrated real UAT",
     "separately unmerged fork branch semantic parity"
   ],
-  "percentage_policy": "Keep previously reported 87.5 percent until P8 acceptance is evidenced under an approved method; no numerical credit for an unverified gate"
+  "percentage_policy": "P8P1 is accepted only within scoped Git source-freeze after native 2/2 gate; (7+1/6)/8=89.6% reporting under equal-phase method. Physical UAT and release remain NO_GO.",
+  "p8p1_gate": {
+    "run_id": 41196096480,
+    "run_url": "https://github.com/Asanda021/StructuralPro-Recovery/actions/runs/41196096480",
+    "tested_commit": "6c073265f72966d37fef4170e7df18348f802037",
+    "linux": "PASS",
+    "windows": "PASS",
+    "successful_jobs": 2,
+    "total_jobs": 2,
+    "scope": "read-only source integrity and protected actions only",
+    "original_earlier_incomplete_run_id": 41195981994,
+    "original_earlier_incomplete_run_reason": "audit report was not yet committed at that intermediate SHA; superseded by green final run"
+  },
+  "progress": {
+    "method": "equal-phase reporting (8 phases); 6 equal P8 priorities",
+    "phase8_accepted": 1,
+    "phase8_total": 6,
+    "phase8_percentage": 16.6666667,
+    "overall_percentage": 89.5833333,
+    "release_no_go": true
+  }
 }
