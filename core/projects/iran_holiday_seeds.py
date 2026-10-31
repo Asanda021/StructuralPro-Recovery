@@ -175,7 +175,7 @@ def listed_holidays(year):
     """Returns every named holiday separately; duplicate-date events preserved."""
     if type(year) is not int or year not in YEAR_SOURCE:
         return []
-    status="PUBLISHED_CALENDAR_REVIEWABLE" if year<=1407 else "PREDICTED_LUNAR_NOT_OFFICIAL"
+    status="PUBLISHED_ANNUAL_DATE_REVIEWABLE" if year==1405 else "PREDICTED_LUNAR_NOT_OFFICIAL"
     events=[{"date":f"{year:04d}/{monthday}","name":name,
              "kind":"solar_fixed","status":"FIXED_SOLAR",
              "source":YEAR_SOURCE[year]} for monthday,name in SOLAR_FIXED.items()]
