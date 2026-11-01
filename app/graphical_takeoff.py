@@ -420,6 +420,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.schedule_button.clicked.connect(self.open_live_schedule)
         self.weekly_button=QPushButton("برنامه هفتگی مهندسان")
         self.weekly_button.setObjectName("OpenEngineerWeeklyPlan")
+        self.weekly_button.setEnabled(False)
         self.weekly_button.clicked.connect(self.open_engineer_weekly_plan)
         self.prev = QPushButton("صفحه قبلی")
         self.next = QPushButton("صفحه بعدی")
@@ -933,7 +934,7 @@ class GraphicalTakeoffDialog(QDialog):
                     if isValid(old):old.hide()
                 self.status.setText(
                     "مبنای مالی انتخاب شد؛ متره بدون زمان‌بندی خودکار فعال است؛ "
-                    "برنامه هفتگی مهندسان مستقل در دسترس است"
+                    "برنامه هفتگی مبتنی بر WBS نیز غیرفعال است"
                 )
         dialog.accepted.connect(accepted)
         dialog.show()
@@ -1171,6 +1172,13 @@ class GraphicalTakeoffDialog(QDialog):
             self.source_label.setText(f"منبع: {new_viewer.source_name} | {new_viewer.kind.upper()}")
             self.page_no.setMaximum(max(1, new_viewer.page_count))
             self.load_page(min(restored.current_page, max(1, new_viewer.page_count)))
+            # Restored UI must honor the original opt-in decision. Merely
+            # reopening the source may never enable an unrelated weekly WBS.
+            preferences=getattr(restored,"workflow_preferences",None) or {}
+            auto=bool(preferences.get("automatic_scheduling") and restored.workflow_plan)
+            self.schedule_button.setEnabled(auto)
+            self.weekly_button.setEnabled(auto and bool(restored.supervision_team))
+            self._workflow_prompted_source=str(source)
             self.status.setText(
                 f"🟢 نشست بازیابی شد | نسخه {self.persisted_session_revision} | "
                 f"متره‌ها: {len(restored.items)}"
@@ -3018,9 +3026,11 @@ class GraphicalTakeoffDialog(QDialog):
         self.redo.setEnabled(self.session.can_redo)
         plan=getattr(self.session, "workflow_plan", None)
         preferences=getattr(self.session,"workflow_preferences",None)
-        self.schedule_button.setEnabled(bool(plan) and (
+        auto=bool(plan) and (
             preferences is None or preferences.get("automatic_scheduling",False)
-        ))
+        )
+        self.schedule_button.setEnabled(auto)
+        self.weekly_button.setEnabled(auto and bool(getattr(self.session,"supervision_team",None)))
         if plan:
             from core.drawings.workflow_planning import sync_measured_items
             sync_measured_items(plan, self.session.items)
