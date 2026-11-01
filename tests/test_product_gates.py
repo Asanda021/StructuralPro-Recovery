@@ -28,7 +28,7 @@ def _fake_converter(tmp_path):
             encoding="utf-8",
         )
     else:
-        exe = tmp_path / "fake-dwg2dxf"
+        exe = tmp_path / "fake-cad-transform"
         exe.write_text(
             f'#!/bin/sh\nexec python3 "{helper}" "$1" "$2"\n',
             encoding="utf-8",
