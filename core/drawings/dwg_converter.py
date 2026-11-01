@@ -35,6 +35,17 @@ class DWGConversionError(RuntimeError):
     """Actionable DWG conversion failure exposed to the UI boundary."""
 
 
+class DWGDroppedLineError(DWGConversionError):
+    """Native reader proves the external converter dropped only LINE handles."""
+
+    def __init__(self, missing_count: int):
+        self.missing_count = missing_count
+        super().__init__(
+            f"تبدیل DWG تعداد {missing_count} موجودیت LINE اصلی را حذف کرده است؛ "
+            "فایل ناقص برای متره پذیرفته نشد"
+        )
+
+
 class UnsupportedDWGVersionError(DWGConversionError):
     """DWG header is readable but its version is outside the supported boundary."""
 
@@ -84,6 +95,10 @@ def _independent_source_coverage(source, converted_doc, signature):
     missing=native-converted
     extra=converted-native
     if missing or extra:
+        if missing and not extra and all(kind == "LINE" for _, kind in missing):
+            # This is an exact loss classification, not approval or geometry
+            # synthesis. The caller may try a second strict real DWG decoder.
+            raise DWGDroppedLineError(len(missing))
         raise DWGConversionError(
             f"پوشش موجودیت‌های DWG/DXF برابر نیست؛ {len(missing)} جزء منبع مفقود/تغییرنوع، "
             f"{len(extra)} جزء خروجی بدون تطبیق؛ خروجی برای متره پذیرفته نشد")
