@@ -18,12 +18,12 @@ class Measurement:
 # Avoid consuming the first digit of a dimension as a free-form label.
 # PDF text extractors may concatenate adjacent annotations: "14.00 mL= 12.00 m".
 _DIM_RE = re.compile(
-    r"(?<![\\w.,٫+\\-])"
-    r"(?:(?P<label_assigned>[A-Za-zآ-ی_][A-Za-zآ-ی0-9_\\-]{0,39})\\s*[=:]\\s*"
-    r"|(?P<label>[A-Za-zآ-ی_][A-Za-zآ-ی_\\-]*(?:\\s+[A-Za-zآ-ی_][A-Za-zآ-ی_\\-]*){0,3})\\s+)?"
-    r"(?P<value>\\d+(?:[.,٫]\\d+)?)\\s*"
-    r"(?P<unit>mm|cm|m|میلی[\\s\\u200c]?متر|سانتی?[\\s\\u200c]?متر|سانت|متر)"
-    r"(?:(?!\\w)|(?=[A-Za-z][=:]))",
+    r"(?<![\w.,٫+\-])"
+    r"(?:(?P<label_assigned>[A-Za-zآ-ی_][A-Za-zآ-ی0-9_\-]{0,39})\s*[=:]\s*"
+    r"|(?P<label>[A-Za-zآ-ی_][A-Za-zآ-ی_\-]*(?:\s+[A-Za-zآ-ی_][A-Za-zآ-ی_\-]*){0,3})\s+)?"
+    r"(?P<value>\d+(?:[.,٫]\d+)?)\s*"
+    r"(?P<unit>mm|cm|m|میلی[\s\u200c]?متر|سانتی?[\s\u200c]?متر|سانت|متر)"
+    r"(?:(?!\w)|(?=[A-Za-z][=:]))",
     re.I,
 )
 
@@ -119,7 +119,7 @@ class PDFTakeoffAdapter:
         for page in pages:
             for m in _DIM_RE.finditer(page.text):
                 value = float(m.group("value").replace(",", ".").replace("٫", "."))
-                unit = re.sub(r"[\\s\\u200c]", "", m.group("unit").lower())
+                unit = re.sub(r"[\s\u200c]", "", m.group("unit").lower())
                 if unit in ("mm", "میلیمتر"):
                     value /= 1000
                 elif unit in ("cm", "سانت", "سانتیمتر", "سانتمتر"):
