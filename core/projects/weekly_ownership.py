@@ -172,6 +172,9 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
             "linked_item_ids":sorted(map(str,activity.get("linked_item_ids",[]))),
             "quantity_multiplier_evidence":activity.get("quantity_multiplier_evidence"),
             "discipline":trade,
+            "assigned_supervisor":person_id,
+            "supervisor_name":next(p["name"] for p in team["people"]
+                                   if p["id"]==person_id),
             "checklist":list(daily_checklist(activity,trade)),
         }
         for day in dates:
