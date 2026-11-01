@@ -257,3 +257,23 @@ def test_reassigning_trade_flags_orphaned_signed_checks_from_original_supervisor
                    for item in out["plans"][0]["days"][0]["work_items"])
     assert any(item["activity_id"]=="wiring"
                for item in out["plans"][1]["days"][0]["work_items"])
+
+
+def test_renaming_responsible_supervisor_revokes_previous_signatures():
+    group=recommended_team(["مهندس احمدی"])
+    data=_project()
+    weeks=derive_weeks(group,data,"1405/08/09",[],"sha")["plans"]
+    row=next(item for item in weeks[0]["days"][0]["work_items"]
+             if item["activity_id"]=="foundation_rebar")
+    approved=check_week_item(
+        weeks,"supervisor-1","1405/08/09","1405/08/09",
+        row["id"],"check-1",done=True,operator="مهندس احمدی"
+    )
+    replacement=recommended_team(["مهندس رضایی"])
+    updated=derive_weeks(replacement,data,"1405/08/09",approved,"sha")
+    assert row["id"] in updated["invalidated_signed_checks"]
+    assert weekly_summary(updated["plans"],"supervisor-1","1405/08/09")["checked_count"]==0
+    first=next(item for item in updated["plans"][0]["days"][0]["work_items"]
+               if item["activity_id"]=="foundation_rebar")
+    assert first["schedule_snapshot"]["supervisor_name"]=="مهندس رضایی"
+    assert first["status"]=="planned"
