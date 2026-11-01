@@ -666,6 +666,26 @@ class GraphicalTakeoffDialog(QDialog):
         else:
             for c,v in getattr(self,'_cad_enabled',{}).items():c.setEnabled(v)
             self.canvas.setEnabled(True)
+            self._apply_source_measurement_controls()
+
+    def _apply_source_measurement_controls(self):
+        """Busy-state restoration cannot grant a new source more capability.
+
+        Recompute from the installed source both when entering a read-only DWG
+        and when reopening a payable DXF after that preview. Cached old widget
+        states are not an engineering permission model.
+        """
+        if self.cad_loading:return
+        model_view=self.viewer.kind=='ifc' or (
+            self.viewer.kind=='cad' and self.cad_document is not None
+            and self.cad_document.format=='DWG_NATIVE_READONLY_PREVIEW')
+        self.canvas.read_only_model=model_view
+        for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.export_boq):
+            control.setEnabled(not model_view)
+        for control in (self.cad_measure,self.cad_review):
+            control.setEnabled(self.viewer.kind=='cad' and not model_view)
+        self.commit_boq_button.setEnabled(not model_view and self.app_service is not None)
+        self.region_to_roof.setEnabled(self.viewer.kind=='pdf' and self.app_service is not None)
 
     def cancel_cad_loading(self):
         job=self._cad_job
@@ -3046,3 +3066,4 @@ class GraphicalTakeoffDialog(QDialog):
             window=self._workflow_schedule_dialog
             if window is not None and window.isVisible():
                 window.refresh()
+        self._apply_source_measurement_controls()

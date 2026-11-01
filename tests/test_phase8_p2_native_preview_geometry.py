@@ -141,3 +141,39 @@ def test_boundary_only_solid_does_not_claim_complete_filled_fidelity(tmp_path,mo
     doc=preview(tmp_path,monkeypatch,[obj("SOLID",points=[(0,0),(1,0),(0,1),(1,1)])])
     assert cad_coverage_report(doc)["not_drawn_count"]==0
     assert cad_coverage_report(doc)["complete_visual_fidelity"] is False
+
+
+@pytest.mark.parametrize("reopen_payable", [False, True])
+def test_async_busy_restore_respects_actual_new_source_capability(tmp_path,monkeypatch,reopen_payable):
+    os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from core.drawings.dwg_takeoff import DWGDocument
+    from core.platform.application import StructuralProApp
+    app=QApplication.instance() or QApplication([])
+    service=StructuralProApp(tmp_path/'projects')
+    dialog=GraphicalTakeoffDialog(app_service=service)
+    try:
+        # Reproduce completion/cancel control restoration, using a synthetic
+        # decoded source boundary. Real DWG/strict import is covered separately.
+        dialog._cad_busy(True)
+        dialog.viewer.kind='cad';dialog.viewer.path=tmp_path/'source.dwg'
+        dialog.cad_document=DWGDocument(format='DWG_NATIVE_READONLY_PREVIEW')
+        dialog.canvas.read_only_model=True
+        for button in (dialog.cad_measure,dialog.cad_review,dialog.commit_boq_button):button.setEnabled(False)
+        dialog._cad_busy(False)
+        dialog.refresh()
+        assert not dialog.cad_measure.isEnabled()
+        assert not dialog.cad_review.isEnabled()
+        assert not dialog.commit_boq_button.isEnabled()
+        assert not dialog.mode.isEnabled()
+        if reopen_payable:
+            dialog._cad_busy(True)
+            dialog.cad_document=DWGDocument(format='DXF',units='m')
+            dialog.canvas.read_only_model=False
+            dialog._cad_busy(False)
+            assert dialog.cad_measure.isEnabled()
+            assert dialog.cad_review.isEnabled()
+            assert dialog.commit_boq_button.isEnabled()
+    finally:
+        dialog.close();dialog.deleteLater();app.processEvents()
