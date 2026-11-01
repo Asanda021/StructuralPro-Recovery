@@ -73,6 +73,7 @@ def setup_import(tmp_path, monkeypatch, *, verified=True, strict_available=True)
         output=out, output_sha256=sha256(out.read_bytes()).hexdigest(),
         source_sha256=original, source_unit="m",
         source_modelspace_verified=verified, line_geometry_verified_count=8,
+        source_handle_remaps=(),
         line_layer_verified_count=8, skipped_entities=0,
         written_entities=8, total_entities=8)
     monkeypatch.setattr(external, "ACadSharpDWGProvider", lambda: SimpleNamespace(available=False))
@@ -152,3 +153,45 @@ def test_first_decoder_classifies_exact_eight_missing_line_handles(tmp_path, mon
         OfflineDWGConverter("dwg2dxf").convert(source, real_dxf.parent)
     assert failure.value.missing_count == 8
     assert not real_dxf.exists()
+
+
+def test_unique_native_line_handle_remap_preserves_auditable_provenance():
+    native, _ = sample_roster(count=1)
+    d = ezdxf.new("R2018")
+    d.layers.new("SOURCE-WALL")
+    d.modelspace().add_line(
+        (0.0, 2.0, 0.0), (3.0, 6.0, 1.0),
+        dxfattribs={"handle": "2F", "layer": "SOURCE-WALL"})
+    proof = _validate_native_entity_roster(native, d)
+    assert proof["source_entity_mapping_verified"] is True
+    assert proof["handle_type_roster_matched"] is False
+    assert proof["line_geometry_verified"] == 1
+    assert proof["source_handle_remaps"] == (("F100", "2F"),)
+
+
+def test_unmatched_renumbered_line_never_receives_false_approval():
+    native, _ = sample_roster(count=1)
+    d = ezdxf.new("R2018")
+    d.layers.new("SOURCE-WALL")
+    d.modelspace().add_line(
+        (0.0, 2.0, 0.0), (99.0, 6.0, 1.0),
+        dxfattribs={"handle": "2F", "layer": "SOURCE-WALL"})
+    with pytest.raises(StrictPythonDWGError, match="Unverifiable|ambiguous"):
+        _validate_native_entity_roster(native, d)
+
+
+def test_duplicate_identical_geometry_cannot_prove_unique_handle_remap():
+    native, _ = sample_roster(count=2)
+    # Both original source objects have identical dimensions/layers, so
+    # swapping handles between two identical DXF lines is not auditable.
+    raw_lines = list(native.modelspace().iter_entities())
+    raw_lines[1].dxf["start"] = raw_lines[0].dxf["start"]
+    raw_lines[1].dxf["end"] = raw_lines[0].dxf["end"]
+    d = ezdxf.new("R2018")
+    d.layers.new("SOURCE-WALL")
+    for handle in ("2F", "30"):
+        d.modelspace().add_line(
+            (0.0, 2.0, 0.0), (3.0, 6.0, 1.0),
+            dxfattribs={"handle": handle, "layer": "SOURCE-WALL"})
+    with pytest.raises(StrictPythonDWGError, match="Unverifiable|ambiguous"):
+        _validate_native_entity_roster(native, d)
