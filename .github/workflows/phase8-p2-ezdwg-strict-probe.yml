@@ -54,6 +54,8 @@ jobs:
           path: public-reader-wheel/*.whl
           if-no-files-found: error
           retention-days: 3
+      - name: Test 8-LINE drop recovery against strict native source modelspace
+        run: python -m pytest -q tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py tests/test_phase8_p2_external_converter_coverage.py
       - name: Decode external AC1015, strict convert, run StructuralPro CAD engine
         run: python -m scripts.phase8_p2_ezdwg_strict_probe --output p8p2-ezdwg-strict-public-dwg-evidence.json
       - if: always()
