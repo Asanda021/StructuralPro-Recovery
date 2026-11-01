@@ -576,6 +576,30 @@ class DrawingTakeoffSession:
         session.workflow_preferences=deepcopy(data.get("workflow_preferences"))
         session.engineer_weekly_plans=deepcopy(data.get("engineer_weekly_plans",[]))
         session.supervision_team=deepcopy(data.get("supervision_team"))
+        if session.supervision_team is not None:
+            from core.projects.weekly_ownership import define_team, TRADES
+            assignment=session.supervision_team
+            if not isinstance(assignment,dict):
+                raise ValueError("ساختار سرپرستی در نشست معتبر نیست")
+            people=assignment.get("people")
+            owners=assignment.get("owners")
+            if (not isinstance(people,list) or
+                    not isinstance(owners,dict) or
+                    not 1<=len(people)<=4 or
+                    assignment.get("count")!=len(people) or
+                    set(owners)!=set(TRADES)):
+                raise ValueError("تعداد یا مسئولیت سرپرستان ذخیره‌شده نادرست است")
+            try:
+                rebuilt=define_team(
+                    [person["name"] for person in people],
+                    {trade:int(owners[trade].rsplit("-",1)[1])-1 for trade in TRADES},
+                )
+            except (KeyError,ValueError,TypeError,AttributeError,IndexError) as exc:
+                raise ValueError("رشته‌های مسئولیت سرپرستان نامعتبرند") from exc
+            if (rebuilt["people"]!=people or
+                    rebuilt["owners"]!=owners or
+                    rebuilt["mode"]!=assignment.get("mode")):
+                raise ValueError("شناسه و مسئولیت سرپرستان با جدول ذخیره‌شده تطبیق ندارد")
         if not isinstance(session.engineer_weekly_plans,list) or len(session.engineer_weekly_plans)>1000:
             raise ValueError("برنامه‌های هفتگی مهندسان معتبر نیست")
         if session.workflow_preferences is not None:
