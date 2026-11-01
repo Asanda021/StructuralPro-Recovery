@@ -297,7 +297,7 @@ def test_project_session_restores_supervisor_assignments_but_rejects_tampering()
     assert restored.supervision_team==session.supervision_team
     fraud=deepcopy(data)
     fraud["supervision_team"]["owners"]["electrical"]="supervisor-2"
-    with pytest.raises(ValueError,match="تطبیق"):
+    with pytest.raises(ValueError,match="نامعتبر"):
         DrawingTakeoffSession.from_dict(fraud)
     fake=deepcopy(data)
     fake["supervision_team"]["people"][1]["name"]=""
