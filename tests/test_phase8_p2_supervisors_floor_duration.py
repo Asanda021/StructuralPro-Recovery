@@ -233,7 +233,14 @@ def test_signed_weekly_check_is_revoked_if_takeoff_quantity_changes_without_date
     plan["tasks"][0]["scheduled_quantity"]="20"  # same dates, changed work volume
     regenerated=derive_weeks(team,plan,"1405/08/09",amended,"sha")
     assert inspection["id"] in regenerated["invalidated_signed_checks"]
+    audit=regenerated["plans"][0]["invalidated_inspection_history"]
+    assert len(audit)==1
+    assert audit[0]["old_signed_record"]["checklist"][0]["checked_by"]=="مهندس ناظر"
+    assert audit[0]["old_signed_record"]["schedule_snapshot"]["scheduled_quantity"]=="10"
+    assert audit[0]["reason"]=="CHANGED_SOURCE_QUANTITY_OWNER_OR_WBS"
     assert weekly_summary(regenerated["plans"],"supervisor-1","1405/08/09")["checked_count"]==0
+    unchanged=derive_weeks(team,plan,"1405/08/09",regenerated["plans"],"sha")["plans"]
+    assert len(unchanged[0]["invalidated_inspection_history"])==1
     repl=next(item for item in regenerated["plans"][0]["days"][0]["work_items"]
               if item["activity_id"]=="foundation_rebar")
     assert repl["schedule_snapshot"]["scheduled_quantity"]=="20"
@@ -253,6 +260,7 @@ def test_reassigning_trade_flags_orphaned_signed_checks_from_original_supervisor
         {"structure":0,"architecture":0,"mechanical":1,"electrical":1})
     out=derive_weeks(reassigned,plan,"1405/08/09",weeks,"sha")
     assert x["id"] in out["invalidated_signed_checks"]
+    assert out["plans"][0]["invalidated_inspection_history"][0]["reason"]=="REMOVED_OR_REASSIGNED_FROM_MASTER_WBS"
     assert not any(item["activity_id"]=="wiring"
                    for item in out["plans"][0]["days"][0]["work_items"])
     assert any(item["activity_id"]=="wiring"
