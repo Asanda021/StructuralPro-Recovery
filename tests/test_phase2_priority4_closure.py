@@ -193,7 +193,7 @@ def test_array_and_block_fail_closed(tmp_path,fault):
  if fault=='cycle':b.add_blockref('B',(0,0))
  if fault=='xref':b.block.dxf.flags=4;b.block.dxf.xref_path='missing.dwg'
  attr={'row_count':2,'column_count':2,'row_spacing':-1 if fault=='spacing' else 5,'column_spacing':5}
- if fault=='too_many':attr.update(row_count=501,column_count=501)
+ if fault=='too_many':attr.update(row_count=1001,column_count=1001)
  root=d.modelspace().add_blockref('B',(0,0),dxfattribs=attr);p=tmp_path/'array.dxf';d.saveas(p)
  if fault in {'spacing','cycle','too_many'}:
   with pytest.raises(RuntimeError):DWGTakeoffEngine.with_array_support().import_file(p)
@@ -310,7 +310,7 @@ def test_native_capability_report_has_persian_blocking_reason(tmp_path):
   def inspect():
    modal=app.activeModalWidget()
    try:
-    table=modal.findChild(QTableWidget);assert table.rowCount()==1;assert 'HATCH' in table.item(0,0).text() and 'پشتیبانی' in table.item(0,2).text()
+    tables=modal.findChildren(QTableWidget);assert any(table.rowCount()==1 and table.columnCount()==3 and 'HATCH' in table.item(0,0).text() and 'پشتیبانی' in table.item(0,2).text() for table in tables)
    except Exception as exc:errors.append(str(exc))
    finally:modal.accept()
   QTimer.singleShot(20,inspect);QTest.mouseClick(w.cad_report,Qt.LeftButton);assert not errors
