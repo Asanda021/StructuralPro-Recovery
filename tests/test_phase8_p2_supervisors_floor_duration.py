@@ -215,3 +215,45 @@ def test_real_qt_cad_intake_assigns_supervisors_and_derives_week_from_wbs(tmp_pa
     finally:
         window.close()
         app.processEvents()
+
+
+def test_signed_weekly_check_is_revoked_if_takeoff_quantity_changes_without_date_change():
+    team=recommended_team(["مهندس کل"])
+    plan=_project()
+    plan["tasks"][0]["scheduled_quantity"]="10"
+    plan["tasks"][0]["linked_item_ids"]=["item-A"]
+    weeks=derive_weeks(team,plan,"1405/08/09",[],"sha")["plans"]
+    inspection=next(item for item in weeks[0]["days"][0]["work_items"]
+                    if item["activity_id"]=="foundation_rebar")
+    amended=check_week_item(
+        weeks,"supervisor-1","1405/08/09","1405/08/09",
+        inspection["id"],"check-1",done=True,operator="مهندس ناظر",
+    )
+    assert weekly_summary(amended,"supervisor-1","1405/08/09")["checked_count"]==1
+    plan["tasks"][0]["scheduled_quantity"]="20"  # same dates, changed work volume
+    regenerated=derive_weeks(team,plan,"1405/08/09",amended,"sha")
+    assert inspection["id"] in regenerated["invalidated_signed_checks"]
+    assert weekly_summary(regenerated["plans"],"supervisor-1","1405/08/09")["checked_count"]==0
+    repl=next(item for item in regenerated["plans"][0]["days"][0]["work_items"]
+              if item["activity_id"]=="foundation_rebar")
+    assert repl["schedule_snapshot"]["scheduled_quantity"]=="20"
+    assert not repl["checklist"][0]["done"]
+    assert repl["status"]=="planned"
+
+
+def test_reassigning_trade_flags_orphaned_signed_checks_from_original_supervisor():
+    old=recommended_team(["سرپرست همه"])
+    plan=_project()
+    weeks=derive_weeks(old,plan,"1405/08/09",[],"sha")["plans"]
+    x=next(item for item in weeks[0]["days"][0]["work_items"]
+           if item["activity_id"]=="wiring")
+    weeks=check_week_item(weeks,"supervisor-1","1405/08/09","1405/08/09",
+        x["id"],"check-1",done=True,operator="ناظر")
+    reassigned=define_team(["مهندس ۱","مهندس ۲"],
+        {"structure":0,"architecture":0,"mechanical":1,"electrical":1})
+    out=derive_weeks(reassigned,plan,"1405/08/09",weeks,"sha")
+    assert x["id"] in out["invalidated_signed_checks"]
+    assert not any(item["activity_id"]=="wiring"
+                   for item in out["plans"][0]["days"][0]["work_items"])
+    assert any(item["activity_id"]=="wiring"
+               for item in out["plans"][1]["days"][0]["work_items"])
