@@ -159,9 +159,21 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
                   and w["week_start"]==first)
         begin=jalali_to_gregorian(activity["start_jalali"])
         finish=jalali_to_gregorian(activity["finish_jalali"])
-        stamp={"activity_id":str(activity["id"]),"title":activity.get("title",""),"start":activity["start_jalali"],
-               "finish":activity["finish_jalali"],
-               "duration":activity["duration_days"]}
+        # A changed measured quantity, source reference or task title can
+        # invalidate a signed site inspection even when the duration and
+        # schedule dates remain identical.
+        stamp={
+            "activity_id":str(activity["id"]),
+            "title":activity.get("title",""),
+            "start":activity["start_jalali"],
+            "finish":activity["finish_jalali"],
+            "duration":activity["duration_days"],
+            "scheduled_quantity":activity.get("scheduled_quantity"),
+            "linked_item_ids":sorted(map(str,activity.get("linked_item_ids",[]))),
+            "quantity_multiplier_evidence":activity.get("quantity_multiplier_evidence"),
+            "discipline":trade,
+            "checklist":list(daily_checklist(activity,trade)),
+        }
         for day in dates:
             dt=jalali_to_gregorian(day)
             if not begin<=dt<=finish or not _working(day,plan["calendar"]):
@@ -190,7 +202,11 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
                  "origin":"schedule_generated","schedule_snapshot":stamp,
                  "review_required":not bool(plan.get("calendar_approved"))}
             if old:
-                if old["status"]=="done" and not same:changed.append(uid)
+                if not same and (
+                    old.get("status")=="done" or
+                    any(x.get("done") for x in old.get("checklist",[]))
+                ):
+                    changed.append(uid)
                 day_row["work_items"].remove(old)
             day_row["work_items"].append(row)
     for week in result:
