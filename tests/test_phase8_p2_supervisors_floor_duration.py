@@ -285,3 +285,21 @@ def test_renaming_responsible_supervisor_revokes_previous_signatures():
                if item["activity_id"]=="foundation_rebar")
     assert first["schedule_snapshot"]["supervisor_name"]=="مهندس رضایی"
     assert first["status"]=="planned"
+
+
+def test_project_session_restores_supervisor_assignments_but_rejects_tampering():
+    from copy import deepcopy
+    from core.drawings.takeoff_session import DrawingTakeoffSession
+    session=DrawingTakeoffSession()
+    session.supervision_team=recommended_team(["سازه","معماری","مکانیک","برق"])
+    data=session.to_dict()
+    restored=DrawingTakeoffSession.from_dict(data)
+    assert restored.supervision_team==session.supervision_team
+    fraud=deepcopy(data)
+    fraud["supervision_team"]["owners"]["electrical"]="supervisor-2"
+    with pytest.raises(ValueError,match="تطبیق"):
+        DrawingTakeoffSession.from_dict(fraud)
+    fake=deepcopy(data)
+    fake["supervision_team"]["people"][1]["name"]=""
+    with pytest.raises(ValueError):
+        DrawingTakeoffSession.from_dict(fake)
