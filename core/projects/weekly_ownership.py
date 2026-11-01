@@ -147,6 +147,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
     active=set()
     uncovered=[]
     changed=[]
+    revoked=[]  # Preserve old signatures for human review/audit.
     for activity in plan.get("tasks",[]):
         if activity.get("duration_days",0)<=0 or not activity.get("start_jalali"):
             continue
@@ -210,6 +211,11 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
                     any(x.get("done") for x in old.get("checklist",[]))
                 ):
                     changed.append(uid)
+                    revoked.append({
+                        "engineer_id":week["engineer_id"],
+                        "date":day,"old_signed_record":deepcopy(old),
+                        "reason":"CHANGED_SOURCE_QUANTITY_OWNER_OR_WBS",
+                    })
                 day_row["work_items"].remove(old)
             day_row["work_items"].append(row)
     for week in result:
@@ -227,8 +233,26 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
                         and (item.get("status")=="done" or
                              any(check.get("done") for check in item.get("checklist",[])))):
                     changed.append(item["id"])
+                    revoked.append({
+                        "engineer_id":week["engineer_id"],
+                        "date":day["jalali"],
+                        "old_signed_record":deepcopy(item),
+                        "reason":"REMOVED_OR_REASSIGNED_FROM_MASTER_WBS",
+                    })
             day["work_items"]=[item for item in day["work_items"]
                 if item.get("origin")!="schedule_generated" or item["id"] in active]
+    # Signatures are never silently discarded. The previous inspected work
+    # stays in an append-only, source-bound review queue on the saved week.
+    for entry in revoked:
+        for week in result:
+            if week.get("engineer_id")!=entry["engineer_id"] or week.get("week_start")!=first:
+                continue
+            from json import dumps
+            fingerprint=sha256(dumps(entry,sort_keys=True,ensure_ascii=False).encode("utf-8")).hexdigest()
+            history=week.setdefault("invalidated_inspection_history",[])
+            if not any(row.get("fingerprint")==fingerprint for row in history):
+                history.append({"fingerprint":fingerprint,**entry})
+            break
     return {"plans":result,"week_start":first,"unassigned_wbs":sorted(set(uncovered)),
             "invalidated_signed_checks":sorted(set(changed)),
             "status":"SOURCE_DERIVED_DRAFT"}
