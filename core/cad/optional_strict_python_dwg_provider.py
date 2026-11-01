@@ -64,7 +64,9 @@ def _validate_native_entity_roster(native_document, converted_document) -> dict:
         extra = dest_types - source_types
         raise StrictPythonDWGError(
             f"Strict DWG conversion lost/retyped source identities; "
-            f"missing={len(missing)} extra={len(extra)}")
+            f"missing={len(missing)} extra={len(extra)} "
+            f"native_examples={sorted(missing)[:3]!r} "
+            f"dxf_examples={sorted(extra)[:3]!r}")
     def xyz(value):
         if value is None:
             raise StrictPythonDWGError("DWG LINE endpoint is missing")
