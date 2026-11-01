@@ -21,10 +21,10 @@ def _fake_converter(tmp_path):
         encoding="utf-8",
     )
     if os.name == "nt":
-        exe = tmp_path / "dwg2dxf.cmd"
+        exe = tmp_path / "fake-cad-transform.cmd"
         exe.write_text(f'@echo off\r\npython "{helper}" "%~1" "%~2"\r\n', encoding="utf-8")
     else:
-        exe = tmp_path / "dwg2dxf"
+        exe = tmp_path / "fake-cad-transform"
         exe.write_text(f'#!/bin/sh\nexec python3 "{helper}" "$1" "$2"\n', encoding="utf-8")
         exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
     return exe
