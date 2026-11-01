@@ -341,6 +341,7 @@ class DrawingScheduleDialog(QDialog):
         self.get_plan = get_plan
         self.on_edit = on_edit
         self._rendering = False
+        self._schedule_export_worker = None
         layout = QVBoxLayout(self)
         self.note = QLabel()
         self.note.setWordWrap(True)
@@ -390,12 +391,47 @@ class DrawingScheduleDialog(QDialog):
         layout.addWidget(self.gantt_view)
         bar = QHBoxLayout()
         self.total = QLabel()
+        self.export_bundle_button = QPushButton("خروجی پیش‌نویس PDF و Excel + گانت")
+        self.export_bundle_button.setObjectName("ExportDrawingScheduleBundle")
+        self.export_bundle_button.clicked.connect(self._export_bundle)
+        self.cancel_export_button = QPushButton("لغو خروجی")
+        self.cancel_export_button.setObjectName("CancelDrawingScheduleExport")
+        self.cancel_export_button.clicked.connect(self._cancel_export)
+        self.cancel_export_button.hide()
         self.close_button = QPushButton("بستن پنجره (برنامه در نشست محفوظ است)")
         self.close_button.clicked.connect(self.hide)
         bar.addWidget(self.total)
+        bar.addWidget(self.export_bundle_button)
+        bar.addWidget(self.cancel_export_button)
         bar.addWidget(self.close_button)
         layout.addLayout(bar)
         self.refresh()
+
+    def _export_bundle(self):
+        """Publish one source-checked draft bundle without changing the plan."""
+        from pathlib import Path
+        from uuid import uuid4
+        from app.drawing_schedule_export_worker import schedule_export_controller
+        if self._schedule_export_worker is not None:return
+        folder=QFileDialog.getExistingDirectory(self,"پوشه خروجی زمان‌بندی پیشنهادی")
+        if not folder:return
+        destination=Path(folder)/("StructuralPro_Schedule_"+uuid4().hex[:10])
+        try:
+            self._schedule_export_worker=schedule_export_controller().start(self,self.get_plan(),destination)
+        except Exception as exc:
+            QMessageBox.warning(self,"خروجی زمان‌بندی ساخته نشد",str(exc))
+            return
+        self.export_bundle_button.setEnabled(False)
+        self.cancel_export_button.show()
+        self.note.setText("ساخت خروجی در حال انجام است؛ لغو در پایان نوشتن فایل جاری اعمال می‌شود")
+
+    def _export_progress(self,message):
+        self.note.setText(message+"؛ نسخه منبع و برنامه پیش از ثبت دوباره کنترل می‌شود")
+
+    def _cancel_export(self):
+        if self._schedule_export_worker is not None:
+            self._schedule_export_worker.cancel()
+            self.note.setText("لغو درخواست شد؛ خروجی پس از پایان نوشتن فایل جاری کنار گذاشته می‌شود")
 
     @staticmethod
     def _quantity_text(task):

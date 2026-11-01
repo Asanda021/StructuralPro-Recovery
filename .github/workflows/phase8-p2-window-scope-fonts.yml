@@ -4,6 +4,12 @@ on:
     branches: [test/phase8-p2-engineering-e2e-20261031]
     paths:
       - core/drawings/viewport_tools.py
+      - core/reports/drawing_schedule_report.py
+      - app/drawing_schedule_export_worker.py
+      - tests/test_phase8_p2_native_preview_geometry.py
+      - tests/test_phase8_p2_converter_failure_cleanup.py
+      - tests/test_phase8_p2_schedule_saved_review_integrity.py
+      - tests/test_phase8_p2_drawing_schedule_export.py
       - core/drawings/native_dwg_preview.py
       - core/cad/persian_text_v1.py
       - core/drawings/dwg_takeoff.py
@@ -64,7 +70,7 @@ jobs:
     env:
       PYTHONPATH: .
       PYTHONUTF8: '1'
-      QT_QPA_PLATFORM: offscreen
+      QT_QPA_PLATFORM: ${{ matrix.os == 'windows-2022' && 'windows' || 'offscreen' }}
     steps:
       - run: git config --global core.autocrlf false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -80,7 +86,7 @@ jobs:
       - name: Install Windows product dependencies with pinned ready-made DWG reader
         run: python -m pip install -q -r requirements.txt
       - name: Qt drag rectangle and scoped quantity policy
-        run: python -m pytest -q tests/test_phase8_p2_window_scope_fonts.py tests/test_phase8_p2_autocad2027_large_cad.py tests/test_phase8_p2_drawing_workflow_schedule.py tests/test_phase8_p2_productivity_and_statement_modes.py tests/test_phase8_p2_calendar_and_crew_leveling.py tests/test_phase8_p2_productivity_evidence.py tests/test_phase8_p2_engineer_weeks_optional_schedule.py tests/test_phase8_p2_supervisors_floor_duration.py tests/test_viewport_tools.py tests/test_persian_cad_text_v1.py tests/test_graphical_workflow.py::test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired tests/test_phase1_5_import_hardening.py --junitxml=p8p2-window-scope-junit.xml
+        run: python -m pytest -q tests/test_phase8_p2_native_preview_geometry.py tests/test_phase8_p2_converter_failure_cleanup.py tests/test_phase8_p2_schedule_saved_review_integrity.py tests/test_phase8_p2_drawing_schedule_export.py tests/test_phase8_p2_window_scope_fonts.py tests/test_phase8_p2_autocad2027_large_cad.py tests/test_phase8_p2_drawing_workflow_schedule.py tests/test_phase8_p2_productivity_and_statement_modes.py tests/test_phase8_p2_calendar_and_crew_leveling.py tests/test_phase8_p2_productivity_evidence.py tests/test_phase8_p2_engineer_weeks_optional_schedule.py tests/test_phase8_p2_supervisors_floor_duration.py tests/test_viewport_tools.py tests/test_persian_cad_text_v1.py tests/test_graphical_workflow.py::test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired tests/test_phase1_5_import_hardening.py --junitxml=p8p2-window-scope-junit.xml
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

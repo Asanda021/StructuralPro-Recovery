@@ -1470,7 +1470,16 @@ class GraphicalTakeoffDialog(QDialog):
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):
                 a,b=d["start"],d["end"]
                 item=self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
-            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC", "SPLINE", "ELLIPSE"} and len(d.get("display_points", d.get("points",[])))>=2:
+            elif entity.entity_type=="HATCH" and d.get("display_paths"):
+                # One selectable source handle, several disconnected rings.
+                # Do not join holes to the outside boundary or imply area.
+                path=QPainterPath()
+                for ring in d["display_paths"]:
+                    if len(ring)<2:continue
+                    path.moveTo(sx(ring[0][0]),sy(ring[0][1]))
+                    for x,y in ring[1:]:path.lineTo(sx(x),sy(y))
+                item=self.canvas.scene.addPath(path,pen)
+            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC", "SPLINE", "ELLIPSE", "SOLID"} and len(d.get("display_points", d.get("points",[])))>=2:
                 pts=[QPointF(sx(x),sy(y)) for x,y in d.get("display_points", d.get("points",[]))]
                 path = QPainterPath(pts[0])
                 for point in pts[1:]:

@@ -622,7 +622,15 @@ class DrawingTakeoffSession:
                     or session.workflow_plan.get("drawing_source") != str(data.get("drawing_source", ""))
                     or session.workflow_plan.get("source_sha256") != str(data.get("source_sha256", ""))):
                 raise ValueError("پیش‌نویس زمان‌بندی با منبع/نسخه نشست نقشه منطبق نیست")
-            recompute_schedule(session.workflow_plan)
+            if session.workflow_plan.get("resource_leveling_status") == "PROPOSED_UNAPPROVED":
+                # Rebuild, rather than trust saved offsets or erase a reviewed
+                # capacity scenario by rerunning unconstrained PDM on reload.
+                from core.drawings.workflow_planning import apply_resource_limits
+                session.workflow_plan = apply_resource_limits(
+                    session.workflow_plan, session.workflow_plan.get("resource_limits"), level=True)
+                session.workflow_plan["resource_conflicts"] = []
+            else:
+                recompute_schedule(session.workflow_plan)
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
         session.source_sha256 = str(data.get("source_sha256", ""))

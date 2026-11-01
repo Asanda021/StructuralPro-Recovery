@@ -12,9 +12,9 @@
 |---|---|---|---|---|
 | C01 | بازکردن DWG واقعی و فرمت‌های قدیمی از جمله AC1018 | `dwg_converter.py`, `native_dwg_preview.py`, تست paired-public | ناقص | بازکردن و متره ردیف‌به‌ردیف `naghshe ha.dwg` با SHA ثابت، نه فایل مصنوعی |
 | C02 | AutoCAD تا ۲۰۲۷ | `AC1032` و تست امضای سرآیند | ناقص | تست DWG واقعی ۲۰۲۷ + ارجاع به Entityهای CAD |
-| C03 | همه اجزای نقشه، بلوک/XREF/HATCH/DIM/3D/AEC/MEP/Proxy | `cad_large_scene.cad_coverage_report`, شمارش unsupported؛ متره بسیاری از انواع رد می‌شود | **باز** | گزارش مستقل شمار کل منبع، کل نمایش‌یافته، حل ارجاعات/فونت/Proxy، مقدار دقیق در موارد قابل متره |
+| C03 | همه اجزای نقشه، بلوک/XREF/HATCH/DIM/3D/AEC/MEP/Proxy | `cad_large_scene.cad_coverage_report/details`؛ تفکیک disjoint DRAWABLE/HIDDEN/UNSUPPORTED/FAILED؛ native ARC/bulge/SPLINE و مرز HATCH/SOLID به canvas می‌رسد | **ناقص؛ شمار decoder مستقل از اصل احراز نشده** | شمار مستقل منبع و حل Block/XREF/Proxy/فونت؛ مرز هاشور/توپر جای fill و مقدار مصوب نیست |
 | C04 | نقشه دارای تعداد بسیار زیاد آیتم بدون هنگ | index stream، Worker جدا، cap صریح ۱میلیون entity/۱۰۰MiB پیش‌نمایش؛ آزمون synthetic ۱۲۵هزار/۲۵۰۰۰۱ | ناقص | benchmark واقعی Windows روی ۱میلیون جزء، memory/time/cancel/search/zoom، بدون حذف |
-| C05 | متن فارسی و انگلیسی CAD، فونت سازگار | `persian_text_v1.py`, DXF source_text، آزمون Unicode | ناقص | legacy custom SHX و codepage با فونت/نقشه منبع؛ عدم جعل گلیف |
+| C05 | متن فارسی و انگلیسی CAD، فونت سازگار | `persian_text_v1.py`، حفظ source_text در DXF و native DWG؛ DIMENSION در text_midpoint منبع، نه insert صفر | ناقص | legacy custom SHX و codepage با فونت/نقشه منبع؛ عدم جعل گلیف |
 | C06 | Window Zoom و مستطیل محدوده متره | `TakeoffCanvas`, `viewport_tools.py`, Qt tests | پیاده‌سازی/آزمون هدفمند | پذیرش اصل نقشه و تراکم بالا روی Windows |
 | C07 | متره فقط قسمتی از نقشه، نه تمام پلان | scoped entity whole-inside؛ crossing/outside blocked | ناقص | clip و quantity مستند اعضای عبوری از Window، یا انتخاب مستقل زیرعضو |
 | C08 | متره هوشمند و نقشه→BOQ/برآورد واقعی | `DWGTakeoffEngine`, `takeoff_session`, BOQ review gates | ناقص | ریزمتره انواع واقعی سازه، معماری، MEP، بدون حدس + منبع/واحد/بازشو |
@@ -28,9 +28,9 @@
 | C16 | ویرایش عنوان، روز، اکیپ، پیش‌نیاز و حفظ در undo | `edit_activity`, `DrawingTakeoffSession`, Qt tests | پیاده‌سازی/آزمون هدفمند | پذیرش واقعی DB و تعارض نسخه، undo/redo مستقل |
 | C17 | تقویم فارسی، گانت، تاریخ شروع/پایان و تعطیلات | `iran_worksite_calendar` با تاریخ و تعطیلات ۱۴۰۵/جمعه/تعطیلی محلی؛ گانت و ستون تاریخ شمسی Qt | ناقص | سال‌های بعد و تعطیلی‌های موردی، تأیید رسمی/پروژه، صادرات و منابع |
 | C18 | امکان افزودن/حذف/تجزیه WBS و کارهای سفارشی | `add_custom_activity` و پنجره افزودن فعالیت، ۷۰ کار + جایگاه هر خانواده اصلی | ناقص | حذف/جابجایی/زیرWBS و اتصال کامل ردیف سفارشی به منبع متره |
-| C19 | زمان‌بندی مستقل از متره اما همگام با آن و ذخیره | `workflow_plan` در JSON session؛ پروژه `save_drawing_takeoff_session` | ناقص | آزمون واقعی ذخیره/بازگشایی از SQLite و ویرایش هم‌زمان چند نشست |
+| C19 | زمان‌بندی مستقل از متره اما همگام با آن و ذخیره | JSON session/SQLite؛ reload سناریوی تراز اکیپ با بازسازی deterministic ظرفیت؛ مقدار و منبع با حفظ مدت دستی تازه می‌شوند | ناقص | آزمون واقعی SQLite/CAS در پروژه و همه ویرایش‌های WBS |
 | C20 | تخصیص اکیپ و محاسبه ظرفیت/تداخل واقعی | `crew_capacity.py` تشخیص تعارض اکیپ مشترک و تراز ظرفیت با PDM، کنترل دستی در GUI | ناقص | تقویم جداگانه هر اکیپ، کنترل چندمنبعی و بازبینی کارگاهی سناریوی پیشنهادی |
-| C21 | گزارش زمان‌بندی فارسی حرفه‌ای و صادرات Excel/PDF | گانت نسبی/شمسی در جدول Qt تکمیل اولیه | **باز** | گزارش حرفه‌ای PDF/XLSX مدت/مقدار و مسیر بحرانی پس از پذیرش شبکه و منابع |
+| C21 | گزارش زمان‌بندی فارسی حرفه‌ای و صادرات Excel/PDF | `drawing_schedule_report.py` + Worker و کلید Qt؛ PDF/XLSX/گانت، CSV ریزمتره، snapshot و Manifest؛ کنترل source/plan پیش از انتشار اتمی | **پیاده‌سازی؛ پیش‌نویس بدون تصویب شبکه/مسیر بحرانی** | CI یک SHA، QA خروجی فارسی و پذیرش شبکه/نرخ واقعی؛ خروجی پیش‌نویس معادل مبنای مصوب نیست |
 | C22 | فرم پنجره شناور + رابط فارسی/RTL و بدون سایدبار دائم | Qt Persian intake/schedule dialog و Ribbon workspace قبلی | ناقص | QA تصویری Windows در DPIهای مختلف، تم روز/شب، رفت‌وآمد صفحات |
 | C23 | همه کلیدها عملکرد واقعی داشته باشند | tests targeted on controls | ناقص | ممیزی click-by-click همه منوها/کلیدها در نسخه نهایی |
 | C24 | نسخه ویندوزی واحد؛ بدون EXE تا اجازه، بدون Merge قبل تأیید | PR #42 Draft/Unmerged | رعایت‌شده | حفظ منع انتشار تا پذیرش |

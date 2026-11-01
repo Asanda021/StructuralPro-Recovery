@@ -171,6 +171,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
             "duration":activity["duration_days"],
             "scheduled_quantity":activity.get("scheduled_quantity"),
             "linked_item_ids":sorted(map(str,activity.get("linked_item_ids",[]))),
+            "measured":deepcopy(activity.get("measured",{})),
             "quantity_multiplier_evidence":activity.get("quantity_multiplier_evidence"),
             "discipline":trade,
             "assigned_supervisor":person_id,
@@ -221,9 +222,10 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
     for week in result:
         if week["week_start"]!=first:continue
         person=next((p for p in team["people"] if p["id"]==week["engineer_id"]),None)
-        if person is None:continue
-        week["engineer_name"]=person["name"]
-        week["role"]="، ".join(TRADE_NAMES[TRADES.index(t)] for t in person["trades"])
+        week["assignment_status"]="ACTIVE" if person else "INACTIVE_REASSIGNED"
+        if person is not None:
+            week["engineer_name"]=person["name"]
+            week["role"]="، ".join(TRADE_NAMES[TRADES.index(t)] for t in person["trades"])
         week["derived_from_wbs"]=True
         week["schedule_review_status"]="DRAFT_FROM_MAIN_WBS"
         for day in week["days"]:

@@ -54,6 +54,10 @@ class OfflineDWGConverter:
         )
 
     def _run(self, command, **kwargs):
+        # Locale-specific diagnostics must not turn a valid converter run into
+        # UnicodeDecodeError, particularly with Persian Windows paths.
+        kwargs.setdefault("encoding", "utf-8")
+        kwargs.setdefault("errors", "replace")
         try:return subprocess.run(command,timeout=self.timeout_seconds,**kwargs)
         except subprocess.TimeoutExpired as exc:raise DWGConversionError("مهلت تبدیل DWG پایان یافت؛ هیچ خروجی برای متره تأیید نشد") from exc
         except OSError as exc:raise DWGConversionError("اجرای مبدل DWG ممکن نیست") from exc
@@ -84,6 +88,27 @@ class OfflineDWGConverter:
         return {"code": signature, "version": version}
 
     def convert(self, source: str | Path, output_dir: str | Path | None = None) -> ConverterResult:
+        out = Path(output_dir) if output_dir is not None else Path(tempfile.mkdtemp(prefix="structuralpro_dwg_"))
+        owned_targets: list[Path] = []
+        try:
+            return self._convert(source, out, owned_targets)
+        except BaseException:
+            # Only our expected result belongs to this operation. Preserve
+            # unrelated user files in an explicitly supplied output directory.
+            for candidate in owned_targets:
+                try:
+                    candidate.unlink(missing_ok=True)
+                except OSError:
+                    pass  # Preserve the original converter/validation failure.
+            if output_dir is None:
+                for directory in (out / "oda", out):
+                    try:
+                        directory.rmdir()
+                    except OSError:
+                        pass
+            raise
+
+    def _convert(self, source: str | Path, output_dir: Path, owned_targets: list[Path]) -> ConverterResult:
         src = Path(source)
         if not src.exists():
             raise FileNotFoundError(f"فایل DWG پیدا نشد: {src}")
@@ -94,7 +119,14 @@ class OfflineDWGConverter:
         if src.stat().st_size < 6:
             raise CorruptDWGError("فایل DWG خالی یا ناقص است.")
 
-        source_digest=hashlib.sha256(src.read_bytes()).hexdigest()
+        def identity(path):
+            stat = path.stat()
+            return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns
+        def digest(path):
+            with path.open("rb") as stream:
+                return hashlib.file_digest(stream, "sha256").hexdigest()
+        source_identity = identity(src)
+        source_digest=digest(src)
         header = self.inspect_header(src)
         if not self.executable:
             raise DWGConversionError(
@@ -103,7 +135,7 @@ class OfflineDWGConverter:
                 "STRUCTURALPRO_DWG_CONVERTER به مسیر اجرایی تنظیم شود."
             )
 
-        out = Path(output_dir or tempfile.mkdtemp(prefix="structuralpro_dwg_"))
+        out = output_dir
         out.mkdir(parents=True, exist_ok=True)
         target = out / (src.stem + ".dxf")
         name = Path(self.executable).name.lower()
@@ -114,6 +146,7 @@ class OfflineDWGConverter:
             # Remove only the expected artifact so a stale DXF cannot masquerade as
             # a successful conversion after the converter exits without writing.
             target = odir / (src.stem + ".dxf")
+            owned_targets.append(target)
             target.unlink(missing_ok=True)
             proc = self._run(
                 [self.executable, str(src.parent), str(odir), "ACAD2018", "DXF", "0", "1", src.name],
@@ -131,7 +164,9 @@ class OfflineDWGConverter:
                 matches = [p for p in odir.glob("*.dxf") if p.stem.casefold() == src.stem.casefold()]
                 if len(matches) == 1:
                     target = matches[0]
+                    owned_targets.append(target)
         else:
+            owned_targets.append(target)
             target.unlink(missing_ok=True)
             # GNU LibreDWG dwg2dxf accepts -o OUTPUT INPUT; the old
             # positional INPUT OUTPUT call treats OUTPUT as a second input
@@ -158,20 +193,26 @@ class OfflineDWGConverter:
             raise DWGConversionError(
                 "مبدل اجرا شد اما فایل DXF خروجی تولید نشد؛ فایل DWG یا تنظیمات مبدل را بررسی کنید."
             )
+        if target.is_symlink():
+            raise DWGConversionError("خروجی مبدل نباید پیوند نمادین باشد")
 
         # A file on disk is not proof of a valid conversion. Parse it with the
         # real DXF reader used by the takeoff pipeline before returning it.
         try:
             import ezdxf
+            output_identity = identity(target)
+            output_digest = digest(target)
             converted_doc = ezdxf.readfile(str(target))
             list(converted_doc.modelspace())
+            if identity(target) != output_identity or digest(target) != output_digest:
+                raise DWGConversionError("خروجی DXF هنگام اعتبارسنجی تغییر کرده است")
         except Exception as exc:
             target.unlink(missing_ok=True)
             raise DWGConversionError(
                 "مبدل فایل DXF قابل‌خواندن تولید نکرد؛ خروجی نامعتبر است و برای متره پذیرفته نشد."
             ) from exc
 
-        if hashlib.sha256(src.read_bytes()).hexdigest()!=source_digest:
+        if identity(src) != source_identity or digest(src)!=source_digest:
             target.unlink(missing_ok=True)
             raise DWGConversionError("فایل DWG هنگام تبدیل تغییر کرده است")
-        return ConverterResult(src,target,str(self.executable),source_digest,hashlib.sha256(target.read_bytes()).hexdigest(),header["version"],proc.returncode)
+        return ConverterResult(src,target,str(self.executable),source_digest,output_digest,header["version"],proc.returncode)

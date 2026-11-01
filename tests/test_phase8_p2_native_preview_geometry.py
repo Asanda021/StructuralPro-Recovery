@@ -1,0 +1,143 @@
+"""SYNTHETIC decoder-boundary regressions; private CAD is never uploaded."""
+from math import hypot
+from types import SimpleNamespace
+import os
+
+import pytest
+
+from core.drawings.native_dwg_preview import native_readonly_dwg_preview
+from core.drawings.cad_large_scene import cad_coverage_report
+from core.drawings.dwg_takeoff import cad_entity_geometry
+
+
+def preview(tmp_path, monkeypatch, objects, on_read=None):
+    import ezdwg
+    source = tmp_path / "decoder-boundary.dwg"
+    source.write_bytes(b"AC1018_SYNTHETIC_DECODER_BOUNDARY_NOT_A_REAL_DWG")
+    layer = SimpleNamespace(handle=1, name="source", on=True, frozen=False)
+    raw = SimpleNamespace(version="AC1018", units="unitless", layers=[layer],
+                          modelspace=lambda: SimpleNamespace(iter_entities=lambda: iter(objects)))
+    def read(path):
+        if on_read:
+            on_read(source)
+        return raw
+    monkeypatch.setattr(ezdwg, "read", read)
+    return native_readonly_dwg_preview(source)
+
+
+def obj(typ, handle="1", **data):
+    return SimpleNamespace(dxftype=typ, handle=handle, dxf={"layer_handle": 1, **data})
+
+
+def test_native_arc_reaches_display_with_correct_sweep(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("ARC", center=(10, 20, 0), radius=2,
+                                           start_angle=350, end_angle=10)])
+    points = doc.entities[0].data["display_points"]
+    assert points[0][1] < 20 < points[-1][1]
+    assert all(x > 11.9 for x, y in points)  # 20-degree arc, not a 340-degree arc
+    assert all(hypot(x-10, y-20) == pytest.approx(2, rel=0.001) for x, y in points)
+    assert cad_coverage_report(doc)["not_drawn_count"] == 0
+    with pytest.raises(ValueError, match="فقط"):
+        cad_entity_geometry(doc, "1", "length")
+
+
+def test_native_bulge_polyline_is_curved_instead_of_chord(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("LWPOLYLINE", points=[(0,0,0),(2,0,0)],
+                                           bulges=[1,0], closed=False)])
+    points = doc.entities[0].data["display_points"]
+    assert len(points) > 4
+    assert min(y for x,y in points) < -0.99
+    assert points[0] == pytest.approx((0,0))
+    assert points[-1] == pytest.approx((2,0))
+
+
+def test_dimension_uses_source_text_midpoint_and_keeps_raw_text(tmp_path, monkeypatch):
+    raw = "كیفیت \\P آزمايش"
+    doc = preview(tmp_path, monkeypatch, [obj("DIMENSION", text=raw,
+                insert=(0,0,0), text_midpoint=(12,34,0), text_rotation=30)])
+    d = doc.entities[0].data
+    assert d["source_text"] == raw
+    assert d["insert"] == (12,34)
+    assert d["rotation"] == 30
+    assert doc.conversion["text_fidelity"] != "VERIFIED"
+
+
+def test_native_invisible_entity_does_not_become_visible(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("LINE", start=(0,0,0), end=(1,1,0), invisible=True)])
+    assert doc.entities[0].data["layer_visible"] is False
+    assert cad_coverage_report(doc)["hidden_layer_by_type"] == {"LINE":1}
+
+
+def test_native_spline_uses_control_points_and_knots(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("SPLINE", degree=2,
+                control_points=[(0,0,0),(1,2,0),(2,0,0)], knots=[0,0,0,1,1,1],
+                weights=[], closed=False)])
+    points = doc.entities[0].data["display_points"]
+    assert max(y for x,y in points) == pytest.approx(1, abs=.01)
+    assert cad_coverage_report(doc)["not_drawn_count"] == 0
+
+
+def test_native_hatch_loops_stay_separate_and_nonpayable(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("HATCH", paths=[
+        {"closed":True,"points":[(0,0),(5,0),(5,5),(0,5)]},
+        {"closed":True,"points":[(1,1),(2,1),(2,2),(1,2)]}])])
+    paths = doc.entities[0].data["display_paths"]
+    assert len(paths) == 2
+    assert all(p[0] == p[-1] for p in paths)
+    assert doc.entities[0].data["unsupported_measurement"]
+    assert cad_coverage_report(doc)["not_drawn_count"] == 0
+
+
+def test_native_bad_geometry_is_accounted_and_not_drawn(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("ARC", center=(0,0,0), radius=-1,
+                                           start_angle=0, end_angle=90)])
+    assert doc.entities[0].data["preview_decode_error"]
+    assert cad_coverage_report(doc)["failed_geometry_count"] == 1
+    assert cad_coverage_report(doc)["not_drawn_count"] == 1
+
+
+def test_native_same_bytes_replacement_is_not_the_original_identity(tmp_path, monkeypatch):
+    def replace(source):
+        replacement=source.with_suffix(".replacement")
+        replacement.write_bytes(source.read_bytes())
+        os.replace(replacement, source)
+    with pytest.raises(ValueError, match="changed|تغییر"):
+        preview(tmp_path, monkeypatch, [obj("LINE", start=(0,0), end=(1,1))], replace)
+
+
+def test_native_accounting_is_disjoint_without_claiming_decoder_completeness(tmp_path, monkeypatch):
+    doc = preview(tmp_path, monkeypatch, [obj("LINE", "1", start=(0,0), end=(1,1)),
+        obj("INSERT", "2", name="unresolved", insert=(2,2)),
+        obj("TEXT", "3", text="كي", insert=(1,1))])
+    report=cad_coverage_report(doc)
+    assert report["decoded_entity_count"] == 3
+    assert sum(report["display_partition"].values()) == 3
+    assert report["original_source_count_verified"] is False
+    assert report["complete_visual_fidelity"] is False  # unresolved block/font
+
+
+def test_qt_canvas_receives_native_arc_and_separate_hatch_rings(tmp_path,monkeypatch):
+    os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
+    from PySide6.QtWidgets import QApplication
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    app=QApplication.instance() or QApplication([])
+    doc=preview(tmp_path,monkeypatch,[obj("ARC","1",center=(0,0,0),radius=2,
+                  start_angle=0,end_angle=90),obj("HATCH","2",paths=[
+                 {"closed":True,"points":[(0,0),(5,0),(5,5),(0,5)]},
+                 {"closed":True,"points":[(1,1),(2,1),(2,2),(1,2)]}])])
+    dialog=GraphicalTakeoffDialog()
+    try:
+        dialog.cad_document=doc
+        dialog._render_cad()
+        assert set(dialog._cad_handle_items)=={"1","2"}
+        assert dialog._cad_handle_items["1"].path().elementCount()>4
+        hatch=dialog._cad_handle_items["2"].path()
+        assert sum(hatch.elementAt(i).isMoveTo() for i in range(hatch.elementCount()))==2
+    finally:
+        dialog.close();dialog.deleteLater();app.processEvents()
+
+
+def test_boundary_only_solid_does_not_claim_complete_filled_fidelity(tmp_path,monkeypatch):
+    doc=preview(tmp_path,monkeypatch,[obj("SOLID",points=[(0,0),(1,0),(0,1),(1,1)])])
+    assert cad_coverage_report(doc)["not_drawn_count"]==0
+    assert cad_coverage_report(doc)["complete_visual_fidelity"] is False

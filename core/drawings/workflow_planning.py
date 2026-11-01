@@ -400,23 +400,32 @@ def sync_measured_items(plan: dict, items) -> dict:
             "geometry_reviewed": bool(
                 getattr(item, "cad_evidence", None)
                 and (item.cad_evidence.get("review") or {}).get("digest")),
+            "geometry_review_digest": str(
+                ((getattr(item, "cad_evidence", None) or {}).get("review") or {}).get("digest", "")),
         }
     for task in plan["tasks"]:
         observed = linked[task["id"]]
         task["linked_item_ids"] = sorted(observed)
         task["measured"] = observed
         task["quantity_reviewed"] = bool(observed) and all(x["geometry_reviewed"] for x in observed.values())
+        # Quantity/source provenance must update even for a manually timed
+        # task. Only the duration belongs to the manual override.
+        if task["id"] in CATALOG:
+            profile = CATALOG[task["id"]]
+            if observed and all(normalized_production_unit(entry["unit"]) == profile.unit for entry in observed.values()):
+                from core.projects.building_scale import effective_quantity
+                source_total = sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
+                total, multiplicity = effective_quantity(task["id"], source_total,
+                    plan.get("building_scope", {"source_scope": "whole_building"}))
+                task["scheduled_quantity"] = str(total)
+                task["quantity_multiplier_evidence"] = multiplicity
+            else:
+                task["scheduled_quantity"] = None
+                task["quantity_multiplier_evidence"] = None
         if task["id"] in CATALOG and not task.get("duration_edited"):
             profile=CATALOG[task["id"]]
             if observed and all(normalized_production_unit(entry["unit"])==profile.unit for entry in observed.values()):
-                source_total=sum((Decimal(entry["quantity"]) for entry in observed.values()), Decimal(0))
-                from core.projects.building_scale import effective_quantity
-                total,multiplicity=effective_quantity(
-                    task["id"],source_total,
-                    plan.get("building_scope",{"source_scope":"whole_building"})
-                )
-                task["scheduled_quantity"]=str(total)
-                task["quantity_multiplier_evidence"]=multiplicity
+                total=Decimal(task["scheduled_quantity"])
                 calibration=plan.get("production_calibrations",{}).get(task["id"])
                 if calibration is not None:
                     from core.projects.productivity_evidence import validate_calibration,calibrated_duration
