@@ -35,11 +35,13 @@ class StrictPythonDWGError(RuntimeError):
 
 
 def _validate_native_entity_roster(native_document, converted_document) -> dict:
-    """Check actual source ModelSpace identities and every LINE against written DXF.
+    """Require one-to-one source entities; permit ONLY unambiguous LINE handle remaps.
 
-    Writer-reported written==total is insufficient evidence: eight source
-    LINEs disappeared in a separate LibreDWG converter on the private case.
-    The ezdwg decoder is the source witness, not a second independent CAD oracle.
+    LibreDWG can lose source LINEs; ezdwg may also *renumber* a LINE in DXF.
+    A renumbered LINE is not a dropped LINE if source layer and both original
+    WCS endpoints uniquely match. Persist the mapping for provenance.
+    No non-LINE type change, missing member or ambiguous remap is accepted.
+    This is decoder-backed evidence, not independent financial sign-off.
     """
     native = {}
     layers = {int(layer.handle): str(layer.name) for layer in native_document.layers}
@@ -57,16 +59,9 @@ def _validate_native_entity_roster(native_document, converted_document) -> dict:
         if handle in converted:
             raise StrictPythonDWGError("Converted DXF contains duplicate ModelSpace handles")
         converted[handle] = (entity.dxftype(), entity)
-    source_types = {(handle, value[0]) for handle, value in native.items()}
-    dest_types = {(handle, value[0]) for handle, value in converted.items()}
-    if source_types != dest_types:
-        missing = source_types - dest_types
-        extra = dest_types - source_types
-        raise StrictPythonDWGError(
-            f"Strict DWG conversion lost/retyped source identities; "
-            f"missing={len(missing)} extra={len(extra)} "
-            f"native_examples={sorted(missing)[:3]!r} "
-            f"dxf_examples={sorted(extra)[:3]!r}")
+    if not native:
+        raise StrictPythonDWGError("Original DWG ModelSpace is empty")
+
     def xyz(value):
         if value is None:
             raise StrictPythonDWGError("DWG LINE endpoint is missing")
@@ -74,34 +69,75 @@ def _validate_native_entity_roster(native_document, converted_document) -> dict:
         if len(values) not in (2, 3) or not all(isfinite(v) for v in values):
             raise StrictPythonDWGError("DWG LINE endpoint is invalid")
         return values if len(values) == 3 else (*values, 0.0)
-    verified_lines = 0
-    verified_layers = 0
-    for handle, (kind, raw) in native.items():
-        if kind != "LINE":
-            continue
-        entity = converted[handle][1]
+
+    def line_is_identical(raw, target, original_handle):
+        source_layer = raw.dxf.get("layer_handle")
+        if source_layer is None or int(source_layer) not in layers:
+            raise StrictPythonDWGError(
+                f"Cannot verify source DWG LINE layer (handle={original_handle:X})")
+        if layers[int(source_layer)] != str(target.dxf.layer):
+            return False
         for field in ("start", "end"):
-            first = xyz(raw.dxf.get(field))
-            second = xyz(entity.dxf.get(field))
+            first, second = xyz(raw.dxf.get(field)), xyz(target.dxf.get(field))
             if any(not isclose(a, b, rel_tol=1e-12, abs_tol=1e-7)
                    for a, b in zip(first, second)):
-                raise StrictPythonDWGError(
-                    f"Strict DWG LINE geometry changed (handle={handle:X}, field={field})")
-        source_layer_handle = raw.dxf.get("layer_handle")
-        if source_layer_handle is None or int(source_layer_handle) not in layers:
-            raise StrictPythonDWGError(
-                f"Cannot verify source DWG LINE layer (handle={handle:X})")
-        if layers[int(source_layer_handle)] != str(entity.dxf.layer):
-            raise StrictPythonDWGError(
-                f"Strict DWG LINE layer changed (handle={handle:X})")
-        verified_layers += 1
-        verified_lines += 1
-    if not native:
-        raise StrictPythonDWGError("Original DWG ModelSpace is empty")
-    return {"source_entity_count": len(native), "dxf_entity_count": len(converted),
-            "source_line_count": verified_lines, "line_geometry_verified": verified_lines,
-            "line_layers_verified": verified_layers, "handle_type_roster_matched": True}
+                return False
+        # A hidden LINE must not be silently rendered as visible, or vice versa.
+        if int(raw.dxf.get("invisible", 0) or 0) != int(target.dxf.get("invisible", 0) or 0):
+            return False
+        return True
 
+    source_types = {(handle, value[0]) for handle, value in native.items()}
+    dest_types = {(handle, value[0]) for handle, value in converted.items()}
+    missing = source_types - dest_types
+    extra = dest_types - source_types
+    remaps = {}
+    if missing or extra:
+        if len(missing) != len(extra) or any(kind != "LINE" for _, kind in missing | extra):
+            raise StrictPythonDWGError(
+                f"Strict DWG conversion lost/retyped identities; missing={len(missing)} "
+                f"extra={len(extra)} native_examples={sorted(missing)[:3]!r} "
+                f"dxf_examples={sorted(extra)[:3]!r}")
+        # A renumbered LINE must have precisely one counterpart by layer,
+        # exact 3D endpoints and visibility. No nearest-neighbour guessing.
+        unmatched_outputs = set(h for h, _ in extra)
+        for original_handle, _ in sorted(missing):
+            raw_line = native[original_handle][1]
+            matches = [h for h in sorted(unmatched_outputs)
+                       if line_is_identical(raw_line, converted[h][1], original_handle)]
+            if len(matches) != 1:
+                raise StrictPythonDWGError(
+                    f"Unverifiable or ambiguous DWG LINE handle mapping "
+                    f"(source={original_handle:X}, matches={len(matches)})")
+            remaps[original_handle] = matches[0]
+            unmatched_outputs.remove(matches[0])
+        if unmatched_outputs:
+            raise StrictPythonDWGError("Converted DXF contains unmatched LINE identities")
+
+    verified_lines = 0
+    for original_handle, (kind, raw) in native.items():
+        if kind != "LINE":
+            continue
+        handle = remaps.get(original_handle, original_handle)
+        if handle not in converted or converted[handle][0] != "LINE":
+            raise StrictPythonDWGError("Source DWG LINE could not be located after remap")
+        if not line_is_identical(raw, converted[handle][1], original_handle):
+            raise StrictPythonDWGError(
+                f"Strict DWG LINE geometry/layer/visibility changed "
+                f"(source_handle={original_handle:X})")
+        verified_lines += 1
+    return {
+        "source_entity_count": len(native),
+        "dxf_entity_count": len(converted),
+        "source_line_count": verified_lines,
+        "line_geometry_verified": verified_lines,
+        "line_layers_verified": verified_lines,
+        "handle_type_roster_matched": len(remaps) == 0,
+        "source_entity_mapping_verified": True,
+        "source_handle_remaps": tuple(
+            (f"{original:X}", f"{mapped:X}") for original, mapped in sorted(remaps.items())
+        ),
+    }
 
 
 
@@ -132,6 +168,7 @@ class StrictPythonDWGReceipt:
     source_modelspace_verified: bool = False
     line_geometry_verified_count: int = 0
     line_layer_verified_count: int = 0
+    source_handle_remaps: tuple[tuple[str, str], ...] = ()
 
 
 class StrictPythonDWGProvider:
@@ -213,9 +250,10 @@ class StrictPythonDWGProvider:
                 source_unit=unit_name, source_unit_code=expected_units,
                 original_dxf_unit_code=original_dxf_unit,
                 source_unit_restored_in_dxf=restored,
-                source_modelspace_verified=bool(roster["handle_type_roster_matched"]),
+                source_modelspace_verified=bool(roster["source_entity_mapping_verified"]),
                 line_geometry_verified_count=int(roster["line_geometry_verified"]),
                 line_layer_verified_count=int(roster["line_layers_verified"]),
+                source_handle_remaps=tuple(roster["source_handle_remaps"]),
             )
         except Exception:
             out.unlink(missing_ok=True)
