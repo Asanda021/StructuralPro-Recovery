@@ -57,8 +57,11 @@ class EngineerWeeklyDialog(QDialog):
         self.complete_button=QPushButton("تأیید اتمام فعالیت")
         self.complete_button.setObjectName("CompleteEngineerDailyWork")
         self.complete_button.clicked.connect(self._complete)
+        self.revoke_audit=QPushButton("سوابق کنترل‌های نیازمند بازبینی")
+        self.revoke_audit.setObjectName("WeeklyRevokedInspectionAudit")
+        self.revoke_audit.clicked.connect(self._show_revoked_history)
         for widget in (self.show_button,self.create_button,self.add_button,
-                       self.check_button,self.complete_button):
+                       self.check_button,self.complete_button,self.revoke_audit):
             bar.addWidget(widget)
         root.addLayout(bar)
         self.description=QLabel(
@@ -176,6 +179,33 @@ class EngineerWeeklyDialog(QDialog):
             QMessageBox.warning(self,"ثبت اتمام کار",str(exc))
         self.refresh()
 
+    def _show_revoked_history(self):
+        try:
+            week=self._selected_week()
+        except ValueError as exc:
+            QMessageBox.warning(self,"سوابق کنترل‌های تغییرکرده",str(exc))
+            return
+        history=week.get("invalidated_inspection_history",[])
+        if not history:
+            QMessageBox.information(self,"سوابق کنترل‌های تغییرکرده",
+                                    "این هفته کنترل امضاشده باطل‌شده ندارد.")
+            return
+        lines=[]
+        for item in history[-40:]:
+            old=item.get("old_signed_record",{})
+            signatures=", ".join(
+                str(check.get("checked_by",""))
+                for check in old.get("checklist",[])
+                if check.get("done") and check.get("checked_by")
+            )
+            lines.append(
+                f"{item.get('date','')} | {old.get('title','')} | "
+                f"ثبت‌کنندگان: {signatures or 'نامشخص'} | "
+                f"علت: {item.get('reason','')}"
+            )
+        QMessageBox.information(self,"سوابق کنترل‌های تغییرکرده",
+            "\n".join(lines)+"\nاین موارد باید دوباره توسط مسئول بررسی شوند.")
+
     def _show_details(self):
         try:
             _,task,_=self._row()
@@ -230,7 +260,8 @@ class EngineerWeeklyDialog(QDialog):
                 f"مهندس {week['engineer_name']} | هفته شروع {week['week_start']} | "
                 f"کارها: {summary['item_count']} | انجام‌شده با تأیید: {summary['completed_items']} | "
                 f"چک‌لیست: {summary['checked_count']}/{summary['checklist_count']} | "
-                "وضعیت: پیش‌نویس؛ اتصال WBS اختیاری است"
+                f"سوابق نیازمند بازبینی: {len(week.get('invalidated_inspection_history',[]))} | "
+                "فعالیت‌های هفتگی از WBS اصلی استخراج شده‌اند؛ تأیید اجرایی مستقل لازم است"
             )
         finally:
             self.table.blockSignals(False)
