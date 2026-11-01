@@ -12,6 +12,7 @@ from importlib import metadata, util
 from pathlib import Path
 import os
 import tempfile
+from math import isclose, isfinite
 
 from core.drawings.dwg_converter import OfflineDWGConverter
 
@@ -31,6 +32,75 @@ _UNIT_CODES = {
 
 class StrictPythonDWGError(RuntimeError):
     pass
+
+
+def _validate_native_entity_roster(native_document, converted_document) -> dict:
+    """Check actual source ModelSpace identities and every LINE against written DXF.
+
+    Writer-reported written==total is insufficient evidence: eight source
+    LINEs disappeared in a separate LibreDWG converter on the private case.
+    The ezdwg decoder is the source witness, not a second independent CAD oracle.
+    """
+    native = {}
+    layers = {int(layer.handle): str(layer.name) for layer in native_document.layers}
+    for entity in native_document.modelspace().iter_entities():
+        handle = int(entity.handle)
+        kind = str(entity.dxftype)
+        if handle in native:
+            raise StrictPythonDWGError("DWG native source contains duplicate ModelSpace handles")
+        if len(native) >= 1_000_000:
+            raise StrictPythonDWGError("DWG native roster exceeds the one-million-entity safety limit")
+        native[handle] = (kind, entity)
+    converted = {}
+    for entity in converted_document.modelspace():
+        handle = int(entity.dxf.handle, 16)
+        if handle in converted:
+            raise StrictPythonDWGError("Converted DXF contains duplicate ModelSpace handles")
+        converted[handle] = (entity.dxftype(), entity)
+    source_types = {(handle, value[0]) for handle, value in native.items()}
+    dest_types = {(handle, value[0]) for handle, value in converted.items()}
+    if source_types != dest_types:
+        missing = source_types - dest_types
+        extra = dest_types - source_types
+        raise StrictPythonDWGError(
+            f"Strict DWG conversion lost/retyped source identities; "
+            f"missing={len(missing)} extra={len(extra)}")
+    def xyz(value):
+        if value is None:
+            raise StrictPythonDWGError("DWG LINE endpoint is missing")
+        values = tuple(float(v) for v in value)
+        if len(values) not in (2, 3) or not all(isfinite(v) for v in values):
+            raise StrictPythonDWGError("DWG LINE endpoint is invalid")
+        return values if len(values) == 3 else (*values, 0.0)
+    verified_lines = 0
+    verified_layers = 0
+    for handle, (kind, raw) in native.items():
+        if kind != "LINE":
+            continue
+        entity = converted[handle][1]
+        for field in ("start", "end"):
+            first = xyz(raw.dxf.get(field))
+            second = xyz(entity.dxf.get(field))
+            if any(not isclose(a, b, rel_tol=1e-12, abs_tol=1e-7)
+                   for a, b in zip(first, second)):
+                raise StrictPythonDWGError(
+                    f"Strict DWG LINE geometry changed (handle={handle:X}, field={field})")
+        source_layer_handle = raw.dxf.get("layer_handle")
+        if source_layer_handle is None or int(source_layer_handle) not in layers:
+            raise StrictPythonDWGError(
+                f"Cannot verify source DWG LINE layer (handle={handle:X})")
+        if layers[int(source_layer_handle)] != str(entity.dxf.layer):
+            raise StrictPythonDWGError(
+                f"Strict DWG LINE layer changed (handle={handle:X})")
+        verified_layers += 1
+        verified_lines += 1
+    if not native:
+        raise StrictPythonDWGError("Original DWG ModelSpace is empty")
+    return {"source_entity_count": len(native), "dxf_entity_count": len(converted),
+            "source_line_count": verified_lines, "line_geometry_verified": verified_lines,
+            "line_layers_verified": verified_layers, "handle_type_roster_matched": True}
+
+
 
 
 def declared_dwg_unit(source_unit: str | None) -> tuple[int, str]:
@@ -57,6 +127,9 @@ class StrictPythonDWGReceipt:
     source_unit_code: int
     original_dxf_unit_code: int
     source_unit_restored_in_dxf: bool
+    source_modelspace_verified: bool = False
+    line_geometry_verified_count: int = 0
+    line_layer_verified_count: int = 0
 
 
 class StrictPythonDWGProvider:
@@ -112,6 +185,7 @@ class StrictPythonDWGProvider:
             if not out.is_file() or out.stat().st_size <= 100:
                 raise StrictPythonDWGError("Strict decoder produced no DXF")
             dxf_doc = ezdxf.readfile(out)
+            roster = _validate_native_entity_roster(decoded_source, dxf_doc)
             original_dxf_unit = int(dxf_doc.header.get("$INSUNITS", 0) or 0)
             restored = original_dxf_unit != expected_units
             if restored:
@@ -137,6 +211,9 @@ class StrictPythonDWGProvider:
                 source_unit=unit_name, source_unit_code=expected_units,
                 original_dxf_unit_code=original_dxf_unit,
                 source_unit_restored_in_dxf=restored,
+                source_modelspace_verified=bool(roster["handle_type_roster_matched"]),
+                line_geometry_verified_count=int(roster["line_geometry_verified"]),
+                line_layer_verified_count=int(roster["line_layers_verified"]),
             )
         except Exception:
             out.unlink(missing_ok=True)
