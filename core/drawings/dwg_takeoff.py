@@ -142,7 +142,7 @@ def _nonplanar(e):
     elif typ in ('CIRCLE','ARC'):values=[d.center.z]
     elif typ=='LWPOLYLINE':values=[d.elevation]
     elif typ=='POLYLINE':values=[v.dxf.location.z for v in e.vertices]+[d.elevation.z]
-    extrusion=d.get('extrusion',(0,0,1))
+    extrusion=d.get('extrusion',(0,0,1)) if d.is_supported('extrusion') else (0,0,1)
     return any(not math.isfinite(float(v)) or float(v)!=0 for v in values) or tuple(extrusion)!=(0,0,1)
 
 
@@ -397,7 +397,7 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
-        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code}
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{})}
         doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"

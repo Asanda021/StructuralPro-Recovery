@@ -1,6 +1,6 @@
 """Offline DWG conversion boundary with deterministic executable discovery and fail-closed diagnostics."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import os, shutil, subprocess, tempfile, hashlib
 
@@ -28,6 +28,7 @@ class ConverterResult:
     output_sha256: str = ""
     dwg_version: str = ""
     exit_code: int = 0
+    source_coverage: dict = field(default_factory=dict)
 
 
 class DWGConversionError(RuntimeError):
@@ -40,6 +41,62 @@ class UnsupportedDWGVersionError(DWGConversionError):
 
 class CorruptDWGError(DWGConversionError):
     """The input does not contain a valid DWG signature."""
+
+
+def _independent_source_coverage(source, converted_doc, signature):
+    """Reject positive evidence of dropped/retyped handles or changed units.
+
+    A successful exit and a parseable DXF cannot prove a lossless conversion.
+    This check uses the separately pinned native reader when it can decode
+    the source. Unavailable independent coverage is explicit, never approval.
+    No reader output is used to invent or repair geometry/units here.
+    """
+    from importlib import metadata, util
+    unknown={"status":"NOT_VERIFIED_INDEPENDENT_READER_UNAVAILABLE","quantity_approved":False}
+    if util.find_spec("ezdwg") is None:
+        return unknown
+    try:
+        if metadata.version("ezdwg") != "0.17.0":
+            return unknown
+        import ezdwg
+        raw=ezdwg.read(str(source))
+    except Exception as exc:
+        return {**unknown,"reason_type":type(exc).__name__}
+    if raw.version != signature:
+        raise DWGConversionError("نسخه decoder مستقل با امضای منبع DWG منطبق نیست")
+    native=set()
+    try:
+        # ezdwg decodes lazily: constructing Document alone does not establish
+        # that its modelspace or unit metadata can actually be read.
+        for entity in raw.modelspace().iter_entities():
+            if len(native)>=1_000_000:
+                raise DWGConversionError("پوشش منبع از سقف ایمن یک میلیون جزء بیشتر است")
+            key=(int(entity.handle),str(entity.dxftype))
+            if key in native:
+                raise DWGConversionError("هویت جزء در decoder مستقل تکراری است؛ پوشش تأیید نشد")
+            native.add(key)
+        source_units=raw.units
+    except DWGConversionError:
+        raise
+    except Exception as exc:
+        return {**unknown,"reason_type":type(exc).__name__}
+    converted={(int(e.dxf.handle,16),e.dxftype()) for e in converted_doc.modelspace()}
+    missing=native-converted
+    extra=converted-native
+    if missing or extra:
+        raise DWGConversionError(
+            f"پوشش موجودیت‌های DWG/DXF برابر نیست؛ {len(missing)} جزء منبع مفقود/تغییرنوع، "
+            f"{len(extra)} جزء خروجی بدون تطبیق؛ خروجی برای متره پذیرفته نشد")
+    from core.cad.optional_strict_python_dwg_provider import _UNIT_CODES
+    expected=0 if source_units in (None,"unitless") else _UNIT_CODES.get(str(source_units).strip().casefold(),(None,None))[0]
+    actual=int(converted_doc.header.get("$INSUNITS",0) or 0)
+    if expected is not None and actual!=expected:
+        raise DWGConversionError("واحد خروجی مبدل با واحد اعلام‌شده در اصل DWG منطبق نیست؛ حدس یا اصلاح خودکار مجاز نیست")
+    return {"status":"MATCHED_INDEPENDENT_MODELSPACE_ROSTER",
+            "reader":"ezdwg==0.17.0","source_count":len(native),
+            "converted_count":len(converted),"source_unit_code":expected,
+            "converted_unit_code":actual,"quantity_approved":False,
+            "geometry_values_independently_verified":False}
 
 
 class OfflineDWGConverter:
@@ -204,8 +261,12 @@ class OfflineDWGConverter:
             output_digest = digest(target)
             converted_doc = ezdxf.readfile(str(target))
             list(converted_doc.modelspace())
+            source_coverage=_independent_source_coverage(src,converted_doc,header['code'])
             if identity(target) != output_identity or digest(target) != output_digest:
                 raise DWGConversionError("خروجی DXF هنگام اعتبارسنجی تغییر کرده است")
+        except DWGConversionError:
+            target.unlink(missing_ok=True)
+            raise
         except Exception as exc:
             target.unlink(missing_ok=True)
             raise DWGConversionError(
@@ -215,4 +276,4 @@ class OfflineDWGConverter:
         if identity(src) != source_identity or digest(src)!=source_digest:
             target.unlink(missing_ok=True)
             raise DWGConversionError("فایل DWG هنگام تبدیل تغییر کرده است")
-        return ConverterResult(src,target,str(self.executable),source_digest,output_digest,header["version"],proc.returncode)
+        return ConverterResult(src,target,str(self.executable),source_digest,output_digest,header["version"],proc.returncode,source_coverage)

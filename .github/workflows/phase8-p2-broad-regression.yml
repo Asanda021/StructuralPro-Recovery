@@ -65,6 +65,7 @@ jobs:
           python -m pytest -q -o faulthandler_timeout=0 --junitxml=technical-targeted.xml
           tests/test_phase8_p2_native_preview_geometry.py
           tests/test_phase8_p2_converter_failure_cleanup.py
+          tests/test_phase8_p2_external_converter_coverage.py
           tests/test_phase8_p2_schedule_saved_review_integrity.py
           tests/test_phase8_p2_drawing_schedule_export.py
           tests/test_phase7_p6_ai_a3_audit_report.py
