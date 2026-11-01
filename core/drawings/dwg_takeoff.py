@@ -387,7 +387,54 @@ class DWGTakeoffEngine:
                 return doc
         # A configured external converter may fail: never silently fall back
         # to the Python backend after its command or output validation failed.
-        result = legacy_converter.convert(p)
+        # A *specific* proven LINE-only loss can be recovered by a second
+        # strict decoder, but not by overlooking missing entities. Generic
+        # conversion failures, unit ambiguity and changed types still fail.
+        from core.drawings.dwg_converter import DWGDroppedLineError
+        try:
+            result = legacy_converter.convert(p)
+        except DWGDroppedLineError as loss:
+            from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+            strict = StrictPythonDWGProvider()
+            if not strict.available:
+                raise DWGDroppedLineError(loss.missing_count) from loss
+            receipt = strict.convert(p)
+            if (not receipt.source_modelspace_verified
+                or receipt.line_geometry_verified_count < loss.missing_count
+                or receipt.line_layer_verified_count != receipt.line_geometry_verified_count
+                or receipt.skipped_entities != 0
+                or receipt.written_entities != receipt.total_entities):
+                raise RuntimeError("بازیابی DWG بدون تطبیق کامل هویت، هندسه و لایه خطوط مجاز نیست")
+            try:
+                doc = self._read_dxf(receipt.output)
+            finally:
+                receipt.output.unlink(missing_ok=True)
+            if doc.source_sha256 != receipt.output_sha256:
+                raise RuntimeError("DWG recovered DXF checksum changed")
+            if doc.units != receipt.source_unit:
+                raise RuntimeError("DWG source units differ from recovered DXF")
+            if hashlib.sha256(p.read_bytes()).hexdigest() != original_sha:
+                raise RuntimeError("DWG original changed during recovery")
+            doc.conversion = {
+                "provider": "ezdwg strict verified recovery",
+                "rejected_primary_converter": str(legacy_converter.executable),
+                "primary_dropped_line_count": loss.missing_count,
+                "native_modelspace_roster_verified": True,
+                "line_geometry_verified_count": receipt.line_geometry_verified_count,
+                "line_layers_verified_count": receipt.line_layer_verified_count,
+                "source_sha256": original_sha,
+                "output_sha256": receipt.output_sha256,
+                "source_units_verified": True,
+                "source_revision_verified": False,
+                "geometry_approved_for_financial_takeoff": False,
+                "legacy_metre_rows_approved": 0,
+                "requires_independent_original_dwg_oracle": True,
+                "strict_recovery": True,
+            }
+            doc.source_sha256 = original_sha
+            doc.source = str(p)
+            doc.format = "DWG→DXF (strict recovered missing LINEs)"
+            return doc
         try:
             doc = self._read_dxf(result.output)
         finally:
