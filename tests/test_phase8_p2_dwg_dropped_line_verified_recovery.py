@@ -108,3 +108,47 @@ def test_missing_second_decoder_still_blocks_all_quantities(tmp_path, monkeypatc
     source, _ = setup_import(tmp_path, monkeypatch, strict_available=False)
     with pytest.raises(DWGDroppedLineError, match="8"):
         DWGTakeoffEngine().import_file(source)
+
+
+def test_first_decoder_classifies_exact_eight_missing_line_handles(tmp_path, monkeypatch):
+    """The 8-LINE case is observed, not inferred from a converter exit code."""
+    import importlib.metadata
+    import importlib.util
+    import sys
+    from core.drawings.dwg_converter import (
+        OfflineDWGConverter, DWGDroppedLineError,
+    )
+    source = tmp_path / "site.dwg"
+    source.write_bytes(b"AC1018_SYNTHETIC_NOT_REAL_DWG")
+    document = ezdxf.new("R2018")
+    document.header["$INSUNITS"] = 6
+    line = document.modelspace().add_line((0, 0), (3, 4))
+    handle = int(line.dxf.handle, 16)
+    real_dxf = tmp_path / "out" / "site.dxf"
+
+    def converted_process(cmd, **kwargs):
+        real_dxf.parent.mkdir(parents=True, exist_ok=True)
+        document.saveas(real_dxf)
+        return SimpleNamespace(returncode=0, stderr="", stdout="")
+
+    native = SimpleNamespace(
+        version="AC1018", units="meters",
+        modelspace=lambda: SimpleNamespace(
+            iter_entities=lambda: iter([
+                SimpleNamespace(handle=handle + index, dxftype="LINE")
+                for index in range(9)
+            ])),
+    )
+    import core.drawings.dwg_converter as mod
+    monkeypatch.setattr(mod.subprocess, "run", converted_process)
+    old_find = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name: (
+        SimpleNamespace() if name == "ezdwg" else old_find(name)))
+    old_version = importlib.metadata.version
+    monkeypatch.setattr(importlib.metadata, "version", lambda name: (
+        "0.17.0" if name == "ezdwg" else old_version(name)))
+    monkeypatch.setitem(sys.modules, "ezdwg", SimpleNamespace(read=lambda p: native))
+    with pytest.raises(DWGDroppedLineError) as failure:
+        OfflineDWGConverter("dwg2dxf").convert(source, real_dxf.parent)
+    assert failure.value.missing_count == 8
+    assert not real_dxf.exists()
