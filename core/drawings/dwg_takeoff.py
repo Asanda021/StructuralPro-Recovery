@@ -404,6 +404,7 @@ class DWGTakeoffEngine:
                 or receipt.line_layer_verified_count != receipt.line_geometry_verified_count
                 or receipt.skipped_entities != 0
                 or receipt.written_entities != receipt.total_entities):
+                receipt.output.unlink(missing_ok=True)
                 raise RuntimeError("بازیابی DWG بدون تطبیق کامل هویت، هندسه و لایه خطوط مجاز نیست")
             try:
                 doc = self._read_dxf(receipt.output)
