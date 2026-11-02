@@ -80,8 +80,24 @@ class StructuralProApp:
 
 
     def create_project(self,name:str,project_id:str)->dict[str,Any]:
+        """Create a new project only; an existing ID must never become an update.
+
+        ProjectStore performs the collision check inside BEGIN IMMEDIATE, so a
+        second creator cannot silently replace a completed project.
+        """
+        if not isinstance(project_id, str) or not project_id.strip():
+            raise ValueError("شناسه پروژه الزامی است.")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("نام پروژه الزامی است.")
+        from core.projects.project_model import _identity
+        # Match the documented wizard's normalization. The store's exact-ID
+        # create_only check remains the final atomic guard for races.
+        if any(_identity(item.get("id")) == _identity(project_id)
+               for item in self.store.list()):
+            raise ValueError("شناسه پروژه مشابه قبلاً وجود دارد.")
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
-        self.store.save(project_id,project); return self.store.get(project_id)
+        self.store.save(project_id, project, create_only=True)
+        return self.store.get(project_id)
 
     def audit_legacy_metre_zip(
         self, zip_path: str | Path, *, bindings: list[dict] | None = None,
