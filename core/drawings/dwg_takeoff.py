@@ -32,6 +32,20 @@ class DWGDocument:
     conversion: dict[str, Any] = field(default_factory=dict)
 
 
+def _require_financial_geometry_not_explicitly_rejected(document: DWGDocument) -> None:
+    """Fail closed when source conversion explicitly disallows payable geometry.
+
+    An absent flag is NOT an approval: legacy and strict conversion paths
+    remain subject to their existing independent review/units/identity gates.
+    Only an explicit False is a non-overridable veto at this boundary.
+    """
+    if document.conversion.get("geometry_approved_for_financial_takeoff") is False:
+        raise ValueError(
+            "هندسه DWG در گزارش تبدیل صریحاً برای متره مالی رد شده است؛ "
+            "بازبینی مستقل و ورود معتبر منبع لازم است"
+        )
+
+
 def _xy(v):
     result=(float(v[0]),float(v[1]))
     if not all(math.isfinite(x) for x in result):raise ValueError("مختصات CAD باید متناهی باشند")
@@ -479,6 +493,7 @@ class DWGTakeoffEngine:
         """Create review-required layer summaries; never treat raw/unknown units as metres."""
         if doc.format == "DWG_NATIVE_READONLY_PREVIEW":
             raise ValueError("نمایش بومی DWG فقط برای مشاهده است؛ متره لایه بدون ورود معتبر مجاز نیست")
+        _require_financial_geometry_not_explicitly_rejected(doc)
         out = []
         for layer, rule in rules.items():
             ents = [e for e in doc.entities if e.layer == layer]
@@ -539,6 +554,7 @@ def cad_entity_geometry(document,handle,metric,origin=(0,0)):
     """Source paths, analytic circles/arcs and disjoint sums, never display chords."""
     if document.format == "DWG_NATIVE_READONLY_PREVIEW":
         raise ValueError("DWG بومی در حالت نمایش فقط‌خواندنی است و برای متره مالی معتبر نیست")
+    _require_financial_geometry_not_explicitly_rejected(document)
     if cad_unit_factor(document.units) is None:raise ValueError('واحد CAD نامشخص است')
     found=[e for e in document.entities if e.handle==handle]
     if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
@@ -588,6 +604,7 @@ def cad_review_digest(item):
 def verify_cad_item(item,document,*,require_review=True):
     if document.format == "DWG_NATIVE_READONLY_PREVIEW":
         raise ValueError("نشست DWG صرفاً نمایشی است و تأیید مالی ندارد")
+    _require_financial_geometry_not_explicitly_rejected(document)
     meta=item.cad_evidence
     if isinstance(meta,dict) and meta.get('unit_evidence'):document=apply_documented_units(document,meta['unit_evidence'])
     if not isinstance(meta,dict) or meta.get('policy')!='cad_entity_review_v1':raise ValueError('قرارداد منشأ CAD معتبر نیست')
