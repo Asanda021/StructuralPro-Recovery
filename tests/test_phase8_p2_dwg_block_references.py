@@ -74,3 +74,42 @@ def test_invalid_record_handle_is_rejected(tmp_path):
     path, _ = _drawing(tmp_path)
     with pytest.raises(ValueError, match="hexadecimal"):
         audit_raw_dxf_block_references(path, "THIS_IS_NOT_HEX")
+
+
+
+def test_dimension_anonymous_block_name_reference_is_observed(tmp_path):
+    # A DIMENSION group 2 points to its anonymous graphics block by name.
+    path = tmp_path / "synthetic-dimension-reference.dxf"
+    path.write_text(
+        "  0\\nSECTION\\n  2\\nBLOCKS\\n"
+        "  0\\nBLOCK\\n  5\\nB1\\n330\\nA1\\n  2\\n*D_TEST\\n"
+        "  0\\nENDBLK\\n  0\\nENDSEC\\n"
+        "  0\\nSECTION\\n  2\\nENTITIES\\n"
+        "  0\\nDIMENSION\\n  5\\nD1\\n  2\\n*D_TEST\\n"
+        "  0\\nENDSEC\\n  0\\nEOF\\n",
+        encoding="utf-8",
+    )
+    audit = audit_raw_dxf_block_references(path, "A1")
+    assert audit["status"] == "RAW_DXF_OBSERVED_REFERENCED_BLOCK"
+    assert audit["observed_raw_insert_count"] == 0
+    assert audit["observed_raw_dimension_count"] == 1
+    assert audit["observed_direct_target_references"] == 1
+    assert audit["observed_reachable_target"] is True
+    assert audit["financial_quantity_approved"] is False
+
+
+def test_unresolved_raw_reference_does_not_get_clean_unused_status(tmp_path):
+    path = tmp_path / "synthetic-broken-reference.dxf"
+    path.write_text(
+        "  0\\nSECTION\\n  2\\nBLOCKS\\n"
+        "  0\\nBLOCK\\n  5\\nB1\\n330\\nA1\\n  2\\nTARGET\\n"
+        "  0\\nENDBLK\\n  0\\nENDSEC\\n"
+        "  0\\nSECTION\\n  2\\nENTITIES\\n"
+        "  0\\nINSERT\\n  5\\nC1\\n  2\\nMISSING_BLOCK\\n"
+        "  0\\nENDSEC\\n  0\\nEOF\\n",
+        encoding="utf-8",
+    )
+    audit = audit_raw_dxf_block_references(path, "A1")
+    assert audit["observed_unknown_named_references"] == 1
+    assert audit["status"] == "RAW_BLOCK_REFERENCE_CHAIN_UNRESOLVED"
+    assert audit["complete_original_dwg_reference_coverage_verified"] is False
