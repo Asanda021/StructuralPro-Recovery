@@ -156,3 +156,29 @@ def test_external_converter_with_anonymous_block_is_blocked_by_ownership_gate(
     assert evidence["missing_from_raw"] == 0
     assert not output.exists()
     assert not isinstance(captured.value, DWGDroppedLineError)
+
+
+def test_unchanged_raw_line_with_wrong_block_owner_does_not_prove_definition(tmp_path):
+    """A BLOCK section alone is not ownership proof without a matching 330."""
+    path = tmp_path / "bad-block-owner.dxf"
+    path.write_text(
+        "  0\nSECTION\n  2\nBLOCKS\n"
+        "  0\nBLOCK\n  5\n2A07E\n330\n2A07F\n  2\n*U_OWNERSHIP\n"
+        "  0\nLINE\n  5\n2A080\n330\nDEAD\n  8\n0\n"
+        " 10\n1\n 20\n2\n 30\n0\n 11\n3\n 21\n4\n 31\n0\n"
+        "  0\nENDBLK\n  0\nENDSEC\n  0\nEOF\n",
+        encoding="utf-8",
+    )
+    entity = SimpleNamespace(
+        handle=int("2A080", 16), dxftype="LINE",
+        dxf={"start": (1, 2, 0), "end": (3, 4, 0), "layer_handle": 1})
+    witness = SimpleNamespace(
+        layers=[SimpleNamespace(handle=1, name="0")],
+        modelspace=lambda: SimpleNamespace(iter_entities=lambda: iter([entity])))
+    result = audit_native_lines_absent_from_dxf_modelspace(
+        path, witness, {entity.handle})
+    assert result["raw_found"] == 1
+    assert result["raw_geometry_and_layer_verified"] == 1
+    assert result["raw_block_definition_owner_verified"] == 0
+    assert result["status"] == "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED"
+    assert result["quantity_approved"] is False
