@@ -202,6 +202,20 @@ def audit_native_lines_absent_from_dxf_modelspace(
         len(found) == len(missing_handles) == len(proven_block_definitions)
         and matched == len(found)
     )
+    reference_audits: tuple[dict[str, Any], ...] = ()
+    if all_definition_only:
+        from core.drawings.dwg_block_references import audit_raw_dxf_block_references
+        record_handles = sorted({
+            found[handle].block_record_handle for handle in proven_block_definitions
+        })
+        if len(record_handles) > 128:
+            raise ValueError("Too many distinct BLOCK records for bounded reference audit")
+        # Evidence comes from the converted raw DXF only. The native original
+        # may have damaged or undecodable links and is never certified complete.
+        reference_audits = tuple(
+            audit_raw_dxf_block_references(dxf_path, record)
+            for record in record_handles
+        )
     return {
         "status": ("RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE"
                    if all_definition_only
@@ -209,6 +223,7 @@ def audit_native_lines_absent_from_dxf_modelspace(
         "raw_found": len(found),
         "raw_geometry_and_layer_verified": matched,
         "raw_block_definition_owner_verified": len(proven_block_definitions),
+        "raw_block_reference_audits": reference_audits,
         "direct_modelspace_lines_added": 0,
         "block_reference_coverage_verified": False,
         "quantity_approved": False,
