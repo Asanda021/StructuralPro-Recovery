@@ -62,6 +62,40 @@ def test_dimension_uses_source_text_midpoint_and_keeps_raw_text(tmp_path, monkey
     assert doc.conversion["text_fidelity"] != "VERIFIED"
 
 
+
+
+def test_native_shx_text_handles_are_preserved_without_guessing_glyph_mapping(tmp_path, monkeypatch):
+    # Synthetic samples model three rejected-style identities. They are NOT
+    # evidence that the private 38 TEXT records were accepted or decoded.
+    entries = [
+        obj("TEXT", "30D30", text="\\x7f" + "\u00D8\u00AA", style_handle="94",
+            text_generation_flag=2, insert=(1, 2, 0)),
+        obj("TEXT", "4416D", text="a\\U+0628", style_handle="1C7",
+            text_generation_flag=0, insert=(3, 4, 0)),
+        obj("TEXT", "76AE9", text="%%c", style_handle="5DF94",
+            text_generation_flag=0, insert=(5, 6, 0)),
+    ]
+    doc = preview(tmp_path, monkeypatch, entries)
+    assert [entity.handle for entity in doc.entities] == ["30D30", "4416D", "76AE9"]
+    assert [entity.data["source_text"] for entity in doc.entities] == [
+        entry.dxf["text"] for entry in entries
+    ]
+    assert [entity.data["style_handle"] for entity in doc.entities] == [
+        "94", "1C7", "5DF94"
+    ]
+    assert doc.conversion["native_text_entity_count"] == 3
+    assert doc.conversion["native_text_decoded_preserved_count"] == 3
+    assert doc.conversion["native_text_style_handles"] == {
+        "1C7": 1, "5DF94": 1, "94": 1
+    }
+    assert doc.conversion["native_text_mapping_approved"] is False
+    assert doc.conversion["native_text_financial_approval"] is False
+    assert all(not entity.data["source_text_mapping_approved"] for entity in doc.entities)
+    assert all(entity.data["preview_only"] for entity in doc.entities)
+    assert doc.units == "unitless"
+    with pytest.raises(ValueError, match="فقط"):
+        cad_entity_geometry(doc, "30D30", "count")
+
 def test_native_invisible_entity_does_not_become_visible(tmp_path, monkeypatch):
     doc = preview(tmp_path, monkeypatch, [obj("LINE", start=(0,0,0), end=(1,1,0), invisible=True)])
     assert doc.entities[0].data["layer_visible"] is False
