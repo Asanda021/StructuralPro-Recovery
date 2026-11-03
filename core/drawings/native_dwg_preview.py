@@ -171,6 +171,8 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
                       "requires_strict_financial_reimport": True}
     unsupported = Counter()
     unresolved_fonts = 0
+    text_style_counts: Counter[str] = Counter()
+    native_text_decoded_count = 0
     seen_handles: set[str] = set()
     for index, obj in enumerate(raw.modelspace().iter_entities()):
         if index >= _LIMIT_ENTITIES:
@@ -224,6 +226,13 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
             if d.get("width") is not None:
                 data["text_width"] = _positive(d["width"])
             data["style_handle"] = str(d.get("style_handle") or "")
+            text_style_counts[data["style_handle"]] += 1
+            native_text_decoded_count += 1
+            # Source-decoder text is retained verbatim in source_text; Unicode
+            # normalization is only for display. Neither a legacy SHX font name
+            # nor an apparently readable string proves its original glyph map.
+            data["source_text_coverage"] = "DECODER_TEXT_PRESERVED_READONLY"
+            data["source_text_mapping_approved"] = False
             data["text_generation_flag"] = int(d.get("text_generation_flag") or 0)
             data["font_name"] = "source-style-handle:" + data["style_handle"]
             # Do not pretend a Windows/Qt font can decode the text of a custom
@@ -264,6 +273,11 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
     from core.drawings.cad_large_scene import cad_coverage_report
     out.conversion["primitive_types_not_drawn"] = cad_coverage_report(out)["not_drawn_by_type"]
     out.conversion["text_fidelity"] = "NOT_VERIFIED_LEGACY_SHX_CODEPAGE"
+    out.conversion["native_text_entity_count"] = native_text_decoded_count
+    out.conversion["native_text_decoded_preserved_count"] = native_text_decoded_count
+    out.conversion["native_text_style_handles"] = dict(sorted(text_style_counts.items()))
+    out.conversion["native_text_mapping_approved"] = False
+    out.conversion["native_text_financial_approval"] = False
     out.conversion["legacy_shx_text_candidates"] = unresolved_fonts
     if unresolved_fonts:
         out.warnings.append(
