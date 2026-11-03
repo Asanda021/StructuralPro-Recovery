@@ -69,6 +69,11 @@ def test_raw_block_conflict_eight_matching_lines_has_no_false_loss(tmp_path):
     assert result["raw_found"] == 8
     assert result["raw_geometry_and_layer_verified"] == 8
     assert result["raw_block_definition_owner_verified"] == 8
+    assert len(result["raw_block_reference_audits"]) == 1
+    assert result["raw_block_reference_audits"][0]["status"] == (
+        "RAW_DXF_NO_OBSERVED_BLOCK_REFERENCE_NOT_PROOF_UNUSED"
+    )
+    assert result["raw_block_reference_audits"][0]["financial_quantity_approved"] is False
     assert result["direct_modelspace_lines_added"] == 0
     assert result["block_reference_coverage_verified"] is False
     assert result["quantity_approved"] is False
@@ -181,4 +186,23 @@ def test_unchanged_raw_line_with_wrong_block_owner_does_not_prove_definition(tmp
     assert result["raw_geometry_and_layer_verified"] == 1
     assert result["raw_block_definition_owner_verified"] == 0
     assert result["status"] == "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED"
+    assert result["quantity_approved"] is False
+
+
+def test_ownership_gate_reports_nested_insert_use_without_approving_quantity(tmp_path):
+    path, lines, doc = sample(tmp_path, count=2)
+    parent = doc.blocks.new("PARENT")
+    parent.add_blockref("*U_OWNERSHIP", (1, 1))
+    doc.modelspace().add_blockref("PARENT", (5, 5))
+    doc.saveas(path)
+    result = audit_native_lines_absent_from_dxf_modelspace(
+        path, native_source(lines), {int(line.dxf.handle, 16) for line in lines}
+    )
+    assert result["status"] == "RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE"
+    reference = result["raw_block_reference_audits"][0]
+    assert reference["status"] == "RAW_DXF_OBSERVED_REFERENCED_BLOCK"
+    assert reference["observed_direct_target_references"] == 0
+    assert reference["observed_reachable_target"] is True
+    assert reference["financial_quantity_approved"] is False
+    assert result["block_reference_coverage_verified"] is False
     assert result["quantity_approved"] is False
