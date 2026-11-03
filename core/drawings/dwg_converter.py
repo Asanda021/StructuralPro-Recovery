@@ -46,6 +46,23 @@ class DWGDroppedLineError(DWGConversionError):
         )
 
 
+class DWGSourceOwnershipConflictError(DWGConversionError):
+    """LINE is present in raw DXF, but not in the parsed ModelSpace roster."""
+
+    def __init__(self, evidence: dict):
+        self.evidence = evidence
+        block_paths = ", ".join(
+            f"{section}/{block or record or handle}"
+            for section, block, handle, record, owner in evidence.get("locations", ())
+        )
+        super().__init__(
+            f"تبدیل DWG: {evidence['raw_found']} خط در متن خام DXF موجود ولی در "
+            f"ModelSpace خواننده مشاهده نشده؛ اختلاف مالک/بلوک باید بررسی شود "
+            f"(بخش/بلوک: {block_paths or 'UNKNOWN'}). "
+            f"این خطوط «حذف‌شده توسط مبدل» نیستند و برای متره تأیید نشده‌اند."
+        )
+
+
 class UnsupportedDWGVersionError(DWGConversionError):
     """DWG header is readable but its version is outside the supported boundary."""
 
@@ -96,8 +113,27 @@ def _independent_source_coverage(source, converted_doc, signature):
     extra=converted-native
     if missing or extra:
         if missing and not extra and all(kind == "LINE" for _, kind in missing):
-            # This is an exact loss classification, not approval or geometry
-            # synthesis. The caller may try a second strict real DWG decoder.
+            # The native reader may include anonymous BLOCK members in its
+            # modelspace roster while ezdxf excludes that BLOCK from ModelSpace.
+            # Inspect the raw DXF bytes *before* declaring a converter deletion
+            # or triggering the strict decoder's unrelated fallback.
+            from core.drawings.dwg_source_ownership import (
+                audit_native_lines_absent_from_dxf_modelspace,
+            )
+            try:
+                provenance = audit_native_lines_absent_from_dxf_modelspace(
+                    converted_doc.filename, raw,
+                    {handle for handle, kind in missing},
+                )
+            except (OSError, ValueError, TypeError, UnicodeError) as exc:
+                raise DWGConversionError(
+                    "ممیزی مالک و بلوک موجودیت‌های مفقود در متن خام DXF ممکن نشد؛ "
+                    "هیچ خروجی قابل متره تأیید نمی‌شود"
+                ) from exc
+            if provenance["raw_found"]:
+                raise DWGSourceOwnershipConflictError(provenance)
+            # Only truly absent LINE bytes are classified as loss. A missing
+            # unit, unsupported TEXT, or ownership issue must never be bypassed.
             raise DWGDroppedLineError(len(missing))
         raise DWGConversionError(
             f"پوشش موجودیت‌های DWG/DXF برابر نیست؛ {len(missing)} جزء منبع مفقود/تغییرنوع، "
