@@ -132,7 +132,13 @@ def audit_raw_dxf_block_references(
         bool(name) and name not in defined_names for _, name, _ in refs
     )
     ambiguous_reference = bool(ambiguous_names & reachable)
-    uncertain = uncertain_text or ambiguous_reference or not target_names
+    # A malformed/unresolvable named reference may hide an unknown chain.
+    # Even when no explicit use is observed, never label the audit complete.
+    uncertain = (
+        uncertain_text or ambiguous_reference
+        or bool(ambiguous_names & target_names)
+        or unknown_references > 0 or not target_names
+    )
     if not target_names:
         status = "RAW_TARGET_BLOCK_RECORD_NOT_FOUND"
     elif uncertain:
