@@ -185,10 +185,33 @@ def audit_native_lines_absent_from_dxf_modelspace(
          entry.block_record_handle, entry.owner_handle)
         for entry in found.values()
     }))
+    # A LINE with owner 330 equal to its enclosing BLOCK's block-record
+    # handle belongs to the block *definition*. It is not an independent
+    # ModelSpace LINE. The parent BLOCK entity handle (code 5) is distinct
+    # from its block-record owner (code 330); never compare the wrong IDs.
+    # This does NOT establish whether a separate INSERT/DIMENSION references
+    # the block, and MUST NOT count the definition's geometry as a quantity.
+    proven_block_definitions = {
+        handle for handle, entry in found.items()
+        if entry.section == "BLOCKS"
+        and bool(entry.block_handle)
+        and bool(entry.block_record_handle)
+        and entry.owner_handle == entry.block_record_handle
+    }
+    all_definition_only = (
+        len(found) == len(missing_handles) == len(proven_block_definitions)
+        and matched == len(found)
+    )
     return {
-        "status": "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED",
+        "status": ("RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE"
+                   if all_definition_only
+                   else "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED"),
         "raw_found": len(found),
         "raw_geometry_and_layer_verified": matched,
+        "raw_block_definition_owner_verified": len(proven_block_definitions),
+        "direct_modelspace_lines_added": 0,
+        "block_reference_coverage_verified": False,
+        "quantity_approved": False,
         "missing_from_raw": len(missing_handles) - len(found),
         "locations": locations,
     }
