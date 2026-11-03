@@ -65,9 +65,13 @@ def test_raw_block_conflict_eight_matching_lines_has_no_false_loss(tmp_path):
     path, lines, _ = sample(tmp_path)
     result = audit_native_lines_absent_from_dxf_modelspace(
         path, native_source(lines), {int(line.dxf.handle, 16) for line in lines})
-    assert result["status"] == "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED"
+    assert result["status"] == "RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE"
     assert result["raw_found"] == 8
     assert result["raw_geometry_and_layer_verified"] == 8
+    assert result["raw_block_definition_owner_verified"] == 8
+    assert result["direct_modelspace_lines_added"] == 0
+    assert result["block_reference_coverage_verified"] is False
+    assert result["quantity_approved"] is False
     assert result["missing_from_raw"] == 0
     assert result["locations"][0][0] == "BLOCKS"
 
@@ -83,6 +87,8 @@ def test_mismatched_raw_geometry_is_not_marked_verified(tmp_path):
         path, witness, {bad.handle})
     assert result["raw_found"] == 1
     assert result["raw_geometry_and_layer_verified"] == 0
+    assert result["status"] == "RAW_DXF_PRESENT_MODELSPACE_OWNERSHIP_UNRESOLVED"
+    assert result["quantity_approved"] is False
 
 
 def test_actual_absence_not_misreported_as_block_conflict(tmp_path):
@@ -143,7 +149,10 @@ def test_external_converter_with_anonymous_block_is_blocked_by_ownership_gate(
         OfflineDWGConverter("dwg2dxf").convert(source, output.parent)
     evidence = captured.value.evidence
     assert evidence["raw_found"] == 8
+    assert evidence["status"] == "RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE"
+    assert evidence["raw_block_definition_owner_verified"] == 8
     assert evidence["raw_geometry_and_layer_verified"] == 8
+    assert evidence["block_reference_coverage_verified"] is False
     assert evidence["missing_from_raw"] == 0
     assert not output.exists()
     assert not isinstance(captured.value, DWGDroppedLineError)
