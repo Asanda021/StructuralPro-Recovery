@@ -68,25 +68,25 @@ def test_native_shx_text_handles_are_preserved_without_guessing_glyph_mapping(tm
     # Synthetic samples model three rejected-style identities. They are NOT
     # evidence that the private 38 TEXT records were accepted or decoded.
     entries = [
-        obj("TEXT", "30D30", text="\\x7f" + "\u00D8\u00AA", style_handle="94",
+        obj("TEXT", "F110", text="\\x7f" + "\u00D8\u00AA", style_handle="A1",
             text_generation_flag=2, insert=(1, 2, 0)),
-        obj("TEXT", "4416D", text="a\\U+0628", style_handle="1C7",
+        obj("TEXT", "F111", text="a\\U+0628", style_handle="B2",
             text_generation_flag=0, insert=(3, 4, 0)),
-        obj("TEXT", "76AE9", text="%%c", style_handle="5DF94",
+        obj("TEXT", "F112", text="%%c", style_handle="C3",
             text_generation_flag=0, insert=(5, 6, 0)),
     ]
     doc = preview(tmp_path, monkeypatch, entries)
-    assert [entity.handle for entity in doc.entities] == ["30D30", "4416D", "76AE9"]
+    assert [entity.handle for entity in doc.entities] == ["F110", "F111", "F112"]
     assert [entity.data["source_text"] for entity in doc.entities] == [
         entry.dxf["text"] for entry in entries
     ]
     assert [entity.data["style_handle"] for entity in doc.entities] == [
-        "94", "1C7", "5DF94"
+        "A1", "B2", "C3"
     ]
     assert doc.conversion["native_text_entity_count"] == 3
     assert doc.conversion["native_text_decoded_preserved_count"] == 3
     assert doc.conversion["native_text_style_handles"] == {
-        "1C7": 1, "5DF94": 1, "94": 1
+        "B2": 1, "C3": 1, "A1": 1
     }
     assert doc.conversion["native_text_mapping_approved"] is False
     assert doc.conversion["native_text_financial_approval"] is False
@@ -94,7 +94,7 @@ def test_native_shx_text_handles_are_preserved_without_guessing_glyph_mapping(tm
     assert all(entity.data["preview_only"] for entity in doc.entities)
     assert doc.units == "unitless"
     with pytest.raises(ValueError, match="فقط"):
-        cad_entity_geometry(doc, "30D30", "count")
+        cad_entity_geometry(doc, "F110", "count")
 
 def test_native_invisible_entity_does_not_become_visible(tmp_path, monkeypatch):
     doc = preview(tmp_path, monkeypatch, [obj("LINE", start=(0,0,0), end=(1,1,0), invisible=True)])
