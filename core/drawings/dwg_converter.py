@@ -55,11 +55,18 @@ class DWGSourceOwnershipConflictError(DWGConversionError):
             f"{section}/{block or record or handle}"
             for section, block, handle, record, owner in evidence.get("locations", ())
         )
+        if evidence.get("status") == "RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE":
+            reason = (
+                "این خطوط اجزای تعریف BLOCK هستند و عضو مستقیم ModelSpace نیستند؛ "
+                "ارجاعات احتمالی INSERT و DIMENSION هنوز باید جداگانه بررسی شوند"
+            )
+        else:
+            reason = "محل و مالکیت این خطوط هنوز به طور کامل قابل اثبات نیست"
         super().__init__(
             f"تبدیل DWG: {evidence['raw_found']} خط در متن خام DXF موجود ولی در "
-            f"ModelSpace خواننده مشاهده نشده؛ اختلاف مالک/بلوک باید بررسی شود "
+            f"ModelSpace خواننده مشاهده نشده؛ {reason} "
             f"(بخش/بلوک: {block_paths or 'UNKNOWN'}). "
-            f"این خطوط «حذف‌شده توسط مبدل» نیستند و برای متره تأیید نشده‌اند."
+            f"نه حذف قطعی مبدل اثبات شده، نه مجوز متره صادر شده است."
         )
 
 
