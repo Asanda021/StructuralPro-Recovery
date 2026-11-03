@@ -81,12 +81,12 @@ def test_dimension_anonymous_block_name_reference_is_observed(tmp_path):
     # A DIMENSION group 2 points to its anonymous graphics block by name.
     path = tmp_path / "synthetic-dimension-reference.dxf"
     path.write_text(
-        "  0\\nSECTION\\n  2\\nBLOCKS\\n"
-        "  0\\nBLOCK\\n  5\\nB1\\n330\\nA1\\n  2\\n*D_TEST\\n"
-        "  0\\nENDBLK\\n  0\\nENDSEC\\n"
-        "  0\\nSECTION\\n  2\\nENTITIES\\n"
-        "  0\\nDIMENSION\\n  5\\nD1\\n  2\\n*D_TEST\\n"
-        "  0\\nENDSEC\\n  0\\nEOF\\n",
+        "  0\nSECTION\n  2\nBLOCKS\n"
+        "  0\nBLOCK\n  5\nB1\n330\nA1\n  2\n*D_TEST\n"
+        "  0\nENDBLK\n  0\nENDSEC\n"
+        "  0\nSECTION\n  2\nENTITIES\n"
+        "  0\nDIMENSION\n  5\nD1\n  2\n*D_TEST\n"
+        "  0\nENDSEC\n  0\nEOF\n",
         encoding="utf-8",
     )
     audit = audit_raw_dxf_block_references(path, "A1")
@@ -101,12 +101,12 @@ def test_dimension_anonymous_block_name_reference_is_observed(tmp_path):
 def test_unresolved_raw_reference_does_not_get_clean_unused_status(tmp_path):
     path = tmp_path / "synthetic-broken-reference.dxf"
     path.write_text(
-        "  0\\nSECTION\\n  2\\nBLOCKS\\n"
-        "  0\\nBLOCK\\n  5\\nB1\\n330\\nA1\\n  2\\nTARGET\\n"
-        "  0\\nENDBLK\\n  0\\nENDSEC\\n"
-        "  0\\nSECTION\\n  2\\nENTITIES\\n"
-        "  0\\nINSERT\\n  5\\nC1\\n  2\\nMISSING_BLOCK\\n"
-        "  0\\nENDSEC\\n  0\\nEOF\\n",
+        "  0\nSECTION\n  2\nBLOCKS\n"
+        "  0\nBLOCK\n  5\nB1\n330\nA1\n  2\nTARGET\n"
+        "  0\nENDBLK\n  0\nENDSEC\n"
+        "  0\nSECTION\n  2\nENTITIES\n"
+        "  0\nINSERT\n  5\nC1\n  2\nMISSING_BLOCK\n"
+        "  0\nENDSEC\n  0\nEOF\n",
         encoding="utf-8",
     )
     audit = audit_raw_dxf_block_references(path, "A1")
