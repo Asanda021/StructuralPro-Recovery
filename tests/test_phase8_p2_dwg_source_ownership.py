@@ -97,10 +97,12 @@ def test_raw_duplicate_selected_handle_cannot_be_ignored(tmp_path):
     path, lines, _ = sample(tmp_path, count=1)
     handle = lines[0].dxf.handle
     content = path.read_bytes()
+    newline = b"\r\n" if b"\r\n" in content else b"\n"
     extra = (f"  0\nLINE\n  5\n{handle}\n  8\n0\n"
-             f" 10\n0\n 20\n0\n 11\n1\n 21\n1\n").encode()
-    assert b"  0\nENDBLK" in content
-    path.write_bytes(content.replace(b"  0\nENDBLK", extra+b"  0\nENDBLK", 1))
+             f" 10\n0\n 20\n0\n 11\n1\n 21\n1\n").encode().replace(b"\n", newline)
+    marker = b"  0" + newline + b"ENDBLK"
+    assert marker in content
+    path.write_bytes(content.replace(marker, extra + marker, 1))
     with pytest.raises(ValueError, match="Duplicate"):
         locate_raw_dxf_lines(path, {int(handle, 16)})
 
