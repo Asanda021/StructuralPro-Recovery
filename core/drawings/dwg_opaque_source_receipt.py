@@ -16,6 +16,7 @@ PINNED_READER = '0.17.0'
 MAX_SOURCE_BYTES = 50 * 1024 * 1024
 MAX_DXF_BYTES = 300 * 1024 * 1024
 MAX_OBJECTS = 64
+MAX_OBJECT_MAP_ENTRIES = 1_000_000
 
 
 def _handles(values):
@@ -38,6 +39,33 @@ def _handles(values):
         seen.add(number)
         output.append(number)
     return output
+
+
+def validate_object_map_entries(entries, expected_handles):
+    """Veto duplicate/missing handles in the *exposed* native object-map index.
+
+    This is a second consistency check against upstream record selection, NOT
+    proof that a closed-source/compressed decoder exposes every corrupt entry.
+    """
+    required = set(_handles(expected_handles))
+    seen = {}
+    count = 0
+    for row in entries:
+        count += 1
+        if count > MAX_OBJECT_MAP_ENTRIES:
+            raise ValueError('Native DWG object map exceeds safe cap')
+        if not isinstance(row, (tuple, list)) or len(row) != 2:
+            raise ValueError('Unexpected DWG object-map record')
+        handle, offset = row
+        if (type(handle) is not int or type(offset) is not int
+                or not 0 < handle < 2**64 or offset < 0):
+            raise ValueError('Invalid DWG index handle or offset')
+        if handle in seen:
+            raise ValueError('Duplicate native DWG object-map handle')
+        seen[handle] = offset
+    if not required.issubset(seen):
+        raise ValueError('Target proprietary handle absent from independent object map')
+    return {h: seen[h] for h in required}
 
 
 def summarize_raw_records(raw_records, expected_handles):
@@ -63,6 +91,12 @@ def summarize_raw_records(raw_records, expected_handles):
         if any(not isinstance(b, int) or isinstance(b, bool) or not 0 <= b <= 255 for b in data):
             raise ValueError('Invalid native object byte stream')
         encoded = bytes(data)
+        # Tested AC1018 native-record framing: the pinned ezdwg API returns
+        # declared_size bytes plus four prefix/trailer bytes.  Eight original
+        # private records exhibit this relation.  Other DWG versions are NOT
+        # authorized by this narrow contract.
+        if len(encoded) != declared_size + 4:
+            raise ValueError('AC1018 native raw-record declared size mismatch')
         seen.add(handle)
         out.append({'handle':format(handle, 'X'), 'raw_record_sha256':hashlib.sha256(encoded).hexdigest(),
                     'raw_record_stream_bytes':len(encoded), 'record_declared_size':declared_size,
@@ -90,9 +124,9 @@ def opaque_recovery_decision(source_records, dxf_link_report, *, expected_source
     if count is None or type(count) is not int or count < 0:
         status = 'INDETERMINATE_DXF_DICTIONARY_GRAPH'
     elif count > 0:
-        status = 'SOURCE_OPAQUE_BYTES_RECOVERABLE_DXF_LINKS_DANGLING'
+        status = 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_LINKS_DANGLING'
     else:
-        status = 'SOURCE_OPAQUE_BYTES_RECOVERABLE_DXF_LINKS_NOT_PROVEN_COMPLETE'
+        status = 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_LINKS_NOT_PROVEN_COMPLETE'
     if not isinstance(expected_source_sha256,str) or len(expected_source_sha256)!=64 or not isinstance(converted_dxf_sha256,str) or len(converted_dxf_sha256)!=64:
         raise ValueError('SHA digests required')
     return {
@@ -126,15 +160,25 @@ def audit_original_opaque_records(source_dwg, converted_dxf, claimed_handles, *,
     if (not converted.is_file() or converted.suffix.lower()!='.dxf'
             or not 10 < converted.stat().st_size <= MAX_DXF_BYTES):
         raise ValueError('Converted DXF missing or outside size limit')
-    sh0=hashlib.sha256(original.read_bytes()).hexdigest()
+    original_bytes = original.read_bytes()
+    sh0=hashlib.sha256(original_bytes).hexdigest()
     shd0=hashlib.sha256(converted.read_bytes()).hexdigest()
+    if original_bytes[:6] != b'AC1018':
+        raise ValueError('Raw-record framing is validated only for AC1018 DWG')
     if sh0!=expected_original_sha256:
         raise ValueError('Original DWG SHA does not match frozen evidence')
     if metadata.version('ezdwg')!=PINNED_READER:
         raise ValueError('Independent ezdwg version not pinned')
     import ezdwg
+    index_rows = ezdwg.raw.list_object_map_entries(
+        str(original), limit=MAX_OBJECT_MAP_ENTRIES + 1)
+    target_offsets = validate_object_map_entries(index_rows, required)
     raw_records=ezdwg.raw.read_object_records_by_handle(str(original),required,limit=MAX_OBJECTS)
     receipts=summarize_raw_records(raw_records,required)
+    for item in receipts:
+        handle = int(item['handle'], 16)
+        if item['native_object_offset'] != target_offsets[handle]:
+            raise ValueError('Native raw record disagrees with object-map offset')
     out=ezdxf.readfile(converted)
     integrity=audit_named_dictionary_links(out)
     decision=opaque_recovery_decision(receipts,integrity,
