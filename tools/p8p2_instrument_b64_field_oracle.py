@@ -55,8 +55,13 @@ def instrument_fdl_spec(text: str) -> str:
         # No values, file names, feature data, counts or paths are logged.
         result = result.replace(
             original,
-            'sp_p8p2_fdl_enter ("' + field + '");\n    ' + original +
-            '\n    sp_p8p2_fdl_complete ("' + field + '");',
+            '#ifdef SP_P8P2_FDL_2004_ONLY\n'
+            '    sp_p8p2_fdl_enter ("' + field + '");\n'
+            '#endif\n'
+            + original +
+            '\n#ifdef SP_P8P2_FDL_2004_ONLY\n'
+            '    sp_p8p2_fdl_complete ("' + field + '");\n'
+            '#endif',
             1,
         )
     return result
@@ -68,6 +73,18 @@ def instrument_decoder(text: str) -> tuple[str, int]:
     if result.count(anchor) != 1:
         raise ValueError("Pinned filedeplist_private anchor changed")
     result = result.replace(anchor, _FDL_HELPERS + "\n" + anchor, 1)
+    # The shared spec is ALSO included by decode_r2007.c. Only R2004 may
+    # call these local helpers; 2007 must compile with marker code excluded.
+    spec_include = '  #include "filedeplist.spec"'
+    if result.count(spec_include) != 1:
+        raise ValueError("Pinned FileDepList include scope changed")
+    result = result.replace(
+        spec_include,
+        '  #define SP_P8P2_FDL_2004_ONLY 1\n'
+        + spec_include
+        + '\n  #undef SP_P8P2_FDL_2004_ONLY',
+        1,
+    )
 
     old = "  error = filedeplist_private (dat, dwg);"
     if result.count(old) != 1:
