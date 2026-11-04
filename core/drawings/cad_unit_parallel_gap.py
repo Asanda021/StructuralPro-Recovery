@@ -57,6 +57,21 @@ def parallel_line_gap_raw(first, second):
     return gap
 
 
+def _evidence_rect(rect_values, bounds, label):
+    import fitz
+    if (not isinstance(rect_values, (tuple, list)) or len(rect_values) != 4):
+        raise ValueError(f"Missing or invalid {label} evidence bounding box")
+    try:
+        rect = fitz.Rect(*[float(v) for v in rect_values])
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"Invalid {label} evidence bounding box") from exc
+    if (not all(math.isfinite(v) for v in (rect.x0,rect.y0,rect.x1,rect.y1))
+            or rect.is_empty or not bounds.contains(rect)
+            or rect.get_area() > bounds.get_area() * 0.20):
+        raise ValueError(f"Oversized/out-of-bounds {label} evidence region")
+    return rect
+
+
 def validate_parallel_gap_references(document, proof, factor):
     """Validate v3 reference contract; no automatic member or unit inference.
 
@@ -89,18 +104,40 @@ def validate_parallel_gap_references(document, proof, factor):
     if unit_factor <= 0:
         raise ValueError("Positive supported conversion factor required")
     import fitz
+    # Bind every declaration to inspectable text in the *actual* PDF, not merely to
+    # self-reported JSON strings. Text-free/scanned sheets require independent manual
+    # approval and must not silently become unit-calibration evidence.
+    identity = proof.get('pdf_identity_evidence')
+    if not isinstance(identity, dict):
+        raise ValueError("Verified PDF project/revision evidence is missing")
+    project_anchor = str(identity.get('project_text', '')).strip()
+    revision_anchor = str(identity.get('revision_text', '')).strip()
+    identity_page = identity.get('page')
+    if (type(identity_page) is not int or not project_anchor or not revision_anchor
+            or proj not in project_anchor or rev not in revision_anchor):
+        raise ValueError("PDF identity anchors are not bound to project/revision")
     with fitz.open(pdf) as pdf_doc:
         pages = len(pdf_doc)
+        if not 1 <= identity_page <= pages:
+            raise ValueError("PDF identity page invalid")
+        pdf_identity_page = pdf_doc[identity_page - 1]
+        identity_rect = _evidence_rect(identity.get('bbox'), pdf_identity_page.rect, 'title-block')
+        identity_text = pdf_identity_page.get_textbox(identity_rect)
+        if project_anchor not in identity_text or revision_anchor not in identity_text:
+            raise ValueError("PDF does not actually contain claimed project/revision in verified title area")
+        pdf_page_sizes = [p.rect for p in pdf_doc]
+    seen_pdf_locations = set()
+    seen_pdf_regions = []
+
     seen_handles, seen_members, seen_segments = set(), set(), set()
-    # Duplicate geometry under different handles cannot prove two independent references.
     seen_pair_geometry = []
     def _same_segment(left, right):
         a, b = left
         c, d = right
-        return (math.dist(a, c) <= 1e-8 and math.dist(b, d) <= 1e-8) or (math.dist(a, d) <= 1e-8 and math.dist(b, c) <= 1e-8)
+        return (math.dist(a,c) <= 1e-8 and math.dist(b,d) <= 1e-8) or (math.dist(a,d) <= 1e-8 and math.dist(b,c) <= 1e-8)
     def _same_pair(left, right):
-        return ((_same_segment(left[0], right[0]) and _same_segment(left[1], right[1])) or
-                (_same_segment(left[0], right[1]) and _same_segment(left[1], right[0])))
+        return ((_same_segment(left[0],right[0]) and _same_segment(left[1],right[1])) or
+                (_same_segment(left[0],right[1]) and _same_segment(left[1],right[0])))
     entities_by_handle = {}
     for entity in document.entities:
         if entity.handle:
@@ -119,6 +156,36 @@ def validate_parallel_gap_references(document, proof, factor):
                 or not member or member in seen_members or not sheet or not note
                 or type(page) is not int or not 1 <= page <= pages):
             raise ValueError("Unique pair, member, sheet, page and independent mapping note required")
+        # Independent printed reference must be present on the exact claimed page.
+        # Document-unit claims are not source proof without a visible numeric label.
+        printed_member = str(ref.get('pdf_member_label', '')).strip()
+        printed_dimension = str(ref.get('pdf_dimension_text', '')).strip()
+        printed_unit = str(ref.get('pdf_unit', '')).strip().lower()
+        unit_scale = {'m': Decimal('1'), 'cm': Decimal('0.01'),
+                      'mm': Decimal('0.001'), 'متر': Decimal('1'),
+                      'سانت': Decimal('0.01'), 'سانتی متر': Decimal('0.01'),
+                      'سانتی‌متر': Decimal('0.01'), 'میلی متر': Decimal('0.001'),
+                      'میلی‌متر': Decimal('0.001')}.get(printed_unit)
+        printed_number = _decimal(ref.get('pdf_dimension_value'), 'pdf_dimension_value')
+        rect = _evidence_rect(ref.get('pdf_evidence_bbox'), pdf_page_sizes[page - 1], 'member')
+        if any(prev_page == page and rect.intersects(prev_rect)
+               for prev_page, prev_rect in seen_pdf_regions):
+            raise ValueError("Printed member evidence regions must not overlap")
+        with fitz.open(pdf) as proof_pdf:
+            anchored_text = proof_pdf[page - 1].get_textbox(rect)
+        if (not printed_member or not printed_dimension or unit_scale is None
+                or printed_number <= 0 or printed_member not in anchored_text
+                or printed_dimension not in anchored_text):
+            raise ValueError("PDF member and dimension must be visible together inside exact source region")
+        if abs(printed_number * unit_scale - _decimal(ref.get('real_length_m'), 'real_length_m')) > tol:
+            raise ValueError("Printed PDF dimension disagrees with declared real-world length")
+        if printed_unit not in printed_dimension:
+            raise ValueError("Printed dimension lacks explicit matching unit")
+        pdf_location = (page, printed_member, printed_dimension)
+        if pdf_location in seen_pdf_locations:
+            raise ValueError("Two references cannot reuse the same printed PDF member/dimension")
+        seen_pdf_locations.add(pdf_location)
+        seen_pdf_regions.append((page,rect))
         lines = []
         for handle in handles:
             match = entities_by_handle.get(handle, [])
