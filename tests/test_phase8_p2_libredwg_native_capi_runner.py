@@ -233,6 +233,55 @@ def test_diagnostic_experimental_config_rejects_upstream_binary(tmp_path, monkey
     assert not (output / 'libredwg_native_receipt.private.json').exists()
     assert not (output / 'libredwg_native_errors.private.log').exists()
 
+
+def test_b64_stage_variant_exact_label_rejects_other_builds():
+    text = (
+        'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\\n'
+        'STRUCTURALPRO_C_API_MASK=68\\n'
+        'STRUCTURALPRO_C_API_OBJECTS=101504\\n'
+    )
+    got = m.parse_helper_stdout(text, 'a835758', 'sortentstable_100k_b64stage')
+    assert got['observed_build_variant'] == 'sortentstable_100k_b64stage'
+    assert got['c_api_return_mask'] == 68
+    for variant in ('upstream', 'sortentstable_100k'):
+        with pytest.raises(ValueError, match='unpinned'):
+            m.parse_helper_stdout(text, 'a835758', variant)
+    with pytest.raises(ValueError, match='unpinned'):
+        m.parse_helper_stdout(text.replace('a835758', 'badbeef'),
+                              'a835758', 'sortentstable_100k_b64stage')
+
+
+def test_b64_stage_private_probe_receipt_is_bounded_and_no_go(tmp_path, monkeypatch):
+    if os.name != 'posix':
+        pytest.skip('POSIX private ACL required')
+    src, cfg, helper, lib, output = sample(tmp_path)
+    contents = json.loads(cfg.read_text(encoding='utf-8'))
+    contents['build_variant'] = 'sortentstable_100k_b64stage'
+    cfg.write_text(json.dumps(contents), encoding='utf-8')
+    cfg.chmod(0o600)
+    monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
+    def fake_run(mock_helper, mock_source, env, stderr_file, timeout):
+        stderr_file.write(
+            b'190:SP_P8P2_B64_STAGE=read_2004_section_handles\\n'
+            b'191:SP_P8P2_B64_OBJECT_RETURN\\n'
+            b'192:SP_P8P2_B64_STAGE=read_2004_section_handles\\n'
+        )
+        return SimpleNamespace(
+            returncode=0,
+            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\\n'
+                   b'STRUCTURALPRO_C_API_MASK=68\\n'
+                   b'STRUCTURALPRO_C_API_OBJECTS=7\\n',
+        )
+    monkeypatch.setattr(m, '_execute_native_filtered', fake_run)
+    report = m.diagnose_private_source(src, cfg, helper, lib, output)
+    assert report['bit64_stage_instrumentation_executed'] is True
+    assert report['bit64_diagnostic_stage_names'] == ['read_2004_section_handles']
+    assert report['bit64_object_decode_return_markers_bounded'] == 1
+    assert report['financial_quantity_approved'] is False
+    assert report['all_other_possible_bit64_sources_excluded'] is False
+    assert report['verdict'] == 'PARTIAL_NO_GO'
+
+
 def test_real_stream_filter_retains_error_but_not_unbounded_trace(tmp_path):
     """Real Python subprocess + grep, synthetic lines: no CAD/native library."""
     import sys
