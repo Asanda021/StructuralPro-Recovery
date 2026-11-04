@@ -26,6 +26,9 @@ def test_pinned_r2004_section_wrapping_is_diagnostic_only():
     assert "error |= added;" in result
     assert "return returned;" in result
     assert "sp_p8p2_obj_b64_seen++ < 16" in result
+    assert "if (added > 0 && (added & DWG_ERR_VALUEOUTOFBOUNDS))" in result
+    assert "if (added == -1)" in result
+    assert "SP_P8P2_OBJECT_REALLOCATION_SENTINEL" in result
     assert "DWG_ERR_VALUEOUTOFBOUNDS" in result
 
 
