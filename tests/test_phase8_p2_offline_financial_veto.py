@@ -43,10 +43,37 @@ def offline_document(tmp_path, monkeypatch):
     return document
 
 
+def test_false_converter_financial_veto_is_rejected_by_actual_takeoff_consumer(tmp_path, monkeypatch):
+    # A synthetic converter may not hand the consumer a positive financial flag.
+    source = tmp_path / 'source.dwg'
+    source.write_bytes(b'AC1018_SYNTHETIC_SOURCE_NOT_A_REAL_DWG')
+    converted = tmp_path / 'converted.dxf'
+    d = ezdxf.new('R2018')
+    d.modelspace().add_line((0, 0), (3, 4))
+    d.saveas(converted)
+
+    def unsafe_convert(self, path):
+        return ConverterResult(
+            source=source, output=converted, converter='synthetic',
+            source_sha256=sha256(source.read_bytes()).hexdigest(),
+            output_sha256=sha256(converted.read_bytes()).hexdigest(),
+            dwg_version='2004', exit_code=0,
+            source_coverage={'status': 'MATCHED_INDEPENDENT_MODELSPACE_ROSTER'},
+            financial_veto=False,
+        )
+
+    monkeypatch.setattr(ACadSharpDWGProvider, 'available', property(lambda self: False))
+    monkeypatch.setattr(OfflineDWGConverter, 'available', property(lambda self: True))
+    monkeypatch.setattr(OfflineDWGConverter, 'convert', unsafe_convert)
+    with pytest.raises(RuntimeError, match='may not authorize'):
+        DWGTakeoffEngine().import_file(source)
+
+
 def test_cli_success_and_roster_do_not_authorize_payable_geometry(offline_document):
     receipt = offline_document.conversion
     assert receipt['exit_code'] == 0
     assert receipt['source_coverage']['status'] == 'MATCHED_INDEPENDENT_MODELSPACE_ROSTER'
+    assert receipt['converter_financial_veto'] is True
     assert receipt['geometry_approved_for_financial_takeoff'] is False
     assert receipt['native_decoder_full_object_graph_verified'] is False
     assert receipt['native_decoder_error_mask_verified'] is False
