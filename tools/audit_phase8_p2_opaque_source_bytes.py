@@ -1,18 +1,28 @@
-"""Read-only DWG opaque-record audit; private output only, never DXF repair."""
+"""Read-only DWG opaque-record audit; keep sensitive parameters off argv."""
 import argparse
 import json
 import os
+import stat
 from pathlib import Path
 
 from core.drawings.dwg_opaque_source_receipt import audit_original_opaque_records
 
 
-def private_output_destination(path, *, project_root=None):
-    """Reject public/repository paths and existing files before reading CAD.
+def _no_symlink_ancestors(path):
+    if any(p.is_symlink() for p in (path, *path.parents)):
+        raise ValueError('Private receipt/config path cannot traverse symlinks')
 
-    An explicit absolute destination outside any git tree is mandatory.
-    New files are created exclusively with mode 0600 on POSIX.
-    """
+
+def _private_directory_guard(directory):
+    if os.name == 'nt':
+        # chmod(0700) does not establish a private Windows DACL.
+        raise ValueError('WINDOWS_PRIVATE_ACL_NOT_VERIFIED')
+    if not directory.is_dir() or (directory.stat().st_mode & 0o077):
+        raise ValueError('Private evidence directory must be accessible only to its owner (0700)')
+
+
+def private_output_destination(path, *, project_root=None):
+    """Reject public/repository paths or pre-existing artifacts before reading CAD."""
     requested = Path(path).expanduser()
     if not requested.is_absolute():
         raise ValueError('Private receipt needs an absolute output path')
@@ -30,15 +40,57 @@ def private_output_destination(path, *, project_root=None):
     if any(p.lower() in {'public', 'artifacts', 'dist', 'docs'}
            for p in destination.parts):
         raise ValueError('Public build, document or artifact directories are forbidden')
-    if any(parent.is_symlink() for parent in (requested.parent, *requested.parents)):
-        raise ValueError('Private receipt location may not traverse symlinks')
+    _no_symlink_ancestors(requested)
     return destination
+
+
+def read_private_config(path, *, project_root=None):
+    """Read handles and source SHA from a 0600 private JSON; never from argv."""
+    private = Path(path).expanduser()
+    if not private.is_absolute() or private.suffix.lower() != '.json':
+        raise ValueError('Absolute private JSON config required')
+    if not private.is_file():
+        raise ValueError('Private handles config not found')
+    project = Path(project_root or Path(__file__).resolve().parents[1]).resolve()
+    resolved = private.resolve(strict=True)
+    if project == resolved or project in resolved.parents:
+        raise ValueError('Private handles config must not be in repository')
+    _no_symlink_ancestors(private)
+    _private_directory_guard(resolved.parent)
+    if os.name != 'nt' and resolved.stat().st_mode & 0o077:
+        raise ValueError('Private handles config must be 0600')
+    if resolved.stat().st_size > 16384:
+        raise ValueError('Private handles config exceeds 16 KiB')
+    flags = os.O_RDONLY
+    if hasattr(os, 'O_NOFOLLOW'):
+        flags |= os.O_NOFOLLOW
+    fd = os.open(resolved, flags)
+    with os.fdopen(fd, 'r', encoding='utf-8') as stream:
+        content = stream.read(16385)
+    if len(content) > 16384:
+        raise ValueError('Private handles config too large')
+    config = json.loads(content)
+    if not isinstance(config, dict) or set(config) != {'handles', 'expected_original_sha256'}:
+        raise ValueError('Expected handles and source SHA in private JSON config')
+    handles = config['handles']
+    digest = config['expected_original_sha256']
+    from core.drawings.dwg_opaque_source_receipt import _handles
+    _handles(handles)
+    if (not isinstance(digest, str) or len(digest) != 64
+            or any(ch not in '0123456789abcdefABCDEF' for ch in digest)):
+        raise ValueError('Invalid private source SHA')
+    return handles, digest.lower()
 
 
 def write_private_report(path, result, *, project_root=None):
     dest = private_output_destination(path, project_root=project_root)
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    # Revalidate after directory creation to avoid symlink path changes.
+    if not dest.parent.exists():
+        # Do not create an unknown hierarchy of world-readable ancestors.
+        if not dest.parent.parent.is_dir():
+            raise ValueError('Private parent directory must already exist')
+        dest.parent.mkdir(mode=0o700)
+    _private_directory_guard(dest.parent)
+    # Revalidate after creating the directory to exclude changed path identities.
     dest = private_output_destination(dest, project_root=project_root)
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
     if hasattr(os, 'O_NOFOLLOW'):
@@ -57,24 +109,26 @@ def write_private_report(path, result, *, project_root=None):
 
 
 def main():
-    p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('original_dwg')
-    p.add_argument('converted_dxf')
-    p.add_argument('output_json', help='Absolute PRIVATE JSON path outside Git repository')
-    p.add_argument('--handles', required=True, help='Comma-separated source handles; private')
-    p.add_argument('--expected-original-sha256', required=True)
-    a = p.parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('original_dwg')
+    parser.add_argument('converted_dxf')
+    parser.add_argument('output_json', help='Absolute private output JSON outside Git')
+    parser.add_argument('--private-config', required=True,
+                        help='0600 private JSON containing handles and source SHA (not on argv)')
+    args = parser.parse_args()
     try:
-        destination = private_output_destination(a.output_json)
+        destination = private_output_destination(args.output_json)
+        handles, original_sha = read_private_config(args.private_config)
         report = audit_original_opaque_records(
-            a.original_dwg, a.converted_dxf, a.handles.split(','),
-            expected_original_sha256=a.expected_original_sha256)
+            args.original_dwg, args.converted_dxf, handles,
+            expected_original_sha256=original_sha)
         write_private_report(destination, report)
     except Exception as exc:
-        print('BLOCKED_NO_SAFE_SOURCE_RECEIPT:', type(exc).__name__, str(exc)[:120])
+        print('BLOCKED_NO_SAFE_SOURCE_RECEIPT:', type(exc).__name__,
+              type(exc).__name__ if os.name == 'nt' else str(exc)[:120])
         return 2
-    print(report['status'], 'original records', report['source_record_count'],
-          'dangling DXF refs', report['converted_dxf_dangling_ref_count'])
+    print(report['status'], 'source record count', report['source_record_count'],
+          'broken DXF link count', report['converted_dxf_dangling_ref_count'])
     return 0
 
 
