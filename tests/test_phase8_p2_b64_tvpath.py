@@ -70,3 +70,13 @@ def test_exact_tvpath_helper_identity_is_not_confusable_with_previous_builds():
     ):
         with pytest.raises(ValueError, match="unpinned"):
             parse_helper_stdout(receipt, "a835758", wrong_variant)
+
+
+def test_ci_builds_actual_tvpath_instrumenter_and_checks_patch_identity():
+    from pathlib import Path
+    workflow = Path(".github/workflows/phase8-p2-libredwg-b64-tvpath.yml").read_text()
+    assert 'python -m tools.p8p2_instrument_b64_tvpath "$RUNNER_TEMP/libredwg-b64"' in workflow
+    assert 'python -m tools.p8p2_instrument_b64_field_oracle ' not in workflow
+    assert workflow.count("grep -Fq 'SP_P8P2_FDL_TV_NULL'") == 1
+    assert workflow.count("grep -Fq 'SP_P8P2_FDL_PREFLIGHT_REJECT'") == 1
+    assert workflow.count("grep -Fq 'SP_P8P2_B64_OBJECT_SITE'") == 1
