@@ -472,6 +472,10 @@ class DWGTakeoffEngine:
             doc.source = str(p)
             doc.format = "DWG→DXF (strict recovered missing LINEs)"
             return doc
+        # Consumer must honor the converter's explicit financial veto, rather
+        # than merely displaying an advisory boolean in a receipt.
+        if getattr(result, 'financial_veto', True) is not True:
+            raise RuntimeError('DWG converter may not authorize payable geometry')
         try:
             doc = self._read_dxf(result.output)
         finally:
@@ -486,6 +490,8 @@ class DWGTakeoffEngine:
         # Preview remains readable, but payable geometry stays vetoed until
         # independent original-source verification is actually implemented.
         doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{}),
+                        "converter_financial_veto":True,
+                        "converter_integrity_veto":getattr(result,"source_coverage",{}).get("converter_integrity_veto",True),
                         "geometry_approved_for_financial_takeoff":False,
                         "native_decoder_full_object_graph_verified":False,
                         "native_decoder_error_mask_verified":False,
