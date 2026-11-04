@@ -92,6 +92,15 @@ def validate_parallel_gap_references(document, proof, factor):
     with fitz.open(pdf) as pdf_doc:
         pages = len(pdf_doc)
     seen_handles, seen_members, seen_segments = set(), set(), set()
+    # Duplicate geometry under different handles cannot prove two independent references.
+    seen_pair_geometry = []
+    def _same_segment(left, right):
+        a, b = left
+        c, d = right
+        return (math.dist(a, c) <= 1e-8 and math.dist(b, d) <= 1e-8) or (math.dist(a, d) <= 1e-8 and math.dist(b, c) <= 1e-8)
+    def _same_pair(left, right):
+        return ((_same_segment(left[0], right[0]) and _same_segment(left[1], right[1])) or
+                (_same_segment(left[0], right[1]) and _same_segment(left[1], right[0])))
     entities_by_handle = {}
     for entity in document.entities:
         if entity.handle:
@@ -122,6 +131,9 @@ def validate_parallel_gap_references(document, proof, factor):
                 raise ValueError("Unverified or hidden LINE is not accepted")
             lines.append(entity.data)
         raw_gap = parallel_line_gap_raw(lines[0], lines[1])
+        pair_geometry = tuple((_xy0(d['start']), _xy0(d['end'])) for d in lines)
+        if any(_same_pair(pair_geometry, earlier) for earlier in seen_pair_geometry):
+            raise ValueError("Distinct handles with duplicate source geometry are not independent references")
         proposed = _decimal(ref.get('cad_length'), 'cad_length')
         real = _decimal(ref.get('real_length_m'), 'real_length_m')
         if proposed <= 0 or real <= 0:
@@ -134,6 +146,7 @@ def validate_parallel_gap_references(document, proof, factor):
         if segment_key in seen_segments:
             raise ValueError("Duplicate physical reference")
         seen_segments.add(segment_key)
+        seen_pair_geometry.append(pair_geometry)
         seen_handles.update(handles)
         seen_members.add(member)
     return True
