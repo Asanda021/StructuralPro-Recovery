@@ -20,7 +20,13 @@ from core.drawings.libredwg_error_mask import decode_libredwg_error_mask
 
 _MAGIC = re.compile(r"^STRUCTURALPRO_C_API_MASK=([0-9]{1,10})$")
 _OBJECTS = re.compile(r"^STRUCTURALPRO_C_API_OBJECTS=([0-9]{1,15})$")
-_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})$")
+_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})(-exp100k)?$")
+# Only the explicitly pinned diagnostic change may be selected. The upstream
+# commit remains a pure hex identity, separate from the build variant.
+_BUILD_VARIANTS = {
+    'upstream': ('', 50000),
+    'sortentstable_100k': ('-exp100k', 100000),
+}
 _MAX_LOG_BYTES = 128 * 1024 * 1024
 
 
@@ -56,8 +62,11 @@ def _read_config(path: Path) -> dict:
         raise ValueError('Private config must have mode 0600 and be <=16KiB')
     data = json.loads(path.read_text(encoding='utf-8'))
     required = {'source_sha256', 'helper_sha256', 'library_sha256', 'libredwg_commit'}
-    if not isinstance(data, dict) or set(data) != required:
-        raise ValueError('Private config must specify all four provenance identities')
+    allowed = required | {'build_variant'}
+    if not isinstance(data, dict) or not required.issubset(data) or not set(data).issubset(allowed):
+        raise ValueError('Private config must specify pinned provenance identities and optional build variant')
+    if data.get('build_variant', 'upstream') not in _BUILD_VARIANTS:
+        raise ValueError('Unrecognized pinned LibreDWG build variant')
     if not all(_is_hex_hash(data[k]) for k in required - {'libredwg_commit'}):
         raise ValueError('Missing valid 64-digit provenance digests')
     if not re.fullmatch(r'[0-9a-f]{7,40}', str(data['libredwg_commit'])):
@@ -65,24 +74,31 @@ def _read_config(path: Path) -> dict:
     return data
 
 
-def parse_helper_stdout(output: str, expected_commit: str) -> dict:
+def parse_helper_stdout(output: str, expected_commit: str,
+                        expected_build_variant: str = 'upstream') -> dict:
     """Exactly one unambiguous observed C API mask and matching compiled label."""
     if not isinstance(output, str) or len(output) > 8192:
         raise ValueError('Unexpected helper output length')
+    if expected_build_variant not in _BUILD_VARIANTS:
+        raise ValueError('Unrecognized pinned LibreDWG build variant')
     lines = output.strip().splitlines()
     if len(lines) != 3:
         raise ValueError('Unexpected C API summary line count')
     matches = [(_COMMIT.fullmatch(x), _MAGIC.fullmatch(x), _OBJECTS.fullmatch(x)) for x in lines]
-    commit = [m[0].group(1) for m in matches if m[0]]
+    commit = [(m[0].group(1), m[0].group(2) or '') for m in matches if m[0]]
     masks = [m[1].group(1) for m in matches if m[1]]
     objects = [m[2].group(1) for m in matches if m[2]]
-    if len(commit) != 1 or len(masks) != 1 or len(objects) != 1 or commit[0] != expected_commit:
+    expected_suffix, _ = _BUILD_VARIANTS[expected_build_variant]
+    if (len(commit) != 1 or len(masks) != 1 or len(objects) != 1
+            or commit[0] != (expected_commit, expected_suffix)):
         raise ValueError('Missing, conflicting or unpinned C API summary')
     parsed = int(masks[0])
     if parsed > 2**31 - 1 or int(objects[0]) > 10_000_000:
         raise ValueError('C API mask or object count outside safe range')
     return {'c_api_return_mask': parsed, 'native_object_count': int(objects[0]),
-            'observed_compiled_commit_label': commit[0]}
+            'observed_upstream_commit': commit[0][0],
+            'observed_build_variant': expected_build_variant,
+            'observed_compiled_commit_label': ''.join(commit[0])}
 
 
 def _verify_linked_library(helper: Path, library: Path) -> None:
@@ -185,8 +201,9 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             raise ValueError('Native C API helper execution failed')
         if stderr_path.stat().st_size > _MAX_LOG_BYTES:
             raise ValueError('Private filtered native trace exceeds safety limit')
+        build_variant = config.get('build_variant', 'upstream')
         parsed = parse_helper_stdout(result.stdout.decode('ascii', 'strict'),
-                                     config['libredwg_commit'])
+                                     config['libredwg_commit'], build_variant)
         if _sha_file(source).lower() != config['source_sha256'].lower() or (
             before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns
         ) != (lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns))(source.stat()):
@@ -197,7 +214,8 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
         guard = [int(v) for v in re.findall(
             r'ERROR: Invalid SORTENTSTABLE\.num_ents ([0-9]{1,12})',
             filtered_text)]
-        guard_exceeded = bool(guard) and all(v > 50000 for v in guard)
+        _, guard_threshold = _BUILD_VARIANTS[build_variant]
+        guard_exceeded = bool(guard) and all(v > guard_threshold for v in guard)
         report = {
             'policy': 'structuralpro_p8p2_private_native_c_api_trace_v2',
             'native_c_api_actually_executed': True,
@@ -211,7 +229,9 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             'map_aec_causation_verified': False,
             'stderr_log_is_private': True,
             'stderr_trace_is_filtered_not_full': True,
-            'sortentstable_guard_threshold_in_pinned_source': 50000,
+            'libredwg_upstream_commit': parsed['observed_upstream_commit'],
+            'libredwg_build_variant': parsed['observed_build_variant'],
+            'sortentstable_guard_threshold_in_pinned_source': guard_threshold,
             'observed_sortentstable_counts_above_guard': guard if guard_exceeded else [],
             'bit64_has_confirmed_sortentstable_guard_trigger': bool(
                 (parsed['c_api_return_mask'] & 64) and guard_exceeded),
