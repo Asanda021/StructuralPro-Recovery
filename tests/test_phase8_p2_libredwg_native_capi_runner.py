@@ -236,9 +236,9 @@ def test_diagnostic_experimental_config_rejects_upstream_binary(tmp_path, monkey
 
 def test_b64_stage_variant_exact_label_rejects_other_builds():
     text = (
-        'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\\n'
-        'STRUCTURALPRO_C_API_MASK=68\\n'
-        'STRUCTURALPRO_C_API_OBJECTS=101504\\n'
+        'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\n'
+        'STRUCTURALPRO_C_API_MASK=68\n'
+        'STRUCTURALPRO_C_API_OBJECTS=101504\n'
     )
     got = m.parse_helper_stdout(text, 'a835758', 'sortentstable_100k_b64stage')
     assert got['observed_build_variant'] == 'sortentstable_100k_b64stage'
@@ -262,15 +262,15 @@ def test_b64_stage_private_probe_receipt_is_bounded_and_no_go(tmp_path, monkeypa
     monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
     def fake_run(mock_helper, mock_source, env, stderr_file, timeout):
         stderr_file.write(
-            b'190:SP_P8P2_B64_STAGE=read_2004_section_handles\\n'
-            b'191:SP_P8P2_B64_OBJECT_RETURN\\n'
-            b'192:SP_P8P2_B64_STAGE=read_2004_section_handles\\n'
+            b'190:SP_P8P2_B64_STAGE=read_2004_section_handles\n'
+            b'191:SP_P8P2_B64_OBJECT_RETURN\n'
+            b'192:SP_P8P2_B64_STAGE=read_2004_section_handles\n'
         )
         return SimpleNamespace(
             returncode=0,
-            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\\n'
-                   b'STRUCTURALPRO_C_API_MASK=68\\n'
-                   b'STRUCTURALPRO_C_API_OBJECTS=7\\n',
+            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64stage\n'
+                   b'STRUCTURALPRO_C_API_MASK=68\n'
+                   b'STRUCTURALPRO_C_API_OBJECTS=7\n',
         )
     monkeypatch.setattr(m, '_execute_native_filtered', fake_run)
     report = m.diagnose_private_source(src, cfg, helper, lib, output)
