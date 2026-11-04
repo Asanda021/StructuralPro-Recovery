@@ -10,6 +10,9 @@ on:
       - core/drawings/dwg_unknown_object_audit.py
       - tools/audit_phase8_p2_unknown_cad.py
       - tests/test_phase8_p2_unknown_object_audit.py
+      - core/drawings/dwg_opaque_conversion_diff.py
+      - tools/audit_phase8_p2_opaque_conversion_diff.py
+      - tests/test_phase8_p2_opaque_conversion_diff.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
 permissions:
@@ -52,6 +55,7 @@ jobs:
           --junitxml=offline-dwg-financial-veto.xml
           tests/test_phase8_p2_offline_financial_veto.py
           tests/test_phase8_p2_unknown_object_audit.py
+          tests/test_phase8_p2_opaque_conversion_diff.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
