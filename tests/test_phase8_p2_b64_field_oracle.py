@@ -62,7 +62,10 @@ def test_nested_object_decoder_calls_instrumented_without_changing_result():
 
 def test_object_source_anchors_fail_closed():
     x = _pinned_shape_fixture()
+    reduced = x
+    for i in range(11):
+        reduced = reduced.replace(f"dwg_decode_TEST_{i} (dat, obj)", "no_function (dat, obj)")
     with pytest.raises(ValueError, match="Unexpected pinned decoder call count"):
-        instrument_decoder(x.replace("dwg_decode_TEST_0", "no_function"))
+        instrument_decoder(reduced)
     with pytest.raises(ValueError, match="custom class decoder"):
         instrument_decoder(x.replace("dwg_decode_variable_type", "changed"))
