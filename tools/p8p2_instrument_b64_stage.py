@@ -57,15 +57,15 @@ def instrument_pinned_decoder(source: str) -> str:
         raise ValueError("Pinned object-add return callsite changed")
     after = (
         "added = dwg_decode_add_object (dwg, &obj_dat, &obj_dat, last_offset);\n"
-        "          /* Reallocation (-1) is NOT an error bitmask. */\\n"
-        "          if (added == -1)\\n"
-        "            {\\n"
-        "              static unsigned sp_p8p2_realloc_seen = 0;\\n"
-        "              if (sp_p8p2_realloc_seen++ < 16)\\n"
-        '                fprintf (stderr, "SP_P8P2_OBJECT_REALLOCATION_SENTINEL\\\\n");\\n'
-        "            }\\n"
-        "          /* Only count positive error codes, never -1 sentinel. */\\n"
-        "          if (added > 0 && (added & DWG_ERR_VALUEOUTOFBOUNDS))\\n"
+        "          /* Reallocation (-1) is NOT an error bitmask. */\n"
+        "          if (added == -1)\n"
+        "            {\n"
+        "              static unsigned sp_p8p2_realloc_seen = 0;\n"
+        "              if (sp_p8p2_realloc_seen++ < 16)\n"
+        '                fprintf (stderr, "SP_P8P2_OBJECT_REALLOCATION_SENTINEL\\n");\n'
+        "            }\n"
+        "          /* Only count positive error codes, never -1 sentinel. */\n"
+        "          if (added > 0 && (added & DWG_ERR_VALUEOUTOFBOUNDS))\n"
         "            {\n"
         "              static unsigned sp_p8p2_obj_b64_seen = 0;\n"
         "              if (sp_p8p2_obj_b64_seen++ < 16)\n"
