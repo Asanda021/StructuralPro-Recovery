@@ -89,3 +89,25 @@ def test_fail_closed(evidence,mode):
 def test_perpendicular_and_overlap():
     assert parallel_line_gap_raw({'start':(0,0),'end':(0,4)},
                                  {'start':(0.2,2),'end':(0.2,8)})==pytest.approx(.2)
+
+
+def test_disjoint_handles_do_not_make_duplicate_geometry_independent(evidence):
+    doc, proof = evidence
+    doc.entities.extend([E('C1',(0,0),(0,3)), E('C2',(0.1,0),(0.1,3))])
+    second = proof['references'][1]
+    second['reference_handles'] = ['C1','C2']
+    second['cad_length'] = '0.1'
+    second['real_length_m'] = '0.1'
+    with pytest.raises(ValueError, match='duplicate source geometry'):
+        validate_parallel_gap_references(doc, proof, 1.0)
+
+
+def test_reverse_direction_duplicate_pair_is_rejected(evidence):
+    doc, proof = evidence
+    doc.entities.extend([E('C1',(0,3),(0,0)), E('C2',(0.1,3),(0.1,0))])
+    second = proof['references'][1]
+    second['reference_handles'] = ['C2','C1']
+    second['cad_length'] = '0.1'
+    second['real_length_m'] = '0.1'
+    with pytest.raises(ValueError, match='duplicate source geometry'):
+        validate_parallel_gap_references(doc, proof, 1.0)
