@@ -5,7 +5,7 @@ from core.drawings.dwg_opaque_source_receipt import (
 
 
 def sample():
-    return [(0x101,100,12,514,[12,22,24]),(0x102,200,6,515,[8,4,2])]
+    return [(0x101,100,2,514,[12,22,24,33,44,55]),(0x102,200,1,515,[8,4,2,1,9])]
 
 
 def links(count=2):
