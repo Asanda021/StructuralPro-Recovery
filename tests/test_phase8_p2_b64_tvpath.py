@@ -80,3 +80,15 @@ def test_ci_builds_actual_tvpath_instrumenter_and_checks_patch_identity():
     assert workflow.count("grep -Fq 'SP_P8P2_FDL_TV_NULL'") == 1
     assert workflow.count("grep -Fq 'SP_P8P2_FDL_PREFLIGHT_REJECT'") == 1
     assert workflow.count("grep -Fq 'SP_P8P2_B64_OBJECT_SITE'") == 1
+
+
+def test_tv_null_reason_oracle_reads_only_a_shadow_cursor():
+    from tools.p8p2_instrument_b64_tvpath import _EXTRA_HELPERS
+    assert "Bit_Chain preview_mode = *dat;" in _EXTRA_HELPERS
+    assert "Bit_Chain preview = *dat;" in _EXTRA_HELPERS
+    assert "_EXTRA_HELPERS" not in _EXTRA_HELPERS
+    assert _EXTRA_HELPERS.count("bit_read_TV (dat)") == 1
+    for label in ("HEADER_BOUNDS", "PREFIX_BOUNDS", "PAYLOAD_BOUNDS", "ALLOC_OR_OTHER"):
+        assert label in _EXTRA_HELPERS
+    assert "SP_P8P2_FDL_TV_NULL_REASON=%s" in _EXTRA_HELPERS
+    assert "fprintf (stderr, \"%s\", v)" not in _EXTRA_HELPERS
