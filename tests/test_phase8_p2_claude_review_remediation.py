@@ -263,6 +263,40 @@ def test_f10_status_does_not_claim_proprietary_recovery():
     assert r['automatic_patch_authorized'] is False
 
 
+@pytest.mark.parametrize('declared, extra', [
+    (32767, 4), (32768, 6), (40000, 6),
+])
+def test_n03_ac1018_modular_short_boundary_accepts_correct_framing(declared, extra):
+    payload = bytes(declared + extra)
+    receipt = summarize_raw_records([(0x101, 7, declared, 514, payload)], ['101'])
+    assert receipt[0]['raw_record_stream_bytes'] == declared + extra
+
+
+@pytest.mark.parametrize('declared, wrong_extra', [
+    (32767, 6), (32768, 4), (40000, 4),
+])
+def test_n03_ac1018_modular_short_boundary_rejects_wrong_framing(declared, wrong_extra):
+    with pytest.raises(ValueError, match='declared size'):
+        summarize_raw_records([(0x101, 7, declared, 514, bytes(declared + wrong_extra))], ['101'])
+
+
+def test_n01_real_proxy_state_never_becomes_dangling_receipt():
+    proxy = SimpleNamespace(dxf=SimpleNamespace(handle='AA'),
+                            dxftype=lambda: 'ACAD_PROXY_OBJECT')
+    dictionary = audit_named_dictionary_links(fake_dictionary_doc(target=proxy))
+    assert dictionary['dangling_or_invalid_count'] == 0
+    assert dictionary['unverified_target_count'] == 1
+    decision = opaque_recovery_decision(
+        [{'handle': '101'}], dictionary,
+        expected_source_sha256='a' * 64,
+        converted_dxf_sha256='b' * 64,
+    )
+    assert decision['converted_dxf_dangling_ref_count'] == 0
+    assert decision['converted_dxf_unverified_target_count'] == 1
+    assert decision['status'] == 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_TARGETS_INDETERMINATE'
+    assert decision['automatic_patch_authorized'] is False
+
+
 def test_f11_missing_frozen_named_root_cannot_fallback_to_1a(tmp_path):
     original = tmp_path / 'synthetic.dwg'
     original.write_bytes(b'AC1018_synthetic')
