@@ -228,7 +228,7 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
         object_b64_return_markers = min(
             filtered_text.count('SP_P8P2_B64_OBJECT_RETURN'), 16)
         field_receipts = re.findall(
-            r'SP_P8P2_B64_FDL_LAST=([a-z_]+)\\|([a-z_]+)', filtered_text)
+            r'SP_P8P2_B64_FDL_LAST=([a-z_]+)\|([a-z_]+)', filtered_text)
         # Only public C decoder function tokens, not private object identifiers.
         nested_decoders = re.findall(
             r'SP_P8P2_B64_DECODER=([A-Za-z0-9_]{1,64})', filtered_text)
