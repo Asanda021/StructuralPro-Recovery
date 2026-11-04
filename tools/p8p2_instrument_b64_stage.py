@@ -28,7 +28,7 @@ static int
 sp_p8p2_b64_stage (const char *stage, int returned)
 {
   if (returned & DWG_ERR_VALUEOUTOFBOUNDS)
-    fprintf (stderr, "SP_P8P2_B64_STAGE=%s\\n", stage);
+    fprintf (stderr, "SP_P8P2_B64_STAGE=%s\n", stage);
   return returned;
 }
 """
