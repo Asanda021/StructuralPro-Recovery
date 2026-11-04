@@ -109,6 +109,8 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
             'root_dictionary_handle': None, 'namespaces': {},
             'dangling_or_invalid_count': None,
             'dangling_or_invalid_references': [],
+            'unverified_target_count': None,
+            'unverified_target_references': [],
             'converted_dxf_namespace_integrity_status': 'AMBIGUOUS_NAMED_DICTIONARY_ROOTS',
             'original_dwg_custom_payloads_verified': False,
             'source_coverage_verified': False, 'financial_quantity_approved': False,
@@ -188,12 +190,21 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
         status = 'NAMESPACES_INCOMPLETE_NO_EVIDENCE'
     else:
         status = 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
+    unresolved_reasons = frozenset({
+        'DANGLING_DXF_HANDLE', 'ROOT_TARGET_UNRESOLVED', 'ROOT_NOT_DICTIONARY',
+    })
+    broken = [finding for finding in findings if finding['reason'] in unresolved_reasons]
+    unverified = [finding for finding in findings if finding['reason'] not in unresolved_reasons]
+    # A reference to an existing proxy is UNVERIFIED, not DANGLING.  Keep the
+    # disjoint sets and counts independently auditable.
     return {
         'policy': 'p8p2_dxf_named_dictionary_links_v1',
         'root_dictionary_handle': str(root.dxf.handle),
         'namespaces': namespaces,
-        'dangling_or_invalid_count': len(findings),
-        'dangling_or_invalid_references': findings,
+        'dangling_or_invalid_count': len(broken),
+        'dangling_or_invalid_references': broken,
+        'unverified_target_count': len(unverified),
+        'unverified_target_references': unverified,
         'unverified_namespace_count': sum(
             v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()),
         'converted_dxf_namespace_integrity_status': status,
