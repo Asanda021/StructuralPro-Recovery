@@ -44,6 +44,11 @@ on:
       - tests/test_phase8_p2_shx_source_provenance.py
       - core/drawings/libredwg_error_mask.py
       - tests/test_phase8_p2_libredwg_error68.py
+      - core/drawings/libredwg_native_trace_runner.py
+      - tools/audit_phase8_p2_libredwg_native_capi.py
+      - tools/structuralpro_libredwg_capi_probe.c
+      - tools/P8P2_NATIVE_C_API_README_FA.md
+      - tests/test_phase8_p2_libredwg_native_capi_runner.py
       - core/drawings/dwg_opaque_conversion_diff.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
@@ -100,6 +105,7 @@ jobs:
           tests/test_phase8_p2_claude_review_remediation.py
           tests/test_phase8_p2_shx_source_provenance.py
           tests/test_phase8_p2_libredwg_error68.py
+          tests/test_phase8_p2_libredwg_native_capi_runner.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
