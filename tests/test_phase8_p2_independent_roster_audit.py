@@ -50,3 +50,16 @@ def test_expected_source_sha_is_mandatory_and_correct(tmp_path):
 def test_missing_source_rejected(tmp_path):
     with pytest.raises(ValueError,match='unavailable'):
         audit(tmp_path/'missing.dwg',tmp_path/'missing.dxf','0'*64)
+
+def test_solid_vertex_z_preserved_in_legacy_elevation_is_flagged_as_compatibility_risk():
+    verts=[(1,2,-5),(3,4,-5),(5,6,-5),(5,6,-5)]
+    original=source('SOLID',points=verts)
+    legacy=target('SOLID',layer='A',elevation=-5,**{'vtx'+str(i):(v[0],v[1],0.0) for i,v in enumerate(verts)})
+    assert classify_geometry_pair(original,legacy,'A') == ['SOLID_Z_RELOCATED_TO_LEGACY_ELEVATION']
+
+
+def test_solid_incorrect_legacy_elevation_remains_actual_z_discrepancy():
+    verts=[(1,2,-5),(3,4,-5),(5,6,-5),(5,6,-5)]
+    original=source('SOLID',points=verts)
+    wrong=target('SOLID',layer='A',elevation=-4,**{'vtx'+str(i):(v[0],v[1],0.0) for i,v in enumerate(verts)})
+    assert classify_geometry_pair(original,wrong,'A') == ['SOLID_Z_CHANGED']
