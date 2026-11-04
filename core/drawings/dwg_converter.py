@@ -348,6 +348,13 @@ class OfflineDWGConverter:
             # from ezdxf's synthetic root, so inspect all named candidates.
             from core.drawings.dwg_source_display_integrity import audit_named_dictionary_links
             source_coverage = dict(source_coverage)
+            # A successful CLI run does NOT observe the LibreDWG dwg_read_file()
+            # C-API error bitmask. Keep this distinction in the receipt so
+            # CLI exit=0 cannot be misrepresented as native decoder error=0.
+            from core.drawings.libredwg_error_mask import libredwg_cli_receipt
+            source_coverage["libredwg_c_api_diagnostic"] = libredwg_cli_receipt(
+                proc.returncode, converter_is_libredwg=("dwg2dxf" in name)
+            )
             diagnostic = audit_named_dictionary_links(converted_doc)
             source_coverage["converted_dxf_named_dictionary_integrity"] = diagnostic
             # Expose a typed explicit veto on incomplete, broken, proxy or
