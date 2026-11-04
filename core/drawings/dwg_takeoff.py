@@ -633,7 +633,7 @@ def apply_documented_units(document,evidence):
     if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
     proof=json.loads(path.read_text(encoding='utf-8-sig'))
     policy=proof.get('policy')
-    if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2'} or proof.get('source_sha256')!=document.source_sha256:
+    if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2','cad_unit_reference_v3'} or proof.get('source_sha256')!=document.source_sha256:
         raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
     # Legacy v1 only establishes one reference. It is preserved for existing
     # DXF-only sessions, but MUST NOT calibrate a newly imported DWG.
@@ -712,6 +712,9 @@ def apply_documented_units(document,evidence):
             seen_handles.add(handle)
             seen_members.add(member)
             seen_segments.add(segment)
+    elif policy=='cad_unit_reference_v3':
+        from core.drawings.cad_unit_parallel_gap import validate_parallel_gap_references
+        validate_parallel_gap_references(document, proof, factor)
     else:
         found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
         if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
