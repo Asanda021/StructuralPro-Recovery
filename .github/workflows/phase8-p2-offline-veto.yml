@@ -22,6 +22,9 @@ on:
       - tests/test_phase8_p2_native_roster_crosscheck.py
       - tools/audit_phase8_p2_real_independent_sources.py
       - tests/test_phase8_p2_independent_roster_audit.py
+      - core/drawings/dwg_insert_solid_contract.py
+      - tools/audit_phase8_p2_block_solid.py
+      - tests/test_phase8_p2_block_solid_contract.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
 permissions:
@@ -69,6 +72,7 @@ jobs:
           tests/test_phase8_p2_second_decoder_probe.py
           tests/test_phase8_p2_native_roster_crosscheck.py
           tests/test_phase8_p2_independent_roster_audit.py
+          tests/test_phase8_p2_block_solid_contract.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
