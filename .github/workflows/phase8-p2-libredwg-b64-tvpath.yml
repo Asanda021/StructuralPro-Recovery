@@ -6,6 +6,10 @@ on:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
       - tools/p8p2_instrument_b64_tvpath.py
+      - tools/p8p2_instrument_b64_stage.py
+      - tools/p8p2_instrument_b64_field_oracle.py
+      - core/drawings/libredwg_native_trace_runner.py
+      - tests/test_phase8_p2_b64_stage_instrumentation.py
       - tests/test_phase8_p2_b64_tvpath.py
       - .github/workflows/phase8-p2-libredwg-b64-tvpath.yml
   workflow_dispatch:
