@@ -21,10 +21,12 @@ def normalize_cad_text(value: object) -> str:
     text = text.replace(r"\P", "\n").replace(r"\p", "\n")
     text = text.replace(r"\~", "\u00a0")
     text = text.replace(r"\{", "{").replace(r"\}", "}")
-    text = re.sub(r"^\{\\[A-Za-z][^;]*;", "", text)
+    # Remove only a complete MTEXT formatting group.  An unconditional
+    # replace("}", "") corrupts legitimate bilingual CAD labels such as
+    # "ستون {A-1}" and changes the member key used by the drawing viewer.
+    text = re.sub(r"\{\\[A-Za-z][^;]*;([^{}]*)\}", r"\1", text)
     text = _FORMATTING.sub("", text)
     text = _MTEXT_STACK.sub("", text)
-    text = text.replace("}", "")
     text = text.replace("%%d", "°").replace("%%D", "°")
     text = text.replace("%%p", "±").replace("%%P", "±")
     text = text.replace("%%c", "Ø").replace("%%C", "Ø")

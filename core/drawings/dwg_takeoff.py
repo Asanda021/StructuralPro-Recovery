@@ -32,11 +32,27 @@ class DWGDocument:
     conversion: dict[str, Any] = field(default_factory=dict)
 
 
+def _require_financial_geometry_not_explicitly_rejected(document: DWGDocument) -> None:
+    """Fail closed when source conversion explicitly disallows payable geometry.
+
+    An absent flag is NOT an approval: legacy and strict conversion paths
+    remain subject to their existing independent review/units/identity gates.
+    Only an explicit False is a non-overridable veto at this boundary.
+    """
+    if document.conversion.get("geometry_approved_for_financial_takeoff") is False:
+        raise ValueError(
+            "هندسه DWG در گزارش تبدیل صریحاً برای متره مالی رد شده است؛ "
+            "بازبینی مستقل و ورود معتبر منبع لازم است"
+        )
+
+
 def _xy(v):
     result=(float(v[0]),float(v[1]))
     if not all(math.isfinite(x) for x in result):raise ValueError("مختصات CAD باید متناهی باشند")
     return result
 
+
+_MAX_EXPANDED_CAD_ENTITIES = 1_000_000  # bounded engineering expansion, never silent truncation
 
 _UNIT_FACTORS = {"in": 0.0254, "ft": 0.3048, "mi": 1609.344, "mm": 0.001, "cm": 0.01, "m": 1.0, "km": 1000.0}
 
@@ -95,7 +111,7 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
         layer=str(e.dxf.layer)
         if layer=='0' and inherited:layer=inherited
         budget[0]+=1
-        if budget[0]>250000:raise ValueError('تعداد اجزای بازشده از حد ۲۵۰۰۰۰ بیشتر است؛ پردازش متوقف شد')
+        if budget[0]>_MAX_EXPANDED_CAD_ENTITIES:raise ValueError('تعداد اجزای بازشده از سقف ایمن یک میلیون بیشتر است؛ پردازش متوقف شد')
         layer_record=document.layers.get(layer) if layer in document.layers else None
         visible=parent_visible and not bool(e.dxf.get('invisible',0)) and (layer_record is None or not(layer_record.is_off() or layer_record.is_frozen()))
         yield e,'/'.join(identity),layer,visible
@@ -107,14 +123,19 @@ def _expanded_entities(entities,document,warnings,path=(),names=(),inherited=Non
             if e.mcount>1:
                 if not allow_arrays:raise ValueError('آرایه MINSERT نیازمند قرارداد توسعه صریح است')
                 rows=e.dxf.row_count;cols=e.dxf.column_count
-                if rows*cols>250000 or any(not math.isfinite(float(e.dxf.get(k,0))) or float(e.dxf.get(k,0))<=0 for k,c in [('row_spacing',rows),('column_spacing',cols)] if c>1):raise ValueError('تعداد یا فاصله آرایه MINSERT نامعتبر است')
-                instances=list(e.multi_insert())
-                if len(instances)!=rows*cols:raise ValueError('نمونه‌های منطبق آرایه مجاز نیستند')
-                for i,instance in enumerate(instances):
+                if rows*cols>_MAX_EXPANDED_CAD_ENTITIES or any(not math.isfinite(float(e.dxf.get(k,0))) or float(e.dxf.get(k,0))<=0 for k,c in [('row_spacing',rows),('column_spacing',cols)] if c>1):raise ValueError('تعداد یا فاصله آرایه MINSERT نامعتبر است')
+                instance_count=0
+                # Do not materialize potentially 1M MINSERT instances before
+                # emitting a single entity; each instance is separately
+                # bounded by the shared expansion budget.
+                for i,instance in enumerate(e.multi_insert()):
+                    instance_count+=1
+                    if instance_count>rows*cols:raise ValueError('تعداد نمونه‌های آرایه با منبع منطبق نیست')
                     cell=identity[:-1]+(handle+'@'+str(i//cols)+','+str(i%cols),)
                     skipped=[];virtual=list(instance.virtual_entities(skipped_entity_callback=lambda entity,reason:skipped.append(str(reason))))
                     if skipped:raise ValueError('تبدیل کامل آرایه ممکن نیست')
                     yield from _expanded_entities(virtual,document,warnings,cell,names+(str(e.dxf.name),),layer,budget,visible,allow_arrays)
+                if instance_count!=rows*cols:raise ValueError('تعداد نمونه‌های آرایه با منبع منطبق نیست')
                 continue
             name=e.dxf.name
             if name in names or len(names)>=32:raise ValueError('چرخه یا عمق نامعتبر بلوک CAD')
@@ -135,7 +156,7 @@ def _nonplanar(e):
     elif typ in ('CIRCLE','ARC'):values=[d.center.z]
     elif typ=='LWPOLYLINE':values=[d.elevation]
     elif typ=='POLYLINE':values=[v.dxf.location.z for v in e.vertices]+[d.elevation.z]
-    extrusion=d.get('extrusion',(0,0,1))
+    extrusion=d.get('extrusion',(0,0,1)) if d.is_supported('extrusion') else (0,0,1)
     return any(not math.isfinite(float(v)) or float(v)!=0 for v in values) or tuple(extrusion)!=(0,0,1)
 
 
@@ -214,7 +235,14 @@ class DWGTakeoffEngine:
                     sweep = (float(e.dxf.end_angle) - float(e.dxf.start_angle)) % 360
                     data.update(radius=r, length=2 * math.pi * r * sweep / 360, start_angle=float(e.dxf.start_angle), sweep_angle=sweep)
                 elif typ in {"TEXT", "MTEXT"}:
-                    data["text"] = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
+                    from core.cad.persian_text_v1 import normalize_cad_text
+                    source_text = str(e.dxf.text if hasattr(e.dxf, "text") else e.text)
+                    # DXF and strict-DWG-to-DXF must display the same normalized
+                    # Unicode labels as native DWG preview.  Keep original bytes'
+                    # decoded text as evidence; no guessed SHX glyph mapping.
+                    data["source_text"] = source_text
+                    data["text"] = normalize_cad_text(source_text)
+                    data["text_status"] = "UNICODE_NORMALIZED_SHX_GLYPHS_UNVERIFIED"
                     data["insert"] = _xy(e.dxf.insert)
                     data["height"] = float(getattr(e.dxf, "height", getattr(e.dxf, "char_height", 1)))
                     data["rotation"]=float(e.get_rotation() if typ=="MTEXT" else e.dxf.rotation)
@@ -246,7 +274,7 @@ class DWGTakeoffEngine:
 
                 if typ in {"CIRCLE", "ARC"}:
                     data["center"] = _xy(e.dxf.center)
-                if typ in {"LWPOLYLINE", "POLYLINE", "ARC"} and not data.get("unsupported_measurement"):
+                if typ in {"LWPOLYLINE", "POLYLINE", "ARC", "SPLINE", "ELLIPSE"} and not data.get("unsupported_measurement"):
                     from ezdxf.path import make_path
                     path = make_path(e)
                     control = list(path.control_vertices())
@@ -332,7 +360,100 @@ class DWGTakeoffEngine:
             return doc
 
         from core.drawings.dwg_converter import OfflineDWGConverter
-        result = OfflineDWGConverter().convert(p)
+        legacy_converter = OfflineDWGConverter()
+        # Older approved offline converter adapters expose convert() but not
+        # the optional available property.  Preserve their existing contract;
+        # only an explicit False should select the strict Python provider.
+        if getattr(legacy_converter, "available", True) is False:
+            from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+            optional = StrictPythonDWGProvider()
+            if optional.available:
+                receipt = optional.convert(p)
+                try:
+                    doc = self._read_dxf(receipt.output)
+                finally:
+                    receipt.output.unlink(missing_ok=True)
+                if doc.source_sha256 != receipt.output_sha256:
+                    raise RuntimeError("Strict DWG output checksum changed")
+                if doc.units != receipt.source_unit:
+                    raise RuntimeError("DWG declared source unit does not match converted DXF unit")
+                if hashlib.sha256(p.read_bytes()).hexdigest() != original_sha:
+                    raise RuntimeError("DWG source changed during strict Python decoding")
+                doc.conversion = {
+                    "provider": "ezdwg strict Python bridge",
+                    "decoder_version": receipt.decoder_version,
+                    "dwg_signature": receipt.signature,
+                    "source_sha256": receipt.source_sha256,
+                    "output_sha256": receipt.output_sha256,
+                    "total_entities": receipt.total_entities,
+                    "written_entities": receipt.written_entities,
+                    "skipped_entities": receipt.skipped_entities,
+                    "strict": True,
+                    "source_unit": receipt.source_unit,
+                    "source_unit_code": receipt.source_unit_code,
+                    "source_handle_remaps": tuple(receipt.source_handle_remaps),
+                    "source_roster_mapping_verified": receipt.source_modelspace_verified,
+                    "line_geometry_verified_count": receipt.line_geometry_verified_count,
+                    "original_dxf_unit_code": receipt.original_dxf_unit_code,
+                    "unit_metadata_repaired": receipt.source_unit_restored_in_dxf,
+                    "exit_code": 0,
+                }
+                doc.source_sha256 = original_sha
+                doc.source = str(p)
+                doc.format = "DWG→DXF (ezdwg strict)"
+                return doc
+        # A configured external converter may fail: never silently fall back
+        # to the Python backend after its command or output validation failed.
+        # A *specific* proven LINE-only loss can be recovered by a second
+        # strict decoder, but not by overlooking missing entities. Generic
+        # conversion failures, unit ambiguity and changed types still fail.
+        from core.drawings.dwg_converter import DWGDroppedLineError
+        try:
+            result = legacy_converter.convert(p)
+        except DWGDroppedLineError as loss:
+            from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+            strict = StrictPythonDWGProvider()
+            if not strict.available:
+                raise DWGDroppedLineError(loss.missing_count) from loss
+            receipt = strict.convert(p)
+            if (not receipt.source_modelspace_verified
+                or receipt.line_geometry_verified_count < loss.missing_count
+                or receipt.line_layer_verified_count != receipt.line_geometry_verified_count
+                or receipt.skipped_entities != 0
+                or receipt.written_entities != receipt.total_entities):
+                receipt.output.unlink(missing_ok=True)
+                raise RuntimeError("بازیابی DWG بدون تطبیق کامل هویت، هندسه و لایه خطوط مجاز نیست")
+            try:
+                doc = self._read_dxf(receipt.output)
+            finally:
+                receipt.output.unlink(missing_ok=True)
+            if doc.source_sha256 != receipt.output_sha256:
+                raise RuntimeError("DWG recovered DXF checksum changed")
+            if doc.units != receipt.source_unit:
+                raise RuntimeError("DWG source units differ from recovered DXF")
+            if hashlib.sha256(p.read_bytes()).hexdigest() != original_sha:
+                raise RuntimeError("DWG original changed during recovery")
+            doc.conversion = {
+                "provider": "ezdwg strict verified recovery",
+                "rejected_primary_converter": str(legacy_converter.executable),
+                "primary_dropped_line_count": loss.missing_count,
+                "native_modelspace_roster_verified": True,
+                "line_geometry_verified_count": receipt.line_geometry_verified_count,
+                "line_layers_verified_count": receipt.line_layer_verified_count,
+                "source_handle_remaps": tuple(receipt.source_handle_remaps),
+                "source_sha256": original_sha,
+                "output_sha256": receipt.output_sha256,
+                "source_units_verified": True,
+                "source_revision_verified": False,
+                "geometry_approved_for_financial_takeoff": False,
+                "legacy_metre_rows_approved": 0,
+                "requires_independent_original_dwg_oracle": True,
+                "strict_recovery": True,
+            }
+            doc.source_sha256 = original_sha
+            doc.source = str(p)
+            doc.format = "DWG→DXF (strict recovered missing LINEs)"
+            return doc
         try:
             doc = self._read_dxf(result.output)
         finally:
@@ -342,19 +463,21 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
-        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code}
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{})}
         doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"
         return doc
 
     def summarize(self, doc: DWGDocument) -> dict[str, Any]:
-        by_type = {}
-        for e in doc.entities:
-            by_type[e.entity_type] = by_type.get(e.entity_type, 0) + 1
+        from core.drawings.cad_large_scene import cad_coverage_report
+        coverage = cad_coverage_report(doc)
+        by_type = coverage["source_by_type"]
         return {
             "entities": len(doc.entities),
             "by_type": by_type,
+            "coverage": coverage,
+            "autocad_format_through": 2027 if doc.dxf_version in {"AC1032", "AC1032/AutoCAD2018", "AC1032 (AutoCAD 2018)"} else None,
             "layers": doc.layers,
             "blocks": doc.block_counts,
             "text_count": len(doc.text_labels),
@@ -368,6 +491,9 @@ class DWGTakeoffEngine:
 
     def layer_takeoff(self, doc: DWGDocument, rules: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
         """Create review-required layer summaries; never treat raw/unknown units as metres."""
+        if doc.format == "DWG_NATIVE_READONLY_PREVIEW":
+            raise ValueError("نمایش بومی DWG فقط برای مشاهده است؛ متره لایه بدون ورود معتبر مجاز نیست")
+        _require_financial_geometry_not_explicitly_rejected(doc)
         out = []
         for layer, rule in rules.items():
             ents = [e for e in doc.entities if e.layer == layer]
@@ -426,6 +552,9 @@ def cad_entity_children(document,handle):
 
 def cad_entity_geometry(document,handle,metric,origin=(0,0)):
     """Source paths, analytic circles/arcs and disjoint sums, never display chords."""
+    if document.format == "DWG_NATIVE_READONLY_PREVIEW":
+        raise ValueError("DWG بومی در حالت نمایش فقط‌خواندنی است و برای متره مالی معتبر نیست")
+    _require_financial_geometry_not_explicitly_rejected(document)
     if cad_unit_factor(document.units) is None:raise ValueError('واحد CAD نامشخص است')
     found=[e for e in document.entities if e.handle==handle]
     if len(found)!=1:raise ValueError('Handle یکتا و معتبر لازم است')
@@ -473,6 +602,9 @@ def cad_review_digest(item):
 
 
 def verify_cad_item(item,document,*,require_review=True):
+    if document.format == "DWG_NATIVE_READONLY_PREVIEW":
+        raise ValueError("نشست DWG صرفاً نمایشی است و تأیید مالی ندارد")
+    _require_financial_geometry_not_explicitly_rejected(document)
     meta=item.cad_evidence
     if isinstance(meta,dict) and meta.get('unit_evidence'):document=apply_documented_units(document,meta['unit_evidence'])
     if not isinstance(meta,dict) or meta.get('policy')!='cad_entity_review_v1':raise ValueError('قرارداد منشأ CAD معتبر نیست')
@@ -500,16 +632,92 @@ def apply_documented_units(document,evidence):
     path=Path(str(evidence.get('path','')))
     if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
     proof=json.loads(path.read_text(encoding='utf-8-sig'))
-    if proof.get('policy')!='cad_unit_reference_v1' or proof.get('source_sha256')!=document.source_sha256:raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
+    policy=proof.get('policy')
+    if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2'} or proof.get('source_sha256')!=document.source_sha256:
+        raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
+    # Legacy v1 only establishes one reference. It is preserved for existing
+    # DXF-only sessions, but MUST NOT calibrate a newly imported DWG.
+    if policy=='cad_unit_reference_v1' and Path(str(document.source)).suffix.lower()=='.dwg':
+        raise ValueError('برای DWG فاقد واحد، دو مرجع مستقل نسخه‌دار v2 الزامی است')
     if any(not str(proof.get(k,'')).strip() for k in ('author','reviewer','reference')) or _identity(proof['author']).casefold()==_identity(proof['reviewer']).casefold():raise ValueError('ثبت‌کننده و بازبین مستقل واحد الزامی‌اند')
     unit=proof.get('unit');factor=cad_unit_factor(unit)
     if factor is None:raise ValueError('واحد پیشنهادی پشتیبانی نمی‌شود')
     if cad_unit_factor(document.units) is not None and document.units!=unit:raise ValueError('تعارض واحد فایل و مدرک؛ ثبت قطعی مسدود است')
-    found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
-    if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
-    raw=Decimal(str(proof.get('cad_length')));real=Decimal(str(proof.get('real_length_m')))
-    if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0 or raw*Decimal(str(factor))!=real:raise ValueError('کالیبراسیون مدرک یا ضریب تبدیل نامعتبر است')
-    if not math.isclose(found[0].data['length']/(cad_unit_factor(document.units) or 1),float(raw),rel_tol=1e-12,abs_tol=0):raise ValueError('مرجع با هندسه منبع مطابق نیست')
+    if policy=='cad_unit_reference_v2':
+        # The evidence must identify a real, unchanged PDF and source drawing.
+        # Matching numbers or a 1:100 ratio cannot establish the same member.
+        source=Path(str(document.source))
+        pdf=Path(str(proof.get('source_pdf_path','')))
+        if (not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest()!=document.source_sha256
+                or not pdf.is_file() or pdf.suffix.lower()!='.pdf'
+                or hashlib.sha256(pdf.read_bytes()).hexdigest()!=proof.get('source_pdf_sha256')):
+            raise ValueError('SHA-256 نقشه اصلی یا PDF مرجع معتبر نیست')
+        project=str(proof.get('project_id','')).strip()
+        revision=str(proof.get('drawing_revision','')).strip()
+        pdf_project=str(proof.get('pdf_project_id','')).strip()
+        pdf_revision=str(proof.get('pdf_drawing_revision','')).strip()
+        if (not project or not revision or project.casefold() in {'unknown','none'}
+                or revision.casefold() in {'unknown','none'}
+                or project!=pdf_project or revision!=pdf_revision):
+            raise ValueError('شناسه پروژه و نسخه یکسان نقشه DWG/PDF الزامی است')
+        references=proof.get('references')
+        if not isinstance(references,list) or len(references)<2 or len(references)>20:
+            raise ValueError('حداقل دو مرجع مستقل و محدود برای واحد DWG لازم است')
+        tolerance=Decimal(str(proof.get('absolute_tolerance_m','')))
+        if not tolerance.is_finite() or not Decimal(0)<=tolerance<=Decimal('0.0001'):
+            raise ValueError('تلرانس مستند باید بین صفر و ۰٫۱ میلی‌متر باشد')
+        import fitz
+        with fitz.open(pdf) as pdf_document:
+            pages=len(pdf_document)
+        seen_handles=set()
+        seen_members=set()
+        seen_segments=set()
+        for item in references:
+            if not isinstance(item,dict):
+                raise ValueError('مرجع هندسی باید ساختار معتبر داشته باشد')
+            handle=str(item.get('reference_handle','')).strip()
+            member=str(item.get('member_id','')).strip()
+            page=item.get('pdf_page')
+            sheet=str(item.get('sheet_id','')).strip()
+            if (not handle or not member or not sheet or
+                    not isinstance(page,int) or isinstance(page,bool) or not 1<=page<=pages
+                    or handle in seen_handles or member in seen_members):
+                raise ValueError('Handle، عضو، شیت و شماره صفحه دو مرجع باید مستقل و معتبر باشند')
+            matches=[e for e in document.entities if e.handle==handle]
+            if (len(matches)!=1 or matches[0].entity_type!='LINE'
+                    or matches[0].data.get('unsupported_measurement')
+                    or matches[0].data.get('layer_visible') is False
+                    or matches[0].data.get('layer_defined') is False):
+                raise ValueError('مرجع طول باید LINE یکتا، قابل‌مشاهده و قابل‌اندازه‌گیری باشد')
+            data=matches[0].data
+            if not all(k in data for k in ('start','end','length')):
+                raise ValueError('مختصات خط مرجع در هندسه منبع موجود نیست')
+            start=tuple(float(x) for x in data['start'])
+            end=tuple(float(x) for x in data['end'])
+            if not all(math.isfinite(x) for x in start+end) or start==end:
+                raise ValueError('مختصات مرجع متناهی و غیرصفر لازم است')
+            segment=tuple(sorted((start,end)))
+            if segment in seen_segments:
+                raise ValueError('دو مرجع نمی‌توانند همان پاره‌خط تکراری باشند')
+            raw=Decimal(str(item.get('cad_length','')))
+            real=Decimal(str(item.get('real_length_m','')))
+            if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0:
+                raise ValueError('ابعاد مرجع باید مثبت و متناهی باشند')
+            expected=raw*Decimal(str(factor))
+            if abs(expected-real)>tolerance:
+                raise ValueError('ابعاد واقعی با واحد و تلرانس اعلامی ناسازگار است')
+            original_cad_length=float(data['length'])/(cad_unit_factor(document.units) or 1)
+            if not math.isclose(original_cad_length,float(raw),rel_tol=1e-12,abs_tol=1e-8):
+                raise ValueError('طول مرجع با Handle هندسی DWG مطابقت ندارد')
+            seen_handles.add(handle)
+            seen_members.add(member)
+            seen_segments.add(segment)
+    else:
+        found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
+        if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
+        raw=Decimal(str(proof.get('cad_length')));real=Decimal(str(proof.get('real_length_m')))
+        if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0 or raw*Decimal(str(factor))!=real:raise ValueError('کالیبراسیون مدرک یا ضریب تبدیل نامعتبر است')
+        if not math.isclose(found[0].data['length']/(cad_unit_factor(document.units) or 1),float(raw),rel_tol=1e-12,abs_tol=0):raise ValueError('مرجع با هندسه منبع مطابق نیست')
     result=deepcopy(document)
     if cad_unit_factor(document.units) is None:
         for e in result.entities:

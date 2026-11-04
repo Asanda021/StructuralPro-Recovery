@@ -9,7 +9,7 @@ from PySide6.QtGui import QPen, QBrush, QColor, QPixmap, QPolygonF, QFont, QText
 from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text, cad_text_height
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLineEdit, QComboBox,
-    QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QDialog, QTableWidget,
+    QLabel, QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem, QGraphicsEllipseItem, QDialog, QTableWidget,
     QTableWidgetItem, QSpinBox, QFileDialog, QMessageBox, QFrame,
     QDoubleSpinBox, QCheckBox, QInputDialog, QHeaderView, QFormLayout, QRubberBand, QGridLayout, QSplitter, QScrollArea, QMainWindow, QDockWidget, QApplication, QTreeWidget, QTreeWidgetItem
 )
@@ -54,7 +54,9 @@ class TakeoffCanvas(QGraphicsView):
             mode = "pan"
         if mode in {"zoom_window", "region_select"} and self.mode not in {"zoom_window", "region_select"}:
             self._previous_mode = self.mode
-        self.cancel_interaction(reset_tool=False, announce=False)
+        # A window is the user's persistent takeoff scope. Changing from
+        # Window Zoom to CAD selection/measurement must not erase that scope.
+        self.cancel_interaction(reset_tool=False, announce=False, preserve_region=True)
         self.mode = mode
         self.points = []
         if mode in {"zoom_window", "region_select"}:
@@ -81,18 +83,24 @@ class TakeoffCanvas(QGraphicsView):
 
     def clear_region_selection(self):
         if self._region_overlay is not None:
-            self.scene.removeItem(self._region_overlay)
+            # Async imports can replace self.scene before the old QGraphicsItem
+            # is removed. Always detach from its own living scene.
+            owner_scene = self._region_overlay.scene()
+            if owner_scene is not None:
+                owner_scene.removeItem(self._region_overlay)
             self._region_overlay = None
         self._selected_region_rect = None
 
-    def cancel_interaction(self, reset_tool: bool = True, announce: bool = True):
+    def cancel_interaction(self, reset_tool: bool = True, announce: bool = True,
+                           preserve_region: bool = False):
         self._selection_origin = None
         self._rubber_band.hide()
         self.points = []
         if self._polygon_preview is not None:
             if self._polygon_preview.scene() is self.scene:self.scene.removeItem(self._polygon_preview)
             self._polygon_preview=None
-        self.clear_region_selection()
+        if not preserve_region:
+            self.clear_region_selection()
         if reset_tool and self.mode in {"zoom_window", "region_select"}:
             self.mode = self._previous_mode
             self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
@@ -106,13 +114,49 @@ class TakeoffCanvas(QGraphicsView):
     def scale_view(self, factor: float):
         self.scale(factor, factor)
 
+    def _scope_relation(self, item):
+        """CAD geometry must be entirely within the user-drawn takeoff window."""
+        region = self._selected_region_rect
+        if region is None:
+            return "unrestricted"
+        # Qt QGraphicsLineItem.sceneBoundingRect includes the width of the
+        # cosmetic 1-pixel pen. On CAD drawings whose geometry spans <1 raw
+        # unit, that pen can be WIDER than the entire Window Zoom region.
+        # Classify original geometry points, never painted pixels.
+        if isinstance(item, QGraphicsLineItem):
+            line = item.line()
+            a, b = item.mapToScene(line.p1()), item.mapToScene(line.p2())
+            candidate = ViewportRect.from_points(a.x(), a.y(), b.x(), b.y())
+        elif isinstance(item, QGraphicsPathItem):
+            box = item.mapRectToScene(item.path().controlPointRect()).boundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
+        elif isinstance(item, QGraphicsEllipseItem):
+            box = item.mapRectToScene(item.rect()).boundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
+        else:
+            box = item.sceneBoundingRect()
+            candidate = ViewportRect.from_points(box.left(),box.top(),box.right(),box.bottom())
+        selected = ViewportRect.from_points(
+            region.left(), region.top(), region.right(), region.bottom()
+        )
+        return selected.classify_rect(candidate)
+
     def mousePressEvent(self, event):
         if self.mode=='cad_select':
-            point=event.position().toPoint();hits=[i for i in self.items(QRect(point.x()-4,point.y()-4,9,9)) if i.data(0) and i.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable]
+            point=event.position().toPoint()
+            hits=[i for i in self.items(QRect(point.x()-4,point.y()-4,9,9))
+                  if i.data(0) and i.flags() & QGraphicsItem.GraphicsItemFlag.ItemIsSelectable]
             if not event.modifiers() & Qt.KeyboardModifier.ControlModifier:self.scene.clearSelection()
             if hits:
-                hits[0].setSelected(not hits[0].isSelected() if event.modifiers() & Qt.KeyboardModifier.ControlModifier else True)
-                self._announce_tool('جزء CAD انتخاب شد: '+str(hits[0].data(0)))
+                relation=self._scope_relation(hits[0])
+                if relation in {"outside","crossing"}:
+                    self._announce_tool(
+                        "عضو بیرون محدوده متره است" if relation=="outside" else
+                        "عضو از مرز Window عبور می‌کند؛ متره کل عضو به قسمت انتخابی نسبت داده نمی‌شود. محدوده را گسترش دهید یا عضو را با مدرک تفکیک کنید."
+                    )
+                else:
+                    hits[0].setSelected(not hits[0].isSelected() if event.modifiers() & Qt.KeyboardModifier.ControlModifier else True)
+                    self._announce_tool('جزء CAD در محدوده انتخاب شد: '+str(hits[0].data(0)))
             event.accept();return
         if event.button() == Qt.MouseButton.RightButton and self.mode in {"zoom_window", "region_select"}:
             self.cancel_interaction()
@@ -131,6 +175,14 @@ class TakeoffCanvas(QGraphicsView):
             return super().mousePressEvent(event)
         p = self.mapToScene(event.position().toPoint())
         page = self.session.current_page
+        # The Window scope also governs manual/PDF measurements. Pan and
+        # annotations remain free, but no count/length/polygon vertex may
+        # originate outside the explicitly selected takeoff rectangle.
+        if (self._selected_region_rect is not None and self.mode != "note"
+                and not self._selected_region_rect.contains(p)):
+            self._announce_tool("این نقطه بیرون محدوده Window متره است؛ فقط محدوده انتخابی قابل برداشت است.")
+            event.accept()
+            return
 
         if self.mode == "note":
             if self.on_note:
@@ -176,7 +228,9 @@ class TakeoffCanvas(QGraphicsView):
             selected = ViewportRect.from_points(
                 top_left.x(), top_left.y(), bottom_right.x(), bottom_right.y()
             ).clamped(ViewportRect(bounds.left(), bounds.top(), bounds.right(), bounds.bottom()))
-            if not selected.is_usable():
+            # 8 pixels is a screen gesture threshold, not 8 CAD drawing
+            # units: original building coordinates can be fractions of metres.
+            if not ViewportRect(0, 0, viewport_rect.width(), viewport_rect.height()).is_usable(8) or not selected.is_usable(0):
                 self._announce_tool("ناحیه خیلی کوچک است؛ مستطیل بزرگ‌تری انتخاب کن یا لغو کن.")
                 return
             scene_rect = QRectF(selected.left, selected.top, selected.width, selected.height)
@@ -184,12 +238,12 @@ class TakeoffCanvas(QGraphicsView):
                 self._set_region_highlight(scene_rect)
                 self.fitInView(scene_rect, Qt.AspectRatioMode.KeepAspectRatio)
                 self._announce_tool(
-                    f"ناحیه زوم و هایلایت شد | عرض: {selected.width:.2f} | ارتفاع: {selected.height:.2f} واحد نقشه"
+                    f"Window Zoom و محدوده متره فعال شد | عرض: {selected.width:.3f} | ارتفاع: {selected.height:.3f} واحد خام نقشه؛ فقط اعضای کامل در محدوده قابل انتخاب‌اند"
                 )
             else:
                 self._set_region_highlight(scene_rect)
                 self._announce_tool(
-                    f"ناحیه هایلایت شد | عرض: {selected.width:.2f} | ارتفاع: {selected.height:.2f} واحد نقشه"
+                    f"محدوده متره فعال شد | عرض: {selected.width:.3f} | ارتفاع: {selected.height:.3f} واحد خام نقشه؛ برای لغو از دکمه لغو استفاده کنید"
                 )
             return
         return super().mouseReleaseEvent(event)
@@ -330,6 +384,10 @@ class GraphicalTakeoffDialog(QDialog):
         self.viewer = DrawingViewerModel()
         self.cad_document = None
         self._cad_scene_origin = None
+        self._workflow_intake_dialog = None
+        self._workflow_schedule_dialog = None
+        self._engineer_weekly_dialog = None
+        self._workflow_prompted_source = None
         self.page = 1
 
         root = QVBoxLayout(self)
@@ -352,6 +410,18 @@ class GraphicalTakeoffDialog(QDialog):
         header.addWidget(self.calibrate)
 
         self.open_pdf = QPushButton("بازکردن نقشه")
+        self.workflow_button = QPushButton("چه چیزی متره شود؟")
+        self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
+        self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
+        self.workflow_button.clicked.connect(self.open_drawing_workflow)
+        self.schedule_button = QPushButton("برنامه زمان‌بندی هم‌زمان")
+        self.schedule_button.setObjectName("OpenDrawingLiveSchedule")
+        self.schedule_button.setEnabled(False)
+        self.schedule_button.clicked.connect(self.open_live_schedule)
+        self.weekly_button=QPushButton("برنامه هفتگی مهندسان")
+        self.weekly_button.setObjectName("OpenEngineerWeeklyPlan")
+        self.weekly_button.setEnabled(False)
+        self.weekly_button.clicked.connect(self.open_engineer_weekly_plan)
         self.prev = QPushButton("صفحه قبلی")
         self.next = QPushButton("صفحه بعدی")
         self.page_no = QSpinBox()
@@ -362,8 +432,9 @@ class GraphicalTakeoffDialog(QDialog):
         self.zoom_in = QPushButton("+")
         self.fit = QPushButton("نمایش کامل")
         self.pan = QPushButton("جابجایی نقشه")
-        self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")
-        self.select_region = QPushButton("انتخاب ناحیه")
+        self.zoom_window = QPushButton("Window Zoom | محدوده متره")
+        self.zoom_window.setToolTip("دو گوشه مستطیل را روی نقشه مشخص کن؛ فقط همان محدوده زوم و برای متره انتخاب می‌شود")
+        self.select_region = QPushButton("انتخاب محدوده بدون زوم")
         self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")
         self.region_to_takeoff = QPushButton("ثبت ناحیه در متره")
         self.region_to_takeoff.setToolTip("فقط متره سطح عمومی؛ برای اجزای سقف از دکمه سقف تخصصی استفاده کنید")
@@ -414,7 +485,8 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.prev, self.next, self.page_no,
+            self.open_pdf, self.workflow_button, self.schedule_button,
+            self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
             self.delete, self.finish, self.back_vertex, self.cancel_polygon, self.edit_vertices, self.remove_opening, self.geometry_components, self.drawing_amendment_button, self.project_id_input, self.save_session_button,
@@ -594,6 +666,26 @@ class GraphicalTakeoffDialog(QDialog):
         else:
             for c,v in getattr(self,'_cad_enabled',{}).items():c.setEnabled(v)
             self.canvas.setEnabled(True)
+            self._apply_source_measurement_controls()
+
+    def _apply_source_measurement_controls(self):
+        """Busy-state restoration cannot grant a new source more capability.
+
+        Recompute from the installed source both when entering a read-only DWG
+        and when reopening a payable DXF after that preview. Cached old widget
+        states are not an engineering permission model.
+        """
+        if self.cad_loading:return
+        model_view=self.viewer.kind=='ifc' or (
+            self.viewer.kind=='cad' and self.cad_document is not None
+            and self.cad_document.format=='DWG_NATIVE_READONLY_PREVIEW')
+        self.canvas.read_only_model=model_view
+        for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.export_boq):
+            control.setEnabled(not model_view)
+        for control in (self.cad_measure,self.cad_review):
+            control.setEnabled(self.viewer.kind=='cad' and not model_view)
+        self.commit_boq_button.setEnabled(not model_view and self.app_service is not None)
+        self.region_to_roof.setEnabled(self.viewer.kind=='pdf' and self.app_service is not None)
 
     def cancel_cad_loading(self):
         job=self._cad_job
@@ -674,6 +766,9 @@ class GraphicalTakeoffDialog(QDialog):
             try:
                 n=next(job['steps']);self.status.setText(f"ساخت نمایش نقشه: {n} از {job['document']._entity_count} جزء؛ متره مسدود است");QTimer.singleShot(0,batch)
             except StopIteration:
+                # A Window from the previous DWG/PDF must never leak into a
+                # different source or silently restrict its takeoff.
+                self.canvas.clear_region_selection()
                 if self.engine is not None:self.engine.close()
                 self.engine=None;self.pdf_path=str(path)
                 if self.session.drawing_source!=str(path):
@@ -697,12 +792,33 @@ class GraphicalTakeoffDialog(QDialog):
                     self.ifc_controls.show();self.cad_controls.hide()
                     for control in (self.mode,self.calibrate,self.region_to_takeoff,self.finish,self.region_to_roof,self.commit_boq_button,self.export_boq):control.setEnabled(False)
                     self.canvas.set_mode('pan');self.scale_label.setText('نمای مدل؛ متره از تصویر غیرفعال است')
-                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release();return
+                    self.source_label.setText('منبع IFC: '+Path(path).name);self.refresh();self.reset_zoom();self._ifc_status();job['gc_lease'].release()
+                    self._queue_workflow_intake()
+                    return
                 self.viewer.ifc_document=None;self.ifc_controls.hide()
                 self.viewer.path=Path(path);self.viewer.kind='cad';self.viewer.page_count=1;self.viewer.current_page=1;self.viewer.cad_document=self.cad_document
-                self.page=1;self.canvas.read_only_model=False;self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
-                self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False);self.source_label.setText('منبع CAD: '+Path(path).name);self.refresh();self.reset_zoom();self.status.setText(f'CAD آماده است؛ {len(self.cad_document.entities)} جزء حفظ شد؛ واحد: {self.cad_document.units}')
+                self.page=1;self.canvas.read_only_model=(
+                    self.cad_document.format == "DWG_NATIVE_READONLY_PREVIEW"
+                );self.canvas.setScene(job['scene']);job['old'][1].deleteLater()
+                if self.canvas.read_only_model:
+                    for control in (self.cad_measure,self.cad_review,self.commit_boq_button,self.finish,self.region_to_takeoff):
+                        control.setEnabled(False)
+                    self.canvas.set_mode('pan')
+                self._cad_job=None;temp.cleanup();p.deleteLater();self._cad_busy(False)
+                self.source_label.setText('منبع CAD: '+Path(path).name)
+                self.refresh();self.reset_zoom()
+                from core.drawings.cad_large_scene import cad_coverage_report
+                coverage=cad_coverage_report(self.cad_document)
+                self.status.setText(
+                    f"CAD خوانده شد: {coverage['source_entity_count']} جزء | "
+                    f"فاقد رسم مستقیم: {coverage['not_drawn_count']} | "
+                    f"فاقد متره تأییدشده: {coverage['unmeasurable_count']} | "
+                    f"واحد: {self.cad_document.units}"
+                    + (" | فقط پیش‌نمایش؛ ثبت BOQ ممنوع است"
+                       if self.canvas.read_only_model else " | متره نیازمند بازبینی مهندسی")
+                )
                 job['gc_lease'].release()
+                self._queue_workflow_intake()
             except Exception as exc:failed(str(exc))
         p.finished.connect(parsed);p.errorOccurred.connect(lambda error:failed(p.errorString()));p.setWorkingDirectory(str(Path(__file__).resolve().parents[1]));p.start(sys.executable,['-m','core.drawings.cad_import_worker',str(Path(path).resolve()),job['result']])
 
@@ -712,12 +828,256 @@ class GraphicalTakeoffDialog(QDialog):
         if self.engine is not None:self.engine.close()
         super().closeEvent(event)
 
+    def _queue_workflow_intake(self):
+        """Do not invoke a deleted Qt widget from a queued open-drawing callback.
+
+        Closing a drawing window within the same event cycle previously left
+        QTimer.singleShot callbacks holding dead Qt wrappers (P2/P5 crosswalk).
+        Resolve a weak reference and verify the underlying C++ QObject at
+        dispatch, not at schedule time.
+        """
+        import weakref
+        from shiboken6 import isValid
+        weak_window = weakref.ref(self)
+        def deliver():
+            window = weak_window()
+            if window is None or not isValid(window):
+                return
+            window._offer_workflow_for_open_drawing()
+        QTimer.singleShot(0, deliver)
+
+    def _offer_workflow_for_open_drawing(self):
+        """Ask once per newly opened source, never while a CAD worker is active."""
+        if self.cad_loading or not self.viewer.path:
+            return
+        source=str(self.viewer.path)
+        preferences=getattr(self.session,"workflow_preferences",None)
+        if preferences and preferences.get("source_sha256")==self.session.source_sha256:
+            self.schedule_button.setEnabled(
+                bool(preferences.get("automatic_scheduling") and self.session.workflow_plan)
+            )
+            return
+        if getattr(self.session,"workflow_plan",None):
+            self.schedule_button.setEnabled(True)
+            return
+        if self._workflow_prompted_source == source:
+            return
+        self._workflow_prompted_source=source
+        self.open_drawing_workflow()
+
+    def open_drawing_workflow(self):
+        if self.cad_loading or not self.viewer.path:
+            self.status.setText("ابتدا نقشه را باز کن تا هدف متره و زمان‌بندی تعیین شود")
+            return
+        from app.drawing_workflow_dialog import DrawingWorkflowIntakeDialog
+        from core.drawings.workflow_planning import infer_structure
+        from shiboken6 import isValid
+        old=self._workflow_intake_dialog
+        if old is not None and isValid(old) and old.isVisible():
+            old.raise_()
+            old.activateWindow()
+            return
+        evidence=infer_structure(self.cad_document if self.viewer.kind=="cad" else None)
+        dialog=DrawingWorkflowIntakeDialog(self.viewer.source_name,evidence,self)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        self._workflow_intake_dialog=dialog
+        source=str(self.viewer.path)
+        sha=str(self.session.source_sha256)
+        def accepted():
+            # Source-bound choices, never silently rebind to a different CAD.
+            if not self.viewer.path or str(self.viewer.path)!=source or self.session.source_sha256!=sha:
+                self.status.setText("نسخه نقشه تغییر کرده؛ انتخاب‌ها مجدداً لازم است")
+                return
+            price_mode,price_entry=dialog.pricing_selection()
+            enabled=dialog.automatic_schedule_selected()
+            structure,disciplines=dialog.selection()
+            selected_project=self.project_id_input.text().strip() or self.persisted_project_id
+            if self.app_service is not None and selected_project:
+                try:
+                    self.app_service.set_statement_pricing_mode(
+                        selected_project,price_mode,price_entry
+                    )
+                except Exception as exc:
+                    QMessageBox.warning(self,"مبنای صورت‌وضعیت پروژه",
+                        "انتخاب مالی در پروژه ذخیره نشد؛ فعالیت آغاز نمی‌شود: "+str(exc))
+                    return
+            selected_team=dialog.selected_supervision_team()
+            self.session.supervision_team=selected_team
+            start_date=dialog.selected_start_date()
+            building=dialog.selected_building_scope()
+            self.session.workflow_preferences={
+                "source_sha256":sha,
+                "project_start_date":start_date,
+                "building_scope":building,
+                "supervision_team":selected_team,
+                "pricing_mode":price_mode,
+                "contract_price_entry":price_entry if price_mode=="contract_rates" else None,
+                "automatic_scheduling":enabled,
+                "structure":structure,"disciplines":list(disciplines),
+                "project_kind":dialog.selected_project_kind(),
+            }
+            if enabled:
+                from core.drawings.workflow_planning import new_workflow_plan,sync_measured_items
+                # Same-source repeated choice must not erase user edits.
+                existing=self.session.workflow_plan
+                if (existing is not None and
+                        existing.get("source_sha256")==sha and
+                        existing.get("structure")==structure and
+                        existing.get("project_kind","new_build")==dialog.selected_project_kind() and
+                        set(existing.get("disciplines",()))==set(disciplines)|{"structure"}):
+                    plan=existing
+                else:
+                    plan=new_workflow_plan(
+                        drawing_source=source,source_sha256=sha,structure=structure,
+                        disciplines=disciplines,inference=evidence,
+                        project_kind=dialog.selected_project_kind(),
+                        project_id=selected_project,
+                    )
+                from core.projects.iran_worksite_calendar import make_calendar,calendarize
+                from core.projects.building_scale import set_building_scope,scaled_initial_wbs
+                plan=set_building_scope(plan,building)
+                plan=scaled_initial_wbs(plan,building)
+                plan=sync_measured_items(plan,self.session.items)
+                plan=calendarize(plan,make_calendar(start_date=start_date))
+                self.session.workflow_plan=plan
+                self.weekly_button.setEnabled(True)
+                self.schedule_button.setEnabled(True)
+                self.status.setText("مبنای مالی انتخاب شد؛ متره + زمان‌بندی پیشنهادی فعال است")
+                self.open_live_schedule()
+            else:
+                self.schedule_button.setEnabled(False)
+                self.weekly_button.setEnabled(False)
+                self.session.workflow_plan=None
+                old=self._workflow_schedule_dialog
+                if old is not None:
+                    from shiboken6 import isValid
+                    if isValid(old):old.hide()
+                self.status.setText(
+                    "مبنای مالی انتخاب شد؛ متره بدون زمان‌بندی خودکار فعال است؛ "
+                    "برنامه هفتگی مبتنی بر WBS نیز غیرفعال است"
+                )
+        dialog.accepted.connect(accepted)
+        dialog.show()
+
+    def open_live_schedule(self):
+        if not getattr(self.session,"workflow_plan",None):
+            self.open_drawing_workflow()
+            return
+        from app.drawing_workflow_dialog import DrawingScheduleDialog
+        from shiboken6 import isValid
+        dialog=self._workflow_schedule_dialog
+        if dialog is not None and isValid(dialog):
+            dialog.refresh()
+            dialog.show()
+            dialog.raise_()
+            dialog.activateWindow()
+            return
+        dialog=DrawingScheduleDialog(
+            lambda:getattr(self.session,"workflow_plan",None),
+            self._set_edited_schedule,self,
+        )
+        self._workflow_schedule_dialog=dialog
+        dialog.show()
+
+    def open_engineer_weekly_plan(self):
+        if not self.viewer.path or not self.session.workflow_plan:
+            self.status.setText("برای برنامه هفتگی باید ابتدا برنامه زمان‌بندی اصلی را فعال کنید")
+            return
+        if not self.session.supervision_team:
+            self.status.setText("ابتدا سرپرستان رشته‌های سازه، معماری، مکانیک و برق را تعیین کنید")
+            return
+        from app.engineer_weekly_dialog import EngineerWeeklyDialog
+        from shiboken6 import isValid
+        old=self._engineer_weekly_dialog
+        if old is not None and isValid(old):
+            old._create()  # Regenerate visible week from current master WBS.
+            old.show()
+            old.raise_()
+            old.activateWindow()
+            return
+        sha=self.session.source_sha256
+        def update(plans):
+            if self.session.source_sha256!=sha:
+                raise ValueError("منبع نقشه تغییر کرده است")
+            self.session.engineer_weekly_plans=plans
+        from core.projects.weekly_ownership import derive_weeks
+        plan=self.session.workflow_plan
+        week_of=plan.get("calendar",{}).get("start_date")
+        if not week_of:
+            self.status.setText("تاریخ آغاز برنامه زمان‌بندی اصلی مشخص نشده است")
+            return
+        derived=derive_weeks(
+            self.session.supervision_team,plan,week_of,
+            self.session.engineer_weekly_plans,sha,
+        )
+        self.session.engineer_weekly_plans=derived["plans"]
+        dialog=EngineerWeeklyDialog(
+            lambda:self.session.engineer_weekly_plans,
+            update,
+            lambda:(self.session.workflow_plan or {}).get("tasks",[]),
+            sha,self,
+            get_team=lambda:self.session.supervision_team,
+            get_wbs=lambda:self.session.workflow_plan,
+        )
+        person=self.session.supervision_team["people"][0]
+        dialog.engineer_id.setText(person["id"])
+        dialog.engineer_name.setText(person["name"])
+        dialog.week_date.setText(week_of)
+        dialog.refresh()
+        self._engineer_weekly_dialog=dialog
+        dialog.show()
+
+    def _set_edited_schedule(self, plan):
+        # Validated by edit_activity(); do not overwrite custom durations during
+        # any later takeoff, undo, redraw, source switch or schedule refresh.
+        if (plan.get("source_sha256")!=self.session.source_sha256
+                or plan.get("drawing_source")!=self.session.drawing_source):
+            raise ValueError("نسخه نقشه برای ویرایش برنامه عوض شده است")
+        from core.drawings.workflow_planning import sync_measured_items
+        if plan.get("resource_leveling_status")=="PROPOSED_UNAPPROVED":
+            # Leveling offsets are a temporary reviewed scenario. Calling the
+            # base CPM calculator now would erase every resource adjustment.
+            self.session.workflow_plan=plan
+        else:
+            self.session.workflow_plan=sync_measured_items(plan,self.session.items)
+        for saved_week in self.session.engineer_weekly_plans:
+            saved_week["schedule_review_status"]="WBS_CHANGED_REGENERATE"
+        from shiboken6 import isValid
+        weekly=self._engineer_weekly_dialog
+        if weekly is not None and isValid(weekly) and weekly.isVisible():
+            weekly._create()  # Re-project selected week, retaining valid signed checks.
+            weekly.refresh()
+
     def show_cad_capabilities(self):
         if self.cad_loading or not self.cad_document:return
         dialog=QDialog(self);dialog.setWindowTitle('قرارداد اجزای CAD و هشدار فونت');dialog.setLayoutDirection(Qt.RightToLeft);dialog.resize(900,500)
         layout=QVBoxLayout(dialog);layout.addWidget(QLabel('نوع پشتیبانی‌نشده، واحد نامعلوم یا مدرک ناقص مجوز BOQ ندارد؛ فونت جایگزین ممکن است چیدمان را تغییر دهد'))
+        from core.drawings.cad_large_scene import cad_coverage_report
+        coverage=cad_coverage_report(self.cad_document)
+        counts=coverage['source_by_type']
+        summary=QLabel(
+            f"اجزای خوانده‌شده: {coverage['source_entity_count']} | "
+            f"فاقد رسم مستقیم: {coverage['not_drawn_count']} | "
+            f"فاقد قرارداد متره: {coverage['unmeasurable_count']} | "
+            f"انواع شناسایی‌شده: {len(counts)}؛ "
+            "نمایش یک فایل معادل تأیید تمام اجزا برای متره نیست"
+        )
+        summary.setWordWrap(True);layout.addWidget(summary)
+        type_table=QTableWidget(len(counts),4)
+        type_table.setHorizontalHeaderLabels(['نوع CAD','تعداد خوانده‌شده','فاقد رسم','فاقد متره'])
+        for index,(typ,count) in enumerate(sorted(counts.items())):
+            for column,value in enumerate((
+                typ,str(count),str(coverage['not_drawn_by_type'].get(typ,0)),
+                str(coverage['unmeasurable_by_type'].get(typ,0))
+            )):
+                type_table.setItem(index,column,QTableWidgetItem(value))
+        type_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        layout.addWidget(type_table)
         shown=self.cad_document.entities[:200]
-        layout.addWidget(QLabel(f'این گزارش نخستین {len(shown)} جزء از {len(self.cad_document.entities)} را نشان می‌دهد؛ همه اجزا در مدل و جست‌وجوی Handle محفوظ‌اند'))
+        layout.addWidget(QLabel(
+            f'جدول جزئیات فقط نخستین {len(shown)} مورد را نشان می‌دهد؛ '
+            'جمع‌بندی انواع بالا از تمام اجزای خوانده‌شده محاسبه شده است'
+        ))
         table=QTableWidget(len(shown),3);table.setHorizontalHeaderLabels(['نوع جزء','Handle و لایه','وضعیت و علت'])
         for row,e in enumerate(shown):
             reason=e.data.get('unsupported_measurement') or e.data.get('font_notice') or 'هندسه قابل بررسی؛ ثبت فقط پس از مدرک و بازبینی مستقل'
@@ -768,6 +1128,15 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.warning(self, "شناسه پروژه", "برای ذخیره دائمی، شناسه پروژه را وارد کنید.")
             return False
         try:
+            settings=getattr(self.session,"workflow_preferences",None)
+            if settings:
+                # The drawing may have been opened without a project ID.
+                # Reconcile the user's original pricing choice when they
+                # subsequently attach and save the source-bound session.
+                self.app_service.set_statement_pricing_mode(
+                    project_id,settings["pricing_mode"],
+                    settings.get("contract_price_entry") or "prefilled",
+                )
             result = self.app_service.save_drawing_takeoff_session(
                 project_id, self.session, session_id=self.persisted_session_id,
                 expected_revision=self.persisted_session_revision,
@@ -823,6 +1192,13 @@ class GraphicalTakeoffDialog(QDialog):
             self.source_label.setText(f"منبع: {new_viewer.source_name} | {new_viewer.kind.upper()}")
             self.page_no.setMaximum(max(1, new_viewer.page_count))
             self.load_page(min(restored.current_page, max(1, new_viewer.page_count)))
+            # Restored UI must honor the original opt-in decision. Merely
+            # reopening the source may never enable an unrelated weekly WBS.
+            preferences=getattr(restored,"workflow_preferences",None) or {}
+            auto=bool(preferences.get("automatic_scheduling") and restored.workflow_plan)
+            self.schedule_button.setEnabled(auto)
+            self.weekly_button.setEnabled(auto and bool(restored.supervision_team))
+            self._workflow_prompted_source=str(source)
             self.status.setText(
                 f"🟢 نشست بازیابی شد | نسخه {self.persisted_session_revision} | "
                 f"متره‌ها: {len(restored.items)}"
@@ -939,6 +1315,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._cad_scene_origin = None  # Never reuse a prior drawing's CAD coordinate transform.
         self.engine = new_engine
         self.load_page(1)
+        self._queue_workflow_intake()
 
     def load_page(self, page):
         if self.cad_loading:return
@@ -960,7 +1337,11 @@ class GraphicalTakeoffDialog(QDialog):
             self.canvas._selected_region_rect = None
             self._cad_scene_origin = None
             self.canvas.points = []
-            model_view = self.viewer.kind == "ifc"
+            model_view = self.viewer.kind == "ifc" or (
+                self.viewer.kind == "cad" and
+                self.cad_document is not None and
+                self.cad_document.format == "DWG_NATIVE_READONLY_PREVIEW"
+            )
             calibration = self.session.calibration
             self.scale_label.setText(
                 "نمای مدل؛ متره از تصویر غیرفعال است" if model_view else
@@ -981,12 +1362,12 @@ class GraphicalTakeoffDialog(QDialog):
                 self._render_pdf_background()
                 for item in self.session.for_page(self.page):
                     self.canvas._draw_measurement(item)
-            elif model_view:
+            elif self.viewer.kind == "ifc":
                 self._render_ifc()
             else:
                 self._render_cad()
             self.refresh()
-            if model_view:
+            if self.viewer.kind == "ifc":
                 self._ifc_status()
             self.reset_zoom()
         except Exception as exc:
@@ -1019,6 +1400,14 @@ class GraphicalTakeoffDialog(QDialog):
             if {str(i.data(0)) for i in selected}!=expected:root_handle=None
         if len(selected)!=1 and not root_handle:
             self.status.setText('یک جزء CAD را انتخاب کنید؛ هر عضو و مالکیت مستقل ثبت می‌شود');return
+        selected_scope_items=(
+            [self._cad_handle_items[h] for h in self._cad_handle_items
+             if h.startswith(root_handle+'/') or h.startswith(root_handle+'@')]
+            if root_handle else selected
+        )
+        if any(self.canvas._scope_relation(item) in {"outside","crossing"} for item in selected_scope_items):
+            self.status.setText('عضو کامل داخل Window متره نیست؛ ثبت کل عضو ممنوع است. مستطیل را بزرگ‌تر کنید یا عضو را جداگانه مستند کنید.')
+            return False
         values=[]
         for prompt in ('کد عملیات متره','سازنده برداشت','مرجع مستقل هندسه و مالکیت'):
             value,ok=QInputDialog.getText(self,'متره جزء CAD',prompt)
@@ -1056,8 +1445,12 @@ class GraphicalTakeoffDialog(QDialog):
         if item is None:
             children=[item for handle,item in self._cad_handle_items.items() if handle.startswith(key+'/') or handle.startswith(key+'@')]
             if not children:self.status.setText('جزء قابل نمایش یافت نشد؛ XREF حل‌نشده یا نوع پشتیبانی‌نشده مجوز متره ندارد');return
+            if any(self.canvas._scope_relation(child) in {"outside","crossing"} for child in children):
+                self.status.setText('بلوک کامل در محدوده Window نیست؛ انتخاب و متره کل بلوک مسدود است');return
             for child in children:child.setVisible(True);child.setSelected(True)
             self._selected_cad_root=key;self.canvas.centerOn(children[0]);self.status.setText('بلوک انتخاب شد: '+key+'؛ اجزا برای جمع کنترل‌شده بازبینی شوند');return
+        if self.canvas._scope_relation(item) in {"outside","crossing"}:
+            self.status.setText('Handle یافت شد، اما عضو کامل داخل محدوده Window متره نیست؛ انتخاب مسدود است');return
         item.setVisible(True);item.setSelected(True);self.canvas.centerOn(item)
         self.status.setText('جزء CAD: '+key+' | '+str(item.data(1)))
 
@@ -1071,21 +1464,15 @@ class GraphicalTakeoffDialog(QDialog):
         self.cad_controls.show();self._cad_items={};self._cad_handle_items={};self.cad_layers.clear()
         from collections import Counter
         for layer,count in sorted((doc._layer_counts if hasattr(doc,'_layer_counts') else Counter(e.layer for e in doc.entities)).items()):self.cad_layers.addItem(layer+" | "+str(count),layer)
-        coords=[]
-        for entity in ([] if hasattr(doc,'_render_bounds') else doc.entities):
-            data=entity.data
-            coords.extend((float(x),float(y)) for x,y in data.get("display_points", data.get("points",[])))
-            if entity.entity_type == "CIRCLE" and data.get("center") and data.get("radius"):
-                x, y = data["center"]; r = data["radius"]
-                coords.extend([(x-r, y-r), (x+r, y+r)])
-            for key in ("start","end","center","insert"):
-                if key in data and data[key] is not None:
-                    coords.append((float(data[key][0]),float(data[key][1])))
-        if not coords and not hasattr(doc,'_render_bounds'):
-            self.canvas.scene.addText("CAD فاقد هندسه قابل نمایش است.")
-            self.canvas.setSceneRect(0,0,1000,700)
-            return
-        min_x,max_x,min_y,max_y=doc._render_bounds if hasattr(doc,'_render_bounds') else (min(x for x,_ in coords),max(x for x,_ in coords),min(y for _,y in coords),max(y for _,y in coords))
+        from core.drawings.cad_large_scene import cad_preview_index
+        # Synchronous CAD loads must follow the same bounded-memory extent
+        # calculation as the worker.  Do not materialize a second list with
+        # every polyline vertex and display-flattening point.
+        bounds=(doc._render_bounds if hasattr(doc,'_render_bounds')
+                else cad_preview_index(doc.entities)[0])
+        min_x,max_x,min_y,max_y=bounds
+        if not all(__import__('math').isfinite(v) for v in bounds):
+            raise ValueError("محدوده CAD دارای مختصات نامعتبر است")
         margin=max(max_x-min_x,max_y-min_y,1.0)*0.05
         min_x-=margin; max_x+=margin; min_y-=margin; max_y+=margin
         # Evidence matching must use the same model -> scene transform as rendering.
@@ -1103,7 +1490,16 @@ class GraphicalTakeoffDialog(QDialog):
             if entity.entity_type=="LINE" and d.get("start") and d.get("end"):
                 a,b=d["start"],d["end"]
                 item=self.canvas.scene.addLine(sx(a[0]),sy(a[1]),sx(b[0]),sy(b[1]),pen)
-            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC"} and len(d.get("display_points", d.get("points",[])))>=2:
+            elif entity.entity_type=="HATCH" and d.get("display_paths"):
+                # One selectable source handle, several disconnected rings.
+                # Do not join holes to the outside boundary or imply area.
+                path=QPainterPath()
+                for ring in d["display_paths"]:
+                    if len(ring)<2:continue
+                    path.moveTo(sx(ring[0][0]),sy(ring[0][1]))
+                    for x,y in ring[1:]:path.lineTo(sx(x),sy(y))
+                item=self.canvas.scene.addPath(path,pen)
+            elif entity.entity_type in {"LWPOLYLINE","POLYLINE", "ARC", "SPLINE", "ELLIPSE", "SOLID"} and len(d.get("display_points", d.get("points",[])))>=2:
                 pts=[QPointF(sx(x),sy(y)) for x,y in d.get("display_points", d.get("points",[]))]
                 path = QPainterPath(pts[0])
                 for point in pts[1:]:
@@ -1120,10 +1516,16 @@ class GraphicalTakeoffDialog(QDialog):
                     continue
                 pos = d.get("insert", d.get("start", (0, 0)))
                 height = cad_text_height(d)
-                font = QFont("Tahoma")
+                # Use the actual verified bilingual application font rather
+                # than hardcoding Tahoma and bypassing the user's font choice.
+                # Proprietary SHX glyph mappings still need their source font.
+                font = QFont(QApplication.font())
                 font.setPixelSize(100)
                 item = self.canvas.scene.addText(text, font)
-                item.setDefaultTextColor(QColor(20, 35, 70))
+                item.setDefaultTextColor(
+                    QColor(158, 83, 0) if d.get("text_status") == "LEGACY_SHX_ENCODING_REQUIRES_SOURCE_FONT"
+                    else QColor(20, 35, 70)
+                )
                 option = item.document().defaultTextOption()
                 option.setTextDirection(
                     Qt.LayoutDirection.RightToLeft
@@ -1150,7 +1552,13 @@ class GraphicalTakeoffDialog(QDialog):
                 render_bounds=render_bounds.united(item.sceneBoundingRect())
         yield len(doc.entities)  # Yield before publishing the completed scene.
         self.canvas.setSceneRect(render_bounds)
-        self.status.setText(f"🟢 CAD نمایش داده شد | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units} | اجزای فاقد قرارداد متره: {unsupported_count} | هشدار: {len(doc.warnings)}")
+        preview = doc.format == "DWG_NATIVE_READONLY_PREVIEW"
+        self.status.setText(
+            f"{'🟠 پیش‌نمایش فقط‌خواندنی' if preview else '🟢 CAD نمایش داده شد'}"
+            f" | {len(doc.entities)} المان | لایه‌ها: {len(doc.layers)} | واحد: {doc.units}"
+            f" | اجزای فاقد قرارداد متره: {unsupported_count} | هشدار: {len(doc.warnings)}"
+            + (" | متن‌های SHX قدیمی نیازمند فونت اصلی هستند؛ BOQ مسدود است" if preview else "")
+        )
 
     def _render_ifc_steps(self,doc):
         """One selectable path per real mesh; all source triangles retained.
@@ -2645,3 +3053,17 @@ class GraphicalTakeoffDialog(QDialog):
         )
         self.undo.setEnabled(self.session.can_undo)
         self.redo.setEnabled(self.session.can_redo)
+        plan=getattr(self.session, "workflow_plan", None)
+        preferences=getattr(self.session,"workflow_preferences",None)
+        auto=bool(plan) and (
+            preferences is None or preferences.get("automatic_scheduling",False)
+        )
+        self.schedule_button.setEnabled(auto)
+        self.weekly_button.setEnabled(auto and bool(getattr(self.session,"supervision_team",None)))
+        if plan:
+            from core.drawings.workflow_planning import sync_measured_items
+            sync_measured_items(plan, self.session.items)
+            window=self._workflow_schedule_dialog
+            if window is not None and window.isVisible():
+                window.refresh()
+        self._apply_source_measurement_controls()

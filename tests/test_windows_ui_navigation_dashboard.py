@@ -55,7 +55,8 @@ def test_contextual_command_ribbon_reuses_existing_workflows():
     assert 'add_command("➕ ایجاد پروژه", create.click, True)' in MAIN
     assert 'add_command("📄 انتخاب/بررسی نقشه", browse.click, True)' in MAIN
     assert 'add_command("🔄 بازسازی برآورد", show_boq, True)' in MAIN
-    assert 'add_command("🧮 محاسبه دوره", statement_shortcut, True)' in MAIN
+    assert 'add_command("انتخاب مبنای صورت‌وضعیت", choose_statement_basis, True)' in MAIN
+    assert 'add_command("🧮 محاسبه دوره", statement_shortcut)' in MAIN
 
 
 def test_user_pricebook_is_persisted_locally():

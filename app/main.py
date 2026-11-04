@@ -16,7 +16,7 @@ def main()->int:
             QApplication,QMainWindow,QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,
             QLabel,QPushButton,QListWidget,QStackedWidget,QStatusBar,QLineEdit,
             QComboBox,QFormLayout,QMessageBox,QTextEdit,QFileDialog,QTableWidget,
-            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QCalendarWidget,QScrollArea
+            QTableWidgetItem,QHeaderView,QGroupBox,QTabWidget,QTabBar,QFrame,QDialog,QInputDialog,QCalendarWidget,QScrollArea
         )
         from PySide6.QtCore import Qt, QTimer, QEvent, QCoreApplication, QDate, QCalendar, QLocale
         from PySide6.QtGui import QShortcut, QKeySequence
@@ -828,7 +828,18 @@ def main()->int:
     stperiod=QLineEdit(); stperiod.setPlaceholderText("شماره دوره؛ خالی = بعدی")
     stcur=QLineEdit(); stcur.setPlaceholderText("کارکرد: W001=3, W002=5")
     stgo=QPushButton("محاسبه دوره"); stsave=QPushButton("ذخیره دوره"); stsave.setObjectName("PrimaryAction")
-    sv.addWidget(QLabel("پروژه")); sv.addWidget(stid,1); sv.addWidget(QLabel("دوره")); sv.addWidget(stperiod); sv.addWidget(stgo); sv.addWidget(stsave); v.addWidget(sttools)
+    stchoose=QPushButton("شروع صورت‌وضعیت | انتخاب مبنا")
+    stchoose.setObjectName("ChooseStatementPricingMode")
+    stproof=QPushButton("بازبینی نرخ‌های قراردادی")
+    stproof.setObjectName("ReviewContractStatementRates")
+    stoperator=QPushButton("ورود مبلغ ردیف توسط اپراتور")
+    stoperator.setObjectName("OperatorEnterContractUnitRate")
+    sv.addWidget(QLabel("پروژه")); sv.addWidget(stid,1); sv.addWidget(QLabel("دوره")); sv.addWidget(stperiod)
+    sv.addWidget(stchoose);sv.addWidget(stoperator);sv.addWidget(stproof);sv.addWidget(stgo);sv.addWidget(stsave)
+    v.addWidget(sttools)
+    stbasis_label=QLabel("مبنای صورت‌وضعیت انتخاب نشده؛ فهرست‌بهایی یا نرخ قراردادی؟")
+    stbasis_label.setWordWrap(True);v.addWidget(stbasis_label)
+    statement_mode_confirmed=set()
     statement_form=QFormLayout()
     statement_form.addRow("کارکرد این دوره به تفکیک کد", stcur)
     statement_rates={}
@@ -854,8 +865,126 @@ def main()->int:
         return {"period_no":int(stperiod.text()) if stperiod.text().strip() else None,
                 "current_quantities":parse_statement_quantities(),
                 **{key:field.text() for key,field in statement_rates.items()}}
+    def choose_statement_basis():
+        pid=stid.text().strip()
+        if not pid:
+            QMessageBox.warning(w,"شناسه پروژه","ابتدا شناسه پروژه را بنویسید")
+            return False
+        try:
+            project=service.open_project(pid)
+            if project is None:raise KeyError("پروژه در پایگاه داده یافت نشد")
+            from core.commercial.statement_basis import MODES,statement_mode
+            modes=list(MODES)
+            labels=[MODES[key] for key in modes]
+            current=statement_mode(project)
+            label,accepted=QInputDialog.getItem(
+                w,"شروع صورت‌وضعیت","صورت‌وضعیت با فهرست‌بها باشد یا بدون فهرست‌بها؟",
+                labels,modes.index(current),False
+            )
+            if not accepted:return False
+            selected=modes[labels.index(label)]
+            entry="prefilled"
+            if selected=="contract_rates":
+                options=[
+                    "مبالغ قرارداد از ابتدا درج و قابل بررسی باشد",
+                    "مبالغ خالی بماند تا اپراتور هنگام کنترل وارد کند",
+                ]
+                selected_option,ok=QInputDialog.getItem(
+                    w,"ورود مبالغ قراردادی",
+                    "ردیف‌های بدون فهرست‌بها با قیمت باشند یا خانه مبلغ خالی باشد؟",
+                    options,0,False
+                )
+                if not ok:return False
+                entry="operator_blank" if selected_option==options[1] else "prefilled"
+            service.set_statement_pricing_mode(pid,selected,entry)
+            statement_mode_confirmed.add(pid)
+            state=service.statement_basis_status(pid)
+            stbasis_label.setText(
+                "مبنای انتخابی: "+MODES[selected]+
+                (" | آماده محاسبه دوره" if state["ready_for_draft"]
+                 else " | نیازمند مدرک/BOQ: "+state["issue"])
+            )
+            return True
+        except Exception as exc:
+            QMessageBox.critical(w,"مبنای صورت‌وضعیت",str(exc))
+            return False
+
+    def operator_enter_contract_unit_rate():
+        pid=stid.text().strip()
+        if not pid:
+            QMessageBox.warning(w,"صورت‌وضعیت","شناسه پروژه را وارد کنید")
+            return
+        try:
+            from core.commercial.statement_basis import statement_mode
+            project=service.open_project(pid)
+            if statement_mode(project)!="contract_rates":
+                raise ValueError("ابتدا حالت بدون فهرست‌بها را انتخاب کنید")
+            boq=project.get("boq") or []
+            if not boq:
+                raise ValueError("ابتدا ردیف‌های BOQ را ثبت کنید")
+            labels=[str(x.get("price_code") or "")+" | "+
+                    str(x.get("description") or x.get("item_code") or "")[:65]+
+                    (" | مبلغ خالی" if x.get("unit_price") is None else
+                     " | مبلغ ثبت‌شده: "+str(x.get("unit_price")))
+                    for x in boq]
+            selection,ok=QInputDialog.getItem(
+                w,"ردیف مبلغ قراردادی","ردیف مورد بررسی:",labels,0,False
+            )
+            if not ok:return
+            row=boq[labels.index(selection)]
+            amount,ok=QInputDialog.getText(
+                w,"ثبت مبلغ قرارداد",
+                "مبلغ واحد واقعی قرارداد (برای ردیف خالی صفر فرض نمی‌شود):"
+            )
+            if not ok:return
+            operator,ok=QInputDialog.getText(
+                w,"اپراتور مسئول","نام اپراتور ثبت‌کننده مبلغ:"
+            )
+            if not ok:return
+            service.record_operator_statement_price(
+                pid,str(row["price_code"]),amount,operator
+            )
+            status=service.statement_operator_price_status(pid)
+            stbasis_label.setText(
+                "قیمت قراردادی ثبت شد و منتظر کنترل سند است | "
+                f"ردیف‌های فاقد مبلغ: {len(status['missing_codes'])}"
+            )
+        except Exception as exc:
+            QMessageBox.critical(w,"ثبت مبلغ قراردادی",str(exc))
+
+    def review_contract_statement_rates():
+        pid=stid.text().strip()
+        if not pid:return QMessageBox.warning(w,"صورت‌وضعیت","شناسه پروژه را وارد کنید")
+        try:
+            from core.commercial.statement_basis import statement_mode
+            if statement_mode(service.open_project(pid))!="contract_rates":
+                raise ValueError("ابتدا گزینه بدون فهرست‌بها را انتخاب کنید")
+            path=QFileDialog.getOpenFileName(w,"قرارداد یا پیوست نرخ‌های توافقی","","مدارک (*.pdf *.xlsx *.xls *.docx *.csv *.txt);;همه فایل‌ها (*)")[0]
+            if not path:return
+            name,approved=QInputDialog.getText(
+                w,"تأیید نرخ قرارداد","نام بازبین نرخ‌های BOQ در برابر سند قرارداد:"
+            )
+            if not approved or not name.strip():return
+            result=service.review_statement_contract_rates(pid,path,name)
+            stbasis_label.setText(
+                "نرخ‌های قراردادی بازبینی شدند | SHA: "+result["sha256"][:12]+
+                " | برای محاسبه دوره نیازمند مقادیر کارکرد تأییدشده"
+            )
+        except Exception as exc:QMessageBox.critical(w,"بازبینی نرخ‌های قرارداد",str(exc))
+
+    def ensure_statement_basis():
+        pid=stid.text().strip()
+        if not pid:raise ValueError("شناسه پروژه را وارد کنید")
+        if pid not in statement_mode_confirmed and not choose_statement_basis():
+            return False
+        state=service.statement_basis_status(pid)
+        if not state["ready_for_draft"]:
+            raise ValueError("مبنای صورت‌وضعیت هنوز کامل نیست: "+state["issue"])
+        return True
+
     def statement_shortcut():
         try:
+            if not ensure_statement_basis():return
             preview=service.save_statement_period(stid.text().strip(),persist=False,**statement_arguments())
             stout.setPlainText(json.dumps(preview,ensure_ascii=False,indent=2))
         except Exception as e: stout.setPlainText("خطا: "+str(e))
@@ -863,6 +992,7 @@ def main()->int:
         try:
             project_id=stid.text().strip()
             if not project_id: raise ValueError("شناسه پروژه را وارد کنید")
+            if not ensure_statement_basis():return
             period=service.save_statement_period(project_id,**statement_arguments())
             stout.setPlainText(json.dumps(period,ensure_ascii=False,indent=2))
             stperiods.setText(f"دوره‌های ذخیره‌شده: {len(service.statement_periods(project_id))}")
@@ -873,17 +1003,22 @@ def main()->int:
         try:
             from app.statement_amendment import StatementAmendmentDialog
             if not stid.text().strip(): raise ValueError("شناسه پروژه را وارد کنید")
+            if stid.text().strip() not in statement_mode_confirmed and not choose_statement_basis():return
             StatementAmendmentDialog(service, stid.text().strip(), w).exec()
         except Exception as e: QMessageBox.critical(w,"خطای اصلاحیه",str(e))
     def open_financial_workspace():
         try:
             from app.financial_workspace import FinancialWorkspace
             if not stid.text().strip():raise ValueError("شناسه پروژه را وارد کنید")
+            if stid.text().strip() not in statement_mode_confirmed and not choose_statement_basis():return
             FinancialWorkspace(service,stid.text().strip(),w).exec()
         except Exception as exc:QMessageBox.critical(w,"خطای دفتر مالی",str(exc))
     finance_open=QPushButton("گردش رسمی صورت‌وضعیت و دفتر مالی");finance_open.setObjectName("FinancialWorkspaceOpen")
     finance_open.clicked.connect(open_financial_workspace);v.addWidget(finance_open)
     stamend.clicked.connect(open_statement_amendments)
+    stchoose.clicked.connect(choose_statement_basis)
+    stproof.clicked.connect(review_contract_statement_rates)
+    stoperator.clicked.connect(operator_enter_contract_unit_rate)
     stgo.clicked.connect(statement_shortcut)
     stsave.clicked.connect(save_statement_period)
     pages.addWidget(p); idx_statement=pages.count()-1
@@ -1210,7 +1345,10 @@ def main()->int:
             add_command("🧾 صورت‌وضعیت", lambda: pages.setCurrentIndex(idx_statement))
             add_command("📊 گزارش", lambda: pages.setCurrentIndex(idx_reports))
         elif index == idx_statement:
-            add_command("🧮 محاسبه دوره", statement_shortcut, True)
+            add_command("انتخاب مبنای صورت‌وضعیت", choose_statement_basis, True)
+            add_command("ورود مبلغ اپراتور", operator_enter_contract_unit_rate)
+            add_command("بازبینی نرخ قرارداد", review_contract_statement_rates)
+            add_command("🧮 محاسبه دوره", statement_shortcut)
             add_command("💾 ذخیره دوره", save_statement_period)
             add_command("دفتر مالی و گردش رسمی", open_financial_workspace)
             add_command("📋 برآورد", lambda: pages.setCurrentIndex(idx_boq))

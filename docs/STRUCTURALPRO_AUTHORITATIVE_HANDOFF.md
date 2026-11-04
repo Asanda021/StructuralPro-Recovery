@@ -4,6 +4,8 @@
 **Baseline Main:** 612542e2619cd171418b1025db2c3f64253755b4  
 **Product state:** Product Acceptance / Maintenance / Versioned Feature Development
 
+**Recovery branch governance note (2026-11-03):** This is a historical handoff for `Asanda021/StructuralPro` at `612542e`, not a certification of the current `StructuralPro-Recovery` PR. The owner-approved narrow read-only native DWG preview policy and the strict payable boundary are documented in [the Recovery DWG policy decision](acceptance/DWG_NATIVE_PREVIEW_POLICY_20261103.fa.md). No merge or release is implied.
+
 ## Non-negotiable engineering rules
 
 - Preserve the existing architecture; no rewrite.
@@ -51,7 +53,7 @@ Required boundary:
 
 **DWG → Provider → Converter → DXF → ezdxf → Extraction → Takeoff**
 
-Native DWG parsing is forbidden. Missing/invalid provider capability must fail closed.
+Direct native DWG parsing as an authoritative **takeoff / BOQ source** is forbidden; missing or invalid payable Provider/Converter capability must fail closed. **Narrow Recovery exception (owner decision 2026-11-03):** pinned native decoding is allowed solely for source-hashed, non-payable, read-only graphical preview after strict import fails, and for validated Provider diagnostics/conversion. Preview data must never enter financial measurement without a separate strict import, reliable unit/source evidence and independent review. This supersedes the historical blanket wording **only** within the scope documented in [the Recovery DWG policy decision](acceptance/DWG_NATIVE_PREVIEW_POLICY_20261103.fa.md).
 
 ### DXF
 

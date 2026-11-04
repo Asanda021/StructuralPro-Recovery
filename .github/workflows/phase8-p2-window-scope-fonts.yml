@@ -1,0 +1,97 @@
+name: P8 P2 real Qt Window Zoom scoped CAD and bilingual text gate
+on:
+  push:
+    branches: [test/phase8-p2-engineering-e2e-20261031]
+    paths:
+      - core/drawings/viewport_tools.py
+      - core/reports/drawing_schedule_report.py
+      - app/drawing_schedule_export_worker.py
+      - tests/test_phase8_p2_native_preview_geometry.py
+      - tests/test_phase8_p2_converter_failure_cleanup.py
+      - tests/test_phase8_p2_external_converter_coverage.py
+      - tests/test_phase8_p2_schedule_saved_review_integrity.py
+      - tests/test_phase8_p2_drawing_schedule_export.py
+      - core/drawings/native_dwg_preview.py
+      - core/cad/persian_text_v1.py
+      - core/drawings/dwg_takeoff.py
+      - core/drawings/cad_large_scene.py
+      - core/drawings/cad_import_worker.py
+      - core/drawings/viewer_model.py
+      - core/drawings/workflow_planning.py
+      - core/projects/production_catalog.py
+      - core/projects/iran_worksite_calendar.py
+      - core/projects/iran_holiday_seeds.py
+      - core/projects/jalali_dates.py
+      - core/projects/weekly_ownership.py
+      - core/projects/building_scale.py
+      - tests/test_phase8_p2_supervisors_floor_duration.py
+      - core/projects/engineer_weekly_plan.py
+      - core/commercial/statement_basis.py
+      - app/engineer_weekly_dialog.py
+      - tests/test_phase8_p2_engineer_weeks_optional_schedule.py
+      - core/projects/productivity_evidence.py
+      - tests/test_phase8_p2_productivity_evidence.py
+      - core/projects/crew_capacity.py
+      - tests/test_phase8_p2_calendar_and_crew_leveling.py
+      - core/projects/precedence_model.py
+      - core/commercial/statement_basis.py
+      - core/platform/application.py
+      - app/main.py
+      - tests/test_phase8_p2_productivity_and_statement_modes.py
+      - core/drawings/takeoff_session.py
+      - app/drawing_workflow_dialog.py
+      - tests/test_phase8_p2_drawing_workflow_schedule.py
+      - tests/test_phase8_p2_autocad2027_large_cad.py
+      - core/drawings/dwg_converter.py
+      - tests/test_phase1_5_import_hardening.py
+      - app/graphical_takeoff.py
+      - tests/test_phase8_p2_window_scope_fonts.py
+      - .github/workflows/phase8-p2-window-scope-fonts.yml
+  pull_request:
+    branches: [audit/phase8-p1-baseline-integrity-20261031]
+    paths:
+      - core/drawings/viewport_tools.py
+      - app/graphical_takeoff.py
+      - core/drawings/native_dwg_preview.py
+      - tests/test_phase8_p2_window_scope_fonts.py
+      - .github/workflows/phase8-p2-window-scope-fonts.yml
+permissions:
+  contents: read
+concurrency:
+  group: p8p2-window-scope-fonts-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  qt-window-and-font-integrity:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: ${{ matrix.os == 'windows-2022' && 'windows' || 'offscreen' }}
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install Linux Qt offscreen runtime libraries
+        if: matrix.os == 'ubuntu-24.04'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libxkbcommon-x11-0
+      - name: Install Windows product dependencies with pinned ready-made DWG reader
+        run: python -m pip install -q -r requirements.txt
+      - name: Qt drag rectangle and scoped quantity policy
+        run: python -m pytest -q tests/test_phase8_p2_external_converter_coverage.py tests/test_phase8_p2_native_preview_geometry.py tests/test_phase8_p2_converter_failure_cleanup.py tests/test_phase8_p2_schedule_saved_review_integrity.py tests/test_phase8_p2_drawing_schedule_export.py tests/test_phase8_p2_window_scope_fonts.py tests/test_phase8_p2_autocad2027_large_cad.py tests/test_phase8_p2_drawing_workflow_schedule.py tests/test_phase8_p2_productivity_and_statement_modes.py tests/test_phase8_p2_calendar_and_crew_leveling.py tests/test_phase8_p2_productivity_evidence.py tests/test_phase8_p2_engineer_weeks_optional_schedule.py tests/test_phase8_p2_supervisors_floor_duration.py tests/test_viewport_tools.py tests/test_persian_cad_text_v1.py tests/test_graphical_workflow.py::test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired tests/test_phase1_5_import_hardening.py --junitxml=p8p2-window-scope-junit.xml
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-window-scope-font-test-${{ matrix.os }}
+          path: p8p2-window-scope-junit.xml
+          if-no-files-found: warn
+          retention-days: 14

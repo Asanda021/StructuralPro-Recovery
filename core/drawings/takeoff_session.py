@@ -68,6 +68,10 @@ class DrawingTakeoffSession:
         self.items: list[TakeoffItem] = []
         self.markups = MarkupStore()
         self.cad_unit_evidence=None
+        self.workflow_plan=None  # Editable source-bound draft, never BOQ authority.
+        self.workflow_preferences=None  # Pricing choice + explicit scheduling opt-in.
+        self.supervision_team=None  # One or multiple trade supervisors.
+        self.engineer_weekly_plans=[]  # Independent signed daily checklists per engineer.
         self.current_page = 1
         self._counter = 0
         self._undo: list[dict[str, Any]] = []
@@ -143,6 +147,8 @@ class DrawingTakeoffSession:
 
     def _restore(self, state: dict[str, Any]) -> None:
         self.cad_unit_evidence=deepcopy(state.get("cad_unit_evidence"))
+        # Scheduling edits are independent of geometry undo/redo. A GUI refresh
+        # re-links the restored measurement set without losing custom durations.
         raw = state.get("calibration")
         self.calibration = Calibration(**raw) if raw else None
         saved_calibrations = state.get("calibrations")
@@ -550,6 +556,10 @@ class DrawingTakeoffSession:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "calibrations": {str(page): value.to_dict() for page, value in self.calibrations.items()},
             **({"cad_unit_evidence":deepcopy(self.cad_unit_evidence)} if self.cad_unit_evidence is not None else {}),
+            **({"workflow_plan":deepcopy(self.workflow_plan)} if self.workflow_plan is not None else {}),
+            **({"workflow_preferences":deepcopy(self.workflow_preferences)} if self.workflow_preferences is not None else {}),
+            "engineer_weekly_plans":deepcopy(self.engineer_weekly_plans),
+            **({"supervision_team":deepcopy(self.supervision_team)} if self.supervision_team is not None else {}),
             "current_page": self.current_page,
             "items": [x.to_dict() for x in self.items],
             "markups": [x.to_dict() for x in self.markups.items],
@@ -562,6 +572,65 @@ class DrawingTakeoffSession:
     def from_dict(cls, data: dict[str, Any]) -> "DrawingTakeoffSession":
         session = cls()
         session.cad_unit_evidence=deepcopy(data.get("cad_unit_evidence"))
+        session.workflow_plan=deepcopy(data.get("workflow_plan"))
+        session.workflow_preferences=deepcopy(data.get("workflow_preferences"))
+        session.engineer_weekly_plans=deepcopy(data.get("engineer_weekly_plans",[]))
+        session.supervision_team=deepcopy(data.get("supervision_team"))
+        if session.supervision_team is not None:
+            from core.projects.weekly_ownership import define_team, TRADES
+            assignment=session.supervision_team
+            if not isinstance(assignment,dict):
+                raise ValueError("ساختار سرپرستی در نشست معتبر نیست")
+            people=assignment.get("people")
+            owners=assignment.get("owners")
+            if (not isinstance(people,list) or
+                    not isinstance(owners,dict) or
+                    not 1<=len(people)<=4 or
+                    assignment.get("count")!=len(people) or
+                    set(owners)!=set(TRADES)):
+                raise ValueError("تعداد یا مسئولیت سرپرستان ذخیره‌شده نادرست است")
+            try:
+                rebuilt=define_team(
+                    [person["name"] for person in people],
+                    {trade:int(owners[trade].rsplit("-",1)[1])-1 for trade in TRADES},
+                )
+            except (KeyError,ValueError,TypeError,AttributeError,IndexError) as exc:
+                raise ValueError("رشته‌های مسئولیت سرپرستان نامعتبرند") from exc
+            if (rebuilt["people"]!=people or
+                    rebuilt["owners"]!=owners or
+                    rebuilt["mode"]!=assignment.get("mode")):
+                raise ValueError("شناسه و مسئولیت سرپرستان با جدول ذخیره‌شده تطبیق ندارد")
+        if not isinstance(session.engineer_weekly_plans,list) or len(session.engineer_weekly_plans)>1000:
+            raise ValueError("برنامه‌های هفتگی مهندسان معتبر نیست")
+        if session.workflow_preferences is not None:
+            config=session.workflow_preferences
+            if (not isinstance(config,dict)
+                    or config.get("pricing_mode") not in ("pricebook","contract_rates")
+                    or type(config.get("automatic_scheduling")) is not bool
+                    or config.get("source_sha256")!=str(data.get("source_sha256",""))):
+                raise ValueError("انتخاب‌های اولیه نقشه با نسخه منبع مطابقت ندارند")
+        for weekly in session.engineer_weekly_plans:
+            if (not isinstance(weekly,dict)
+                    or weekly.get("schema")!="structuralpro.engineer-week-v1"
+                    or weekly.get("source_sha256")!=str(data.get("source_sha256",""))):
+                raise ValueError("برنامه هفتگی مهندس متعلق به نسخه منبع دیگری است")
+        if session.workflow_plan is not None:
+            from core.drawings.workflow_planning import recompute_schedule
+            if (not isinstance(session.workflow_plan, dict)
+                    or session.workflow_plan.get("schema") != "structuralpro.drawing-workflow-v1"
+                    or session.workflow_plan.get("status") != "DRAFT_UNAPPROVED"
+                    or session.workflow_plan.get("drawing_source") != str(data.get("drawing_source", ""))
+                    or session.workflow_plan.get("source_sha256") != str(data.get("source_sha256", ""))):
+                raise ValueError("پیش‌نویس زمان‌بندی با منبع/نسخه نشست نقشه منطبق نیست")
+            if session.workflow_plan.get("resource_leveling_status") == "PROPOSED_UNAPPROVED":
+                # Rebuild, rather than trust saved offsets or erase a reviewed
+                # capacity scenario by rerunning unconstrained PDM on reload.
+                from core.drawings.workflow_planning import apply_resource_limits
+                session.workflow_plan = apply_resource_limits(
+                    session.workflow_plan, session.workflow_plan.get("resource_limits"), level=True)
+                session.workflow_plan["resource_conflicts"] = []
+            else:
+                recompute_schedule(session.workflow_plan)
         session.drawing_source = str(data.get("drawing_source", ""))
         # Loading a saved measurement must never rebind it to changed bytes.
         session.source_sha256 = str(data.get("source_sha256", ""))

@@ -1,6 +1,6 @@
 """Offline DWG conversion boundary with deterministic executable discovery and fail-closed diagnostics."""
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import os, shutil, subprocess, tempfile, hashlib
 
@@ -28,10 +28,46 @@ class ConverterResult:
     output_sha256: str = ""
     dwg_version: str = ""
     exit_code: int = 0
+    source_coverage: dict = field(default_factory=dict)
 
 
 class DWGConversionError(RuntimeError):
     """Actionable DWG conversion failure exposed to the UI boundary."""
+
+
+class DWGDroppedLineError(DWGConversionError):
+    """Native reader proves the external converter dropped only LINE handles."""
+
+    def __init__(self, missing_count: int):
+        self.missing_count = missing_count
+        super().__init__(
+            f"تبدیل DWG تعداد {missing_count} موجودیت LINE اصلی را حذف کرده است؛ "
+            "فایل ناقص برای متره پذیرفته نشد"
+        )
+
+
+class DWGSourceOwnershipConflictError(DWGConversionError):
+    """LINE is present in raw DXF, but not in the parsed ModelSpace roster."""
+
+    def __init__(self, evidence: dict):
+        self.evidence = evidence
+        block_paths = ", ".join(
+            f"{section}/{block or record or handle}"
+            for section, block, handle, record, owner in evidence.get("locations", ())
+        )
+        if evidence.get("status") == "RAW_BLOCK_DEFINITION_NOT_DIRECT_MODELSPACE":
+            reason = (
+                "این خطوط اجزای تعریف BLOCK هستند و عضو مستقیم ModelSpace نیستند؛ "
+                "ارجاعات احتمالی INSERT و DIMENSION هنوز باید جداگانه بررسی شوند"
+            )
+        else:
+            reason = "محل و مالکیت این خطوط هنوز به طور کامل قابل اثبات نیست"
+        super().__init__(
+            f"تبدیل DWG: {evidence['raw_found']} خط در متن خام DXF موجود ولی در "
+            f"ModelSpace خواننده مشاهده نشده؛ {reason} "
+            f"(بخش/بلوک: {block_paths or 'UNKNOWN'}). "
+            f"نه حذف قطعی مبدل اثبات شده، نه مجوز متره صادر شده است."
+        )
 
 
 class UnsupportedDWGVersionError(DWGConversionError):
@@ -40,6 +76,85 @@ class UnsupportedDWGVersionError(DWGConversionError):
 
 class CorruptDWGError(DWGConversionError):
     """The input does not contain a valid DWG signature."""
+
+
+def _independent_source_coverage(source, converted_doc, signature):
+    """Reject positive evidence of dropped/retyped handles or changed units.
+
+    A successful exit and a parseable DXF cannot prove a lossless conversion.
+    This check uses the separately pinned native reader when it can decode
+    the source. Unavailable independent coverage is explicit, never approval.
+    No reader output is used to invent or repair geometry/units here.
+    """
+    from importlib import metadata, util
+    unknown={"status":"NOT_VERIFIED_INDEPENDENT_READER_UNAVAILABLE","quantity_approved":False}
+    if util.find_spec("ezdwg") is None:
+        return unknown
+    try:
+        if metadata.version("ezdwg") != "0.17.0":
+            return unknown
+        import ezdwg
+        raw=ezdwg.read(str(source))
+    except Exception as exc:
+        return {**unknown,"reason_type":type(exc).__name__}
+    if raw.version != signature:
+        raise DWGConversionError("نسخه decoder مستقل با امضای منبع DWG منطبق نیست")
+    native=set()
+    try:
+        # ezdwg decodes lazily: constructing Document alone does not establish
+        # that its modelspace or unit metadata can actually be read.
+        for entity in raw.modelspace().iter_entities():
+            if len(native)>=1_000_000:
+                raise DWGConversionError("پوشش منبع از سقف ایمن یک میلیون جزء بیشتر است")
+            key=(int(entity.handle),str(entity.dxftype))
+            if key in native:
+                raise DWGConversionError("هویت جزء در decoder مستقل تکراری است؛ پوشش تأیید نشد")
+            native.add(key)
+        source_units=raw.units
+    except DWGConversionError:
+        raise
+    except Exception as exc:
+        return {**unknown,"reason_type":type(exc).__name__}
+    converted={(int(e.dxf.handle,16),e.dxftype()) for e in converted_doc.modelspace()}
+    missing=native-converted
+    extra=converted-native
+    if missing or extra:
+        if missing and not extra and all(kind == "LINE" for _, kind in missing):
+            # The native reader may include anonymous BLOCK members in its
+            # modelspace roster while ezdxf excludes that BLOCK from ModelSpace.
+            # Inspect the raw DXF bytes *before* declaring a converter deletion
+            # or triggering the strict decoder's unrelated fallback.
+            from core.drawings.dwg_source_ownership import (
+                audit_native_lines_absent_from_dxf_modelspace,
+            )
+            try:
+                provenance = audit_native_lines_absent_from_dxf_modelspace(
+                    converted_doc.filename, raw,
+                    {handle for handle, kind in missing},
+                )
+            except (OSError, ValueError, TypeError, UnicodeError) as exc:
+                raise DWGConversionError(
+                    "ممیزی مالک و بلوک موجودیت‌های مفقود در متن خام DXF ممکن نشد؛ "
+                    "هیچ خروجی قابل متره تأیید نمی‌شود"
+                ) from exc
+            if provenance["raw_found"]:
+                raise DWGSourceOwnershipConflictError(provenance)
+            # Only truly absent LINE bytes are classified as loss. A missing
+            # unit, unsupported TEXT, or ownership issue must never be bypassed.
+            raise DWGDroppedLineError(len(missing))
+        raise DWGConversionError(
+            f"پوشش موجودیت‌های DWG/DXF برابر نیست؛ {len(missing)} جزء منبع مفقود/تغییرنوع، "
+            f"{len(extra)} جزء خروجی بدون تطبیق؛ خروجی برای متره پذیرفته نشد")
+    from core.cad.optional_strict_python_dwg_provider import _UNIT_CODES
+    expected=0 if source_units in (None,"unitless") else _UNIT_CODES.get(str(source_units).strip().casefold(),(None,None))[0]
+    actual=int(converted_doc.header.get("$INSUNITS",0) or 0)
+    if expected is not None and actual!=expected:
+        raise DWGConversionError("واحد خروجی مبدل با واحد اعلام‌شده در اصل DWG منطبق نیست؛ حدس یا اصلاح خودکار مجاز نیست")
+    return {"status":"MATCHED_INDEPENDENT_MODELSPACE_ROSTER",
+            "reader":"ezdwg==0.17.0","source_count":len(native),
+            "converted_count":len(converted),"source_unit_code":expected,
+            "converted_unit_code":actual,"quantity_approved":False,
+            "geometry_values_independently_verified":False}
 
 
 class OfflineDWGConverter:
@@ -54,6 +169,10 @@ class OfflineDWGConverter:
         )
 
     def _run(self, command, **kwargs):
+        # Locale-specific diagnostics must not turn a valid converter run into
+        # UnicodeDecodeError, particularly with Persian Windows paths.
+        kwargs.setdefault("encoding", "utf-8")
+        kwargs.setdefault("errors", "replace")
         try:return subprocess.run(command,timeout=self.timeout_seconds,**kwargs)
         except subprocess.TimeoutExpired as exc:raise DWGConversionError("مهلت تبدیل DWG پایان یافت؛ هیچ خروجی برای متره تأیید نشد") from exc
         except OSError as exc:raise DWGConversionError("اجرای مبدل DWG ممکن نیست") from exc
@@ -84,6 +203,27 @@ class OfflineDWGConverter:
         return {"code": signature, "version": version}
 
     def convert(self, source: str | Path, output_dir: str | Path | None = None) -> ConverterResult:
+        out = Path(output_dir) if output_dir is not None else Path(tempfile.mkdtemp(prefix="structuralpro_dwg_"))
+        owned_targets: list[Path] = []
+        try:
+            return self._convert(source, out, owned_targets)
+        except BaseException:
+            # Only our expected result belongs to this operation. Preserve
+            # unrelated user files in an explicitly supplied output directory.
+            for candidate in owned_targets:
+                try:
+                    candidate.unlink(missing_ok=True)
+                except OSError:
+                    pass  # Preserve the original converter/validation failure.
+            if output_dir is None:
+                for directory in (out / "oda", out):
+                    try:
+                        directory.rmdir()
+                    except OSError:
+                        pass
+            raise
+
+    def _convert(self, source: str | Path, output_dir: Path, owned_targets: list[Path]) -> ConverterResult:
         src = Path(source)
         if not src.exists():
             raise FileNotFoundError(f"فایل DWG پیدا نشد: {src}")
@@ -94,7 +234,14 @@ class OfflineDWGConverter:
         if src.stat().st_size < 6:
             raise CorruptDWGError("فایل DWG خالی یا ناقص است.")
 
-        source_digest=hashlib.sha256(src.read_bytes()).hexdigest()
+        def identity(path):
+            stat = path.stat()
+            return stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns
+        def digest(path):
+            with path.open("rb") as stream:
+                return hashlib.file_digest(stream, "sha256").hexdigest()
+        source_identity = identity(src)
+        source_digest=digest(src)
         header = self.inspect_header(src)
         if not self.executable:
             raise DWGConversionError(
@@ -103,7 +250,7 @@ class OfflineDWGConverter:
                 "STRUCTURALPRO_DWG_CONVERTER به مسیر اجرایی تنظیم شود."
             )
 
-        out = Path(output_dir or tempfile.mkdtemp(prefix="structuralpro_dwg_"))
+        out = output_dir
         out.mkdir(parents=True, exist_ok=True)
         target = out / (src.stem + ".dxf")
         name = Path(self.executable).name.lower()
@@ -114,6 +261,7 @@ class OfflineDWGConverter:
             # Remove only the expected artifact so a stale DXF cannot masquerade as
             # a successful conversion after the converter exits without writing.
             target = odir / (src.stem + ".dxf")
+            owned_targets.append(target)
             target.unlink(missing_ok=True)
             proc = self._run(
                 [self.executable, str(src.parent), str(odir), "ACAD2018", "DXF", "0", "1", src.name],
@@ -131,10 +279,20 @@ class OfflineDWGConverter:
                 matches = [p for p in odir.glob("*.dxf") if p.stem.casefold() == src.stem.casefold()]
                 if len(matches) == 1:
                     target = matches[0]
+                    owned_targets.append(target)
         else:
+            owned_targets.append(target)
             target.unlink(missing_ok=True)
+            # GNU LibreDWG dwg2dxf accepts -o OUTPUT INPUT; the old
+            # positional INPUT OUTPUT call treats OUTPUT as a second input
+            # and never creates the required DXF.  Use the documented CLI,
+            # without weakening DXF parse/integrity checks below.
+            if "dwg2dxf" in name:
+                command = [self.executable, "-o", str(target), str(src)]
+            else:
+                command = [self.executable, str(src), str(target)]
             proc = self._run(
-                [self.executable, str(src), str(target)],
+                command,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -150,20 +308,30 @@ class OfflineDWGConverter:
             raise DWGConversionError(
                 "مبدل اجرا شد اما فایل DXF خروجی تولید نشد؛ فایل DWG یا تنظیمات مبدل را بررسی کنید."
             )
+        if target.is_symlink():
+            raise DWGConversionError("خروجی مبدل نباید پیوند نمادین باشد")
 
         # A file on disk is not proof of a valid conversion. Parse it with the
         # real DXF reader used by the takeoff pipeline before returning it.
         try:
             import ezdxf
+            output_identity = identity(target)
+            output_digest = digest(target)
             converted_doc = ezdxf.readfile(str(target))
             list(converted_doc.modelspace())
+            source_coverage=_independent_source_coverage(src,converted_doc,header['code'])
+            if identity(target) != output_identity or digest(target) != output_digest:
+                raise DWGConversionError("خروجی DXF هنگام اعتبارسنجی تغییر کرده است")
+        except DWGConversionError:
+            target.unlink(missing_ok=True)
+            raise
         except Exception as exc:
             target.unlink(missing_ok=True)
             raise DWGConversionError(
                 "مبدل فایل DXF قابل‌خواندن تولید نکرد؛ خروجی نامعتبر است و برای متره پذیرفته نشد."
             ) from exc
 
-        if hashlib.sha256(src.read_bytes()).hexdigest()!=source_digest:
+        if identity(src) != source_identity or digest(src)!=source_digest:
             target.unlink(missing_ok=True)
             raise DWGConversionError("فایل DWG هنگام تبدیل تغییر کرده است")
-        return ConverterResult(src,target,str(self.executable),source_digest,hashlib.sha256(target.read_bytes()).hexdigest(),header["version"],proc.returncode)
+        return ConverterResult(src,target,str(self.executable),source_digest,output_digest,header["version"],proc.returncode,source_coverage)

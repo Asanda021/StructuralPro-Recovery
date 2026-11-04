@@ -1,0 +1,56 @@
+name: P8 P2 native Windows source freshness stress and safety
+on:
+  push:
+    branches: [test/phase8-p2-engineering-e2e-20261031]
+    paths:
+      - core/reports/custom_batch.py
+      - tests/test_phase8_p2_windows_custom_batch_freshness.py
+      - .github/workflows/phase8-p2-windows-source-freshness.yml
+permissions:
+  contents: read
+concurrency:
+  group: p8-p2-windows-freshness-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-integrity:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 24
+    env:
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Three native repetitions of integrity and real four-format custom reports
+        shell: bash
+        run: |
+          for iteration in 1 2 3; do
+            python -m pytest -q --junitxml=source-freshness-${iteration}.xml \
+              tests/test_phase8_p2_windows_custom_batch_freshness.py \
+              tests/test_phase7_p3_custom_batch.py \
+              -k "real_untouched_source or windows_ctime_only_drift or real_content_mutation or file_identity_size_and_mtime or mid_verification or pricebook_integrity or batch_two_selected_floors_four_formats_manifest_and_no_project_write or grand_total_without_grouping_is_in_actual_documents or changed_source or source_change_after_last_preview"
+          done
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: source-freshness-${{ matrix.os }}
+          path: source-freshness-*.xml
+          retention-days: 14
+          if-no-files-found: warn

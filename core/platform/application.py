@@ -83,6 +83,33 @@ class StructuralProApp:
         project={"id":project_id,"name":name,"takeoffs":[],"boq":[],"metadata":{"offline":True}}
         self.store.save(project_id,project); return self.store.get(project_id)
 
+    def audit_legacy_metre_zip(
+        self, zip_path: str | Path, *, bindings: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """Read a user-supplied DWG+metre ZIP locally with strict ZIP/CAD gates.
+
+        Does not write projects/BOQ, copy source drawings, or infer quantities.
+        """
+        from core.drawings.legacy_metre_cad_package import inspect_legacy_metre_package
+        return inspect_legacy_metre_package(zip_path, bindings=bindings)
+
+    def audit_legacy_metre_against_drawing(
+        self, metre_path: str | Path, *,
+        summary_path: str | Path | None = None,
+        drawing_path: str | Path | None = None,
+        bindings: list[dict] | None = None,
+    ) -> dict[str, Any]:
+        """P8/P2 read-only legacy metre vs CAD audit.
+
+        No inferred line items, source mapping, user approval, or BOQ/price
+        writes. A missing or unavailable native DWG reader is BLOCKED, not PASS.
+        """
+        from core.drawings.legacy_metre_cad_reconciliation import LegacyMetreCADReconciler
+        return LegacyMetreCADReconciler().inspect(
+            metre_path, summary_path=summary_path,
+            drawing_path=drawing_path, bindings=bindings,
+        )
+
     def preview_project_start(self, template_code: str, *, project_id: str, name: str,
                               floor_count: int, floor_names=None, disciplines=None):
         from core.projects.start_templates import preview_project_start
@@ -1636,6 +1663,49 @@ class StructuralProApp:
                 "boq_summary":boq_summary(p.get("boq",[]))}
 
     @exact
+    def set_statement_pricing_mode(self, project_id: str, mode: str, contract_price_entry="prefilled"):
+        """Explicit choice and priced/blank operator style before statement."""
+        from core.commercial.statement_basis import choose_statement_mode
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        choose_statement_mode(project,mode,contract_price_entry)
+        self.store.save(project_id,project)
+        return {"mode":mode,
+                "contract_price_entry":contract_price_entry if mode=="contract_rates" else None,
+                "requires_contract_rate_review":mode=="contract_rates"}
+
+    def record_operator_statement_price(self,project_id:str,price_code:str,amount,operator:str):
+        from core.commercial.statement_basis import set_operator_contract_price
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        result=set_operator_contract_price(project,price_code,amount,operator)
+        self.store.save(project_id,project)
+        return result
+
+    def statement_operator_price_status(self,project_id:str):
+        from core.commercial.statement_basis import operator_price_status
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        return operator_price_status(project)
+
+    def review_statement_contract_rates(self,project_id: str,agreement_path,reviewer):
+        from core.commercial.statement_basis import review_contract_rates
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        result=review_contract_rates(project,agreement_path,reviewer)
+        self.store.save(project_id,project)
+        return result
+
+    def statement_basis_status(self,project_id:str):
+        from core.commercial.statement_basis import statement_mode,validate_statement_pricing
+        project=self.store.get(project_id)
+        if project is None:raise KeyError(project_id)
+        try:
+            detail=validate_statement_pricing(project)
+            return {**detail,"ready_for_draft":True}
+        except (ValueError,FileNotFoundError) as exc:
+            return {"mode":statement_mode(project),"ready_for_draft":False,"issue":str(exc)}
+
     def build_statement(self, project_id: str, *, previous_paid: float = 0.0,
                         retention_rate: float = 0.0, advance_recovery_rate: float = 0.0,
                         tax_rate: float = 0.0, insurance_rate: float = 0.0) -> dict[str, Any]:
@@ -1643,8 +1713,8 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
-        from core.reports.aec_office_package import audit_boq
-        audit_boq(p, require_pricebook=True)
+        from core.commercial.statement_basis import validate_statement_pricing
+        statement_basis=validate_statement_pricing(p)
         retention_rate = _statement_rate(retention_rate, "تضمین")
         advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
         tax_rate = _statement_rate(tax_rate, "مالیات")
@@ -1670,7 +1740,10 @@ class StructuralProApp:
         }
         rates={'retention_rate':retention_rate,'advance_recovery_rate':advance_recovery_rate,'tax_rate':tax_rate,'insurance_rate':insurance_rate}
         amounts,status,money=self._statement_money(p,progress['lines'],rates)
-        return wire({**progress,**amounts,'previous_paid':previous_paid,'balance_after_current':number(amounts['payable_current'],'پرداختنی')-previous_paid,
+        return wire({**progress,**amounts,
+                     'statement_pricing_mode':statement_basis['mode'],
+                     'statement_pricing_source':statement_basis['source'],
+                     'previous_paid':previous_paid,'balance_after_current':number(amounts['payable_current'],'پرداختنی')-previous_paid,
                      'rates':rates,'financial_policy_status':status,**({'money_policy':money} if money else {})})
 
     @exact
@@ -1747,8 +1820,8 @@ class StructuralProApp:
         advance_recovery_rate = _statement_rate(advance_recovery_rate, "بازگشت پیش‌پرداخت")
         tax_rate = _statement_rate(tax_rate, "مالیات")
         insurance_rate = _statement_rate(insurance_rate, "بیمه")
-        from core.reports.aec_office_package import audit_boq
-        audit_boq(p, require_pricebook=True)
+        from core.commercial.statement_basis import validate_statement_pricing
+        statement_basis=validate_statement_pricing(p)
         periods = list(p.get("statement_periods", []))
         if period_no is None:
             period_no = (max((int(x.get("number", 0)) for x in periods), default=0) + 1)
@@ -1791,6 +1864,8 @@ class StructuralProApp:
         progress = build_progress(lines)
         period = {
             "number": period_no,
+            "statement_pricing_mode":statement_basis["mode"],
+            "statement_pricing_source":statement_basis["source"],
             "lines": progress["lines"],
             "gross_current": progress["gross_current"],
             "completed_total": progress["completed_total"],
@@ -3329,9 +3404,27 @@ class StructuralProApp:
     def report(self,project_id:str,fmt:str,path,*,period_no:int|None=None):
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
-        from core.reports.aec_office_package import audit_boq
-        audit_boq(p, require_pricebook=True)
-        estimate=p.get("estimate") or self.recalculate_estimate(project_id)
+        from core.commercial.statement_basis import validate_statement_pricing
+        basis=validate_statement_pricing(p)
+        # A reviewed private-contract BOQ does not magically become a
+        # government pricebook.  Avoid calling pricebook-only recalc here.
+        if basis["mode"]=="contract_rates":
+            # Never reuse a cached government-pricebook estimate after the
+            # operator chooses a private contractual rate basis.
+            from decimal import Decimal
+            from core.commercial.exact_values import number
+            contractual_total=sum((
+                Decimal(str(number(row.get("quantity"),"مقدار قرارداد"))) *
+                Decimal(str(number(row.get("unit_price"),"نرخ توافقی")))
+                for row in p.get("boq",[])
+            ),Decimal(0))
+            estimate={"cost":{
+                "pricing_source":"REVIEWED_CONTRACT_RATES",
+                "source_sha256":basis["agreement_sha256"],
+                "grand_total":str(contractual_total),
+            }}
+        else:
+            estimate=p.get("estimate") or self.recalculate_estimate(project_id)
         selected=None
         periods=p.get("statement_periods",[])
         if period_no is not None:
@@ -3361,7 +3454,9 @@ class StructuralProApp:
                 "قبلی":row.get("previous_quantity",0),"این دوره":row.get("current_quantity",0),
                 "تجمعی":row.get("cumulative_quantity",0),"قیمت واحد":row.get("unit_price",0),
                 "مبلغ این دوره":row.get("current_amount",0),"مبلغ تجمعی":row.get("completed_amount",0)})
-        summary={**estimate.get("cost",{}), "period_no": selected.get("number") if selected else None,
+        summary={**estimate.get("cost",{}), "statement_pricing_mode":basis["mode"],
+                 "statement_pricing_source":basis["source"],
+                 "period_no": selected.get("number") if selected else None,
                  "statement": {
             "gross_current":statement.get("gross_current",0),
             "retention":statement.get("retention",0),

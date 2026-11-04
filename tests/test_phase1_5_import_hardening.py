@@ -44,7 +44,8 @@ def test_converter_rejects_invalid_dxf_even_when_process_exits_successfully(monk
     converter = OfflineDWGConverter(executable="dwg2dxf")
 
     def fake_run(command, **kwargs):
-        Path(command[-1]).write_text("not a DXF", encoding="utf-8")
+        assert command == ["dwg2dxf", "-o", str(output / "plan.dxf"), str(source)]
+        Path(command[2]).write_text("not a DXF", encoding="utf-8")
         return SuccessfulProcess()
 
     monkeypatch.setattr("core.drawings.dwg_converter.subprocess.run", fake_run)
@@ -59,9 +60,10 @@ def test_converter_accepts_a_real_parseable_dxf(monkeypatch, tmp_path):
     converter = OfflineDWGConverter(executable="dwg2dxf")
 
     def fake_run(command, **kwargs):
+        assert command == ["dwg2dxf", "-o", str(output / "plan.dxf"), str(source)]
         doc = ezdxf.new("R2018")
         doc.modelspace().add_line((0, 0), (3, 4), dxfattribs={"layer": "A-STRUCT"})
-        doc.saveas(command[-1])
+        doc.saveas(command[2])
         return SuccessfulProcess()
 
     monkeypatch.setattr("core.drawings.dwg_converter.subprocess.run", fake_run)

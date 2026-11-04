@@ -13,6 +13,10 @@ PyYAML>=6.0,<7
 # Optional drawing integrations:
 # ezdxf is required by the canonical DXF/DWG extraction path and its tests.
 ezdxf>=1.3
+# Native read-only fallback for real DWG files with unitless headers or old SHX;
+# x64 Windows/Linux prebuilt wheels; never compile a DWG executable in install.
+--only-binary=ezdwg
+ezdwg[dxf]==0.17.0
 # Optional BIM integration:
 # IFC/BIM integration (install for production IFC ingestion)
 # ifcopenshell>=0.8

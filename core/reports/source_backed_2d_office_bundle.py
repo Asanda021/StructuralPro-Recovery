@@ -386,23 +386,42 @@ def export_verified_2d_multifloor_bundle(
         # This is optimistic freshness, not an OS transaction over external apps.
         from hashlib import file_digest
         def signature(stat):
-            return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+            # Windows st_ctime_ns is creation/change metadata, not a reliable
+            # content identity after opening a file. Preserve identity, size,
+            # and modification time; separately rehash from a fresh handle.
+            return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns)
         checked_sources = {}
         for page in pages:
             path = Path(latest["drawing_sessions"][page["session_id"]]["drawing_source"])
             if path in checked_sources:
+                if checked_sources[path][1] != page["source_sha256"]:
+                    raise ValueError("صفحات یک منبع دارای هش ناسازگار هستند")
                 continue
             try:
                 with path.open("rb") as stream:
                     before_stat = os.fstat(stream.fileno())
-                    actual = file_digest(stream, "sha256").hexdigest()
+                    first_hash = file_digest(stream, "sha256").hexdigest()
                     after_stat = os.fstat(stream.fileno())
-                if signature(before_stat) != signature(after_stat) or signature(path.stat()) != signature(after_stat) or actual != page["source_sha256"]:
+                # A second, independently opened file handle prevents the
+                # same-size Windows timestamp-granularity rewrite from being
+                # accepted based on a single digest and unchanged stat tuple.
+                with path.open("rb") as stream:
+                    reopened_stat = os.fstat(stream.fileno())
+                    second_hash = file_digest(stream, "sha256").hexdigest()
+                    final_stat = os.fstat(stream.fileno())
+                if (
+                    signature(before_stat) != signature(after_stat)
+                    or signature(after_stat) != signature(reopened_stat)
+                    or signature(reopened_stat) != signature(final_stat)
+                    or signature(path.stat()) != signature(final_stat)
+                    or first_hash != second_hash
+                    or second_hash != page["source_sha256"]
+                ):
                     raise ValueError("منبع نقشه هنگام بررسی نهایی تغییر کرده است")
-                checked_sources[path] = signature(after_stat)
+                checked_sources[path] = (signature(final_stat), second_hash)
             except OSError as exc:
                 raise ValueError("منبع نقشه پیش از انتشار در دسترس نیست") from exc
-        if any(signature(path.stat()) != stat for path, stat in checked_sources.items()):
+        if any(signature(path.stat()) != stat for path, (stat, _) in checked_sources.items()):
             raise ValueError("منبع نقشه در حین بررسی نهایی تغییر کرده است")
         if service.store.current_digest(project_id) != digest:
             raise RuntimeError("پروژه در حین انتشار تغییر کرده است")

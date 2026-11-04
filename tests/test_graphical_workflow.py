@@ -54,8 +54,9 @@ def test_phase_three_to_five_viewer_zoom_and_persian_cad_are_wired():
     from pathlib import Path
     source = Path("app/graphical_takeoff.py").read_text(encoding="utf-8")
     assert '"نقشه‌ها (*.pdf *.dwg *.dxf *.ifc)' in source
-    assert 'self.zoom_window = QPushButton("بزرگ‌نمایی ناحیه")' in source
-    assert 'self.select_region = QPushButton("انتخاب ناحیه")' in source
+    assert 'self.zoom_window = QPushButton("Window Zoom | محدوده متره")' in source
+    assert 'self.select_region = QPushButton("انتخاب محدوده بدون زوم")' in source
+    assert 'self.cancel_selection = QPushButton("لغو انتخاب/هایلایت")' in source
     assert 'self.region_to_takeoff = QPushButton("ثبت ناحیه در متره")' in source
     assert "self.fitInView(scene_rect" in source
     assert "normalize_cad_text(d[\"text\"])" in source
