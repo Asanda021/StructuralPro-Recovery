@@ -25,7 +25,7 @@ from core.drawings.dwg_opaque_source_receipt import (
 )
 from core.drawings.dwg_opaque_conversion_diff import audit_opaque_conversion_loss
 from tools.audit_phase8_p2_opaque_source_bytes import (
-    private_output_destination, write_private_report,
+    private_output_destination, write_private_report, read_private_config,
 )
 
 
@@ -215,10 +215,15 @@ def test_f09_private_report_is_exclusive_and_restricted(tmp_path):
     project = tmp_path / 'project'
     project.mkdir()
     dest = tmp_path / 'private_data' / 'receipt.json'
+    if os.name == 'nt':
+        with pytest.raises(ValueError, match='ACL_NOT_VERIFIED'):
+            write_private_report(dest, {'synthetic': True}, project_root=project)
+        assert not dest.exists()
+        return
     write_private_report(dest, {'synthetic': True}, project_root=project)
     assert dest.exists()
-    if os.name == 'posix':
-        assert (dest.stat().st_mode & 0o777) == 0o600
+    assert (dest.stat().st_mode & 0o777) == 0o600
+    assert (dest.parent.stat().st_mode & 0o777) == 0o700
     with pytest.raises(ValueError, match='overwrite'):
         write_private_report(dest, {'overwritten': True}, project_root=project)
 
@@ -295,6 +300,50 @@ def test_n01_real_proxy_state_never_becomes_dangling_receipt():
     assert decision['converted_dxf_unverified_target_count'] == 1
     assert decision['status'] == 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_TARGETS_INDETERMINATE'
     assert decision['automatic_patch_authorized'] is False
+
+
+def test_n05_private_config_replaces_sensitive_command_line_options(tmp_path):
+    if os.name == 'nt':
+        pytest.skip('Windows private ACL verification deliberately remains NO-GO')
+    project = tmp_path / 'git_work'
+    project.mkdir()
+    private = tmp_path / 'private'
+    private.mkdir(mode=0o700)
+    config_file = private / 'handles.json'
+    import json
+    config_file.write_text(json.dumps({
+        'handles': ['101', '102'],
+        'expected_original_sha256': 'a' * 64,
+    }), encoding='utf-8')
+    config_file.chmod(0o600)
+    assert read_private_config(config_file, project_root=project) == (['101', '102'], 'a' * 64)
+    config_file.chmod(0o644)
+    with pytest.raises(ValueError, match='0600'):
+        read_private_config(config_file, project_root=project)
+
+
+def test_n05_cli_cannot_expose_private_handles_or_sha_in_argv():
+    import importlib
+    from tools import audit_phase8_p2_opaque_source_bytes as cli
+    import inspect
+    source = inspect.getsource(cli.main)
+    assert "add_argument('--handles'," not in source
+    assert "add_argument('--expected-original-sha256'," not in source
+    assert "add_argument('--private-config', required=True" in source
+
+
+def test_n06_world_readable_private_parent_is_rejected(tmp_path):
+    if os.name == 'nt':
+        pytest.skip('Windows private ACL verification deliberately remains NO-GO')
+    project = tmp_path / 'repo'
+    project.mkdir()
+    parent = tmp_path / 'insecure_parent'
+    parent.mkdir(mode=0o755)
+    parent.chmod(0o755)
+    with pytest.raises(ValueError, match='0700'):
+        write_private_report(parent / 'result.json', {'synthetic': True},
+                             project_root=project)
+    assert not (parent / 'result.json').exists()
 
 
 def test_f11_missing_frozen_named_root_cannot_fallback_to_1a(tmp_path):
