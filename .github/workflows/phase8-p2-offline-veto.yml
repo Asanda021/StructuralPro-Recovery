@@ -32,6 +32,9 @@ on:
       - tests/test_phase8_p2_solid_dictionary_integrity.py
       - tests/test_phase8_p2_converter_dictionary_receipt.py
       - tests/test_phase8_p2_native_solid_preview_receipt.py
+      - core/drawings/dwg_opaque_source_receipt.py
+      - tools/audit_phase8_p2_opaque_source_bytes.py
+      - tests/test_phase8_p2_opaque_source_receipts.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
 permissions:
@@ -83,6 +86,7 @@ jobs:
           tests/test_phase8_p2_solid_dictionary_integrity.py
           tests/test_phase8_p2_converter_dictionary_receipt.py
           tests/test_phase8_p2_native_solid_preview_receipt.py
+          tests/test_phase8_p2_opaque_source_receipts.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
