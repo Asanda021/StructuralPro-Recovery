@@ -92,68 +92,113 @@ def _unverified(reason: str) -> dict:
 
 
 def audit_named_dictionary_links(dxf_document: Any) -> dict:
-    """Check two targeted converted-DXF dictionary namespaces, not DWG payload.
+    """Audit *observed* MAP/AEC dictionary links, without source completeness claims.
 
-    A missing link is a failure in the *output DXF*. An absent namespace is
-    'NOT_PRESENT', never evidence that all original DWG objects were kept.
+    A missing namespace is never healthy evidence.  Proxy/custom targets are
+    indeterminate even if a handle exists in the DXF entity database.  Do not
+    reconstruct or modify an original or converted drawing.
     """
-    # Converted files may contain a newly synthesized ezdxf root dictionary
-    # *and* the actual imported named-object dictionary in OBJECTS. Scanning
-    # only doc.rootdict would hide the three known broken MAP/AEC references.
     candidates = []
     for obj in dxf_document.objects:
-        if obj.dxftype() != 'DICTIONARY':
-            continue
-        if any(key in obj for key in ('Autodesk_MAP', 'AEC_VARS')):
+        if obj.dxftype() == 'DICTIONARY' and any(
+                name in obj for name in ('Autodesk_MAP', 'AEC_VARS')):
             candidates.append(obj)
     if len(candidates) > 1:
         return {
             'policy': 'p8p2_dxf_named_dictionary_links_v1',
-            'root_dictionary_handle': None,
-            'namespaces': {},
+            'root_dictionary_handle': None, 'namespaces': {},
             'dangling_or_invalid_count': None,
             'dangling_or_invalid_references': [],
             'converted_dxf_namespace_integrity_status': 'AMBIGUOUS_NAMED_DICTIONARY_ROOTS',
             'original_dwg_custom_payloads_verified': False,
-            'source_coverage_verified': False,
-            'financial_quantity_approved': False,
+            'source_coverage_verified': False, 'financial_quantity_approved': False,
+            'automatic_patch_authorized': False,
         }
     root = candidates[0] if candidates else dxf_document.rootdict
     findings = []
     namespaces = {}
+    class_names = {str(c.dxf.name).upper() for c in dxf_document.classes}
+    # Structural link resolution for a small set of *standard* DXF objects
+    # does not imply that an embedded proprietary payload was understood.
+    standard_links = frozenset({
+        'DICTIONARY', 'ACDBDICTIONARYWDFLT', 'DICTIONARYVAR', 'XRECORD',
+    })
+    proxy_types = frozenset({'ACAD_PROXY_OBJECT', 'ACAD_PROXY_ENTITY'})
+    indeterminate = False
+
+    def resolve(value):
+        if isinstance(value, str):
+            handle = value.strip().upper()
+            if not handle or any(c not in '0123456789ABCDEF' for c in handle):
+                return None, handle
+            return dxf_document.entitydb.get(handle), handle
+        try:
+            handle = str(value.dxf.handle).upper()
+        except (TypeError, AttributeError, ValueError):
+            return None, ''
+        # A supplied object is not enough: its handle must exist in this DXF.
+        return dxf_document.entitydb.get(handle), handle
+
     for namespace in ('Autodesk_MAP', 'AEC_VARS'):
-        child = root.get(namespace)
-        if child is None:
+        raw_child = root.get(namespace)
+        if raw_child is None:
             namespaces[namespace] = 'NOT_PRESENT_IN_DXF'
             continue
-        if isinstance(child, str):
+        child, child_handle = resolve(raw_child)
+        if child is None:
             namespaces[namespace] = 'UNRESOLVED_NAMESPACE_ROOT'
             findings.append({'namespace': namespace, 'key': '<root>',
-                             'target_handle': child.upper(), 'reason': 'ROOT_TARGET_UNRESOLVED'})
+                             'target_handle': child_handle,
+                             'reason': 'ROOT_TARGET_UNRESOLVED'})
             continue
         if child.dxftype() != 'DICTIONARY':
             namespaces[namespace] = 'WRONG_NAMESPACE_OBJECT_TYPE'
             findings.append({'namespace': namespace, 'key': '<root>',
-                             'target_handle': str(child.dxf.handle), 'reason': 'ROOT_NOT_DICTIONARY'})
+                             'target_handle': child_handle,
+                             'reason': 'ROOT_NOT_DICTIONARY'})
             continue
         namespaces[namespace] = 'DICTIONARY_PRESENT'
-        for key, entity in child.items():
-            try:
-                handle = entity.upper() if isinstance(entity, str) else str(entity.dxf.handle).upper()
-                resolved = dxf_document.entitydb.get(handle)
-            except (TypeError, ValueError, AttributeError) as exc:
-                raise ValueError('Unreadable DXF dictionary link') from exc
-            if resolved is None:
+        for key, value in child.items():
+            target, handle = resolve(value)
+            if target is None:
                 findings.append({'namespace': namespace, 'key': str(key),
                                  'target_handle': handle, 'reason': 'DANGLING_DXF_HANDLE'})
+                continue
+            kind = str(target.dxftype()).upper()
+            if kind in proxy_types:
+                indeterminate = True
+                findings.append({'namespace': namespace, 'key': str(key),
+                                 'target_handle': handle,
+                                 'reason': 'PROXY_TARGET_UNVERIFIED'})
+            elif kind not in standard_links:
+                indeterminate = True
+                findings.append({'namespace': namespace, 'key': str(key),
+                                 'target_handle': handle,
+                                 'reason': ('CUSTOM_TARGET_UNVERIFIED'
+                                            if kind in class_names
+                                            else 'TARGET_CLASS_NOT_DECLARED')})
+    if any(f['reason'] in {'DANGLING_DXF_HANDLE', 'ROOT_TARGET_UNRESOLVED',
+                            'ROOT_NOT_DICTIONARY'} for f in findings):
+        status = 'BROKEN_DXF_DICTIONARY_LINKS'
+    elif indeterminate:
+        status = 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
+    elif all(v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()):
+        status = 'NAMESPACES_ABSENT_NO_EVIDENCE'
+    elif any(v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()):
+        status = 'NAMESPACES_INCOMPLETE_NO_EVIDENCE'
+    else:
+        status = 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
     return {
         'policy': 'p8p2_dxf_named_dictionary_links_v1',
         'root_dictionary_handle': str(root.dxf.handle),
-        'namespaces': namespaces, 'dangling_or_invalid_count': len(findings),
+        'namespaces': namespaces,
+        'dangling_or_invalid_count': len(findings),
         'dangling_or_invalid_references': findings,
-        'converted_dxf_namespace_integrity_status': (
-            'BROKEN_DXF_DICTIONARY_LINKS' if findings else 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'),
+        'unverified_namespace_count': sum(
+            v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()),
+        'converted_dxf_namespace_integrity_status': status,
         'original_dwg_custom_payloads_verified': False,
         'source_coverage_verified': False,
         'financial_quantity_approved': False,
+        'automatic_patch_authorized': False,
     }
