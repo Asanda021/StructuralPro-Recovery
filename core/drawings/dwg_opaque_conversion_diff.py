@@ -49,7 +49,11 @@ def audit_opaque_conversion_loss(original_dwg: str | Path, converted_dxf: str | 
         raise ValueError('Opaque roster count differs')
 
     dxf = ezdxf.readfile(converted_dxf)
-    named = dxf.entitydb.get(str(earlier_ledger.get('named_root_handle', '1A')).upper())
+    root_handle = earlier_ledger.get('named_root_handle')
+    if (not isinstance(root_handle, str) or not root_handle.strip()
+            or any(ch not in '0123456789ABCDEF' for ch in root_handle.strip().upper())):
+        raise ValueError('Frozen source ledger must explicitly name the original root handle')
+    named = dxf.entitydb.get(root_handle.strip().upper())
     if named is None or named.dxftype() != 'DICTIONARY':
         raise ValueError('Original named root 1A is not preserved')
     classes = {c.dxf.name: c for c in dxf.classes}
