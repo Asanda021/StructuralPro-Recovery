@@ -25,6 +25,13 @@ on:
       - core/drawings/dwg_insert_solid_contract.py
       - tools/audit_phase8_p2_block_solid.py
       - tests/test_phase8_p2_block_solid_contract.py
+      - core/drawings/dwg_source_display_integrity.py
+      - core/drawings/native_dwg_preview.py
+      - core/drawings/dwg_converter.py
+      - tools/audit_phase8_p2_solid_and_dictionary.py
+      - tests/test_phase8_p2_solid_dictionary_integrity.py
+      - tests/test_phase8_p2_converter_dictionary_receipt.py
+      - tests/test_phase8_p2_native_solid_preview_receipt.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
 permissions:
@@ -73,6 +80,9 @@ jobs:
           tests/test_phase8_p2_native_roster_crosscheck.py
           tests/test_phase8_p2_independent_roster_audit.py
           tests/test_phase8_p2_block_solid_contract.py
+          tests/test_phase8_p2_solid_dictionary_integrity.py
+          tests/test_phase8_p2_converter_dictionary_receipt.py
+          tests/test_phase8_p2_native_solid_preview_receipt.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
