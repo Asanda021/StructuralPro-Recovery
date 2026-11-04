@@ -632,16 +632,92 @@ def apply_documented_units(document,evidence):
     path=Path(str(evidence.get('path','')))
     if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
     proof=json.loads(path.read_text(encoding='utf-8-sig'))
-    if proof.get('policy')!='cad_unit_reference_v1' or proof.get('source_sha256')!=document.source_sha256:raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
+    policy=proof.get('policy')
+    if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2'} or proof.get('source_sha256')!=document.source_sha256:
+        raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
+    # Legacy v1 only establishes one reference. It is preserved for existing
+    # DXF-only sessions, but MUST NOT calibrate a newly imported DWG.
+    if policy=='cad_unit_reference_v1' and Path(str(document.source)).suffix.lower()=='.dwg':
+        raise ValueError('برای DWG فاقد واحد، دو مرجع مستقل نسخه‌دار v2 الزامی است')
     if any(not str(proof.get(k,'')).strip() for k in ('author','reviewer','reference')) or _identity(proof['author']).casefold()==_identity(proof['reviewer']).casefold():raise ValueError('ثبت‌کننده و بازبین مستقل واحد الزامی‌اند')
     unit=proof.get('unit');factor=cad_unit_factor(unit)
     if factor is None:raise ValueError('واحد پیشنهادی پشتیبانی نمی‌شود')
     if cad_unit_factor(document.units) is not None and document.units!=unit:raise ValueError('تعارض واحد فایل و مدرک؛ ثبت قطعی مسدود است')
-    found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
-    if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
-    raw=Decimal(str(proof.get('cad_length')));real=Decimal(str(proof.get('real_length_m')))
-    if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0 or raw*Decimal(str(factor))!=real:raise ValueError('کالیبراسیون مدرک یا ضریب تبدیل نامعتبر است')
-    if not math.isclose(found[0].data['length']/(cad_unit_factor(document.units) or 1),float(raw),rel_tol=1e-12,abs_tol=0):raise ValueError('مرجع با هندسه منبع مطابق نیست')
+    if policy=='cad_unit_reference_v2':
+        # The evidence must identify a real, unchanged PDF and source drawing.
+        # Matching numbers or a 1:100 ratio cannot establish the same member.
+        source=Path(str(document.source))
+        pdf=Path(str(proof.get('source_pdf_path','')))
+        if (not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest()!=document.source_sha256
+                or not pdf.is_file() or pdf.suffix.lower()!='.pdf'
+                or hashlib.sha256(pdf.read_bytes()).hexdigest()!=proof.get('source_pdf_sha256')):
+            raise ValueError('SHA-256 نقشه اصلی یا PDF مرجع معتبر نیست')
+        project=str(proof.get('project_id','')).strip()
+        revision=str(proof.get('drawing_revision','')).strip()
+        pdf_project=str(proof.get('pdf_project_id','')).strip()
+        pdf_revision=str(proof.get('pdf_drawing_revision','')).strip()
+        if (not project or not revision or project.casefold() in {'unknown','none'}
+                or revision.casefold() in {'unknown','none'}
+                or project!=pdf_project or revision!=pdf_revision):
+            raise ValueError('شناسه پروژه و نسخه یکسان نقشه DWG/PDF الزامی است')
+        references=proof.get('references')
+        if not isinstance(references,list) or len(references)<2 or len(references)>20:
+            raise ValueError('حداقل دو مرجع مستقل و محدود برای واحد DWG لازم است')
+        tolerance=Decimal(str(proof.get('absolute_tolerance_m','')))
+        if not tolerance.is_finite() or not Decimal(0)<=tolerance<=Decimal('0.0001'):
+            raise ValueError('تلرانس مستند باید بین صفر و ۰٫۱ میلی‌متر باشد')
+        import fitz
+        with fitz.open(pdf) as pdf_document:
+            pages=len(pdf_document)
+        seen_handles=set()
+        seen_members=set()
+        seen_segments=set()
+        for item in references:
+            if not isinstance(item,dict):
+                raise ValueError('مرجع هندسی باید ساختار معتبر داشته باشد')
+            handle=str(item.get('reference_handle','')).strip()
+            member=str(item.get('member_id','')).strip()
+            page=item.get('pdf_page')
+            sheet=str(item.get('sheet_id','')).strip()
+            if (not handle or not member or not sheet or
+                    not isinstance(page,int) or isinstance(page,bool) or not 1<=page<=pages
+                    or handle in seen_handles or member in seen_members):
+                raise ValueError('Handle، عضو، شیت و شماره صفحه دو مرجع باید مستقل و معتبر باشند')
+            matches=[e for e in document.entities if e.handle==handle]
+            if (len(matches)!=1 or matches[0].entity_type!='LINE'
+                    or matches[0].data.get('unsupported_measurement')
+                    or matches[0].data.get('layer_visible') is False
+                    or matches[0].data.get('layer_defined') is False):
+                raise ValueError('مرجع طول باید LINE یکتا، قابل‌مشاهده و قابل‌اندازه‌گیری باشد')
+            data=matches[0].data
+            if not all(k in data for k in ('start','end','length')):
+                raise ValueError('مختصات خط مرجع در هندسه منبع موجود نیست')
+            start=tuple(float(x) for x in data['start'])
+            end=tuple(float(x) for x in data['end'])
+            if not all(math.isfinite(x) for x in start+end) or start==end:
+                raise ValueError('مختصات مرجع متناهی و غیرصفر لازم است')
+            segment=tuple(sorted((start,end)))
+            if segment in seen_segments:
+                raise ValueError('دو مرجع نمی‌توانند همان پاره‌خط تکراری باشند')
+            raw=Decimal(str(item.get('cad_length','')))
+            real=Decimal(str(item.get('real_length_m','')))
+            if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0:
+                raise ValueError('ابعاد مرجع باید مثبت و متناهی باشند')
+            expected=raw*Decimal(str(factor))
+            if abs(expected-real)>tolerance:
+                raise ValueError('ابعاد واقعی با واحد و تلرانس اعلامی ناسازگار است')
+            original_cad_length=float(data['length'])/(cad_unit_factor(document.units) or 1)
+            if not math.isclose(original_cad_length,float(raw),rel_tol=1e-12,abs_tol=1e-8):
+                raise ValueError('طول مرجع با Handle هندسی DWG مطابقت ندارد')
+            seen_handles.add(handle)
+            seen_members.add(member)
+            seen_segments.add(segment)
+    else:
+        found=[e for e in document.entities if e.handle==proof.get('reference_handle')]
+        if len(found)!=1 or found[0].data.get('unsupported_measurement') or found[0].data.get('length',0)<=0:raise ValueError('جزء طول مرجع معتبر لازم است')
+        raw=Decimal(str(proof.get('cad_length')));real=Decimal(str(proof.get('real_length_m')))
+        if not raw.is_finite() or not real.is_finite() or raw<=0 or real<=0 or raw*Decimal(str(factor))!=real:raise ValueError('کالیبراسیون مدرک یا ضریب تبدیل نامعتبر است')
+        if not math.isclose(found[0].data['length']/(cad_unit_factor(document.units) or 1),float(raw),rel_tol=1e-12,abs_tol=0):raise ValueError('مرجع با هندسه منبع مطابق نیست')
     result=deepcopy(document)
     if cad_unit_factor(document.units) is None:
         for e in result.entities:
