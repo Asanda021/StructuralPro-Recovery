@@ -165,6 +165,74 @@ def test_synthetic_repeated_object_masks_not_inferred_from_stderr(tmp_path, monk
     assert result['verdict'] == 'PARTIAL_NO_GO'
 
 
+
+def test_ab_diagnostic_label_requires_exact_variant_and_upstream_commit():
+    """The experimental suffix is a build identity, never a Git commit SHA."""
+    exp = ('STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k\n'
+           'STRUCTURALPRO_C_API_MASK=4\n'
+           'STRUCTURALPRO_C_API_OBJECTS=101504\n')
+    got = m.parse_helper_stdout(exp, 'a835758', 'sortentstable_100k')
+    assert got['observed_upstream_commit'] == 'a835758'
+    assert got['observed_build_variant'] == 'sortentstable_100k'
+    assert got['c_api_return_mask'] == 4
+    for upstream, variant in [
+        ('a835758', 'upstream'), ('badbeef', 'sortentstable_100k'),
+        ('a835758', 'sortentstable_200k'),
+    ]:
+        with pytest.raises(ValueError):
+            m.parse_helper_stdout(exp, upstream, variant)
+    for invalid_label in ('a835758-exp100000', 'a835758-exp100k-extra',
+                          'a835758-exp50k', 'a835758-release'):
+        with pytest.raises(ValueError):
+            m.parse_helper_stdout(exp.replace('a835758-exp100k', invalid_label),
+                                  'a835758', 'sortentstable_100k')
+
+
+def test_experimental_guard_is_not_mislabeled_as_original_50k(tmp_path, monkeypatch):
+    """Synthetic A/B observation cannot authorize quantity or silently change threshold."""
+    if os.name != 'posix':
+        pytest.skip('POSIX private ACL required')
+    src, cfg, helper, lib, output = sample(tmp_path)
+    contents = json.loads(cfg.read_text(encoding='utf-8'))
+    contents['build_variant'] = 'sortentstable_100k'
+    cfg.write_text(json.dumps(contents), encoding='utf-8')
+    cfg.chmod(0o600)
+    monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
+    def fake_run(mock_helper, mock_source, env, stderr_file, timeout):
+        stderr_file.write(b'ERROR: Invalid SORTENTSTABLE.num_ents 50001\n')
+        return SimpleNamespace(returncode=0,
+            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k\n'
+                   b'STRUCTURALPRO_C_API_MASK=4\n'
+                   b'STRUCTURALPRO_C_API_OBJECTS=7\n')
+    monkeypatch.setattr(m, '_execute_native_filtered', fake_run)
+    result = m.diagnose_private_source(src, cfg, helper, lib, output)
+    assert result['libredwg_upstream_commit'] == 'a835758'
+    assert result['libredwg_build_variant'] == 'sortentstable_100k'
+    assert result['sortentstable_guard_threshold_in_pinned_source'] == 100000
+    assert result['bit64_has_confirmed_sortentstable_guard_trigger'] is False
+    assert result['financial_quantity_approved'] is False
+    assert result['verdict'] == 'PARTIAL_NO_GO'
+
+
+def test_diagnostic_experimental_config_rejects_upstream_binary(tmp_path, monkeypatch):
+    if os.name != 'posix':
+        pytest.skip('POSIX private ACL required')
+    src, cfg, helper, lib, output = sample(tmp_path)
+    contents = json.loads(cfg.read_text(encoding='utf-8'))
+    contents['build_variant'] = 'sortentstable_100k'
+    cfg.write_text(json.dumps(contents), encoding='utf-8')
+    cfg.chmod(0o600)
+    monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
+    monkeypatch.setattr(m, '_execute_native_filtered', lambda *args, **kwargs:
+        SimpleNamespace(returncode=0,
+            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758\n'
+                   b'STRUCTURALPRO_C_API_MASK=0\n'
+                   b'STRUCTURALPRO_C_API_OBJECTS=7\n'))
+    with pytest.raises(ValueError, match='unpinned'):
+        m.diagnose_private_source(src, cfg, helper, lib, output)
+    assert not (output / 'libredwg_native_receipt.private.json').exists()
+    assert not (output / 'libredwg_native_errors.private.log').exists()
+
 def test_real_stream_filter_retains_error_but_not_unbounded_trace(tmp_path):
     """Real Python subprocess + grep, synthetic lines: no CAD/native library."""
     import sys
