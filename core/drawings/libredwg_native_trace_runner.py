@@ -20,7 +20,7 @@ from core.drawings.libredwg_error_mask import decode_libredwg_error_mask
 
 _MAGIC = re.compile(r"^STRUCTURALPRO_C_API_MASK=([0-9]{1,10})$")
 _OBJECTS = re.compile(r"^STRUCTURALPRO_C_API_OBJECTS=([0-9]{1,15})$")
-_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})(-exp100k-b64field|-exp100k-b64stage|-exp100k)?$")
+_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})(-exp100k-b64tvpath|-exp100k-b64field|-exp100k-b64stage|-exp100k)?$")
 # Only the explicitly pinned diagnostic change may be selected. The upstream
 # commit remains a pure hex identity, separate from the build variant.
 _BUILD_VARIANTS = {
@@ -28,6 +28,7 @@ _BUILD_VARIANTS = {
     'sortentstable_100k': ('-exp100k', 100000),
     'sortentstable_100k_b64stage': ('-exp100k-b64stage', 100000),
     'sortentstable_100k_b64field': ('-exp100k-b64field', 100000),
+    'sortentstable_100k_b64tvpath': ('-exp100k-b64tvpath', 100000),
 }
 _MAX_LOG_BYTES = 128 * 1024 * 1024
 
@@ -137,7 +138,8 @@ def _execute_native_filtered(helper: Path, source: Path, env: dict,
     needle = (r'VALUEOUTOFBOUNDS|out.of.bounds|out.of.range|overflow|overrun|'
               r'CRITICAL|ERROR:|WARN:|WARNING:|invalid .*value|exceeds? .*limit|too large|'
               r'Unhandled Class|SP_P8P2_B64_STAGE|SP_P8P2_B64_OBJECT_RETURN|'
-              r'SP_P8P2_B64_FDL_LAST|SP_P8P2_B64_DECODER')
+              r'SP_P8P2_B64_FDL_LAST|SP_P8P2_B64_DECODER|SP_P8P2_FDL_TV_|'
+              r'SP_P8P2_FDL_PREFLIGHT_REJECT|SP_P8P2_B64_OBJECT_SITE')
     native = subprocess.Popen([str(helper), str(source)], stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     filter_proc = None
@@ -233,6 +235,16 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
         nested_decoders = re.findall(
             r'SP_P8P2_B64_DECODER=([A-Za-z0-9_]{1,64})', filtered_text)
         nested_decoders = nested_decoders[:32]
+        # The added markers distinguish count preflight from a NULL TV
+        # return and public control-flow return sites, never source values.
+        tv_call_count_bounded = min(
+            filtered_text.count('SP_P8P2_FDL_TV_CALLED'), 4)
+        tv_null_count_bounded = min(
+            filtered_text.count('SP_P8P2_FDL_TV_NULL'), 16)
+        vector_preflight_reject = 'SP_P8P2_FDL_PREFLIGHT_REJECT' in filtered_text
+        object_site_labels = re.findall(
+            r'SP_P8P2_B64_OBJECT_SITE=(ms_stream_overflow|object_size_bounds|'
+            r'invalid_class_index|final_accumulation)', filtered_text)[:16]
         report = {
             'policy': 'structuralpro_p8p2_private_native_c_api_trace_v2',
             'native_c_api_actually_executed': True,
@@ -253,9 +265,14 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             'bit64_diagnostic_stage_names': list(stage_names),
             'bit64_object_decode_return_markers_bounded': object_b64_return_markers,
             'bit64_stage_instrumentation_executed': build_variant in (
-                'sortentstable_100k_b64stage', 'sortentstable_100k_b64field'),
+                'sortentstable_100k_b64stage', 'sortentstable_100k_b64field',
+                'sortentstable_100k_b64tvpath'),
             'filedeplist_last_entered_completed': [list(x) for x in field_receipts[:4]],
             'object_decoder_functions_returning_bit64': nested_decoders,
+            'filedeplist_tv_calls_bounded': tv_call_count_bounded,
+            'filedeplist_tv_nulls_bounded': tv_null_count_bounded,
+            'filedeplist_vector_preflight_rejected': vector_preflight_reject,
+            'bit64_object_return_site_labels_bounded': object_site_labels,
             'bit64_has_confirmed_sortentstable_guard_trigger': bool(
                 (parsed['c_api_return_mask'] & 64) and guard_exceeded),
             'all_other_possible_bit64_sources_excluded': False,
