@@ -60,6 +60,8 @@ def add_object_site_probes(source: str) -> str:
     start = source.index("int\ndwg_decode_add_object (")
     end = source.index("\n/** dwg_decode_unknown", start)
     region = source[start:end]
+    if 'SP_P8P2_B64_OBJECT_SITE' in region or 'sp_p8p2_obj_site (' in region:
+        raise ValueError('Pinned object return sites missing or ambiguous: already instrumented')
     anchors = (
         ("return DWG_ERR_VALUEOUTOFBOUNDS;", "ms_stream_overflow"),
         ("return error;", "object_size_bounds"),
