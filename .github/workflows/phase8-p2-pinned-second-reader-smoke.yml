@@ -24,7 +24,7 @@ jobs:
       matrix:
         include:
           - os: ubuntu-24.04
-            wheel_sha256: 8239d8170264ae1612bcee06561ecdc53621c5017d979eaaf35d899dd12de44
+            wheel_sha256: 8239d8170264ae1612bcee06561ecdc53621c5017d979eaaf35d899dd12de44d
           - os: windows-2022
             wheel_sha256: ddf74b215ab0caf055bbf31229493d3a7e279c3cc11ffb9161e7d2560e52e874
     timeout-minutes: 20
