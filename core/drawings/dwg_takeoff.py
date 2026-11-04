@@ -353,6 +353,16 @@ class DWGTakeoffEngine:
             finally:
                 converted.unlink(missing_ok=True)
             doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":getattr(provider,"version","unverified"),"exit_code":0}
+            # A readable DXF and a successful bridge process are not proof of
+            # original custom-object, SHX, or revision fidelity.
+            doc.conversion.update({
+                "geometry_approved_for_financial_takeoff": False,
+                "native_decoder_full_object_graph_verified": False,
+                "native_decoder_error_mask_verified": False,
+                "source_revision_verified": False,
+                "requires_independent_original_dwg_oracle": True,
+                "safety_reason": "ACADSHARP_SUCCESS_NOT_FULL_NATIVE_COVERAGE",
+            })
             if hashlib.sha256(p.read_bytes()).hexdigest()!=original_sha:raise RuntimeError("فایل DWG هنگام تبدیل تغییر کرده است")
             doc.source_sha256=original_sha
             doc.source = str(p)
@@ -397,6 +407,14 @@ class DWGTakeoffEngine:
                     "original_dxf_unit_code": receipt.original_dxf_unit_code,
                     "unit_metadata_repaired": receipt.source_unit_restored_in_dxf,
                     "exit_code": 0,
+                    # Strict ModelSpace matching does not cover opaque OBJECTS
+                    # or establish the source issue and SHX glyph semantics.
+                    "geometry_approved_for_financial_takeoff": False,
+                    "native_decoder_full_object_graph_verified": False,
+                    "native_decoder_error_mask_verified": False,
+                    "source_revision_verified": False,
+                    "requires_independent_original_dwg_oracle": True,
+                    "safety_reason": "STRICT_MODELSPACE_NOT_FULL_NATIVE_COVERAGE",
                 }
                 doc.source_sha256 = original_sha
                 doc.source = str(p)

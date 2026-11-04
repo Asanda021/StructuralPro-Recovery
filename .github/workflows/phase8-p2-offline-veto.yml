@@ -7,6 +7,7 @@ on:
     paths:
       - core/drawings/dwg_takeoff.py
       - tests/test_phase8_p2_offline_financial_veto.py
+      - tests/test_phase8_p2_alternate_provider_financial_veto.py
       - core/drawings/dwg_unknown_object_audit.py
       - tools/audit_phase8_p2_unknown_cad.py
       - tests/test_phase8_p2_unknown_object_audit.py
@@ -54,6 +55,7 @@ jobs:
           python -m pytest -q
           --junitxml=offline-dwg-financial-veto.xml
           tests/test_phase8_p2_offline_financial_veto.py
+          tests/test_phase8_p2_alternate_provider_financial_veto.py
           tests/test_phase8_p2_unknown_object_audit.py
           tests/test_phase8_p2_opaque_conversion_diff.py
           tests/test_phase8_p2_converter_failure_cleanup.py
