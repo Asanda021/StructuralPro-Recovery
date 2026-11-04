@@ -282,6 +282,47 @@ def test_b64_stage_private_probe_receipt_is_bounded_and_no_go(tmp_path, monkeypa
     assert report['verdict'] == 'PARTIAL_NO_GO'
 
 
+
+def test_b64_field_variant_has_pinned_label_and_stays_no_go(tmp_path, monkeypatch):
+    if os.name != 'posix':
+        pytest.skip('POSIX private ACL required')
+    src, cfg, helper, lib, output = sample(tmp_path)
+    config = json.loads(cfg.read_text(encoding='utf-8'))
+    config['build_variant'] = 'sortentstable_100k_b64field'
+    cfg.write_text(json.dumps(config), encoding='utf-8')
+    cfg.chmod(0o600)
+    monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
+
+    def fake_run(mock_helper, mock_source, env, stderr_file, timeout):
+        stderr_file.write(
+            b'77:SP_P8P2_B64_FDL_LAST=filename|num_files\n'
+            b'100:SP_P8P2_B64_DECODER=UNKNOWN_OBJ\n'
+            b'101:SP_P8P2_B64_OBJECT_RETURN\n'
+            b'102:SP_P8P2_B64_STAGE=read_2004_section_filedeplist\n'
+        )
+        return SimpleNamespace(
+            returncode=0,
+            stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64field\n'
+                   b'STRUCTURALPRO_C_API_MASK=68\n'
+                   b'STRUCTURALPRO_C_API_OBJECTS=7\n')
+    monkeypatch.setattr(m, '_execute_native_filtered', fake_run)
+    result = m.diagnose_private_source(src, cfg, helper, lib, output)
+    assert result['filedeplist_last_entered_completed'] == [['filename', 'num_files']]
+    assert result['object_decoder_functions_returning_bit64'] == ['UNKNOWN_OBJ']
+    assert result['financial_quantity_approved'] is False
+    assert result['verdict'] == 'PARTIAL_NO_GO'
+
+
+def test_b64_field_label_mismatch_fails_closed():
+    field = ('STRUCTURALPRO_LIBREDWG_COMMIT=a835758-exp100k-b64field\n'
+             'STRUCTURALPRO_C_API_MASK=0\n'
+             'STRUCTURALPRO_C_API_OBJECTS=7\n')
+    assert m.parse_helper_stdout(field, 'a835758',
+                                 'sortentstable_100k_b64field')['c_api_return_mask'] == 0
+    for wrong in ('upstream', 'sortentstable_100k', 'sortentstable_100k_b64stage'):
+        with pytest.raises(ValueError, match='unpinned'):
+            m.parse_helper_stdout(field, 'a835758', wrong)
+
 def test_real_stream_filter_retains_error_but_not_unbounded_trace(tmp_path):
     """Real Python subprocess + grep, synthetic lines: no CAD/native library."""
     import sys
