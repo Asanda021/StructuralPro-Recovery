@@ -139,7 +139,8 @@ def _execute_native_filtered(helper: Path, source: Path, env: dict,
               r'CRITICAL|ERROR:|WARN:|WARNING:|invalid .*value|exceeds? .*limit|too large|'
               r'Unhandled Class|SP_P8P2_B64_STAGE|SP_P8P2_B64_OBJECT_RETURN|'
               r'SP_P8P2_B64_FDL_LAST|SP_P8P2_B64_DECODER|SP_P8P2_FDL_TV_|'
-              r'SP_P8P2_FDL_PREFLIGHT_REJECT|SP_P8P2_B64_OBJECT_SITE')
+              r'SP_P8P2_FDL_PREFLIGHT_REJECT|SP_P8P2_B64_OBJECT_SITE|'
+              r'SP_P8P2_OBJECT_REALLOCATION_SENTINEL')
     native = subprocess.Popen([str(helper), str(source)], stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     filter_proc = None
@@ -242,6 +243,8 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
         tv_null_count_bounded = min(
             filtered_text.count('SP_P8P2_FDL_TV_NULL'), 16)
         vector_preflight_reject = 'SP_P8P2_FDL_PREFLIGHT_REJECT' in filtered_text
+        object_pool_realloc_sentinel_count = min(
+            filtered_text.count('SP_P8P2_OBJECT_REALLOCATION_SENTINEL'), 16)
         object_site_labels = re.findall(
             r'SP_P8P2_B64_OBJECT_SITE=(ms_stream_overflow|object_size_bounds|'
             r'invalid_class_index|final_accumulation)', filtered_text)[:16]
@@ -273,6 +276,7 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             'filedeplist_tv_nulls_bounded': tv_null_count_bounded,
             'filedeplist_vector_preflight_rejected': vector_preflight_reject,
             'bit64_object_return_site_labels_bounded': object_site_labels,
+            'native_object_pool_reallocation_sentinels_bounded': object_pool_realloc_sentinel_count,
             'bit64_has_confirmed_sortentstable_guard_trigger': bool(
                 (parsed['c_api_return_mask'] & 64) and guard_exceeded),
             'all_other_possible_bit64_sources_excluded': False,
