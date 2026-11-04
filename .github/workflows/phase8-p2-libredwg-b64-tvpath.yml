@@ -56,10 +56,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m tools.p8p2_instrument_b64_field_oracle "$RUNNER_TEMP/libredwg-b64"
+          python -m tools.p8p2_instrument_b64_tvpath "$RUNNER_TEMP/libredwg-b64"
           git -C "$RUNNER_TEMP/libredwg-b64" diff --check
           test "$(git -C "$RUNNER_TEMP/libredwg-b64" diff --name-only | wc -l)" -eq 3
           git -C "$RUNNER_TEMP/libredwg-b64" diff > "$RUNNER_TEMP/EXPERIMENTAL_B64_TVPATH_ONLY.patch"
+          # Source-level provenance: reject a mislabeled older field-only build.
+          grep -Fq 'SP_P8P2_FDL_TV_NULL' "$RUNNER_TEMP/EXPERIMENTAL_B64_TVPATH_ONLY.patch"
+          grep -Fq 'SP_P8P2_FDL_PREFLIGHT_REJECT' "$RUNNER_TEMP/EXPERIMENTAL_B64_TVPATH_ONLY.patch"
+          grep -Fq 'SP_P8P2_B64_OBJECT_SITE' "$RUNNER_TEMP/EXPERIMENTAL_B64_TVPATH_ONLY.patch"
+
       - name: Build diagnostic only, no private data files
         shell: bash
         run: |
