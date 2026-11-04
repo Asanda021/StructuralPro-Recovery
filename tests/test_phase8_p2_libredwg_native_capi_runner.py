@@ -130,23 +130,23 @@ def test_mocked_success_cannot_approve_financial_quantities(tmp_path, monkeypatc
         pytest.skip('Windows private ACL is intentionally not verified')
     src, cfg, helper, lib, output = sample(tmp_path)
     monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
-    def fake_run(cmd, **kwargs):
-        assert cmd == [str(helper), str(src)]
-        assert kwargs['env']['LIBREDWG_TRACE'] == '9'
-        assert kwargs['stdin'] == subprocess.DEVNULL
-        kwargs['stderr'].write(b'synthetic trace not real C API\n')
+    def fake_run(mock_helper, mock_source, env, stderr_file, timeout):
+        assert mock_helper == helper and mock_source == src
+        assert env['LIBREDWG_TRACE'] == '9'
+        stderr_file.write(b'ERROR: Invalid SORTENTSTABLE.num_ents 50001\n')
         return SimpleNamespace(returncode=0,
              stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758\n'
                     b'STRUCTURALPRO_C_API_MASK=68\n'
                     b'STRUCTURALPRO_C_API_OBJECTS=7\n')
-    monkeypatch.setattr(m.subprocess, 'run', fake_run)
+    monkeypatch.setattr(m, '_execute_native_filtered', fake_run)
     r = m.diagnose_private_source(src, cfg, helper, lib, output)
     assert r['exact_libredwg_return_mask'] == 68
     assert r['financial_quantity_approved'] is False
     assert r['object_level_error_cause_verified'] is False
     assert r['value_out_of_bounds_object_cause_verified'] is False
     assert (output / 'libredwg_native_receipt.private.json').stat().st_mode & 0o077 == 0
-    assert (output / 'libredwg_native_stderr.private.log').stat().st_mode & 0o077 == 0
+    assert (output / 'libredwg_native_errors.private.log').stat().st_mode & 0o077 == 0
+    assert r['bit64_has_confirmed_sortentstable_guard_trigger'] is True
 
 
 def test_synthetic_repeated_object_masks_not_inferred_from_stderr(tmp_path, monkeypatch):
@@ -154,7 +154,7 @@ def test_synthetic_repeated_object_masks_not_inferred_from_stderr(tmp_path, monk
         pytest.skip('Windows private ACL is intentionally not verified')
     src, cfg, helper, lib, output = sample(tmp_path)
     monkeypatch.setattr(m, '_verify_linked_library', lambda *_: None)
-    monkeypatch.setattr(m.subprocess, 'run', lambda *args, **kwargs:
+    monkeypatch.setattr(m, '_execute_native_filtered', lambda *args, **kwargs:
          SimpleNamespace(returncode=0,
              stdout=b'STRUCTURALPRO_LIBREDWG_COMMIT=a835758\n'
                     b'STRUCTURALPRO_C_API_MASK=4\n'
@@ -163,3 +163,28 @@ def test_synthetic_repeated_object_masks_not_inferred_from_stderr(tmp_path, monk
     assert result['exact_libredwg_return_mask'] == 4
     assert result['map_aec_causation_verified'] is False
     assert result['verdict'] == 'PARTIAL_NO_GO'
+
+
+def test_real_stream_filter_retains_error_but_not_unbounded_trace(tmp_path):
+    """Real Python subprocess + grep, synthetic lines: no CAD/native library."""
+    import sys
+    if os.name != 'posix':
+        pytest.skip('POSIX native trace filter only')
+    mock_helper = tmp_path / 'synthetic_helper.py'
+    mock_helper.write_text(
+        'import sys\n'
+        'for i in range(10000): print("trace irrelevant", file=sys.stderr)\n'
+        'print("ERROR: Invalid SORTENTSTABLE.num_ents 50001", file=sys.stderr)\n'
+        'print("STRUCTURALPRO_LIBREDWG_COMMIT=a835758")\n'
+        'print("STRUCTURALPRO_C_API_MASK=64")\n'
+        'print("STRUCTURALPRO_C_API_OBJECTS=3")\n', encoding='utf-8')
+    target = tmp_path / 'filtered.private.txt'
+    with target.open('wb') as fp:
+        out = m._execute_native_filtered(Path(sys.executable), mock_helper,
+                                         dict(os.environ), fp, timeout=20)
+    assert out.returncode == 0
+    assert b'STRUCTURALPRO_C_API_MASK=64' in out.stdout
+    saved = target.read_text()
+    assert 'Invalid SORTENTSTABLE.num_ents 50001' in saved
+    assert 'trace irrelevant' not in saved
+    assert len(saved) < 1000
