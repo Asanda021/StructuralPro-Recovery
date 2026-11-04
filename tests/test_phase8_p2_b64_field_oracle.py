@@ -15,7 +15,7 @@ def _pinned_shape_fixture():
     return (
         "/* for 2004 and 2010+ */\nstatic int\ndecode_R2004\n{\n"
         + calls
-        + "\n}\nstatic int\nfiledeplist_private (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)\n{\n}\n"
+        + "\n}\nstatic int\nfiledeplist_private (Bit_Chain *restrict dat, Dwg_Data *restrict dwg)\n{\n  #include \"filedeplist.spec\"\n}\n"
         + "  error = filedeplist_private (dat, dwg);\n"
         + "int\ndwg_decode_add_object (Dwg_Data *restrict dwg, Bit_Chain *dat,\n"
         + " Bit_Chain *hdl_dat, size_t address)\n{\n"
@@ -37,6 +37,8 @@ def test_fdl_exact_fields_instrumented_once():
     for _, field in _FDL_FIELDS:
         assert f'sp_p8p2_fdl_enter ("{field}")' in out
         assert f'sp_p8p2_fdl_complete ("{field}")' in out
+    assert out.count("#ifdef SP_P8P2_FDL_2004_ONLY") == len(_FDL_FIELDS) * 2
+    assert out.count("#endif") == len(_FDL_FIELDS) * 2
     assert "source_sha256" not in out
 
 
@@ -53,6 +55,8 @@ def test_nested_object_decoder_calls_instrumented_without_changing_result():
     assert count == 70
     assert 'SP_P8P2_B64_DECODER=%s' in out
     assert 'SP_P8P2_B64_FDL_LAST=%s|%s' in out
+    assert '#define SP_P8P2_FDL_2004_ONLY 1' in out
+    assert '#undef SP_P8P2_FDL_2004_ONLY' in out
     assert out.count('sp_p8p2_b64_decoded ("TEST_') == 70
     assert 'sp_p8p2_b64_decoded ("variable_type"' in out
     assert 'sp_p8p2_b64_decoded ("UNKNOWN_OBJ"' in out
