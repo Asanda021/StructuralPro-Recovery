@@ -106,6 +106,43 @@ def _verify_linked_library(helper: Path, library: Path) -> None:
         raise ValueError('Actual libredwg dynamic loader location is unverified')
 
 
+def _execute_native_filtered(helper: Path, source: Path, env: dict,
+                             stderr_file, timeout: int):
+    """Stream massive stderr through GNU grep; never buffer raw multi-GB trace.
+
+    Only selected error/warning lines and their original trace-line numbers
+    are stored privately. This cannot replace a full instrumented source trace
+    and never provides drawing approval.
+    """
+    if not Path('/usr/bin/grep').is_file():
+        raise ValueError('Pinned native trace requires local grep executable')
+    needle = (r'VALUEOUTOFBOUNDS|out.of.bounds|out.of.range|overflow|overrun|'
+              r'CRITICAL|ERROR:|WARN:|WARNING:|invalid .*value|exceeds? .*limit|too large|'
+              r'Unhandled Class')
+    native = subprocess.Popen([str(helper), str(source)], stdin=subprocess.DEVNULL,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    filter_proc = None
+    try:
+        filter_proc = subprocess.Popen(['/usr/bin/grep', '-anEi', needle],
+                                       stdin=native.stderr, stdout=stderr_file,
+                                       stderr=subprocess.DEVNULL)
+        native.stderr.close()
+        stdout, _ = native.communicate(timeout=timeout)
+        filter_status = filter_proc.wait(timeout=timeout)
+        if filter_status not in (0, 1):
+            raise ValueError('Native trace filter failed')
+        return subprocess.CompletedProcess([str(helper), str(source)],
+                                           native.returncode, stdout=stdout)
+    except BaseException:
+        native.kill()
+        if filter_proc is not None:
+            filter_proc.kill()
+        native.wait()
+        if filter_proc is not None:
+            filter_proc.wait()
+        raise
+
+
 def diagnose_private_source(source: str | Path, private_config: str | Path,
                             helper: str | Path, library: str | Path,
                             private_output: str | Path, *, timeout=120) -> dict:
@@ -132,32 +169,37 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
     if _sha_file(library).lower() != config['library_sha256'].lower():
         raise ValueError('LibreDWG library SHA unverified')
     _verify_linked_library(helper, library)
-    if any((output / name).exists() for name in ('libredwg_native_stderr.private.log',
+    if any((output / name).exists() for name in ('libredwg_native_errors.private.log',
                                                   'libredwg_native_receipt.private.json')):
         raise ValueError('Existing private evidence must not be overwritten')
     before = source.stat()
     env = dict(os.environ)
     env['LIBREDWG_TRACE'] = '9'
     env['LD_LIBRARY_PATH'] = str(library.parent)
-    stderr_path = output / 'libredwg_native_stderr.private.log'
+    stderr_path = output / 'libredwg_native_errors.private.log'
     fd = os.open(stderr_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     try:
         with os.fdopen(fd, 'wb') as stderr_file:
-            result = subprocess.run([str(helper), str(source)], stdin=subprocess.DEVNULL,
-                                    stdout=subprocess.PIPE, stderr=stderr_file,
-                                    env=env, timeout=timeout, check=False)
+            result = _execute_native_filtered(helper, source, env, stderr_file, timeout)
         if result.returncode != 0:
             raise ValueError('Native C API helper execution failed')
         if stderr_path.stat().st_size > _MAX_LOG_BYTES:
-            raise ValueError('Native stderr trace exceeds private log safety limit')
+            raise ValueError('Private filtered native trace exceeds safety limit')
         parsed = parse_helper_stdout(result.stdout.decode('ascii', 'strict'),
                                      config['libredwg_commit'])
         if _sha_file(source).lower() != config['source_sha256'].lower() or (
             before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns
         ) != (lambda s: (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns))(source.stat()):
             raise ValueError('DWG source changed during native C API diagnostic')
+        filtered_text = stderr_path.read_text(encoding='utf-8', errors='replace')
+        # This emitted diagnostic is traced to VALUEOUTOFBOUNDS(num_ents,50000)
+        # in pinned GNU LibreDWG src/dwg2.spec, expanded in src/spec.h.
+        guard = [int(v) for v in re.findall(
+            r'ERROR: Invalid SORTENTSTABLE\.num_ents ([0-9]{1,12})',
+            filtered_text)]
+        guard_exceeded = bool(guard) and all(v > 50000 for v in guard)
         report = {
-            'policy': 'structuralpro_p8p2_private_native_c_api_trace_v1',
+            'policy': 'structuralpro_p8p2_private_native_c_api_trace_v2',
             'native_c_api_actually_executed': True,
             'exact_libredwg_return_mask': parsed['c_api_return_mask'],
             'native_object_count': parsed['native_object_count'],
@@ -168,6 +210,12 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             'value_out_of_bounds_object_cause_verified': False,
             'map_aec_causation_verified': False,
             'stderr_log_is_private': True,
+            'stderr_trace_is_filtered_not_full': True,
+            'sortentstable_guard_threshold_in_pinned_source': 50000,
+            'observed_sortentstable_counts_above_guard': guard if guard_exceeded else [],
+            'bit64_has_confirmed_sortentstable_guard_trigger': bool(
+                (parsed['c_api_return_mask'] & 64) and guard_exceeded),
+            'all_other_possible_bit64_sources_excluded': False,
             'financial_quantity_approved': False,
             'verdict': 'PARTIAL_NO_GO',
         }
