@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/phase8-p2-libredwg-native-build.yml
       - tools/structuralpro_libredwg_capi_probe.c
+      - core/drawings/libredwg_native_trace_runner.py
+      - tests/test_phase8_p2_libredwg_native_capi_runner.py
       - .github/workflows/phase8-p2-libredwg-sortentstable-ab-experiment.yml
   workflow_dispatch:
 permissions:
