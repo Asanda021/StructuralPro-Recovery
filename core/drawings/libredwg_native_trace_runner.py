@@ -20,12 +20,13 @@ from core.drawings.libredwg_error_mask import decode_libredwg_error_mask
 
 _MAGIC = re.compile(r"^STRUCTURALPRO_C_API_MASK=([0-9]{1,10})$")
 _OBJECTS = re.compile(r"^STRUCTURALPRO_C_API_OBJECTS=([0-9]{1,15})$")
-_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})(-exp100k)?$")
+_COMMIT = re.compile(r"^STRUCTURALPRO_LIBREDWG_COMMIT=([0-9a-f]{7,40})(-exp100k-b64stage|-exp100k)?$")
 # Only the explicitly pinned diagnostic change may be selected. The upstream
 # commit remains a pure hex identity, separate from the build variant.
 _BUILD_VARIANTS = {
     'upstream': ('', 50000),
     'sortentstable_100k': ('-exp100k', 100000),
+    'sortentstable_100k_b64stage': ('-exp100k-b64stage', 100000),
 }
 _MAX_LOG_BYTES = 128 * 1024 * 1024
 
@@ -134,7 +135,7 @@ def _execute_native_filtered(helper: Path, source: Path, env: dict,
         raise ValueError('Pinned native trace requires local grep executable')
     needle = (r'VALUEOUTOFBOUNDS|out.of.bounds|out.of.range|overflow|overrun|'
               r'CRITICAL|ERROR:|WARN:|WARNING:|invalid .*value|exceeds? .*limit|too large|'
-              r'Unhandled Class')
+              r'Unhandled Class|SP_P8P2_B64_STAGE|SP_P8P2_B64_OBJECT_RETURN')
     native = subprocess.Popen([str(helper), str(source)], stdin=subprocess.DEVNULL,
                               stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
     filter_proc = None
@@ -216,6 +217,14 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             filtered_text)]
         _, guard_threshold = _BUILD_VARIANTS[build_variant]
         guard_exceeded = bool(guard) and all(v > guard_threshold for v in guard)
+        # A bounded source-level *stage* receipt, not object or payload parity.
+        # Only known public code stage names are emitted; no raw CAD identifiers.
+        stage_names = tuple(re.findall(
+            r'SP_P8P2_B64_STAGE=(decode_R2004_header|read_R2004_section_[a-z]+|read_2004_section_[a-z]+)',
+            filtered_text))
+        stage_names = tuple(dict.fromkeys(stage_names[:32]))
+        object_b64_return_markers = min(
+            filtered_text.count('SP_P8P2_B64_OBJECT_RETURN'), 16)
         report = {
             'policy': 'structuralpro_p8p2_private_native_c_api_trace_v2',
             'native_c_api_actually_executed': True,
@@ -233,6 +242,9 @@ def diagnose_private_source(source: str | Path, private_config: str | Path,
             'libredwg_build_variant': parsed['observed_build_variant'],
             'sortentstable_guard_threshold_in_pinned_source': guard_threshold,
             'observed_sortentstable_counts_above_guard': guard if guard_exceeded else [],
+            'bit64_diagnostic_stage_names': list(stage_names),
+            'bit64_object_decode_return_markers_bounded': object_b64_return_markers,
+            'bit64_stage_instrumentation_executed': build_variant == 'sortentstable_100k_b64stage',
             'bit64_has_confirmed_sortentstable_guard_trigger': bool(
                 (parsed['c_api_return_mask'] & 64) and guard_exceeded),
             'all_other_possible_bit64_sources_excluded': False,
