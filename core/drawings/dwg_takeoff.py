@@ -463,7 +463,17 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
-        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{})}
+        # CLI success and an equal ModelSpace roster do not prove full native
+        # decoder object/proxy coverage, error bitmask health or drawing revision.
+        # Preview remains readable, but payable geometry stays vetoed until
+        # independent original-source verification is actually implemented.
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{}),
+                        "geometry_approved_for_financial_takeoff":False,
+                        "native_decoder_full_object_graph_verified":False,
+                        "native_decoder_error_mask_verified":False,
+                        "source_revision_verified":False,
+                        "requires_independent_original_dwg_oracle":True,
+                        "safety_reason":"OFFLINE_CLI_SUCCESS_NOT_FULL_NATIVE_COVERAGE"}
         doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"
