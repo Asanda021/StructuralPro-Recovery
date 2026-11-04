@@ -18,6 +18,7 @@ static unsigned sp_p8p2_tv_calls = 0, sp_p8p2_tv_nulls = 0;
 static BITCODE_TV
 sp_p8p2_fdl_tv_read (Bit_Chain *dat)
 {
+  BITCODE_TV v;
   /* Read the bitshort *header on a cloned cursor*. Never consume original
    * stream twice or retain any length, bytes, coordinates or file paths. */
   const char *cause = "ALLOC_OR_OTHER";
@@ -51,7 +52,7 @@ sp_p8p2_fdl_tv_read (Bit_Chain *dat)
             }
         }
     }
-  BITCODE_TV v = bit_read_TV (dat); /* The unmodified GNU reader: exactly once. */
+  v = bit_read_TV (dat); /* The unmodified GNU reader: exactly once. */
   if (sp_p8p2_tv_calls++ < 4)
     fprintf (stderr, "SP_P8P2_FDL_TV_CALLED\n");
   if (!v && sp_p8p2_tv_nulls++ < 16)
