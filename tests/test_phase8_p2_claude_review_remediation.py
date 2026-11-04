@@ -111,8 +111,9 @@ def test_f03_proxy_reference_is_indeterminate_not_resolved():
                             dxftype=lambda: 'ACAD_PROXY_OBJECT')
     got = audit_named_dictionary_links(fake_dictionary_doc(target=proxy))
     assert got['converted_dxf_namespace_integrity_status'] == 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
-    assert got['dangling_or_invalid_count'] == 1
-    assert got['dangling_or_invalid_references'][0]['reason'] == 'PROXY_TARGET_UNVERIFIED'
+    assert got['dangling_or_invalid_count'] == 0
+    assert got['unverified_target_count'] == 1
+    assert got['unverified_target_references'][0]['reason'] == 'PROXY_TARGET_UNVERIFIED'
     assert got['automatic_patch_authorized'] is False
 
 
@@ -125,7 +126,9 @@ def test_f03_custom_class_targets_never_green(class_declared, expected):
                              dxftype=lambda: 'VENDOR_CUSTOM')
     got = audit_named_dictionary_links(
         fake_dictionary_doc(target=custom, declared_class=class_declared))
-    assert got['dangling_or_invalid_references'][0]['reason'] == expected
+    assert got['unverified_target_references'][0]['reason'] == expected
+    assert got['dangling_or_invalid_count'] == 0
+    assert got['unverified_target_count'] == 1
     assert got['converted_dxf_namespace_integrity_status'] == 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
 
 
@@ -158,20 +161,42 @@ def test_f07_converter_never_runs_or_deletes_preexisting_same_stem(
     assert existing.read_bytes() == b'private-user-data'
 
 
-def test_f08_bad_dxf_dictionary_receipt_has_explicit_converter_veto(tmp_path, monkeypatch):
+@pytest.mark.parametrize('dictionary_case, expected_veto', [
+    ('valid_target', False),
+    ('dangling_target', True),
+    ('missing_namespaces', True),
+    ('proxy_target', True),
+])
+def test_f08_dictionary_integrity_veto_changes_with_verified_roster(
+    tmp_path, monkeypatch, dictionary_case, expected_veto
+):
+    from core.drawings import dwg_converter
     src = tmp_path / 'drawing.dwg'
     src.write_bytes(b'AC1018_mock_source_data')
     def fake_run(self, command, **kwargs):
         d = ezdxf.new('R2018')
         d.modelspace().add_line((0, 0), (1, 2))
-        m = d.rootdict.add_new_dict('Autodesk_MAP')
-        m['TARGET'] = 'BADF00D'
+        if dictionary_case != 'missing_namespaces':
+            m = d.rootdict.add_new_dict('Autodesk_MAP')
+            d.rootdict.add_new_dict('AEC_VARS')
+            if dictionary_case == 'valid_target':
+                m['TARGET'] = d.objects.add_xrecord()
+            elif dictionary_case == 'dangling_target':
+                m['TARGET'] = 'BADF00D'
+            else:
+                # These registered DXF proxies must not pass as proven objects.
+                m['TARGET'] = d.objects.new_entity('ACAD_PROXY_OBJECT',
+                                                     dxfattribs={})
         d.saveas(command[2])
         return SimpleNamespace(returncode=0, stdout='SUCCESS', stderr='')
     monkeypatch.setattr(OfflineDWGConverter, '_run', fake_run)
+    monkeypatch.setattr(
+        dwg_converter, '_independent_source_coverage',
+        lambda *args: {'status': 'MATCHED_INDEPENDENT_MODELSPACE_ROSTER',
+                       'quantity_approved': False})
     receipt = OfflineDWGConverter('dwg2dxf').convert(src, tmp_path / 'out')
-    assert receipt.financial_veto is True
-    assert receipt.source_coverage['converter_integrity_veto'] is True
+    assert receipt.financial_veto is True  # Final financial authority stays blocked.
+    assert receipt.source_coverage['converter_integrity_veto'] is expected_veto
     assert receipt.source_coverage['financial_quantity_approved'] is False
 
 
