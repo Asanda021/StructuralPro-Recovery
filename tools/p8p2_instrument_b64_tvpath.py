@@ -18,11 +18,47 @@ static unsigned sp_p8p2_tv_calls = 0, sp_p8p2_tv_nulls = 0;
 static BITCODE_TV
 sp_p8p2_fdl_tv_read (Bit_Chain *dat)
 {
-  BITCODE_TV v = bit_read_TV (dat);
+  /* Read the bitshort *header on a cloned cursor*. Never consume original
+   * stream twice or retain any length, bytes, coordinates or file paths. */
+  const char *cause = "ALLOC_OR_OTHER";
+  if (dat->bit > 7 || dat->byte >= dat->size)
+    cause = "HEADER_BOUNDS";
+  else
+    {
+      size_t available = (dat->size - dat->byte) * 8 - dat->bit;
+      if (available < 8) /* exact first CHK_OVERFLOW_PLUS(1) guard */
+        cause = "HEADER_BOUNDS";
+      else
+        {
+          Bit_Chain preview_mode = *dat;
+          unsigned mode = bit_read_BB (&preview_mode);
+          size_t suffix_bits = mode == 0 ? 16 : (mode == 1 ? 8 : 0);
+          if (available < (2 + suffix_bits))
+            cause = "PREFIX_BOUNDS";
+          else
+            {
+              Bit_Chain preview = *dat;
+              unsigned length = bit_read_BS (&preview);
+              if (preview.bit > 7 || preview.byte > preview.size)
+                cause = "PREFIX_BOUNDS";
+              else
+                {
+                  size_t payload_available
+                    = (preview.size - preview.byte) * 8 - preview.bit;
+                  if ((size_t)length > payload_available / 8)
+                    cause = "PAYLOAD_BOUNDS";
+                }
+            }
+        }
+    }
+  BITCODE_TV v = bit_read_TV (dat); /* The unmodified GNU reader: exactly once. */
   if (sp_p8p2_tv_calls++ < 4)
     fprintf (stderr, "SP_P8P2_FDL_TV_CALLED\n");
   if (!v && sp_p8p2_tv_nulls++ < 16)
-    fprintf (stderr, "SP_P8P2_FDL_TV_NULL\n");
+    {
+      fprintf (stderr, "SP_P8P2_FDL_TV_NULL\n");
+      fprintf (stderr, "SP_P8P2_FDL_TV_NULL_REASON=%s\n", cause);
+    }
   return v;
 }
 static void
