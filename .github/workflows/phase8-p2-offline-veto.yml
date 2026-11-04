@@ -14,6 +14,9 @@ on:
       - core/drawings/dwg_opaque_conversion_diff.py
       - tools/audit_phase8_p2_opaque_conversion_diff.py
       - tests/test_phase8_p2_opaque_conversion_diff.py
+      - core/drawings/dwg_second_decoder_probe.py
+      - tools/audit_phase8_p2_second_decoder.py
+      - tests/test_phase8_p2_second_decoder_probe.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
 permissions:
@@ -58,6 +61,7 @@ jobs:
           tests/test_phase8_p2_alternate_provider_financial_veto.py
           tests/test_phase8_p2_unknown_object_audit.py
           tests/test_phase8_p2_opaque_conversion_diff.py
+          tests/test_phase8_p2_second_decoder_probe.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
