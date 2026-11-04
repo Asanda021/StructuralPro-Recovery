@@ -1,0 +1,139 @@
+"""Evidence-gated parallel LINE pair reference for unitless DWG.
+
+Geometric match does not prove sheet/member/revision identity; these require
+independent evidence and review. The function MUST NOT infer a unit.
+"""
+from __future__ import annotations
+
+from decimal import Decimal, InvalidOperation
+import hashlib
+import math
+from pathlib import Path
+
+
+def _decimal(value, name):
+    try:
+        out = Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError) as exc:
+        raise ValueError(f"Invalid {name}") from exc
+    if not out.is_finite():
+        raise ValueError(f"Nonfinite {name}")
+    return out
+
+
+def _xy0(point):
+    if not isinstance(point, (list, tuple)) or len(point) not in (2, 3):
+        raise ValueError("Reference LINE coordinates must be 2D/3D")
+    vals = tuple(float(v) for v in point)
+    if not all(math.isfinite(v) for v in vals):
+        raise ValueError("Nonfinite CAD geometry")
+    if len(vals) == 3 and abs(vals[2]) > 1e-10:
+        raise ValueError("Nonplanar LINE cannot calibrate a plan gap")
+    return vals[:2]
+
+
+def parallel_line_gap_raw(first, second):
+    """Return perpendicular spacing of two genuinely overlapping parallel LINEs."""
+    a, b = _xy0(first['start']), _xy0(first['end'])
+    c, d = _xy0(second['start']), _xy0(second['end'])
+    vx, vy = b[0] - a[0], b[1] - a[1]
+    wx, wy = d[0] - c[0], d[1] - c[1]
+    alen, blen = math.hypot(vx, vy), math.hypot(wx, wy)
+    if not all(math.isfinite(z) and z > 1e-9 for z in (alen, blen)):
+        raise ValueError("Zero or invalid LINE")
+    ux, uy = vx / alen, vy / alen
+    angle_error = abs(ux * wy - uy * wx) / blen
+    if angle_error > 1e-8:
+        raise ValueError("LINE pair is not parallel")
+    nx, ny = -uy, ux
+    gap = abs((c[0] - a[0]) * nx + (c[1] - a[1]) * ny)
+    if not math.isfinite(gap) or gap <= 1e-9:
+        raise ValueError("Co-linear or zero-gap LINEs")
+    cproj = (c[0] - a[0]) * ux + (c[1] - a[1]) * uy
+    dproj = (d[0] - a[0]) * ux + (d[1] - a[1]) * uy
+    overlap = min(alen, max(cproj, dproj)) - max(0.0, min(cproj, dproj))
+    if overlap <= max(1e-8, gap):
+        raise ValueError("LINE pair lacks meaningful parallel overlap")
+    return gap
+
+
+def validate_parallel_gap_references(document, proof, factor):
+    """Validate v3 reference contract; no automatic member or unit inference.
+
+    v3: two independent pairs, source/PDF SHA and matching project revision,
+    reviewed member mappings and exact CAD geometry, within <=0.1 mm tolerance.
+    """
+    if proof.get('policy') != 'cad_unit_reference_v3':
+        raise ValueError("Unsupported parallel gap evidence policy")
+    source = Path(str(document.source))
+    pdf = Path(str(proof.get('source_pdf_path', '')))
+    if (source.suffix.lower() != '.dwg' or not source.is_file()
+            or hashlib.sha256(source.read_bytes()).hexdigest() != document.source_sha256
+            or not pdf.is_file() or pdf.suffix.lower() != '.pdf'
+            or hashlib.sha256(pdf.read_bytes()).hexdigest() != proof.get('source_pdf_sha256')):
+        raise ValueError("DWG and same-source PDF hash evidence is required")
+    proj = str(proof.get('project_id', '')).strip()
+    rev = str(proof.get('drawing_revision', '')).strip()
+    if (not proj or not rev or proj.lower() in ('unknown','none','n/a')
+            or rev.lower() in ('unknown','none','n/a')
+            or proj != str(proof.get('pdf_project_id', '')).strip()
+            or rev != str(proof.get('pdf_drawing_revision', '')).strip()):
+        raise ValueError("DWG/PDF identity and revision must be documented as equal")
+    refs = proof.get('references')
+    if not isinstance(refs, list) or not 2 <= len(refs) <= 20:
+        raise ValueError("At least two independent reference members required")
+    tol = _decimal(proof.get('absolute_tolerance_m'), 'absolute_tolerance_m')
+    if not Decimal('0') <= tol <= Decimal('0.0001'):
+        raise ValueError("Tolerance outside documented <=0.1 mm window")
+    unit_factor = _decimal(factor, 'unit conversion factor')
+    if unit_factor <= 0:
+        raise ValueError("Positive supported conversion factor required")
+    import fitz
+    with fitz.open(pdf) as pdf_doc:
+        pages = len(pdf_doc)
+    seen_handles, seen_members, seen_segments = set(), set(), set()
+    entities_by_handle = {}
+    for entity in document.entities:
+        if entity.handle:
+            entities_by_handle.setdefault(str(entity.handle), []).append(entity)
+    for ref in refs:
+        if not isinstance(ref, dict) or ref.get('reference_kind') != 'parallel_line_gap':
+            raise ValueError("Reference must explicitly describe a parallel LINE gap")
+        handles = ref.get('reference_handles')
+        member = str(ref.get('member_id', '')).strip()
+        sheet = str(ref.get('sheet_id', '')).strip()
+        page = ref.get('pdf_page')
+        note = str(ref.get('reviewed_pdf_member_mapping', '')).strip()
+        if (not isinstance(handles, list) or len(handles) != 2
+                or not all(isinstance(h, str) and h.strip() for h in handles)
+                or handles[0] == handles[1] or any(h in seen_handles for h in handles)
+                or not member or member in seen_members or not sheet or not note
+                or type(page) is not int or not 1 <= page <= pages):
+            raise ValueError("Unique pair, member, sheet, page and independent mapping note required")
+        lines = []
+        for handle in handles:
+            match = entities_by_handle.get(handle, [])
+            if len(match) != 1 or match[0].entity_type != 'LINE':
+                raise ValueError("Each reference handle must resolve to one LINE")
+            entity = match[0]
+            if (entity.data.get('unsupported_measurement')
+                    or entity.data.get('layer_visible') is not True
+                    or entity.data.get('layer_defined') is not True):
+                raise ValueError("Unverified or hidden LINE is not accepted")
+            lines.append(entity.data)
+        raw_gap = parallel_line_gap_raw(lines[0], lines[1])
+        proposed = _decimal(ref.get('cad_length'), 'cad_length')
+        real = _decimal(ref.get('real_length_m'), 'real_length_m')
+        if proposed <= 0 or real <= 0:
+            raise ValueError("Positive dimensions required")
+        if not math.isclose(raw_gap, float(proposed), rel_tol=1e-12, abs_tol=1e-8):
+            raise ValueError("Claimed spacing differs from handle geometry")
+        if abs(proposed * unit_factor - real) > tol:
+            raise ValueError("Real-world dimension conflicts with stated conversion")
+        segment_key = tuple(sorted(handles))
+        if segment_key in seen_segments:
+            raise ValueError("Duplicate physical reference")
+        seen_segments.add(segment_key)
+        seen_handles.update(handles)
+        seen_members.add(member)
+    return True
