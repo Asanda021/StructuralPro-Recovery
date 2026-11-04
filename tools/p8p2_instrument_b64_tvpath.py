@@ -37,7 +37,8 @@ sp_p8p2_obj_site (const char *site)
 def add_fdl_tv_diagnostic(spec: str) -> str:
     """Guard preflight + TV read wrapper strictly to original features macro."""
     target = "FIELD_VECTOR_T (features, TU32, num_features, 0);"
-    if (spec.count(target) != 1 or "SP_P8P2_FDL_PREFLIGHT_REJECT" in spec\n            or "sp_p8p2_fdl_tv_read" in spec):
+    if (spec.count(target) != 1 or "SP_P8P2_FDL_PREFLIGHT_REJECT" in spec
+            or "sp_p8p2_fdl_tv_read" in spec):
         raise ValueError("Unexpected pinned feature-vector call")
     replacement = (
         "#ifdef SP_P8P2_FDL_2004_ONLY\n"
