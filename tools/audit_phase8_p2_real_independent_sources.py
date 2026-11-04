@@ -57,7 +57,16 @@ def classify_geometry_pair(source, converted, source_layer: str | None) -> list[
         if len(a)!=len(b):issues.append('SOLID_VERTEX_COUNT_CHANGED')
         elif any(not _vec(u,v) for u,v in zip(a,b)):
             if all(_vec(list(u)[:2],list(v)[:2]) for u,v in zip(a,b)) and any(not _close(u[2],v[2]) for u,v in zip(a,b)):
-                issues.append('SOLID_Z_CHANGED')
+                elevation = getattr(d, 'elevation', None)
+                if (elevation is not None and math.isfinite(float(elevation))
+                        and all(_close(u[2], float(v[2]) + float(elevation)) for u,v in zip(a,b))):
+                    # A DXF group-38 elevation in an R2000+ DXF is not
+                    # interchangeable with per-vertex Z for every importer.
+                    # Preserve the non-approval gate and report representation
+                    # relocation instead of falsely claiming height was erased.
+                    issues.append('SOLID_Z_RELOCATED_TO_LEGACY_ELEVATION')
+                else:
+                    issues.append('SOLID_Z_CHANGED')
             else:issues.append('SOLID_GEOMETRY_CHANGED')
     elif t=='POINT':
         if not _vec(s['location'],d.location):issues.append('POINT_3D_COORD_CHANGED')
