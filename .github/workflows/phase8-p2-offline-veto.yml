@@ -42,6 +42,8 @@ on:
       - core/drawings/native_dwg_preview.py
       - tools/audit_phase8_p2_shx_source.py
       - tests/test_phase8_p2_shx_source_provenance.py
+      - core/drawings/libredwg_error_mask.py
+      - tests/test_phase8_p2_libredwg_error68.py
       - core/drawings/dwg_opaque_conversion_diff.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
@@ -97,6 +99,7 @@ jobs:
           tests/test_phase8_p2_opaque_source_receipts.py
           tests/test_phase8_p2_claude_review_remediation.py
           tests/test_phase8_p2_shx_source_provenance.py
+          tests/test_phase8_p2_libredwg_error68.py
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
