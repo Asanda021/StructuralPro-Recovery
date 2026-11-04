@@ -95,7 +95,11 @@ def summarize_raw_records(raw_records, expected_handles):
         # declared_size bytes plus four prefix/trailer bytes.  Eight original
         # private records exhibit this relation.  Other DWG versions are NOT
         # authorized by this narrow contract.
-        if len(encoded) != declared_size + 4:
+        # AC1018 modular-short length prefix uses two bytes for lengths below
+        # 32768 and four bytes from 32768 onward; the CRC takes two bytes.
+        # This checks framing only, not the meaning of proprietary content.
+        overhead = 4 if declared_size < 32768 else 6
+        if len(encoded) != declared_size + overhead:
             raise ValueError('AC1018 native raw-record declared size mismatch')
         seen.add(handle)
         out.append({'handle':format(handle, 'X'), 'raw_record_sha256':hashlib.sha256(encoded).hexdigest(),
@@ -121,10 +125,20 @@ def opaque_recovery_decision(source_records, dxf_link_report, *, expected_source
         raise ValueError('Untrusted dictionary report claims quantity approval')
     report_state = dxf_link_report.get('converted_dxf_namespace_integrity_status')
     count = dxf_link_report.get('dangling_or_invalid_count')
-    if count is None or type(count) is not int or count < 0:
+    unverified_count = dxf_link_report.get('unverified_target_count', 0)
+    if type(unverified_count) is not int or unverified_count < 0:
+        unverified_count = None
+    if (type(count) is not int or count < 0 or unverified_count is None
+            or not isinstance(report_state, str)):
         status = 'INDETERMINATE_DXF_DICTIONARY_GRAPH'
-    elif count > 0:
+    elif report_state == 'BROKEN_DXF_DICTIONARY_LINKS' and count > 0:
         status = 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_LINKS_DANGLING'
+    elif report_state == 'INDETERMINATE_DXF_DICTIONARY_TARGETS' and count == 0 and unverified_count > 0:
+        status = 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_TARGETS_INDETERMINATE'
+    elif count > 0 or report_state in {
+            'BROKEN_DXF_DICTIONARY_LINKS', 'AMBIGUOUS_NAMED_DICTIONARY_ROOTS',
+            'INDETERMINATE_DXF_DICTIONARY_TARGETS'}:
+        status = 'INDETERMINATE_DXF_DICTIONARY_GRAPH'
     else:
         status = 'SOURCE_OPAQUE_RECORD_STREAMS_READ_DXF_LINKS_NOT_PROVEN_COMPLETE'
     if not isinstance(expected_source_sha256,str) or len(expected_source_sha256)!=64 or not isinstance(converted_dxf_sha256,str) or len(converted_dxf_sha256)!=64:
@@ -136,6 +150,8 @@ def opaque_recovery_decision(source_records, dxf_link_report, *, expected_source
         'converted_dxf_named_dictionary_integrity_status':report_state,
         'converted_dxf_dangling_ref_count':count,
         'converted_dxf_dangling_refs':dxf_link_report.get('dangling_or_invalid_references', []),
+        'converted_dxf_unverified_target_count':unverified_count,
+        'converted_dxf_unverified_targets':dxf_link_report.get('unverified_target_references', []),
         'status':status, 'automatic_patch_authorized':False,
         'opaque_payload_semantics_verified':False,
         'full_source_graph_verified':False, 'financial_quantity_approved':False,
