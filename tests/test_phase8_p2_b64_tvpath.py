@@ -88,6 +88,8 @@ def test_tv_null_reason_oracle_reads_only_a_shadow_cursor():
     assert "Bit_Chain preview = *dat;" in _EXTRA_HELPERS
     assert "_EXTRA_HELPERS" not in _EXTRA_HELPERS
     assert _EXTRA_HELPERS.count("bit_read_TV (dat)") == 1
+    assert "sp_p8p2_fdl_tv_read (Bit_Chain *dat)\n{\n  BITCODE_TV v;" in _EXTRA_HELPERS
+    assert "BITCODE_TV v = bit_read_TV (dat);" not in _EXTRA_HELPERS
     for label in ("HEADER_BOUNDS", "PREFIX_BOUNDS", "PAYLOAD_BOUNDS", "ALLOC_OR_OTHER"):
         assert label in _EXTRA_HELPERS
     assert "SP_P8P2_FDL_TV_NULL_REASON=%s" in _EXTRA_HELPERS
