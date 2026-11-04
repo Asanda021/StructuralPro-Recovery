@@ -320,6 +320,14 @@ class OfflineDWGConverter:
             converted_doc = ezdxf.readfile(str(target))
             list(converted_doc.modelspace())
             source_coverage=_independent_source_coverage(src,converted_doc,header['code'])
+            # Independently inspect the converted DXF dictionary graph, not
+            # just the modelspace roster. The imported source NOD may differ
+            # from ezdxf's synthetic root, so inspect all named candidates.
+            from core.drawings.dwg_source_display_integrity import audit_named_dictionary_links
+            source_coverage = dict(source_coverage)
+            source_coverage["converted_dxf_named_dictionary_integrity"] = (
+                audit_named_dictionary_links(converted_doc)
+            )
             if identity(target) != output_identity or digest(target) != output_digest:
                 raise DWGConversionError("خروجی DXF هنگام اعتبارسنجی تغییر کرده است")
         except DWGConversionError:
