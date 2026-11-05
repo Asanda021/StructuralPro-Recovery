@@ -160,6 +160,51 @@ def opaque_recovery_decision(source_records, dxf_link_report, *, expected_source
     }
 
 
+
+def summarize_converted_opaque_identity_coverage(source_records, converted_dxf_document):
+    """Compare source-authenticated opaque record IDs with converted DXF identities.
+
+    Matching an ID does NOT verify record bytes, class meaning, owners or links.
+    Fail on duplicate/malformed source identities and expose aggregate counts
+    only (never publish private handles, original bytes or source hashes).
+    """
+    if not isinstance(source_records, list) or not 1 <= len(source_records) <= MAX_OBJECTS:
+        raise ValueError('Expected bounded authenticated opaque source records')
+    if not hasattr(converted_dxf_document, 'entitydb'):
+        raise ValueError('DXF document lacks an entity index')
+    seen = set()
+    present = 0
+    for record in source_records:
+        if not isinstance(record, dict):
+            raise ValueError('Invalid authenticated opaque source item')
+        handle = record.get('handle')
+        if (not isinstance(handle, str) or not handle
+                or any(ch not in '0123456789abcdefABCDEF' for ch in handle)):
+            raise ValueError('Malformed opaque source handle')
+        canonical = format(int(handle, 16), 'X')
+        if canonical == '0' or canonical in seen:
+            raise ValueError('Duplicate or null opaque source identity')
+        seen.add(canonical)
+        # Presence alone is not proof of type or proprietary byte preservation.
+        if converted_dxf_document.entitydb.get(canonical) is not None:
+            present += 1
+    missing = len(seen) - present
+    return {
+        'source_opaque_identity_count': len(seen),
+        'converted_dxf_identity_present_count': present,
+        'converted_dxf_identity_missing_count': missing,
+        'converted_dxf_opaque_identity_status': (
+            'SOURCE_OPAQUE_OBJECT_IDENTITIES_MISSING_NO_GO' if missing
+            else 'SOURCE_IDENTITIES_PRESENT_PAYLOAD_UNVERIFIED_NO_GO'
+        ),
+        'source_record_payload_semantics_verified': False,
+        'converted_opaque_payload_bytes_independently_verified': False,
+        'source_reference_graph_complete': False,
+        'automatic_reconstruction_authorized': False,
+        'financial_quantity_approved': False,
+    }
+
+
 def audit_original_opaque_records(source_dwg, converted_dxf, claimed_handles, *, expected_original_sha256):
     """Read original DWG raw records with ezdwg v0.17.0 and compare DXF links.
 
@@ -199,6 +244,9 @@ def audit_original_opaque_records(source_dwg, converted_dxf, claimed_handles, *,
     integrity=audit_named_dictionary_links(out)
     decision=opaque_recovery_decision(receipts,integrity,
                                       expected_source_sha256=sh0,converted_dxf_sha256=shd0)
+    # Authenticated raw source record identities must not silently disappear.
+    # This is a separate observation from dictionary-link presence or CLI exit.
+    decision.update(summarize_converted_opaque_identity_coverage(receipts, out))
     if hashlib.sha256(original.read_bytes()).hexdigest()!=sh0 or hashlib.sha256(converted.read_bytes()).hexdigest()!=shd0:
         raise ValueError('Source files changed during independent audit')
     return decision
