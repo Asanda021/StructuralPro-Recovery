@@ -8,6 +8,9 @@ on:
       - tools/p8p2_independent_sort_pair_parity.py
       - tests/test_p8p2_independent_sort_pair_parity.py
       - core/drawings/dwg_converter.py
+      - core/drawings/dwg_source_display_integrity.py
+      - tests/test_phase8_p2_solid_dictionary_integrity.py
+      - tests/test_phase8_p2_converter_dictionary_receipt.py
       - core/drawings/libredwg_error_mask.py
       - .github/workflows/phase8-p2-string32-product-boundary-review.yml
   workflow_dispatch:
@@ -28,5 +31,5 @@ jobs:
       - name: Run synthetic product converter safety contract
         run: |
           python -m pip install -q pytest==9.0.2 ezdxf==1.4.4
-          python -m pytest -q tests/test_phase8_p2_string32_product_boundary_review.py tests/test_phase8_p2_libredwg_error68.py tests/test_p8p2_independent_sort_pair_parity.py
+          python -m pytest -q tests/test_phase8_p2_string32_product_boundary_review.py tests/test_phase8_p2_libredwg_error68.py tests/test_p8p2_independent_sort_pair_parity.py tests/test_phase8_p2_solid_dictionary_integrity.py tests/test_phase8_p2_converter_dictionary_receipt.py
       # No private DWG or converter candidate, and no production integration.
