@@ -100,10 +100,15 @@ def audit_custom_named_root_ancestry(
         if index.get(root_handle, {}).get("object") != "DICTIONARY":
             raise ValueError("Named MAP/AEC root is not a source dictionary")
 
+    verified_ids = {_raw_id(record.get("handle")) for record in independently_verified_raw_records
+                    if isinstance(record, Mapping)}
+    if len(verified_ids) != len(independently_verified_raw_records):
+        raise ValueError("Duplicate original raw record identities")
     seen = set()
     depth_counts = Counter()
     family_counts = Counter()
-    direct = reciprocal = owner_reactors = 0
+    direct_children_checked = set()
+    owner_reactors = 0
     for record in independently_verified_raw_records:
         if not isinstance(record, Mapping) or type(record.get("native_type_code")) is not int:
             raise ValueError("Invalid independently verified raw DWG object")
@@ -136,20 +141,21 @@ def audit_custom_named_root_ancestry(
             depth += 1
             if parent not in root_handles:
                 parent_obj = index.get(parent)
-                if (parent_obj is None or parent_obj.get("object") != "UNKNOWN_OBJ"
+                if (parent not in verified_ids or parent_obj is None
+                        or parent_obj.get("object") != "UNKNOWN_OBJ"
                         or parent == current or type(parent_obj.get("type")) is not int):
                     raise ValueError("Unverified custom ancestry or non-MAP/AEC parent")
             else:
                 # Named-dictionary direct children must be reciprocally
                 # addressable from their owning dictionary in the source.
-                direct += 1
-                children = index[parent].get("items")
-                if not isinstance(children, Mapping):
-                    raise ValueError("Source named dictionary entries unavailable")
-                matches = sum(_ref(ref) == current for ref in children.values())
-                if matches != 1:
-                    raise ValueError("Source named dictionary owner is not reciprocal")
-                reciprocal += 1
+                if current not in direct_children_checked:
+                    children = index[parent].get("items")
+                    if not isinstance(children, Mapping):
+                        raise ValueError("Source named dictionary entries unavailable")
+                    matches = sum(_ref(ref) == current for ref in children.values())
+                    if matches != 1:
+                        raise ValueError("Source named dictionary owner is not reciprocal")
+                    direct_children_checked.add(current)
             current = parent
         if root_handles[current] != family:
             raise ValueError("Original MAP/AEC ownership crosses vendor root")
@@ -170,8 +176,8 @@ def audit_custom_named_root_ancestry(
         "decoded_custom_count_by_named_root": dict(sorted(family_counts.items())),
         "decoded_custom_owner_depth_histogram": dict(sorted(depth_counts.items())),
         "maximum_source_custom_owner_depth": max(depth_counts),
-        "direct_named_dictionary_custom_children": direct,
-        "reciprocal_named_dictionary_entries_verified": reciprocal,
+        "direct_named_dictionary_custom_children": len(direct_children_checked),
+        "reciprocal_named_dictionary_entries_verified": len(direct_children_checked),
         "decoded_custom_reactor_points_to_own_owner": owner_reactors,
         "original_custom_payload_semantics_verified": False,
         "independent_custom_owner_edges_verified": False,
