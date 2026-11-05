@@ -126,6 +126,34 @@ def test_broken_source_named_root_or_raw_record_fails_closed(mutation):
         audit_custom_named_root_ancestry(objects, classes, raw)
 
 
+def test_missing_independently_verified_leaf_fails_closed():
+    # The leaf is not used as an owner by other source records. Before this
+    # guard, the remaining named-root ancestry could still appear consistent.
+    objects, classes, raw = sample()
+    raw = [entry for entry in raw if entry["handle"] != format(14, "X")]
+    with pytest.raises(ValueError, match="raw roster differs"):
+        audit_custom_named_root_ancestry(objects, classes, raw)
+
+
+def test_unreported_decoded_vendor_object_fails_closed():
+    objects, classes, raw = sample()
+    # A source object from a recognized AEC class must not disappear from the
+    # independent receipt just because the recognized records still match.
+    objects.append(dict(handle=ref(22), object="UNKNOWN_OBJ", type=521,
+                        ownerhandle=ref(3), reactors=[]))
+    with pytest.raises(ValueError, match="raw roster differs"):
+        audit_custom_named_root_ancestry(objects, classes, raw)
+
+
+def test_non_vendor_unknown_class_outside_scope_does_not_claim_parity():
+    objects, classes, raw = sample()
+    objects.append(dict(handle=ref(99), object="UNKNOWN_OBJ", type=999,
+                        ownerhandle=ref(1), reactors=[]))
+    result = audit_custom_named_root_ancestry(objects, classes, raw)
+    assert result["original_custom_payload_semantics_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
 def test_no_source_byte_semantics_are_inferred_from_all_links_matching():
     r = audit_custom_named_root_ancestry(*sample())
     assert r["source_to_converted_custom_instance_parity_verified"] is False
