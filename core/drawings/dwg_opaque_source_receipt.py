@@ -172,29 +172,71 @@ def summarize_converted_opaque_identity_coverage(source_records, converted_dxf_d
         raise ValueError('Expected bounded authenticated opaque source records')
     if not hasattr(converted_dxf_document, 'entitydb'):
         raise ValueError('DXF document lacks an entity index')
+    # A reused source handle can point to an ordinary LINE, DICTIONARY,
+    # ACAD_PROXY_OBJECT, etc. in DXF. This is an identity collision, not an
+    # original custom instance's successful semantic preservation.
+    # This is an intentionally bounded denylist of *known* standard DXF types.
+    # Unknown/custom types remain UNVERIFIED rather than presumed authentic.
+    standard_dxf_types = frozenset((
+        'LINE', 'ARC', 'CIRCLE', 'ELLIPSE', 'SPLINE', 'POINT', 'SOLID',
+        'TRACE', '3DFACE', 'POLYLINE', 'VERTEX', 'SEQEND', 'LWPOLYLINE',
+        'HATCH', 'INSERT', 'ATTRIB', 'ATTDEF', 'DIMENSION', 'LEADER',
+        'MLEADER', 'TEXT', 'MTEXT', 'XLINE', 'RAY', 'VIEWPORT',
+        'BLOCK', 'ENDBLK', 'LAYER', 'STYLE', 'LTYPE', 'APPID', 'VPORT',
+        'BLOCK_RECORD', 'LAYOUT', 'DICTIONARY', 'DICTIONARYVAR',
+        'XRECORD', 'GROUP', 'MATERIAL', 'IMAGE', 'IMAGEDEF',
+        'UNDERLAY', '3DSOLID', 'REGION', 'BODY', 'MESH',
+    ))
     seen = set()
     present = 0
+    reused_standard = 0
+    replaced_proxy = 0
+    present_custom_type_unverified = 0
+    unreadable_type = 0
     for record in source_records:
         if not isinstance(record, dict):
             raise ValueError('Invalid authenticated opaque source item')
         handle = record.get('handle')
-        if (not isinstance(handle, str) or not handle
+        if (not isinstance(handle, str) or not handle or len(handle) > 64
                 or any(ch not in '0123456789abcdefABCDEF' for ch in handle)):
             raise ValueError('Malformed opaque source handle')
-        canonical = format(int(handle, 16), 'X')
-        if canonical == '0' or canonical in seen:
-            raise ValueError('Duplicate or null opaque source identity')
+        number = int(handle, 16)
+        if not 0 < number < 2**64:
+            raise ValueError('Null or out-of-bounds opaque source identity')
+        canonical = format(number, 'X')
+        if canonical in seen:
+            raise ValueError('Duplicate opaque source identity')
         seen.add(canonical)
-        # Presence alone is not proof of type or proprietary byte preservation.
-        if converted_dxf_document.entitydb.get(canonical) is not None:
-            present += 1
+        candidate = converted_dxf_document.entitydb.get(canonical)
+        if candidate is None:
+            continue
+        present += 1
+        try:
+            reader = getattr(candidate, 'dxftype', None)
+            type_name = reader() if callable(reader) else None
+        except Exception:
+            type_name = None
+        if not isinstance(type_name, str) or not type_name:
+            unreadable_type += 1
+        elif type_name.upper() in ('ACAD_PROXY_OBJECT', 'ACAD_PROXY_ENTITY'):
+            replaced_proxy += 1
+        elif type_name.upper() in standard_dxf_types:
+            reused_standard += 1
+        else:
+            present_custom_type_unverified += 1
     missing = len(seen) - present
     return {
         'source_opaque_identity_count': len(seen),
         'converted_dxf_identity_present_count': present,
         'converted_dxf_identity_missing_count': missing,
+        'converted_dxf_identity_reused_as_standard_type_count': reused_standard,
+        'converted_dxf_identity_replaced_by_proxy_count': replaced_proxy,
+        'converted_dxf_identity_custom_type_unverified_count': present_custom_type_unverified,
+        'converted_dxf_identity_type_unreadable_count': unreadable_type,
         'converted_dxf_opaque_identity_status': (
             'SOURCE_OPAQUE_OBJECT_IDENTITIES_MISSING_NO_GO' if missing
+            else 'SOURCE_OPAQUE_IDENTITIES_REUSED_AS_STANDARD_NO_GO' if reused_standard
+            else 'SOURCE_OPAQUE_IDENTITIES_REPLACED_BY_PROXY_NO_GO' if replaced_proxy
             else 'SOURCE_IDENTITIES_PRESENT_PAYLOAD_UNVERIFIED_NO_GO'
         ),
         'source_record_payload_semantics_verified': False,
