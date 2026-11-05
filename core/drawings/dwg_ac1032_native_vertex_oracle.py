@@ -89,7 +89,21 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
         flags, decoded_vertices = row[1:]
         if type(flags) is not int or not 0 <= flags <= 65535:
             raise ValueError('Invalid native POLYLINE flags')
-        if not isinstance(decoded_vertices, (tuple, list)) or len(decoded_vertices) != len(sequences[parent]):
+        if not isinstance(decoded_vertices, (tuple, list)):
+            raise ValueError('Native polyline vertex list is malformed')
+        # The pinned raw POLYLINE decoder can emit one duplicate closing point
+        # for an explicitly closed contour even when the original VERTEX
+        # handle sequence contains no extra VERTEX. The high-level ezdwg
+        # reader explicitly strips this repeated closure position. Accept only
+        # an exact redundant endpoint, never an arbitrary missing/extra node.
+        if (len(decoded_vertices) == len(sequences[parent]) + 1 and flags & 1):
+            first, last = decoded_vertices[0], decoded_vertices[-1]
+            if (not isinstance(first, (list, tuple)) or not isinstance(last, (list, tuple))
+                    or len(first) != 8 or len(last) != 8
+                    or _finite_xyz(first[:3]) != _finite_xyz(last[:3])):
+                raise ValueError('Native polyline has nonredundant extra endpoint')
+            decoded_vertices = decoded_vertices[:-1]
+        if len(decoded_vertices) != len(sequences[parent]):
             raise ValueError('Native polyline vertex list differs from source handles')
         flags_by_parent[parent] = flags
         sequence_by_parent[parent] = sequences[parent]
