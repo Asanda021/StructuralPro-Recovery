@@ -89,7 +89,9 @@ def audit_custom_graph_coverage(
         elif parent_obj is not None and parent_obj.get("object") == "DICTIONARY":
             owner_dictionary += 1
         else:
-            unresolved_links += 1
+            # An unknown or zero owner cannot be treated as a benign empty
+            # ownership path; abort rather than continue with false coverage.
+            raise ValueError("Custom object owner missing or unsupported")
         reactors = obj.get("reactors", [])
         if not isinstance(reactors, (list, tuple)):
             raise ValueError("Malformed custom object reactor vector")
