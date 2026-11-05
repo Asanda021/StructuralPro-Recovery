@@ -74,10 +74,17 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
         if type(flags) is not int or not 0 <= flags <= 65535:
             raise ValueError('Invalid native VERTEX flags')
         xyz = _finite_xyz(row[2:5])
-        bulge = float(row[7])
-        if not math.isfinite(bulge) or h in vertices:
-            raise ValueError('Duplicate/invalid native VERTEX bulge')
-        vertices[h] = (xyz, bulge, flags)
+        try:
+            start_width, end_width, bulge, tangent = (
+                float(row[i]) for i in (5, 6, 7, 8)
+            )
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError('Malformed native VERTEX width/bulge/tangent') from exc
+        if (not all(math.isfinite(v) for v in
+                    (start_width, end_width, bulge, tangent))
+                or start_width < 0 or end_width < 0 or h in vertices):
+            raise ValueError('Invalid native VERTEX width/bulge/tangent or identity')
+        vertices[h] = (xyz, bulge, flags, start_width, end_width, tangent)
 
     result, flags_by_parent, sequence_by_parent = {}, {}, {}
     if set(sequences) != {_integer_handle(row[0]) for row in poly_rows}:
@@ -121,12 +128,22 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
                     or len(decoded) != 8 or type(decoded[7]) is not int):
                 raise ValueError('Missing/duplicated native 2D VERTEX identity')
             xyz = _finite_xyz(decoded[:3])
-            bulge = float(decoded[5])
-            if not math.isfinite(bulge):
-                raise ValueError('Nonfinite native 2D POLYLINE bulge')
+            try:
+                start_width, end_width, bulge, tangent = (
+                    float(decoded[i]) for i in (3, 4, 5, 6)
+                )
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError('Malformed native POLYLINE width/bulge/tangent') from exc
+            if (not all(math.isfinite(v) for v in
+                        (start_width, end_width, bulge, tangent))
+                    or start_width < 0 or end_width < 0):
+                raise ValueError('Invalid native POLYLINE width/bulge/tangent')
             truth = vertices[handle]
-            if (truth[2] != decoded[7] or any(abs(a-b) > 1e-9 for a,b in zip(xyz,truth[0]))
-                    or abs(bulge-truth[1]) > 1e-9):
+            if (truth[2] != decoded[7]
+                    or any(abs(a-b) > 1e-9 for a,b in zip(xyz,truth[0]))
+                    or abs(bulge-truth[1]) > 1e-9
+                    or any(abs(a-b) > 1e-9 for a,b in zip(
+                        (start_width, end_width, tangent), truth[3:]))):
                 raise ValueError('Native source VERTEX and POLYLINE geometry conflict')
             result[handle] = (parent, xyz, bulge, truth[2])
             if len(result) > _MAX_VERTICES:
