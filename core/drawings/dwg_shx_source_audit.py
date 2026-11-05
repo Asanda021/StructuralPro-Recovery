@@ -134,7 +134,9 @@ def classify_shx_record(
         "CONVERTED_DXF_TEXT_DIFFERENT_FROM_SOURCE_LEDGER_NO_GO"
         if not canonical_match
         else "CONVERTED_DXF_STYLE_OR_FONT_MISMATCH_UNVERIFIED"
-        if style_match is False or font_match is False
+        if style_match is False or font_match is False or (
+            style_match is True and font_match is None
+        )
         else "NATIVE_DIRECT_MODELSPACE_RAW_TEXT_MATCHED_GLYPHS_UNVERIFIED"
         if same and owner == modelspace_record_handle.upper()
         else "SOURCE_TEXT_OR_OWNER_MISMATCH_UNVERIFIED"
