@@ -188,3 +188,24 @@ def test_private_hash_and_handles_not_reported(tmp_path,monkeypatch):
         assert str(path) not in output
         assert sha(path) not in output
     assert r['original_to_converted_financial_geometry_approved'] is False
+
+
+def test_redundant_closed_polyline_terminal_position_is_not_phantom_handle(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    poly,members,verts=fake_reader(monkeypatch,files[1])
+    parent,flags,data=poly[0]
+    assert flags & 1
+    poly[0]=(parent,flags,[*data,data[0]])
+    result,_,sequences=oracle._native_2d_vertex_roster(poly,members,verts)
+    assert len(result)==6
+    assert len(sequences[f"{parent:X}"])==3
+
+
+def test_nonredundant_extra_closed_polyline_position_fails_closed(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    poly,members,verts=fake_reader(monkeypatch,files[1])
+    parent,flags,data=poly[0]
+    nonredundant=(99.0,*data[0][1:])
+    poly[0]=(parent,flags,[*data,nonredundant])
+    with pytest.raises(ValueError,match="nonredundant extra endpoint"):
+        oracle._native_2d_vertex_roster(poly,members,verts)
