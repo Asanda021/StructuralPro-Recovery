@@ -101,3 +101,76 @@ def test_source_text_changed_no_false_approval():
                               TextEntity('Xµ‰؛'), modelspace_record_handle='2')
     assert got['source_location_status'] == 'SOURCE_TEXT_OR_OWNER_MISMATCH_UNVERIFIED'
     assert got['native_text_equal_ledger'] is False
+
+class StyledTextEntity:
+    def __init__(self, text, *, owner='2', style='EXAMPLE'):
+        values = {'text': text, 'owner': owner, 'style': style}
+        self.dxf = SimpleNamespace(get=lambda k, default=None: values.get(k, default))
+
+    def dxftype(self):
+        return 'TEXT'
+
+
+def _styled_shx_ledger():
+    row = sample_record()
+    row['style_name'] = 'EXAMPLE'
+    return row
+
+
+def test_real_dxf_unicode_escape_syntax_not_counted_as_changed_shx_text():
+    row = _styled_shx_ledger()
+    native = StyledTextEntity('Xµ‰؛')
+    converted = StyledTextEntity(r'Xµ‰\U+061B')
+    result = classify_shx_record(
+        row, native, converted, modelspace_record_handle='2',
+        dxf_style_font_file=r'C:\fonts\EXAMPLE.SHX',
+    )
+    assert result['dxf_raw_text_equal_ledger'] is False
+    assert result['dxf_text_matches_ledger_after_unicode_escape_decoding'] is True
+    assert result['dxf_unicode_escape_normalization_only'] is True
+    assert result['dxf_style_name_matches_ledger'] is True
+    assert result['dxf_style_font_matches_ledger_filename'] is True
+    assert result['source_location_status'] == 'NATIVE_DIRECT_MODELSPACE_RAW_TEXT_MATCHED_GLYPHS_UNVERIFIED'
+    assert result['glyph_mapping_verified'] is False
+    assert result['financial_quantity_approved'] is False
+
+
+def test_genuinely_changed_dxf_unicode_content_rejected_despite_native_match():
+    row = _styled_shx_ledger()
+    result = classify_shx_record(
+        row, StyledTextEntity('Xµ‰؛'),
+        StyledTextEntity(r'Xµ‰\U+061C'),
+        modelspace_record_handle='2', dxf_style_font_file='EXAMPLE.shx',
+    )
+    assert result['native_text_equal_ledger'] is True
+    assert result['dxf_text_matches_ledger_after_unicode_escape_decoding'] is False
+    assert result['source_location_status'] == 'CONVERTED_DXF_TEXT_DIFFERENT_FROM_SOURCE_LEDGER_NO_GO'
+    assert not result['financial_quantity_approved']
+
+
+@pytest.mark.parametrize('style,font', [
+    ('DIFFERENT', 'EXAMPLE.shx'),
+    ('EXAMPLE', 'OTHER.shx'),
+    ('EXAMPLE', None),
+])
+def test_dxf_style_or_font_drift_cannot_get_text_preservation_status(style, font):
+    row = _styled_shx_ledger()
+    result = classify_shx_record(
+        row, StyledTextEntity('Xµ‰؛'),
+        StyledTextEntity(r'Xµ‰\U+061B', style=style),
+        modelspace_record_handle='2', dxf_style_font_file=font,
+    )
+    assert result['dxf_text_matches_ledger_after_unicode_escape_decoding'] is True
+    assert result['source_location_status'] == 'CONVERTED_DXF_STYLE_OR_FONT_MISMATCH_UNVERIFIED'
+    assert result['glyph_mapping_verified'] is False
+
+
+def test_non_modelspace_definition_with_unicode_escapes_remains_non_modelspace():
+    row = _styled_shx_ledger()
+    result = classify_shx_record(
+        row, None, StyledTextEntity(r'Xµ‰\U+061B', owner='3'),
+        modelspace_record_handle='2', dxf_style_font_file='EXAMPLE.shx',
+    )
+    assert result['source_location_status'] == 'DXF_NON_MODELSPACE_DEFINITION_ONLY'
+    assert result['dxf_text_matches_ledger_after_unicode_escape_decoding'] is True
+    assert result['financial_quantity_approved'] is False
