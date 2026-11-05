@@ -163,6 +163,8 @@ def test_f07_converter_never_runs_or_deletes_preexisting_same_stem(
 
 @pytest.mark.parametrize('dictionary_case, expected_veto', [
     ('valid_target', False),
+    ('one_empty_namespace', True),
+    ('both_empty_namespaces', True),
     ('dangling_target', True),
     ('missing_namespaces', True),
     ('proxy_target', True),
@@ -178,9 +180,14 @@ def test_f08_dictionary_integrity_veto_changes_with_verified_roster(
         d.modelspace().add_line((0, 0), (1, 2))
         if dictionary_case != 'missing_namespaces':
             m = d.rootdict.add_new_dict('Autodesk_MAP')
-            d.rootdict.add_new_dict('AEC_VARS')
+            a = d.rootdict.add_new_dict('AEC_VARS')
             if dictionary_case == 'valid_target':
                 m['TARGET'] = d.objects.add_xrecord()
+                a['SETUP'] = d.objects.add_xrecord()
+            elif dictionary_case == 'one_empty_namespace':
+                m['TARGET'] = d.objects.add_xrecord()
+            elif dictionary_case == 'both_empty_namespaces':
+                pass  # Both headers survive but no source payload evidence remains.
             elif dictionary_case == 'dangling_target':
                 m['TARGET'] = 'BADF00D'
             else:
