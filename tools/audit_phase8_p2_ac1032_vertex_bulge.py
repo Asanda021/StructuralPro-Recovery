@@ -71,26 +71,47 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--private-config", required=True,
                         help="Absolute POSIX 0600 private JSON containing file paths, hashes and output path")
+    parser.add_argument("--original-native-vertex-oracle", action="store_true",
+                        help="Use pinned original-DWG Rust native 2D VERTEX reader (read-only, still NO-GO)")
     args = parser.parse_args(argv)
     try:
         settings = read_private_vertex_config(args.private_config)
-        report = audit_ac1032_legacy_vertex_bulge_parity(
-            settings["original_dwg"], settings["reference_dxf"], settings["candidate_dxf"],
-            original_sha256=settings["original_sha256"],
-            reference_sha256=settings["reference_sha256"],
-            candidate_sha256=settings["candidate_sha256"],
-        )
+        if args.original_native_vertex_oracle:
+            from core.drawings.dwg_ac1032_native_vertex_oracle import audit_ac1032_native_2d_vertex_sources
+            report = audit_ac1032_native_2d_vertex_sources(
+                settings["original_dwg"], settings["reference_dxf"], settings["candidate_dxf"],
+                original_sha256=settings["original_sha256"],
+                reference_sha256=settings["reference_sha256"],
+                candidate_sha256=settings["candidate_sha256"],
+            )
+        else:
+            report = audit_ac1032_legacy_vertex_bulge_parity(
+                settings["original_dwg"], settings["reference_dxf"], settings["candidate_dxf"],
+                original_sha256=settings["original_sha256"],
+                reference_sha256=settings["reference_sha256"],
+                candidate_sha256=settings["candidate_sha256"],
+            )
         write_private_report(settings["output_json"], report)
     except Exception as exc:
         # Never print exception text: paths, handles or private byte snippets
         # may appear in third-party parser failures.
         print("BLOCKED_PRIVATE_VERTEX_AUDIT:", type(exc).__name__)
         return 2
-    print(report["status"],
-          "legacy vertex differences:", report["bulge_difference_count"],
-          "order differences:", report["parent_vertex_order_difference_count"],
-          "closed/flags differences:", report["parent_polyline_flags_difference_count"],
-          "financial approvals:", report["financial_quantity_rows_approved"])
+    if args.original_native_vertex_oracle:
+        reference = report["reference_dxf"]
+        candidate = report["candidate_dxf"]
+        print(report["status"],
+              "original-native 2D vertices:", report["native_2d_vertex_observations_verified_by_reader"],
+              "reference bulge differences:", reference["bulge_difference_count"],
+              "candidate bulge differences:", candidate["bulge_difference_count"],
+              "candidate missing curvature:", candidate["native_nonzero_bulge_zeroed_in_dxf_count"],
+              "financial approvals:", report["financial_quantity_rows_approved"])
+    else:
+        print(report["status"],
+              "legacy vertex differences:", report["bulge_difference_count"],
+              "order differences:", report["parent_vertex_order_difference_count"],
+              "closed/flags differences:", report["parent_polyline_flags_difference_count"],
+              "financial approvals:", report["financial_quantity_rows_approved"])
     return 0
 
 
