@@ -124,3 +124,44 @@ def test_ambiguous_named_dictionary_roots_cannot_claim_clean():
     assert got['converted_dxf_namespace_integrity_status'] == 'AMBIGUOUS_NAMED_DICTIONARY_ROOTS'
     assert got['dangling_or_invalid_count'] is None
     assert got['source_coverage_verified'] is False
+
+def test_present_but_empty_map_aec_dictionaries_are_source_unverified():
+    # ACadSharp-style structural output: both namespace containers survive,
+    # but every original custom instance may have been dropped.
+    d = ezdxf.new('R2018')
+    d.rootdict.add_new_dict('Autodesk_MAP')
+    d.rootdict.add_new_dict('AEC_VARS')
+    r = audit_named_dictionary_links(d)
+    assert r['dangling_or_invalid_count'] == 0
+    assert r['empty_namespace_count'] == 2
+    assert set(r['empty_namespaces']) == {'Autodesk_MAP', 'AEC_VARS'}
+    assert r['converted_dxf_namespace_integrity_status'] == 'EMPTY_NAMED_NAMESPACE_SOURCE_UNVERIFIED'
+    assert r['source_coverage_verified'] is False
+    assert r['financial_quantity_approved'] is False
+    assert r['automatic_patch_authorized'] is False
+
+
+def test_one_empty_present_namespace_rejects_false_clean_status():
+    d = ezdxf.new('R2018')
+    m = d.rootdict.add_new_dict('Autodesk_MAP')
+    a = d.rootdict.add_new_dict('AEC_VARS')
+    a['SYNTHETIC_REFERENCE'] = d.objects.add_xrecord()
+    r = audit_named_dictionary_links(d)
+    assert r['dangling_or_invalid_count'] == 0
+    assert r['empty_namespace_count'] == 1
+    assert r['empty_namespaces'] == ('Autodesk_MAP',)
+    assert r['converted_dxf_namespace_integrity_status'] == 'EMPTY_NAMED_NAMESPACE_SOURCE_UNVERIFIED'
+    assert r['original_dwg_custom_payloads_verified'] is False
+
+
+def test_populated_standard_namespaces_are_not_declared_original_source_verified():
+    d = ezdxf.new('R2018')
+    m = d.rootdict.add_new_dict('Autodesk_MAP')
+    a = d.rootdict.add_new_dict('AEC_VARS')
+    m['SYNTHETIC_REFERENCE'] = d.objects.add_xrecord()
+    a['SYNTHETIC_REFERENCE'] = d.objects.add_xrecord()
+    r = audit_named_dictionary_links(d)
+    assert r['empty_namespace_count'] == 0
+    assert r['converted_dxf_namespace_integrity_status'] == 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
+    assert r['original_dwg_custom_payloads_verified'] is False
+    assert r['financial_quantity_approved'] is False
