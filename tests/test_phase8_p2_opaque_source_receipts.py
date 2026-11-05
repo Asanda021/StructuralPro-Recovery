@@ -106,3 +106,73 @@ def test_invalid_source_opaque_identity_coverage_fails_closed(bad):
     with pytest.raises(ValueError):
         summarize_converted_opaque_identity_coverage(
             bad, SimpleNamespace(entitydb={}))
+
+
+def test_reused_opaque_handle_as_standard_line_is_not_preserved_custom_object():
+    from types import SimpleNamespace
+    source = [{'handle': '10'}]
+    line = SimpleNamespace(dxftype=lambda: 'LINE')
+    got = summarize_converted_opaque_identity_coverage(
+        source, SimpleNamespace(entitydb={'10': line}))
+    assert got['converted_dxf_identity_present_count'] == 1
+    assert got['converted_dxf_identity_missing_count'] == 0
+    assert got['converted_dxf_identity_reused_as_standard_type_count'] == 1
+    assert got['converted_dxf_opaque_identity_status'] == 'SOURCE_OPAQUE_IDENTITIES_REUSED_AS_STANDARD_NO_GO'
+    assert got['financial_quantity_approved'] is False
+    assert '10' not in str(got)
+
+
+def test_opaque_handle_proxy_is_replacement_not_semantic_recovery():
+    from types import SimpleNamespace
+    result = summarize_converted_opaque_identity_coverage(
+        [{'handle': 'A'}],
+        SimpleNamespace(entitydb={'A': SimpleNamespace(dxftype=lambda: 'ACAD_PROXY_OBJECT')}))
+    assert result['converted_dxf_identity_replaced_by_proxy_count'] == 1
+    assert result['converted_dxf_opaque_identity_status'] == 'SOURCE_OPAQUE_IDENTITIES_REPLACED_BY_PROXY_NO_GO'
+    assert not result['source_record_payload_semantics_verified']
+
+
+def test_opaque_present_unreadable_type_is_explicitly_unverified():
+    from types import SimpleNamespace
+    result = summarize_converted_opaque_identity_coverage(
+        [{'handle': 'A'}], SimpleNamespace(entitydb={'A': object()}))
+    assert result['converted_dxf_identity_type_unreadable_count'] == 1
+    assert result['converted_dxf_identity_custom_type_unverified_count'] == 0
+    assert result['converted_dxf_opaque_identity_status'] == 'SOURCE_IDENTITIES_PRESENT_PAYLOAD_UNVERIFIED_NO_GO'
+
+
+def test_opaque_present_unknown_custom_type_still_never_claims_parity():
+    from types import SimpleNamespace
+    custom = SimpleNamespace(dxftype=lambda: 'DMMAPMANAGER')
+    result = summarize_converted_opaque_identity_coverage(
+        [{'handle': 'A'}], SimpleNamespace(entitydb={'A': custom}))
+    assert result['converted_dxf_identity_custom_type_unverified_count'] == 1
+    assert result['converted_dxf_identity_reused_as_standard_type_count'] == 0
+    assert not result['converted_opaque_payload_bytes_independently_verified']
+    assert not result['financial_quantity_approved']
+
+
+def test_mixed_opaque_source_loss_collision_and_proxy_counts_without_ids():
+    from types import SimpleNamespace
+    source = [{'handle': 'A'}, {'handle': 'B'}, {'handle': 'C'}, {'handle': 'D'}]
+    dxf = SimpleNamespace(entitydb={
+        'A': SimpleNamespace(dxftype=lambda: 'LINE'),
+        'B': SimpleNamespace(dxftype=lambda: 'ACAD_PROXY_ENTITY'),
+        'C': SimpleNamespace(dxftype=lambda: 'DMMAPMANAGER')})
+    result = summarize_converted_opaque_identity_coverage(source, dxf)
+    assert result['converted_dxf_identity_present_count'] == 3
+    assert result['converted_dxf_identity_missing_count'] == 1
+    assert result['converted_dxf_identity_reused_as_standard_type_count'] == 1
+    assert result['converted_dxf_identity_replaced_by_proxy_count'] == 1
+    assert result['converted_dxf_identity_custom_type_unverified_count'] == 1
+    assert result['converted_dxf_opaque_identity_status'] == 'SOURCE_OPAQUE_OBJECT_IDENTITIES_MISSING_NO_GO'
+    assert not any(x in str(result) for x in ['DMMAPMANAGER', 'ACAD_PROXY_ENTITY'])
+    assert result['automatic_reconstruction_authorized'] is False
+
+
+@pytest.mark.parametrize('bad_handle', ['1' + '0'*16, 'F'*65, '0'*64, 'F'*64])
+def test_opaque_source_handle_outside_64_bit_scope_is_rejected(bad_handle):
+    from types import SimpleNamespace
+    with pytest.raises(ValueError):
+        summarize_converted_opaque_identity_coverage(
+            [{'handle': bad_handle}], SimpleNamespace(entitydb={}))
