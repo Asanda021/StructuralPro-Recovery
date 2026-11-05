@@ -73,6 +73,7 @@ def validate_private_shx_ledger(rows: list[dict[str, str]], *, source_sha256: st
 def classify_shx_record(
     record: dict[str, str], native_entity: Any | None, dxf_entity: Any | None,
     *, modelspace_record_handle: str,
+    dxf_style_font_file: str | None = None,
 ) -> dict[str, Any]:
     """Classify modelspace vs block-owned TEXT. Neither status proves glyphs."""
     result: dict[str, Any] = {
@@ -86,7 +87,35 @@ def classify_shx_record(
     if dxf_entity is None or dxf_entity.dxftype() != "TEXT":
         result["source_location_status"] = "MISSING_OR_RETYPE_CONVERTED_DXF"
         result["native_text_equal_ledger"] = False
+        result["dxf_text_matches_ledger_after_unicode_escape_decoding"] = False
         return result
+    # Legacy DXF can store an ordinary Unicode semicolon/comma as the literal
+    # ASCII sequence \\U+061B / \\U+060C. Raw string inequality is not
+    # lost text, but arbitrary SHX glyph decoding is equally NOT authorized.
+    # ezdxf's standard Unicode-escape decoder does *only* DXF syntax here.
+    from ezdxf.lldxf.encoding import decode_dxf_unicode
+    from pathlib import PureWindowsPath
+    dxf_raw_text = str(dxf_entity.dxf.get("text", "") or "")
+    dxf_text = decode_dxf_unicode(dxf_raw_text)
+    canonical_match = dxf_text == record["decoded_unicode"]
+    result["dxf_raw_text_equal_ledger"] = dxf_raw_text == record["decoded_unicode"]
+    result["dxf_text_matches_ledger_after_unicode_escape_decoding"] = canonical_match
+    result["dxf_unicode_escape_normalization_only"] = (
+        canonical_match and dxf_raw_text != record["decoded_unicode"]
+    )
+    source_style = record.get("style_name")
+    dxf_style = str(dxf_entity.dxf.get("style", "") or "")
+    style_match = (
+        dxf_style.casefold() == source_style.casefold()
+        if isinstance(source_style, str) and source_style else None
+    )
+    result["dxf_style_name_matches_ledger"] = style_match
+    font_match = (
+        PureWindowsPath(dxf_style_font_file).name.casefold()
+        == PureWindowsPath(record["font_file"]).name.casefold()
+        if isinstance(dxf_style_font_file, str) and dxf_style_font_file else None
+    )
+    result["dxf_style_font_matches_ledger_filename"] = font_match
     owner = str(dxf_entity.dxf.get("owner", "")).upper()
     result["dxf_owner_is_modelspace"] = owner == modelspace_record_handle.upper()
     if native_entity is None:
@@ -102,7 +131,11 @@ def classify_shx_record(
     same = raw_text == record["decoded_unicode"]
     result["native_text_equal_ledger"] = same
     result["source_location_status"] = (
-        "NATIVE_DIRECT_MODELSPACE_RAW_TEXT_MATCHED_GLYPHS_UNVERIFIED"
+        "CONVERTED_DXF_TEXT_DIFFERENT_FROM_SOURCE_LEDGER_NO_GO"
+        if not canonical_match
+        else "CONVERTED_DXF_STYLE_OR_FONT_MISMATCH_UNVERIFIED"
+        if style_match is False or font_match is False
+        else "NATIVE_DIRECT_MODELSPACE_RAW_TEXT_MATCHED_GLYPHS_UNVERIFIED"
         if same and owner == modelspace_record_handle.upper()
         else "SOURCE_TEXT_OR_OWNER_MISMATCH_UNVERIFIED"
     )
@@ -161,8 +194,17 @@ def audit_original_shx_ledger(
     classified = []
     for row in rows:
         entity = dxf.entitydb.get(row["handle"])
-        classified.append(classify_shx_record(row, native.get(row["handle"]), entity,
-                                              modelspace_record_handle=modelspace_owner))
+        style_font = None
+        if entity is not None and entity.dxftype() == "TEXT":
+            dxf_style = str(entity.dxf.get("style", "") or "")
+            style_record = dxf.styles.get(dxf_style) if dxf_style else None
+            if style_record is not None:
+                style_font = str(style_record.dxf.get("font", "") or "")
+        classified.append(classify_shx_record(
+            row, native.get(row["handle"]), entity,
+            modelspace_record_handle=modelspace_owner,
+            dxf_style_font_file=style_font,
+        ))
     if any(_digest(p) != prior for p, prior in (
         (source, source_hash), (converted, dxf_hash), (ledger, ledger_hash)
     )):
