@@ -6,7 +6,7 @@ Return only bounded aggregate counts, never private handles or coordinates.
 """
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 import hashlib
 import math
 from pathlib import Path
@@ -51,25 +51,32 @@ def _handle(value: object) -> str:
     return format(n, "X")
 
 
-def _raw_vertex_owner_bulge(path: Path) -> dict[str, tuple[str, float]]:
+def _raw_vertex_owner_bulge(path: Path) -> tuple[dict[str, tuple[str, float]], dict[str, int]]:
     """Inspect original text-DXF tags before ezdxf repairs owner sequences.
 
     This is deliberately strict and bounded: malformed or unsupported raw
     VERTEX records are blockers rather than candidates for silent repair.
     """
     values = {}
+    parent_flags = {}
     kind = None
     fields = {}
 
     def flush():
-        if kind != b"VERTEX":
-            return
-        if not {5, 330}.issubset(fields):
-            raise ValueError("Original DXF VERTEX lacks unique raw identity/owner/bulge tags")
-        handle, owner, bulge = fields[5], fields[330], fields.get(42, 0.0)
-        if handle in values or len(values) >= _MAX_VERTICES:
-            raise ValueError("Duplicate or unbounded raw DXF VERTEX")
-        values[handle] = (owner, bulge)
+        if kind == b"VERTEX":
+            if not {5, 330}.issubset(fields):
+                raise ValueError("Original DXF VERTEX lacks unique raw identity/owner/bulge tags")
+            handle, owner, bulge = fields[5], fields[330], fields.get(42, 0.0)
+            if handle in values or len(values) >= _MAX_VERTICES:
+                raise ValueError("Duplicate or unbounded raw DXF VERTEX")
+            values[handle] = (owner, bulge)
+        elif kind == b"POLYLINE":
+            if 5 not in fields:
+                raise ValueError("Original DXF POLYLINE lacks raw identity")
+            handle = fields[5]
+            if handle in parent_flags or len(parent_flags) >= _MAX_VERTICES:
+                raise ValueError("Duplicate or unbounded raw DXF POLYLINE")
+            parent_flags[handle] = fields.get(70, 0)
 
     with path.open('rb') as stream:
         if stream.read(18).startswith(b'AutoCAD Binary DXF'):
@@ -90,14 +97,22 @@ def _raw_vertex_owner_bulge(path: Path) -> dict[str, tuple[str, float]]:
             if code == 0:
                 flush()
                 kind, fields = value, {}
-            elif kind == b'VERTEX' and code in (5, 330, 42):
+            elif (kind == b'VERTEX' and code in (5, 330, 42)) or (kind == b'POLYLINE' and code in (5, 70)):
                 if code in fields:
-                    raise ValueError("Duplicated raw DXF VERTEX tag")
+                    raise ValueError("Duplicated raw DXF " + ("VERTEX" if kind == b"VERTEX" else "POLYLINE") + " tag")
                 if code in (5, 330):
                     try:
                         fields[code] = _handle(value.decode('ascii'))
                     except UnicodeError as exc:
-                        raise ValueError("Non-ASCII raw DXF VERTEX handle") from exc
+                        raise ValueError("Non-ASCII raw DXF entity handle") from exc
+                elif code == 70:
+                    try:
+                        flags = int(value.decode('ascii'))
+                    except (ValueError, UnicodeError) as exc:
+                        raise ValueError("Malformed raw POLYLINE flags") from exc
+                    if not 0 <= flags <= 65535:
+                        raise ValueError("Out-of-bounds raw POLYLINE flags")
+                    fields[70] = flags
                 else:
                     try:
                         number = float(value.decode('ascii'))
@@ -107,7 +122,7 @@ def _raw_vertex_owner_bulge(path: Path) -> dict[str, tuple[str, float]]:
                         raise ValueError("Nonfinite raw DXF VERTEX bulge")
                     fields[42] = number
         flush()
-    return values
+    return values, parent_flags
 
 
 def _roster(doc) -> dict[str, tuple]:
@@ -171,8 +186,8 @@ def audit_ac1032_legacy_vertex_bulge_parity(
             raise ValueError("This scope audits original AC1032 DWG only")
     # Verify raw tags first, before a third-party parser can normalize bad
     # values, hide duplicate tags or reject nonfinite inputs in another way.
-    raw_reference = _raw_vertex_owner_bulge(captures[1][0])
-    raw_candidate = _raw_vertex_owner_bulge(captures[2][0])
+    raw_reference, raw_ref_parent_flags = _raw_vertex_owner_bulge(captures[1][0])
+    raw_candidate, raw_cand_parent_flags = _raw_vertex_owner_bulge(captures[2][0])
     import ezdxf
     ref = ezdxf.readfile(str(captures[1][0]))
     candidate = ezdxf.readfile(str(captures[2][0]))
@@ -188,6 +203,23 @@ def audit_ac1032_legacy_vertex_bulge_parity(
                 raise ValueError("Parsed DXF VERTEX ownership/bulge differs from raw tags")
     if not rr:
         raise ValueError("Reference DXF has no legacy VERTEX records")
+
+    def parsed_parent_flags(doc, roster, raw_flags):
+        result = {}
+        for parent in {entry[0] for entry in roster.values()}:
+            record = doc.entitydb.get(parent)
+            if record is None or record.dxftype() != "POLYLINE":
+                raise ValueError("Legacy vertex parent POLYLINE missing")
+            flags = record.dxf.get("flags", 0)
+            if type(flags) is not int or not 0 <= flags <= 65535:
+                raise ValueError("Invalid parsed POLYLINE flags")
+            if parent not in raw_flags or flags != raw_flags[parent]:
+                raise ValueError("Parsed POLYLINE flags differ from raw DXF")
+            result[parent] = flags
+        return result
+
+    reference_parent_flags = parsed_parent_flags(ref, rr, raw_ref_parent_flags)
+    candidate_parent_flags = parsed_parent_flags(candidate, cr, raw_cand_parent_flags)
     missing = set(rr) - set(cr)
     extra = set(cr) - set(rr)
     common = set(rr) & set(cr)
@@ -202,6 +234,23 @@ def audit_ac1032_legacy_vertex_bulge_parity(
     for x in cr.values():
         if abs(x[4]) > abs_tolerance:
             candidate_nonzero[x[2]] += 1
+    # Original raw VERTEX record order defines the segment traversal of a
+    # legacy POLYLINE. Entity-identity and per-vertex coordinate equality alone
+    # miss changed topology when a converter reorders unchanged VERTEX records.
+    def grouped_vertex_sequence(raw_vertices):
+        grouped = defaultdict(list)
+        for handle, (parent, _) in raw_vertices.items():
+            grouped[parent].append(handle)
+        return grouped
+
+    reference_sequences = grouped_vertex_sequence(raw_reference)
+    candidate_sequences = grouped_vertex_sequence(raw_candidate)
+    for parent in reference_sequences.keys() & candidate_sequences.keys():
+        a, b = reference_sequences[parent], candidate_sequences[parent]
+        if set(a) == set(b) and a != b:
+            differences['vertex_order'] += 1
+        if reference_parent_flags[parent] != candidate_parent_flags[parent]:
+            differences['parent_polyline_flags'] += 1
     for key in common:
         a, b = rr[key], cr[key]
         if a[:3] != b[:3]:
@@ -229,6 +278,8 @@ def audit_ac1032_legacy_vertex_bulge_parity(
         'extra_vertex_handles_count': len(extra),
         'owner_or_section_difference_count': differences['owner_or_section'],
         'vertex_role_difference_count': differences['vertex_role'],
+        'parent_polyline_flags_difference_count': differences['parent_polyline_flags'],
+        'parent_vertex_order_difference_count': differences['vertex_order'],
         'xyz_difference_count': differences['xyz'],
         'bulge_difference_count': differences['bulge'],
         'reference_nonzero_bulges_zeroed_in_candidate_count': differences['nonzero_bulge_lost'],
