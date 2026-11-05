@@ -83,3 +83,34 @@ def test_empty_map_aec_namespaces_veto_even_if_modelspace_roster_matches(tmp_pat
     assert view['converter_integrity_veto'] is True
     assert view['financial_quantity_approved'] is False
     assert receipt.financial_veto is True
+
+
+def test_wrong_owner_in_map_namespace_blocks_converter_integrity(tmp_path, monkeypatch):
+    # This case used to report clean dictionary links when the namespace
+    # happened to point to an existing but cross-owned DICTIONARY object.
+    src = tmp_path / 'synthetic.dwg'
+    src.write_bytes(b'AC1018' + b'SYNTHETIC_NOT_AN_ORIGINAL_DRAWING')
+    def fake_converter(command, **kwargs):
+        d = ezdxf.new('R2018')
+        d.modelspace().add_line((0, 0), (1, 0))
+        a = d.rootdict.add_new_dict('Autodesk_MAP')
+        b = d.rootdict.add_new_dict('AEC_VARS')
+        a['HAS_TARGET'] = d.objects.add_xrecord()
+        b['HAS_TARGET'] = d.objects.add_xrecord()
+        a.dxf.owner = b.dxf.handle
+        d.saveas(command[2])
+        return SimpleNamespace(returncode=0, stdout='OK', stderr='')
+    monkeypatch.setattr(OfflineDWGConverter, '_run',
+                        lambda self, command, **kw: fake_converter(command, **kw))
+    monkeypatch.setattr(
+        'core.drawings.dwg_converter._independent_source_coverage',
+        lambda *_args: {'status': 'MATCHED_INDEPENDENT_MODELSPACE_ROSTER',
+                        'quantity_approved': False})
+    receipt = OfflineDWGConverter('dwg2dxf').convert(src, tmp_path / 'converted')
+    detail = receipt.source_coverage['converted_dxf_named_dictionary_integrity']
+    assert detail['namespace_owner_unverified_count'] == 1
+    assert detail['converted_dxf_namespace_integrity_status'] == 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
+    assert receipt.source_coverage['converter_integrity_veto'] is True
+    assert receipt.source_coverage['financial_quantity_approved'] is False
+    assert receipt.financial_veto is True
+    assert receipt.output.exists()  # preview allowed, no payable takeoff
