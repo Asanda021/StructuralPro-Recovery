@@ -34,9 +34,11 @@ on:
       - tests/test_phase8_p2_native_solid_preview_receipt.py
       - core/drawings/dwg_opaque_source_receipt.py
       - core/drawings/dwg_map_aec_vendor_triage.py
+      - core/drawings/dwg_custom_graph_coverage.py
       - tools/audit_phase8_p2_opaque_source_bytes.py
       - tests/test_phase8_p2_opaque_source_receipts.py
       - tests/test_p8p2_map_aec_vendor_triage.py
+      - tests/test_p8p2_custom_graph_coverage.py
       - tools/audit_phase8_p2_opaque_source_bytes.py
       - tests/test_phase8_p2_claude_review_remediation.py
       - core/cad/persian_text_v1.py
@@ -105,6 +107,7 @@ jobs:
           tests/test_phase8_p2_native_solid_preview_receipt.py
           tests/test_phase8_p2_opaque_source_receipts.py
           tests/test_p8p2_map_aec_vendor_triage.py
+          tests/test_p8p2_custom_graph_coverage.py
           tests/test_phase8_p2_claude_review_remediation.py
           tests/test_phase8_p2_shx_source_provenance.py
           tests/test_phase8_p2_libredwg_error68.py
