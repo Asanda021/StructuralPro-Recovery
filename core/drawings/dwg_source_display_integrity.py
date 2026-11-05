@@ -165,7 +165,15 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
         # that it is truly the named child of this root. Check the DXF-level
         # owner; an orphan/aliased namespace may masquerade as a preserved
         # MAP/AEC dictionary while source semantics remain completely absent.
-        owner = str(child.dxf.get('owner', '')).strip().upper()
+        dxf_fields = getattr(child, 'dxf', None)
+        getter = getattr(dxf_fields, 'get', None)
+        # Real ezdxf namespace attributes expose .get; lightweight tests
+        # may expose .owner directly. Missing values remain unverified.
+        try:
+            owner_value = getter('owner', None) if callable(getter) else getattr(dxf_fields, 'owner', None)
+        except (TypeError, AttributeError, ValueError):
+            owner_value = None
+        owner = str(owner_value).strip().upper() if owner_value is not None else ''
         expected_owner = str(root.dxf.handle).strip().upper()
         if owner != expected_owner:
             namespace_owner_unverified += 1
