@@ -17,10 +17,14 @@ REPLACEMENT = r'''#ifdef IS_DECODER
   if (dat->from_version == R_2004)
     {
       /* SP_P8P2_R2004_STRING32: ODA section 17, byte-aligned RL size.
-       * Preserve bounds failures and allocation errors. Never reinterpret
-       * page padding as part of the logical section. */
+       * The following num_files RL is mandatory. Guard its four bytes and
+       * every remaining feature prefix before reading any feature payload.
+       * Never include page padding in the logical section. */
+      BITCODE_BL sp_p8p2_free_idx;
+      int sp_p8p2_feature_error = DWG_ERR_VALUEOUTOFBOUNDS;
       if (dat->bit != 0 || dat->byte > dat->size
-          || _obj->num_features > (dat->size - dat->byte) / 4)
+          || dat->size - dat->byte < 4
+          || _obj->num_features > (dat->size - dat->byte - 4) / 4)
         return DWG_ERR_VALUEOUTOFBOUNDS;
       if (_obj->num_features)
         {
@@ -31,16 +35,36 @@ REPLACEMENT = r'''#ifdef IS_DECODER
             {
               Bit_Chain prefix = *dat;
               BITCODE_RL size;
+              size_t available;
+              size_t remaining_prefixes;
               if (dat->byte > dat->size || dat->size - dat->byte < 4)
-                return DWG_ERR_VALUEOUTOFBOUNDS;
+                goto sp_p8p2_features_fail;
               size = bit_read_RL (&prefix);
-              if (size > prefix.size - prefix.byte)
-                return DWG_ERR_VALUEOUTOFBOUNDS;
+              if (prefix.byte > prefix.size)
+                goto sp_p8p2_features_fail;
+              available = prefix.size - prefix.byte;
+              remaining_prefixes = (size_t)(_obj->num_features - vcount - 1) * 4 + 4;
+              if (remaining_prefixes > available
+                  || (size_t)size > available - remaining_prefixes)
+                goto sp_p8p2_features_fail;
               _obj->features[vcount] = bit_read_T32 (dat);
               if (!_obj->features[vcount])
-                return DWG_ERR_VALUEOUTOFBOUNDS;
+                goto sp_p8p2_features_fail;
             }
         }
+      /* A feature may never consume the mandatory num_files RL. Therefore
+       * the pinned upstream T32 >= end check cannot reject a valid feature. */
+      goto sp_p8p2_features_done;
+sp_p8p2_features_fail:
+      for (sp_p8p2_free_idx = 0;
+           sp_p8p2_free_idx < _obj->num_features; sp_p8p2_free_idx++)
+        free (_obj->features[sp_p8p2_free_idx]);
+      free (_obj->features);
+      _obj->features = NULL;
+      _obj->num_features = 0;
+      return sp_p8p2_feature_error;
+sp_p8p2_features_done:
+      ;
     }
   else
 #endif
