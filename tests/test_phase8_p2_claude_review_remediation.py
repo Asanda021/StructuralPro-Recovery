@@ -164,7 +164,7 @@ def test_f07_converter_never_runs_or_deletes_preexisting_same_stem(
 
 
 @pytest.mark.parametrize('dictionary_case, expected_veto', [
-    ('valid_target', False),
+    ('valid_target', True),
     ('one_empty_namespace', True),
     ('both_empty_namespaces', True),
     ('dangling_target', True),
@@ -206,6 +206,13 @@ def test_f08_dictionary_integrity_veto_changes_with_verified_roster(
     receipt = OfflineDWGConverter('dwg2dxf').convert(src, tmp_path / 'out')
     assert receipt.financial_veto is True  # Final financial authority stays blocked.
     assert receipt.source_coverage['converter_integrity_veto'] is expected_veto
+    # Even 'valid_target' only proves that the converted DXF's *structural*
+    # links exist. It cannot authenticate the original proprietary bytes.
+    assert receipt.source_coverage['original_custom_semantic_parity_veto'] is True
+    assert receipt.source_coverage['original_custom_semantic_parity_verified'] is False
+    assert receipt.source_coverage['independent_modelspace_roster_observed'] is True
+    if dictionary_case == 'valid_target':
+        assert receipt.source_coverage['converted_dxf_structural_links_observed'] is True
     assert receipt.source_coverage['financial_quantity_approved'] is False
 
 
