@@ -182,11 +182,29 @@ jobs:
                 "Then run on the original DWG only on your private machine:\n"
                 "  python tools/audit_phase8_p2_second_decoder.py ORIGINAL.dwg report.json\n"
                 "The report is PARTIAL_NO_GO even if the high-level reader succeeds.\n"
+                "For original AC1032 legacy VERTEX field provenance only, install\n"
+                "project requirement ezdxf then, on a private POSIX system:\n"
+                "  python -m tools.audit_phase8_p2_ac1032_vertex_bulge\n"
+                "    --private-config /secure/vertex-config.json\n"
+                "    --original-native-vertex-oracle\n"
+                "The 0600 JSON config must live under a 0700 private directory,\n"
+                "contain original_dwg, reference_dxf, candidate_dxf, their\n"
+                "three *_sha256 fields and an unused output_json path outside Git.\n"
+                "Windows private JSON output is vetoed until DACL review.\n"
+                "This is a field-only native reader diagnostic: never payable.\n"
                 "Do NOT upload original DWG or report to the public GitHub repository.\n")
           Path("dist").mkdir(exist_ok=True)
           with ZipFile("dist/p8p2-native-second-reader-"+os.environ.get("RUNNER_OS","unknown").lower()+".zip","w",ZIP_DEFLATED) as z:
               z.write(wheel,"wheelhouse/"+wheel.name)
-              for name in ("core/drawings/dwg_second_decoder_probe.py","tools/audit_phase8_p2_second_decoder.py"):
+              for name in (
+                  "core/drawings/dwg_second_decoder_probe.py",
+                  "tools/audit_phase8_p2_second_decoder.py",
+                  "core/drawings/dwg_legacy_vertex_bulge_audit.py",
+                  "core/drawings/dwg_ac1032_native_vertex_oracle.py",
+                  "core/drawings/dwg_opaque_source_receipt.py",
+                  "tools/audit_phase8_p2_opaque_source_bytes.py",
+                  "tools/audit_phase8_p2_ac1032_vertex_bulge.py",
+              ):
                   z.write(name,name)
               z.writestr("MANIFEST.json",json.dumps(manifest,sort_keys=True,indent=2))
               z.writestr("README.txt",text)
