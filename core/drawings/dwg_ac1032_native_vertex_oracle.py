@@ -102,6 +102,15 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
                     or len(first) != 8 or len(last) != 8
                     or _finite_xyz(first[:3]) != _finite_xyz(last[:3])):
                 raise ValueError('Native polyline has nonredundant extra endpoint')
+            # Coincident coordinates alone are insufficient: a closing row
+            # with distinct width, bulge, tangent or flags is not redundant.
+            # Do not discard possible source geometry/semantics silently.
+            try:
+                finite_closure = all(math.isfinite(float(v)) for v in (*first[:7], *last[:7]))
+            except (TypeError, ValueError, OverflowError):
+                finite_closure = False
+            if not finite_closure or tuple(first) != tuple(last):
+                raise ValueError('Native polyline has nonredundant extra endpoint metadata')
             decoded_vertices = decoded_vertices[:-1]
         if len(decoded_vertices) != len(sequences[parent]):
             raise ValueError('Native polyline vertex list differs from source handles')
