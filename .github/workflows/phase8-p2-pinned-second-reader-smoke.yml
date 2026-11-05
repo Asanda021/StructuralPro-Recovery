@@ -130,6 +130,25 @@ jobs:
               print("PUBLIC_AC1032_NO_NATIVE_2D_VERTEX_TEST_CASE_IN_THIS_FIXTURE")
           print("PUBLIC_FIXTURE_IS_NOT_USER_DRAWING_OR_FINANCIAL_ACCEPTANCE")
           PY
+      - name: Exercise actual legacy 2D VERTEX reader on public AC1018 POLYLINE DWG
+        shell: bash
+        run: |
+          curl -fLsS --retry 2 --max-time 60 -o public_2d_polyline_2004.dwg "https://raw.githubusercontent.com/monozukuri-ai/ezdwg/43bad041452dd8e7a9c9f08d885dcb3cbbf24bd5/test_dwg/polyline2d_line_2004.dwg"
+          test "$(git hash-object public_2d_polyline_2004.dwg)" = "bf0359ec793a73afe3b274df0321d8b04f4ad8a3"
+          python - <<'PY'
+          from ezdwg import raw
+          from core.drawings.dwg_ac1032_native_vertex_oracle import _native_2d_vertex_roster
+          p = "public_2d_polyline_2004.dwg"
+          assert raw.detect_version(p) == "AC1018"
+          poly = raw.decode_polyline_2d_with_vertex_data(p)
+          members = raw.decode_polyline_sequence_members(p)
+          vertices = raw.decode_vertex_2d_entities(p)
+          assert poly, "Public legacy 2D POLYLINE fixture decoded no source polylines"
+          result, flags, sequences = _native_2d_vertex_roster(poly, members, vertices)
+          assert result and flags and sequences
+          print("PUBLIC_AC1018_REAL_LEGACY_2D_VERTEX_CONSISTENCY_PASS="+str(len(result)))
+          print("PUBLIC_AC1018_IS_DECODER_SMOKE_NOT_AC1032_USER_SOURCE_ACCEPTANCE")
+          PY
       - name: Create verified wheel and read-only CLI bundle without private CAD
         shell: bash
         run: |
