@@ -165,3 +165,38 @@ def test_populated_standard_namespaces_are_not_declared_original_source_verified
     assert r['converted_dxf_namespace_integrity_status'] == 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
     assert r['original_dwg_custom_payloads_verified'] is False
     assert r['financial_quantity_approved'] is False
+
+
+@pytest.mark.parametrize('wrong_owner', ['0', 'another_named_dictionary'])
+def test_named_map_aec_namespace_wrong_owner_cannot_pass(wrong_owner):
+    # Even if all dictionary entries point to existing valid standard DXF
+    # records, a namespace child that belongs elsewhere is not a clean link.
+    d = ezdxf.new('R2018')
+    map_dict = d.rootdict.add_new_dict('Autodesk_MAP')
+    aec_dict = d.rootdict.add_new_dict('AEC_VARS')
+    map_dict['SUBOBJECT'] = d.objects.add_xrecord()
+    aec_dict['SUBOBJECT'] = d.objects.add_xrecord()
+    map_dict.dxf.owner = (
+        '0' if wrong_owner == '0' else aec_dict.dxf.handle)
+    result = audit_named_dictionary_links(d)
+    assert result['dangling_or_invalid_count'] == 0
+    assert result['namespace_owner_unverified_count'] == 1
+    assert result['unverified_target_count'] >= 1
+    assert any(item['reason'] == 'NAMESPACE_OWNER_MISMATCH'
+               for item in result['unverified_target_references'])
+    assert result['converted_dxf_namespace_integrity_status'] == 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
+    assert result['original_dwg_custom_payloads_verified'] is False
+    assert result['financial_quantity_approved'] is False
+
+
+def test_both_named_namespace_owners_correct_do_not_create_false_mismatch():
+    d = ezdxf.new('R2018')
+    map_dict = d.rootdict.add_new_dict('Autodesk_MAP')
+    aec_dict = d.rootdict.add_new_dict('AEC_VARS')
+    map_dict['SUBOBJECT'] = d.objects.add_xrecord()
+    aec_dict['SUBOBJECT'] = d.objects.add_xrecord()
+    result = audit_named_dictionary_links(d)
+    assert result['namespace_owner_unverified_count'] == 0
+    assert result['unverified_target_count'] == 0
+    assert result['converted_dxf_namespace_integrity_status'] == 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
+    assert not result['source_coverage_verified']
