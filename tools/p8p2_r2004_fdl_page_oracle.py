@@ -1,9 +1,12 @@
-"""Independent read-only R2004 FileDepList raw-page and TV prefix auditor.
+"""Read-only raw-page locator and diagnostic emulation of the legacy TV path.
 
 Inputs MUST remain private. No writes, uploads, CAD text, source hashes or handles.
 Only a single uncompressed FileDepList page is supported. The supplied logical
 section length still needs separate section-map validation; finding the physical
 page by raw header XOR does not establish the logical map's correctness.
+TV is NOT the normative R2004 FileDepList feature encoding (ODA specifies
+String32). Use p8p2_r2004_section_map for verified descriptors and String32
+bounds; this legacy function remains useful only to reproduce the decoder bug.
 """
 from __future__ import annotations
 
@@ -57,7 +60,7 @@ def scan_r2004_pages(file_bytes: bytes) -> list[R2004Page]:
 
 
 def inspect_filedeplist_tv(file_bytes: bytes, logical_section_size: int) -> dict:
-    """Decode only prefix lengths, NEVER any actual feature string bytes."""
+    """Emulate TV prefix lengths, not R2004 format validity; never return text."""
     pages = [p for p in scan_r2004_pages(file_bytes)
              if p.section_type == _FILEDEPLIST_TYPE]
     if len(pages) != 1:
