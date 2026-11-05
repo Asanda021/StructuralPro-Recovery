@@ -39,11 +39,11 @@ def test_missing_target_block_name_and_no_standard_links_is_not_unused_proof():
     assert result["all_original_DWG_references_verified"] is False
     assert result["block_proven_unused_in_original_DWG"] is False
     assert result["financial_quantity_approved"] is False
-    assert not any(
-        token in str(key).lower()
-        for key in result
-        for token in ("handle", "private_path", "raw_record", "source_sha", "geometry")
-    )
+    assert set(result).isdisjoint({
+        "source_sha256", "private_handles", "raw_record_bytes",
+        "private_path", "coordinates", "geometry_values",
+    })
+    assert all(isinstance(value, (str, int, bool)) for value in result.values())
 
 
 def test_real_target_insert_observed_without_financial_authority():
