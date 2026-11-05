@@ -12,6 +12,7 @@ from typing import Any, Mapping, Sequence
 
 MAX_CUSTOM_OBJECTS = 64
 MAX_CLASSES = 512
+MAX_DXF_CLASSES = 4096
 
 
 def _handle(value: Any) -> str:
@@ -54,6 +55,8 @@ def audit_custom_class_fidelity(
         original_classes[item['number']] = item
     target_classes: dict[str, Any] = {}
     for c in converted_dxf.classes:
+        if len(target_classes) >= MAX_DXF_CLASSES:
+            raise ValueError('Unbounded target DXF class registry')
         name = str(c.dxf.get('name', ''))
         if not name or name in target_classes:
             raise ValueError('Duplicated or malformed target DXF class registry')
@@ -62,7 +65,7 @@ def audit_custom_class_fidelity(
     seen_classes: set[int] = set()
     by_vendor: Counter[str] = Counter()
     definition_missing = origin_mismatch = nongraphical = 0
-    id_missing = id_present_unverified = claims_without_id = 0
+    id_missing = id_present_unverified = claims_without_id = id_type_unverified = 0
     for r in source_records:
         if not isinstance(r, Mapping) or type(r.get('type_code')) is not int:
             raise ValueError('Missing authenticated original object type')
@@ -91,13 +94,24 @@ def audit_custom_class_fidelity(
             declared = target.dxf.get('instance_count')
             if type(declared) is not int or declared < 0:
                 raise ValueError('Invalid target class instance declaration')
-        if converted_dxf.entitydb.get(h) is None:
+        candidate = converted_dxf.entitydb.get(h)
+        if candidate is None:
             id_missing += 1
             if target is not None and int(target.dxf.get('instance_count')) > 0:
                 claims_without_id += 1
         else:
-            # Handle presence alone is not proprietary class or byte fidelity.
-            id_present_unverified += 1
+            # A recycled original handle could now designate LINE or a proxy.
+            # Neither is an independently verified custom-class match. Even
+            # matching DXF types do not authenticate the proprietary payload.
+            type_reader = getattr(candidate, 'dxftype', None)
+            try:
+                actual_type = type_reader() if callable(type_reader) else None
+            except Exception:
+                actual_type = None
+            if actual_type == name:
+                id_present_unverified += 1
+            else:
+                id_type_unverified += 1
     return {
         'policy': 'p8p2_original_custom_class_vendor_and_instance_triage_v1',
         'source_custom_record_count': len(seen_handles),
@@ -108,6 +122,7 @@ def audit_custom_class_fidelity(
         'target_dxf_nongraphical_class_declarations': nongraphical,
         'original_instance_identifiers_missing_in_dxf': id_missing,
         'original_instance_identifiers_present_payload_unverified': id_present_unverified,
+        'original_instance_identifiers_reused_or_type_unverified': id_type_unverified,
         'claimed_positive_class_count_but_original_instance_id_missing': claims_without_id,
         'all_source_instance_payloads_verified': False,
         'all_source_custom_reference_links_verified': False,
@@ -115,7 +130,9 @@ def audit_custom_class_fidelity(
         'automatic_object_enabler_selected': False,
         'automatic_reconstruction_authorized': False,
         'financial_quantity_approved': False,
-        'status': ('CUSTOM_CLASS_OR_INSTANCES_MISSING_NO_GO'
+        'status': ('CUSTOM_CLASS_OR_INSTANCE_IDENTITY_BROKEN_NO_GO'
+                   if id_type_unverified
+                   else 'CUSTOM_CLASS_OR_INSTANCES_MISSING_NO_GO'
                    if id_missing or definition_missing or origin_mismatch
                    else 'SOURCE_IDS_PRESENT_CUSTOM_CONTENT_UNVERIFIED_NO_GO'),
     }
