@@ -105,6 +105,31 @@ jobs:
           assert r["approved_quantities"] == 0
           print("PUBLIC_NATIVE_READ_PASS_TOTAL="+str(r["native_modelspace_entity_count"]))
           PY
+      - name: Exercise pinned native API against public AC1032 DWG fixture
+        shell: bash
+        run: |
+          curl -fLsS --retry 2 --max-time 60 -o public_ac1032.dwg "https://raw.githubusercontent.com/monozukuri-ai/ezdwg/43bad041452dd8e7a9c9f08d885dcb3cbbf24bd5/test_dwg/acadsharp/sample_AC1032.dwg"
+          test "$(git hash-object public_ac1032.dwg)" = "4cfa790d6719acf3aad9818bacbd693ac3ab71b8"
+          python - <<'PY'
+          from ezdwg import raw
+          p = "public_ac1032.dwg"
+          assert raw.detect_version(p) == "AC1032"
+          poly = raw.decode_polyline_2d_with_vertex_data(p)
+          sequence = raw.decode_polyline_sequence_members(p)
+          vertex = raw.decode_vertex_2d_entities(p)
+          assert all(isinstance(rows, list) for rows in (poly, sequence, vertex))
+          print("PUBLIC_AC1032_NATIVE_POLYLINES="+str(len(poly)))
+          print("PUBLIC_AC1032_NATIVE_SEQUENCE_ROWS="+str(len(sequence)))
+          print("PUBLIC_AC1032_NATIVE_VERTICES="+str(len(vertex)))
+          if poly:
+              from core.drawings.dwg_ac1032_native_vertex_oracle import _native_2d_vertex_roster
+              matched, _, _ = _native_2d_vertex_roster(poly, sequence, vertex)
+              assert matched
+              print("PUBLIC_AC1032_NATIVE_2D_VERTEX_ROSTER_CONSISTENT")
+          else:
+              print("PUBLIC_AC1032_NO_NATIVE_2D_VERTEX_TEST_CASE_IN_THIS_FIXTURE")
+          print("PUBLIC_FIXTURE_IS_NOT_USER_DRAWING_OR_FINANCIAL_ACCEPTANCE")
+          PY
       - name: Create verified wheel and read-only CLI bundle without private CAD
         shell: bash
         run: |
