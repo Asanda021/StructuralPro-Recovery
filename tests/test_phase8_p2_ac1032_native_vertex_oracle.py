@@ -241,3 +241,48 @@ def test_closed_extra_matching_endpoint_with_nonfinite_original_metadata_fails(
     poly[0] = (parent, flags, [*data, data[0]])
     with pytest.raises(ValueError, match='nonredundant extra endpoint metadata'):
         oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+@pytest.mark.parametrize(('projection', 'field', 'value'), [
+    ('poly', 3, 0.25), ('poly', 4, 0.5), ('poly', 6, 0.75),
+    ('vertex', 5, 0.25), ('vertex', 6, 0.5), ('vertex', 8, 0.75),
+    ('poly', 3, float('nan')), ('poly', 4, -0.01),
+    ('poly', 6, float('inf')),
+    ('vertex', 5, float('nan')), ('vertex', 6, -0.01),
+    ('vertex', 8, float('inf')),
+])
+def test_native_width_and_tangent_evidence_cannot_diverge_silently(
+    tmp_path, monkeypatch, projection, field, value,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    poly, members, verts = list(poly), list(members), list(verts)
+    if projection == 'poly':
+        parent, flags, rows = poly[0]
+        first = list(rows[0])
+        first[field] = value
+        poly[0] = (parent, flags, [tuple(first), *rows[1:]])
+    else:
+        first = list(verts[0])
+        first[field] = value
+        verts[0] = tuple(first)
+    with pytest.raises(ValueError, match='width/bulge/tangent|geometry conflict'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+def test_matching_nonzero_native_width_and_tangent_still_not_financial_approval(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    poly, members, verts = list(poly), list(members), list(verts)
+    parent, flags, rows = poly[0]
+    first = list(rows[0])
+    first[3], first[4], first[6] = 0.2, 0.4, 0.6
+    poly[0] = (parent, flags, [tuple(first), *rows[1:]])
+    raw_vertex = list(verts[0])
+    raw_vertex[5], raw_vertex[6], raw_vertex[8] = 0.2, 0.4, 0.6
+    verts[0] = tuple(raw_vertex)
+    roster, _, _ = oracle._native_2d_vertex_roster(poly, members, verts)
+    assert len(roster) == 6
+    assert not oracle.audit_ac1032_native_2d_vertex_sources.__doc__.startswith('Authorize')
