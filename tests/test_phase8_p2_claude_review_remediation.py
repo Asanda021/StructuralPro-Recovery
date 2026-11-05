@@ -68,9 +68,11 @@ def test_f01_known_source_mismatched_header_rejected(monkeypatch):
 
 
 class DictionaryStub(dict):
-    def __init__(self, handle):
+    def __init__(self, handle, owner='0'):
         super().__init__()
-        self.dxf = SimpleNamespace(handle=handle)
+        # Synthetic source must model real DXF 330 ownership explicitly,
+        # otherwise the hardened auditor rightly classifies it as unknown.
+        self.dxf = SimpleNamespace(handle=handle, owner=owner)
 
     def dxftype(self):
         return 'DICTIONARY'
@@ -78,7 +80,7 @@ class DictionaryStub(dict):
 
 def fake_dictionary_doc(*, root_value=None, target=None, declared_class=None):
     root = DictionaryStub('1')
-    namespace = DictionaryStub('2')
+    namespace = DictionaryStub('2', owner='1')
     root['Autodesk_MAP'] = namespace if root_value is None else root_value
     entitydb = {'1': root, '2': namespace}
     if target is not None:
