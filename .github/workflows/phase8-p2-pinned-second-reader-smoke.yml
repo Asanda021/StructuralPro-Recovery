@@ -10,6 +10,8 @@ on:
       - tests/test_phase8_p2_second_decoder_probe.py
       - tools/audit_phase8_p2_real_independent_sources.py
       - tests/test_phase8_p2_independent_roster_audit.py
+      - core/drawings/dwg_ac1032_native_vertex_oracle.py
+      - tests/test_phase8_p2_ac1032_native_vertex_oracle.py
       - .github/workflows/phase8-p2-pinned-second-reader-smoke.yml
   workflow_dispatch:
 permissions:
@@ -58,6 +60,19 @@ jobs:
       - name: Install verified decoder locally on the runner
         shell: bash
         run: python -m pip install --no-index --no-deps --find-links=wheelhouse ezdwg==0.17.0
+      - name: Verify pinned reader exposes AC1032 native legacy VERTEX evidence APIs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib.metadata import version
+          from ezdwg import raw
+          assert version("ezdwg") == "0.17.0"
+          for name in ("decode_polyline_2d_with_vertex_data",
+                       "decode_polyline_sequence_members",
+                       "decode_vertex_2d_entities"):
+              assert callable(getattr(raw, name, None)), name
+          print("PUBLIC_PINNED_NATIVE_VERTEX_API_AVAILABLE_NOT_SOURCE_CERTIFIED")
+          PY
       - name: Run synthetic fail-closed source-DXF audit tests
         shell: bash
         run: |
