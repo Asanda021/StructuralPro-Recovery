@@ -104,6 +104,31 @@ def audit_custom_named_root_ancestry(
                     if isinstance(record, Mapping)}
     if len(verified_ids) != len(independently_verified_raw_records):
         raise ValueError("Duplicate original raw record identities")
+
+    # A missing *leaf* custom record can otherwise pass all ancestry checks:
+    # the remaining raw records still reach the named root. Compare the
+    # authenticated raw roster to the entire decoded family-specific inventory.
+    # This is only a consistency check against an impaired decoder snapshot,
+    # not an independent proof that every original DWG object was discovered.
+    decoded_family_ids = set()
+    for object_handle, candidate in index.items():
+        if candidate.get("object") != "UNKNOWN_OBJ":
+            continue
+        native_type = candidate.get("type")
+        if type(native_type) is not int:
+            raise ValueError("Malformed decoded source custom object type")
+        family_class = classes.get(native_type)
+        if family_class is None:
+            continue
+        app = family_class.get("appname")
+        if app == "AcMapDisplayManagement" or (
+            isinstance(app, str)
+            and app.startswith("AecBase40|")
+            and "Autodesk Architectural Desktop 2005" in app
+        ):
+            decoded_family_ids.add(object_handle)
+    if decoded_family_ids != verified_ids:
+        raise ValueError("Independent raw roster differs from decoded MAP/AEC inventory")
     seen = set()
     depth_counts = Counter()
     family_counts = Counter()
