@@ -270,7 +270,7 @@ def test_native_width_and_tangent_evidence_cannot_diverge_silently(
         oracle._native_2d_vertex_roster(poly, members, verts)
 
 
-def test_matching_nonzero_native_width_and_tangent_still_not_financial_approval(
+def test_matching_nonzero_native_width_and_tangent_is_consistent(
     tmp_path, monkeypatch,
 ):
     files = setup_files(tmp_path)
@@ -285,4 +285,4 @@ def test_matching_nonzero_native_width_and_tangent_still_not_financial_approval(
     verts[0] = tuple(raw_vertex)
     roster, _, _ = oracle._native_2d_vertex_roster(poly, members, verts)
     assert len(roster) == 6
-    assert not oracle.audit_ac1032_native_2d_vertex_sources.__doc__.startswith('Authorize')
+    assert all(len(record) == 4 for record in roster.values())
