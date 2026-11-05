@@ -357,12 +357,29 @@ class OfflineDWGConverter:
             )
             diagnostic = audit_named_dictionary_links(converted_doc)
             source_coverage["converted_dxf_named_dictionary_integrity"] = diagnostic
-            # Expose a typed explicit veto on incomplete, broken, proxy or
-            # entirely absent dictionary evidence. Preview may still be viewed.
-            source_coverage["converter_integrity_veto"] = (
+            # Structural links and ModelSpace may both appear intact while
+            # the original MAP/AEC custom class instances have been dropped.
+            # Keep that narrowly observed DXF structure separate from proof
+            # of proprietary source semantics. This legacy diagnostic has no
+            # authenticated source-vs-output custom-payload/owner/reactor
+            # parity oracle, so it must never silently clear the converter
+            # integrity gate merely because both DXF namespaces contain
+            # ordinary XRECORDs or DICTIONARY objects.
+            structural_dxf_links_observed = (
                 diagnostic["converted_dxf_namespace_integrity_status"]
-                != "NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES"
-                or source_coverage.get("status") != "MATCHED_INDEPENDENT_MODELSPACE_ROSTER"
+                == "NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES"
+            )
+            modelspace_roster_observed = (
+                source_coverage.get("status") == "MATCHED_INDEPENDENT_MODELSPACE_ROSTER"
+            )
+            source_coverage["converted_dxf_structural_links_observed"] = structural_dxf_links_observed
+            source_coverage["independent_modelspace_roster_observed"] = modelspace_roster_observed
+            source_coverage["original_custom_semantic_parity_verified"] = False
+            source_coverage["original_custom_semantic_parity_veto"] = True
+            source_coverage["converter_integrity_veto"] = (
+                not structural_dxf_links_observed
+                or not modelspace_roster_observed
+                or source_coverage["original_custom_semantic_parity_veto"]
             )
             source_coverage["financial_quantity_approved"] = False
             if identity(target) != output_identity or digest(target) != output_digest:
