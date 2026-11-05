@@ -176,3 +176,27 @@ def test_opaque_source_handle_outside_64_bit_scope_is_rejected(bad_handle):
     with pytest.raises(ValueError):
         summarize_converted_opaque_identity_coverage(
             [{'handle': bad_handle}], SimpleNamespace(entitydb={}))
+
+
+def test_private_map_aec_cli_never_prints_reader_exception_details(monkeypatch, capsys):
+    from pathlib import Path
+    import sys
+    import tools.audit_phase8_p2_opaque_source_bytes as cli
+    secret = 'PRIVATE_DWG_PATH_AND_CLASS_HANDLE_SHOULD_NEVER_BE_LOGGED'
+    monkeypatch.setattr(sys, 'argv', [
+        'p8p2-opaque-audit', '/private/source.dwg', '/private/result.dxf',
+        '/private/report.json', '--private-config', '/private/config.json',
+    ])
+    monkeypatch.setattr(cli, 'private_output_destination', lambda path: Path(path))
+    monkeypatch.setattr(cli, 'read_private_config', lambda path: (['A'], 'f'*64))
+
+    def private_source_failure(*args, **kwargs):
+        raise ValueError(secret)
+
+    monkeypatch.setattr(cli, 'audit_original_opaque_records', private_source_failure)
+    assert cli.main() == 2
+    output = capsys.readouterr().out
+    assert 'BLOCKED_NO_SAFE_SOURCE_RECEIPT: ValueError' in output
+    assert secret not in output
+    assert '/private/source.dwg' not in output
+    assert '/private/config.json' not in output
