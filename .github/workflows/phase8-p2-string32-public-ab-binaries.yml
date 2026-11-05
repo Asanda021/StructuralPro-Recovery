@@ -93,13 +93,25 @@ jobs:
           soname=$(readelf -d "$out/structuralpro_libredwg_capi_probe" | grep 'Shared library:' | grep -o 'libredwg.so[^]]*' | head -1)
           test -n "$soname"
           cp "$real" "$out/lib/$soname"
+          # Product-path CLI for strictly offline review. NEVER RELEASE.
+          cli=$(find "$RUNNER_TEMP/p8p2-ab-install" -type f -name dwg2dxf -perm /111 | head -1)
+          test -n "$cli"
+          mkdir -p "$out/bin"
+          cp "$cli" "$out/bin/dwg2dxf"
+          chmod 755 "$out/bin/dwg2dxf"
+          readelf -d "$out/bin/dwg2dxf" | grep -Fq libredwg.so
+          LD_LIBRARY_PATH="$out/lib" ldd "$out/bin/dwg2dxf" | tee "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"
+          grep -Fq "$out/lib/$soname" "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"
+          if grep -Fq 'not found' "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"; then exit 1; fi
+
           cp "$RUNNER_TEMP/EXPERIMENTAL_STRING32_AB_ONLY.patch" "$out/EXPERIMENTAL_STRING32_AB_ONLY.patch"
           cp "$RUNNER_TEMP/libredwg-ab/COPYING" "$out/LIBREDWG_GPL_LICENSE.txt"
           printf '%s\n' "$LIBREDWG_COMMIT" > "$out/LIBREDWG_UPSTREAM_COMMIT.txt"
           printf '%s\n' "$GITHUB_SHA" > "$out/STRUCTURALPRO_PATCH_HEAD.txt"
           printf '%s\n' "$DIAG_VARIANT" > "$out/DIAGNOSTIC_VARIANT.txt"
           printf '%s\n' 'PUBLIC SOURCE BINARY ONLY. DO NOT RELEASE. CAD DATA MUST STAY PRIVATE. NO BOQ ACCEPTANCE.' > "$out/NOT_FOR_RELEASE.txt"
-          (cd "$out" && sha256sum structuralpro_libredwg_capi_probe "lib/$soname" EXPERIMENTAL_STRING32_AB_ONLY.patch > PUBLIC_BINARY_SHA256.txt)
+          printf '%s\\n' 'Experimental dwg2dxf CLI; review only in a private sandbox. No BOQ, geometry, MAP/AEC, SHX, units or financial approval.' > "$out/CLI_REVIEW_ONLY.txt"
+          (cd "$out" && sha256sum structuralpro_libredwg_capi_probe bin/dwg2dxf "lib/$soname" EXPERIMENTAL_STRING32_AB_ONLY.patch > PUBLIC_BINARY_SHA256.txt)
           (cd "$out" && ldd structuralpro_libredwg_capi_probe)
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
