@@ -124,8 +124,10 @@ def main():
             expected_original_sha256=original_sha)
         write_private_report(destination, report)
     except Exception as exc:
-        print('BLOCKED_NO_SAFE_SOURCE_RECEIPT:', type(exc).__name__,
-              type(exc).__name__ if os.name == 'nt' else str(exc)[:120])
+        # On both POSIX and Windows, third-party readers may embed private
+        # file names, raw object identities or byte snippets in exceptions.
+        # Never print exception text from an original-DWG forensic audit.
+        print('BLOCKED_NO_SAFE_SOURCE_RECEIPT:', type(exc).__name__)
         return 2
     print(report['status'], 'source record count', report['source_record_count'],
           'broken DXF link count', report['converted_dxf_dangling_ref_count'])
