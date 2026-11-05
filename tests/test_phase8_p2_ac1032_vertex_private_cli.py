@@ -104,3 +104,43 @@ def test_windows_is_explicitly_fail_closed(tmp_path):
         assert not Path(doc['output_json']).exists()
     else:
         assert config.is_file()
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Private Windows DACL gate remains fail-closed")
+def test_private_native_mode_explicitly_uses_original_source_oracle(tmp_path, monkeypatch, capsys):
+    config, doc = make_config(tmp_path)
+    from core.drawings import dwg_ac1032_native_vertex_oracle as native
+    calls = []
+    def oracle(*args, **kwargs):
+        calls.append((args, kwargs))
+        return {
+            "status": "NATIVE_SOURCE_VS_DXF_FIELD_DISCREPANCY_NO_GO",
+            "native_2d_vertex_observations_verified_by_reader": 6,
+            "reference_dxf": {"bulge_difference_count": 0},
+            "candidate_dxf": {"bulge_difference_count": 3,
+                              "native_nonzero_bulge_zeroed_in_dxf_count": 3},
+            "financial_quantity_rows_approved": 0,
+        }
+    monkeypatch.setattr(native, "audit_ac1032_native_2d_vertex_sources", oracle)
+    assert main(["--private-config", str(config), "--original-native-vertex-oracle"]) == 0
+    assert len(calls) == 1
+    assert Path(doc["output_json"]).is_file()
+    message = capsys.readouterr().out
+    assert "candidate missing curvature: 3" in message
+    for key in ("original_sha256", "reference_sha256", "candidate_sha256",
+                "original_dwg", "reference_dxf", "candidate_dxf"):
+        assert doc[key] not in message
+
+
+@pytest.mark.skipif(os.name == 'nt', reason="Private Windows DACL gate remains fail-closed")
+def test_private_native_reader_failure_leaves_no_report(tmp_path, monkeypatch, capsys):
+    config, doc = make_config(tmp_path)
+    from core.drawings import dwg_ac1032_native_vertex_oracle as native
+    def broken(*args, **kwargs):
+        raise ValueError("PRIVATE_VALUE_MUST_NOT_BE_PRINTED")
+    monkeypatch.setattr(native, "audit_ac1032_native_2d_vertex_sources", broken)
+    assert main(["--private-config", str(config), "--original-native-vertex-oracle"]) == 2
+    assert not Path(doc["output_json"]).exists()
+    message = capsys.readouterr().out
+    assert "PRIVATE_VALUE_MUST_NOT_BE_PRINTED" not in message
+    assert "BLOCKED_PRIVATE_VERTEX_AUDIT:" in message
