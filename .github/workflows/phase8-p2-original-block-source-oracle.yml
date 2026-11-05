@@ -4,6 +4,7 @@ on:
     branches: [fix/phase8-p2-offline-converter-veto-20261104]
     paths:
       - core/drawings/dwg_original_block_source_oracle.py
+      - tools/audit_phase8_p2_original_block_source.py
       - tests/test_phase8_p2_original_block_source_oracle.py
       - .github/workflows/phase8-p2-original-block-source-oracle.yml
   workflow_dispatch:
