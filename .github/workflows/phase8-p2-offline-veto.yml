@@ -37,6 +37,8 @@ on:
       - core/drawings/dwg_custom_graph_coverage.py
       - core/drawings/dwg_custom_named_root_ancestry.py
       - core/drawings/dwg_legacy_vertex_bulge_audit.py
+      - core/drawings/dwg_ac1032_native_vertex_oracle.py
+      - tests/test_phase8_p2_ac1032_native_vertex_oracle.py
       - tests/test_phase8_p2_ac1032_vertex_bulge_parity.py
       - tools/audit_phase8_p2_ac1032_vertex_bulge.py
       - tests/test_phase8_p2_ac1032_vertex_private_cli.py
@@ -116,6 +118,7 @@ jobs:
           tests/test_p8p2_custom_graph_coverage.py
           tests/test_p8p2_custom_named_root_ancestry.py
           tests/test_phase8_p2_ac1032_vertex_bulge_parity.py
+          tests/test_phase8_p2_ac1032_native_vertex_oracle.py
           tests/test_phase8_p2_ac1032_vertex_private_cli.py
           tests/test_phase8_p2_claude_review_remediation.py
           tests/test_phase8_p2_shx_source_provenance.py
