@@ -51,6 +51,8 @@ on:
       - tests/test_phase8_p2_claude_review_remediation.py
       - core/cad/persian_text_v1.py
       - core/drawings/dwg_shx_source_audit.py
+      - core/drawings/dwg_dimension_unit_ambiguity.py
+      - tests/test_phase8_p2_dimension_unit_ambiguity.py
       - core/drawings/native_dwg_preview.py
       - tools/audit_phase8_p2_shx_source.py
       - tests/test_phase8_p2_shx_source_provenance.py
@@ -122,6 +124,7 @@ jobs:
           tests/test_phase8_p2_ac1032_vertex_private_cli.py
           tests/test_phase8_p2_claude_review_remediation.py
           tests/test_phase8_p2_shx_source_provenance.py
+          tests/test_phase8_p2_dimension_unit_ambiguity.py
           tests/test_phase8_p2_libredwg_error68.py
           tests/test_phase8_p2_libredwg_native_capi_runner.py
           tests/test_phase8_p2_converter_failure_cleanup.py
