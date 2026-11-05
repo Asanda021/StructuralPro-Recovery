@@ -119,6 +119,7 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
     root = candidates[0] if candidates else dxf_document.rootdict
     findings = []
     namespaces = {}
+    empty_named_dictionaries = []
     class_names = {str(c.dxf.name).upper() for c in dxf_document.classes}
     # Structural link resolution for a small set of *standard* DXF objects
     # does not imply that an embedded proprietary payload was understood.
@@ -160,6 +161,10 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
                              'reason': 'ROOT_NOT_DICTIONARY'})
             continue
         namespaces[namespace] = 'DICTIONARY_PRESENT'
+        if len(child) == 0:
+            # An empty imported namespace says nothing about the original DWG's
+            # custom instances. Do not promote missing links to clean source data.
+            empty_named_dictionaries.append(namespace)
         for key, value in child.items():
             target, handle = resolve(value)
             if target is None:
@@ -188,6 +193,8 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
         status = 'NAMESPACES_ABSENT_NO_EVIDENCE'
     elif any(v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()):
         status = 'NAMESPACES_INCOMPLETE_NO_EVIDENCE'
+    elif empty_named_dictionaries:
+        status = 'EMPTY_NAMED_NAMESPACE_SOURCE_UNVERIFIED'
     else:
         status = 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
     unresolved_reasons = frozenset({
@@ -205,6 +212,8 @@ def audit_named_dictionary_links(dxf_document: Any) -> dict:
         'dangling_or_invalid_references': broken,
         'unverified_target_count': len(unverified),
         'unverified_target_references': unverified,
+        'empty_namespace_count': len(empty_named_dictionaries),
+        'empty_namespaces': tuple(empty_named_dictionaries),
         'unverified_namespace_count': sum(
             v == 'NOT_PRESENT_IN_DXF' for v in namespaces.values()),
         'converted_dxf_namespace_integrity_status': status,
