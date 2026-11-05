@@ -200,3 +200,18 @@ def test_both_named_namespace_owners_correct_do_not_create_false_mismatch():
     assert result['unverified_target_count'] == 0
     assert result['converted_dxf_namespace_integrity_status'] == 'NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES'
     assert not result['source_coverage_verified']
+
+
+def test_named_map_aec_missing_owner_is_unverified():
+    d = ezdxf.new('R2018')
+    m = d.rootdict.add_new_dict('Autodesk_MAP')
+    a = d.rootdict.add_new_dict('AEC_VARS')
+    m['PAYLOAD'] = d.objects.add_xrecord()
+    a['PAYLOAD'] = d.objects.add_xrecord()
+    m.dxf.discard('owner')  # Original DXF group-330 missing, not a valid child.
+    result = audit_named_dictionary_links(d)
+    assert result['namespace_owner_unverified_count'] == 1
+    assert result['converted_dxf_namespace_integrity_status'] == 'INDETERMINATE_DXF_DICTIONARY_TARGETS'
+    assert result['unverified_target_count'] >= 1
+    assert result['original_dwg_custom_payloads_verified'] is False
+    assert result['financial_quantity_approved'] is False
