@@ -209,3 +209,35 @@ def test_nonredundant_extra_closed_polyline_position_fails_closed(tmp_path,monke
     poly[0]=(parent,flags,[*data,nonredundant])
     with pytest.raises(ValueError,match="nonredundant extra endpoint"):
         oracle._native_2d_vertex_roster(poly,members,verts)
+
+
+@pytest.mark.parametrize(('field','replacement'), [
+    (3, 0.25), (4, 0.5), (5, 0.75), (6, 0.125), (7, 2),
+    (5, float('nan')), (3, 'INVALID_WIDTH'),
+])
+def test_closed_extra_coincident_endpoint_cannot_hide_metadata(
+    tmp_path, monkeypatch, field, replacement,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    parent, flags, data = poly[0]
+    assert flags & 1
+    closing = list(data[0])
+    closing[field] = replacement
+    poly[0] = (parent, flags, [*data, tuple(closing)])
+    with pytest.raises(ValueError, match='nonredundant extra endpoint metadata'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+def test_closed_extra_matching_endpoint_with_nonfinite_original_metadata_fails(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    parent, flags, data = poly[0]
+    first = list(data[0])
+    first[3] = float('nan')
+    data[0] = tuple(first)
+    poly[0] = (parent, flags, [*data, data[0]])
+    with pytest.raises(ValueError, match='nonredundant extra endpoint metadata'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
