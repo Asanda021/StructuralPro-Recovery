@@ -81,6 +81,8 @@ def test_matches_are_not_source_or_financial_approval(tmp_path):
     assert r['status'] == 'TWO_DXF_FIELD_PARITY_OBSERVED_SOURCE_UNVERIFIED_NO_GO'
     assert r['original_dwg_vertex_field_truth_verified'] is False
     assert r['financial_quantity_rows_approved'] == 0
+    assert r['parent_vertex_order_difference_count'] == 0
+    assert r['parent_polyline_flags_difference_count'] == 0
 
 
 def test_zeroed_legacy_bulge_is_detected_in_both_sections(tmp_path):
@@ -107,6 +109,47 @@ def test_missing_vertex_is_detected(tmp_path):
     r = audit(setup_files(tmp_path, replace_vertex=True))
     assert r['missing_vertex_handles_count'] == 1
     assert r['status'].endswith('NO_GO')
+
+
+def test_same_handles_and_coordinates_but_reordered_vertices_veto(tmp_path):
+    src, ref, cand = setup_files(tmp_path)
+    raw = cand.read_text()
+    records = list(re.finditer(r"(?s)\n  0\nVERTEX\n.*?(?=\n  0\n)", raw))
+    assert len(records) == 6
+    a, b = records[3], records[4]  # The first two modelspace VERTEXs
+    assert a.end() == b.start()
+    cand.write_text(raw[:a.start()] + raw[b.start():b.end()] +
+                    raw[a.start():a.end()] + raw[b.end():])
+    result = audit((src, ref, cand))
+    assert result['missing_vertex_handles_count'] == 0
+    assert result['extra_vertex_handles_count'] == 0
+    assert result['bulge_difference_count'] == 0
+    assert result['xyz_difference_count'] == 0
+    assert result['parent_vertex_order_difference_count'] == 1
+    assert result['status'] == 'LEGACY_VERTEX_CONVERSION_DIFFERENCES_NO_GO'
+
+
+def test_closed_polyline_flag_change_veto(tmp_path):
+    src, ref, cand = setup_files(tmp_path)
+    raw = cand.read_text()
+    pattern = r"(?s)(\n  0\nPOLYLINE\n.*?\n 70\n)(1)(\n  0\nVERTEX)"
+    assert re.search(pattern, raw)
+    cand.write_text(re.sub(pattern, lambda m: m.group(1) + '0' + m.group(3), raw, count=1))
+    result = audit((src, ref, cand))
+    assert result['parent_polyline_flags_difference_count'] == 1
+    assert result['parent_vertex_order_difference_count'] == 0
+    assert result['xyz_difference_count'] == 0
+    assert result['status'] == 'LEGACY_VERTEX_CONVERSION_DIFFERENCES_NO_GO'
+
+
+def test_malformed_raw_parent_flags_fail_closed(tmp_path):
+    src, ref, cand = setup_files(tmp_path)
+    raw = cand.read_text()
+    pattern = r"(?s)(\n  0\nPOLYLINE\n.*?\n 70\n)1(\n  0\nVERTEX)"
+    assert re.search(pattern, raw)
+    cand.write_text(re.sub(pattern, lambda m: m.group(1) + 'NaN' + m.group(2), raw, count=1))
+    with pytest.raises(ValueError, match='Malformed raw POLYLINE flags'):
+        audit((src, ref, cand))
 
 
 def test_wrong_source_hash_fails_closed(tmp_path):
