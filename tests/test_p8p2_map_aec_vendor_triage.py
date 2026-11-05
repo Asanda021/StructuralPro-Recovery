@@ -32,7 +32,8 @@ def evidence(*, missing=False, count=1, wrong_app=False, restored_id=False):
         target.pop()
     dxf = SimpleNamespace(
         classes=target,
-        entitydb={'A': object(), 'B': object()} if restored_id else {},
+        entitydb={x['handle']: SimpleNamespace(dxftype=lambda name=x['class_name']: name)
+                  for x in source} if restored_id else {},
     )
     return source, classes, dxf
 
@@ -66,6 +67,32 @@ def test_original_id_present_does_not_certify_bytes_or_links():
     assert r['status'] == 'SOURCE_IDS_PRESENT_CUSTOM_CONTENT_UNVERIFIED_NO_GO'
     assert r['all_source_custom_reference_links_verified'] is False
     assert r['automatic_reconstruction_authorized'] is False
+
+
+def test_recycled_dxf_handle_with_wrong_type_is_not_custom_class_match():
+    source, registry, dxf = evidence(restored_id=True)
+    dxf.entitydb['B'] = SimpleNamespace(dxftype=lambda: 'LINE')
+    result = audit_custom_class_fidelity(source, registry, dxf)
+    assert result['original_instance_identifiers_present_payload_unverified'] == 1
+    assert result['original_instance_identifiers_reused_or_type_unverified'] == 1
+    assert result['status'] == 'CUSTOM_CLASS_OR_INSTANCE_IDENTITY_BROKEN_NO_GO'
+    assert not result['financial_quantity_approved']
+
+
+def test_unknown_dxf_object_type_is_not_presumed_matching():
+    source, registry, dxf = evidence(restored_id=True)
+    dxf.entitydb['A'] = object()   # No readable DXF class identity
+    result = audit_custom_class_fidelity(source, registry, dxf)
+    assert result['original_instance_identifiers_reused_or_type_unverified'] == 1
+    assert result['original_instance_identifiers_present_payload_unverified'] == 1
+    assert not result['all_source_instance_payloads_verified']
+
+
+def test_unbounded_dxf_class_registry_fails_closed():
+    source, registry, dxf = evidence()
+    dxf.classes.extend(_Class(name=f'SYN_{i}') for i in range(4096))
+    with pytest.raises(ValueError, match='Unbounded target DXF class registry'):
+        audit_custom_class_fidelity(source, registry, dxf)
 
 
 def test_class_missing_detected():
