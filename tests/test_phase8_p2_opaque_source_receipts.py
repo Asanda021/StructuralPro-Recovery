@@ -1,7 +1,8 @@
 """Synthetic safety tests only. Private DWG bytes and class names not included."""
 import pytest
 from core.drawings.dwg_opaque_source_receipt import (
-  _handles,summarize_raw_records,opaque_recovery_decision)
+  _handles,summarize_raw_records,opaque_recovery_decision,
+  summarize_converted_opaque_identity_coverage)
 
 
 def sample():
@@ -68,3 +69,40 @@ def test_fake_green_approval_rejected():
     bad=links();bad['financial_quantity_approved']=True
     with pytest.raises(ValueError):opaque_recovery_decision([{'handle':'101'}],bad,
                        expected_source_sha256='a'*64,converted_dxf_sha256='b'*64)
+
+def test_source_opaque_identity_loss_is_reported_without_handles_or_repair():
+    from types import SimpleNamespace
+    source = [{'handle': '10'}, {'handle': '20'}]
+    dxf = SimpleNamespace(entitydb={'10': object()})
+    got = summarize_converted_opaque_identity_coverage(source, dxf)
+    assert got['source_opaque_identity_count'] == 2
+    assert got['converted_dxf_identity_present_count'] == 1
+    assert got['converted_dxf_identity_missing_count'] == 1
+    assert got['converted_dxf_opaque_identity_status'] == 'SOURCE_OPAQUE_OBJECT_IDENTITIES_MISSING_NO_GO'
+    assert got['automatic_reconstruction_authorized'] is False
+    assert got['financial_quantity_approved'] is False
+    assert '10' not in str(got) and '20' not in str(got)
+
+
+def test_source_opaque_identity_present_does_not_validate_payload():
+    from types import SimpleNamespace
+    source = [{'handle': '000A'}]
+    # A totally different DXF type with the same ID must NOT be called recovered.
+    dxf = SimpleNamespace(entitydb={'A': object()})
+    got = summarize_converted_opaque_identity_coverage(source, dxf)
+    assert got['converted_dxf_identity_missing_count'] == 0
+    assert got['converted_dxf_opaque_identity_status'] == 'SOURCE_IDENTITIES_PRESENT_PAYLOAD_UNVERIFIED_NO_GO'
+    assert got['converted_opaque_payload_bytes_independently_verified'] is False
+    assert got['financial_quantity_approved'] is False
+
+
+@pytest.mark.parametrize('bad', [
+    [], [{}], [{'handle': '0'}], [{'handle': 'GG'}],
+    [{'handle': 'A'}, {'handle': '0A'}],
+    [{'handle': 10}], ['A'], [None], [{'handle': ''}],
+])
+def test_invalid_source_opaque_identity_coverage_fails_closed(bad):
+    from types import SimpleNamespace
+    with pytest.raises(ValueError):
+        summarize_converted_opaque_identity_coverage(
+            bad, SimpleNamespace(entitydb={}))
