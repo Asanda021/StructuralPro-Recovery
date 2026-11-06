@@ -417,8 +417,19 @@ class ProjectStore:
         try:
             self.db.execute("BEGIN IMMEDIATE")
             row=self.db.execute("SELECT version,payload FROM projects WHERE id=?",(pid,)).fetchone()
-            if create_only and row is not None:
-                raise ValueError("شناسه پروژه قبلاً ثبت شده است؛ ایجاد مجدد مجاز نیست.")
+            if create_only:
+                from core.projects.project_model import _identity
+                key = _identity(pid)
+                if not key:
+                    raise ValueError("شناسه پروژه الزامی است.")
+                # Keep the NFKC/Persian-digit identity contract atomic across
+                # connections. A preflight list() cannot stop a concurrent
+                # fullwidth/digit-variant alias from being created.
+                if row is not None or any(
+                    _identity(item["id"]) == key
+                    for item in self.db.execute("SELECT id FROM projects")
+                ):
+                    raise ValueError("شناسه پروژه قبلاً ثبت شده است؛ ایجاد مجدد مجاز نیست.")
             identity = self._identity()
             role = self._role(pid, identity)
             if row is None:
