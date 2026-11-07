@@ -29,6 +29,8 @@ class ConverterResult:
     dwg_version: str = ""
     exit_code: int = 0
     source_coverage: dict = field(default_factory=dict)
+    # A converted DXF receipt is never, by itself, permission for payable CAD geometry.
+    financial_veto: bool = True
 
 
 class DWGConversionError(RuntimeError):
@@ -146,9 +148,23 @@ def _independent_source_coverage(source, converted_doc, signature):
             f"پوشش موجودیت‌های DWG/DXF برابر نیست؛ {len(missing)} جزء منبع مفقود/تغییرنوع، "
             f"{len(extra)} جزء خروجی بدون تطبیق؛ خروجی برای متره پذیرفته نشد")
     from core.cad.optional_strict_python_dwg_provider import _UNIT_CODES
-    expected=0 if source_units in (None,"unitless") else _UNIT_CODES.get(str(source_units).strip().casefold(),(None,None))[0]
-    actual=int(converted_doc.header.get("$INSUNITS",0) or 0)
-    if expected is not None and actual!=expected:
+    # Neither a missing unit nor an unknown enum is the same as an explicitly
+    # verified unitless source.  In particular, NEVER infer code 0 for R14.
+    unit_name = source_units.strip().casefold() if isinstance(source_units, str) else ""
+    native_unit = _UNIT_CODES.get(unit_name)
+    try:
+        raw_code = converted_doc.header.get("$INSUNITS")
+        actual = int(raw_code) if raw_code is not None else None
+    except (TypeError, ValueError, OverflowError):
+        actual = None
+    if native_unit is None or actual is None:
+        return {"status":"NOT_VERIFIED_UNIT","reader":"ezdwg==0.17.0",
+                "source_count":len(native),"converted_count":len(converted),
+                "native_unit_label":unit_name or "NOT_DECLARED",
+                "source_unit_code":None,"converted_unit_code":actual,
+                "quantity_approved":False,"geometry_values_independently_verified":False}
+    expected = native_unit[0]
+    if actual != expected:
         raise DWGConversionError("واحد خروجی مبدل با واحد اعلام‌شده در اصل DWG منطبق نیست؛ حدس یا اصلاح خودکار مجاز نیست")
     return {"status":"MATCHED_INDEPENDENT_MODELSPACE_ROSTER",
             "reader":"ezdwg==0.17.0","source_count":len(native),
@@ -253,6 +269,10 @@ class OfflineDWGConverter:
         out = output_dir
         out.mkdir(parents=True, exist_ok=True)
         target = out / (src.stem + ".dxf")
+        # Never overwrite or unlink a pre-existing result owned by the user.
+        # Refuse the collision *before* recording ownership or starting a process.
+        if target.exists() or target.is_symlink():
+            raise DWGConversionError("فایل DXF هم‌نام از قبل موجود است؛ جایگزینی یا حذف فایل کاربر مجاز نیست")
         name = Path(self.executable).name.lower()
 
         if "odafileconverter" in name:
@@ -261,8 +281,12 @@ class OfflineDWGConverter:
             # Remove only the expected artifact so a stale DXF cannot masquerade as
             # a successful conversion after the converter exits without writing.
             target = odir / (src.stem + ".dxf")
+            # ODA may write case-varied filenames on case-sensitive filesystems.
+            # All same-stem existing outputs must be treated as user-owned.
+            if any(p.stem.casefold() == src.stem.casefold() and p.suffix.lower() == ".dxf"
+                   for p in odir.iterdir()):
+                raise DWGConversionError("خروجی DXF هم‌نام در پوشه ODA موجود است؛ فایل قبلی حفظ شد")
             owned_targets.append(target)
-            target.unlink(missing_ok=True)
             proc = self._run(
                 [self.executable, str(src.parent), str(odir), "ACAD2018", "DXF", "0", "1", src.name],
                 capture_output=True,
@@ -282,7 +306,6 @@ class OfflineDWGConverter:
                     owned_targets.append(target)
         else:
             owned_targets.append(target)
-            target.unlink(missing_ok=True)
             # GNU LibreDWG dwg2dxf accepts -o OUTPUT INPUT; the old
             # positional INPUT OUTPUT call treats OUTPUT as a second input
             # and never creates the required DXF.  Use the documented CLI,
@@ -320,6 +343,45 @@ class OfflineDWGConverter:
             converted_doc = ezdxf.readfile(str(target))
             list(converted_doc.modelspace())
             source_coverage=_independent_source_coverage(src,converted_doc,header['code'])
+            # Independently inspect the converted DXF dictionary graph, not
+            # just the modelspace roster. The imported source NOD may differ
+            # from ezdxf's synthetic root, so inspect all named candidates.
+            from core.drawings.dwg_source_display_integrity import audit_named_dictionary_links
+            source_coverage = dict(source_coverage)
+            # A successful CLI run does NOT observe the LibreDWG dwg_read_file()
+            # C-API error bitmask. Keep this distinction in the receipt so
+            # CLI exit=0 cannot be misrepresented as native decoder error=0.
+            from core.drawings.libredwg_error_mask import libredwg_cli_receipt
+            source_coverage["libredwg_c_api_diagnostic"] = libredwg_cli_receipt(
+                proc.returncode, converter_is_libredwg=("dwg2dxf" in name)
+            )
+            diagnostic = audit_named_dictionary_links(converted_doc)
+            source_coverage["converted_dxf_named_dictionary_integrity"] = diagnostic
+            # Structural links and ModelSpace may both appear intact while
+            # the original MAP/AEC custom class instances have been dropped.
+            # Keep that narrowly observed DXF structure separate from proof
+            # of proprietary source semantics. This legacy diagnostic has no
+            # authenticated source-vs-output custom-payload/owner/reactor
+            # parity oracle, so it must never silently clear the converter
+            # integrity gate merely because both DXF namespaces contain
+            # ordinary XRECORDs or DICTIONARY objects.
+            structural_dxf_links_observed = (
+                diagnostic["converted_dxf_namespace_integrity_status"]
+                == "NO_DANGLING_LINKS_OBSERVED_IN_TARGETED_NAMESPACES"
+            )
+            modelspace_roster_observed = (
+                source_coverage.get("status") == "MATCHED_INDEPENDENT_MODELSPACE_ROSTER"
+            )
+            source_coverage["converted_dxf_structural_links_observed"] = structural_dxf_links_observed
+            source_coverage["independent_modelspace_roster_observed"] = modelspace_roster_observed
+            source_coverage["original_custom_semantic_parity_verified"] = False
+            source_coverage["original_custom_semantic_parity_veto"] = True
+            source_coverage["converter_integrity_veto"] = (
+                not structural_dxf_links_observed
+                or not modelspace_roster_observed
+                or source_coverage["original_custom_semantic_parity_veto"]
+            )
+            source_coverage["financial_quantity_approved"] = False
             if identity(target) != output_identity or digest(target) != output_digest:
                 raise DWGConversionError("خروجی DXF هنگام اعتبارسنجی تغییر کرده است")
         except DWGConversionError:

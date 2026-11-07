@@ -14,7 +14,7 @@ from math import dist, isfinite, pi
 from pathlib import Path
 from typing import Any
 
-from core.cad.persian_text_v1 import normalize_cad_text, is_rtl_cad_text
+from core.cad.persian_text_v1 import normalize_cad_text, is_legacy_shx_text_candidate
 from core.drawings.dwg_takeoff import DWGDocument, DWGEntity
 from core.drawings.dwg_converter import OfflineDWGConverter
 
@@ -124,9 +124,16 @@ def _native_display_geometry(typ: str, d: dict) -> dict:
             raise ValueError("Native display path exceeds safe vertex budget")
     if len(points) < 2:
         raise ValueError("Native display path is incomplete")
-    return {"display_points": points, "closed": bool(path.is_closed),
-            "display_fidelity": ("BOUNDARIES_ONLY_NO_SOLID_FILL" if typ == "SOLID" else
-                                 "TESSELLATED_SOURCE_GEOMETRY_NOT_MEASUREMENT")}
+    result = {"display_points": points, "closed": bool(path.is_closed),
+              "display_fidelity": ("BOUNDARIES_ONLY_NO_SOLID_FILL" if typ == "SOLID" else
+                                   "TESSELLATED_SOURCE_GEOMETRY_NOT_MEASUREMENT")}
+    if typ == "SOLID":
+        # Retain the actual original-DWG 3D coordinates for diagnostics. The
+        # native CAD preview is still 2D and never claims a verified 3D render.
+        from core.drawings.dwg_source_display_integrity import source_solid_3d_preview_manifest
+        result.update(source_solid_3d_preview_manifest(d.get("points", []),
+                                                       d.get("extrusion", (0, 0, 1))))
+    return result
 
 
 def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
@@ -237,10 +244,8 @@ def native_readonly_dwg_preview(path: str | Path) -> DWGDocument:
             data["font_name"] = "source-style-handle:" + data["style_handle"]
             # Do not pretend a Windows/Qt font can decode the text of a custom
             # legacy SHX byte-to-glyph mapping. Keep raw characters inspectable.
-            legacy_like = (
-                data["text_generation_flag"] & 2
-                and not is_rtl_cad_text(value)
-                and sum(1 for c in value if 0xA0 <= ord(c) <= 0x2FFF) >= 2
+            legacy_like = is_legacy_shx_text_candidate(
+                value, data["text_generation_flag"]
             )
             if legacy_like:
                 unresolved_fonts += 1

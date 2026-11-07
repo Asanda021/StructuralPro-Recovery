@@ -49,6 +49,36 @@ def is_rtl_cad_text(value: object) -> bool:
     return bool(_PERSIAN_ARABIC.search(normalize_cad_text(value)))
 
 
+def is_legacy_shx_text_candidate(value: object, text_generation_flag: object) -> bool:
+    """Conservative annotation warning, NEVER a font or glyph decoder.
+
+    Legacy SHX encodings can contain Arabic punctuation (\u061B/\u060C) and
+    Unicode-format characters (\u200C) without containing an actual readable
+    Persian/Arabic letter. The broader is_rtl_cad_text() predicate deliberately
+    counts punctuation and MUST NOT be used as a SHX provenance oracle.
+
+    This heuristic only flags suspicious old-style right-to-left text for human
+    review; False does not prove that a glyph map or font is correct.
+    """
+    try:
+        if not int(text_generation_flag) & 2:
+            return False
+    except (TypeError, ValueError, OverflowError):
+        return False
+    text = normalize_cad_text(value)
+    # Visible Arabic-script letters are distinct from punctuation/combining
+    # marks. A semicolon, comma or ZWNJ alone cannot certify a font mapping.
+    has_script_letters = any(
+        (0x0600 <= ord(ch) <= 0x08FF or 0xFB50 <= ord(ch) <= 0xFEFF)
+        and unicodedata.category(ch).startswith("L")
+        for ch in text
+    )
+    suspicious_legacy_codepoints = sum(
+        1 for ch in text if 0x00A0 <= ord(ch) <= 0x2FFF
+    )
+    return not has_script_letters and suspicious_legacy_codepoints >= 2
+
+
 def cad_text_height(entity_data: dict, default: float = 2.5) -> float:
     """Return a safe positive annotation height from parsed entity metadata."""
     for key in ("height", "char_height", "text_height"):

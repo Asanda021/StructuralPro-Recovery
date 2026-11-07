@@ -1,0 +1,225 @@
+# Public fixture only. Never upload original private engineering DWG, PDF or ledger.
+name: P8 P2 pinned second-reader public AC1018 smoke and offline wheel
+on:
+  push:
+    branches:
+      - fix/phase8-p2-offline-converter-veto-20261104
+    paths:
+      - core/drawings/dwg_second_decoder_probe.py
+      - tools/audit_phase8_p2_second_decoder.py
+      - tests/test_phase8_p2_second_decoder_probe.py
+      - tools/audit_phase8_p2_real_independent_sources.py
+      - tests/test_phase8_p2_independent_roster_audit.py
+      - core/drawings/dwg_ac1032_native_vertex_oracle.py
+      - tests/test_phase8_p2_ac1032_native_vertex_oracle.py
+      - tests/test_phase8_p2_ezdwg_modelspace_scope.py
+      - .github/workflows/phase8-p2-pinned-second-reader-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: p8-p2-public-reader-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-source-smoke:
+    name: Public AC1018 independent reader (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            wheel_sha256: 8239d8170264ae1612bcee06561ecdc53621c5017d979eaaf35d899dd12de44d
+          - os: windows-2022
+            wheel_sha256: ddf74b215ab0caf055bbf31229493d3a7e279c3cc11ffb9161e7d2560e52e874
+    timeout-minutes: 20
+    env:
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      EXPECTED_WHEEL_SHA256: ${{ matrix.wheel_sha256 }}
+    steps:
+      - name: Checkout exact source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Download pinned binary decoder wheel (never private input)
+        shell: bash
+        run: |
+          python -m pip download --disable-pip-version-check --no-deps --only-binary=:all: "ezdwg==0.17.0" -d wheelhouse
+          python - <<'PY'
+          import glob,hashlib,os
+          wheel=glob.glob("wheelhouse/*.whl")
+          assert len(wheel)==1, wheel
+          actual=hashlib.sha256(open(wheel[0],"rb").read()).hexdigest()
+          assert actual==os.environ["EXPECTED_WHEEL_SHA256"], (actual,"pin mismatch")
+          print("verified_pypi_wheel_sha256="+actual)
+          PY
+      - name: Install verified decoder locally on the runner
+        shell: bash
+        run: python -m pip install --no-index --no-deps --find-links=wheelhouse ezdwg==0.17.0
+      - name: Verify pinned reader exposes AC1032 native legacy VERTEX evidence APIs
+        shell: bash
+        run: |
+          python - <<'PY'
+          from importlib.metadata import version
+          from ezdwg import raw
+          assert version("ezdwg") == "0.17.0"
+          for name in ("decode_polyline_2d_with_vertex_data",
+                       "decode_polyline_sequence_members",
+                       "decode_vertex_2d_entities"):
+              assert callable(getattr(raw, name, None)), name
+          print("PUBLIC_PINNED_NATIVE_VERTEX_API_AVAILABLE_NOT_SOURCE_CERTIFIED")
+          PY
+      - name: Run synthetic fail-closed source-DXF audit tests
+        shell: bash
+        run: |
+          python -m pip install -q "pytest==9.0.2" "ezdxf==1.4.4"
+          python - <<'PY'
+          from importlib.metadata import version
+          assert version("ezdxf") == "1.4.4", "DXF verifier missing"
+          assert version("ezdwg") == "0.17.0", "Native reader changed"
+          print("PINNED_NATIVE_AND_DXF_READERS_AVAILABLE")
+          PY
+          python -m pytest -q -ra tests/test_phase8_p2_independent_roster_audit.py tests/test_phase8_p2_ezdwg_modelspace_scope.py
+      - name: Download independently authored public AC1018 test file and validate Git blob
+        shell: bash
+        run: |
+          curl -fLsS --retry 2 --max-time 60 -o public_insert_2004.dwg "https://raw.githubusercontent.com/monozukuri-ai/ezdwg/55e3ae4fb1318e5cdc624db73ac95f1c75caecff/examples/data/insert_2004.dwg"
+          test "$(git hash-object public_insert_2004.dwg)" = "630f329d62b9f402d8744d4c53b2509adeca41e3"
+          python - <<'PY'
+          from pathlib import Path
+          p=Path("public_insert_2004.dwg")
+          assert p.read_bytes()[:6]==b"AC1018"
+          print("PUBLIC_FIXTURE_AC1018_GIT_BLOB_VERIFIED")
+          PY
+      - name: Exercise actual independent native reader against public DWG
+        shell: bash
+        run: |
+          python tools/audit_phase8_p2_second_decoder.py public_insert_2004.dwg public-probe.json
+          python - <<'PY'
+          import json
+          r=json.load(open("public-probe.json",encoding="utf8"))
+          assert r["source_dwg_signature"]=="AC1018"
+          assert r["independent_decoder_executed"] is True
+          assert r["native_modelspace_entity_count"] > 0
+          assert r["status"]=="PARTIAL_NO_GO"
+          assert r["opaque_class_payloads_verified"] is False
+          assert r["geometry_approved_for_financial_takeoff"] is False
+          assert r["approved_quantities"] == 0
+          print("PUBLIC_NATIVE_READ_PASS_TOTAL="+str(r["native_modelspace_entity_count"]))
+          PY
+      - name: Exercise pinned native API against public AC1032 DWG fixture
+        shell: bash
+        run: |
+          curl -fLsS --retry 2 --max-time 60 -o public_ac1032.dwg "https://raw.githubusercontent.com/monozukuri-ai/ezdwg/43bad041452dd8e7a9c9f08d885dcb3cbbf24bd5/test_dwg/acadsharp/sample_AC1032.dwg"
+          test "$(git hash-object public_ac1032.dwg)" = "4cfa790d6719acf3aad9818bacbd693ac3ab71b8"
+          python - <<'PY'
+          from ezdwg import raw
+          p = "public_ac1032.dwg"
+          assert raw.detect_version(p) == "AC1032"
+          poly = raw.decode_polyline_2d_with_vertex_data(p)
+          sequence = raw.decode_polyline_sequence_members(p)
+          vertex = raw.decode_vertex_2d_entities(p)
+          assert all(isinstance(rows, list) for rows in (poly, sequence, vertex))
+          print("PUBLIC_AC1032_NATIVE_POLYLINES="+str(len(poly)))
+          print("PUBLIC_AC1032_NATIVE_SEQUENCE_ROWS="+str(len(sequence)))
+          print("PUBLIC_AC1032_NATIVE_VERTICES="+str(len(vertex)))
+          if poly:
+              from core.drawings.dwg_ac1032_native_vertex_oracle import _native_2d_vertex_roster
+              matched, _, _ = _native_2d_vertex_roster(poly, sequence, vertex)
+              assert matched
+              print("PUBLIC_AC1032_NATIVE_2D_VERTEX_ROSTER_CONSISTENT")
+          else:
+              print("PUBLIC_AC1032_NO_NATIVE_2D_VERTEX_TEST_CASE_IN_THIS_FIXTURE")
+          print("PUBLIC_FIXTURE_IS_NOT_USER_DRAWING_OR_FINANCIAL_ACCEPTANCE")
+          PY
+      - name: Exercise actual Rust legacy 2D reader on freshly generated public AC1015 DWG
+        shell: bash
+        run: |
+          python - <<'PY'
+          import ezdwg
+          from ezdwg import raw
+          from core.drawings.dwg_ac1032_native_vertex_oracle import _native_2d_vertex_roster
+          path = "synthetic_public_legacy_ac1015.dwg"
+          doc = ezdwg.new()
+          msp = doc.modelspace()
+          msp.add_polyline2d([(0, 0), (4, 0), (4, 3)], closed=True,
+                             bulges=[0.0, 0.5, -0.25])
+          block = doc.blocks.new("TestPart")
+          block.add_polyline2d([(0, 0), (2, 0), (2, 2)],
+                               bulges=[0.25, 0.0, 0.0])
+          msp.add_blockref("TestPart", (10, 20))
+          doc.save(path)
+          assert raw.detect_version(path) == "AC1015"
+          poly = raw.decode_polyline_2d_with_vertex_data(path)
+          members = raw.decode_polyline_sequence_members(path)
+          vertex = raw.decode_vertex_2d_entities(path)
+          assert len(poly) == 2, "Native writer/read mismatch: 2D polylines"
+          records, flags, sequences = _native_2d_vertex_roster(poly, members, vertex)
+          assert len(records) == 6 and len(flags) == 2 and len(sequences) == 2
+          assert sum(abs(data[2]) > 1e-9 for data in records.values()) == 3
+          print("PUBLIC_GENERATED_NATIVE_2D_VERTEX_READER_PASS="+str(len(records)))
+          print("SAME_LIBRARY_GENERATED_SOURCE_IS_A_SMOKE_TEST_NOT_DWG_USER_ORACLE")
+          PY
+      - name: Create verified wheel and read-only CLI bundle without private CAD
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          from zipfile import ZipFile,ZIP_DEFLATED
+          wheel=next(Path("wheelhouse").glob("*.whl"))
+          manifest={
+              "ezdwg_version":"0.17.0",
+              "wheel_name":wheel.name,
+              "wheel_sha256":hashlib.sha256(wheel.read_bytes()).hexdigest(),
+              "public_test_fixture_git_blob":"630f329d62b9f402d8744d4c53b2509adeca41e3",
+              "proprietary_opaque_payloads_supported":False,
+              "financial_geometry_approved":False,
+              "private_files_included":False
+          }
+          text=("OFFLINE DWG SECOND READER PROBE - NO ENGINEERING APPROVAL\n"
+                "Use Python 3.10+ with architecture matching the wheel.\n"
+                "From this extracted directory, install with:\n"
+                "  python -m pip install --no-index --no-deps --find-links=wheelhouse ezdwg==0.17.0\n"
+                "Then run on the original DWG only on your private machine:\n"
+                "  python tools/audit_phase8_p2_second_decoder.py ORIGINAL.dwg report.json\n"
+                "The report is PARTIAL_NO_GO even if the high-level reader succeeds.\n"
+                "For original AC1032 legacy VERTEX field provenance only, install\n"
+                "project requirement ezdxf then, on a private POSIX system:\n"
+                "  python -m tools.audit_phase8_p2_ac1032_vertex_bulge --private-config /secure/vertex-config.json --original-native-vertex-oracle\n"
+                "The 0600 JSON config must live under a 0700 private directory,\n"
+                "contain original_dwg, reference_dxf, candidate_dxf, their\n"
+                "three *_sha256 fields and an unused output_json path outside Git.\n"
+                "Windows private JSON output is vetoed until DACL review.\n"
+                "This is a field-only native reader diagnostic: never payable.\n"
+                "Do NOT upload original DWG or report to the public GitHub repository.\n")
+          Path("dist").mkdir(exist_ok=True)
+          with ZipFile("dist/p8p2-native-second-reader-"+os.environ.get("RUNNER_OS","unknown").lower()+".zip","w",ZIP_DEFLATED) as z:
+              z.write(wheel,"wheelhouse/"+wheel.name)
+              for name in (
+                  "core/drawings/dwg_second_decoder_probe.py",
+                  "tools/audit_phase8_p2_second_decoder.py",
+                  "core/drawings/dwg_legacy_vertex_bulge_audit.py",
+                  "core/drawings/dwg_ac1032_native_vertex_oracle.py",
+                  "core/drawings/dwg_opaque_source_receipt.py",
+                  "tools/audit_phase8_p2_opaque_source_bytes.py",
+                  "tools/audit_phase8_p2_ac1032_vertex_bulge.py",
+              ):
+                  z.write(name,name)
+              z.writestr("MANIFEST.json",json.dumps(manifest,sort_keys=True,indent=2))
+              z.writestr("README.txt",text)
+          PY
+      - name: Upload public-only reproducible offline kit
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8-p2-pinned-reader-${{ matrix.os }}-${{ github.sha }}
+          path: |
+            dist/*.zip
+            public-probe.json
+          if-no-files-found: error
+          retention-days: 14

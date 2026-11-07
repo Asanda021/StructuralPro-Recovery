@@ -1,0 +1,48 @@
+name: P8 P2 independent ezdwg raw source wheelhouse (public packages only)
+on:
+  push:
+    branches: [fix/phase8-p2-offline-converter-veto-20261104]
+    paths:
+      - .github/workflows/phase8-p2-independent-opaque-source-wheelhouse.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-pinned-public-decoder:
+    name: Offline ezdwg 0.17.0 raw object reader (NO private CAD)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Package pinned independent reader and deps in public wheelhouse
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/p8p2-ezdwg-wheelhouse"
+          python -m pip download --only-binary=:all: \
+            -d "$RUNNER_TEMP/p8p2-ezdwg-wheelhouse" \
+            ezdwg==0.17.0
+          python -m pip install --no-index --find-links "$RUNNER_TEMP/p8p2-ezdwg-wheelhouse" ezdwg==0.17.0
+          python - <<'PY'
+          from importlib.metadata import version
+          import ezdwg
+          assert version('ezdwg') == '0.17.0'
+          assert callable(ezdwg.raw.list_object_map_entries)
+          assert callable(ezdwg.raw.read_object_records_by_handle)
+          print('Public raw-object reader API PINNED PASS; NO drawing supplied')
+          PY
+          cd "$RUNNER_TEMP/p8p2-ezdwg-wheelhouse"
+          sha256sum *.whl > WHEEL_SHA256.txt
+          printf '%s\n' "$GITHUB_SHA" > STRUCTURALPRO_HEAD.txt
+          printf '%s\n' 'Only public PyPI packages; no private CAD. Installation/reading to take place locally after file hash verification. No semantic payload or BOQ acceptance.' > NOT_FOR_RELEASE.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-ezdwg-wheelhouse-public-only-${{ github.sha }}
+          path: ${{ runner.temp }}/p8p2-ezdwg-wheelhouse/
+          if-no-files-found: error
+          retention-days: 7

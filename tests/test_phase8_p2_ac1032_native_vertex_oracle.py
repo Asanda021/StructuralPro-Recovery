@@ -1,0 +1,416 @@
+"""Synthetic only: pinned native 2D VERTEX API cross-reader contract."""
+from __future__ import annotations
+
+import hashlib
+import re
+import sys
+from types import ModuleType, SimpleNamespace
+
+import pytest
+import ezdxf
+from core.drawings import dwg_ac1032_native_vertex_oracle as oracle
+
+
+def sha(p):
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def setup_files(tmp_path, *, erase_bulges=False, move_vertex=False, modify_parent=False,
+                erase_widths=False, erase_tangent=False, preserve_nonzero_extras=False):
+    original = tmp_path / 'original.dwg'
+    original.write_bytes(b'AC1032' + bytes(128))
+    results = []
+    for filename, altered in [('reference.dxf', False), ('candidate.dxf', True)]:
+        d = ezdxf.new('R2013')
+        poly = d.modelspace().add_polyline2d([(0,0),(2,0),(2,2)], close=True)
+        vertices = list(poly.vertices)
+        vertices[0].dxf.bulge = 0.5
+        vertices[1].dxf.bulge = -0.25
+        if erase_widths or erase_tangent or preserve_nonzero_extras:
+            vertices[0].dxf.start_width = 0.25
+            vertices[0].dxf.end_width = 0.5
+            vertices[0].dxf.tangent = 35.0
+        if altered and erase_widths:
+            vertices[0].dxf.start_width = 0.0
+            vertices[0].dxf.end_width = 0.0
+        if altered and erase_tangent:
+            vertices[0].dxf.tangent = 0.0
+        block = d.blocks.new('FOOTPRINT')
+        block_poly = block.add_polyline2d([(1,1),(2,1),(2,2)], close=True)
+        block_vertices = list(block_poly.vertices)
+        block_vertices[0].dxf.bulge = 0.75
+        if altered and erase_bulges:
+            for v in (*vertices,*block_vertices):
+                v.dxf.bulge = 0
+        if altered and move_vertex:
+            vertices[0].dxf.location = (0.5,0,0)
+        path = tmp_path / filename
+        d.saveas(path)
+        parsed = ezdxf.readfile(path)
+        text = path.read_text()
+        for vertex in parsed.entitydb.values():
+            if vertex is not None and vertex.dxftype() == 'VERTEX':
+                pattern = (rf"(\n  0\nVERTEX\n  5\n{vertex.dxf.handle}\n330\n)"
+                           r"([0-9A-F]+)(\n)")
+                match = re.search(pattern,text)
+                assert match is not None
+                text = text[:match.start(2)] + str(vertex.dxf.owner) + text[match.end(2):]
+        path.write_text(text)
+        if altered and modify_parent:
+            parsed = ezdxf.readfile(path)
+            text = path.read_text()
+            pattern = (rf"(\n  0\nVERTEX\n  5\n{vertices[0].dxf.handle}\n330\n)"
+                       r"([0-9A-F]+)(\n)")
+            match = re.search(pattern,text)
+            assert match is not None
+            current = match.group(2)
+            candidates = [e.dxf.handle for e in parsed.entitydb.values()
+                          if e is not None and e.dxftype() == 'POLYLINE'
+                          and e.dxf.handle != current]
+            assert candidates
+            path.write_text(text[:match.start(2)] + candidates[0] + text[match.end(2):])
+        results.append(path)
+    return original, *results
+
+
+def native_projection_from_dxf(dxf):
+    doc = ezdxf.readfile(dxf)
+    poly_rows, members, vertex_rows = [], [], []
+    for e in doc.entitydb.values():
+        if e is None or e.dxftype() != 'POLYLINE':
+            continue
+        vertices = list(e.vertices)
+        decoded = []
+        for v in vertices:
+            p = v.dxf.location
+            decoded.append((float(p.x),float(p.y),float(p.z),
+                            float(v.dxf.get('start_width',0.0)),
+                            float(v.dxf.get('end_width',0.0)),
+                            float(v.dxf.get('bulge',0)),
+                            float(v.dxf.get('tangent',0.0)),
+                            int(v.dxf.get('flags',0))))
+            vertex_rows.append((int(v.dxf.handle,16),int(v.dxf.get('flags',0)),
+                                float(p.x),float(p.y),float(p.z),
+                                float(v.dxf.get('start_width',0.0)),
+                                float(v.dxf.get('end_width',0.0)),
+                                float(v.dxf.get('bulge',0)),
+                                float(v.dxf.get('tangent',0.0))))
+        poly_rows.append((int(e.dxf.handle,16), int(e.dxf.get('flags',0)), decoded))
+        members.append((int(e.dxf.handle,16),'POLYLINE_2D',
+                        [int(v.dxf.handle,16) for v in vertices],[],
+                        int(e.seqend.dxf.handle,16)))
+    return poly_rows,members,vertex_rows
+
+
+def fake_reader(monkeypatch, native_reference):
+    poly,members,verts = native_projection_from_dxf(native_reference)
+    native = ModuleType('ezdwg')
+    raw = SimpleNamespace(detect_version=lambda p:'AC1032',
+                          decode_polyline_2d_with_vertex_data=lambda p:poly,
+                          decode_polyline_sequence_members=lambda p:members,
+                          decode_vertex_2d_entities=lambda p:verts)
+    native.raw = raw
+    monkeypatch.setitem(sys.modules,'ezdwg',native)
+    monkeypatch.setattr(oracle.metadata,'version',lambda n:'0.17.0')
+    return poly,members,verts
+
+
+def run(files):
+    src,ref,cand = files
+    return oracle.audit_ac1032_native_2d_vertex_sources(
+        src,ref,cand,original_sha256=sha(src),reference_sha256=sha(ref),candidate_sha256=sha(cand))
+
+
+def test_original_reader_fields_match_but_never_approve(tmp_path,monkeypatch):
+    files = setup_files(tmp_path)
+    fake_reader(monkeypatch,files[1])
+    r=run(files)
+    assert r['native_2d_vertex_observations_verified_by_reader']==6
+    assert r['status']=='NATIVE_FIELDS_MATCH_SEMANTICS_UNVERIFIED_NO_GO'
+    assert r['reference_dxf']['bulge_difference_count']==0
+    assert r['candidate_dxf']['bulge_difference_count']==0
+    assert r['ac1032_source_geometry_certified'] is False
+    assert r['financial_quantity_rows_approved']==0
+
+
+def test_gnu_like_zero_bulges_exposed_against_original(tmp_path,monkeypatch):
+    files = setup_files(tmp_path,erase_bulges=True)
+    fake_reader(monkeypatch,files[1])
+    r=run(files)
+    assert r['reference_dxf']['bulge_difference_count']==0
+    assert r['candidate_dxf']['native_nonzero_bulge_zeroed_in_dxf_count']==3
+    assert r['candidate_dxf']['bulge_difference_count']==3
+    assert r['status']=='NATIVE_SOURCE_VS_DXF_FIELD_DISCREPANCY_NO_GO'
+    assert r['financial_quantity_rows_approved']==0
+
+
+def test_changed_coordinate_detected(tmp_path,monkeypatch):
+    files=setup_files(tmp_path,move_vertex=True)
+    fake_reader(monkeypatch,files[1])
+    assert run(files)['candidate_dxf']['coordinate_difference_count']==1
+
+
+def test_changed_raw_owner_cannot_be_normalized_to_false_parity(tmp_path,monkeypatch):
+    files=setup_files(tmp_path,modify_parent=True)
+    fake_reader(monkeypatch,files[1])
+    with pytest.raises(ValueError,match='normalization changed raw ownership'):
+        run(files)
+
+
+@pytest.mark.parametrize('bad',['duplicate_polys','missing_members','duplicate_vertex','lost_vertex',
+                                'polyline_reader_conflict','bad_seqend','wrong_type','bogus_vertex_flag'])
+def test_conflicting_native_fields_fail_closed(tmp_path,monkeypatch,bad):
+    files=setup_files(tmp_path)
+    poly,members,verts=fake_reader(monkeypatch,files[1])
+    poly=list(poly);members=list(members);verts=list(verts)
+    if bad=='duplicate_polys':poly.append(poly[0])
+    elif bad=='missing_members':members.pop()
+    elif bad=='duplicate_vertex':verts.append(verts[0])
+    elif bad=='lost_vertex':verts.pop()
+    elif bad=='polyline_reader_conflict':
+        p,f,data=poly[0];poly[0]=(p,f,[(*data[0][:5],99.0,*data[0][6:]),*data[1:]])
+    elif bad=='bad_seqend':
+        p,k,ids,faces,end=members[0];members[0]=(p,k,ids,faces,None)
+    elif bad=='wrong_type':
+        p,k,ids,faces,end=members[0];members[0]=(p,'POLYLINE_3D',ids,faces,end)
+    else:
+        v=list(verts[0]);v[1]=70000;verts[0]=tuple(v)
+    with pytest.raises(ValueError):
+        oracle._native_2d_vertex_roster(poly,members,verts)
+
+
+def test_source_sha_mismatch_blocks_before_native_decode(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    fake_reader(monkeypatch,files[1])
+    src,ref,cand=files
+    with pytest.raises(ValueError,match='SHA-256'):
+        oracle.audit_ac1032_native_2d_vertex_sources(src,ref,cand,original_sha256='0'*64,
+                            reference_sha256=sha(ref),candidate_sha256=sha(cand))
+
+
+def test_wrong_pinned_reader_version_blocks(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    fake_reader(monkeypatch,files[1])
+    monkeypatch.setattr(oracle.metadata,'version',lambda x:'0.19.0')
+    with pytest.raises(ValueError,match='version'):
+        run(files)
+
+
+def test_private_hash_and_handles_not_reported(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    fake_reader(monkeypatch,files[1])
+    r=run(files)
+    output=repr(r)
+    for path in files:
+        assert str(path) not in output
+        assert sha(path) not in output
+    assert r['original_to_converted_financial_geometry_approved'] is False
+
+
+def test_redundant_closed_polyline_terminal_position_is_not_phantom_handle(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    poly,members,verts=fake_reader(monkeypatch,files[1])
+    parent,flags,data=poly[0]
+    assert flags & 1
+    poly[0]=(parent,flags,[*data,data[0]])
+    result,_,sequences=oracle._native_2d_vertex_roster(poly,members,verts)
+    assert len(result)==6
+    assert len(sequences[f"{parent:X}"])==3
+
+
+def test_nonredundant_extra_closed_polyline_position_fails_closed(tmp_path,monkeypatch):
+    files=setup_files(tmp_path)
+    poly,members,verts=fake_reader(monkeypatch,files[1])
+    parent,flags,data=poly[0]
+    nonredundant=(99.0,*data[0][1:])
+    poly[0]=(parent,flags,[*data,nonredundant])
+    with pytest.raises(ValueError,match="nonredundant extra endpoint"):
+        oracle._native_2d_vertex_roster(poly,members,verts)
+
+
+@pytest.mark.parametrize(('field','replacement'), [
+    (3, 0.25), (4, 0.5), (5, 0.75), (6, 0.125), (7, 2),
+    (5, float('nan')), (3, 'INVALID_WIDTH'),
+])
+def test_closed_extra_coincident_endpoint_cannot_hide_metadata(
+    tmp_path, monkeypatch, field, replacement,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    parent, flags, data = poly[0]
+    assert flags & 1
+    closing = list(data[0])
+    closing[field] = replacement
+    poly[0] = (parent, flags, [*data, tuple(closing)])
+    with pytest.raises(ValueError, match='nonredundant extra endpoint metadata'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+def test_closed_extra_matching_endpoint_with_nonfinite_original_metadata_fails(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    parent, flags, data = poly[0]
+    first = list(data[0])
+    first[3] = float('nan')
+    data[0] = tuple(first)
+    poly[0] = (parent, flags, [*data, data[0]])
+    with pytest.raises(ValueError, match='nonredundant extra endpoint metadata'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+@pytest.mark.parametrize(('projection', 'field', 'value'), [
+    ('poly', 3, 0.25), ('poly', 4, 0.5), ('poly', 6, 0.75),
+    ('vertex', 5, 0.25), ('vertex', 6, 0.5), ('vertex', 8, 0.75),
+    ('poly', 3, float('nan')), ('poly', 4, -0.01),
+    ('poly', 6, float('inf')),
+    ('vertex', 5, float('nan')), ('vertex', 6, -0.01),
+    ('vertex', 8, float('inf')),
+])
+def test_native_width_and_tangent_evidence_cannot_diverge_silently(
+    tmp_path, monkeypatch, projection, field, value,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    poly, members, verts = list(poly), list(members), list(verts)
+    if projection == 'poly':
+        parent, flags, rows = poly[0]
+        first = list(rows[0])
+        first[field] = value
+        poly[0] = (parent, flags, [tuple(first), *rows[1:]])
+    else:
+        first = list(verts[0])
+        first[field] = value
+        verts[0] = tuple(first)
+    with pytest.raises(ValueError, match='width/bulge/tangent|geometry conflict'):
+        oracle._native_2d_vertex_roster(poly, members, verts)
+
+
+def test_matching_nonzero_native_width_and_tangent_is_consistent(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, files[1])
+    poly, members, verts = list(poly), list(members), list(verts)
+    parent, flags, rows = poly[0]
+    first = list(rows[0])
+    first[3], first[4], first[6] = 0.2, 0.4, 0.6
+    poly[0] = (parent, flags, [tuple(first), *rows[1:]])
+    raw_vertex = list(verts[0])
+    raw_vertex[5], raw_vertex[6], raw_vertex[8] = 0.2, 0.4, 0.6
+    verts[0] = tuple(raw_vertex)
+    roster, _, _ = oracle._native_2d_vertex_roster(poly, members, verts)
+    assert len(roster) == 6
+    assert all(len(record) == 7 for record in roster.values())
+
+
+
+@pytest.mark.parametrize(('mode','expected'), [
+    ('width', ('start_width_difference_count', 'end_width_difference_count')),
+    ('tangent', ('tangent_difference_count',)),
+])
+def test_source_nonzero_vertex_metadata_lost_in_candidate_is_not_silent(
+    tmp_path, monkeypatch, mode, expected,
+):
+    files = setup_files(tmp_path, erase_widths=mode=='width',
+                        erase_tangent=mode=='tangent')
+    fake_reader(monkeypatch, files[1])
+    report = run(files)
+    assert report['status'] == 'NATIVE_SOURCE_VS_DXF_FIELD_DISCREPANCY_NO_GO'
+    for name in expected:
+        assert report['reference_dxf'][name] == 0
+        assert report['candidate_dxf'][name] == 1
+    assert report['financial_quantity_rows_approved'] == 0
+
+
+def test_source_matching_nonzero_vertex_width_and_tangent_remains_no_go(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    report = run(files)
+    for name in ('start_width_difference_count',
+                 'end_width_difference_count', 'tangent_difference_count'):
+        assert report['reference_dxf'][name] == 0
+        assert report['candidate_dxf'][name] == 0
+    assert report['status'] == 'NATIVE_FIELDS_MATCH_SEMANTICS_UNVERIFIED_NO_GO'
+    assert report['policy'].endswith('_v2')
+    assert report['financial_quantity_rows_approved'] == 0
+
+
+@pytest.mark.parametrize('corrupt', ['nan','-1.0'])
+def test_raw_dxf_width_invalid_value_is_rejected_before_parsed_comparison(
+    tmp_path, monkeypatch, corrupt,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    content = files[2].read_text()
+    anchor = ' 40\n0.25\n'
+    assert content.count(anchor) >= 1
+    files[2].write_text(content.replace(anchor, ' 40\n'+corrupt+'\n', 1))
+    with pytest.raises(ValueError, match='Nonfinite raw DXF|Negative raw DXF'):
+        run(files)
+
+
+def test_raw_and_ezdxf_vertex_width_disagreement_blocks(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    actual = oracle._raw_vertex_owner_bulge
+    def conflicting_raw(path, **options):
+        observations, flags = actual(path, **options)
+        assert options.get('include_width_tangent') is True
+        handle = next(iter(observations))
+        owner, bulge, start, end, tangent = observations[handle]
+        observations[handle] = (owner, bulge, start+0.1, end, tangent)
+        return observations, flags
+    monkeypatch.setattr(oracle, '_raw_vertex_owner_bulge', conflicting_raw)
+    with pytest.raises(ValueError, match='normalization changed raw VERTEX width/tangent'):
+        run(files)
+
+
+def test_original_only_native_2d_inventory_is_aggregate_no_go(tmp_path, monkeypatch):
+    src, ref, _ = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, ref)
+    result = oracle.audit_original_ac1032_native_2d_inventory(
+        src, original_sha256=sha(src))
+    assert result['all_containers_native_2d_polyline_count'] == 2
+    assert result['all_containers_native_2d_vertex_count'] == 6
+    assert result['native_nonzero_bulge_field_count'] == 3
+    assert result['native_nonzero_width_field_count'] == 1
+    assert result['native_closed_2d_polyline_flag_count'] == 2
+    assert result['modelspace_only'] is False
+    assert result['status'] == 'NATIVE_ORIGINAL_FIELDS_ONLY_NO_GO'
+    assert result['source_units_verified'] is False
+    assert result['converted_dxf_2d_geometry_verified'] is False
+    assert result['financial_quantity_rows_approved'] == 0
+    assert result['geometry_approved_for_financial_takeoff'] is False
+    assert str(src) not in repr(result)
+    assert sha(src) not in repr(result)
+
+
+def test_original_only_native_inventory_wrong_hash_stops_before_decode(
+    tmp_path, monkeypatch,
+):
+    src, ref, _ = setup_files(tmp_path)
+    fake_reader(monkeypatch, ref)
+    with pytest.raises(ValueError, match='SHA-256'):
+        oracle.audit_original_ac1032_native_2d_inventory(
+            src, original_sha256='0' * 64)
+
+
+def test_original_only_native_inventory_rejects_conflicting_reader_fields(
+    tmp_path, monkeypatch,
+):
+    src, ref, _ = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, ref)
+    # The original DWG's native POLYLINE and VERTEX reader projections
+    # contradict each other: reject rather than give a positive inventory.
+    raw_vertex = list(verts[0])
+    raw_vertex[5] = -0.5
+    verts[0] = tuple(raw_vertex)
+    with pytest.raises(ValueError, match='width/bulge/tangent|geometry conflict'):
+        oracle.audit_original_ac1032_native_2d_inventory(
+            src, original_sha256=sha(src))

@@ -1,0 +1,47 @@
+name: P8 P2 independent ACadSharp public offline binary for private sort-order audit
+on:
+  push:
+    branches:
+      - fix/phase8-p2-offline-converter-veto-20261104
+    paths:
+      - .github/workflows/phase8-p2-independent-acadsharp-private-sort-oracle.yml
+      - tools/acadsharp-dwg-bridge/Program.cs
+      - tools/acadsharp-dwg-bridge/StructuralPro.DwgBridge.csproj
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-independently:
+    name: Publish independent ACadSharp bridge (public source only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Publish .NET 8 self-contained Linux bridge without user DWG
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet --info
+          dotnet publish tools/acadsharp-dwg-bridge/StructuralPro.DwgBridge.csproj \
+            -c Release -r linux-x64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:EnableCompressionInSingleFile=true \
+            -p:DebugType=none \
+            -p:DebugSymbols=false \
+            -o "$RUNNER_TEMP/acadsharp-private-oracle"
+          cd "$RUNNER_TEMP/acadsharp-private-oracle"
+          test -x StructuralPro.DwgBridge
+          ./StructuralPro.DwgBridge --version
+          printf '%s\n' "$GITHUB_SHA" > STRUCTURALPRO_BRIDGE_COMMIT.txt
+          printf '%s\n' 'ACadSharp 3.8.0 (public NuGet package), independent of LibreDWG.' > INDEPENDENT_READER_PIN.txt
+          printf '%s\n' 'Experimental offline validation only. Never release; never upload CAD originals or derived DXF. No sort-order or BOQ approval from successful conversion alone.' > NOT_FOR_RELEASE.txt
+          sha256sum StructuralPro.DwgBridge StructuralPro.DwgBridge.pdb 2>/dev/null > /dev/null || true
+          sha256sum StructuralPro.DwgBridge > PUBLIC_BINARY_SHA256.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-independent-acadsharp-offline-oracle-${{ github.sha }}
+          path: ${{ runner.temp }}/acadsharp-private-oracle/
+          if-no-files-found: error
+          retention-days: 7

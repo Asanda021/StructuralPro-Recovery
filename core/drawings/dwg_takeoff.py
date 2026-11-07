@@ -353,6 +353,16 @@ class DWGTakeoffEngine:
             finally:
                 converted.unlink(missing_ok=True)
             doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":getattr(provider,"version","unverified"),"exit_code":0}
+            # A readable DXF and a successful bridge process are not proof of
+            # original custom-object, SHX, or revision fidelity.
+            doc.conversion.update({
+                "geometry_approved_for_financial_takeoff": False,
+                "native_decoder_full_object_graph_verified": False,
+                "native_decoder_error_mask_verified": False,
+                "source_revision_verified": False,
+                "requires_independent_original_dwg_oracle": True,
+                "safety_reason": "ACADSHARP_SUCCESS_NOT_FULL_NATIVE_COVERAGE",
+            })
             if hashlib.sha256(p.read_bytes()).hexdigest()!=original_sha:raise RuntimeError("فایل DWG هنگام تبدیل تغییر کرده است")
             doc.source_sha256=original_sha
             doc.source = str(p)
@@ -397,6 +407,14 @@ class DWGTakeoffEngine:
                     "original_dxf_unit_code": receipt.original_dxf_unit_code,
                     "unit_metadata_repaired": receipt.source_unit_restored_in_dxf,
                     "exit_code": 0,
+                    # Strict ModelSpace matching does not cover opaque OBJECTS
+                    # or establish the source issue and SHX glyph semantics.
+                    "geometry_approved_for_financial_takeoff": False,
+                    "native_decoder_full_object_graph_verified": False,
+                    "native_decoder_error_mask_verified": False,
+                    "source_revision_verified": False,
+                    "requires_independent_original_dwg_oracle": True,
+                    "safety_reason": "STRICT_MODELSPACE_NOT_FULL_NATIVE_COVERAGE",
                 }
                 doc.source_sha256 = original_sha
                 doc.source = str(p)
@@ -454,6 +472,10 @@ class DWGTakeoffEngine:
             doc.source = str(p)
             doc.format = "DWG→DXF (strict recovered missing LINEs)"
             return doc
+        # Consumer must honor the converter's explicit financial veto, rather
+        # than merely displaying an advisory boolean in a receipt.
+        if getattr(result, 'financial_veto', True) is not True:
+            raise RuntimeError('DWG converter may not authorize payable geometry')
         try:
             doc = self._read_dxf(result.output)
         finally:
@@ -463,7 +485,19 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
-        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{})}
+        # CLI success and an equal ModelSpace roster do not prove full native
+        # decoder object/proxy coverage, error bitmask health or drawing revision.
+        # Preview remains readable, but payable geometry stays vetoed until
+        # independent original-source verification is actually implemented.
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{}),
+                        "converter_financial_veto":True,
+                        "converter_integrity_veto":getattr(result,"source_coverage",{}).get("converter_integrity_veto",True),
+                        "geometry_approved_for_financial_takeoff":False,
+                        "native_decoder_full_object_graph_verified":False,
+                        "native_decoder_error_mask_verified":False,
+                        "source_revision_verified":False,
+                        "requires_independent_original_dwg_oracle":True,
+                        "safety_reason":"OFFLINE_CLI_SUCCESS_NOT_FULL_NATIVE_COVERAGE"}
         doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"
