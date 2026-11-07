@@ -40,7 +40,7 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
     poly_rows: decode_polyline_2d_with_vertex_data, per-vertex
     (x,y,z,start_width,end_width,bulge,tangent,flags).
     sequence_rows: decode_polyline_sequence_members, vertex identities.
-    vertex_rows: decode_vertex_2d_entities, per-handle geometry/bulge.
+    vertex_rows: decode_vertex_2d_entities, per-handle geometry/bulge/width/tangent.
     """
     if not all(isinstance(rows, (list, tuple)) for rows in (poly_rows, sequence_rows, vertex_rows)):
         raise ValueError('Incomplete independent original-DWG native reader data')
@@ -145,7 +145,9 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
                     or any(abs(a-b) > 1e-9 for a,b in zip(
                         (start_width, end_width, tangent), truth[3:]))):
                 raise ValueError('Native source VERTEX and POLYLINE geometry conflict')
-            result[handle] = (parent, xyz, bulge, truth[2])
+            # Preserve extra fields until both diagnostic DXFs are compared.
+            result[handle] = (parent, xyz, bulge, truth[2],
+                              start_width, end_width, tangent)
             if len(result) > _MAX_VERTICES:
                 raise ValueError('Unbounded native POLYLINE VERTEX inventory')
     if not result:
@@ -156,15 +158,32 @@ def _native_2d_vertex_roster(poly_rows, sequence_rows, vertex_rows):
 def _compare_native_to_dxf(source_roster, source_flags, source_sequence, dxf_path, *, tolerance):
     """Cross-check original observations with raw DXF tags and parser view."""
     import ezdxf
-    raw, raw_parent_flags = _raw_vertex_owner_bulge(dxf_path)
+    raw, raw_parent_flags = _raw_vertex_owner_bulge(
+        dxf_path, include_width_tangent=True)
     dxf = ezdxf.readfile(str(dxf_path))
     parsed = _roster(dxf)
     if set(raw) != set(parsed):
         raise ValueError('DXF raw/parsed VERTEX roster mismatch')
+    dxf_width_tangent = {}
     for h, entry in parsed.items():
-        owner, bulge = raw[h]
+        owner, bulge, raw_start, raw_end, raw_tangent = raw[h]
         if entry[0] != owner or abs(entry[4]-bulge) > tolerance:
             raise ValueError('DXF parser normalization changed raw ownership or bulge')
+        vertex_entity = dxf.entitydb.get(h)
+        if vertex_entity is None or vertex_entity.dxftype() != 'VERTEX':
+            raise ValueError('Missing DXF parsed VERTEX width/tangent identity')
+        try:
+            parsed_extras = tuple(float(vertex_entity.dxf.get(name, 0.0))
+                                  for name in ('start_width', 'end_width', 'tangent'))
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError('Malformed DXF VERTEX width/tangent') from exc
+        if (not all(math.isfinite(v) for v in parsed_extras)
+                or parsed_extras[0] < 0 or parsed_extras[1] < 0):
+            raise ValueError('Invalid DXF VERTEX width/tangent')
+        if any(abs(a - b) > tolerance for a, b in
+               zip(parsed_extras, (raw_start, raw_end, raw_tangent))):
+            raise ValueError('DXF parser normalization changed raw VERTEX width/tangent')
+        dxf_width_tangent[h] = parsed_extras
     for parent in {entry[0] for entry in parsed.values()}:
         entity = dxf.entitydb.get(parent)
         flags = entity.dxf.get('flags', 0)
@@ -179,7 +198,7 @@ def _compare_native_to_dxf(source_roster, source_flags, source_sequence, dxf_pat
     unscoped = target_ids - source_ids
     differences = Counter()
     for h in source_ids & target_ids:
-        owner, xyz, bulge, flags = source_roster[h]
+        owner, xyz, bulge, flags, source_start, source_end, source_tangent = source_roster[h]
         dxf_data = parsed[h]
         if owner != dxf_data[0]:
             differences['owner'] += 1
@@ -191,6 +210,15 @@ def _compare_native_to_dxf(source_roster, source_flags, source_sequence, dxf_pat
             differences['bulge'] += 1
             if abs(bulge) > tolerance and abs(dxf_data[4]) <= tolerance:
                 differences['lost_curvature'] += 1
+        target_start, target_end, target_tangent = dxf_width_tangent[h]
+        if abs(source_start - target_start) > tolerance:
+            differences['start_width'] += 1
+        if abs(source_end - target_end) > tolerance:
+            differences['end_width'] += 1
+        # The native reader's tangent convention is not a certified Autodesk
+        # source oracle. A discrepancy is a veto, not permission to convert.
+        if abs(source_tangent - target_tangent) > tolerance:
+            differences['tangent'] += 1
 
     # Ordering can change geometry while all handles, coordinates and bulges match.
     target_sequences = {}
@@ -213,6 +241,9 @@ def _compare_native_to_dxf(source_roster, source_flags, source_sequence, dxf_pat
         'vertex_flag_difference_count': differences['flags'],
         'coordinate_difference_count': differences['xyz'],
         'bulge_difference_count': differences['bulge'],
+        'start_width_difference_count': differences['start_width'],
+        'end_width_difference_count': differences['end_width'],
+        'tangent_difference_count': differences['tangent'],
         'native_nonzero_bulge_zeroed_in_dxf_count': differences['lost_curvature'],
         'sequence_difference_count': differences['order'],
         'polyline_flag_difference_count': differences['polyline_flags'],
@@ -256,11 +287,13 @@ def audit_ac1032_native_2d_vertex_sources(
         _unchanged(p,identity,digest)
     discrepancy_fields = ('source_vertex_id_missing_count','owner_difference_count',
                           'vertex_flag_difference_count','coordinate_difference_count',
-                          'bulge_difference_count','sequence_difference_count',
+                          'bulge_difference_count','start_width_difference_count',
+                          'end_width_difference_count','tangent_difference_count',
+                          'sequence_difference_count',
                           'polyline_flag_difference_count')
     any_diff = any(item[key] for item in (reference,candidate) for key in discrepancy_fields)
     return {
-        'policy': 'p8p2_native_ac1032_legacy_2d_vertex_source_vs_two_dxf_v1',
+        'policy': 'p8p2_native_ac1032_legacy_2d_vertex_source_vs_two_dxf_v2',
         'reader_version': 'ezdwg==0.17.0',
         'native_2d_vertex_observations_verified_by_reader': len(source),
         'reference_dxf': reference, 'candidate_dxf': candidate,
