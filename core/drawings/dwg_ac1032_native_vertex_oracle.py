@@ -222,7 +222,9 @@ def _compare_native_to_dxf(source_roster, source_flags, source_sequence, dxf_pat
 
     # Ordering can change geometry while all handles, coordinates and bulges match.
     target_sequences = {}
-    for h,(parent,_) in raw.items():
+    for h, raw_entry in raw.items():
+        # Raw VERTEX evidence now includes owner, bulge, widths and tangent.
+        parent = raw_entry[0]
         target_sequences.setdefault(parent, []).append(h)
     for parent, handles in source_sequence.items():
         dxf_handles = target_sequences.get(parent, [])
