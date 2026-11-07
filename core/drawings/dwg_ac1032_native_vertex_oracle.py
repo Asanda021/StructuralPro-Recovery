@@ -306,3 +306,55 @@ def audit_ac1032_native_2d_vertex_sources(
         'status': ('NATIVE_SOURCE_VS_DXF_FIELD_DISCREPANCY_NO_GO' if any_diff
                    else 'NATIVE_FIELDS_MATCH_SEMANTICS_UNVERIFIED_NO_GO'),
     }
+
+
+def audit_original_ac1032_native_2d_inventory(
+    original_dwg: str | Path, *, original_sha256: str,
+) -> dict:
+    """Bounded original-DWG-only diagnostic when paired DXFs are unavailable.
+
+    Counts native 2D vertex field observations in ALL drawing containers, not
+    ModelSpace alone. No DXF conversion, unit inference or financial approval.
+    Source identity is hash-pinned and checked again after the native decode.
+    Output contains no paths, source hash, entity handles or coordinates.
+    """
+    original, identity = _snapshot(original_dwg, original_sha256)
+    if original.stat().st_size > 50 * 1024 * 1024:
+        raise ValueError('Original native inventory exceeds bounded source size')
+    with original.open('rb') as stream:
+        if stream.read(6) != b'AC1032':
+            raise ValueError('Native original-only inventory requires AC1032 DWG')
+    if metadata.version('ezdwg') != _PINNED_READER_VERSION:
+        raise ValueError('Native reader differs from pinned evidence version')
+    from ezdwg import raw
+    if raw.detect_version(str(original)) != 'AC1032':
+        raise ValueError('Native reader did not confirm AC1032 source')
+    poly = raw.decode_polyline_2d_with_vertex_data(str(original))
+    membership = raw.decode_polyline_sequence_members(str(original))
+    vertex = raw.decode_vertex_2d_entities(str(original))
+    roster, flags, sequences = _native_2d_vertex_roster(poly, membership, vertex)
+    _unchanged(original, identity, original_sha256)
+    return {
+        'policy': 'p8p2_ac1032_original_only_native_vertex_inventory_v1',
+        'reader_version': 'ezdwg==0.17.0',
+        'original_dwg_signature': 'AC1032',
+        'all_containers_native_2d_polyline_count': len(flags),
+        'all_containers_native_2d_vertex_count': len(roster),
+        'native_nonzero_bulge_field_count':
+            sum(abs(item[2]) > 1e-9 for item in roster.values()),
+        'native_nonzero_width_field_count':
+            sum(item[4] > 1e-9 or item[5] > 1e-9
+                for item in roster.values()),
+        'native_nonzero_tangent_field_count':
+            sum(abs(item[6]) > 1e-9 for item in roster.values()),
+        'native_closed_2d_polyline_flag_count':
+            sum(bool(value & 1) for value in flags.values()),
+        'modelspace_only': False,
+        'source_units_verified': False,
+        'converted_dxf_2d_geometry_verified': False,
+        'opaque_class_payloads_verified': False,
+        'shx_source_semantics_verified': False,
+        'financial_quantity_rows_approved': 0,
+        'geometry_approved_for_financial_takeoff': False,
+        'status': 'NATIVE_ORIGINAL_FIELDS_ONLY_NO_GO',
+    }
