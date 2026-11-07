@@ -369,3 +369,48 @@ def test_raw_and_ezdxf_vertex_width_disagreement_blocks(
     monkeypatch.setattr(oracle, '_raw_vertex_owner_bulge', conflicting_raw)
     with pytest.raises(ValueError, match='normalization changed raw VERTEX width/tangent'):
         run(files)
+
+
+def test_original_only_native_2d_inventory_is_aggregate_no_go(tmp_path, monkeypatch):
+    src, ref, _ = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, ref)
+    result = oracle.audit_original_ac1032_native_2d_inventory(
+        src, original_sha256=sha(src))
+    assert result['all_containers_native_2d_polyline_count'] == 2
+    assert result['all_containers_native_2d_vertex_count'] == 6
+    assert result['native_nonzero_bulge_field_count'] == 3
+    assert result['native_nonzero_width_field_count'] == 1
+    assert result['native_closed_2d_polyline_flag_count'] == 2
+    assert result['modelspace_only'] is False
+    assert result['status'] == 'NATIVE_ORIGINAL_FIELDS_ONLY_NO_GO'
+    assert result['source_units_verified'] is False
+    assert result['converted_dxf_2d_geometry_verified'] is False
+    assert result['financial_quantity_rows_approved'] == 0
+    assert result['geometry_approved_for_financial_takeoff'] is False
+    assert str(src) not in repr(result)
+    assert sha(src) not in repr(result)
+
+
+def test_original_only_native_inventory_wrong_hash_stops_before_decode(
+    tmp_path, monkeypatch,
+):
+    src, ref, _ = setup_files(tmp_path)
+    fake_reader(monkeypatch, ref)
+    with pytest.raises(ValueError, match='SHA-256'):
+        oracle.audit_original_ac1032_native_2d_inventory(
+            src, original_sha256='0' * 64)
+
+
+def test_original_only_native_inventory_rejects_conflicting_reader_fields(
+    tmp_path, monkeypatch,
+):
+    src, ref, _ = setup_files(tmp_path)
+    poly, members, verts = fake_reader(monkeypatch, ref)
+    # The original DWG's native POLYLINE and VERTEX reader projections
+    # contradict each other: reject rather than give a positive inventory.
+    raw_vertex = list(verts[0])
+    raw_vertex[5] = -0.5
+    verts[0] = tuple(raw_vertex)
+    with pytest.raises(ValueError, match='width/bulge/tangent|geometry conflict'):
+        oracle.audit_original_ac1032_native_2d_inventory(
+            src, original_sha256=sha(src))
