@@ -12,6 +12,7 @@ on:
       - tests/test_phase8_p2_independent_roster_audit.py
       - core/drawings/dwg_ac1032_native_vertex_oracle.py
       - tests/test_phase8_p2_ac1032_native_vertex_oracle.py
+      - tests/test_phase8_p2_ezdwg_modelspace_scope.py
       - .github/workflows/phase8-p2-pinned-second-reader-smoke.yml
   workflow_dispatch:
 permissions:
@@ -77,7 +78,7 @@ jobs:
         shell: bash
         run: |
           python -m pip install -q "pytest==9.0.2"
-          python -m pytest -q tests/test_phase8_p2_independent_roster_audit.py
+          python -m pytest -q tests/test_phase8_p2_independent_roster_audit.py tests/test_phase8_p2_ezdwg_modelspace_scope.py
       - name: Download independently authored public AC1018 test file and validate Git blob
         shell: bash
         run: |
