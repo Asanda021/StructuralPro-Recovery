@@ -10,9 +10,8 @@ from importlib import metadata
 
 import pytest
 
-pytest.importorskip('ezdxf')
-ezdwg = pytest.importorskip('ezdwg')
 import ezdxf
+import ezdwg
 
 
 def _source_with_modelspace_and_block_polyline(tmp_path):
@@ -63,3 +62,53 @@ def test_plain_source_path_scope_hint_is_not_trusted(tmp_path):
     assert expected == 1
     assert result.total_entities == observed == 2
     assert observed != expected
+
+
+def _scoped_geometry_fingerprint(doc):
+    """Count, ordered XY, widths, bulges and closure; never payable."""
+    return tuple(
+        (str(poly.dxf.layer), bool(poly.closed),
+         tuple(tuple(float(v) for v in point)
+               for point in poly.get_points('xyseb')))
+        for poly in doc.modelspace().query('LWPOLYLINE')
+    )
+
+
+@pytest.mark.parametrize('mutation', ['x', 'bulge', 'order', 'closure'])
+def test_scope_count_parity_alone_does_not_prove_geometry(tmp_path, mutation):
+    """A valid entity count must not hide geometric changes."""
+    assert metadata.version('ezdwg') == '0.17.0'
+    original = _source_with_modelspace_and_block_polyline(tmp_path)
+    native = ezdwg.read(str(original))
+    out = tmp_path / 'public-scoped.dxf'
+    result = ezdwg.to_dxf(
+        native.modelspace(), str(out), types='POLYLINE_2D',
+        modelspace_only=True, preserve_colors=False, strict=True)
+    doc = ezdxf.readfile(str(out))
+    baseline = _scoped_geometry_fingerprint(doc)
+    expected = (
+        ('0', True, (
+            (0.0, 0.0, 0.0, 0.0, 0.0),
+            (4.0, 0.0, 0.0, 0.0, 0.5),
+            (4.0, 3.0, 0.0, 0.0, -0.25),
+        )),
+    )
+    assert result.written_entities == 1
+    assert baseline == expected
+    poly = list(doc.modelspace().query('LWPOLYLINE'))[0]
+    points = list(poly.get_points('xyseb'))
+    if mutation == 'x':
+        points[0] = (points[0][0] + 0.5, *points[0][1:])
+    elif mutation == 'bulge':
+        points[1] = (*points[1][:4], 0.0)
+    elif mutation == 'order':
+        points = points[1:] + points[:1]
+    else:
+        poly.closed = False
+    if mutation != 'closure':
+        poly.set_points(points, format='xyseb')
+    altered = _scoped_geometry_fingerprint(doc)
+    assert len(altered) == len(baseline) == 1
+    assert sum(len(poly[2]) for poly in altered) == 3
+    assert altered != expected, 'Same count must not bypass geometric parity'
+    # The synthetic test does not establish independent original-DWG semantics.
