@@ -125,9 +125,11 @@ def _raw_vertex_owner_bulge(path: Path, *, include_width_tangent: bool = False) 
                     try:
                         number = float(value.decode('ascii'))
                     except (ValueError, UnicodeError) as exc:
-                        raise ValueError("Malformed raw DXF VERTEX numeric geometry tag") from exc
+                        raise ValueError("Malformed raw DXF VERTEX bulge" if code == 42
+                                         else "Malformed raw DXF VERTEX numeric geometry tag") from exc
                     if not math.isfinite(number):
-                        raise ValueError("Nonfinite raw DXF VERTEX numeric geometry tag")
+                        raise ValueError("Nonfinite raw DXF VERTEX bulge" if code == 42
+                                         else "Nonfinite raw DXF VERTEX numeric geometry tag")
                     fields[code] = number
         flush()
     return values, parent_flags
