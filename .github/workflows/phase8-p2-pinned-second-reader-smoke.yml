@@ -77,8 +77,14 @@ jobs:
       - name: Run synthetic fail-closed source-DXF audit tests
         shell: bash
         run: |
-          python -m pip install -q "pytest==9.0.2"
-          python -m pytest -q tests/test_phase8_p2_independent_roster_audit.py tests/test_phase8_p2_ezdwg_modelspace_scope.py
+          python -m pip install -q "pytest==9.0.2" "ezdxf==1.4.4"
+          python - <<'PY'
+          from importlib.metadata import version
+          assert version("ezdxf") == "1.4.4", "DXF verifier missing"
+          assert version("ezdwg") == "0.17.0", "Native reader changed"
+          print("PINNED_NATIVE_AND_DXF_READERS_AVAILABLE")
+          PY
+          python -m pytest -q -ra tests/test_phase8_p2_independent_roster_audit.py tests/test_phase8_p2_ezdwg_modelspace_scope.py
       - name: Download independently authored public AC1018 test file and validate Git blob
         shell: bash
         run: |
