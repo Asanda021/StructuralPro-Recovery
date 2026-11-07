@@ -15,7 +15,8 @@ def sha(p):
     return hashlib.sha256(p.read_bytes()).hexdigest()
 
 
-def setup_files(tmp_path, *, erase_bulges=False, move_vertex=False, modify_parent=False):
+def setup_files(tmp_path, *, erase_bulges=False, move_vertex=False, modify_parent=False,
+                erase_widths=False, erase_tangent=False, preserve_nonzero_extras=False):
     original = tmp_path / 'original.dwg'
     original.write_bytes(b'AC1032' + bytes(128))
     results = []
@@ -25,6 +26,15 @@ def setup_files(tmp_path, *, erase_bulges=False, move_vertex=False, modify_paren
         vertices = list(poly.vertices)
         vertices[0].dxf.bulge = 0.5
         vertices[1].dxf.bulge = -0.25
+        if erase_widths or erase_tangent or preserve_nonzero_extras:
+            vertices[0].dxf.start_width = 0.25
+            vertices[0].dxf.end_width = 0.5
+            vertices[0].dxf.tangent = 35.0
+        if altered and erase_widths:
+            vertices[0].dxf.start_width = 0.0
+            vertices[0].dxf.end_width = 0.0
+        if altered and erase_tangent:
+            vertices[0].dxf.tangent = 0.0
         block = d.blocks.new('FOOTPRINT')
         block_poly = block.add_polyline2d([(1,1),(2,1),(2,2)], close=True)
         block_vertices = list(block_poly.vertices)
@@ -73,11 +83,18 @@ def native_projection_from_dxf(dxf):
         decoded = []
         for v in vertices:
             p = v.dxf.location
-            decoded.append((float(p.x),float(p.y),float(p.z),0.0,0.0,
-                            float(v.dxf.get('bulge',0)),0.0,int(v.dxf.get('flags',0))))
+            decoded.append((float(p.x),float(p.y),float(p.z),
+                            float(v.dxf.get('start_width',0.0)),
+                            float(v.dxf.get('end_width',0.0)),
+                            float(v.dxf.get('bulge',0)),
+                            float(v.dxf.get('tangent',0.0)),
+                            int(v.dxf.get('flags',0))))
             vertex_rows.append((int(v.dxf.handle,16),int(v.dxf.get('flags',0)),
-                                float(p.x),float(p.y),float(p.z),0.0,0.0,
-                                float(v.dxf.get('bulge',0)),0.0))
+                                float(p.x),float(p.y),float(p.z),
+                                float(v.dxf.get('start_width',0.0)),
+                                float(v.dxf.get('end_width',0.0)),
+                                float(v.dxf.get('bulge',0)),
+                                float(v.dxf.get('tangent',0.0))))
         poly_rows.append((int(e.dxf.handle,16), int(e.dxf.get('flags',0)), decoded))
         members.append((int(e.dxf.handle,16),'POLYLINE_2D',
                         [int(v.dxf.handle,16) for v in vertices],[],
@@ -285,4 +302,70 @@ def test_matching_nonzero_native_width_and_tangent_is_consistent(
     verts[0] = tuple(raw_vertex)
     roster, _, _ = oracle._native_2d_vertex_roster(poly, members, verts)
     assert len(roster) == 6
-    assert all(len(record) == 4 for record in roster.values())
+    assert all(len(record) == 7 for record in roster.values())
+
+
+
+@pytest.mark.parametrize(('mode','expected'), [
+    ('width', ('start_width_difference_count', 'end_width_difference_count')),
+    ('tangent', ('tangent_difference_count',)),
+])
+def test_source_nonzero_vertex_metadata_lost_in_candidate_is_not_silent(
+    tmp_path, monkeypatch, mode, expected,
+):
+    files = setup_files(tmp_path, erase_widths=mode=='width',
+                        erase_tangent=mode=='tangent')
+    fake_reader(monkeypatch, files[1])
+    report = run(files)
+    assert report['status'] == 'NATIVE_SOURCE_VS_DXF_FIELD_DISCREPANCY_NO_GO'
+    for name in expected:
+        assert report['reference_dxf'][name] == 0
+        assert report['candidate_dxf'][name] == 1
+    assert report['financial_quantity_rows_approved'] == 0
+
+
+def test_source_matching_nonzero_vertex_width_and_tangent_remains_no_go(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    report = run(files)
+    for name in ('start_width_difference_count',
+                 'end_width_difference_count', 'tangent_difference_count'):
+        assert report['reference_dxf'][name] == 0
+        assert report['candidate_dxf'][name] == 0
+    assert report['status'] == 'NATIVE_FIELDS_MATCH_SEMANTICS_UNVERIFIED_NO_GO'
+    assert report['policy'].endswith('_v2')
+    assert report['financial_quantity_rows_approved'] == 0
+
+
+@pytest.mark.parametrize('corrupt', ['nan','-1.0'])
+def test_raw_dxf_width_invalid_value_is_rejected_before_parsed_comparison(
+    tmp_path, monkeypatch, corrupt,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    content = files[2].read_text()
+    anchor = ' 40\n0.25\n'
+    assert content.count(anchor) >= 1
+    files[2].write_text(content.replace(anchor, ' 40\n'+corrupt+'\n', 1))
+    with pytest.raises(ValueError, match='Nonfinite raw DXF|Negative raw DXF'):
+        run(files)
+
+
+def test_raw_and_ezdxf_vertex_width_disagreement_blocks(
+    tmp_path, monkeypatch,
+):
+    files = setup_files(tmp_path, preserve_nonzero_extras=True)
+    fake_reader(monkeypatch, files[1])
+    actual = oracle._raw_vertex_owner_bulge
+    def conflicting_raw(path, **options):
+        observations, flags = actual(path, **options)
+        assert options.get('include_width_tangent') is True
+        handle = next(iter(observations))
+        owner, bulge, start, end, tangent = observations[handle]
+        observations[handle] = (owner, bulge, start+0.1, end, tangent)
+        return observations, flags
+    monkeypatch.setattr(oracle, '_raw_vertex_owner_bulge', conflicting_raw)
+    with pytest.raises(ValueError, match='normalization changed raw VERTEX width/tangent'):
+        run(files)
