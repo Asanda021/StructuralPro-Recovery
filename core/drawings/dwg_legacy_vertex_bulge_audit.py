@@ -51,12 +51,14 @@ def _handle(value: object) -> str:
     return format(n, "X")
 
 
-def _raw_vertex_owner_bulge(path: Path) -> tuple[dict[str, tuple[str, float]], dict[str, int]]:
+def _raw_vertex_owner_bulge(path: Path, *, include_width_tangent: bool = False) -> tuple[dict[str, tuple], dict[str, int]]:
     """Inspect original text-DXF tags before ezdxf repairs owner sequences.
 
     This is deliberately strict and bounded: malformed or unsupported raw
     VERTEX records are blockers rather than candidates for silent repair.
     """
+    if type(include_width_tangent) is not bool:
+        raise ValueError('Invalid raw DXF width/tangent evidence option')
     values = {}
     parent_flags = {}
     kind = None
@@ -69,7 +71,13 @@ def _raw_vertex_owner_bulge(path: Path) -> tuple[dict[str, tuple[str, float]], d
             handle, owner, bulge = fields[5], fields[330], fields.get(42, 0.0)
             if handle in values or len(values) >= _MAX_VERTICES:
                 raise ValueError("Duplicate or unbounded raw DXF VERTEX")
-            values[handle] = (owner, bulge)
+            if include_width_tangent:
+                width_start, width_end, tangent = (fields.get(code, 0.0) for code in (40, 41, 50))
+                if width_start < 0 or width_end < 0:
+                    raise ValueError('Negative raw DXF VERTEX width')
+                values[handle] = (owner, bulge, width_start, width_end, tangent)
+            else:
+                values[handle] = (owner, bulge)
         elif kind == b"POLYLINE":
             if 5 not in fields:
                 raise ValueError("Original DXF POLYLINE lacks raw identity")
@@ -97,7 +105,7 @@ def _raw_vertex_owner_bulge(path: Path) -> tuple[dict[str, tuple[str, float]], d
             if code == 0:
                 flush()
                 kind, fields = value, {}
-            elif (kind == b'VERTEX' and code in (5, 330, 42)) or (kind == b'POLYLINE' and code in (5, 70)):
+            elif (kind == b'VERTEX' and (code in (5, 330, 42) or (include_width_tangent and code in (40, 41, 50)))) or (kind == b'POLYLINE' and code in (5, 70)):
                 if code in fields:
                     raise ValueError("Duplicated raw DXF " + ("VERTEX" if kind == b"VERTEX" else "POLYLINE") + " tag")
                 if code in (5, 330):
@@ -117,10 +125,10 @@ def _raw_vertex_owner_bulge(path: Path) -> tuple[dict[str, tuple[str, float]], d
                     try:
                         number = float(value.decode('ascii'))
                     except (ValueError, UnicodeError) as exc:
-                        raise ValueError("Malformed raw DXF VERTEX bulge") from exc
+                        raise ValueError("Malformed raw DXF VERTEX numeric geometry tag") from exc
                     if not math.isfinite(number):
-                        raise ValueError("Nonfinite raw DXF VERTEX bulge")
-                    fields[42] = number
+                        raise ValueError("Nonfinite raw DXF VERTEX numeric geometry tag")
+                    fields[code] = number
         flush()
     return values, parent_flags
 
