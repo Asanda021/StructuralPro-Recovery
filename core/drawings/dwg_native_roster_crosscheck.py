@@ -14,6 +14,8 @@ import math
 
 from dataclasses import dataclass
 
+LINE_COORDINATE_TOLERANCE = 1e-7
+
 @dataclass(frozen=True)
 class _RawLine:
     section: str
@@ -94,7 +96,7 @@ def compare_raw_and_native_line(raw, entity, source_layers):
         layer = source_layers[int(entity.dxf.get('layer_handle'))]
         a,b = _point3(entity.dxf.get('start')),_point3(entity.dxf.get('end'))
         return raw.layer == layer and all(
-            math.isclose(x,y,rel_tol=1e-12,abs_tol=1e-7)
+            math.isclose(x,y,rel_tol=0.0, abs_tol=LINE_COORDINATE_TOLERANCE)
             for p,q in ((a,raw.start),(b,raw.end)) for x,y in zip(p,q))
     except (ValueError,TypeError,KeyError,AttributeError):
         return False
@@ -141,7 +143,7 @@ def _line_equal(native, converted, native_layer):
         return False
     for name in ('start', 'end'):
         a, b = _point3(native.dxf.get(name)), _point3(converted.dxf.get(name))
-        if any(not math.isclose(x, y, rel_tol=1e-12, abs_tol=1e-7) for x, y in zip(a, b)):
+        if any(not math.isclose(x, y, rel_tol=0.0, abs_tol=LINE_COORDINATE_TOLERANCE) for x, y in zip(a, b)):
             return False
     return True
 

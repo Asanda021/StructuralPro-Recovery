@@ -79,3 +79,10 @@ def test_sha_guard_rejects_mismatched_original_before_opening_decoder(tmp_path):
     dwg.write_bytes(b'AC1018fake');dxf.write_bytes(b'0\nEOF\n')
     with pytest.raises(ValueError,match='Source hash mismatch'):
         audit_native_to_dxf(dwg,dxf,expected_dwg_sha256='0'*64,expected_dxf_sha256='0'*64)
+
+@pytest.mark.parametrize("end", [(4, 5, 6.001), (1e9 + 0.0005, 5, 6)])
+def test_source_line_absolute_precision_detects_z_or_large_coordinate_loss(end):
+    reference_x = 1e9 if end[0] > 1e8 else 4
+    source = Entity({"start": (1, 2, 3), "end": (reference_x, 5, 6)})
+    target = DXF({"start": (1, 2, 3), "end": end})
+    assert not _line_equal(source, target, "L")
