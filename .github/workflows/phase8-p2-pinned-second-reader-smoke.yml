@@ -5,6 +5,8 @@ on:
     branches:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
+      - core/drawings/dwg_native_roster_crosscheck.py
+      - core/drawings/dwg_legacy_vertex_bulge_audit.py
       - core/drawings/dwg_second_decoder_probe.py
       - tools/audit_phase8_p2_second_decoder.py
       - tests/test_phase8_p2_second_decoder_probe.py
@@ -84,7 +86,10 @@ jobs:
           assert version("ezdwg") == "0.17.0", "Native reader changed"
           print("PINNED_NATIVE_AND_DXF_READERS_AVAILABLE")
           PY
-          python -m pytest -q -ra tests/test_phase8_p2_independent_roster_audit.py tests/test_phase8_p2_ezdwg_modelspace_scope.py
+          python -m pytest -q -ra \
+            tests/test_phase8_p2_independent_roster_audit.py \
+            tests/test_phase8_p2_ezdwg_modelspace_scope.py \
+            tests/test_phase8_p2_ac1032_native_vertex_oracle.py
       - name: Download independently authored public AC1018 test file and validate Git blob
         shell: bash
         run: |

@@ -63,3 +63,48 @@ def test_solid_incorrect_legacy_elevation_remains_actual_z_discrepancy():
     original=source('SOLID',points=verts)
     wrong=target('SOLID',layer='A',elevation=-4,**{'vtx'+str(i):(v[0],v[1],0.0) for i,v in enumerate(verts)})
     assert classify_geometry_pair(original,wrong,'A') == ['SOLID_Z_CHANGED']
+
+@pytest.mark.parametrize(
+    ('source_owner', 'expected'),
+    [(2, {}), (64, {'NATIVE_OWNER_OUTSIDE_MODELSPACE': 1}),
+     (None, {'NATIVE_OWNER_UNVERIFIED': 1})],
+)
+def test_shared_line_geometry_does_not_mask_modelspace_ownership(
+    tmp_path, monkeypatch, source_owner, expected,
+):
+    import sys
+
+    import ezdxf
+
+    from core.drawings import dwg_native_roster_crosscheck as roster
+
+    dwg = tmp_path / 'public.dwg'
+    dwg.write_bytes(b'AC1018 synthetic test')
+    dxf = tmp_path / 'public.dxf'
+    doc = ezdxf.new()
+    line = doc.modelspace().add_line((1, 2, 3), (4, 5, 6))
+    doc.saveas(dxf)
+    source_line = source(
+        'LINE', start=(1, 2, 3), end=(4, 5, 6),
+        layer_handle=3, owner_handle=source_owner,
+    )
+    source_line.handle = int(line.dxf.handle, 16)
+    native = SimpleNamespace(
+        version='AC1018', units='unitless',
+        layers=[SimpleNamespace(handle=3, name='0')],
+        modelspace=lambda: SimpleNamespace(iter_entities=lambda: iter([source_line])),
+        layouts=lambda: {'Model': {'block_record_handle': 2}},
+    )
+    monkeypatch.setitem(sys.modules, 'ezdwg', SimpleNamespace(read=lambda _: native))
+    monkeypatch.setattr(roster.metadata, 'version', lambda _: roster.PINNED_NATIVE_VERSION)
+
+    receipt = roster.audit_native_to_dxf(
+        dwg, dxf, expected_dwg_sha256=hashlib.sha256(dwg.read_bytes()).hexdigest(),
+        expected_dxf_sha256=hashlib.sha256(dxf.read_bytes()).hexdigest(),
+    )
+
+    assert receipt['shared_line_count'] == 1
+    assert receipt['shared_line_geometry_layer_mismatch_count'] == 0
+    assert receipt['shared_line_modelspace_ownership_issues'] == expected
+    assert receipt['financial_geometry_approved'] is False
+    assert receipt['approved_quantities'] == 0

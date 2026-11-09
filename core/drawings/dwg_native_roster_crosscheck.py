@@ -203,12 +203,21 @@ def audit_native_to_dxf(original_dwg, converted_dxf, *, expected_dwg_sha256, exp
                    - set((k,t) for k,(t,e) in native_map.items()))
     native_layers = {int(layer.handle):str(layer.name) for layer in native.layers}
     model_record = int(native.layouts()['Model']['block_record_handle'])
+    ownership_issues = Counter()
+    dxf_model_record = int(converted.modelspace().block_record.dxf.handle, 16)
     mismatch_handles = []
     common_line_count = 0
     for handle, (typ, entity) in native_map.items():
         other = target_map.get(handle)
         if typ == 'LINE' and other is not None and other[0] == 'LINE':
             common_line_count += 1
+            native_owner = entity.dxf.get('owner_handle')
+            if not native_owner:
+                ownership_issues['NATIVE_OWNER_UNVERIFIED'] += 1
+            elif int(native_owner) != model_record:
+                ownership_issues['NATIVE_OWNER_OUTSIDE_MODELSPACE'] += 1
+            if other[1].dxf.owner != format(dxf_model_record, 'X'):
+                ownership_issues['DXF_OWNER_OUTSIDE_MODELSPACE'] += 1
             layer_handle = entity.dxf.get('layer_handle')
             layer = native_layers.get(int(layer_handle)) if layer_handle is not None else None
             try:
@@ -254,6 +263,7 @@ def audit_native_to_dxf(original_dwg, converted_dxf, *, expected_dwg_sha256, exp
         'shared_line_geometry_layer_mismatch_count':len(mismatch_handles),
         'shared_line_geometry_layer_mismatch_examples':mismatch_handles[:25],
         'shared_line_count':common_line_count,
+        'shared_line_modelspace_ownership_issues':dict(sorted(ownership_issues.items())),
         'opaque_class_payloads_verified':False,
         'source_drawing_revision_verified':False,
         'financial_geometry_approved':False,

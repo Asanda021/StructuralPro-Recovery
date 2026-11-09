@@ -65,16 +65,16 @@ def test_plain_source_path_scope_hint_is_not_trusted(tmp_path):
 
 
 def _scoped_geometry_fingerprint(doc):
-    """Count, ordered XY, widths, bulges and closure; never payable."""
+    """Count, elevation, ordered XY, widths, bulges and closure; never payable."""
     return tuple(
         (str(poly.dxf.layer), bool(poly.closed),
          tuple(tuple(float(v) for v in point)
-               for point in poly.get_points('xyseb')))
+               for point in poly.get_points('xyseb')), float(poly.dxf.elevation))
         for poly in doc.modelspace().query('LWPOLYLINE')
     )
 
 
-@pytest.mark.parametrize('mutation', ['x', 'bulge', 'order', 'closure'])
+@pytest.mark.parametrize('mutation', ['x', 'precision', 'elevation', 'width', 'bulge', 'order', 'closure'])
 def test_scope_count_parity_alone_does_not_prove_geometry(tmp_path, mutation):
     """A valid entity count must not hide geometric changes."""
     assert metadata.version('ezdwg') == '0.17.0'
@@ -91,7 +91,7 @@ def test_scope_count_parity_alone_does_not_prove_geometry(tmp_path, mutation):
             (0.0, 0.0, 0.0, 0.0, 0.0),
             (4.0, 0.0, 0.0, 0.0, 0.5),
             (4.0, 3.0, 0.0, 0.0, -0.25),
-        )),
+        ), 0.0),
     )
     assert result.written_entities == 1
     assert baseline == expected
@@ -99,13 +99,19 @@ def test_scope_count_parity_alone_does_not_prove_geometry(tmp_path, mutation):
     points = list(poly.get_points('xyseb'))
     if mutation == 'x':
         points[0] = (points[0][0] + 0.5, *points[0][1:])
+    elif mutation == 'precision':
+        points[1] = (points[1][0] - 0.0001, *points[1][1:])
+    elif mutation == 'elevation':
+        poly.dxf.elevation = 0.5
+    elif mutation == 'width':
+        points[0] = (*points[0][:2], 0.25, *points[0][3:])
     elif mutation == 'bulge':
         points[1] = (*points[1][:4], 0.0)
     elif mutation == 'order':
         points = points[1:] + points[:1]
-    else:
+    elif mutation == 'closure':
         poly.closed = False
-    if mutation != 'closure':
+    if mutation not in ('closure', 'elevation'):
         poly.set_points(points, format='xyseb')
     altered = _scoped_geometry_fingerprint(doc)
     assert len(altered) == len(baseline) == 1
