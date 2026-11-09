@@ -5,6 +5,8 @@ on:
     branches:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
+      - core/drawings/dwg_line_ownership_graph.py
+      - tests/test_phase8_p2_line_ownership_graph.py
       - core/drawings/dwg_takeoff.py
       - tests/test_phase8_p2_offline_financial_veto.py
       - tests/test_phase8_p2_alternate_provider_financial_veto.py
@@ -110,6 +112,7 @@ jobs:
           tests/test_phase8_p2_opaque_conversion_diff.py
           tests/test_phase8_p2_second_decoder_probe.py
           tests/test_phase8_p2_native_roster_crosscheck.py
+          tests/test_phase8_p2_line_ownership_graph.py
           tests/test_phase8_p2_independent_roster_audit.py
           tests/test_phase8_p2_block_solid_contract.py
           tests/test_phase8_p2_solid_dictionary_integrity.py
