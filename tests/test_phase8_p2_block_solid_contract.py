@@ -109,3 +109,9 @@ def test_solid_unreadable_target_extrusion_does_not_pass():
     assert classify_solid_height(
         vertices, vertices, None, (0, 0, 1), target_extrusion=None
     ) == 'SOLID_EXTRUSION_CHANGED'
+
+
+def test_block_line_large_coordinate_loss_exceeds_absolute_tolerance():
+    original = native('LINE', start=(1_000_000_000.0, 1, 2), end=(4, 5, 6))
+    changed = converted('LINE', layer='A', start=(1_000_000_000.0005, 1, 2), end=(4, 5, 6))
+    assert 'BLOCK_LINE_START_CHANGED' in verify_block_line(original, changed, 'A')

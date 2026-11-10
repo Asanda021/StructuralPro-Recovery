@@ -20,7 +20,7 @@ _UNSPECIFIED_EXTRUSION = object()
 
 def _same(x: Any, y: Any) -> bool:
     a, b = float(x), float(y)
-    return math.isfinite(a) and math.isfinite(b) and math.isclose(a, b, abs_tol=1e-7, rel_tol=1e-12)
+    return math.isfinite(a) and math.isfinite(b) and math.isclose(a, b, abs_tol=1e-7, rel_tol=0.0)
 
 
 def _vec_equal(a: Any, b: Any, count: int = 3) -> bool:
