@@ -93,3 +93,19 @@ def test_wrong_sha_fails_before_decoder_access(tmp_path):
     dxf.write_bytes(b'0\nSECTION\n'*30)
     with pytest.raises(ValueError,match='mismatch'):
         audit_insert_solid(dwg,dxf,'0'*64,'0'*64)
+
+def test_solid_changed_dxf_extrusion_is_never_a_vertex_match():
+    vertices = [(0, 0, -5), (2, 0, -5), (0, 2, -5), (0, 2, -5)]
+    assert classify_solid_height(
+        vertices, vertices, None, (0, 0, 1), target_extrusion=(0, 0, 1)
+    ) == 'SOLID_3D_VERTEX_MATCH'
+    assert classify_solid_height(
+        vertices, vertices, None, (0, 0, 1), target_extrusion=(0, 1, 0)
+    ) == 'SOLID_EXTRUSION_CHANGED'
+
+
+def test_solid_unreadable_target_extrusion_does_not_pass():
+    vertices = [(0, 0, 0), (2, 0, 0), (0, 2, 0), (0, 2, 0)]
+    assert classify_solid_height(
+        vertices, vertices, None, (0, 0, 1), target_extrusion=None
+    ) == 'SOLID_EXTRUSION_CHANGED'

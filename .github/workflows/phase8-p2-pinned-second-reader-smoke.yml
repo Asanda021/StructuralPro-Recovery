@@ -5,6 +5,8 @@ on:
     branches:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
+      - core/drawings/dwg_insert_solid_contract.py
+      - tests/test_phase8_p2_block_solid_contract.py
       - core/drawings/dwg_line_ownership_graph.py
       - tests/test_phase8_p2_line_ownership_graph.py
       - core/drawings/dwg_native_roster_crosscheck.py
@@ -94,7 +96,8 @@ jobs:
             tests/test_phase8_p2_ezdwg_modelspace_scope.py \
             tests/test_phase8_p2_ac1032_native_vertex_oracle.py \
             tests/test_phase8_p2_native_roster_crosscheck.py \
-            tests/test_phase8_p2_line_ownership_graph.py
+            tests/test_phase8_p2_line_ownership_graph.py \
+            tests/test_phase8_p2_block_solid_contract.py
       - name: Download independently authored public AC1018 test file and validate Git blob
         shell: bash
         run: |

@@ -15,6 +15,7 @@ from typing import Any
 MAX_DWG_BYTES = 50 * 1024 * 1024
 MAX_DXF_BYTES = 300 * 1024 * 1024
 MAX_SOURCE_ENTITIES = 1_000_000
+_UNSPECIFIED_EXTRUSION = object()
 
 
 def _same(x: Any, y: Any) -> bool:
@@ -66,7 +67,8 @@ def verify_block_line(source: Any, target: Any, source_layer: str) -> list[str]:
     return errors
 
 
-def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation: Any, extrusion: Any) -> str:
+def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation: Any, extrusion: Any,
+                          *, target_extrusion: Any = _UNSPECIFIED_EXTRUSION) -> str:
     """Distinguish exact 3D preservation vs legacy elevation relocation.
 
     Legacy elevation alone is NOT proof a 3D viewer reconstructs correct WCS.
@@ -78,6 +80,8 @@ def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation:
         return "SOLID_UNREADABLE"
     if len(a) != 4 or len(b) != 4 or any(len(x) != 3 for x in a + b):
         return "SOLID_TOPOLOGY_UNVERIFIED"
+    if target_extrusion is not _UNSPECIFIED_EXTRUSION and not _vec_equal(extrusion, target_extrusion):
+        return "SOLID_EXTRUSION_CHANGED"
     if not _vec_equal(extrusion, (0, 0, 1)):
         return "SOLID_NONSTANDARD_EXTRUSION_UNVERIFIED"
     if any(not _same(x[0], y[0]) or not _same(x[1], y[1]) for x, y in zip(a, b)):
@@ -220,7 +224,8 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         raw_vertices = [tuple(getattr(converted.dxf, "vtx" + str(i))) for i in range(4)]
         mode = classify_solid_height(entity.dxf.get("points"), raw_vertices,
                                      converted.dxf.get("elevation", None),
-                                     entity.dxf.get("extrusion", (0, 0, 1)))
+                                     entity.dxf.get("extrusion", (0, 0, 1)),
+                                     target_extrusion=converted.dxf.get("extrusion", (0, 0, 1)))
         solid_results[mode] += 1
         if len(solid_examples[mode]) < 12:
             solid_examples[mode].append(format(h, "X"))
