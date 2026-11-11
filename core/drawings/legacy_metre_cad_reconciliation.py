@@ -221,6 +221,15 @@ class LegacyMetreCADReconciler:
         if not src.is_file() or src.suffix.lower() not in {".dwg", ".dxf"}:
             raise ValueError("A real DWG or DXF file is required")
         src_digest = sha256(src.read_bytes()).hexdigest()
+
+        def check_source_unchanged():
+            try:
+                current_digest = sha256(src.read_bytes()).hexdigest()
+            except OSError as exc:
+                raise ValueError("CAD source changed during the review") from exc
+            if current_digest != src_digest:
+                raise ValueError("CAD source changed during the review")
+
         cad_header = {}
         if src.suffix.lower() == ".dwg":
             from core.drawings.dwg_converter import OfflineDWGConverter
@@ -228,6 +237,7 @@ class LegacyMetreCADReconciler:
             try:
                 cad_header = OfflineDWGConverter.inspect_header(src)
             except (RuntimeError, ValueError) as exc:
+                check_source_unchanged()
                 report["cad"] = {
                     "status": "BLOCKED_UNSUPPORTED_OR_CORRUPT_DWG_HEADER",
                     "source_sha256": src_digest,
@@ -239,6 +249,7 @@ class LegacyMetreCADReconciler:
             if (not ACadSharpDWGProvider().available and
                 not OfflineDWGConverter().available and
                 not StrictPythonDWGProvider().available):
+                check_source_unchanged()
                 report["cad"] = {
                     "status": "BLOCKED_NATIVE_DWG_CONVERTER_UNAVAILABLE",
                     "source_sha256": src_digest, "dwg_signature": cad_header["code"],
@@ -251,6 +262,7 @@ class LegacyMetreCADReconciler:
         try:
             doc = DWGTakeoffEngine.with_array_support().import_file(src)
         except (OSError, RuntimeError, ValueError) as exc:
+            check_source_unchanged()
             report["cad"] = {
                 "status": "BLOCKED_NATIVE_CAD_IMPORT_NOT_VERIFIED",
                 "source_sha256": src_digest,
@@ -307,6 +319,7 @@ class LegacyMetreCADReconciler:
             }
             if not matched:
                 report["issues"].append({"code": "CAD_QUANTITY_DIFFERS_FROM_METRE", "key": key})
+        check_source_unchanged()
         report["cad"] = {
             "status": "PARTIAL_EXPLICIT_GEOMETRY_CROSSCHECK_NOT_APPROVED",
             "source_sha256": src_digest,

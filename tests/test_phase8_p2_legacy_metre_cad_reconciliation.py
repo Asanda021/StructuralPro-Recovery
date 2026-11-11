@@ -198,3 +198,51 @@ def test_legacy_metre_accepts_only_authentic_persian_arabic_header_variants(tmp_
     book.close()
     with pytest.raises(ValueError, match="Legacy metre sheet"):
         LegacyMetreCADReconciler().inspect(path)
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_failed_cad_import_checks_source_unchanged(tmp_path, monkeypatch, change_source):
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+
+    drawing = tmp_path / 'public.dxf'
+    drawing.write_bytes(b'synthetic original drawing')
+    report = {'rows': [{}]}
+
+    def fail_import(path):
+        if change_source:
+            path.write_bytes(b'synthetic altered drawing')
+        raise ValueError('synthetic parse error')
+
+    monkeypatch.setattr(DWGTakeoffEngine, 'with_array_support',
+                        lambda: SimpleNamespace(import_file=fail_import))
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_NATIVE_CAD_IMPORT_NOT_VERIFIED'
+        assert report['cad']['verified_rows'] == 0
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_failed_dwg_header_checks_source_unchanged(tmp_path, monkeypatch, change_source):
+    from core.drawings.dwg_converter import OfflineDWGConverter
+
+    drawing = tmp_path / 'public.dwg'
+    drawing.write_bytes(b'AC1018 synthetic drawing')
+    report = {'rows': [{}]}
+
+    def fail_header(path):
+        if change_source:
+            path.write_bytes(b'AC1018 altered drawing')
+        raise ValueError('synthetic header error')
+
+    monkeypatch.setattr(OfflineDWGConverter, 'inspect_header', fail_header)
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_UNSUPPORTED_OR_CORRUPT_DWG_HEADER'
+        assert report['cad']['verified_rows'] == 0

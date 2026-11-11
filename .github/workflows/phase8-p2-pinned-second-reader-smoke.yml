@@ -5,6 +5,7 @@ on:
     branches:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
+      - core/drawings/legacy_metre_cad_reconciliation.py
       - core/drawings/dwg_insert_solid_contract.py
       - tests/test_phase8_p2_block_solid_contract.py
       - core/drawings/dwg_line_ownership_graph.py
