@@ -470,3 +470,64 @@ def test_previous_line_only_block_receipt_counts_are_preserved():
 def test_block_receipt_member_counts_reject_untrusted_shapes(invalid):
     with pytest.raises(ValueError, match="BLOCK member"):
         summarize_block_member_type_counts(invalid)
+
+
+
+@pytest.mark.parametrize("original_registry_matches", [True, False])
+def test_same_named_direct_insert_requires_original_block_record_identity(
+        tmp_path, monkeypatch, original_registry_matches):
+    """Full bounded auditor path: unchanged display names are not identity proof.
+
+    Only public synthetic records and real synthetic ezdxf output are used.
+    """
+    from hashlib import sha256
+    import sys
+    import ezdxf
+    import core.drawings.dwg_insert_solid_contract as contract
+
+    source_path = tmp_path / "synthetic-original.dwg"
+    source_path.write_bytes(b"AC1018" + b"SYNTHETIC_ONLY_" * 10)
+    target_path = tmp_path / "synthetic-output.dxf"
+    converted_drawing = ezdxf.new("R2013")
+    block = converted_drawing.blocks.new("PUBLIC_CHILD")
+    block.add_line((0, 0), (2, 1))
+    inserted = converted_drawing.modelspace().add_blockref("PUBLIC_CHILD", (1, 2, 0))
+    converted_drawing.saveas(target_path)
+    block_record = int(block.block_record_handle, 16)
+
+    native_insert = SimpleNamespace(
+        handle=int(inserted.dxf.handle, 16), dxftype="INSERT",
+        dxf={"name": "PUBLIC_CHILD", "insert": (1, 2, 0),
+             "layer_handle": 0xB0},
+    )
+    def native_entities(**kw):
+        kind = kw.get("types", "")
+        return iter([native_insert] if "INSERT" in kind else [])
+    native_dwg = SimpleNamespace(
+        version="AC1018",
+        layers=[SimpleNamespace(handle=0xB0, name="0")],
+        modelspace=lambda: SimpleNamespace(iter_entities=native_entities),
+        entities=lambda: SimpleNamespace(iter_entities=lambda **_: iter(())),
+    )
+    known_original_name = "PUBLIC_CHILD" if original_registry_matches else "DIFFERENT_NATIVE_BLOCK"
+    synthetic_ezdwg = SimpleNamespace(
+        read=lambda _: native_dwg,
+        raw=SimpleNamespace(decode_block_header_names=lambda _: [
+            (block_record, known_original_name)
+        ]),
+    )
+    monkeypatch.setitem(sys.modules, "ezdwg", synthetic_ezdwg)
+    monkeypatch.setattr(contract.metadata, "version", lambda _: "0.17.0")
+
+    source_digest = sha256(source_path.read_bytes()).hexdigest()
+    target_digest = sha256(target_path.read_bytes()).hexdigest()
+    if original_registry_matches:
+        result = audit_insert_solid(source_path, target_path, source_digest, target_digest)
+        assert result["direct_insert_block_record_identity_checked"] == 1
+        assert result["source_inserts_checked"] == 1
+        assert result["status"] == "PARTIAL_NO_GO"
+        assert result["geometry_approved_for_financial_takeoff"] is False
+        assert result["financial_quantity_rows_approved"] == 0
+    else:
+        with pytest.raises(ValueError, match="NESTED_BLOCK_RECORD_IDENTITY_CHANGED"):
+            audit_insert_solid(source_path, target_path, source_digest, target_digest)
