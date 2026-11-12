@@ -119,3 +119,28 @@ def test_windows_receipt_write_stays_blocked_without_protected_file_creation(tmp
     with pytest.raises(ValueError,match="WINDOWS_PRIVATE_REPORT_DACL_CREATION_NOT_VERIFIED"):
         write_private_report(output,{"synthetic":True},project_root=project)
     assert not output.exists()
+
+@pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
+def test_atomic_windows_receipt_has_private_acl_before_first_write(tmp_path):
+    from core.platform.windows_private_acl import create_private_output_fd
+    folder=tmp_path/"private"
+    folder.mkdir()
+    _restrict(folder,directory=True)
+    output=folder/"synthetic-receipt.json"
+    fd=create_private_output_fd(output)
+    with os.fdopen(fd,"w",encoding="utf-8") as stream:
+        stream.write('{"synthetic":true}')
+    assert output.is_file() and verify_private_dacl(output,directory=False)
+    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_DACL_NOT_VERIFIED"):
+        create_private_output_fd(output)
+    assert output.read_text(encoding="utf-8")=='{"synthetic":true}'
+
+@pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
+def test_atomic_windows_output_refuses_insecure_parent(tmp_path):
+    from core.platform.windows_private_acl import create_private_output_fd
+    folder=tmp_path/"ordinary"
+    folder.mkdir()
+    target=folder/"no-output.json"
+    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_DACL_NOT_VERIFIED"):
+        create_private_output_fd(target)
+    assert not target.exists()
