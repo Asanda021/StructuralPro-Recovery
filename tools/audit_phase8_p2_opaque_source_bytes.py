@@ -100,22 +100,27 @@ def write_private_report(path, result, *, project_root=None):
             raise ValueError('Private parent directory must already exist')
         dest.parent.mkdir(mode=0o700)
     _private_directory_guard(dest.parent)
-    if os.name == 'nt':
-        # A protected folder alone does not prove an exclusively-created file
-        # has a protected non-inherited DACL. No Windows receipt writes yet.
-        raise ValueError('WINDOWS_PRIVATE_REPORT_DACL_CREATION_NOT_VERIFIED')
     # Revalidate after creating the directory to exclude changed path identities.
     dest = private_output_destination(dest, project_root=project_root)
-    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
-    if hasattr(os, 'O_NOFOLLOW'):
-        flags |= os.O_NOFOLLOW
-    fd = os.open(dest, flags, 0o600)
+    if os.name == 'nt':
+        # The native SDDL security descriptor is attached atomically by
+        # CreateFileW/CREATE_NEW before the first private byte is written.
+        from core.platform.windows_private_acl import create_private_output_fd
+        fd = create_private_output_fd(dest)
+    else:
+        flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
+        if hasattr(os, 'O_NOFOLLOW'):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(dest, flags, 0o600)
     try:
         with os.fdopen(fd, 'w', encoding='utf-8') as stream:
             json.dump(result, stream, ensure_ascii=False, indent=2)
             stream.write('\n')
             stream.flush()
             os.fsync(stream.fileno())
+        if os.name == 'nt':
+            from core.platform.windows_private_acl import verify_private_dacl
+            verify_private_dacl(dest, directory=False)
     except BaseException:
         dest.unlink(missing_ok=True)
         raise
