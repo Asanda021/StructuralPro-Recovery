@@ -75,3 +75,47 @@ def test_missing_file_and_wrong_type_denied(tmp_path):
     for candidate,is_dir in [(folder,False),(folder/"missing.json",False)]:
         with pytest.raises(ValueError,match="WINDOWS_PRIVATE_DACL_NOT_VERIFIED"):
             verify_private_dacl(candidate,directory=is_dir)
+
+@pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
+def test_original_opaque_private_config_reader_accepts_only_actual_dacl(tmp_path):
+    import json
+    from tools.audit_phase8_p2_opaque_source_bytes import read_private_config
+    project=tmp_path/"repo"
+    project.mkdir()
+    folder=tmp_path/"private"
+    folder.mkdir()
+    _restrict(folder,directory=True)
+    config=folder/"config.json"
+    config.write_text(json.dumps({"handles":["101","102"],"expected_original_sha256":"a"*64}),encoding="utf-8")
+    _restrict(config,directory=False)
+    assert read_private_config(config,project_root=project)==(["101","102"],"a"*64)
+    _icacls(config,"/grant","*S-1-1-0:R")
+    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_DACL_NOT_VERIFIED"):
+        read_private_config(config,project_root=project)
+
+@pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
+def test_private_reader_rejects_insecure_directory_even_with_private_file(tmp_path):
+    import json
+    from tools.audit_phase8_p2_opaque_source_bytes import read_private_config
+    folder=tmp_path/"private"
+    folder.mkdir()
+    _restrict(folder,directory=True)
+    config=folder/"config.json"
+    config.write_text(json.dumps({"handles":["101"],"expected_original_sha256":"b"*64}),encoding="utf-8")
+    _restrict(config,directory=False)
+    _icacls(folder,"/grant","*S-1-1-0:(OI)(CI)R")
+    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_ACL_NOT_VERIFIED"):
+        read_private_config(config,project_root=tmp_path/"repo")
+
+@pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
+def test_windows_receipt_write_stays_blocked_without_protected_file_creation(tmp_path):
+    from tools.audit_phase8_p2_opaque_source_bytes import write_private_report
+    project=tmp_path/"repo"
+    project.mkdir()
+    folder=tmp_path/"private"
+    folder.mkdir()
+    _restrict(folder,directory=True)
+    output=folder/"synthetic-report.json"
+    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_REPORT_DACL_CREATION_NOT_VERIFIED"):
+        write_private_report(output,{"synthetic":True},project_root=project)
+    assert not output.exists()
