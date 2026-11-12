@@ -272,7 +272,7 @@ def test_original_insert_attrib_identity_and_selected_fields():
     ("tag", "tag/text changed"),
     ("flags", "flags changed"),
     ("insert", "position changed"),
-    ("owner", "moved to another INSERT"),
+    ("owner", "moved outside INSERT layout"),
     ("drop", "count changed"),
     ("extra", "count changed"),
 ])
