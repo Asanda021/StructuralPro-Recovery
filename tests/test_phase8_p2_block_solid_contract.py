@@ -262,7 +262,11 @@ def _attrib_test_fixture():
 def test_original_insert_attrib_identity_and_selected_fields():
     d, parent, source, _, instance = _attrib_test_fixture()
     assert verify_insert_attached_attributes({parent: source}, d, {parent}) == 2
-    assert verify_insert_attached_attributes({}, d, set()) == 0
+    # With zero source INSERTs, extra DXF ModelSpace ATTRIBs must be vetoed.
+    with pytest.raises(ValueError, match="Detached converted ATTRIB"):
+        verify_insert_attached_attributes({}, d, set())
+    import ezdxf
+    assert verify_insert_attached_attributes({}, ezdxf.new("R2013"), set()) == 0
     # Exact value matching is not original-font or source-glyph certification.
     assert len(instance.attribs) == 2
 
