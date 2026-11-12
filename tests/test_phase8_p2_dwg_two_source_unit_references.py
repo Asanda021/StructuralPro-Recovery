@@ -176,8 +176,12 @@ def test_unit_proof_rejects_source_change_during_pdf_validation(tmp_path, monkey
     def open_then_mutate_source(*args, **kwargs):
         opened = original_fitz_open(*args, **kwargs)
         if args and Path(args[0]) == pdf:
-            changed_path = Path(doc.source) if changed_file == 'drawing' else pdf
-            changed_path.write_bytes(b'SYNTHETIC_CHANGED_AFTER_SOURCE_HASH')
+            if changed_file == 'drawing':
+                Path(doc.source).write_bytes(b'SYNTHETIC_CHANGED_AFTER_SOURCE_HASH')
+            else:
+                # Keep a valid, still-readable PDF. A trailing PDF comment
+                # changes its SHA without corrupting its page tree.
+                pdf.write_bytes(pdf.read_bytes() + b'\n%SYNTHETIC_CHANGED_AFTER_HASH\n')
         return opened
 
     monkeypatch.setattr(fitz, 'open', open_then_mutate_source)
