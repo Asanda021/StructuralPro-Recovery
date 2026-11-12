@@ -15,8 +15,13 @@ def _no_symlink_ancestors(path):
 
 def _private_directory_guard(directory):
     if os.name == 'nt':
-        # chmod(0700) does not establish a private Windows DACL.
-        raise ValueError('WINDOWS_PRIVATE_ACL_NOT_VERIFIED')
+        # Actual token owner + protected native DACL, not POSIX chmod fiction.
+        from core.platform.windows_private_acl import verify_private_dacl
+        try:
+            verify_private_dacl(directory, directory=True)
+        except ValueError as exc:
+            raise ValueError('WINDOWS_PRIVATE_ACL_NOT_VERIFIED') from exc
+        return
     if not directory.is_dir() or (directory.stat().st_mode & 0o077):
         raise ValueError('Private evidence directory must be accessible only to its owner (0700)')
 
@@ -57,6 +62,11 @@ def read_private_config(path, *, project_root=None):
         raise ValueError('Private handles config must not be in repository')
     _no_symlink_ancestors(private)
     _private_directory_guard(resolved.parent)
+    if os.name == 'nt':
+        # Reading a private config is now allowed only after two native DACL
+        # validations: parent directory and the config file itself.
+        from core.platform.windows_private_acl import verify_private_dacl
+        verify_private_dacl(resolved, directory=False)
     if os.name != 'nt' and resolved.stat().st_mode & 0o077:
         raise ValueError('Private handles config must be 0600')
     if resolved.stat().st_size > 16384:
@@ -90,6 +100,10 @@ def write_private_report(path, result, *, project_root=None):
             raise ValueError('Private parent directory must already exist')
         dest.parent.mkdir(mode=0o700)
     _private_directory_guard(dest.parent)
+    if os.name == 'nt':
+        # A protected folder alone does not prove an exclusively-created file
+        # has a protected non-inherited DACL. No Windows receipt writes yet.
+        raise ValueError('WINDOWS_PRIVATE_REPORT_DACL_CREATION_NOT_VERIFIED')
     # Revalidate after creating the directory to exclude changed path identities.
     dest = private_output_destination(dest, project_root=project_root)
     flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY
