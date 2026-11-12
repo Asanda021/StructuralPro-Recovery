@@ -212,6 +212,14 @@ class LegacyMetreCADReconciler:
             self._compare_cad(report, drawing_path, bindings or [])
         elif bindings:
             raise ValueError("CAD mappings cannot be evaluated without drawing file")
+        # The source must remain identical through summary and CAD reconciliation,
+        # not merely during the initial workbook parse.
+        try:
+            final_source_sha = sha256(p.read_bytes()).hexdigest()
+        except OSError as exc:
+            raise ValueError("Metre workbook changed during audit") from exc
+        if final_source_sha != source_sha:
+            raise ValueError("Metre workbook changed during audit")
         return report
 
     @staticmethod
@@ -276,6 +284,7 @@ class LegacyMetreCADReconciler:
         if sha256(src.read_bytes()).hexdigest() != src_digest or doc.source_sha256 != src_digest:
             raise ValueError("CAD source changed during the review")
         if doc.format.startswith("DWG") and doc.conversion.get("decoder_version") in (None, "", "unverified"):
+            check_source_unchanged()
             report["cad"] = {
                 "status": "BLOCKED_DWG_DECODER_VERSION_UNVERIFIED",
                 "source_sha256": src_digest, "verified_rows": 0,
