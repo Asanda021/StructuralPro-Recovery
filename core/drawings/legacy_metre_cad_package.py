@@ -7,6 +7,7 @@ implicitly trust cached formula values, text matches, units, or pricing.
 from __future__ import annotations
 
 from hashlib import sha256
+from io import BytesIO
 from pathlib import Path, PurePosixPath
 import stat
 from tempfile import TemporaryDirectory
@@ -29,11 +30,17 @@ def inspect_legacy_metre_package(
         raise ValueError("Expected an existing real local ZIP archive")
     if not 1 <= path.stat().st_size <= _MAX_ZIP_BYTES:
         raise ValueError("ZIP size outside approved range")
-    starting_sha = sha256(path.read_bytes()).hexdigest()
+    # Bind the ZIP parser to the exact bytes whose digest is recorded.
+    # Reopening the path after hashing can read a different archive if it is
+    # atomically replaced and then restored before the final SHA check.
+    starting_bytes = path.read_bytes()
+    if not 1 <= len(starting_bytes) <= _MAX_ZIP_BYTES:
+        raise ValueError("ZIP size outside approved range")
+    starting_sha = sha256(starting_bytes).hexdigest()
     files = {}
     contents = {}
     try:
-        with ZipFile(path, "r") as package:
+        with ZipFile(BytesIO(starting_bytes), "r") as package:
             members = package.infolist()
             if len(members) > _MAX_MEMBERS:
                 raise ValueError("ZIP has too many members")
