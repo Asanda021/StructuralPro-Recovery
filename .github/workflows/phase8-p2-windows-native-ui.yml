@@ -10,6 +10,7 @@ on:
       - app/dashboard.py
       - app/theme.py
       - app/desktop_preferences.py
+      - app/workspace_docks.py
       - app/ifc_3d_viewport.py
       - app/graphical_takeoff.py
       - tests/test_phase6_p2_real_ifc_3d.py
@@ -72,6 +73,7 @@ jobs:
           $receipt = Get-Content -Raw -Encoding UTF8 "native-ui-evidence/${{ matrix.slug }}/evidence.json" | ConvertFrom-Json
           if ($receipt.native_qpa -ne "windows" -or $receipt.main_window_exposed -ne $true) { throw "NOT_NATIVE_VISIBLE_UI" }
           if ($receipt.dashboard_actions_clicked.Count -ne 8 -or $receipt.navigation_tabs_checked -ne 23) { throw "INCOMPLETE_UI_INTERACTION" }
+          if ($receipt.stray_top_menubar -ne $false -or $receipt.dock_commands_accessible.Count -lt 2) { throw "WINDOWS_DOCK_MENU_LAYOUT_REGRESSION" }
           if ($receipt.real_user_desktop_acceptance -ne $false -or $receipt.original_private_dwg_tested -ne $false -or $receipt.geometry_approved_for_financial_takeoff -ne $false -or $receipt.financial_quantity_rows_approved -ne 0) { throw "UI_EVIDENCE_MISREPRESENTED_AS_DWG_APPROVAL" }
           $images = @(Get-ChildItem "native-ui-evidence/${{ matrix.slug }}" -Filter "empty-shell-*.png")
           if ($images.Count -ne 3) { throw "MISSING_QT_RENDER_SCREENSHOTS" }
