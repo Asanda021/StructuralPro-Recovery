@@ -46,6 +46,24 @@ def verify_insert_fields(source: Any, target: Any, source_layer: str) -> list[st
     for fld, default in (("xscale", 1), ("yscale", 1), ("zscale", 1), ("rotation", 0)):
         if not _same(a.get(fld, default), b.get(fld, default)):
             errors.append("INSERT_" + fld.upper() + "_CHANGED")
+    # A native MINSERT remains an INSERT in converted DXF. Its array
+    # dimensions and spacing are part of the repeated geometry identity.
+    counts = {}
+    for fld in ("column_count", "row_count"):
+        original, converted = a.get(fld, 1), b.get(fld, 1)
+        if (type(original) is not int or type(converted) is not int or
+                not 1 <= original <= MAX_SOURCE_ENTITIES or
+                not 1 <= converted <= MAX_SOURCE_ENTITIES):
+            errors.append("INSERT_" + fld.upper() + "_INVALID")
+        elif original != converted:
+            errors.append("INSERT_" + fld.upper() + "_CHANGED")
+        counts[fld] = original
+    if (type(counts["row_count"]) is int and type(counts["column_count"]) is int
+            and counts["row_count"] * counts["column_count"] > MAX_SOURCE_ENTITIES):
+        errors.append("INSERT_ARRAY_INSTANCE_LIMIT_EXCEEDED")
+    for fld in ("column_spacing", "row_spacing"):
+        if not _same(a.get(fld, 0), b.get(fld, 0)):
+            errors.append("INSERT_" + fld.upper() + "_CHANGED")
     if bool(a.get("invisible", False)) != bool(b.get("invisible", False)):
         errors.append("INSERT_VISIBILITY_CHANGED")
     return errors
@@ -172,7 +190,7 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         block_names[int(handle)].add(str(name))
     source_inserts = {}
     renames = {}
-    for entity in source.modelspace().iter_entities(types="INSERT", include_styles=True):
+    for entity in source.modelspace().iter_entities(types="INSERT MINSERT", include_styles=True):
         if len(source_inserts) >= MAX_SOURCE_ENTITIES:
             raise ValueError("Too many native INSERTs")
         handle = int(entity.handle)
