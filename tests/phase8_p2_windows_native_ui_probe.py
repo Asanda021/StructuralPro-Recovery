@@ -35,7 +35,7 @@ Path.home = classmethod(lambda cls: home)
 from PySide6.QtCore import Qt, QTimer, QCoreApplication, QEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QLabel,
+    QApplication, QMainWindow, QTabBar, QStackedWidget, QPushButton, QLabel, QDockWidget,
 )
 from app.main import main
 
@@ -136,6 +136,32 @@ def exercise(app: QApplication) -> None:
     QTest.mouseClick(theme, Qt.MouseButton.LeftButton)
     assert app.property("structuralproTheme") == before
 
+    # Diagnose a narrow vertical strip visible at the left edge of the
+    # actual Windows dashboard screenshots. Hit-test native QWidget ancestry,
+    # rather than guessing whether this is a scrollbar or a dock.
+    pages.setCurrentIndex(0)
+    window.resize(1560, 900)
+    app.processEvents()
+    def widget_chain(x, y):
+        widget = window.childAt(x, y)
+        chain = []
+        while widget is not None and widget is not window and len(chain) < 20:
+            chain.append({
+                "type": type(widget).__name__,
+                "object_name": widget.objectName(),
+                "visible": widget.isVisible(),
+            })
+            widget = widget.parentWidget()
+        return chain
+    left_edge_widget_hits = {
+        f"{x},{y}": widget_chain(x, y)
+        for x, y in ((15, 290), (30, 315), (30, 400), (40, 400), (65, 290))
+    }
+    visible_dock_names = [
+        dock.objectName()
+        for dock in window.findChildren(QDockWidget) if dock.isVisible()
+    ]
+
     # Evidence describes only a synthetic GUI smoke, never Windows user
     # acceptance, native Autodesk semantics or payable takeoff.
     evidence = {
@@ -149,6 +175,8 @@ def exercise(app: QApplication) -> None:
         "navigation_tabs_checked": tabs.count(),
         "dock_commands_accessible": panel_commands,
         "stray_top_menubar": False,
+        "left_edge_widget_hits": left_edge_widget_hits,
+        "visible_dock_names": visible_dock_names,
         "dashboard_actions_clicked": observed,
         "theme_toggle_checked": True,
         "screenshots": shots + ["empty-shell-theme-toggle.png"],
