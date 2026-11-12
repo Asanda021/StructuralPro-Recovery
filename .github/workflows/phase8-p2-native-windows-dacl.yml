@@ -7,6 +7,7 @@ on:
     paths:
       - core/platform/windows_private_acl.py
       - tests/test_phase8_p2_windows_private_dacl.py
+      - tools/audit_phase8_p2_opaque_source_bytes.py
       - .github/workflows/phase8-p2-native-windows-dacl.yml
   workflow_dispatch:
 
@@ -46,7 +47,7 @@ jobs:
       - name: Fail if any DACL case skipped, failed or absent
         shell: pwsh
         run: |
-          python -c "import xml.etree.ElementTree as E; r=E.parse('windows-dacl.xml').getroot(); x=r if r.tag=='testsuite' else r.find('testsuite'); print('NTFS_DACL_TESTS',x.get('tests'),'SKIP',x.get('skipped')); assert x is not None and int(x.get('tests',0))==6 and all(int(x.get(y,0))==0 for y in ('skipped','failures','errors'))"
+          python -c "import xml.etree.ElementTree as E; r=E.parse('windows-dacl.xml').getroot(); x=r if r.tag=='testsuite' else r.find('testsuite'); print('NTFS_DACL_TESTS',x.get('tests'),'SKIP',x.get('skipped')); assert x is not None and int(x.get('tests',0))==9 and all(int(x.get(y,0))==0 for y in ('skipped','failures','errors'))"
           if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_DACL_TESTS_NOT_EXHAUSTIVE' }
       - name: Upload test-only JUnit, never paths, accounts or private source
         if: always()
