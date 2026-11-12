@@ -85,6 +85,63 @@ def verify_block_line(source: Any, target: Any, source_layer: str) -> list[str]:
     return errors
 
 
+def verify_block_attdef(source: Any, target: Any, source_layer: str) -> list[str]:
+    """Selected source ATTDEF fields; not a proof of final SHX text rendering."""
+    if str(source.dxftype) != "ATTDEF" or target.dxftype() != "ATTDEF":
+        return ["BLOCK_ATTDEF_TYPE_CHANGED"]
+    a, b = source.dxf, target.dxf
+    errors: list[str] = []
+    if source_layer != str(b.get("layer", "")):
+        errors.append("BLOCK_ATTDEF_LAYER_CHANGED")
+    for fld in ("tag", "text", "prompt"):
+        left, right = a.get(fld, ""), b.get(fld, "")
+        if not isinstance(left, str) or not isinstance(right, str) or left != right:
+            errors.append("BLOCK_ATTDEF_" + fld.upper() + "_CHANGED")
+    left, right = a.get("attribute_flags", 0), b.get("flags", 0)
+    if type(left) is not int or type(right) is not int or left != right:
+        errors.append("BLOCK_ATTDEF_FLAGS_CHANGED")
+    if not _vec_equal(a.get("insert"), b.get("insert")):
+        errors.append("BLOCK_ATTDEF_POSITION_CHANGED")
+    for fld, default in (("height", 1), ("rotation", 0), ("width", 1), ("oblique", 0)):
+        try:
+            same = _same(a.get(fld, default), b.get(fld, default))
+        except (ValueError, TypeError, OverflowError):
+            same = False
+        if not same:
+            errors.append("BLOCK_ATTDEF_" + fld.upper() + "_CHANGED")
+    return errors
+
+
+def verify_nested_block_insert(source: Any, target: Any, source_layer: str,
+                               source_block_names: dict, target_blocks: Any) -> list[str]:
+    """Selected nested INSERT fields and source BLOCK_RECORD identity only.
+
+    Does not recursively verify a nested definition or resolve custom objects.
+    """
+    if str(source.dxftype) not in ("INSERT", "MINSERT"):
+        return ["NESTED_BLOCK_SOURCE_TYPE_UNSUPPORTED"]
+    issues = verify_insert_fields(source, target, source_layer)
+    if target.dxftype() != "INSERT":
+        return issues
+    source_name = source.dxf.get("name", "")
+    target_name = target.dxf.get("name", "")
+    if not isinstance(source_name, str) or not source_name or not isinstance(target_name, str) or not target_name:
+        issues.append("NESTED_BLOCK_REFERENCE_NAME_UNVERIFIED")
+        return issues
+    converted_block = target_blocks.get(target_name)
+    if converted_block is None:
+        issues.append("NESTED_BLOCK_TARGET_DEFINITION_MISSING")
+        return issues
+    try:
+        record_id = int(str(converted_block.block_record_handle), 16)
+    except (TypeError, ValueError):
+        issues.append("NESTED_BLOCK_RECORD_IDENTITY_UNVERIFIED")
+        return issues
+    if source_block_names.get(record_id) != {source_name}:
+        issues.append("NESTED_BLOCK_RECORD_IDENTITY_CHANGED")
+    return issues
+
+
 def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation: Any, extrusion: Any,
                           *, target_extrusion: Any = _UNSPECIFIED_EXTRUSION) -> str:
     """Distinguish exact 3D preservation vs legacy elevation relocation.
@@ -320,6 +377,9 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         native_attributes, target, set(source_inserts))
 
     definitions = {}
+    block_non_line_member_count = 0
+    nested_block_insert_member_count = 0
+    attdef_member_count = 0
     if renames:
         requested = {r for _, _, r in renames.values()}
         source_members = defaultdict(dict)
@@ -352,14 +412,26 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
                 raise ValueError("BLOCK member handle roster not preserved")
             issues = []
             for handle, ent in native_members.items():
-                if str(ent.dxftype) != "LINE":
-                    raise ValueError("Only LINE-only BLOCK definitions are compared")
                 native_layer_handle = ent.dxf.get("layer_handle")
                 if native_layer_handle is None or int(native_layer_handle) not in layers:
                     raise ValueError("Native BLOCK member layer unknown")
-                issues.extend(verify_block_line(ent, dxf_members[handle], layers[int(native_layer_handle)]))
+                native_layer = layers[int(native_layer_handle)]
+                kind = str(ent.dxftype)
+                if kind == "LINE":
+                    issues.extend(verify_block_line(ent, dxf_members[handle], native_layer))
+                elif kind == "ATTDEF":
+                    block_non_line_member_count += 1
+                    attdef_member_count += 1
+                    issues.extend(verify_block_attdef(ent, dxf_members[handle], native_layer))
+                elif kind in ("INSERT", "MINSERT"):
+                    block_non_line_member_count += 1
+                    nested_block_insert_member_count += 1
+                    issues.extend(verify_nested_block_insert(
+                        ent, dxf_members[handle], native_layer, block_names, target.blocks))
+                else:
+                    raise ValueError("Unverified nested BLOCK member type, no geometry approval")
             if issues:
-                raise ValueError("BLOCK member geometry/layer changed: " + ",".join(issues[:5]))
+                raise ValueError("BLOCK member geometry/attribute/reference changed: " + ",".join(issues[:5]))
             definitions[record] = len(native_members)
 
     solid_results = defaultdict(int)
@@ -401,8 +473,13 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
              "converted_name": new, "block_record_handle": format(r, "X")}
             for h, (old, new, r) in sorted(renames.items())
         ],
-        "line_only_block_definitions_checked": len(definitions),
-        "block_definition_line_members_checked": sum(definitions.values()),
+        "line_only_block_definitions_checked": len(definitions) if block_non_line_member_count == 0 else 0,
+        "block_definition_selected_members_checked": sum(definitions.values()),
+        "block_definition_attdef_members_checked": attdef_member_count,
+        "block_definition_nested_insert_members_checked": nested_block_insert_member_count,
+        "nested_block_source_definition_semantics_verified": False,
+        "original_shx_glyph_mapping_verified": False,
+        "block_definition_line_members_checked": sum(definitions.values()) - block_non_line_member_count,
         "block_line_member_count_by_record": {format(k,"X"):v for k,v in sorted(definitions.items())},
         "native_solid_count_checked": len(source_solid_handles),
         "solid_selected_3d_status_counts": dict(sorted(solid_results.items())),
@@ -413,5 +490,5 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         "financial_quantity_rows_approved": 0,
         "geometry_approved_for_financial_takeoff": False,
         "status": "PARTIAL_NO_GO",
-        "limitation": "Checks specific INSERT transformations, LINE-only block members and SOLID encoded Z, not full object graph or rendering."
+        "limitation": "Checks selected INSERT transformations, LINE/ATTDEF/nested INSERT members of renamed blocks and SOLID encoded Z; not complete nested definitions, custom objects or rendering."
     }
