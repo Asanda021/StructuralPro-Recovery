@@ -664,8 +664,11 @@ def apply_documented_units(document,evidence):
     import json
     from core.projects.project_model import _identity
     path=Path(str(evidence.get('path','')))
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
-    proof=json.loads(path.read_text(encoding='utf-8-sig'))
+    if not path.is_file():raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
+    proof_bytes=path.read_bytes()
+    if hashlib.sha256(proof_bytes).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
+    # Parse exactly the bytes which were hashed, never a second mutable read.
+    proof=json.loads(proof_bytes.decode('utf-8-sig'))
     policy=proof.get('policy')
     if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2'} or proof.get('source_sha256')!=document.source_sha256:
         raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
@@ -763,5 +766,18 @@ def apply_documented_units(document,evidence):
                 if k in d:d[k]=tuple(v*factor for v in d[k])
             for k in ('points','display_points'):
                 if k in d:d[k]=[tuple(v*factor for v in p) for p in d[k]]
+    # A document/attachment can change while the independent references are
+    # being checked. Refuse to return a calibrated copy on any source drift.
+    try:
+        proof_unchanged=hashlib.sha256(path.read_bytes()).hexdigest()==evidence.get('sha256')
+        source_unchanged=True
+        pdf_unchanged=True
+        if policy=='cad_unit_reference_v2':
+            source_unchanged=hashlib.sha256(source.read_bytes()).hexdigest()==document.source_sha256
+            pdf_unchanged=hashlib.sha256(pdf.read_bytes()).hexdigest()==proof.get('source_pdf_sha256')
+    except OSError as exc:
+        raise ValueError('مدرک واحد یا منبع CAD/PDF در طول بررسی تغییر کرده است') from exc
+    if not (proof_unchanged and source_unchanged and pdf_unchanged):
+        raise ValueError('مدرک واحد یا منبع CAD/PDF در طول بررسی تغییر کرده است')
     result.__dict__.pop('_render_bounds',None);result.units=unit;result.unit_name=unit;result.unit_evidence=deepcopy(evidence)
     return result
