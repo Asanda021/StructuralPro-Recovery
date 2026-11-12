@@ -11,6 +11,10 @@ def _icacls(path,*args):
 
 def _restrict(path,*,directory):
     sid=current_user_sid()
+    # Elevated Windows runners can create new files owned by the local
+    # Administrators group. Require an explicit owner change, do not relax
+    # the production owner's identity invariant to accommodate the runner.
+    _icacls(path,"/setowner",f"*{sid}")
     _icacls(path,"/inheritance:r")
     rights="(OI)(CI)F" if directory else "F"
     _icacls(path,"/grant:r",f"*{sid}:{rights}",f"*S-1-5-18:{rights}")
