@@ -168,3 +168,67 @@ def test_modelspace_roster_rejects_type_or_identity_mismatch():
         verify_direct_modelspace_roster(set(), drawing, "LINE")
     with pytest.raises(ValueError, match="Malformed"):
         verify_direct_modelspace_roster({0}, drawing, "INSERT")
+
+
+
+def test_real_dxf_minsert_array_counts_and_spacings():
+    """MINSERT is a native type, but ezdxf represents its array as INSERT."""
+    import ezdxf
+    dxf = ezdxf.new("R2013")
+    dxf.blocks.new("PUBLIC_ARRAY")
+    reference = dxf.modelspace().add_blockref(
+        "PUBLIC_ARRAY", (1, 2, 3), dxfattribs={
+            "layer": "0", "column_count": 3, "row_count": 2,
+            "column_spacing": 5.0, "row_spacing": 7.0,
+        },
+    )
+    source = native(
+        "MINSERT", insert=(1, 2, 3),
+        column_count=3, row_count=2,
+        column_spacing=5.0, row_spacing=7.0,
+    )
+    assert reference.dxftype() == "INSERT"
+    assert verify_insert_fields(source, reference, "0") == []
+
+
+@pytest.mark.parametrize("field, value, code", [
+    ("column_count", 4, "INSERT_COLUMN_COUNT_CHANGED"),
+    ("row_count", 3, "INSERT_ROW_COUNT_CHANGED"),
+    ("column_spacing", 6.0, "INSERT_COLUMN_SPACING_CHANGED"),
+    ("row_spacing", 8.0, "INSERT_ROW_SPACING_CHANGED"),
+])
+def test_minsert_changed_replication_is_detected(field, value, code):
+    source = native(
+        "MINSERT", insert=(1, 2, 3),
+        column_count=3, row_count=2,
+        column_spacing=5.0, row_spacing=7.0,
+    )
+    attributes = dict(
+        layer="0", insert=(1, 2, 3),
+        column_count=3, row_count=2,
+        column_spacing=5.0, row_spacing=7.0,
+    )
+    attributes[field] = value
+    assert code in verify_insert_fields(source, converted("INSERT", **attributes), "0")
+
+
+@pytest.mark.parametrize("count", [0, -1, 1000001, 2.5, True])
+def test_minsert_invalid_array_count_never_matches(count):
+    source = native("MINSERT", insert=(0, 0, 0), column_count=3, row_count=2)
+    target = converted("INSERT", layer="0", insert=(0, 0, 0),
+                       column_count=count, row_count=2)
+    assert "INSERT_COLUMN_COUNT_INVALID" in verify_insert_fields(source, target, "0")
+
+
+def test_minsert_replication_above_engineering_cap_is_rejected():
+    source = native("MINSERT", insert=(0, 0, 0),
+                    column_count=1001, row_count=1000)
+    target = converted("INSERT", layer="0", insert=(0, 0, 0),
+                       column_count=1001, row_count=1000)
+    assert "INSERT_ARRAY_INSTANCE_LIMIT_EXCEEDED" in verify_insert_fields(source, target, "0")
+
+
+def test_simple_insert_uses_safe_dxftype_defaults_for_array_fields():
+    source = native("INSERT", insert=(0, 0, 0))
+    target = converted("INSERT", layer="0", insert=(0, 0, 0))
+    assert verify_insert_fields(source, target, "0") == []
