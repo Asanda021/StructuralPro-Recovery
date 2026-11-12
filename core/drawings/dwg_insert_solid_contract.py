@@ -374,17 +374,16 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         layer_handle = entity.dxf.get("layer_handle")
         if layer_handle is None or int(layer_handle) not in layers:
             raise ValueError("Native INSERT layer unverified")
-        issues = verify_insert_fields(entity, converted, layers[int(layer_handle)])
+        # Verify the native BLOCK_RECORD identity even when the displayed
+        # block name is unchanged. A same-named DXF definition can still
+        # refer to a different source block; name equality is not provenance.
+        issues = verify_nested_block_insert(
+            entity, converted, layers[int(layer_handle)], block_names, target.blocks)
         if issues:
-            raise ValueError("INSERT source transform changed: " + ",".join(issues))
+            raise ValueError("INSERT source transform/block identity changed: " + ",".join(issues))
         old, new = str(entity.dxf.get("name", "")), str(converted.dxf.name)
         if old != new:
-            if new not in target.blocks:
-                raise ValueError("Renamed INSERT target BLOCK missing")
-            record_hex = str(target.blocks[new].block_record_handle)
-            record = int(record_hex, 16)
-            if block_names.get(record) != {old}:
-                raise ValueError("Native BLOCK_RECORD identity does not support rename")
+            record = int(str(target.blocks[new].block_record_handle), 16)
             renames[handle] = (old, new, record)
 
     # Native ATTRIB ownership is sourced from the original DWG, not
@@ -490,6 +489,8 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         "source_sha256": sha_src,
         "dxf_sha256": sha_dst,
         "source_inserts_checked": len(source_inserts),
+        "direct_insert_block_record_identity_checked": len(source_inserts),
+        "direct_insert_block_definition_contents_all_verified": False,
         "native_direct_insert_attached_attributes_checked": native_attached_attributes_checked,
         "native_attributes_outside_direct_insert_scope": native_attributes_outside_direct_insert,
         "original_shx_glyph_mapping_verified": False,
