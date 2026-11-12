@@ -131,8 +131,29 @@ def _native_display_geometry(typ: str, d: dict) -> dict:
         # Retain the actual original-DWG 3D coordinates for diagnostics. The
         # native CAD preview is still 2D and never claims a verified 3D render.
         from core.drawings.dwg_source_display_integrity import source_solid_3d_preview_manifest
-        result.update(source_solid_3d_preview_manifest(d.get("points", []),
-                                                       d.get("extrusion", (0, 0, 1))))
+        original_points = d.get("points", [])
+        if all(isinstance(p, (tuple, list)) and len(p) == 2 for p in original_points):
+            # A 2D decoded footprint can be drawn, but an original-DWG native
+            # Z coordinate must NOT be synthesized or marked as preserved.
+            # Nonstandard extrusion still requires independent WCS proof.
+            from math import isclose
+            try:
+                extrusion = tuple(float(n) for n in d.get("extrusion", (0, 0, 1)))
+            except (ValueError, TypeError, OverflowError) as exc:
+                raise ValueError("Nonstandard SOLID extrusion needs independent WCS proof") from exc
+            if (len(extrusion) != 3 or not all(isfinite(v) for v in extrusion)
+                    or not all(isclose(v, expected, abs_tol=1e-7, rel_tol=1e-12)
+                               for v, expected in zip(extrusion, (0, 0, 1)))):
+                raise ValueError("Nonstandard SOLID extrusion needs independent WCS proof")
+            result.update({
+                "source_vertices_3d_preserved": False,
+                "cad_3d_gui_render_verified": False,
+                "source_preview_geometry_status": "MISSING_NATIVE_Z_2D_BOUNDARY_ONLY",
+                "financial_quantity_approved": False,
+            })
+        else:
+            result.update(source_solid_3d_preview_manifest(
+                original_points, d.get("extrusion", (0, 0, 1))))
     return result
 
 

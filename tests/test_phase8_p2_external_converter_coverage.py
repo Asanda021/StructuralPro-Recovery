@@ -45,11 +45,22 @@ def test_same_count_but_changed_source_type_is_rejected(tmp_path,monkeypatch):
         OfflineDWGConverter('dwg2dxf').convert(source,tmp_path/'out')
 
 
-@pytest.mark.parametrize('source_units,dxf_unit',[(None,6),('millimeters',6)])
-def test_external_converter_may_not_invent_or_change_declared_units(tmp_path,monkeypatch,source_units,dxf_unit):
-    source=setup(tmp_path,monkeypatch,source_units=source_units,dxf_unit=dxf_unit)
+def test_external_converter_cannot_change_declared_units(tmp_path,monkeypatch):
+    source=setup(tmp_path,monkeypatch,source_units='millimeters',dxf_unit=6)
     with pytest.raises(DWGConversionError,match='واحد'):
         OfflineDWGConverter('dwg2dxf').convert(source,tmp_path/'out')
+
+
+def test_unknown_original_unit_is_explicitly_unverified_and_never_payable(tmp_path,monkeypatch):
+    source=setup(tmp_path,monkeypatch,source_units=None,dxf_unit=6)
+    receipt=OfflineDWGConverter('dwg2dxf').convert(source,tmp_path/'out')
+    coverage=receipt.source_coverage
+    assert coverage['status']=='NOT_VERIFIED_UNIT'
+    assert coverage['source_unit_code'] is None
+    assert coverage['converted_unit_code']==6
+    assert coverage['converter_integrity_veto'] is True
+    assert coverage['financial_quantity_approved'] is False
+    assert receipt.financial_veto is True
 
 
 def test_matching_independent_roster_has_explicit_receipt_without_quantity_approval(tmp_path,monkeypatch):

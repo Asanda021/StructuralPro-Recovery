@@ -22,20 +22,22 @@ def _source(tmp_path: Path) -> Path:
     return source
 
 
-def test_converter_rejects_stale_dxf_when_process_writes_nothing(monkeypatch, tmp_path):
+def test_converter_rejects_stale_dxf_without_overwriting_user_file(monkeypatch, tmp_path):
     source = _source(tmp_path)
     output = tmp_path / "out"
     output.mkdir()
     stale = output / "plan.dxf"
     stale.write_text("stale, invalid output", encoding="utf-8")
     converter = OfflineDWGConverter(executable="dwg2dxf")
+    launched = []
     monkeypatch.setattr("core.drawings.dwg_converter.subprocess.run",
-                        lambda *args, **kwargs: SuccessfulProcess())
+                        lambda *args, **kwargs: launched.append((args, kwargs)))
 
-    with pytest.raises(DWGConversionError, match="خروجی تولید نشد"):
+    with pytest.raises(DWGConversionError, match="از قبل موجود است"):
         converter.convert(source, output)
 
-    assert not stale.exists()
+    assert stale.read_text(encoding="utf-8") == "stale, invalid output"
+    assert launched == [], "Existing user DXF must be rejected before launching a converter"
 
 
 def test_converter_rejects_invalid_dxf_even_when_process_exits_successfully(monkeypatch, tmp_path):
