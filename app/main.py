@@ -1423,6 +1423,7 @@ def main()->int:
     workspace_docks.configure_presets(lambda mode:pages.setCurrentIndex(preset_pages[mode]))
     presentation_row.addWidget(workspace_docks.toggle_button)
     presentation_row.addWidget(workspace_docks.boq_toggle)
+    presentation_row.addWidget(workspace_docks.panel_button)
     pid.textChanged.connect(lambda *_:workspace_docks.restore())
     app.aboutToQuit.connect(workspace_docks.save_on_shutdown)
     from app.desktop_shell import ContextRibbonController
