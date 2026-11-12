@@ -142,6 +142,36 @@ def verify_nested_block_insert(source: Any, target: Any, source_layer: str,
     return issues
 
 
+def summarize_block_member_type_counts(by_record: dict) -> dict:
+    """Aggregate exact selected members; never label ATTDEF/INSERT as LINE."""
+    if not isinstance(by_record, dict):
+        raise ValueError("Malformed BLOCK member evidence")
+    supported = frozenset(("LINE", "ATTDEF", "INSERT", "MINSERT"))
+    line_only = lines = attdefs = nested = all_members = 0
+    line_by_record = {}
+    for record, kinds in sorted(by_record.items()):
+        if (type(record) is not int or not 0 < record < 2**64
+                or not isinstance(kinds, dict) or not kinds or
+                any(k not in supported or type(n) is not int or n < 0
+                    for k, n in kinds.items()) or not sum(kinds.values())):
+            raise ValueError("Unsupported or malformed BLOCK member counts")
+        count_line = kinds.get("LINE", 0)
+        lines += count_line
+        attdefs += kinds.get("ATTDEF", 0)
+        nested += kinds.get("INSERT", 0) + kinds.get("MINSERT", 0)
+        all_members += sum(kinds.values())
+        line_only += set(kinds) == {"LINE"}
+        line_by_record[format(record, "X")] = count_line
+    return {
+        "line_only_block_definitions_checked": line_only,
+        "block_definition_selected_members_checked": all_members,
+        "block_definition_attdef_members_checked": attdefs,
+        "block_definition_nested_insert_members_checked": nested,
+        "block_definition_line_members_checked": lines,
+        "block_line_member_count_by_record": line_by_record,
+    }
+
+
 def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation: Any, extrusion: Any,
                           *, target_extrusion: Any = _UNSPECIFIED_EXTRUSION) -> str:
     """Distinguish exact 3D preservation vs legacy elevation relocation.
@@ -377,9 +407,7 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         native_attributes, target, set(source_inserts))
 
     definitions = {}
-    block_non_line_member_count = 0
-    nested_block_insert_member_count = 0
-    attdef_member_count = 0
+    member_kinds_by_record = {}
     if renames:
         requested = {r for _, _, r in renames.values()}
         source_members = defaultdict(dict)
@@ -411,21 +439,19 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
             if not native_members or set(native_members) != set(dxf_members):
                 raise ValueError("BLOCK member handle roster not preserved")
             issues = []
+            member_kinds = defaultdict(int)
             for handle, ent in native_members.items():
                 native_layer_handle = ent.dxf.get("layer_handle")
                 if native_layer_handle is None or int(native_layer_handle) not in layers:
                     raise ValueError("Native BLOCK member layer unknown")
                 native_layer = layers[int(native_layer_handle)]
                 kind = str(ent.dxftype)
+                member_kinds[kind] += 1
                 if kind == "LINE":
                     issues.extend(verify_block_line(ent, dxf_members[handle], native_layer))
                 elif kind == "ATTDEF":
-                    block_non_line_member_count += 1
-                    attdef_member_count += 1
                     issues.extend(verify_block_attdef(ent, dxf_members[handle], native_layer))
                 elif kind in ("INSERT", "MINSERT"):
-                    block_non_line_member_count += 1
-                    nested_block_insert_member_count += 1
                     issues.extend(verify_nested_block_insert(
                         ent, dxf_members[handle], native_layer, block_names, target.blocks))
                 else:
@@ -433,6 +459,7 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
             if issues:
                 raise ValueError("BLOCK member geometry/attribute/reference changed: " + ",".join(issues[:5]))
             definitions[record] = len(native_members)
+            member_kinds_by_record[record] = dict(member_kinds)
 
     solid_results = defaultdict(int)
     solid_examples = defaultdict(list)
@@ -473,14 +500,8 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
              "converted_name": new, "block_record_handle": format(r, "X")}
             for h, (old, new, r) in sorted(renames.items())
         ],
-        "line_only_block_definitions_checked": len(definitions) if block_non_line_member_count == 0 else 0,
-        "block_definition_selected_members_checked": sum(definitions.values()),
-        "block_definition_attdef_members_checked": attdef_member_count,
-        "block_definition_nested_insert_members_checked": nested_block_insert_member_count,
+        **summarize_block_member_type_counts(member_kinds_by_record),
         "nested_block_source_definition_semantics_verified": False,
-        "original_shx_glyph_mapping_verified": False,
-        "block_definition_line_members_checked": sum(definitions.values()) - block_non_line_member_count,
-        "block_line_member_count_by_record": {format(k,"X"):v for k,v in sorted(definitions.items())},
         "native_solid_count_checked": len(source_solid_handles),
         "solid_selected_3d_status_counts": dict(sorted(solid_results.items())),
         "solid_selected_status_examples": dict(sorted(solid_examples.items())),
