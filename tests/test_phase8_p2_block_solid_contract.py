@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from core.drawings.dwg_insert_solid_contract import (
     _vec_equal, verify_insert_fields, verify_block_line, classify_solid_height,
-    audit_insert_solid,
+    audit_insert_solid, verify_direct_modelspace_roster,
 )
 
 
@@ -115,3 +115,56 @@ def test_block_line_large_coordinate_loss_exceeds_absolute_tolerance():
     original = native('LINE', start=(1_000_000_000.0, 1, 2), end=(4, 5, 6))
     changed = converted('LINE', layer='A', start=(1_000_000_000.0005, 1, 2), end=(4, 5, 6))
     assert 'BLOCK_LINE_START_CHANGED' in verify_block_line(original, changed, 'A')
+
+
+def test_modelspace_solid_roster_detects_added_and_removed_dxf_entity():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    model = drawing.modelspace()
+    a = model.add_solid([(0, 0), (2, 0), (0, 2)])
+    original = {int(a.dxf.handle, 16)}
+    verify_direct_modelspace_roster(original, drawing, "SOLID")
+    extra = model.add_solid([(3, 0), (4, 0), (3, 1)])
+    with pytest.raises(ValueError, match="extra=1"):
+        verify_direct_modelspace_roster(original, drawing, "SOLID")
+    model.delete_entity(extra)
+    model.delete_entity(a)
+    with pytest.raises(ValueError, match="missing=1"):
+        verify_direct_modelspace_roster(original, drawing, "SOLID")
+
+
+def test_modelspace_roster_does_not_accept_paperspace_solid():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    paper = drawing.layouts.get("Layout1")
+    a = paper.add_solid([(0, 0), (1, 0), (0, 1)])
+    # EntityDB can find this original handle, but it is not in ModelSpace.
+    original = {int(a.dxf.handle, 16)}
+    assert drawing.entitydb.get(a.dxf.handle) is a
+    with pytest.raises(ValueError, match="missing=1"):
+        verify_direct_modelspace_roster(original, drawing, "SOLID")
+
+
+def test_modelspace_insert_roster_detects_added_reference():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    drawing.blocks.new("PUBLIC_BLOCK")
+    model = drawing.modelspace()
+    original_insert = model.add_blockref("PUBLIC_BLOCK", (0, 0))
+    original = {int(original_insert.dxf.handle, 16)}
+    verify_direct_modelspace_roster(original, drawing, "INSERT")
+    model.add_blockref("PUBLIC_BLOCK", (4, 0))
+    with pytest.raises(ValueError, match="extra=1"):
+        verify_direct_modelspace_roster(original, drawing, "INSERT")
+
+
+def test_modelspace_roster_rejects_type_or_identity_mismatch():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    line = drawing.modelspace().add_line((0, 0), (1, 0))
+    with pytest.raises(ValueError, match="missing=1"):
+        verify_direct_modelspace_roster({int(line.dxf.handle, 16)}, drawing, "SOLID")
+    with pytest.raises(ValueError, match="Unsupported"):
+        verify_direct_modelspace_roster(set(), drawing, "LINE")
+    with pytest.raises(ValueError, match="Malformed"):
+        verify_direct_modelspace_roster({0}, drawing, "INSERT")
