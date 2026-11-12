@@ -108,17 +108,21 @@ def test_private_reader_rejects_insecure_directory_even_with_private_file(tmp_pa
         read_private_config(config,project_root=tmp_path/"repo")
 
 @pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
-def test_windows_receipt_write_stays_blocked_without_protected_file_creation(tmp_path):
+def test_windows_receipt_write_is_protected_and_exclusive(tmp_path):
     from tools.audit_phase8_p2_opaque_source_bytes import write_private_report
+    import json
     project=tmp_path/"repo"
     project.mkdir()
     folder=tmp_path/"private"
     folder.mkdir()
     _restrict(folder,directory=True)
     output=folder/"synthetic-report.json"
-    with pytest.raises(ValueError,match="WINDOWS_PRIVATE_REPORT_DACL_CREATION_NOT_VERIFIED"):
-        write_private_report(output,{"synthetic":True},project_root=project)
-    assert not output.exists()
+    write_private_report(output,{"synthetic":True,"financial_quantity_rows_approved":0},project_root=project)
+    assert output.is_file() and verify_private_dacl(output,directory=False)
+    assert json.loads(output.read_text(encoding="utf-8"))["financial_quantity_rows_approved"]==0
+    with pytest.raises(ValueError,match="overwrite"):
+        write_private_report(output,{"synthetic":False},project_root=project)
+    assert json.loads(output.read_text(encoding="utf-8"))["synthetic"] is True
 
 @pytest.mark.skipif(os.name!="nt",reason="Requires native Windows NTFS DACL")
 def test_atomic_windows_receipt_has_private_acl_before_first_write(tmp_path):
