@@ -4,7 +4,8 @@ import pytest
 from core.drawings.dwg_insert_solid_contract import (
     _vec_equal, verify_insert_fields, verify_block_line, classify_solid_height,
     audit_insert_solid, verify_direct_modelspace_roster,
-    verify_insert_attached_attributes,
+    verify_insert_attached_attributes, verify_block_attdef,
+    verify_nested_block_insert,
 )
 
 
@@ -320,3 +321,105 @@ def test_original_insert_attrib_foreign_parent_is_rejected():
     d, parent, source, _, instance = _attrib_test_fixture()
     with pytest.raises(ValueError, match="Malformed source"):
         verify_insert_attached_attributes({parent + 1: source}, d, {parent})
+
+
+
+def _attdef_fixture():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    block = drawing.blocks.new("PUBLIC_TOP")
+    target = block.add_attdef(
+        "SIZE", insert=(3, 4), text="SYNTHETIC",
+        dxfattribs={"prompt": "SIZE?", "flags": 1},
+    )
+    source = native(
+        "ATTDEF", tag="SIZE", text="SYNTHETIC", prompt="SIZE?",
+        insert=(3, 4, 0), attribute_flags=1,
+    )
+    return source, target
+
+
+def test_renamed_block_attdef_preserves_text_flags_and_position():
+    source, target = _attdef_fixture()
+    assert verify_block_attdef(source, target, "0") == []
+
+
+@pytest.mark.parametrize("change, expected", [
+    ("tag", "BLOCK_ATTDEF_TAG_CHANGED"),
+    ("text", "BLOCK_ATTDEF_TEXT_CHANGED"),
+    ("prompt", "BLOCK_ATTDEF_PROMPT_CHANGED"),
+    ("flags", "BLOCK_ATTDEF_FLAGS_CHANGED"),
+    ("insert", "BLOCK_ATTDEF_POSITION_CHANGED"),
+    ("layer", "BLOCK_ATTDEF_LAYER_CHANGED"),
+])
+def test_renamed_block_attdef_mutation_detected(change, expected):
+    source, target = _attdef_fixture()
+    if change == "tag":
+        target.dxf.tag = "ALTERED"
+    elif change == "text":
+        target.dxf.text = "ALTERED"
+    elif change == "prompt":
+        target.dxf.prompt = "ALTERED"
+    elif change == "flags":
+        target.dxf.flags = 0
+    elif change == "insert":
+        target.dxf.insert = (0, 8, 0)
+    elif change == "layer":
+        target.dxf.layer = "ALTERED"
+    assert expected in verify_block_attdef(source, target, "0")
+
+
+def _nested_reference_fixture():
+    import ezdxf
+    drawing = ezdxf.new("R2013")
+    child = drawing.blocks.new("PUBLIC_CHILD")
+    child.add_line((0, 0), (1, 0))
+    parent = drawing.blocks.new("PUBLIC_PARENT")
+    nested = parent.add_blockref(
+        "PUBLIC_CHILD", (1, 2, 3),
+        dxfattribs={"xscale": 2.5, "rotation": 12},
+    )
+    native_ref = native(
+        "INSERT", insert=(1, 2, 3), name="PUBLIC_CHILD",
+        xscale=2.5, rotation=12,
+    )
+    expected_names = {int(child.block_record_handle, 16): {"PUBLIC_CHILD"}}
+    return drawing, native_ref, nested, expected_names
+
+
+def test_nested_insert_reference_preserves_transform_and_block_record():
+    drawing, src, target, known = _nested_reference_fixture()
+    assert verify_nested_block_insert(src, target, "0", known, drawing.blocks) == []
+
+
+@pytest.mark.parametrize("mutation, expected", [
+    ("position", "INSERT_POSITION_CHANGED"),
+    ("scale", "INSERT_XSCALE_CHANGED"),
+    ("rotation", "INSERT_ROTATION_CHANGED"),
+    ("target_block", "NESTED_BLOCK_RECORD_IDENTITY_CHANGED"),
+    ("missing_block", "NESTED_BLOCK_TARGET_DEFINITION_MISSING"),
+])
+def test_nested_insert_geometry_or_definition_identity_drift_rejected(mutation, expected):
+    drawing, src, target, known = _nested_reference_fixture()
+    if mutation == "position":
+        target.dxf.insert = (9, 2, 3)
+    elif mutation == "scale":
+        target.dxf.xscale = 3.0
+    elif mutation == "rotation":
+        target.dxf.rotation = 99
+    elif mutation == "target_block":
+        other = drawing.blocks.new("DIFFERENT_SOURCE_BLOCK")
+        target.dxf.name = other.name
+    elif mutation == "missing_block":
+        target.dxf.name = "MISSING"
+    assert expected in verify_nested_block_insert(src, target, "0", known, drawing.blocks)
+
+
+def test_nested_array_repetition_change_is_not_ignored():
+    drawing, src, target, known = _nested_reference_fixture()
+    src.dxftype = "MINSERT"
+    src.dxf.update({"row_count": 2, "column_count": 3, "row_spacing": 1.5, "column_spacing": 4.0})
+    target.dxf.update({"row_count": 2, "column_count": 3, "row_spacing": 1.5, "column_spacing": 4.0})
+    assert verify_nested_block_insert(src, target, "0", known, drawing.blocks) == []
+    target.dxf.column_count = 4
+    assert "INSERT_COLUMN_COUNT_CHANGED" in verify_nested_block_insert(src, target, "0", known, drawing.blocks)
