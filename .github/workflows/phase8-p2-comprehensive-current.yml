@@ -86,7 +86,7 @@ jobs:
         run: |
           if sudo apt-get update -qq -o APT::Update::Error-Mode=any && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0; then exit 0; fi
           test -f /etc/apt/apt-mirrors.txt
-          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/mirrors.txt >/dev/null
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
           sudo apt-get update -qq -o APT::Update::Error-Mode=any
           sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
       - name: Install full GUI, IFC and offline test dependencies
