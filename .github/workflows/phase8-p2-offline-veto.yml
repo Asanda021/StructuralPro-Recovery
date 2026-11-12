@@ -6,6 +6,7 @@ on:
       - fix/phase8-p2-offline-converter-veto-20261104
     paths:
       - core/drawings/legacy_metre_cad_reconciliation.py
+      - core/drawings/legacy_metre_cad_package.py
       - tests/test_phase8_p2_legacy_metre_cad_reconciliation.py
       - tests/test_phase8_p2_private_metre_zip_gate.py
       - core/drawings/dwg_line_ownership_graph.py
