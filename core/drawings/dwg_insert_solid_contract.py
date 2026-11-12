@@ -147,6 +147,86 @@ def verify_direct_modelspace_roster(source_handles: set[int], target: Any, kind:
         )
 
 
+def verify_insert_attached_attributes(native_by_insert: dict, target: Any,
+                                      original_insert_handles: set[int]) -> int:
+    """Selected source ATTRIB versus DXF INSERT attachment parity, fail closed.
+
+    This is NOT proof of rendered SHX glyphs, block-definition ATTDEF parity,
+    or complete native custom-object semantics. It reveals no attribute text.
+    """
+    if (not isinstance(native_by_insert, dict)
+            or not isinstance(original_insert_handles, set)
+            or any(type(h) is not int or not 0 < h < 2**64
+                   for h in original_insert_handles)
+            or not set(native_by_insert).issubset(original_insert_handles)):
+        raise ValueError("Malformed source INSERT attribute ownership")
+    original_ids: set[int] = set()
+    converted_ids: set[int] = set()
+    for parent in sorted(original_insert_handles):
+        insert = target.entitydb.get(format(parent, "X"))
+        if insert is None or insert.dxftype() != "INSERT":
+            raise ValueError("Source INSERT attribute owner missing from DXF")
+        source_attrs = native_by_insert.get(parent, ())
+        target_attrs = tuple(insert.attribs)
+        if len(source_attrs) != len(target_attrs):
+            raise ValueError("INSERT attached ATTRIB count changed")
+        target_by_id = {}
+        for attr in target_attrs:
+            raw = str(attr.dxf.get("handle", ""))
+            if (not raw or any(c not in "0123456789abcdefABCDEF" for c in raw)):
+                raise ValueError("Invalid converted ATTRIB handle")
+            child_id = int(raw, 16)
+            if child_id == 0 or child_id >= 2**64 or child_id in converted_ids:
+                raise ValueError("Duplicate converted attached ATTRIB identity")
+            if str(attr.dxf.get("owner", "")).upper() != format(parent, "X"):
+                raise ValueError("Converted ATTRIB moved to another INSERT owner")
+            if target.entitydb.get(format(child_id, "X")) is not attr:
+                raise ValueError("Converted ATTRIB not backed by entity index")
+            converted_ids.add(child_id)
+            target_by_id[child_id] = attr
+        for attr in source_attrs:
+            child_id = attr.handle
+            if type(child_id) is not int or not 0 < child_id < 2**64:
+                raise ValueError("Invalid original ATTRIB identity")
+            if child_id in original_ids:
+                raise ValueError("Duplicate original ATTRIB identity")
+            original_ids.add(child_id)
+            converted = target_by_id.get(child_id)
+            if converted is None or converted.dxftype() != "ATTRIB":
+                raise ValueError("Original attached ATTRIB omitted or retyped")
+            source_dxf = attr.dxf
+            target_dxf = converted.dxf
+            for key in ("tag", "text"):
+                a = source_dxf.get(key)
+                b = target_dxf.get(key)
+                if not isinstance(a, str) or not isinstance(b, str) or a != b:
+                    raise ValueError("Original attached ATTRIB tag/text changed or unreadable")
+            flags_a = source_dxf.get("attribute_flags", 0)
+            flags_b = target_dxf.get("flags", 0)
+            if type(flags_a) is not int or type(flags_b) is not int or flags_a != flags_b:
+                raise ValueError("Original attached ATTRIB flags changed or unreadable")
+            if not _vec_equal(source_dxf.get("insert"), target_dxf.get("insert")):
+                raise ValueError("Original attached ATTRIB position changed")
+    if original_ids != converted_ids:
+        raise ValueError("INSERT attached ATTRIB identity roster changed")
+    # Catch a converted ATTRIB still indexed as owned by an original INSERT
+    # but silently excluded from the target INSERT's attached attribs list.
+    for entity in target.entitydb.values():
+        if entity is None or entity.dxftype() != "ATTRIB":
+            continue
+        raw_owner = str(entity.dxf.get("owner", ""))
+        if not raw_owner or any(c not in "0123456789ABCDEFabcdef" for c in raw_owner):
+            continue
+        if int(raw_owner, 16) not in original_insert_handles:
+            continue
+        raw_handle = str(entity.dxf.get("handle", ""))
+        if not raw_handle or any(c not in "0123456789ABCDEFabcdef" for c in raw_handle):
+            raise ValueError("Malformed direct INSERT ATTRIB in converted index")
+        if int(raw_handle, 16) not in converted_ids:
+            raise ValueError("Detached converted ATTRIB still owned by source INSERT")
+    return len(original_ids)
+
+
 def _digest(path: Path, maximum: int) -> str:
     if (not path.is_file() or path.is_symlink()
             or not 100 < path.stat().st_size <= maximum):
@@ -215,6 +295,25 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
             if block_names.get(record) != {old}:
                 raise ValueError("Native BLOCK_RECORD identity does not support rename")
             renames[handle] = (old, new, record)
+
+    # Native ATTRIB ownership is sourced from the original DWG, not
+    # guessed from the displayed block or a converted DXF only.
+    native_attributes = defaultdict(list)
+    native_attributes_outside_direct_insert = 0
+    native_attribute_count = 0
+    for attrib in source.entities().iter_entities(types="ATTRIB", include_styles=True):
+        native_attribute_count += 1
+        if native_attribute_count > MAX_SOURCE_ENTITIES:
+            raise ValueError("Native ATTRIB roster exceeds safe cap")
+        placement = source.entity_placement(attrib.handle)
+        if not placement or len(placement) < 2 or type(placement[1]) is not int:
+            raise ValueError("Unverifiable native ATTRIB owner placement")
+        if placement[1] in source_inserts:
+            native_attributes[placement[1]].append(attrib)
+        else:
+            native_attributes_outside_direct_insert += 1
+    native_attached_attributes_checked = verify_insert_attached_attributes(
+        native_attributes, target, set(source_inserts))
 
     definitions = {}
     if renames:
@@ -288,6 +387,10 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         "source_sha256": sha_src,
         "dxf_sha256": sha_dst,
         "source_inserts_checked": len(source_inserts),
+        "native_direct_insert_attached_attributes_checked": native_attached_attributes_checked,
+        "native_attributes_outside_direct_insert_scope": native_attributes_outside_direct_insert,
+        "original_shx_glyph_mapping_verified": False,
+        "all_block_nested_attribute_semantics_verified": False,
         "renamed_insert_count": len(renames),
         "renamed_insert_records": [
             {"insert_handle": format(h, "X"), "source_name": old,
