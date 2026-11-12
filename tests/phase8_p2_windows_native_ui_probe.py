@@ -61,6 +61,15 @@ def exercise(app: QApplication) -> None:
 
     brand = window.findChild(QLabel, "BrandTitle")
     assert brand is not None and brand.isVisible() and "StructuralPro" in brand.text()
+    panel_button = window.findChild(QPushButton, "E5PanelMenu")
+    assert panel_button is not None and panel_button.isVisible()
+    assert panel_button.menu() is not None
+    panel_commands = [a.text() for a in panel_button.menu().actions()]
+    assert any("گزارش" in label for label in panel_commands)
+    assert any("تاریخچه تغییرات" in label for label in panel_commands)
+    # The first native Windows screenshots showed a stray top menu strip.
+    # Keep dock actions in a normal RTL shell control instead.
+    assert window.menuWidget() is None, "Unexpected bare native top menu strip"
 
     shots = []
     for width, height in ((1180, 760), (1560, 900)):
@@ -138,6 +147,8 @@ def exercise(app: QApplication) -> None:
         "main_window_exposed": True,
         "rtl": True,
         "navigation_tabs_checked": tabs.count(),
+        "dock_commands_accessible": panel_commands,
+        "stray_top_menubar": False,
         "dashboard_actions_clicked": observed,
         "theme_toggle_checked": True,
         "screenshots": shots + ["empty-shell-theme-toggle.png"],
