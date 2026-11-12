@@ -4,6 +4,7 @@ import pytest
 from core.drawings.dwg_insert_solid_contract import (
     _vec_equal, verify_insert_fields, verify_block_line, classify_solid_height,
     audit_insert_solid, verify_direct_modelspace_roster,
+    verify_insert_attached_attributes,
 )
 
 
@@ -232,3 +233,86 @@ def test_simple_insert_uses_safe_dxftype_defaults_for_array_fields():
     source = native("INSERT", insert=(0, 0, 0))
     target = converted("INSERT", layer="0", insert=(0, 0, 0))
     assert verify_insert_fields(source, target, "0") == []
+
+
+def _attrib_test_fixture():
+    """DXF is real ezdxf; native ATTRIB objects are synthetic original-DWG records."""
+    import ezdxf
+    d = ezdxf.new("R2013")
+    block = d.blocks.new("PUBLIC_WITH_ATTRIB")
+    block.add_attdef("MODEL", insert=(0, 0))
+    instance = d.modelspace().add_blockref("PUBLIC_WITH_ATTRIB", (0, 0))
+    a = instance.add_attrib("MODEL", "SYNTHETIC", insert=(1, 2, 0),
+                            dxfattribs={"flags": 2})
+    b = instance.add_attrib("UNIT", "mm", insert=(2, 3, 0))
+    parent = int(instance.dxf.handle, 16)
+    records = [
+        SimpleNamespace(handle=int(a.dxf.handle, 16), dxf={
+            "tag": "MODEL", "text": "SYNTHETIC", "insert": (1, 2, 0),
+            "attribute_flags": 2,
+        }),
+        SimpleNamespace(handle=int(b.dxf.handle, 16), dxf={
+            "tag": "UNIT", "text": "mm", "insert": (2, 3, 0),
+            "attribute_flags": 0,
+        }),
+    ]
+    return d, parent, records, (a, b), instance
+
+
+def test_original_insert_attrib_identity_and_selected_fields():
+    d, parent, source, _, instance = _attrib_test_fixture()
+    assert verify_insert_attached_attributes({parent: source}, d, {parent}) == 2
+    assert verify_insert_attached_attributes({}, d, set()) == 0
+    # Exact value matching is not original-font or source-glyph certification.
+    assert len(instance.attribs) == 2
+
+
+@pytest.mark.parametrize("change, expected", [
+    ("text", "tag/text changed"),
+    ("tag", "tag/text changed"),
+    ("flags", "flags changed"),
+    ("insert", "position changed"),
+    ("owner", "moved to another INSERT"),
+    ("drop", "count changed"),
+    ("extra", "count changed"),
+])
+def test_original_insert_attrib_mutation_is_rejected(change, expected):
+    d, parent, source, attrs, instance = _attrib_test_fixture()
+    if change == "text":
+        attrs[0].dxf.text = "ALTERED"
+    elif change == "tag":
+        attrs[0].dxf.tag = "OTHER"
+    elif change == "flags":
+        attrs[0].dxf.flags = 1
+    elif change == "insert":
+        attrs[0].dxf.insert = (8, 8, 0)
+    elif change == "owner":
+        attrs[0].dxf.owner = "FFFF"
+    elif change == "drop":
+        instance.attribs.remove(attrs[0])
+    elif change == "extra":
+        instance.add_attrib("EXTRA", "UNDOCUMENTED", insert=(4, 4, 0))
+    with pytest.raises(ValueError, match=expected):
+        verify_insert_attached_attributes({parent: source}, d, {parent})
+
+
+def test_dxf_attrib_hidden_in_entitydb_without_attachment_is_rejected():
+    d, parent, source, attrs, instance = _attrib_test_fixture()
+    instance.attribs.remove(attrs[0])
+    # Keep source/target counts equal while hiding an index-owned ATTRIB.
+    source = source[1:]
+    with pytest.raises(ValueError, match="Detached converted ATTRIB"):
+        verify_insert_attached_attributes({parent: source}, d, {parent})
+
+
+def test_original_insert_attrib_duplicate_source_id_is_rejected():
+    d, parent, source, _, instance = _attrib_test_fixture()
+    source[1].handle = source[0].handle
+    with pytest.raises(ValueError, match="Duplicate original ATTRIB"):
+        verify_insert_attached_attributes({parent: source}, d, {parent})
+
+
+def test_original_insert_attrib_foreign_parent_is_rejected():
+    d, parent, source, _, instance = _attrib_test_fixture()
+    with pytest.raises(ValueError, match="Malformed source"):
+        verify_insert_attached_attributes({parent + 1: source}, d, {parent})
