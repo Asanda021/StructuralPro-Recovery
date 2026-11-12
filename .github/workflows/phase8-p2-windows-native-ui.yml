@@ -129,7 +129,7 @@ jobs:
       - name: Validate no skipped tests, native images and read-only scope
         shell: pwsh
         run: |
-          python -c "import xml.etree.ElementTree as E; paths=['native-ifc-font-evidence/ifc3d.xml','native-ifc-font-evidence/fonts.xml']; suites=[E.parse(x).getroot() for x in paths]; assert all(int(y.get('tests','0'))==1 and int(y.get('failures','0'))==0 and int(y.get('errors','0'))==0 and int(y.get('skipped','0'))==0 for y in suites), [(y.attrib) for y in suites]"
+          python -c "import xml.etree.ElementTree as E; paths=['native-ifc-font-evidence/ifc3d.xml','native-ifc-font-evidence/fonts.xml']; roots=[E.parse(x).getroot() for x in paths]; suites=[r if r.tag=='testsuite' else r.find('testsuite') for r in roots]; assert all(y is not None and int(y.get('tests','0'))==1 and int(y.get('failures','0'))==0 and int(y.get('errors','0'))==0 and int(y.get('skipped','0'))==0 for y in suites), [(r.tag,r.attrib) for r in roots]"
           if ($LASTEXITCODE -ne 0) { throw "SKIPPED_OR_FAILED_NATIVE_GUI_TEST" }
           foreach ($path in @('native-ifc-font-evidence/ifc3d/ifc-3d-native-windows.png', 'native-ifc-font-evidence/ifc3d/ifc-3d-dialog-native-windows.png', 'native-ifc-font-evidence/fonts/font-direct.png', 'native-ifc-font-evidence/fonts/font-label.png')) {
             if (!(Test-Path $path)) { throw "MISSING_NATIVE_QT_EVIDENCE: $path" }
