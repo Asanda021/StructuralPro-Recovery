@@ -98,6 +98,37 @@ def classify_solid_height(source_vertices: Any, target_vertices: Any, elevation:
     return "SOLID_Z_MISMATCH"
 
 
+def verify_direct_modelspace_roster(source_handles: set[int], target: Any, kind: str) -> None:
+    """Verify BOTH directions of direct ModelSpace INSERT/SOLID membership.
+
+    EntityDB handle equality alone does not prove an entity was kept in its
+    original layout; a converted entity may have moved to PaperSpace, or an
+    extra synthetic entity may have been added to ModelSpace.
+    """
+    if kind not in {"INSERT", "SOLID"}:
+        raise ValueError("Unsupported bounded ModelSpace roster type")
+    if (not isinstance(source_handles, set) or
+            any(type(h) is not int or not 0 < h < 2**64 for h in source_handles)):
+        raise ValueError("Malformed original ModelSpace handle roster")
+    converted_handles: set[int] = set()
+    for entity in target.modelspace():
+        if entity.dxftype() != kind:
+            continue
+        raw = str(entity.dxf.get("handle", ""))
+        if not raw or any(c not in "0123456789ABCDEFabcdef" for c in raw):
+            raise ValueError("Malformed converted ModelSpace handle")
+        handle = int(raw, 16)
+        if not 0 < handle < 2**64 or handle in converted_handles:
+            raise ValueError("Duplicate or null converted ModelSpace handle")
+        converted_handles.add(handle)
+    if source_handles != converted_handles:
+        raise ValueError(
+            f"{kind} direct ModelSpace roster changed: "
+            f"missing={len(source_handles - converted_handles)}, "
+            f"extra={len(converted_handles - source_handles)}"
+        )
+
+
 def _digest(path: Path, maximum: int) -> str:
     if (not path.is_file() or path.is_symlink()
             or not 100 < path.stat().st_size <= maximum):
@@ -229,6 +260,8 @@ def audit_insert_solid(original_dwg: str | Path, diagnostic_dxf: str | Path,
         solid_results[mode] += 1
         if len(solid_examples[mode]) < 12:
             solid_examples[mode].append(format(h, "X"))
+    verify_direct_modelspace_roster(set(source_inserts), target, "INSERT")
+    verify_direct_modelspace_roster(source_solid_handles, target, "SOLID")
     if _digest(src, MAX_DWG_BYTES) != sha_src or _digest(dst, MAX_DXF_BYTES) != sha_dst:
         raise ValueError("DWG/DXF bytes changed during audit")
     return {
