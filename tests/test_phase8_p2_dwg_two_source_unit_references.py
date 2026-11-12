@@ -7,6 +7,7 @@ from __future__ import annotations
 from copy import deepcopy
 from hashlib import sha256
 import json
+from pathlib import Path
 
 import fitz
 import pytest
@@ -140,3 +141,46 @@ def test_legacy_one_reference_cannot_calibrate_real_dwg_source(tmp_path):
     with pytest.raises(ValueError, match="v2"):
         _apply(tmp_path, doc, legacy)
     assert doc.units == "unitless"
+
+
+def test_unit_proof_changed_after_hash_read_is_not_accepted(tmp_path, monkeypatch):
+    doc, proof, _ = _evidence(tmp_path)
+    genuine_read_bytes = Path.read_bytes
+    observed = {'proof_reads': 0}
+
+    def swap_after_verified_read(path):
+        contents = genuine_read_bytes(path)
+        if path.name == 'unit_proof_v2.json':
+            observed['proof_reads'] += 1
+            if observed['proof_reads'] == 2:
+                # The same bytes were hashed but the file was replaced
+                # before the older implementation's second text read.
+                path.write_bytes(contents.replace(
+                    b'Explicit drawing revision',
+                    b'Unverified altered revision',
+                ))
+        return contents
+
+    monkeypatch.setattr(Path, 'read_bytes', swap_after_verified_read)
+    with pytest.raises(ValueError, match='در طول بررسی تغییر'):
+        _apply(tmp_path, doc, proof)
+    assert observed['proof_reads'] >= 3
+    assert doc.units == 'unitless'
+
+
+@pytest.mark.parametrize('changed_file', ['drawing', 'pdf'])
+def test_unit_proof_rejects_source_change_during_pdf_validation(tmp_path, monkeypatch, changed_file):
+    doc, proof, pdf = _evidence(tmp_path)
+    original_fitz_open = fitz.open
+
+    def open_then_mutate_source(*args, **kwargs):
+        opened = original_fitz_open(*args, **kwargs)
+        if args and Path(args[0]) == pdf:
+            changed_path = Path(doc.source) if changed_file == 'drawing' else pdf
+            changed_path.write_bytes(b'SYNTHETIC_CHANGED_AFTER_SOURCE_HASH')
+        return opened
+
+    monkeypatch.setattr(fitz, 'open', open_then_mutate_source)
+    with pytest.raises(ValueError, match='در طول بررسی تغییر'):
+        _apply(tmp_path, doc, proof)
+    assert doc.units == 'unitless'
