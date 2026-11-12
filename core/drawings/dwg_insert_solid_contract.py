@@ -178,8 +178,11 @@ def verify_insert_attached_attributes(native_by_insert: dict, target: Any,
             child_id = int(raw, 16)
             if child_id == 0 or child_id >= 2**64 or child_id in converted_ids:
                 raise ValueError("Duplicate converted attached ATTRIB identity")
-            if str(attr.dxf.get("owner", "")).upper() != format(parent, "X"):
-                raise ValueError("Converted ATTRIB moved to another INSERT owner")
+            # DXF group 330 of ATTRIB points to the owning LAYOUT, not
+            # the INSERT handle. The INSERT.attribs chain is the attachment.
+            # Native ezdwg placement, by contrast, points to the INSERT.
+            if str(attr.dxf.get("owner", "")).upper() != str(insert.dxf.get("owner", "")).upper():
+                raise ValueError("Converted ATTRIB moved outside INSERT layout")
             if target.entitydb.get(format(child_id, "X")) is not attr:
                 raise ValueError("Converted ATTRIB not backed by entity index")
             converted_ids.add(child_id)
@@ -209,15 +212,16 @@ def verify_insert_attached_attributes(native_by_insert: dict, target: Any,
                 raise ValueError("Original attached ATTRIB position changed")
     if original_ids != converted_ids:
         raise ValueError("INSERT attached ATTRIB identity roster changed")
-    # Catch a converted ATTRIB still indexed as owned by an original INSERT
-    # but silently excluded from the target INSERT's attached attribs list.
+    # Catch a converted ModelSpace ATTRIB still indexed under the layout
+    # but silently absent from every source INSERT's attached attribs chain.
+    model_owner = str(target.modelspace().block_record_handle).upper()
     for entity in target.entitydb.values():
         if entity is None or entity.dxftype() != "ATTRIB":
             continue
         raw_owner = str(entity.dxf.get("owner", ""))
         if not raw_owner or any(c not in "0123456789ABCDEFabcdef" for c in raw_owner):
             continue
-        if int(raw_owner, 16) not in original_insert_handles:
+        if int(raw_owner, 16) != int(model_owner, 16):
             continue
         raw_handle = str(entity.dxf.get("handle", ""))
         if not raw_handle or any(c not in "0123456789ABCDEFabcdef" for c in raw_handle):
