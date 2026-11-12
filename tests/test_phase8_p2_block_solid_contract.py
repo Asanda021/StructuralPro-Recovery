@@ -5,7 +5,7 @@ from core.drawings.dwg_insert_solid_contract import (
     _vec_equal, verify_insert_fields, verify_block_line, classify_solid_height,
     audit_insert_solid, verify_direct_modelspace_roster,
     verify_insert_attached_attributes, verify_block_attdef,
-    verify_nested_block_insert,
+    verify_nested_block_insert, summarize_block_member_type_counts,
 )
 
 
@@ -423,3 +423,50 @@ def test_nested_array_repetition_change_is_not_ignored():
     assert verify_nested_block_insert(src, target, "0", known, drawing.blocks) == []
     target.dxf.column_count = 4
     assert "INSERT_COLUMN_COUNT_CHANGED" in verify_nested_block_insert(src, target, "0", known, drawing.blocks)
+
+
+
+def test_mixed_block_member_counts_not_misreported_as_lines():
+    result = summarize_block_member_type_counts({
+        0xB1: {"LINE": 3},
+        0xB2: {"LINE": 2, "ATTDEF": 1, "INSERT": 2},
+        0xB3: {"MINSERT": 1},
+    })
+    assert result == {
+        "line_only_block_definitions_checked": 1,
+        "block_definition_selected_members_checked": 9,
+        "block_definition_attdef_members_checked": 1,
+        "block_definition_nested_insert_members_checked": 3,
+        "block_definition_line_members_checked": 5,
+        "block_line_member_count_by_record": {
+            "B1": 3, "B2": 2, "B3": 0,
+        },
+    }
+    assert result["block_definition_selected_members_checked"] != result["block_definition_line_members_checked"]
+
+
+def test_previous_line_only_block_receipt_counts_are_preserved():
+    result = summarize_block_member_type_counts({
+        0xA1: {"LINE": 70},
+        0xA2: {"LINE": 3},
+    })
+    assert result["line_only_block_definitions_checked"] == 2
+    assert result["block_definition_selected_members_checked"] == 73
+    assert result["block_definition_line_members_checked"] == 73
+    assert result["block_definition_attdef_members_checked"] == 0
+    assert result["block_definition_nested_insert_members_checked"] == 0
+
+
+@pytest.mark.parametrize("invalid", [
+    None, [],
+    {0: {"LINE": 1}},
+    {"B1": {"LINE": 1}},
+    {0xB1: {}},
+    {0xB1: {"LINE": -2}},
+    {0xB1: {"LINE": 2.0}},
+    {0xB1: {"LINE": True}},
+    {0xB1: {"CIRCLE": 1}},
+])
+def test_block_receipt_member_counts_reject_untrusted_shapes(invalid):
+    with pytest.raises(ValueError, match="BLOCK member"):
+        summarize_block_member_type_counts(invalid)
