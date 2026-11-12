@@ -138,3 +138,57 @@ def verify_private_dacl(path: str | Path, *, directory: bool) -> bool:
         kernel.LocalFree.argtypes=(wt.HLOCAL,)
         kernel.LocalFree.restype=wt.HLOCAL
         kernel.LocalFree(sd)
+
+
+def create_private_output_fd(path: str | Path) -> int:
+    """Atomically create protected Windows output via CreateFileW with SDDL.
+
+    Protected security descriptor is attached before any private data is
+    written; no external shell, post-hoc chmod or overwrite is allowed.
+    Caller owns the returned descriptor.
+    """
+    c,wt,adv,kernel=_apis()
+    import msvcrt
+    dest=Path(path)
+    if not dest.is_absolute() or dest.exists() or dest.is_symlink():
+        _blocked()
+    verify_private_dacl(dest.parent,directory=True)
+    user=current_user_sid()
+    # SDDL D:P disallows inherited privileges and restricts allowed SIDs.
+    sddl=f"O:{user}D:P(A;;FA;;;{user})(A;;FA;;;SY)(A;;FA;;;BA)"
+    sd=wt.LPVOID()
+    length=wt.DWORD()
+    convert=adv.ConvertStringSecurityDescriptorToSecurityDescriptorW
+    convert.argtypes=(wt.LPCWSTR,wt.DWORD,c.POINTER(wt.LPVOID),c.POINTER(wt.DWORD))
+    convert.restype=wt.BOOL
+    if not convert(sddl,1,c.byref(sd),c.byref(length)):
+        _blocked()
+    try:
+        class SecurityAttributes(c.Structure):
+            _fields_=(("size",wt.DWORD),("descriptor",wt.LPVOID),("inheritable",wt.BOOL))
+        attrs=SecurityAttributes(c.sizeof(SecurityAttributes),sd,False)
+        create=kernel.CreateFileW
+        create.argtypes=(wt.LPCWSTR,wt.DWORD,wt.DWORD,
+                         c.POINTER(SecurityAttributes),wt.DWORD,wt.DWORD,wt.HANDLE)
+        create.restype=wt.HANDLE
+        handle=create(str(dest),0x40000000,7,c.byref(attrs),1,0x80,None)
+        if handle==wt.HANDLE(-1).value or handle is None:
+            _blocked()
+        try:
+            fd=msvcrt.open_osfhandle(handle,os.O_WRONLY | os.O_BINARY)
+        except BaseException:
+            kernel.CloseHandle.argtypes=(wt.HANDLE,)
+            kernel.CloseHandle.restype=wt.BOOL
+            kernel.CloseHandle(handle)
+            raise
+        try:
+            verify_private_dacl(dest,directory=False)
+        except BaseException:
+            os.close(fd)
+            dest.unlink(missing_ok=True)
+            raise
+        return fd
+    finally:
+        kernel.LocalFree.argtypes=(wt.HLOCAL,)
+        kernel.LocalFree.restype=wt.HLOCAL
+        kernel.LocalFree(sd)
