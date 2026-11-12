@@ -531,3 +531,95 @@ def test_same_named_direct_insert_requires_original_block_record_identity(
     else:
         with pytest.raises(ValueError, match="NESTED_BLOCK_RECORD_IDENTITY_CHANGED"):
             audit_insert_solid(source_path, target_path, source_digest, target_digest)
+
+
+
+def _run_block_receipt_cli(monkeypatch, output):
+    import sys
+    from tools import audit_phase8_p2_block_solid as cli
+    monkeypatch.setattr(sys, "argv", [
+        "audit_phase8_p2_block_solid", "synthetic-original.dwg",
+        "synthetic-diagnostic.dxf", str(output),
+        "--dwg-sha256", "0" * 64,
+        "--dxf-sha256", "1" * 64,
+    ])
+    return cli.main()
+
+
+def test_block_cli_rejects_git_receipt_before_loading_private_source(monkeypatch, capsys):
+    from pathlib import Path
+    from tools import audit_phase8_p2_block_solid as cli
+    triggered = []
+    monkeypatch.setattr(cli, "audit_insert_solid", lambda *_: triggered.append(True))
+    # The existing repository's docs folder is intentionally forbidden.
+    target = Path(__file__).resolve().parents[1] / "docs" / "synthetic-private-receipt.json"
+    assert _run_block_receipt_cli(monkeypatch, target) == 2
+    assert triggered == []
+    assert not target.exists()
+    assert "BLOCKED_READ_ONLY_AUDIT" in capsys.readouterr().out
+
+
+def test_block_cli_never_overwrites_existing_private_evidence(tmp_path, monkeypatch):
+    from tools import audit_phase8_p2_block_solid as cli
+    folder = tmp_path / "private"
+    folder.mkdir(mode=0o700)
+    folder.chmod(0o700)
+    target = folder / "receipt.json"
+    target.write_bytes(b"SYNTHETIC_EXISTING_EVIDENCE")
+    triggered = []
+    monkeypatch.setattr(cli, "audit_insert_solid", lambda *_: triggered.append(True))
+    assert _run_block_receipt_cli(monkeypatch, target) == 2
+    assert target.read_bytes() == b"SYNTHETIC_EXISTING_EVIDENCE"
+    assert triggered == []
+
+
+def test_block_cli_private_receipt_secure_creation(tmp_path, monkeypatch, capsys):
+    import json
+    import os
+    import stat
+    from tools import audit_phase8_p2_block_solid as cli
+    folder = tmp_path / "private"
+    folder.mkdir(mode=0o700)
+    folder.chmod(0o700)
+    target = folder / "receipt.json"
+    confidential = "SYNTHETIC_HANDLE_TOKEN_NOT_FOR_STDOUT"
+    report = {
+        "status": "PARTIAL_NO_GO",
+        "source_sha256": confidential,
+        "renamed_insert_count": 0,
+        "block_definition_line_members_checked": 2,
+        "solid_selected_3d_status_counts": {"SOLID_3D_VERTEX_MATCH": 1},
+        "financial_quantity_rows_approved": 0,
+        "geometry_approved_for_financial_takeoff": False,
+    }
+    monkeypatch.setattr(cli, "audit_insert_solid", lambda *_: report)
+    result = _run_block_receipt_cli(monkeypatch, target)
+    stdout = capsys.readouterr().out
+    assert confidential not in stdout
+    if os.name == "nt":
+        # The shared guard refuses to claim Windows DACL privacy without proof.
+        assert result == 2
+        assert not target.exists()
+    else:
+        assert result == 0
+        assert json.loads(target.read_text(encoding="utf-8")) == report
+        assert stat.S_IMODE(target.stat().st_mode) == 0o600
+        assert stat.S_IMODE(folder.stat().st_mode) == 0o700
+
+
+def test_block_cli_decoder_exception_never_leaks_private_text(
+        tmp_path, monkeypatch, capsys):
+    from tools import audit_phase8_p2_block_solid as cli
+    folder = tmp_path / "private"
+    folder.mkdir(mode=0o700)
+    folder.chmod(0o700)
+    target = folder / "receipt.json"
+    secret = "SYNTHETIC_PRIVATE_CAD_PATH_AND_HANDLE"
+    def raising_decoder(*_):
+        raise ValueError(secret)
+    monkeypatch.setattr(cli, "audit_insert_solid", raising_decoder)
+    assert _run_block_receipt_cli(monkeypatch, target) == 2
+    stdout = capsys.readouterr().out
+    assert secret not in stdout
+    assert "ValueError" in stdout
+    assert not target.exists()
