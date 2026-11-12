@@ -313,3 +313,71 @@ def test_cad_source_change_during_geometry_comparison_is_rejected(tmp_path, monk
             'quantity_cell': 'I5', 'evidence_ref': 'synthetic', 'handle': 'A'}
     with pytest.raises(ValueError, match='CAD source changed'):
         LegacyMetreCADReconciler._compare_cad(report, drawing, [link])
+
+
+@pytest.mark.parametrize('remove_source', [False, True])
+def test_metre_workbook_change_during_summary_is_rejected(tmp_path, monkeypatch, remove_source):
+    import core.drawings.legacy_metre_cad_reconciliation as reconciliation
+
+    source = legacy_book(tmp_path)
+    summary = tmp_path / 'synthetic-summary.xlsx'
+    summary.write_bytes(b'synthetic summary input')
+
+    def mutate_during_summary(*_):
+        if remove_source:
+            source.unlink()
+        else:
+            source.write_bytes(b'synthetic modified metre workbook')
+        return {'independent_formula_evaluation': False}, []
+
+    monkeypatch.setattr(reconciliation, '_read_summary', mutate_during_summary)
+    with pytest.raises(ValueError, match='Metre workbook changed during audit'):
+        LegacyMetreCADReconciler().inspect(source, summary_path=summary)
+
+
+def test_metre_workbook_change_during_cad_reconciliation_is_rejected(tmp_path, monkeypatch):
+    source = legacy_book(tmp_path)
+    drawing = tmp_path / 'synthetic.dxf'
+    drawing.write_bytes(b'synthetic-only CAD')
+
+    def mutate_during_cad(*_):
+        source.write_bytes(b'synthetic switched metre workbook')
+
+    monkeypatch.setattr(LegacyMetreCADReconciler, '_compare_cad',
+                        staticmethod(mutate_during_cad))
+    with pytest.raises(ValueError, match='Metre workbook changed during audit'):
+        LegacyMetreCADReconciler().inspect(source, drawing_path=drawing)
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_unverified_decoder_return_checks_cad_source_identity(tmp_path, monkeypatch, change_source):
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+
+    drawing = tmp_path / 'synthetic.dxf'
+    drawing.write_bytes(b'synthetic CAD original')
+    original_sha = sha256(drawing.read_bytes()).hexdigest()
+
+    class DecoderMetadata(dict):
+        def get(self, key, default=None):
+            if change_source:
+                drawing.write_bytes(b'synthetic CAD altered during decoder check')
+            return None
+
+    decoded = SimpleNamespace(
+        source_sha256=original_sha,
+        format='DWG_NATIVE',
+        conversion=DecoderMetadata(),
+    )
+    monkeypatch.setattr(
+        DWGTakeoffEngine, 'with_array_support',
+        lambda: SimpleNamespace(import_file=lambda _: decoded),
+    )
+    report = {'rows': [{}]}
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed during the review'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_DWG_DECODER_VERSION_UNVERIFIED'
+        assert report['cad']['verified_rows'] == 0
