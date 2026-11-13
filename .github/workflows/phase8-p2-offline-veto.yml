@@ -70,6 +70,7 @@ on:
       - tools/structuralpro_libredwg_capi_probe.c
       - tools/P8P2_NATIVE_C_API_README_FA.md
       - tests/test_phase8_p2_libredwg_native_capi_runner.py
+      - tests/test_phase8_p2_native_dwg_readonly_preview.py
       - core/drawings/dwg_opaque_conversion_diff.py
       - .github/workflows/phase8-p2-offline-veto.yml
   workflow_dispatch:
@@ -150,11 +151,19 @@ jobs:
           tests/test_phase8_p2_converter_failure_cleanup.py
           tests/test_phase8_p2_dwg_dropped_line_verified_recovery.py
           tests/test_p57_dwg_dxf_validation.py
+      - name: Verify public DWG transport fail-closed behavior (offline mocks only)
+        run: >-
+          python -m pytest -q
+          --junitxml=preview-transport-guard.xml
+          tests/test_phase8_p2_native_dwg_readonly_preview.py::test_public_studio_502_retry_is_bounded_and_sha_stays_pinned
+          tests/test_phase8_p2_native_dwg_readonly_preview.py::test_public_studio_wrong_sha_fails_without_retry
       - name: Store results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: p8-p2-offline-dwg-${{ matrix.os }}-${{ github.sha }}
-          path: offline-dwg-financial-veto.xml
+          path: |
+            offline-dwg-financial-veto.xml
+            preview-transport-guard.xml
           if-no-files-found: ignore
           retention-days: 7
