@@ -129,6 +129,8 @@ def audit_custom_graph_coverage(
     # An independent graph API that omits all custom nodes cannot prove they
     # have no real links. Validate tuples, count only matching custom endpoints.
     independent_custom_edge_count = 0
+    corroborating_custom_edges = 0
+    conflicting_custom_edges = 0
     seen_independent_edges = set()
     for edge in independent_standard_graph_edges:
         if (not isinstance(edge, (tuple, list)) or len(edge) != 3
@@ -146,6 +148,24 @@ def audit_custom_graph_coverage(
         seen_independent_edges.add(identity)
         if source in custom_ids or target in custom_ids:
             independent_custom_edge_count += 1
+            # An arbitrary relationship label or merely touching an unknown
+            # custom node is NOT proof of cross-reader link agreement.
+            # Check only established, direction-specific standard relationships.
+            decoded_match = None
+            if relationship == "owner" and source in custom_ids:
+                decoded_match = _source_handle(custom[source].get("ownerhandle")) == target
+            elif relationship == "reactor" and source in custom_ids:
+                decoded_match = any(_source_handle(ref) == target
+                                    for ref in custom[source].get("reactors", []))
+            elif (relationship in ("dictionary", "dictionary_item", "item")
+                  and target in custom_ids
+                  and index[source].get("object") == "DICTIONARY"):
+                decoded_match = any(_source_handle(ref) == target
+                                    for ref in index[source].get("items", {}).values())
+            if decoded_match is True:
+                corroborating_custom_edges += 1
+            elif decoded_match is False:
+                conflicting_custom_edges += 1
 
     dxfs_found = None
     if converted_dxf is not None:
@@ -165,6 +185,11 @@ def audit_custom_graph_coverage(
         "decoded_unresolved_custom_links_count": unresolved_links,
         "independent_standard_graph_edges_count": len(independent_standard_graph_edges),
         "independent_graph_edges_touching_custom_count": independent_custom_edge_count,
+        "independent_custom_links_corresponding_to_decoded_count": corroborating_custom_edges,
+        "independent_custom_links_conflicting_with_decoded_count": conflicting_custom_edges,
+        "independent_custom_edges_not_comparable_count": (
+            independent_custom_edge_count - corroborating_custom_edges - conflicting_custom_edges
+        ),
         "converted_original_custom_ids_present_count": dxfs_found,
         "independent_reader_custom_link_coverage_verified": False,
         "source_proprietary_payload_semantics_verified": False,
@@ -172,9 +197,11 @@ def audit_custom_graph_coverage(
         "original_block_proven_unused": False,
         "automatic_reconstruction_authorized": False,
         "financial_quantity_approved": False,
-        "status": ("CROSS_READER_CUSTOM_LINK_COVERAGE_GAP_NO_GO"
+        "status": ("CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
+                   if conflicting_custom_edges
+                   else "CROSS_READER_CUSTOM_LINK_COVERAGE_GAP_NO_GO"
                    if (owner_custom + owner_dictionary + reactor_custom +
                        reactor_dictionary + dictionary_direct) and
-                      independent_custom_edge_count == 0
+                      corroborating_custom_edges == 0
                    else "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"),
     }
