@@ -166,7 +166,8 @@ def test_public_studio_wrong_sha_fails_without_retry(monkeypatch):
         def read(self, _limit):
             return payload
     class Opener:
-        def open(self, _request, _timeout):
+        def open(self, _request, timeout):
+            assert timeout == 35
             calls[0] += 1
             return Response()
     monkeypatch.setitem(globals(), "build_opener", lambda *_: Opener())
