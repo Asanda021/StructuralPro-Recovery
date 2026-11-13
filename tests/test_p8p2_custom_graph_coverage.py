@@ -215,3 +215,58 @@ def test_conflict_has_priority_over_an_unrelated_matching_edge():
     assert result["independent_custom_links_conflicting_with_decoded_count"] == 1
     assert result["status"] == "CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
     assert not result["automatic_reconstruction_authorized"]
+
+
+def test_recycled_and_proxy_custom_handles_are_not_preserved_payloads():
+    objects, raw, edges = fixture()
+    converted = SimpleNamespace(entitydb={
+        "A": SimpleNamespace(dxftype=lambda: "LINE"),
+        "B": SimpleNamespace(dxftype=lambda: "ACAD_PROXY_OBJECT"),
+        "C": object(),
+    })
+    result = audit_custom_graph_coverage(
+        objects, raw, edges, converted_dxf=converted,
+    )
+    assert result["converted_original_custom_ids_present_count"] == 3
+    assert result["converted_original_custom_ids_missing_count"] == 0
+    assert result["converted_original_custom_ids_reused_as_standard_count"] == 1
+    assert result["converted_original_custom_ids_replaced_by_proxy_count"] == 1
+    assert result["converted_original_custom_ids_type_unreadable_count"] == 1
+    assert result["converted_original_custom_ids_custom_type_unverified_count"] == 0
+    assert result["converted_original_custom_identity_status"].endswith("NO_GO")
+    assert result["source_proprietary_payload_semantics_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_custom_named_target_type_still_does_not_prove_vendor_semantics():
+    objects, raw, edges = fixture()
+    result = audit_custom_graph_coverage(
+        objects, raw, edges,
+        converted_dxf=SimpleNamespace(entitydb={
+            "A": SimpleNamespace(dxftype=lambda: "DMMAPMANAGER"),
+        }),
+    )
+    assert result["converted_original_custom_ids_present_count"] == 1
+    assert result["converted_original_custom_ids_missing_count"] == 2
+    assert result["converted_original_custom_ids_custom_type_unverified_count"] == 1
+    assert result["converted_original_custom_identity_status"].endswith("NO_GO")
+    assert result["all_source_custom_links_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_not_supplied_dxf_must_not_be_interpreted_as_zero_source_losses():
+    objects, raw, edges = fixture()
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["converted_original_custom_ids_present_count"] is None
+    assert result["converted_original_custom_ids_missing_count"] is None
+    assert result["converted_original_custom_ids_reused_as_standard_count"] is None
+    assert result["converted_original_custom_identity_status"] == "NOT_CHECKED_NO_GO"
+    assert result["financial_quantity_approved"] is False
+
+
+def test_converted_dxf_missing_entity_index_rejected():
+    objects, raw, edges = fixture()
+    with pytest.raises(ValueError, match="entity index"):
+        audit_custom_graph_coverage(
+            objects, raw, edges, converted_dxf=SimpleNamespace(),
+        )
