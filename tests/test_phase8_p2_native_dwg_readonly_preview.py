@@ -5,6 +5,9 @@ immutable public upstream sample DWGs already pinned by other CI scenarios.
 """
 from hashlib import sha256
 from pathlib import Path
+from functools import lru_cache
+from time import sleep
+from urllib.error import HTTPError
 
 import pytest
 
@@ -27,13 +30,36 @@ def public_ac1018(tmp_path):
     return p
 
 
+@lru_cache(maxsize=1)
+def _verified_public_studio_bytes():
+    """One immutable public sample per test process. Never accept changed bytes.
+
+    Some public hosts intermittently return HTTP 502/503/504. Retry these
+    transport errors only, with a fixed, bounded budget; do not retry bad
+    host redirects or an incorrect SHA and never substitute synthetic CAD.
+    """
+    for attempt in range(3):
+        try:
+            with build_opener(RestrictedRedirect()).open(
+                Request(STUDIO_SOURCE, headers={"User-Agent": "P8P2-native-preview-CI/1.0"}),
+                timeout=35,
+            ) as response:
+                if not approved_url(response.geturl()):
+                    raise ValueError("Unapproved public DWG redirect")
+                b = response.read(500_000)
+        except HTTPError as exc:
+            if exc.code not in (502, 503, 504) or attempt == 2:
+                raise
+            sleep(2 * (attempt + 1))
+            continue
+        if sha256(b).hexdigest() != SOURCES["studio_cc0"]["expected_sha256"]:
+            raise ValueError("Pinned public DWG SHA changed")
+        return b
+    raise RuntimeError("Pinned public DWG was not acquired")
+
+
 def public_unitless_ac1015(tmp_path):
-    with build_opener(RestrictedRedirect()).open(
-        Request(STUDIO_SOURCE, headers={"User-Agent":"P8P2-native-preview-CI/1.0"}), timeout=35,
-    ) as response:
-        assert approved_url(response.geturl())
-        b = response.read(500_000)
-    assert sha256(b).hexdigest() == SOURCES["studio_cc0"]["expected_sha256"]
+    b = _verified_public_studio_bytes()
     p = tmp_path / "public-cc0-unitless.dwg"
     p.write_bytes(b)
     return p
