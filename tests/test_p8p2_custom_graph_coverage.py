@@ -109,3 +109,44 @@ def test_bad_source_or_unverifiable_graph_fails_closed(bad):
         raw[0]["handle"] = "A??"
     with pytest.raises(ValueError):
         audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("unindexed_edge", [
+    (999, "owner", 10), (10, "reactor", 999), (999, "owner", 998),
+])
+def test_independent_graph_edge_with_unindexed_endpoint_cannot_hide_gap(unindexed_edge):
+    objects, raw, edges = fixture()
+    edges.append(unindexed_edge)
+    with pytest.raises(ValueError, match="unindexed source object"):
+        audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("invalid_edge", [
+    (10, "", 1), (10, "x" * 129, 1), (True, "owner", 1),
+    (10, "owner", False),
+])
+def test_malformed_independent_edge_cannot_claim_custom_coverage(invalid_edge):
+    objects, raw, edges = fixture()
+    edges.append(invalid_edge)
+    with pytest.raises(ValueError, match="Malformed independent graph edge"):
+        audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("duplicated_edge", [
+    (10, "owner", 1), (30, "layer", 40),
+])
+def test_duplicate_standard_or_custom_edge_never_increases_coverage(duplicated_edge):
+    objects, raw, _ = fixture()
+    with pytest.raises(ValueError, match="Duplicate independent graph edge"):
+        audit_custom_graph_coverage(objects, raw, [duplicated_edge, duplicated_edge])
+
+
+def test_distinct_independent_custom_edges_remain_diagnostic_only():
+    objects, raw, edges = fixture()
+    edges.extend([(10, "owner", 1), (11, "reactor", 10)])
+    receipt = audit_custom_graph_coverage(objects, raw, edges)
+    assert receipt["independent_graph_edges_touching_custom_count"] == 2
+    assert receipt["status"] == "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"
+    assert receipt["independent_reader_custom_link_coverage_verified"] is False
+    assert receipt["all_source_custom_links_verified"] is False
+    assert receipt["financial_quantity_approved"] is False
