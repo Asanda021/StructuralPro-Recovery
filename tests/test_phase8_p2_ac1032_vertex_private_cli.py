@@ -5,11 +5,36 @@ from pathlib import Path
 import pytest
 import hashlib
 import re
+import subprocess
 import ezdxf
 
 
 def _sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _icacls(path, *args):
+    assert os.name == "nt"
+    result = subprocess.run(["icacls", str(path), *args],
+                            capture_output=True, text=True, timeout=25)
+    assert result.returncode == 0, "Cannot establish synthetic NTFS test ACL"
+
+
+def _restrict_native(path, *, directory=False):
+    from core.platform.windows_private_acl import (
+        current_user_sid, verify_private_dacl,
+    )
+    user_sid = current_user_sid()
+    rights = "(OI)(CI)F" if directory else "F"
+    _icacls(path, "/setowner", f"*{user_sid}")
+    _icacls(path, "/inheritance:r")
+    _icacls(path, "/grant:r",
+            f"*{user_sid}:{rights}", f"*S-1-5-18:{rights}")
+    assert verify_private_dacl(path, directory=directory)
+
+
+def _make_public_native(path):
+    _icacls(path, "/grant", "*S-1-1-0:R")
 
 
 def setup_files(tmp_path):
@@ -53,10 +78,15 @@ def make_config(tmp_path, **changes):
     config.write_text(json.dumps(doc), encoding="utf-8")
     if os.name != "nt":
         config.chmod(0o600)
+    else:
+        # All test files are synthetic, but native Windows input protection
+        # must be real; chmod(0600) cannot replace a protected NTFS DACL.
+        _restrict_native(private, directory=True)
+        for item in (src, ref, cand, config):
+            _restrict_native(item)
     return config, doc
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows private DACL not certified; fail closed")
 def test_private_cli_writes_0600_non_payable_receipt(tmp_path, capsys):
     config, doc = make_config(tmp_path)
     assert main(["--private-config", str(config)]) == 0
@@ -64,14 +94,17 @@ def test_private_cli_writes_0600_non_payable_receipt(tmp_path, capsys):
     report = json.loads(p.read_text())
     assert report['financial_quantity_rows_approved'] == 0
     assert report['original_dwg_vertex_field_truth_verified'] is False
-    assert p.stat().st_mode & 0o077 == 0
+    if os.name == "nt":
+        from core.platform.windows_private_acl import verify_private_dacl
+        assert verify_private_dacl(p, directory=False)
+    else:
+        assert p.stat().st_mode & 0o077 == 0
     output = capsys.readouterr().out
     assert doc['original_sha256'] not in output
     assert doc['original_dwg'] not in output
     assert doc['output_json'] not in output
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows private DACL not certified; fail closed")
 def test_private_cli_wrong_hash_fails_without_leaking(tmp_path, capsys):
     config, doc = make_config(tmp_path, original_sha256='0'*64)
     assert main(["--private-config", str(config)]) == 2
@@ -79,15 +112,16 @@ def test_private_cli_wrong_hash_fails_without_leaking(tmp_path, capsys):
     assert doc['original_dwg'] not in capsys.readouterr().out
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows private DACL not certified; fail closed")
 def test_insecure_config_rejected(tmp_path):
     config, doc = make_config(tmp_path)
-    config.chmod(0o644)
+    if os.name == "nt":
+        _make_public_native(config)
+    else:
+        config.chmod(0o644)
     assert main(["--private-config", str(config)]) == 2
     assert not Path(doc['output_json']).exists()
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Windows private DACL not certified; fail closed")
 def test_existing_output_never_overwritten(tmp_path):
     config, doc = make_config(tmp_path)
     output = Path(doc['output_json'])
@@ -97,16 +131,17 @@ def test_existing_output_never_overwritten(tmp_path):
 
 
 def test_windows_is_explicitly_fail_closed(tmp_path):
-    # CI on Windows must not quietly create private output with chmod alone.
+    # A world-readable Windows config must remain blocked even if the
+    # directory and all native inputs were previously secured.
     config, doc = make_config(tmp_path)
     if os.name == 'nt':
+        _make_public_native(config)
         assert main(["--private-config", str(config)]) == 2
         assert not Path(doc['output_json']).exists()
     else:
         assert config.is_file()
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Private Windows DACL gate remains fail-closed")
 def test_private_native_mode_explicitly_uses_original_source_oracle(tmp_path, monkeypatch, capsys):
     config, doc = make_config(tmp_path)
     from core.drawings import dwg_ac1032_native_vertex_oracle as native
@@ -132,7 +167,6 @@ def test_private_native_mode_explicitly_uses_original_source_oracle(tmp_path, mo
         assert doc[key] not in message
 
 
-@pytest.mark.skipif(os.name == 'nt', reason="Private Windows DACL gate remains fail-closed")
 def test_private_native_reader_failure_leaves_no_report(tmp_path, monkeypatch, capsys):
     config, doc = make_config(tmp_path)
     from core.drawings import dwg_ac1032_native_vertex_oracle as native
