@@ -129,12 +129,22 @@ def audit_custom_graph_coverage(
     # An independent graph API that omits all custom nodes cannot prove they
     # have no real links. Validate tuples, count only matching custom endpoints.
     independent_custom_edge_count = 0
+    seen_independent_edges = set()
     for edge in independent_standard_graph_edges:
         if (not isinstance(edge, (tuple, list)) or len(edge) != 3
                 or type(edge[0]) is not int or type(edge[2]) is not int
-                or not isinstance(edge[1], str)):
+                or not isinstance(edge[1], str) or not 0 < len(edge[1]) <= 128):
             raise ValueError("Malformed independent graph edge")
-        if edge[0] in custom_ids or edge[2] in custom_ids:
+        source, relationship, target = edge
+        # A reader's unbacked endpoint must not be counted as evidence
+        # that it independently covered a proprietary object link.
+        if source not in index or target not in index:
+            raise ValueError("Independent graph edge references an unindexed source object")
+        identity = (source, relationship, target)
+        if identity in seen_independent_edges:
+            raise ValueError("Duplicate independent graph edge cannot increase coverage")
+        seen_independent_edges.add(identity)
+        if source in custom_ids or target in custom_ids:
             independent_custom_edge_count += 1
 
     dxfs_found = None
