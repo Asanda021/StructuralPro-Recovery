@@ -150,3 +150,68 @@ def test_distinct_independent_custom_edges_remain_diagnostic_only():
     assert receipt["independent_reader_custom_link_coverage_verified"] is False
     assert receipt["all_source_custom_links_verified"] is False
     assert receipt["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("edge", [
+    (10, "unverified_label", 1),
+    (30, "unknown", 10),
+    (1, "owner", 10),  # inverse direction is not documented as an owner edge
+])
+def test_arbitrary_custom_touching_edge_is_not_independent_correspondence(edge):
+    objects, raw, edges = fixture()
+    edges.append(edge)
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_graph_edges_touching_custom_count"] == 1
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 0
+    assert result["independent_custom_edges_not_comparable_count"] == 1
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 0
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_COVERAGE_GAP_NO_GO"
+    assert result["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("edge", [
+    (10, "owner", 11),  # actual parent is dictionary 1
+    (10, "reactor", 11),  # actual reactor is dictionary 1
+    (1, "dictionary", 12),  # 12 is not a named entry in dictionary 1
+    (1, "dictionary_item", 12),
+    (1, "item", 12),
+])
+def test_contradicting_reader_link_is_a_no_go_conflict(edge):
+    objects, raw, edges = fixture()
+    edges.append(edge)
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 1
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 0
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
+    assert result["independent_reader_custom_link_coverage_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("dictionary_label", [
+    "dictionary", "dictionary_item", "item",
+])
+def test_matching_directional_standard_links_remain_unapproved(dictionary_label):
+    objects, raw, edges = fixture()
+    edges.extend([
+        (10, "owner", 1),
+        (11, "reactor", 10),
+        (1, dictionary_label, 10),
+    ])
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 3
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 0
+    assert result["independent_custom_edges_not_comparable_count"] == 0
+    assert result["status"] == "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"
+    assert result["all_source_custom_links_verified"] is False
+    assert result["source_proprietary_payload_semantics_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_conflict_has_priority_over_an_unrelated_matching_edge():
+    objects, raw, edges = fixture()
+    edges.extend([(10, "owner", 1), (11, "owner", 10)])
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 1
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 1
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
+    assert not result["automatic_reconstruction_authorized"]
