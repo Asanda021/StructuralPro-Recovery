@@ -41,8 +41,11 @@ def read_private_vertex_config(path: str | Path) -> dict:
         raise ValueError("Private configuration cannot reside inside source repository")
     _private_directory_guard(resolved.parent)
     if os.name == "nt":
-        raise ValueError("WINDOWS_PRIVATE_ACL_NOT_VERIFIED")
-    if resolved.stat().st_mode & 0o077 or resolved.stat().st_size > 16384:
+        # The native ACL verifier checks current-token ownership, protected
+        # non-null DACL and all ACEs. chmod() is not evidence on Windows.
+        from core.platform.windows_private_acl import verify_private_dacl
+        verify_private_dacl(resolved, directory=False)
+    if (os.name != "nt" and resolved.stat().st_mode & 0o077) or resolved.stat().st_size > 16384:
         raise ValueError("Private configuration must be a 0600 JSON below 16 KiB")
     flags = os.O_RDONLY
     if hasattr(os, "O_NOFOLLOW"):
@@ -63,6 +66,11 @@ def read_private_vertex_config(path: str | Path) -> dict:
         location = loc.resolve(strict=True)
         if location == project or project in location.parents:
             raise ValueError("Private source inputs cannot be committed into the repository")
+        if os.name == "nt":
+            # Private original inputs must not be world-readable just because
+            # the output location is secured.
+            from core.platform.windows_private_acl import verify_private_dacl
+            verify_private_dacl(location, directory=False)
     private_output_destination(config["output_json"])
     return config
 
@@ -70,7 +78,7 @@ def read_private_vertex_config(path: str | Path) -> dict:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--private-config", required=True,
-                        help="Absolute POSIX 0600 private JSON containing file paths, hashes and output path")
+                        help="Absolute private JSON with POSIX 0600 or verified Windows NTFS DACL; all source paths stay inside the config")
     parser.add_argument("--original-native-vertex-oracle", action="store_true",
                         help="Use pinned original-DWG Rust native 2D VERTEX reader (read-only, still NO-GO)")
     args = parser.parse_args(argv)
