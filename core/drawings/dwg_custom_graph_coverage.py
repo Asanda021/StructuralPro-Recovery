@@ -11,6 +11,8 @@ from __future__ import annotations
 from collections import Counter
 from collections.abc import Mapping, Sequence
 
+from core.drawings.dwg_opaque_source_receipt import summarize_converted_opaque_identity_coverage
+
 _MAX_SOURCE_OBJECTS = 1_000_000
 _MAX_CUSTOM = 64
 _MAX_EDGES = 1_000_000
@@ -167,12 +169,17 @@ def audit_custom_graph_coverage(
             elif decoded_match is False:
                 conflicting_custom_edges += 1
 
-    dxfs_found = None
+    dxf_identity = None
     if converted_dxf is not None:
-        if not hasattr(converted_dxf, "entitydb"):
-            raise ValueError("DXF lacks entity identity index")
-        dxfs_found = sum(converted_dxf.entitydb.get(format(h, "X")) is not None
-                         for h in custom_ids)
+        # Presence of a handle can mean reuse by LINE/DICTIONARY, proxy
+        # substitution or an unreadable object, never verified MAP/AEC parity.
+        # Reuse the existing bounded, fail-closed opaque identity classifier.
+        dxf_identity = summarize_converted_opaque_identity_coverage(
+            [{"handle": format(h, "X")} for h in sorted(custom_ids)],
+            converted_dxf,
+        )
+    dxfs_found = (dxf_identity["converted_dxf_identity_present_count"]
+                  if dxf_identity is not None else None)
 
     return {
         "policy": "p8p2_custom_source_graph_coverage_not_semantic_parity_v1",
@@ -191,6 +198,30 @@ def audit_custom_graph_coverage(
             independent_custom_edge_count - corroborating_custom_edges - conflicting_custom_edges
         ),
         "converted_original_custom_ids_present_count": dxfs_found,
+        "converted_original_custom_ids_missing_count": (
+            dxf_identity["converted_dxf_identity_missing_count"]
+            if dxf_identity is not None else None
+        ),
+        "converted_original_custom_ids_reused_as_standard_count": (
+            dxf_identity["converted_dxf_identity_reused_as_standard_type_count"]
+            if dxf_identity is not None else None
+        ),
+        "converted_original_custom_ids_replaced_by_proxy_count": (
+            dxf_identity["converted_dxf_identity_replaced_by_proxy_count"]
+            if dxf_identity is not None else None
+        ),
+        "converted_original_custom_ids_type_unreadable_count": (
+            dxf_identity["converted_dxf_identity_type_unreadable_count"]
+            if dxf_identity is not None else None
+        ),
+        "converted_original_custom_ids_custom_type_unverified_count": (
+            dxf_identity["converted_dxf_identity_custom_type_unverified_count"]
+            if dxf_identity is not None else None
+        ),
+        "converted_original_custom_identity_status": (
+            dxf_identity["converted_dxf_opaque_identity_status"]
+            if dxf_identity is not None else "NOT_CHECKED_NO_GO"
+        ),
         "independent_reader_custom_link_coverage_verified": False,
         "source_proprietary_payload_semantics_verified": False,
         "all_source_custom_links_verified": False,
