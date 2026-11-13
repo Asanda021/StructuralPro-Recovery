@@ -175,6 +175,19 @@ def test_boundary_only_solid_does_not_claim_complete_filled_fidelity(tmp_path,mo
     doc=preview(tmp_path,monkeypatch,[obj("SOLID",points=[(0,0),(1,0),(0,1),(1,1)])])
     assert cad_coverage_report(doc)["not_drawn_count"]==0
     assert cad_coverage_report(doc)["complete_visual_fidelity"] is False
+    data=doc.entities[0].data
+    assert data["source_vertices_3d_preserved"] is False
+    assert data["source_preview_geometry_status"]=="MISSING_NATIVE_Z_2D_BOUNDARY_ONLY"
+    assert data["cad_3d_gui_render_verified"] is False
+    assert data["financial_quantity_approved"] is False
+
+
+def test_two_dimensional_solid_nonstandard_extrusion_is_not_silently_accepted(tmp_path,monkeypatch):
+    doc=preview(tmp_path,monkeypatch,[obj("SOLID",points=[(0,0),(1,0),(0,1)],
+                                           extrusion=(1,0,0))])
+    assert cad_coverage_report(doc)["not_drawn_count"]==1
+    assert doc.entities[0].data["preview_decode_error"]
+    assert doc.conversion["preview_only"] is True
 
 
 @pytest.mark.parametrize("reopen_payable", [False, True])

@@ -5,6 +5,9 @@ immutable public upstream sample DWGs already pinned by other CI scenarios.
 """
 from hashlib import sha256
 from pathlib import Path
+from functools import lru_cache
+from time import sleep
+from urllib.error import HTTPError
 
 import pytest
 
@@ -27,13 +30,36 @@ def public_ac1018(tmp_path):
     return p
 
 
+@lru_cache(maxsize=1)
+def _verified_public_studio_bytes():
+    """One immutable public sample per test process. Never accept changed bytes.
+
+    Some public hosts intermittently return HTTP 502/503/504. Retry these
+    transport errors only, with a fixed, bounded budget; do not retry bad
+    host redirects or an incorrect SHA and never substitute synthetic CAD.
+    """
+    for attempt in range(3):
+        try:
+            with build_opener(RestrictedRedirect()).open(
+                Request(STUDIO_SOURCE, headers={"User-Agent": "P8P2-native-preview-CI/1.0"}),
+                timeout=35,
+            ) as response:
+                if not approved_url(response.geturl()):
+                    raise ValueError("Unapproved public DWG redirect")
+                b = response.read(500_000)
+        except HTTPError as exc:
+            if exc.code not in (502, 503, 504) or attempt == 2:
+                raise
+            sleep(2 * (attempt + 1))
+            continue
+        if sha256(b).hexdigest() != SOURCES["studio_cc0"]["expected_sha256"]:
+            raise ValueError("Pinned public DWG SHA changed")
+        return b
+    raise RuntimeError("Pinned public DWG was not acquired")
+
+
 def public_unitless_ac1015(tmp_path):
-    with build_opener(RestrictedRedirect()).open(
-        Request(STUDIO_SOURCE, headers={"User-Agent":"P8P2-native-preview-CI/1.0"}), timeout=35,
-    ) as response:
-        assert approved_url(response.geturl())
-        b = response.read(500_000)
-    assert sha256(b).hexdigest() == SOURCES["studio_cc0"]["expected_sha256"]
+    b = _verified_public_studio_bytes()
     p = tmp_path / "public-cc0-unitless.dwg"
     p.write_bytes(b)
     return p
@@ -89,3 +115,67 @@ def test_corrupt_dwg_fails_closed_even_in_preview(tmp_path):
     src.write_bytes(b"AC1018"+b"broken-sample-dwg-not-a-real-cad-file")
     with pytest.raises((RuntimeError,ValueError,Exception)):
         native_readonly_dwg_preview(src)
+
+
+def test_public_studio_502_retry_is_bounded_and_sha_stays_pinned(monkeypatch):
+    """Deterministic transport stub; no network, no falsely approved CAD."""
+    payload = b"AC1015" + bytes(300)
+    calls = [0]
+
+    class Response:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def geturl(self):
+            return STUDIO_SOURCE
+        def read(self, limit):
+            assert limit == 500_000
+            return payload
+
+    class Opener:
+        def open(self, request, timeout):
+            assert timeout == 35
+            calls[0] += 1
+            if calls[0] == 1:
+                raise HTTPError(STUDIO_SOURCE, 502, "upstream temporarily unavailable", {}, None)
+            return Response()
+
+    monkeypatch.setitem(globals(), "build_opener", lambda *_: Opener())
+    monkeypatch.setitem(globals(), "sleep", lambda _seconds: None)
+    monkeypatch.setitem(SOURCES["studio_cc0"], "expected_sha256", sha256(payload).hexdigest())
+    _verified_public_studio_bytes.cache_clear()
+    try:
+        assert _verified_public_studio_bytes() == payload
+        assert _verified_public_studio_bytes() == payload
+        assert calls == [2], "SHA-verified bytes should be shared within a pytest process"
+    finally:
+        _verified_public_studio_bytes.cache_clear()
+
+
+def test_public_studio_wrong_sha_fails_without_retry(monkeypatch):
+    payload = b"AC1015" + bytes(300)
+    calls = [0]
+    class Response:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def geturl(self):
+            return STUDIO_SOURCE
+        def read(self, _limit):
+            return payload
+    class Opener:
+        def open(self, _request, timeout):
+            assert timeout == 35
+            calls[0] += 1
+            return Response()
+    monkeypatch.setitem(globals(), "build_opener", lambda *_: Opener())
+    monkeypatch.setitem(SOURCES["studio_cc0"], "expected_sha256", "0" * 64)
+    _verified_public_studio_bytes.cache_clear()
+    try:
+        with pytest.raises(ValueError, match="Pinned public DWG SHA changed"):
+            _verified_public_studio_bytes()
+        assert calls == [1], "A changed DWG must never pass or be retried as a transport fault"
+    finally:
+        _verified_public_studio_bytes.cache_clear()

@@ -353,6 +353,16 @@ class DWGTakeoffEngine:
             finally:
                 converted.unlink(missing_ok=True)
             doc.conversion={"provider":"ACadSharp bridge","source_sha256":original_sha,"output_sha256":doc.source_sha256,"decoder_version":getattr(provider,"version","unverified"),"exit_code":0}
+            # A readable DXF and a successful bridge process are not proof of
+            # original custom-object, SHX, or revision fidelity.
+            doc.conversion.update({
+                "geometry_approved_for_financial_takeoff": False,
+                "native_decoder_full_object_graph_verified": False,
+                "native_decoder_error_mask_verified": False,
+                "source_revision_verified": False,
+                "requires_independent_original_dwg_oracle": True,
+                "safety_reason": "ACADSHARP_SUCCESS_NOT_FULL_NATIVE_COVERAGE",
+            })
             if hashlib.sha256(p.read_bytes()).hexdigest()!=original_sha:raise RuntimeError("فایل DWG هنگام تبدیل تغییر کرده است")
             doc.source_sha256=original_sha
             doc.source = str(p)
@@ -397,6 +407,14 @@ class DWGTakeoffEngine:
                     "original_dxf_unit_code": receipt.original_dxf_unit_code,
                     "unit_metadata_repaired": receipt.source_unit_restored_in_dxf,
                     "exit_code": 0,
+                    # Strict ModelSpace matching does not cover opaque OBJECTS
+                    # or establish the source issue and SHX glyph semantics.
+                    "geometry_approved_for_financial_takeoff": False,
+                    "native_decoder_full_object_graph_verified": False,
+                    "native_decoder_error_mask_verified": False,
+                    "source_revision_verified": False,
+                    "requires_independent_original_dwg_oracle": True,
+                    "safety_reason": "STRICT_MODELSPACE_NOT_FULL_NATIVE_COVERAGE",
                 }
                 doc.source_sha256 = original_sha
                 doc.source = str(p)
@@ -454,6 +472,10 @@ class DWGTakeoffEngine:
             doc.source = str(p)
             doc.format = "DWG→DXF (strict recovered missing LINEs)"
             return doc
+        # Consumer must honor the converter's explicit financial veto, rather
+        # than merely displaying an advisory boolean in a receipt.
+        if getattr(result, 'financial_veto', True) is not True:
+            raise RuntimeError('DWG converter may not authorize payable geometry')
         try:
             doc = self._read_dxf(result.output)
         finally:
@@ -463,7 +485,19 @@ class DWGTakeoffEngine:
                     result.output.parent.rmdir()
                 except OSError:
                     pass
-        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{})}
+        # CLI success and an equal ModelSpace roster do not prove full native
+        # decoder object/proxy coverage, error bitmask health or drawing revision.
+        # Preview remains readable, but payable geometry stays vetoed until
+        # independent original-source verification is actually implemented.
+        doc.conversion={"provider":result.converter,"source_sha256":result.source_sha256,"output_sha256":result.output_sha256,"dwg_version":result.dwg_version,"exit_code":result.exit_code,"source_coverage":getattr(result,"source_coverage",{}),
+                        "converter_financial_veto":True,
+                        "converter_integrity_veto":getattr(result,"source_coverage",{}).get("converter_integrity_veto",True),
+                        "geometry_approved_for_financial_takeoff":False,
+                        "native_decoder_full_object_graph_verified":False,
+                        "native_decoder_error_mask_verified":False,
+                        "source_revision_verified":False,
+                        "requires_independent_original_dwg_oracle":True,
+                        "safety_reason":"OFFLINE_CLI_SUCCESS_NOT_FULL_NATIVE_COVERAGE"}
         doc.source_sha256=original_sha
         doc.source = str(p)
         doc.format = "DWG→DXF (offline converter)"
@@ -630,8 +664,11 @@ def apply_documented_units(document,evidence):
     import json
     from core.projects.project_model import _identity
     path=Path(str(evidence.get('path','')))
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
-    proof=json.loads(path.read_text(encoding='utf-8-sig'))
+    if not path.is_file():raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
+    proof_bytes=path.read_bytes()
+    if hashlib.sha256(proof_bytes).hexdigest()!=evidence.get('sha256'):raise ValueError('مدرک واحد یافت نشد یا SHA-256 تغییر کرده است')
+    # Parse exactly the bytes which were hashed, never a second mutable read.
+    proof=json.loads(proof_bytes.decode('utf-8-sig'))
     policy=proof.get('policy')
     if policy not in {'cad_unit_reference_v1','cad_unit_reference_v2'} or proof.get('source_sha256')!=document.source_sha256:
         raise ValueError('مدرک واحد با منبع CAD منطبق نیست')
@@ -729,5 +766,18 @@ def apply_documented_units(document,evidence):
                 if k in d:d[k]=tuple(v*factor for v in d[k])
             for k in ('points','display_points'):
                 if k in d:d[k]=[tuple(v*factor for v in p) for p in d[k]]
+    # A document/attachment can change while the independent references are
+    # being checked. Refuse to return a calibrated copy on any source drift.
+    try:
+        proof_unchanged=hashlib.sha256(path.read_bytes()).hexdigest()==evidence.get('sha256')
+        source_unchanged=True
+        pdf_unchanged=True
+        if policy=='cad_unit_reference_v2':
+            source_unchanged=hashlib.sha256(source.read_bytes()).hexdigest()==document.source_sha256
+            pdf_unchanged=hashlib.sha256(pdf.read_bytes()).hexdigest()==proof.get('source_pdf_sha256')
+    except OSError as exc:
+        raise ValueError('مدرک واحد یا منبع CAD/PDF در طول بررسی تغییر کرده است') from exc
+    if not (proof_unchanged and source_unchanged and pdf_unchanged):
+        raise ValueError('مدرک واحد یا منبع CAD/PDF در طول بررسی تغییر کرده است')
     result.__dict__.pop('_render_bounds',None);result.units=unit;result.unit_name=unit;result.unit_evidence=deepcopy(evidence)
     return result

@@ -1,0 +1,102 @@
+# Windows-only private security proof. Never mount original DWG or upload ACL path.
+name: P8 P2 native Windows private DACL security proof
+
+on:
+  push:
+    branches: [fix/phase8-p2-offline-converter-veto-20261104]
+    paths:
+      - core/platform/windows_private_acl.py
+      - tests/test_phase8_p2_windows_private_dacl.py
+      - tools/audit_phase8_p2_opaque_source_bytes.py
+      - tools/audit_phase8_p2_ac1032_vertex_bulge.py
+      - tests/test_phase8_p2_ac1032_vertex_private_cli.py
+      - .github/workflows/phase8-p2-native-windows-dacl.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+concurrency:
+  group: p8p2-private-dacl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-ntfs:
+    runs-on: windows-2022
+    timeout-minutes: 14
+    env:
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Check exact reviewed commit, NTFS and no private source
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne "${{ github.sha }}") { throw 'DACL_HEAD_MISMATCH' }
+          python -c "import os,platform; assert os.name=='nt' and platform.system()=='Windows'"
+      - name: Run actual Windows DACL positive and negative tests
+        shell: pwsh
+        run: |
+          python -m pip install -q pytest
+          python -m pytest -q -o faulthandler_timeout=0 --junitxml=windows-dacl.xml tests/test_phase8_p2_windows_private_dacl.py
+          if ($LASTEXITCODE -ne 0) { throw 'NATIVE_WINDOWS_DACL_PROBE_FAILED' }
+      - name: Fail if any DACL case skipped, failed or absent
+        shell: pwsh
+        run: |
+          python -c "import xml.etree.ElementTree as E; r=E.parse('windows-dacl.xml').getroot(); x=r if r.tag=='testsuite' else r.find('testsuite'); print('NTFS_DACL_TESTS',x.get('tests'),'SKIP',x.get('skipped')); assert x is not None and int(x.get('tests',0))==11 and all(int(x.get(y,0))==0 for y in ('skipped','failures','errors'))"
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_DACL_TESTS_NOT_EXHAUSTIVE' }
+      - name: Upload test-only JUnit, never paths, accounts or private source
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-native-windows-dacl-junit
+          path: windows-dacl.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+  private-ac1032-cli:
+    name: Native Windows AC1032 private CLI regression (synthetic)
+    runs-on: windows-2022
+    timeout-minutes: 22
+    env:
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+      PYTHONFAULTHANDLER: '1'
+      QT_QPA_PLATFORM: windows
+    steps:
+      - run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Assert source SHA and Windows token backend
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD) -ne "${{ github.sha }}") { throw 'SOURCE_SHA_MISMATCH' }
+          python -c "import os; assert os.name=='nt'"
+      - name: Install actual AC1032 audit runtime and test dependencies
+        run: python -m pip install -q -r requirements.txt
+      - name: Exercise every AC1032 private source/receipt CLI test without skips
+        shell: pwsh
+        run: |
+          python -m pytest -q -o faulthandler_timeout=0 --junitxml=ac1032-private-windows.xml tests/test_phase8_p2_ac1032_vertex_private_cli.py
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_AC1032_PRIVATE_CLI_FAILED' }
+          python -c "import xml.etree.ElementTree as E; r=E.parse('ac1032-private-windows.xml').getroot(); s=r if r.tag=='testsuite' else r.find('testsuite'); print('AC1032_Windows',s.attrib); assert s is not None and int(s.get('tests',0))==7 and all(int(s.get(x,0))==0 for x in ('skipped','failures','errors'))"
+          if ($LASTEXITCODE -ne 0) { throw 'WINDOWS_AC1032_MISSING_OR_SKIPPED_TESTS' }
+      - name: Upload synthetic-only test result, never private CAD
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-windows-ac1032-private-cli-junit
+          path: ac1032-private-windows.xml
+          retention-days: 7
+          if-no-files-found: warn

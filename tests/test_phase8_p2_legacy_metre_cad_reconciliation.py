@@ -198,3 +198,186 @@ def test_legacy_metre_accepts_only_authentic_persian_arabic_header_variants(tmp_
     book.close()
     with pytest.raises(ValueError, match="Legacy metre sheet"):
         LegacyMetreCADReconciler().inspect(path)
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_failed_cad_import_checks_source_unchanged(tmp_path, monkeypatch, change_source):
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+
+    drawing = tmp_path / 'public.dxf'
+    drawing.write_bytes(b'synthetic original drawing')
+    report = {'rows': [{}]}
+
+    def fail_import(path):
+        if change_source:
+            path.write_bytes(b'synthetic altered drawing')
+        raise ValueError('synthetic parse error')
+
+    monkeypatch.setattr(DWGTakeoffEngine, 'with_array_support',
+                        lambda: SimpleNamespace(import_file=fail_import))
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_NATIVE_CAD_IMPORT_NOT_VERIFIED'
+        assert report['cad']['verified_rows'] == 0
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_failed_dwg_header_checks_source_unchanged(tmp_path, monkeypatch, change_source):
+    from core.drawings.dwg_converter import OfflineDWGConverter
+
+    drawing = tmp_path / 'public.dwg'
+    drawing.write_bytes(b'AC1018 synthetic drawing')
+    report = {'rows': [{}]}
+
+    def fail_header(path):
+        if change_source:
+            path.write_bytes(b'AC1018 altered drawing')
+        raise ValueError('synthetic header error')
+
+    monkeypatch.setattr(OfflineDWGConverter, 'inspect_header', fail_header)
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_UNSUPPORTED_OR_CORRUPT_DWG_HEADER'
+        assert report['cad']['verified_rows'] == 0
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_unavailable_converter_checks_source_unchanged(tmp_path, monkeypatch, change_source):
+    from core.drawings.dwg_converter import OfflineDWGConverter
+    from core.cad.external_dwg_provider_v1 import ACadSharpDWGProvider
+    from core.cad.optional_strict_python_dwg_provider import StrictPythonDWGProvider
+
+    drawing = tmp_path / 'public.dwg'
+    drawing.write_bytes(b'AC1018 synthetic drawing')
+    report = {'rows': [{}]}
+    monkeypatch.setattr(OfflineDWGConverter, 'inspect_header',
+                        lambda _: {'code': 'AC1018', 'version': '2004'})
+    monkeypatch.setattr(ACadSharpDWGProvider, 'available', property(lambda _: False))
+    monkeypatch.setattr(OfflineDWGConverter, 'available', property(lambda _: False))
+
+    def unavailable(_):
+        if change_source:
+            drawing.write_bytes(b'AC1018 altered drawing')
+        return False
+
+    monkeypatch.setattr(StrictPythonDWGProvider, 'available', property(unavailable))
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_NATIVE_DWG_CONVERTER_UNAVAILABLE'
+        assert report['cad']['verified_rows'] == 0
+
+
+def test_decoded_document_source_hash_must_match_input(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+
+    drawing = tmp_path / 'public.dxf'
+    drawing.write_bytes(b'synthetic original drawing')
+    decoded = SimpleNamespace(source_sha256='0' * 64)
+    monkeypatch.setattr(DWGTakeoffEngine, 'with_array_support',
+                        lambda: SimpleNamespace(import_file=lambda _: decoded))
+    with pytest.raises(ValueError, match='CAD source changed'):
+        LegacyMetreCADReconciler._compare_cad({'rows': [{}]}, drawing, [])
+
+
+def test_cad_source_change_during_geometry_comparison_is_rejected(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import core.drawings.dwg_takeoff as takeoff
+
+    drawing = tmp_path / 'public.dxf'
+    drawing.write_bytes(b'synthetic original drawing')
+    digest = sha256(drawing.read_bytes()).hexdigest()
+    decoded = SimpleNamespace(source_sha256=digest, format='DXF', units='m', conversion={})
+    monkeypatch.setattr(takeoff.DWGTakeoffEngine, 'with_array_support',
+                        lambda: SimpleNamespace(import_file=lambda _: decoded))
+
+    def alter_source(*_):
+        drawing.write_bytes(b'synthetic changed drawing')
+        return SimpleNamespace(handle='A', layer='PUBLIC'), [], 2.0
+
+    monkeypatch.setattr(takeoff, 'cad_entity_geometry', alter_source)
+    report = {'rows': [{'key': 'public', 'quantity_cell': 'I5', 'quantity': '2',
+                        'cad_status': 'NOT_VERIFIED_NO_EXPLICIT_GEOMETRY_BINDING'}],
+              'issues': []}
+    link = {'key': 'public', 'source_sha256': digest, 'metric': 'length', 'unit': 'm',
+            'quantity_cell': 'I5', 'evidence_ref': 'synthetic', 'handle': 'A'}
+    with pytest.raises(ValueError, match='CAD source changed'):
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [link])
+
+
+@pytest.mark.parametrize('remove_source', [False, True])
+def test_metre_workbook_change_during_summary_is_rejected(tmp_path, monkeypatch, remove_source):
+    import core.drawings.legacy_metre_cad_reconciliation as reconciliation
+
+    source = legacy_book(tmp_path)
+    summary = tmp_path / 'synthetic-summary.xlsx'
+    summary.write_bytes(b'synthetic summary input')
+
+    def mutate_during_summary(*_):
+        if remove_source:
+            source.unlink()
+        else:
+            source.write_bytes(b'synthetic modified metre workbook')
+        return {'independent_formula_evaluation': False}, []
+
+    monkeypatch.setattr(reconciliation, '_read_summary', mutate_during_summary)
+    with pytest.raises(ValueError, match='Metre workbook changed during audit'):
+        LegacyMetreCADReconciler().inspect(source, summary_path=summary)
+
+
+def test_metre_workbook_change_during_cad_reconciliation_is_rejected(tmp_path, monkeypatch):
+    source = legacy_book(tmp_path)
+    drawing = tmp_path / 'synthetic.dxf'
+    drawing.write_bytes(b'synthetic-only CAD')
+
+    def mutate_during_cad(*_):
+        source.write_bytes(b'synthetic switched metre workbook')
+
+    monkeypatch.setattr(LegacyMetreCADReconciler, '_compare_cad',
+                        staticmethod(mutate_during_cad))
+    with pytest.raises(ValueError, match='Metre workbook changed during audit'):
+        LegacyMetreCADReconciler().inspect(source, drawing_path=drawing)
+
+
+@pytest.mark.parametrize('change_source', [False, True])
+def test_unverified_decoder_return_checks_cad_source_identity(tmp_path, monkeypatch, change_source):
+    from types import SimpleNamespace
+    from core.drawings.dwg_takeoff import DWGTakeoffEngine
+
+    drawing = tmp_path / 'synthetic.dxf'
+    drawing.write_bytes(b'synthetic CAD original')
+    original_sha = sha256(drawing.read_bytes()).hexdigest()
+
+    class DecoderMetadata(dict):
+        def get(self, key, default=None):
+            if change_source:
+                drawing.write_bytes(b'synthetic CAD altered during decoder check')
+            return None
+
+    decoded = SimpleNamespace(
+        source_sha256=original_sha,
+        format='DWG_NATIVE',
+        conversion=DecoderMetadata(),
+    )
+    monkeypatch.setattr(
+        DWGTakeoffEngine, 'with_array_support',
+        lambda: SimpleNamespace(import_file=lambda _: decoded),
+    )
+    report = {'rows': [{}]}
+    if change_source:
+        with pytest.raises(ValueError, match='CAD source changed during the review'):
+            LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+    else:
+        LegacyMetreCADReconciler._compare_cad(report, drawing, [])
+        assert report['cad']['status'] == 'BLOCKED_DWG_DECODER_VERSION_UNVERIFIED'
+        assert report['cad']['verified_rows'] == 0

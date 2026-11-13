@@ -1,0 +1,121 @@
+# Two public-code-only experimental binaries. NEVER commit or upload private DWG.
+name: P8 P2 pinned R2004 String32 private A-B public binaries
+on:
+  push:
+    branches: [fix/phase8-p2-offline-converter-veto-20261104]
+    paths:
+      - .github/workflows/phase8-p2-string32-public-ab-binaries.yml
+      - tools/p8p2_patch_r2004_fdl_string32.py
+      - tools/structuralpro_libredwg_capi_probe.c
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile-ab-public-only:
+    name: Public native probe ${{ matrix.variant }} (no CAD)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [fdl_only, fdl_plus_guard100k]
+    env:
+      LIBREDWG_COMMIT: a83575825b86528bf1997484852b2a9f5cdbbac0
+      DIAG_VARIANT: ${{ matrix.variant }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install pinned public GNU build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq autoconf automake autopoint gettext libtool libtool-bin pkg-config texinfo make gcc zlib1g-dev libxml2-dev libpcre2-dev
+      - name: Checkout exact public LibreDWG commit, apply R2004 String32-only correction
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/LibreDWG/libredwg.git "$RUNNER_TEMP/libredwg-ab"
+          git -C "$RUNNER_TEMP/libredwg-ab" fetch --depth=1 origin "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg-ab" checkout --detach "$LIBREDWG_COMMIT"
+          test "$(git -C "$RUNNER_TEMP/libredwg-ab" rev-parse HEAD)" = "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg-ab" submodule update --init --recursive
+          python -m tools.p8p2_patch_r2004_fdl_string32 "$RUNNER_TEMP/libredwg-ab"
+          if [ "$DIAG_VARIANT" = fdl_plus_guard100k ]; then
+            python - <<'PY'
+          import os
+          from pathlib import Path
+          p = Path(os.environ['RUNNER_TEMP']) / 'libredwg-ab/src/dwg2.spec'
+          src = p.read_text(encoding='utf-8')
+          before = 'VALUEOUTOFBOUNDS (num_ents, 50000)'
+          after = 'VALUEOUTOFBOUNDS (num_ents, 100000)'
+          if src.count(before) != 1 or after in src:
+              raise SystemExit('Pinned SORTENTSTABLE guard anchor mismatch')
+          p.write_text(src.replace(before, after, 1), encoding='utf-8')
+          PY
+          fi
+          git -C "$RUNNER_TEMP/libredwg-ab" diff --check
+          git -C "$RUNNER_TEMP/libredwg-ab" diff --name-only > "$RUNNER_TEMP/CHANGED_PUBLIC_PATHS.txt"
+          grep -Fxq src/filedeplist.spec "$RUNNER_TEMP/CHANGED_PUBLIC_PATHS.txt"
+          if [ "$DIAG_VARIANT" = fdl_only ]; then
+            test "$(wc -l < "$RUNNER_TEMP/CHANGED_PUBLIC_PATHS.txt")" -eq 1
+          else
+            grep -Fxq src/dwg2.spec "$RUNNER_TEMP/CHANGED_PUBLIC_PATHS.txt"
+            test "$(wc -l < "$RUNNER_TEMP/CHANGED_PUBLIC_PATHS.txt")" -eq 2
+          fi
+          git -C "$RUNNER_TEMP/libredwg-ab" diff > "$RUNNER_TEMP/EXPERIMENTAL_STRING32_AB_ONLY.patch"
+          grep -Fq SP_P8P2_R2004_STRING32 "$RUNNER_TEMP/EXPERIMENTAL_STRING32_AB_ONLY.patch"
+      - name: Compile linked GNU C API probe (source-only diagnostic, not product)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/libredwg-ab"
+          ./autogen.sh
+          ./configure --enable-trace --disable-bindings --disable-docs --prefix="$RUNNER_TEMP/p8p2-ab-install"
+          make -j2
+          make install
+      - name: Package verifiable executable, shared library, public-only patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/structuralpro-ab-${DIAG_VARIANT}"
+          mkdir -p "$out/lib"
+          pc=$(find "$RUNNER_TEMP/p8p2-ab-install" -name libredwg.pc -type f | head -1)
+          test -n "$pc"
+          export PKG_CONFIG_PATH="$(dirname "$pc")"
+          cc -O2 -DSTRUCTURALPRO_LIBREDWG_COMMIT="\"a835758-string32-${DIAG_VARIANT}-v2\"" \
+            tools/structuralpro_libredwg_capi_probe.c \
+            $(pkg-config --cflags --libs libredwg) \
+            -Wl,-rpath,'$ORIGIN/lib' -o "$out/structuralpro_libredwg_capi_probe"
+          real=$(find "$RUNNER_TEMP/p8p2-ab-install" -type f -name 'libredwg.so.*' | head -1)
+          test -n "$real"
+          soname=$(readelf -d "$out/structuralpro_libredwg_capi_probe" | grep 'Shared library:' | grep -o 'libredwg.so[^]]*' | head -1)
+          test -n "$soname"
+          cp "$real" "$out/lib/$soname"
+          # Product-path CLI for strictly offline review. NEVER RELEASE.
+          cli=$(find "$RUNNER_TEMP/p8p2-ab-install" -type f -name dwg2dxf -perm /111 | head -1)
+          test -n "$cli"
+          mkdir -p "$out/bin"
+          cp "$cli" "$out/bin/dwg2dxf"
+          chmod 755 "$out/bin/dwg2dxf"
+          readelf -d "$out/bin/dwg2dxf" | grep -Fq libredwg.so
+          LD_LIBRARY_PATH="$out/lib" ldd "$out/bin/dwg2dxf" | tee "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"
+          grep -Fq "$out/lib/$soname" "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"
+          if grep -Fq 'not found' "$RUNNER_TEMP/CLI_LDD_PUBLIC.txt"; then exit 1; fi
+
+          cp "$RUNNER_TEMP/EXPERIMENTAL_STRING32_AB_ONLY.patch" "$out/EXPERIMENTAL_STRING32_AB_ONLY.patch"
+          cp "$RUNNER_TEMP/libredwg-ab/COPYING" "$out/LIBREDWG_GPL_LICENSE.txt"
+          printf '%s\n' "$LIBREDWG_COMMIT" > "$out/LIBREDWG_UPSTREAM_COMMIT.txt"
+          printf '%s\n' "$GITHUB_SHA" > "$out/STRUCTURALPRO_PATCH_HEAD.txt"
+          printf '%s\n' "$DIAG_VARIANT" > "$out/DIAGNOSTIC_VARIANT.txt"
+          printf '%s\n' 'PUBLIC SOURCE BINARY ONLY. DO NOT RELEASE. CAD DATA MUST STAY PRIVATE. NO BOQ ACCEPTANCE.' > "$out/NOT_FOR_RELEASE.txt"
+          printf '%s\\n' 'Experimental dwg2dxf CLI; review only in a private sandbox. No BOQ, geometry, MAP/AEC, SHX, units or financial approval.' > "$out/CLI_REVIEW_ONLY.txt"
+          (cd "$out" && sha256sum structuralpro_libredwg_capi_probe bin/dwg2dxf "lib/$soname" EXPERIMENTAL_STRING32_AB_ONLY.patch > PUBLIC_BINARY_SHA256.txt)
+          (cd "$out" && ldd structuralpro_libredwg_capi_probe)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-string32-${{ matrix.variant }}-public-only-${{ github.sha }}
+          path: ${{ runner.temp }}/structuralpro-ab-${{ matrix.variant }}/
+          if-no-files-found: error
+          retention-days: 7

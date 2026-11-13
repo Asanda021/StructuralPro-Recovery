@@ -4,7 +4,7 @@ Presentation state is saved only in QSettings, never in SQLite or BOQ.
 """
 from PySide6.QtCore import Qt,QByteArray,QTimer
 from PySide6.QtWidgets import (
-    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QScrollArea,QComboBox,QTabWidget
+    QDockWidget,QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QScrollArea,QComboBox,QTabWidget,QMenu
 )
 
 
@@ -21,6 +21,13 @@ class WorkspaceDockController:
         self._panel_context=None
         self._panel_refresh_tokens={}
         self._preset_navigate=None
+        # Use a normal RTL shell control instead of a separate unstyled menu strip.
+        self.panel_menu=QMenu("پنل‌های شناور",window)
+        self.panel_menu.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.panel_button=QPushButton("پنل‌ها")
+        self.panel_button.setObjectName("E5PanelMenu")
+        self.panel_button.setAccessibleName("نمایش پنل‌های شناور گزارش و تاریخچه تغییرات")
+        self.panel_button.setMenu(self.panel_menu)
         self._view_timer=QTimer(window)
         self._view_timer.setInterval(250)
         self._view_timer.timeout.connect(self.validate_views)
@@ -156,7 +163,7 @@ class WorkspaceDockController:
         return_button.clicked.connect(back_to_tab)
         dock.visibilityChanged.connect(lambda visible:move_panel(bool(visible)))
         host.currentChanged.connect(host_selected)
-        self.window.menuBar().addAction(dock.toggleViewAction())
+        self.panel_menu.addAction(dock.toggleViewAction())
         return dock
 
     def save_on_shutdown(self):
@@ -185,7 +192,7 @@ class WorkspaceDockController:
             dock.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
             if not self.window.restoreDockWidget(dock):
                 self.window.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea,dock)
-            self.window.menuBar().addAction(dock.toggleViewAction())
+            self.panel_menu.addAction(dock.toggleViewAction())
             self.view_docks[kind]=dock
         view.setWindowFlags(Qt.WindowType.Widget)
         scroll=QScrollArea(dock)

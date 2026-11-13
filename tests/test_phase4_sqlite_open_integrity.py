@@ -1,7 +1,7 @@
 """A corrupted project DB must be refused *before* initialization can write DDL."""
 import hashlib
-import os
 import sqlite3
+from core.platform.identity import SystemIdentityProvider
 import pytest
 
 from core.projects.store import ProjectStore
@@ -20,20 +20,30 @@ def test_corrupted_existing_database_refused_without_writes(tmp_path):
 
 def test_healthy_existing_database_and_new_database_open(tmp_path):
     source=make_source(tmp_path)
-    if os.name == 'nt':
-        # An unaudited legacy database has no trusted Windows owner proof.
-        # It must NOT be silently claimed or granted project permissions.
-        with pytest.raises(RuntimeError,match='audit integrity'):
-            ProjectStore(source)
-        with sqlite3.connect(source) as db:
-            assert db.execute('SELECT version FROM projects WHERE id=?',('P',)).fetchone()[0]==3
-            assert db.execute('SELECT count(*) FROM revisions WHERE project_id=?',('P',)).fetchone()[0]==3
-    else:
-        store=ProjectStore(source)
-        try:
-            assert store.get('P')['_meta']['version']==3
-            assert store.integrity_check()['ok']
-        finally: store.close()
+    class UntrustedOwner:
+        # Deterministic negative proof on both Windows and POSIX: no legacy
+        # project may be claimed without an independently verified file owner.
+        trusted_for_legacy_claim = False
+
+        def current(self):
+            return SystemIdentityProvider().current()
+
+        def owns_path(self, identity, path):
+            raise AssertionError("Untrusted owner must not be consulted")
+
+    with pytest.raises(RuntimeError, match='audit integrity'):
+        ProjectStore(source, identity_provider=UntrustedOwner())
+    with sqlite3.connect(source) as db:
+        assert db.execute('SELECT version FROM projects WHERE id=?',('P',)).fetchone()[0]==3
+        assert db.execute('SELECT count(*) FROM revisions WHERE project_id=?',('P',)).fetchone()[0]==3
+    # Real Windows owner SID or POSIX file UID is a separate positive proof.
+    # This test does not synthesize elevated privileges or bypass the ACL.
+    store=ProjectStore(source)
+    try:
+        assert store.get('P')['_meta']['version']==3
+        assert store.integrity_check()['ok']
+    finally:
+        store.close()
     new=tmp_path/'new.db'
     store=ProjectStore(new)
     try:

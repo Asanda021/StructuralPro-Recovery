@@ -1,0 +1,272 @@
+"""Synthetic-only source MAP/AEC edge-coverage veto. No private DWG data."""
+from copy import deepcopy
+from types import SimpleNamespace
+
+import pytest
+
+from core.drawings.dwg_custom_graph_coverage import audit_custom_graph_coverage
+
+
+def ref(handle):
+    return [5, 1, handle]
+
+
+def fixture():
+    objects = [
+        dict(handle=ref(1), object="DICTIONARY",
+             items={"MAP": ref(10), "STYLE": ref(11)}),
+        dict(handle=ref(10), object="UNKNOWN_OBJ", type=514,
+             ownerhandle=ref(1), reactors=[ref(1)]),
+        dict(handle=ref(11), object="UNKNOWN_OBJ", type=515,
+             ownerhandle=ref(1), reactors=[ref(10)]),
+        dict(handle=ref(12), object="UNKNOWN_OBJ", type=516,
+             ownerhandle=ref(10), reactors=[ref(10), ref(11)]),
+        dict(handle=ref(30), object="LINE", type=1),
+        dict(handle=ref(40), object="LAYER", type=2),
+    ]
+    raw = [
+        {"handle": "A", "native_type_code": 514},
+        {"handle": "B", "native_type_code": 515},
+        {"handle": "C", "native_type_code": 516},
+    ]
+    return objects, raw, [(30, "layer", 40)]
+
+
+def test_custom_owners_reactors_not_exposed_by_standard_graph():
+    obj, raw, edges = fixture()
+    r = audit_custom_graph_coverage(
+        obj, raw, edges, converted_dxf=SimpleNamespace(entitydb={})
+    )
+    assert r["raw_source_custom_identity_count"] == 3
+    assert r["decoded_custom_owner_to_custom_count"] == 1
+    assert r["decoded_custom_owner_to_dictionary_count"] == 2
+    assert r["decoded_custom_reactor_to_custom_count"] == 3
+    assert r["decoded_custom_reactor_to_dictionary_count"] == 1
+    assert r["decoded_dictionary_entry_to_custom_count"] == 2
+    assert r["independent_graph_edges_touching_custom_count"] == 0
+    assert r["converted_original_custom_ids_present_count"] == 0
+    assert r["status"] == "CROSS_READER_CUSTOM_LINK_COVERAGE_GAP_NO_GO"
+    assert not r["original_block_proven_unused"]
+    assert not r["financial_quantity_approved"]
+    assert not any(isinstance(v, (list, tuple, dict)) for v in r.values())
+
+
+def test_independent_reader_some_links_still_not_sufficient():
+    obj, raw, edges = fixture()
+    edges += [(10, "owner", 1)]
+    r = audit_custom_graph_coverage(obj, raw, edges)
+    assert r["independent_graph_edges_touching_custom_count"] == 1
+    assert r["status"] == "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"
+    assert r["all_source_custom_links_verified"] is False
+
+
+def test_synthetic_dxfs_with_same_handles_cannot_pass_semantics():
+    obj, raw, edges = fixture()
+    r = audit_custom_graph_coverage(
+        obj, raw, edges,
+        converted_dxf=SimpleNamespace(entitydb={
+            "A": object(), "B": object(), "C": object(),
+        }),
+    )
+    assert r["converted_original_custom_ids_present_count"] == 3
+    assert r["source_proprietary_payload_semantics_verified"] is False
+    assert r["automatic_reconstruction_authorized"] is False
+
+
+@pytest.mark.parametrize("bad", [
+    "empty", "duplicated_source_handle", "duplicate_raw", "raw_type_conflict",
+    "unknown_raw_handle", "null_owner", "unknown_owner",
+    "invalid_reactor_reference", "cyclic_ownership", "invalid_dictionary_items",
+    "invalid_graph_edge", "invalid_raw_type", "malformed_raw_handle",
+])
+def test_bad_source_or_unverifiable_graph_fails_closed(bad):
+    objects, raw, edges = deepcopy(fixture())
+    if bad == "empty":
+        objects = []
+    elif bad == "duplicated_source_handle":
+        objects.append(dict(objects[1]))
+    elif bad == "duplicate_raw":
+        raw.append(dict(raw[0]))
+    elif bad == "raw_type_conflict":
+        raw[0]["native_type_code"] = 999
+    elif bad == "unknown_raw_handle":
+        raw[0]["handle"] = "DDDD"
+    elif bad == "null_owner":
+        objects[1]["ownerhandle"] = ref(0)
+    elif bad == "unknown_owner":
+        objects[1]["ownerhandle"] = ref(900)
+    elif bad == "invalid_reactor_reference":
+        objects[2]["reactors"] = ["INVALID"]
+    elif bad == "cyclic_ownership":
+        objects[1]["ownerhandle"] = ref(12)
+    elif bad == "invalid_dictionary_items":
+        objects[0]["items"] = "bad"
+    elif bad == "invalid_graph_edge":
+        edges.append((10, "owner"))
+    elif bad == "invalid_raw_type":
+        raw[0]["native_type_code"] = True
+    elif bad == "malformed_raw_handle":
+        raw[0]["handle"] = "A??"
+    with pytest.raises(ValueError):
+        audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("unindexed_edge", [
+    (999, "owner", 10), (10, "reactor", 999), (999, "owner", 998),
+])
+def test_independent_graph_edge_with_unindexed_endpoint_cannot_hide_gap(unindexed_edge):
+    objects, raw, edges = fixture()
+    edges.append(unindexed_edge)
+    with pytest.raises(ValueError, match="unindexed source object"):
+        audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("invalid_edge", [
+    (10, "", 1), (10, "x" * 129, 1), (True, "owner", 1),
+    (10, "owner", False),
+])
+def test_malformed_independent_edge_cannot_claim_custom_coverage(invalid_edge):
+    objects, raw, edges = fixture()
+    edges.append(invalid_edge)
+    with pytest.raises(ValueError, match="Malformed independent graph edge"):
+        audit_custom_graph_coverage(objects, raw, edges)
+
+
+@pytest.mark.parametrize("duplicated_edge", [
+    (10, "owner", 1), (30, "layer", 40),
+])
+def test_duplicate_standard_or_custom_edge_never_increases_coverage(duplicated_edge):
+    objects, raw, _ = fixture()
+    with pytest.raises(ValueError, match="Duplicate independent graph edge"):
+        audit_custom_graph_coverage(objects, raw, [duplicated_edge, duplicated_edge])
+
+
+def test_distinct_independent_custom_edges_remain_diagnostic_only():
+    objects, raw, edges = fixture()
+    edges.extend([(10, "owner", 1), (11, "reactor", 10)])
+    receipt = audit_custom_graph_coverage(objects, raw, edges)
+    assert receipt["independent_graph_edges_touching_custom_count"] == 2
+    assert receipt["status"] == "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"
+    assert receipt["independent_reader_custom_link_coverage_verified"] is False
+    assert receipt["all_source_custom_links_verified"] is False
+    assert receipt["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("edge", [
+    (10, "unverified_label", 1),
+    (30, "unknown", 10),
+    (1, "owner", 10),  # inverse direction is not documented as an owner edge
+])
+def test_arbitrary_custom_touching_edge_is_not_independent_correspondence(edge):
+    objects, raw, edges = fixture()
+    edges.append(edge)
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_graph_edges_touching_custom_count"] == 1
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 0
+    assert result["independent_custom_edges_not_comparable_count"] == 1
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 0
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_COVERAGE_GAP_NO_GO"
+    assert result["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("edge", [
+    (10, "owner", 11),  # actual parent is dictionary 1
+    (10, "reactor", 11),  # actual reactor is dictionary 1
+    (1, "dictionary", 12),  # 12 is not a named entry in dictionary 1
+    (1, "dictionary_item", 12),
+    (1, "item", 12),
+])
+def test_contradicting_reader_link_is_a_no_go_conflict(edge):
+    objects, raw, edges = fixture()
+    edges.append(edge)
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 1
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 0
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
+    assert result["independent_reader_custom_link_coverage_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+@pytest.mark.parametrize("dictionary_label", [
+    "dictionary", "dictionary_item", "item",
+])
+def test_matching_directional_standard_links_remain_unapproved(dictionary_label):
+    objects, raw, edges = fixture()
+    edges.extend([
+        (10, "owner", 1),
+        (11, "reactor", 10),
+        (1, dictionary_label, 10),
+    ])
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 3
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 0
+    assert result["independent_custom_edges_not_comparable_count"] == 0
+    assert result["status"] == "CUSTOM_GRAPH_SEMANTICS_UNVERIFIED_NO_GO"
+    assert result["all_source_custom_links_verified"] is False
+    assert result["source_proprietary_payload_semantics_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_conflict_has_priority_over_an_unrelated_matching_edge():
+    objects, raw, edges = fixture()
+    edges.extend([(10, "owner", 1), (11, "owner", 10)])
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["independent_custom_links_corresponding_to_decoded_count"] == 1
+    assert result["independent_custom_links_conflicting_with_decoded_count"] == 1
+    assert result["status"] == "CROSS_READER_CUSTOM_LINK_CONFLICT_NO_GO"
+    assert not result["automatic_reconstruction_authorized"]
+
+
+def test_recycled_and_proxy_custom_handles_are_not_preserved_payloads():
+    objects, raw, edges = fixture()
+    converted = SimpleNamespace(entitydb={
+        "A": SimpleNamespace(dxftype=lambda: "LINE"),
+        "B": SimpleNamespace(dxftype=lambda: "ACAD_PROXY_OBJECT"),
+        "C": object(),
+    })
+    result = audit_custom_graph_coverage(
+        objects, raw, edges, converted_dxf=converted,
+    )
+    assert result["converted_original_custom_ids_present_count"] == 3
+    assert result["converted_original_custom_ids_missing_count"] == 0
+    assert result["converted_original_custom_ids_reused_as_standard_count"] == 1
+    assert result["converted_original_custom_ids_replaced_by_proxy_count"] == 1
+    assert result["converted_original_custom_ids_type_unreadable_count"] == 1
+    assert result["converted_original_custom_ids_custom_type_unverified_count"] == 0
+    assert result["converted_original_custom_identity_status"].endswith("NO_GO")
+    assert result["source_proprietary_payload_semantics_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_custom_named_target_type_still_does_not_prove_vendor_semantics():
+    objects, raw, edges = fixture()
+    result = audit_custom_graph_coverage(
+        objects, raw, edges,
+        converted_dxf=SimpleNamespace(entitydb={
+            "A": SimpleNamespace(dxftype=lambda: "DMMAPMANAGER"),
+        }),
+    )
+    assert result["converted_original_custom_ids_present_count"] == 1
+    assert result["converted_original_custom_ids_missing_count"] == 2
+    assert result["converted_original_custom_ids_custom_type_unverified_count"] == 1
+    assert result["converted_original_custom_identity_status"].endswith("NO_GO")
+    assert result["all_source_custom_links_verified"] is False
+    assert result["financial_quantity_approved"] is False
+
+
+def test_not_supplied_dxf_must_not_be_interpreted_as_zero_source_losses():
+    objects, raw, edges = fixture()
+    result = audit_custom_graph_coverage(objects, raw, edges)
+    assert result["converted_original_custom_ids_present_count"] is None
+    assert result["converted_original_custom_ids_missing_count"] is None
+    assert result["converted_original_custom_ids_reused_as_standard_count"] is None
+    assert result["converted_original_custom_identity_status"] == "NOT_CHECKED_NO_GO"
+    assert result["financial_quantity_approved"] is False
+
+
+def test_converted_dxf_missing_entity_index_rejected():
+    objects, raw, edges = fixture()
+    with pytest.raises(ValueError, match="entity index"):
+        audit_custom_graph_coverage(
+            objects, raw, edges, converted_dxf=SimpleNamespace(),
+        )

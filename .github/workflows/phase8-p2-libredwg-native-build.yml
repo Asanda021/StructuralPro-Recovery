@@ -1,0 +1,161 @@
+# Diagnostic builder only: NEVER add a private DWG, handle ledger or SHA.
+name: P8 P2 pinned LibreDWG native diagnostic builder
+on:
+  push:
+    branches:
+      - fix/phase8-p2-offline-converter-veto-20261104
+    paths:
+      - .github/workflows/phase8-p2-libredwg-native-build.yml
+      - tools/structuralpro_libredwg_capi_probe.c
+      - core/drawings/libredwg_native_trace_runner.py
+      - tests/test_phase8_p2_libredwg_native_capi_runner.py
+      - .github/workflows/phase8-p2-libredwg-sortentstable-ab-experiment.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compile-native-diagnostic:
+    name: Build pinned read-only C API probe (Ubuntu only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      LIBREDWG_COMMIT: a83575825b86528bf1997484852b2a9f5cdbbac0
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install public build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq autoconf automake autopoint gettext libtool libtool-bin pkg-config texinfo make gcc zlib1g-dev libxml2-dev libpcre2-dev
+      - name: Fetch exactly pinned public GNU LibreDWG source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/LibreDWG/libredwg.git "$RUNNER_TEMP/libredwg"
+          git -C "$RUNNER_TEMP/libredwg" fetch --depth=1 origin "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg" checkout --detach "$LIBREDWG_COMMIT"
+          test "$(git -C "$RUNNER_TEMP/libredwg" rev-parse HEAD)" = "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg" submodule update --init --recursive
+      - name: Build GNU LibreDWG with trace enabled
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/libredwg"
+          ./autogen.sh
+          ./configure --enable-trace --disable-bindings --disable-docs --prefix="$RUNNER_TEMP/p8p2-install"
+          make -j2
+          make install
+      - name: Compile actual dwg_read_file C API helper and package linked library
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/p8p2-bundle/lib"
+          lib_pc=$(find "$RUNNER_TEMP/p8p2-install" -name libredwg.pc -type f | head -1)
+          test -n "$lib_pc"
+          export PKG_CONFIG_PATH="$(dirname "$lib_pc")"
+          cc -O2 -DSTRUCTURALPRO_LIBREDWG_COMMIT='"a835758"' \
+             tools/structuralpro_libredwg_capi_probe.c \
+             $(pkg-config --cflags --libs libredwg) \
+             -Wl,-rpath,'$ORIGIN/lib' \
+             -o "$RUNNER_TEMP/p8p2-bundle/structuralpro_libredwg_capi_probe"
+          lib_real=$(find "$RUNNER_TEMP/p8p2-install" -type f -name 'libredwg.so.*' | head -1)
+          test -n "$lib_real"
+          lib_soname=$(readelf -d "$RUNNER_TEMP/p8p2-bundle/structuralpro_libredwg_capi_probe" | grep 'Shared library:' | grep -o 'libredwg.so[^]]*' | head -1)
+          test -n "$lib_soname"
+          cp "$lib_real" "$RUNNER_TEMP/p8p2-bundle/lib/$lib_soname"
+          cp "$RUNNER_TEMP/libredwg/COPYING" "$RUNNER_TEMP/p8p2-bundle/LIBREDWG_GPL_LICENSE.txt"
+          (cd "$RUNNER_TEMP/p8p2-bundle" && sha256sum structuralpro_libredwg_capi_probe "lib/$lib_soname" > PUBLIC_BINARY_SHA256.txt)
+          (cd "$RUNNER_TEMP/p8p2-bundle" && ldd structuralpro_libredwg_capi_probe)
+          printf '%s\n' "$LIBREDWG_COMMIT" > "$RUNNER_TEMP/p8p2-bundle/LIBREDWG_UPSTREAM_COMMIT.txt"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-native-c-api-public-toolchain-${{ github.sha }}
+          path: ${{ runner.temp }}/p8p2-bundle/
+          if-no-files-found: error
+          retention-days: 7
+
+  build-experimental-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      LIBREDWG_COMMIT: a83575825b86528bf1997484852b2a9f5cdbbac0
+      EXPERIMENTAL_SORTENTS_LIMIT: "100000"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install build dependencies from public Ubuntu packages
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq autoconf automake autopoint gettext libtool libtool-bin pkg-config texinfo make gcc zlib1g-dev libxml2-dev libpcre2-dev
+      - name: Clone exact pinned public LibreDWG source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --filter=blob:none --no-checkout https://github.com/LibreDWG/libredwg.git "$RUNNER_TEMP/libredwg-exp"
+          git -C "$RUNNER_TEMP/libredwg-exp" fetch --depth=1 origin "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg-exp" checkout --detach "$LIBREDWG_COMMIT"
+          test "$(git -C "$RUNNER_TEMP/libredwg-exp" rev-parse HEAD)" = "$LIBREDWG_COMMIT"
+          git -C "$RUNNER_TEMP/libredwg-exp" submodule update --init --recursive
+      - name: Apply EXACTLY ONE isolated experimental guard change
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p=Path(os.environ['RUNNER_TEMP'])/'libredwg-exp/src/dwg2.spec'
+          source=p.read_bytes()
+          old=b'VALUEOUTOFBOUNDS (num_ents, 50000)'
+          new=b'VALUEOUTOFBOUNDS (num_ents, 100000)'
+          assert source.count(old)==1, 'Pinned source guard missing or non-unique'
+          assert source.count(new)==0, 'Pinned source already modified'
+          p.write_bytes(source.replace(old,new))
+          assert p.read_bytes().count(new)==1
+          PY
+          git -C "$RUNNER_TEMP/libredwg-exp" diff --check
+          test "$(git -C "$RUNNER_TEMP/libredwg-exp" diff --name-only | wc -l)" -eq 1
+          test "$(git -C "$RUNNER_TEMP/libredwg-exp" diff --name-only)" = "src/dwg2.spec"
+          git -C "$RUNNER_TEMP/libredwg-exp" diff -- src/dwg2.spec | tee "$RUNNER_TEMP/EXPERIMENTAL_GUARD_ONLY.patch"
+          test "$(grep -c '^+  VALUEOUTOFBOUNDS (num_ents, 100000)' "$RUNNER_TEMP/EXPERIMENTAL_GUARD_ONLY.patch")" -eq 1
+      - name: Build isolated traced experiment (NOT production)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/libredwg-exp"
+          ./autogen.sh
+          ./configure --enable-trace --disable-bindings --disable-docs --prefix="$RUNNER_TEMP/p8p2-exp-install"
+          make -j2
+          make install
+      - name: Link exact native C-API probe and package public-only binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/p8p2-ab-exp"
+          mkdir -p "$out/lib"
+          pc=$(find "$RUNNER_TEMP/p8p2-exp-install" -name libredwg.pc -type f | head -1)
+          test -n "$pc"
+          export PKG_CONFIG_PATH="$(dirname "$pc")"
+          cc -O2 -DSTRUCTURALPRO_LIBREDWG_COMMIT='"a835758-exp100k"' \
+             tools/structuralpro_libredwg_capi_probe.c \
+             $(pkg-config --cflags --libs libredwg) \
+             -Wl,-rpath,'$ORIGIN/lib' -o "$out/structuralpro_libredwg_capi_probe"
+          lib_real=$(find "$RUNNER_TEMP/p8p2-exp-install" -type f -name 'libredwg.so.*' | head -1)
+          test -n "$lib_real"
+          soname=$(readelf -d "$out/structuralpro_libredwg_capi_probe" | grep 'Shared library:' | grep -o 'libredwg.so[^]]*' | head -1)
+          test -n "$soname"
+          cp "$lib_real" "$out/lib/$soname"
+          cp "$RUNNER_TEMP/libredwg-exp/COPYING" "$out/LIBREDWG_GPL_LICENSE.txt"
+          cp "$RUNNER_TEMP/EXPERIMENTAL_GUARD_ONLY.patch" "$out/EXPERIMENTAL_GUARD_ONLY.patch"
+          printf '%s\n' "$LIBREDWG_COMMIT" > "$out/LIBREDWG_UPSTREAM_COMMIT.txt"
+          printf '%s\n' 'EXPERIMENTAL ONLY: SORTENTSTABLE 50000 -> 100000; no private DWG in CI; NOT RELEASE APPROVED' > "$out/EXPERIMENTAL_NOT_FOR_RELEASE.txt"
+          (cd "$out" && sha256sum structuralpro_libredwg_capi_probe "lib/$soname" EXPERIMENTAL_GUARD_ONLY.patch > PUBLIC_BINARY_SHA256.txt)
+          (cd "$out" && ldd structuralpro_libredwg_capi_probe)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-libredwg-public-ab-experimental-only-${{ github.sha }}
+          path: ${{ runner.temp }}/p8p2-ab-exp/
+          if-no-files-found: error
+          retention-days: 7

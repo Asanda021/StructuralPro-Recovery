@@ -1,0 +1,125 @@
+# Phase 8/P2: actual complete active regression on both OS, separate from private DWG acceptance.
+# All 4 shards per OS cover each current test module exactly once. Known historical
+# release workflows stay quarantined; no EXE, installer, main write or merge.
+name: P8 P2 comprehensive current tests Windows and Linux
+
+on:
+  push:
+    branches:
+      - fix/phase8-p2-offline-converter-veto-20261104
+    paths:
+      - .github/workflows/phase8-p2-comprehensive-current.yml
+      - app/**
+      - core/**
+      - tests/**
+      - scripts/run_quarantined_workflow_qa.py
+      - requirements.txt
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p8p2-comprehensive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  current-tests:
+    name: Complete active regression (${{ matrix.label }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 46
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+            shard: 0
+            label: linux-0
+          - os: ubuntu-24.04
+            qpa: offscreen
+            shard: 1
+            label: linux-1
+          - os: ubuntu-24.04
+            qpa: offscreen
+            shard: 2
+            label: linux-2
+          - os: ubuntu-24.04
+            qpa: offscreen
+            shard: 3
+            label: linux-3
+          - os: windows-2022
+            qpa: windows
+            shard: 0
+            label: windows-0
+          - os: windows-2022
+            qpa: windows
+            shard: 1
+            label: windows-1
+          - os: windows-2022
+            qpa: windows
+            shard: 2
+            label: windows-2
+          - os: windows-2022
+            qpa: windows
+            shard: 3
+            label: windows-3
+    env:
+      PYTHONPATH: .
+      PYTHONUTF8: "1"
+      PYTHONFAULTHANDLER: "1"
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      STRUCTURALPRO_P6_QPA_PLATFORM: ${{ matrix.qpa }}
+    steps:
+      - name: Avoid implicit Windows CRLF changes
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+      - name: Install Linux Qt native libraries
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if sudo apt-get update -qq -o APT::Update::Error-Mode=any && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0; then exit 0; fi
+          test -f /etc/apt/apt-mirrors.txt
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          sudo apt-get update -qq -o APT::Update::Error-Mode=any
+          sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - name: Install full GUI, IFC and offline test dependencies
+        run: python -m pip install -q -r requirements.txt "ifcopenshell>=0.8" psutil
+      - name: Verify exact branch commit and full-suite shard manifest
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          python -c "from scripts.run_quarantined_workflow_qa import current_test_modules; from pathlib import Path; p=Path('.'); all_,part,h=current_test_modules(p,shard_count=4,shard_index=${{ matrix.shard }}); assert len(all_)>400 and part and len({x for i in range(4) for x in current_test_modules(p,shard_count=4,shard_index=i)[1]})==len(all_); print('ACTIVE_MODULES',len(all_),'SHARD',${{ matrix.shard }},'SELECTED',len(part),'MANIFEST_SHA',h)"
+      - name: Execute unchanged full active test partition in disposable source
+        shell: bash
+        run: |
+          python scripts/run_quarantined_workflow_qa.py \
+            --mode current \
+            --shard-count 4 \
+            --shard-index ${{ matrix.shard }} \
+            --timeout 2100 \
+            --json broad-evidence-${{ matrix.label }}.json \
+            --log broad-evidence-${{ matrix.label }}.log \
+            --junit broad-evidence-${{ matrix.label }}.xml
+      - name: Report real outcomes, including failures, skips and source boundaries
+        if: always()
+        shell: bash
+        run: |
+          python -c "import json,pathlib; p=pathlib.Path('broad-evidence-${{ matrix.label }}.json'); d=json.loads(p.read_text(encoding='utf-8')) if p.is_file() else {}; s=d.get('stats') or {}; print('SOURCE_SHA','${{ github.sha }}','OS','${{ matrix.os }}','SHARD',${{ matrix.shard }},'ACTIVE_MODULES',d.get('current_test_modules_total'),'PARTITION',d.get('current_test_modules_in_shard'),'PASSED',s.get('passed'),'FAILED',s.get('failed'),'SKIPPED',s.get('skipped'),'TIMED_OUT',d.get('timed_out'),'GREEN',d.get('overall_green'),'MANIFEST',d.get('current_test_manifest_sha256'),'RELEASE',d.get('build_or_release_performed'))"
+      - name: Preserve public synthetic module results without private CAD artifacts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8p2-comprehensive-${{ matrix.label }}
+          path: |
+            broad-evidence-${{ matrix.label }}.json
+            broad-evidence-${{ matrix.label }}.log
+            broad-evidence-${{ matrix.label }}.xml
+          retention-days: 7
+          if-no-files-found: warn
