@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import timedelta
 from decimal import Decimal
 from core.commercial.exact_values import exact
-from core.projects.controls import text,num,evidence,find,references,digest
+from core.projects.controls import text,num,integer,evidence,find,references,digest
 from core.projects.scheduling import WorkCalendar,current
 
 KEYS=('project_resources','resource_assignments','resource_availability','resource_events','activity_resource_requirements')
@@ -173,7 +173,7 @@ def lookahead(p,*,start,days=None,end=None):
             for rel in a['schedule']['relationships']:
                 pred=find(p['project_schedule_tasks'],rel['pred'],'پیش‌نیاز')
                 q=max((num(x['quantity'],'کارکرد') for x in observations if x['activity_id']==pred['id']),default=None)
-                if rel['type']=='FS' and rel['lag']>=0:
+                if rel['type']=='FS' and integer(rel['lag'],'وقفه کاری',signed=True)>=0:
                     if q is None or pred.get('measurement',{}).get('total') is None or q<num(pred['measurement']['total'],'مبنا'):
                         reasons.append('تکمیل پیش‌نیاز تأیید نشده: '+pred['id']);status='dependent'
                 else:reasons.append('کنترل انسانی رابطه اجرایی: '+pred['id']);status='human_decision'

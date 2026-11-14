@@ -360,3 +360,30 @@ def test_parallel_critical_activities_are_not_displayed_as_one_path(tmp_path):
             view.close()
             qt.processEvents()
         service.store.close()
+
+
+@pytest.mark.parametrize(('lag', 'start', 'status'), [
+    ('0', '2026-01-04', 'dependent'),
+    ('-1', '2026-01-03', 'human_decision'),
+])
+def test_lookahead_reads_saved_text_lag(tmp_path, lag, start, status):
+    service = StructuralProApp(tmp_path)
+    try:
+        service.create_project('Synthetic lookahead', 'P')
+        structure(service)
+        for name in ('A', 'B'):
+            activity(service, name)
+        cmd(service, 'schedule_calendar', start=START, calendar=ALL_DAYS)
+        cmd(service, 'schedule_activity', id='A', duration=2, relationships=[])
+        cmd(service, 'schedule_activity', id='B', duration=1,
+            relationships=[{'pred': 'A', 'succ': 'B', 'type': 'FS', 'lag': lag}])
+        service.store.close()
+        service = StructuralProApp(tmp_path)
+        before = service.open_project('P')
+        assert before['project_schedule_tasks'][1]['schedule']['relationships'][0]['lag'] == lag
+        rows = service.site_lookahead('P', start=START, days=7)['activities']
+        dependent = next(row for row in rows if row['id'] == 'B')
+        assert (dependent['start'], dependent['status']) == (start, status)
+        assert service.open_project('P') == before
+    finally:
+        service.store.close()
