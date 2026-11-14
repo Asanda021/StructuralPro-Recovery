@@ -22,9 +22,8 @@ def valid_source(row):
     except (ValueError,KeyError):return False
 
 def capacity(p,r,day):
-    config=p.get('project_control_config',{}).get('schedule',{})
-    cid=config.get('resource_calendars',{}).get(r['id'])
-    if cid and not WorkCalendar(config['calendars'][cid],config['start']).is_open(WorkCalendar.valid_date(day)):
+    calendar=_resource_calendar(p,r['id'])
+    if calendar and not calendar.is_open(WorkCalendar.valid_date(day)):
         return Decimal(0)
     events=[x for x in p.get('resource_events',[]) if x['resource_id']==r['id'] and x['start']<=day<=x['end']]
     if not valid_source(r) or any(not valid_source(x) for x in events):return None
@@ -38,24 +37,32 @@ def capacity(p,r,day):
     if row['state']!='present':return Decimal(0) if row['state']=='absent' else None
     return min(num(r['capacity'],'ظرفیت'),num(row['capacity'],'حضور'))
 
-def work_dates(p,start,end,*,resource_id=None):
+def _resource_calendar(p,resource_id):
     config=p.get('project_control_config',{}).get('schedule')
-    if not config:raise ValueError('تقویم معتبر پروژه لازم است')
-    cal=WorkCalendar(config['calendar'],config['start'])
+    if not config:return None
     cid=config.get('resource_calendars',{}).get(resource_id)
-    if cid:
-        cal=WorkCalendar(config['calendars'][cid],config['start'])
+    return WorkCalendar(config['calendars'][cid] if cid else config['calendar'],config['start'])
+
+
+def work_dates(p,start,end,*,resource_id=None):
+    cal=_resource_calendar(p,resource_id)
+    if not cal:raise ValueError('تقویم معتبر پروژه لازم است')
     return [x for x in dates(start,end) if cal.is_open(WorkCalendar.valid_date(x))]
 
 
 def _schedule_basis(p, activity_id, resource_id):
-    if 'calendar_version' not in p.get('project_control_config',{}).get('schedule',{}):
+    if not _requires_calendar_basis(p.get('project_control_config',{}).get('schedule',{})):
         return None
     return _calendar_basis(current(p),activity_id,resource_id)
 
 
+def _requires_calendar_basis(config):
+    return (config.get('calendar_version',0)>1 or bool(config.get('calendars'))
+            or bool(config.get('resource_calendars')))
+
+
 def _calendar_basis(schedule, activity_id, resource_id):
-    if 'calendar_version' not in schedule:
+    if not _requires_calendar_basis(schedule):
         return None
     row=schedule['activities'][activity_id]
     cid=schedule.get('resource_calendars',{}).get(resource_id)
@@ -128,8 +135,9 @@ def dispatch(p,op,data,actor,reason):
         q=num(data.get('allocation'),'تخصیص')
         if q<=0:raise ValueError('تخصیص باید مثبت باشد')
         row={'id':id,'activity_id':a['id'],'resource_id':r['id'],'start':start.isoformat(),'end':end.isoformat(),'allocation':str(q),'source':evidence(data.get('source')),'created_by':actor,'reason':reason,'status':'draft','activity_basis':digest(a),'floor_ids':deepcopy(a.get('floor_ids',[])),'zone_ids':deepcopy(a.get('zone_ids',[]))}
-        if 'calendar_version' in p.get('project_control_config',{}).get('schedule',{}):
-            row['schedule_basis']=_schedule_basis(p,a['id'],r['id'])
+        schedule_basis=_schedule_basis(p,a['id'],r['id'])
+        if schedule_basis is not None:
+            row['schedule_basis']=schedule_basis
         rows.append(row);return row
     if op=='assignment_cancel':
         r=find(p.get('resource_assignments',[]),id,'تخصیص')

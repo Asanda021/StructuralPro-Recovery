@@ -77,13 +77,19 @@ def selected_calendars(task, parsed, resource_calendars):
     return (calendar_id or 'PROJECT', *(resource_calendars[rid] for rid in sorted(resource_ids)))
 
 
-def shift_event(event, lag, project):
+def shift_event(event, lag, project, *, allow_before_start=False):
     if not lag:
         return event
+    if allow_before_start and event < project.start:
+        return shift_event(event,lag,project.with_start(event))
     index = project.index_day(event) + lag
     if index < 0:
         return project.start
     return project.at(index)
+
+
+def clipped_lead(event, lag, project):
+    return lag < 0 and project.index_day(event) + lag < 0
 
 
 class Slot:
@@ -184,10 +190,11 @@ def dated_cpm(by, duration, order, links, relationships, project, base, calendar
         bounds = []
         for link in incoming[key]:
             pred = link['pred']
-            target = shift_event(slots[pred].event(link['type'][0], early[pred]), link['lag'], project)
-            bounds.append((slot.lower(link['type'][1], target), link))
-        early[key] = max([lower[key], *(index for index, _ in bounds)])
-        tight.extend(link for index, link in bounds if index == early[key])
+            event=slots[pred].event(link['type'][0],early[pred])
+            target=shift_event(event,link['lag'],project)
+            bounds.append((slot.lower(link['type'][1],target),link,clipped_lead(event,link['lag'],project)))
+        early[key] = max([lower[key], *(index for index, _, _ in bounds)])
+        tight.extend(link for index, link, clipped in bounds if index == early[key] and not clipped)
         if early[key] == lower[key]:
             if earliest is not None and project.valid_date(earliest) >= slot.start(0):
                 roots[key] = 'NOT_BEFORE'

@@ -35,6 +35,7 @@ class WorkCalendar:
     def __init__(self,config,start):
         self.start=self.valid_date(start)
         if not isinstance(config,dict):raise ValueError('تقویم کاری صریح لازم است')
+        self.definition=config
         days=config.get('weekdays')
         if not isinstance(days,list) or not days:raise ValueError('روزهای کاری تقویم نامعتبر است')
         self.days={integer(x,'روز هفته') for x in days}
@@ -69,6 +70,9 @@ class WorkCalendar:
         return self.dates[index]
     def is_open(self,day):
         return day not in self.holidays and (day.weekday() in self.days or day in self.exceptions)
+
+    def with_start(self,day):
+        return WorkCalendar(self.definition,day.isoformat())
 
     def index_day(self,day):
         if day <= self.start:return 0
@@ -210,10 +214,9 @@ def schedule_command(p,op,data,actor,reason):
         for task in tasks:
             selected_calendars(task.get('schedule') or {},parsed,mappings)
         updated={'start':data['start'],'calendar':base}
-        if calendars or mappings or 'calendar_version' in previous or 'calendars' in data or 'resource_calendars' in data:
-            updated.update(calendars=deepcopy(calendars),resource_calendars=deepcopy(mappings))
-            before={key:previous.get(key,{} if key in {'calendars','resource_calendars'} else None) for key in updated}
-            updated['calendar_version']=previous.get('calendar_version',1 if previous else 0)+int(updated!=before)
+        updated.update(calendars=deepcopy(calendars),resource_calendars=deepcopy(mappings))
+        before={key:previous.get(key,{} if key in {'calendars','resource_calendars'} else None) for key in updated}
+        updated['calendar_version']=previous.get('calendar_version',1 if previous else 0)+int(updated!=before)
         config['schedule']=updated
         if tasks and all(a.get('schedule') for a in tasks):
             _refresh_schedule_projection(p)
@@ -222,6 +225,11 @@ def schedule_command(p,op,data,actor,reason):
         _check_schedule_fields(data)
         a=find(p.get('project_schedule_tasks',[]),data.get('id'),'فعالیت')
         d=_duration(data.get('duration'));nb=data.get('not_before')
+        old=a.get('schedule')
+        if old and (old['duration']==0)!=(d==0) and any(
+                row['id']==a['id'] and row['actual_start'] is not None
+                for version in p.get('schedule_status_records',[]) for row in version['observations']):
+            raise ValueError('نوع فعالیت دارای تاریخ واقعی نمی‌تواند بین کار و نقطه عطف تغییر کند')
         if nb is not None:WorkCalendar.valid_date(nb)
         schedule_config=config.get('schedule',{})
         calendar_data={key:data.get(key,(a.get('schedule') or {}).get(key))

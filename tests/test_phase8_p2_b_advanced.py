@@ -530,12 +530,23 @@ def test_replanning_project_origin_preserves_prior_actual_dates(recorded):
     assert service.project_schedule_forecast('P')['version']==2
 
 
+def test_observed_task_cannot_be_rewritten_as_milestone(recorded):
+    from test_phase4_structure import cmd
+    service,_,proof=recorded
+    cmd(service,'schedule_status',**status_payload(proof))
+    before=service.store.current_digest('P')
+    with pytest.raises(ValueError,match='نقطه عطف'):
+        cmd(service,'schedule_activity',id='A',duration=0,relationships=[])
+    assert service.store.current_digest('P')==before
+
+
 def test_legacy_calendar_edit_preserves_explicit_exceptions(recorded):
     from test_phase4_structure import cmd
     service,_,_=recorded
-    cmd(service,'schedule_calendar',start=START,calendar={**WEEK,'working_exceptions':[START]})
+    first=cmd(service,'schedule_calendar',start=START,calendar={**WEEK,'working_exceptions':[START]})
     saved=cmd(service,'schedule_calendar',start=START,calendar={**WEEK,'holidays':['2027-03-22']})
     assert saved['calendar']['working_exceptions']==[START]
+    assert saved['calendar_version']==first['calendar_version']+1
     assert service.project_schedule('P')['activities']['A']['start']==START
 
 
@@ -571,3 +582,70 @@ def test_qt_preserves_saved_project_exceptions_and_labels_forecast_as_proposed(r
     finally:
         view.close()
         qt.processEvents()
+
+
+def test_calendar_default_prevents_unmapped_equipment_on_closed_project_days(tmp_path):
+    from test_phase4_structure import activity, cmd, structure
+    from core.platform.application import StructuralProApp
+    from test_phase8_p2_b_golden import resource, site, synthetic_source
+    proof=synthetic_source(tmp_path)
+    service=StructuralProApp(tmp_path/'p')
+    try:
+        service.create_project('Unmapped equipment','P')
+        structure(service)
+        activity(service,'A')
+        site(service,'policy',actor='owner',owner='owner',establish_owner=True,source=proof,
+             permissions={k:['maker','reviewer','approver','owner'] for k in ('create','review','approve','issue','adjust','finance')})
+        resource(service,'L','equipment',proof,'1')
+        cmd(service,'schedule_calendar',start='2027-03-27',calendar=WEEK,calendars={'all':ALL})
+        cmd(service,'schedule_activity',id='A',duration=3,calendar_id='all',relationships=[])
+        site(service,'requirements',id='REQ',activity_id='A',resources=[{'resource_id':'L','quantity':'1'}],
+             materials=[],source=proof)
+        site(service,'assign',id='AS',activity_id='A',resource_id='L',start='2027-03-27',
+             end='2027-03-29',allocation='1',source=proof)
+        site(service,'assignment_review',actor='reviewer',id='AS')
+        site(service,'assignment_approve',actor='approver',id='AS')
+        row=service.site_lookahead('P',start='2027-03-27',days=7)['activities'][0]
+        assert row['work_dates']==['2027-03-27','2027-03-28','2027-03-29']
+        assert row['status']=='resource_conflict'
+        assert any('2027-03-27' in reason for reason in row['reasons'])
+    finally:
+        service.store.close()
+
+
+def test_schedule_report_exports_one_snapshot_and_out_of_sequence(recorded,tmp_path,monkeypatch):
+    import csv
+    from test_phase4_structure import cmd
+    service,_,proof=recorded
+    payload=status_payload(proof)
+    payload['observations'].append({'id':'B','state':'IN_PROGRESS','actual_start':'2027-03-21',
+                                    'remaining_duration':1,'source':proof})
+    cmd(service,'schedule_status',**payload)
+    def inconsistent_reopen(*args,**kwargs):
+        raise AssertionError('export re-read schedule from another project revision')
+    monkeypatch.setattr(service,'project_schedule',inconsistent_reopen)
+    monkeypatch.setattr(service,'project_schedule_forecast',inconsistent_reopen)
+    target=tmp_path/'schedule.csv'
+    service.project_controls_report('P','schedule','csv',target)
+    with target.open(encoding='utf-8-sig',newline='') as stream:
+        rows=list(csv.reader(stream))
+    row=next(row for row in rows if 'خارج از توالی' in row)
+    assert any('2027-03-21' in field and '2027-03-24' in field for field in row)
+
+
+def test_pre_origin_lead_is_not_counted_as_driving():
+    result=cpm([task('A',1,calendar_id='all'),task('B',3)],
+               [edge('A','B','FS',-5)],start=START,calendar=ALL,calendars={'all':ALL})
+    assert result['driving']['paths']==[['B']]
+
+
+def test_retained_lag_uses_observed_endpoint_before_revised_origin(recorded):
+    from test_phase4_structure import cmd
+    service,_,proof=recorded
+    cmd(service,'schedule_activity',id='B',duration=1,relationships=[edge('A','B','SS',3)])
+    cmd(service,'schedule_status',**status_payload(proof))
+    cmd(service,'schedule_calendar',start='2027-03-23',calendar=ALL)
+    payload=status_payload(proof)
+    payload['data_date']='2027-03-24'
+    cmd(service,'schedule_status',**payload)
+    assert service.project_schedule_forecast('P')['activities']['B']['resume']=='2027-03-24'

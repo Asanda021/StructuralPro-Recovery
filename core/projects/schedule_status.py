@@ -5,7 +5,7 @@ from datetime import timedelta
 from core.projects.controls import basis_stale, digest, evidence, num
 from core.commercial.exact_values import exact
 from core.projects.precedence_model import driving_graph
-from core.projects.schedule_calendars import EffectiveCalendar, Slot, latest_predecessor, shift_event
+from core.projects.schedule_calendars import EffectiveCalendar, Slot, clipped_lead, latest_predecessor, shift_event
 from core.projects.scheduling import WorkCalendar, _duration, current
 
 DAY = timedelta(days=1)
@@ -105,7 +105,8 @@ def _forecast(schedule, data_date, observations, not_before):
         if durations[key]:
             day += DAY
             if shared:
-                day=project_calendar.at(project_calendar.index_day(day))
+                calendar=project_calendar.with_start(day) if day<project_calendar.start else project_calendar
+                day=calendar.at(calendar.index_day(day))
         actual_finishes[key]=day
     definitions = {'PROJECT':project_calendar, **{key:WorkCalendar(value,start)
                    for key,value in schedule.get('calendars',{}).items()}}
@@ -141,7 +142,9 @@ def _forecast(schedule, data_date, observations, not_before):
         for link in incoming[key]:
             pred, kind = link['pred'], link['type']
             upstream = known[pred]
-            limit = shift_event(_event(upstream,kind[0],slots,early,actual_finishes),link['lag'],project_calendar)
+            event = _event(upstream,kind[0],slots,early,actual_finishes)
+            historical=event<project_calendar.start
+            limit=shift_event(event,link['lag'],project_calendar,allow_before_start=historical)
             actual = observed.get('actual_start' if kind[1]=='S' else 'actual_finish')
             if actual is not None:
                 reported = _event(observed,kind[1],slots,early,actual_finishes)
@@ -152,15 +155,15 @@ def _forecast(schedule, data_date, observations, not_before):
             # An already observed start stays fixed. Retained logic bounds the
             # future resumption of its remaining work at the same requirement.
             offset = slot.lower(kind[1],limit)
-            requirements.append((offset,link))
+            requirements.append((offset,link,not historical and clipped_lead(event,link['lag'],project_calendar)))
             if pred in slots and not upstream.get('actual_start' if kind[0]=='S' else 'actual_finish'):
                 future_edges[pred].append(link)
         if slot is not None:
-            early[key] = max([lower, *(offset for offset,_ in requirements)])
+            early[key] = max([lower, *(offset for offset,_,_ in requirements)])
             if early[key] == lower:
                 roots[key] = 'DATA_DATE' if not planned or WorkCalendar.valid_date(planned) <= data_date else 'NOT_BEFORE'
-            for offset,link in requirements:
-                if offset != early[key]:
+            for offset,link,clipped in requirements:
+                if offset != early[key] or clipped:
                     continue
                 upstream = known[link['pred']]
                 if link['pred'] in slots and not upstream.get('actual_start' if link['type'][0]=='S' else 'actual_finish'):
