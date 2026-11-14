@@ -125,6 +125,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
     source task's date/duration has not changed; otherwise resets approval.
     """
     from hashlib import sha256
+    from core.projects.controls import digest
     if not isinstance(team,dict) or team.get("schema")!="structuralpro.supervision-team-v1":
         raise ValueError("ساختار سرپرستی پروژه انتخاب نشده است")
     if not isinstance(plan,dict) or not plan.get("calendar",{}).get("start_date"):
@@ -148,6 +149,7 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
     uncovered=[]
     changed=[]
     revoked=[]  # Preserve old signatures for human review/audit.
+    calendar_digest = digest(plan["calendar"])
     for activity in plan.get("tasks",[]):
         if activity.get("duration_days",0)<=0 or not activity.get("start_jalali"):
             continue
@@ -169,6 +171,14 @@ def derive_weeks(team, plan, reference_date, previous_weeks, source_sha256):
             "start":activity["start_jalali"],
             "finish":activity["finish_jalali"],
             "duration":activity["duration_days"],
+            "calendar_digest":calendar_digest,
+            "calendar_approved":bool(plan.get("calendar_approved")),
+            "predecessors":sorted(activity.get("predecessors", [])),
+            "links":deepcopy(activity.get("links") or []),
+            "crew":{key:activity.get(key) for key in
+                    ("crew", "crew_pool", "crew_count", "crew_demand", "efficiency")},
+            "crew_capacity":(plan.get("resource_limits") or {}).get(activity.get("crew_pool")),
+            "resource_leveling_status":plan.get("resource_leveling_status"),
             "scheduled_quantity":activity.get("scheduled_quantity"),
             "linked_item_ids":sorted(map(str,activity.get("linked_item_ids",[]))),
             "measured":deepcopy(activity.get("measured",{})),

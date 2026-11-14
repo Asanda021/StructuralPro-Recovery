@@ -8,6 +8,25 @@ from copy import deepcopy
 from datetime import date,timedelta
 import heapq
 from core.projects.controls import integer,text,find,digest
+from core.projects.precedence_model import precedence_order
+
+
+_UNSUPPORTED_SCHEDULE_FIELDS = {
+    'constraint', 'constraints', 'deadline', 'calendar_id', 'actual_start',
+    'actual_finish', 'actual_end', 'remaining_duration', 'data_date',
+}
+
+
+def _check_schedule_fields(data, *, allow_calendar=False):
+    if _UNSUPPORTED_SCHEDULE_FIELDS.intersection(data) or ('calendar' in data and not allow_calendar):
+        raise ValueError('CPM فقط تقویم مشترک پروژه و زودترین شروع مجاز را پشتیبانی می‌کند؛ مهلت و کارکرد واقعی پشتیبانی نمی‌شوند')
+
+
+def _duration(value):
+    duration = integer(value, 'مدت کاری')
+    if duration > 100000:
+        raise ValueError('مدت بیش از افق پشتیبانی‌شده است')
+    return duration
 
 
 class WorkCalendar:
@@ -49,11 +68,10 @@ def cpm(tasks,relationships,*,start,calendar):
     if not tasks:raise ValueError('برای محاسبه برنامه فعالیت لازم است')
     cal=WorkCalendar(calendar,start);by={};duration={}
     for t in tasks:
+        _check_schedule_fields(t)
         id=text(t.get('id'),'شناسه فعالیت')
         if id in by:raise ValueError('شناسه فعالیت تکراری است')
-        d=integer(t.get('duration'),'مدت کاری')
-        if d>100000:raise ValueError('مدت بیش از افق پشتیبانی‌شده است')
-        by[id]=t;duration[id]=d
+        by[id]=t;duration[id]=_duration(t.get('duration'))
     adj={k:[] for k in by};incoming={k:[] for k in by};degree={k:0 for k in by};seen=set()
     for r in relationships:
         a,b,kind=r.get('pred'),r.get('succ'),r.get('type')
@@ -107,6 +125,7 @@ def current(project):
 def schedule_command(p,op,data,actor,reason):
     config=p['project_control_config']
     if op=='schedule_calendar':
+        _check_schedule_fields(data, allow_calendar=True)
         WorkCalendar(data.get('calendar'),data.get('start')).at(0)
         config['schedule']={'start':data['start'],'calendar':deepcopy(data['calendar'])}
         if p.get('project_schedule_tasks') and all(a.get('schedule') for a in p['project_schedule_tasks']):
@@ -115,8 +134,9 @@ def schedule_command(p,op,data,actor,reason):
                 a.update(planned_start=result['activities'][a['id']]['start'],planned_end=result['activities'][a['id']]['finish'])
         return config['schedule']
     if op=='schedule_activity':
+        _check_schedule_fields(data)
         a=find(p.get('project_schedule_tasks',[]),data.get('id'),'فعالیت')
-        d=integer(data.get('duration'),'مدت');nb=data.get('not_before')
+        d=_duration(data.get('duration'));nb=data.get('not_before')
         if nb is not None:WorkCalendar.valid_date(nb)
         rels=data.get('relationships')
         if not isinstance(rels,list):raise ValueError('روابط فعالیت باید صریح ثبت شوند')
@@ -132,6 +152,13 @@ def schedule_command(p,op,data,actor,reason):
             for t in p['project_schedule_tasks']:
                 t.update(planned_start=r['activities'][t['id']]['start'],planned_end=r['activities'][t['id']]['finish'],
                          predecessor_ids=[x['pred'] for x in t['schedule']['relationships']])
+        else:
+            # A cycle between entered activities is invalid even while other
+            # activities are still waiting for a duration or links.
+            precedence_order({
+                task['id']: [rel['pred'] for rel in (task.get('schedule') or {}).get('relationships', [])]
+                for task in p['project_schedule_tasks']
+            })
         return a
     if op=='schedule_baseline':
         ref=text(data.get('reference'),'مرجع مبنا');approved=text(data.get('approved_by'),'تأییدکننده مبنا')

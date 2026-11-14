@@ -226,7 +226,7 @@ class ProjectControlsWorkspace(QDialog):
         v=self.tab('گزارش و ریزمنابع');self.details=QLabel();self.details.setWordWrap(True);v.addWidget(self.details)
         self.location_choice=QComboBox();v.addWidget(self.location_choice);self.button(v,'نمایش و هایلایت موقعیت معتبر','ActivityHighlight',self.open_location)
         self.report_kind=QComboBox()
-        for label,key in [('WBS','wbs'),('فعالیت‌ها','activities'),('زمان‌بندی و مسیر بحرانی','schedule'),('پیشرفت و انحراف','progress'),('منحنی S','curve')]:self.report_kind.addItem(label,key)
+        for label,key in [('WBS','wbs'),('فعالیت‌ها','activities'),('زمان‌بندی و فعالیت‌های بحرانی','schedule'),('پیشرفت و انحراف','progress'),('منحنی S','curve')]:self.report_kind.addItem(label,key)
         v.addWidget(self.report_kind);self.report_format=QComboBox()
         for fmt in ['pdf','xlsx','docx','csv']:self.report_format.addItem(fmt.upper(),fmt)
         v.addWidget(self.report_format);self.button(v,'تولید گزارش فارسی','ProjectControlsExport',self.export)
@@ -288,7 +288,7 @@ class ProjectControlsWorkspace(QDialog):
         try:
             schedule=self.service.project_schedule(self.pid);base=(p.get('schedule_baselines') or [None])[-1]
             self.gantt.render(schedule,base['result'] if base else None)
-            self.schedule_info.setText('مسیر بحرانی: '+', '.join(schedule['critical_ids'])+' | مدت کاری: '+str(schedule['duration']))
+            self.schedule_info.setText('فعالیت‌های بحرانی: '+', '.join(schedule['critical_ids'])+' | مدت کاری: '+str(schedule['duration']))
         except ValueError as e:self.gantt.render(None);self.schedule_info.setText(str(e))
         self.curve.render(self.service.project_progress_curve(self.pid,frequency=self.curve_frequency.currentData()))
         if self.selected_id:self.select_activity(self.selected_id)

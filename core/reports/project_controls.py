@@ -4,7 +4,7 @@ from pathlib import Path
 from core.reports.project_report import build_report
 from core.reports.exporters import report_date,FA_UNITS
 
-LABELS={'wbs':'ساختار شکست کار','activities':'فهرست فعالیت‌ها','schedule':'زمان‌بندی و مسیر بحرانی','progress':'پیشرفت وزنی و انحراف','curve':'منحنی S برنامه‌ای و واقعی'}
+LABELS={'wbs':'ساختار شکست کار','activities':'فهرست فعالیت‌ها','schedule':'زمان‌بندی و فعالیت‌های بحرانی','progress':'پیشرفت وزنی و انحراف','curve':'منحنی S برنامه‌ای و واقعی'}
 
 def export(service,pid,kind,fmt,path,*,as_of=None):
     if kind not in LABELS:raise ValueError('نوع گزارش کنترل پروژه ناشناخته است')

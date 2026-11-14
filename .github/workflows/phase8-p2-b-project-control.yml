@@ -1,0 +1,80 @@
+name: P8 P2-B project control contracts
+
+on:
+  push:
+    branches:
+      - test/phase8-p2-b-schedule-engine-validation-20261114
+
+permissions:
+  contents: read
+
+jobs:
+  project-control:
+    name: Project control (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 18
+    env:
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify exact source SHA
+        shell: bash
+        run: |
+          git rev-parse HEAD
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Install schedule test dependencies
+        run: python -m pip install -q -r requirements.txt pytest==9.0.2
+      - name: Check Linux Qt runtime and install system libraries if needed
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          if ! python -c 'from PySide6.QtWidgets import QApplication; app = QApplication([])'; then
+            sudo apt-get update -qq -o APT::Update::Error-Mode=any
+            sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+            python -c 'from PySide6.QtWidgets import QApplication; app = QApplication([])'
+          fi
+      - name: Run independent CPM and adjacent schedule regressions
+        run: >-
+          python -m pytest -q -ra --junitxml=p8-p2-b.xml
+          tests/test_phase8_p2_schedule_contract.py
+          tests/test_phase8_cpm_offsets.py
+          tests/test_phase8_p2_calendar_and_crew_leveling.py
+          tests/test_phase8_p2_schedule_saved_review_integrity.py
+          tests/test_phase8_p2_drawing_schedule_export.py
+          tests/test_phase8_p2_drawing_workflow_schedule.py
+          tests/test_phase8_p2_productivity_and_statement_modes.py
+          tests/test_phase8_p2_engineer_weeks_optional_schedule.py
+          tests/test_phase8_p2_supervisors_floor_duration.py
+          tests/test_phase8_p2_productivity_evidence.py
+          tests/test_phase4_scheduling.py
+          tests/test_phase4_progress.py
+          tests/test_phase4_structure.py
+          tests/test_phase4_site_resources.py
+          tests/test_phase4_review_regressions.py
+          tests/test_phase4_workspace.py
+          tests/test_phase4_chain.py
+          tests/test_phase4_performance.py
+          tests/test_phase4_reports.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: p8-p2-b-${{ matrix.os }}-${{ github.sha }}
+          path: p8-p2-b.xml
+          retention-days: 14
+          if-no-files-found: warn
