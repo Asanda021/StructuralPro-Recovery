@@ -21,6 +21,31 @@ def export(service,pid,kind,fmt,path,*,as_of=None):
             for label,value in [('عنوان',a['title']),('WBS',a.get('wbs_id')),('طبقات',', '.join(a.get('floor_ids',[]))),('زون‌ها',', '.join(a.get('zone_ids',[]))),('رشته',a.get('discipline_id')),('اعضا',', '.join(a.get('member_ids',[]))),('واحد',FA_UNITS.get(a.get('unit'),a.get('unit'))),('مقدار مصوب',a.get('measurement',{}).get('total')),('منبع مقدار',str(a.get('measurement',{})))]:add(a['id'],label,value)
     elif kind=='schedule':
         current=service.project_schedule(pid)
+        driving=current['driving']
+        add('شبکه','دامنه محاسبه','تقویم مشترک پروژه' if current['cpm_scope']=='SHARED_PROJECT_WORKDAYS' else 'تقویم مؤثر هر فعالیت')
+        add('شبکه','زنجیره‌های محرک پایان',str(driving['path_count'])+('+' if driving['path_count_capped'] else ''))
+        if driving['paths_truncated']:
+            add('شبکه','فهرست نمونه','فهرست زنجیره‌ها محدود است. روابط حاکم در جدول ثبت شده‌اند.')
+        for chain in driving['paths']:
+            add('شبکه','زنجیره محرک',' → '.join(chain))
+        for rel in driving['edges']:
+            add(rel['succ'],'رابطه حاکم بر پایان',f"{rel['pred']} / {rel['type']} / {rel['lag']}")
+        if p.get('schedule_status_records'):
+            try:
+                forecast=service.project_schedule_forecast(pid)
+            except ValueError:
+                add('پیش‌بینی','وضعیت','رکورد تاریخ وضعیت نیازمند بازبینی است')
+            else:
+                for key,label in [('version','نسخه مشاهده'),('data_date','تاریخ وضعیت'),
+                                  ('finish_boundary','پایان پیش‌بینی پیشنهادی'),('baseline_finish','پایان مبنا'),
+                                  ('baseline_delta_days','اختلاف روز تقویمی با مبنا'),
+                                  ('baseline_sha256','هش مبنای مقایسه'),('status_sha256','هش رکورد')]:
+                    add('پیش‌بینی',label,forecast[key])
+                for row in forecast['activities'].values():
+                    if row['state']=='NOT_STARTED':continue
+                    for key,label in [('actual_start','شروع مشاهده‌شده'),('actual_finish','پایان مشاهده‌شده'),
+                                      ('resume','ادامه پیشنهادی'),('remaining_duration','مدت کاری باقی‌مانده')]:
+                        add(row['id'],label,row[key])
         for id,r in current['activities'].items():
             for label,value in [('شروع',report_date(date.fromisoformat(r['start']))),('پایان',report_date(date.fromisoformat(r['finish']))),('مدت روز کاری',r['duration']),('شروع زودترین',r['es']),('پایان زودترین انحصاری',r['ef']),('شروع دیرترین',r['ls']),('پایان دیرترین انحصاری',r['lf']),('شناوری کل',r['total_float']),('شناوری آزاد',r['free_float']),('بحرانی','بله' if r['critical'] else 'خیر')]:add(id,label,value)
         for r in current['relationships']:add(r['succ'],'پیش‌نیاز',f"{r['pred']} / {r['type']} / {r['lag']} روز کاری")

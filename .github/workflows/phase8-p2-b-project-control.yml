@@ -10,17 +10,19 @@ permissions:
 
 jobs:
   project-control:
-    name: Project control (${{ matrix.os }})
+    name: ${{ matrix.suite }} (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-24.04, windows-2022]
+        suite: [targeted, regression]
         include:
           - os: ubuntu-24.04
             qpa: offscreen
           - os: windows-2022
             qpa: windows
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 18
+    timeout-minutes: 28
     env:
       QT_QPA_PLATFORM: ${{ matrix.qpa }}
       PYTHONUTF8: '1'
@@ -50,8 +52,11 @@ jobs:
             python -c 'from PySide6.QtWidgets import QApplication; app = QApplication([])'
           fi
       - name: Run independent CPM and adjacent schedule regressions
+        if: matrix.suite == 'targeted'
         run: >-
           python -m pytest -q -ra --junitxml=p8-p2-b.xml
+          tests/test_phase8_p2_b_advanced.py
+          tests/test_phase8_p2_b_golden.py
           tests/test_phase8_p2_schedule_contract.py
           tests/test_phase8_cpm_offsets.py
           tests/test_phase8_p2_calendar_and_crew_leveling.py
@@ -71,10 +76,27 @@ jobs:
           tests/test_phase4_chain.py
           tests/test_phase4_performance.py
           tests/test_phase4_reports.py
+      - name: Run project-control, SQLite, finance, RTL and Qt regression
+        if: matrix.suite == 'regression'
+        shell: bash
+        run: >-
+          python -m pytest -q -ra --junitxml=p8-p2-b.xml
+          tests/test_phase4_*.py
+          tests/test_phase3_financial_*.py
+          tests/test_phase3_five_floor_finance.py
+          tests/test_phase3_statement_ledger_completion.py
+          tests/test_phase3_factor_review_qt.py
+          tests/test_financial_*.py
+          tests/test_audit_critical_finance.py
+          tests/test_audit_critical_ui.py
+          tests/test_phase8_p2_fivefloor_financial_e2e.py
+          tests/test_phase8_p2_dwg_financial_veto.py
+          tests/test_phase7_p1_exact_persian_reports.py
+          tests/test_shared_report_persian.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: p8-p2-b-${{ matrix.os }}-${{ github.sha }}
+          name: p8-p2-b-${{ matrix.suite }}-${{ matrix.os }}-${{ github.sha }}
           path: p8-p2-b.xml
           retention-days: 14
           if-no-files-found: warn

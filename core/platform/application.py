@@ -2244,6 +2244,13 @@ class StructuralProApp:
         if p is None:raise KeyError(project_id)
         return current(p)
 
+    def project_schedule_forecast(self, project_id, *, version=None):
+        from core.projects.schedule_status import forecast
+        project = self.store.get(project_id)
+        if project is None:
+            raise KeyError(project_id)
+        return forecast(project, version=version)
+
     def project_controls(self, project_id):
         from core.projects.controls import snapshot
         p=self.store.get(project_id)

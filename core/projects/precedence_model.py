@@ -6,6 +6,62 @@ References: PMI Scheduling 101, CMU PMBook ch10, Oracle P6 Relationships.
 from __future__ import annotations
 
 
+def relation_weight(predecessor_duration, successor_duration, kind, lag):
+    """Convert the two endpoints of a shared-axis relationship to a start bound."""
+    return (lag + (predecessor_duration if kind[0] == 'F' else 0)
+            - (successor_duration if kind[1] == 'F' else 0))
+
+
+def driving_graph(order, tight, finish_ids, binding_dates):
+    """Explain the current finish via binding edges, not via zero float alone."""
+    path_limit = 64
+    count_limit = 1_000_000_000_000
+    incoming = {key: [] for key in order}
+    for link in sorted(tight, key=lambda row: (row['pred'], row['succ'])):
+        incoming[link['succ']].append(link)
+    finish_ids = sorted(finish_ids)
+    retained = set(finish_ids)
+    for key in reversed(order):
+        if key in retained:
+            retained.update(link['pred'] for link in incoming[key])
+    roots = {}
+    choices = {}
+    counts = {}
+    for key in order:
+        if key not in retained:
+            continue
+        predecessors = [link['pred'] for link in incoming[key]]
+        if key in binding_dates or not predecessors:
+            roots[key] = binding_dates.get(key, 'PROJECT_START')
+            predecessors.insert(0, None)
+        choices[key] = predecessors
+        counts[key] = min(count_limit + 1, sum(1 if pred is None else counts[pred] for pred in predecessors))
+    count = min(count_limit + 1, sum(counts[key] for key in finish_ids))
+    paths = []
+    for end in finish_ids:
+        chain = [end]
+        stack = [iter(choices[end])]
+        while stack and len(paths) < path_limit:
+            try:
+                pred = next(stack[-1])
+            except StopIteration:
+                stack.pop()
+                chain.pop()
+                continue
+            if pred is None:
+                paths.append(list(reversed(chain)))
+            else:
+                chain.append(pred)
+                stack.append(iter(choices[pred]))
+        if len(paths) == path_limit:
+            break
+    return {'finish_ids': finish_ids,
+            'roots': [{'id': key, 'reason': roots[key]} for key in sorted(roots)],
+            'edges': [link for key in sorted(retained) for link in incoming[key]],
+            'paths': paths, 'path_count': min(count, count_limit),
+            'path_count_capped': count > count_limit, 'paths_truncated': count > len(paths)}
+
+
 def precedence_order(predecessors):
     """Visit dependencies first in input order, without using the call stack."""
     done = set()
@@ -41,6 +97,10 @@ _CPM_TASK_FIELDS = (
 def calculate_precedence(plan, *, include_cpm=False):
     tasks=plan.get("tasks",[])
     if not isinstance(tasks,list):raise ValueError("فهرست فعالیت‌ها معتبر نیست")
+    if plan.get('calendars') or plan.get('resource_calendars') or any(
+            isinstance(task,dict) and (task.get('calendar_id') is not None or task.get('resource_ids'))
+            for task in tasks):
+        raise ValueError('محور نسبی پیش‌نویس از تقویم فعالیت یا منبع پشتیبانی نمی‌کند')
     by_id={}
     for t in tasks:
         ident=t.get("id")
@@ -92,11 +152,7 @@ def calculate_precedence(plan, *, include_cpm=False):
     for key in order:
         lower = 0
         for pred, kind, lag in incoming[key]:
-            weight = lag
-            if kind in ("FS", "FF"):
-                weight += durations[pred]
-            if kind in ("FF", "SF"):
-                weight -= durations[key]
+            weight = relation_weight(durations[pred], durations[key], kind, lag)
             lower = max(lower, starts[pred] + weight)
             if outgoing is not None:
                 outgoing[pred].append((key, weight))
@@ -121,7 +177,13 @@ def calculate_precedence(plan, *, include_cpm=False):
             task["total_float_workdays"]=latest-early
             task["free_float_workdays"]=free
         plan["cpm_scope"]="DRAFT_SHARED_WORKDAY_OFFSETS_NO_CONSTRAINTS_OR_ACTUALS"
+        tight = [{'pred': pred, 'succ': succ, 'type': kind, 'lag': lag}
+                 for succ, links in incoming.items() for pred, kind, lag in links
+                 if starts[succ] == starts[pred] + relation_weight(durations[pred], durations[succ], kind, lag)]
+        plan['driving'] = driving_graph(order, tight,
+                                        [key for key in order if starts[key] + durations[key] == finish], {})
     else:
         plan.pop("cpm_scope", None)
+        plan.pop('driving', None)
     plan["network_review_status"]="DRAFT_UNAPPROVED_NOT_RESOURCE_LEVELED"
     return plan

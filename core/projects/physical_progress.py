@@ -5,9 +5,10 @@ supersede an observation explicitly; original observations/reports are retained.
 Planned percentages are at the start boundary of the selected report date.
 """
 from copy import deepcopy
+from datetime import timedelta
 from decimal import Decimal,localcontext,ROUND_HALF_EVEN,ROUND_HALF_UP
 from core.projects.controls import num,integer,text,evidence,find,digest,basis_stale
-from core.projects.scheduling import WorkCalendar,current
+from core.projects.scheduling import WorkCalendar,activity_work_dates,current
 from core.commercial.exact_values import exact
 
 
@@ -140,8 +141,13 @@ def calculate(p,*,as_of):
             if obs and total and not basis_stale(p,a) and obs[-1]['basis_digest']==digest(m):quantity=num(obs[-1]['quantity'],'کارکرد');actual=quantity/total*100
             def planned_for(schedule):
                 if not schedule or not weights or not weight_valid or a['id'] not in schedule['activities']:return None
-                t=schedule['activities'][a['id']];cal=WorkCalendar(schedule['calendar'],schedule['calendar_start'])
-                elapsed=0 if day<cal.at(t['es']).isoformat() else max(0,min(t['duration'],cal.index(day)-t['es']))
+                t=schedule['activities'][a['id']]
+                if schedule.get('offset_unit')=='CALENDAR_DAY':
+                    elapsed=len(activity_work_dates(schedule,a['id'],WorkCalendar.valid_date(t['start']),
+                                                   WorkCalendar.valid_date(day)-timedelta(days=1))) if day>t['start'] else 0
+                else:
+                    cal=WorkCalendar(schedule['calendar'],schedule['calendar_start'])
+                    elapsed=0 if day<cal.at(t['es']).isoformat() else max(0,min(t['duration'],cal.index(day)-t['es']))
                 if weights['distributions'][a['id']]=='linear_workdays' and t['duration']:return Decimal(elapsed)/Decimal(t['duration'])*100
                 return Decimal(100) if day>=t['finish_boundary'] else Decimal(0)
             planned=planned_for(baseline['result'] if baseline else None)

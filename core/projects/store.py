@@ -376,7 +376,7 @@ class ProjectStore:
             return {"owner", "admin", "editor"}, "project-store:save"
         operation = str(command.get("op") or command.get("action") or "update").lower()
         reference = f"project-store:{operation}"
-        if "approve" in operation:
+        if "approve" in operation or operation == 'schedule_baseline':
             return {"owner", "admin"}, reference
         if "review" in operation:
             return {"owner", "admin", "reviewer"}, reference
