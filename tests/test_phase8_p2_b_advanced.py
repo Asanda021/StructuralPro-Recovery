@@ -521,13 +521,14 @@ def test_replanning_project_origin_preserves_prior_actual_dates(recorded):
     from test_phase4_structure import cmd
     service,_,proof=recorded
     first=cmd(service,'schedule_status',**status_payload(proof))
-    cmd(service,'schedule_calendar',start='2027-03-21',calendar=ALL)
+    cmd(service,'schedule_calendar',start='2027-03-25',calendar=ALL)
     payload=status_payload(proof)
     payload['data_date']='2027-03-24'
     second=cmd(service,'schedule_status',**payload)
     assert second['version']==2
     assert second['observations'][0]['actual_start']==first['observations'][0]['actual_start']==START
     assert service.project_schedule_forecast('P')['version']==2
+    assert service.project_schedule_forecast('P')['activities']['A']['resume']=='2027-03-25'
 
 
 def test_observed_task_cannot_be_rewritten_as_milestone(recorded):

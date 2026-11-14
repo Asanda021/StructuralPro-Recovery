@@ -15,7 +15,8 @@ from core.projects.schedule_calendars import calendar_registry, dated_cpm, selec
 
 _UNSUPPORTED_SCHEDULE_FIELDS = {
     'constraint', 'constraints', 'deadline', 'actual_start',
-    'actual_finish', 'actual_end', 'remaining_duration', 'data_date',
+    'actual_finish', 'actual_end', 'actual_percent', 'actual_quantity', 'remaining_work',
+    'remaining_duration', 'data_date',
 }
 
 
@@ -47,7 +48,8 @@ class WorkCalendar:
         if not isinstance(exceptions,list):raise ValueError('استثناهای روز کاری باید صریح باشند')
         self.exceptions={self.valid_date(x) for x in exceptions}
         if self.holidays & self.exceptions:raise ValueError('یک تاریخ نمی‌تواند هم تعطیل و هم روز کاری استثنایی باشد')
-        if any(key in config for key in ('shift_hours','shifts','working_hours','half_days','timezone','official_holidays')):
+        if any(key in config for key in ('shift_hours','shifts','working_hours','working_time','half_days',
+                                         'timezone','timezone_id','official_holidays')):
             raise ValueError('تقویم فقط روز مدنی کامل و تعطیلی صریح ثبت‌شده را پشتیبانی می‌کند')
         self.dates=[];self.cursor=self.start
         self.closed=sorted(day for day in self.holidays if day>=self.start and day.weekday() in self.days)

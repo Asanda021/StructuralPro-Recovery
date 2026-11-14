@@ -15,15 +15,18 @@ FIELDS = {'id', 'state', 'actual_start', 'actual_finish', 'actual_percent',
           'actual_quantity', 'remaining_work', 'remaining_duration', 'source'}
 
 
+def _historical_origin(project, schedule):
+    return WorkCalendar.valid_date(min([schedule['calendar_start'],
+        *(row['schedule_origin'] for row in project.get('schedule_status_records',[]))]))
+
+
 @exact
 def _observations(project, schedule, data_date, items):
     if not isinstance(items, list):
         raise ValueError('فهرست مشاهدات باید صریح باشد')
     rows = {task['id']: task for task in project['project_schedule_tasks']}
     result = {}
-    planned_start = schedule['calendar_start']
-    records=project.get('schedule_status_records',[])
-    earliest=WorkCalendar.valid_date(min([planned_start, *(row['schedule_origin'] for row in records)]))
+    earliest = _historical_origin(project,schedule)
     for item in items:
         if not isinstance(item, dict) or set(item) - FIELDS:
             raise ValueError('فیلد مشاهده زمان‌بندی نامعتبر یا پشتیبانی‌نشده است')
@@ -258,8 +261,8 @@ def record_status(project, data, actor, reason):
         raise ValueError('سیاست RETAINED_LOGIC و فرض صریح NOT_STARTED برای موارد گزارش‌نشده لازم است')
     schedule = current(project)
     day = WorkCalendar.valid_date(data.get('data_date'))
-    if day < WorkCalendar.valid_date(schedule['calendar_start']):
-        raise ValueError('تاریخ وضعیت پیش از شروع پروژه است')
+    if day < _historical_origin(project,schedule):
+        raise ValueError('تاریخ وضعیت پیش از شروع سابقه پروژه است')
     records = project.setdefault('schedule_status_records',[])
     observations = _observations(project,schedule,day,data.get('observations'))
     correction=data.get('corrects_version')

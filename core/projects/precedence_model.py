@@ -132,7 +132,8 @@ def calculate_precedence(plan, *, include_cpm=False):
         return [(name,*mapping.get(name,("FS",0))) for name in refs]
     if include_cpm:
         unsupported = {"constraint", "constraints", "deadline", "calendar", "calendar_id",
-                       "not_before", "actual_start", "actual_finish", "actual_end", "remaining_duration", "data_date"}
+                       "not_before", "actual_start", "actual_finish", "actual_end", "actual_percent",
+                       "actual_quantity", "remaining_work", "remaining_duration", "data_date"}
         if any(unsupported.intersection(t) for t in tasks) or any(k in plan for k in ("data_date", "deadline", "calendar")):
             raise ValueError("CPM offsets do not support constraints, calendars or actuals")
 
