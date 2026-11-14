@@ -3,8 +3,8 @@ from copy import deepcopy
 from datetime import timedelta
 from decimal import Decimal
 from core.commercial.exact_values import exact
-from core.projects.controls import text,num,evidence,find,references,digest
-from core.projects.scheduling import WorkCalendar,current
+from core.projects.controls import text,num,integer,evidence,find,references,digest
+from core.projects.scheduling import WorkCalendar,activity_work_dates,current
 
 KEYS=('project_resources','resource_assignments','resource_availability','resource_events','activity_resource_requirements')
 OPS={'resource_create','resource_review','resource_approve','availability','resource_event','assign','assignment_review','assignment_approve','assignment_cancel','requirements'}
@@ -22,6 +22,9 @@ def valid_source(row):
     except (ValueError,KeyError):return False
 
 def capacity(p,r,day):
+    calendar=_resource_calendar(p,r['id'])
+    if calendar and not calendar.is_open(WorkCalendar.valid_date(day)):
+        return Decimal(0)
     events=[x for x in p.get('resource_events',[]) if x['resource_id']==r['id'] and x['start']<=day<=x['end']]
     if not valid_source(r) or any(not valid_source(x) for x in events):return None
     released={x.get('reference_id') for x in events if x['state']=='released'}
@@ -34,17 +37,44 @@ def capacity(p,r,day):
     if row['state']!='present':return Decimal(0) if row['state']=='absent' else None
     return min(num(r['capacity'],'ظرفیت'),num(row['capacity'],'حضور'))
 
-def work_dates(p,start,end):
+def _resource_calendar(p,resource_id):
     config=p.get('project_control_config',{}).get('schedule')
-    if not config:raise ValueError('تقویم معتبر پروژه لازم است')
-    cal=WorkCalendar(config['calendar'],config['start'])
-    return [x for x in dates(start,end) if WorkCalendar.valid_date(x).weekday() in cal.days and WorkCalendar.valid_date(x) not in cal.holidays]
+    if not config:return None
+    cid=config.get('resource_calendars',{}).get(resource_id)
+    return WorkCalendar(config['calendars'][cid] if cid else config['calendar'],config['start'])
+
+
+def work_dates(p,start,end,*,resource_id=None):
+    cal=_resource_calendar(p,resource_id)
+    if not cal:raise ValueError('تقویم معتبر پروژه لازم است')
+    return [x for x in dates(start,end) if cal.is_open(WorkCalendar.valid_date(x))]
+
+
+def _schedule_basis(p, activity_id, resource_id):
+    if not _requires_calendar_basis(p.get('project_control_config',{}).get('schedule',{})):
+        return None
+    return _calendar_basis(current(p),activity_id,resource_id)
+
+
+def _requires_calendar_basis(config):
+    return (config.get('calendar_version',0)>1 or bool(config.get('calendars'))
+            or bool(config.get('resource_calendars')))
+
+
+def _calendar_basis(schedule, activity_id, resource_id):
+    if not _requires_calendar_basis(schedule):
+        return None
+    row=schedule['activities'][activity_id]
+    cid=schedule.get('resource_calendars',{}).get(resource_id)
+    resource=schedule['calendars'][cid] if cid else schedule['calendar']
+    return digest({'activity':row.get('calendar_digest') or schedule['calendar'],
+                   'resource':resource,'start':row['start'],'finish':row['finish']})
 
 @exact
 def conflicts(p,row):
     r=find(p.get('project_resources',[]),row['resource_id'],'منبع')
     if r.get('status')!='approved':raise ValueError('منبع تأییدشده لازم است')
-    days=work_dates(p,*interval(row))
+    days=work_dates(p,*interval(row),resource_id=r['id'])
     if not days:raise ValueError('تخصیص باید روز کاری داشته باشد')
     reasons=[]
     for day in days:
@@ -74,6 +104,7 @@ def dispatch(p,op,data,actor,reason):
         evidence(r['source'])
         if key=='resource_assignments':
             if r['activity_basis']!=digest(find(p['project_schedule_tasks'],r['activity_id'],'فعالیت')):raise ValueError('فعالیت تغییر کرده است؛ تخصیص جدید لازم است')
+            if r.get('schedule_basis')!=_schedule_basis(p,r['activity_id'],r['resource_id']):raise ValueError('تقویم مؤثر تغییر کرده است؛ تخصیص جدید لازم است')
             problems=conflicts(p,r)
             if problems:raise ValueError('؛ '.join(problems))
         r['status']='reviewed' if review else 'approved';r['reviewed_by' if review else 'approved_by']=actor;return r
@@ -104,6 +135,9 @@ def dispatch(p,op,data,actor,reason):
         q=num(data.get('allocation'),'تخصیص')
         if q<=0:raise ValueError('تخصیص باید مثبت باشد')
         row={'id':id,'activity_id':a['id'],'resource_id':r['id'],'start':start.isoformat(),'end':end.isoformat(),'allocation':str(q),'source':evidence(data.get('source')),'created_by':actor,'reason':reason,'status':'draft','activity_basis':digest(a),'floor_ids':deepcopy(a.get('floor_ids',[])),'zone_ids':deepcopy(a.get('zone_ids',[]))}
+        schedule_basis=_schedule_basis(p,a['id'],r['id'])
+        if schedule_basis is not None:
+            row['schedule_basis']=schedule_basis
         rows.append(row);return row
     if op=='assignment_cancel':
         r=find(p.get('resource_assignments',[]),id,'تخصیص')
@@ -143,18 +177,19 @@ def lookahead(p,*,start,days=None,end=None):
         if not schedule:reasons.append(error);status='insufficient_information'
         req=next((x for x in reversed(p.get('activity_resource_requirements',[])) if x['activity_id']==a['id']),None)
         if req is None or req.get('activity_basis')!=digest(a) or not valid_source(req):reasons.append('نیاز منابع فعالیت ثبت نشده، قدیمی یا دارای مدرک نامعتبر است');status='insufficient_information'
-        occupied=work_dates(p,max(first,WorkCalendar.valid_date(schedule['start'])),min(last,WorkCalendar.valid_date(schedule['finish']))) if schedule else []
+        occupied=activity_work_dates(plan,a['id'],first,last) if schedule else []
         if req and schedule:
             for need in req['resources']:
                 resource=find(p.get('project_resources',[]),need['resource_id'],'منبع')
-                assignments=[x for x in p.get('resource_assignments',[]) if x.get('status')=='approved' and x['activity_id']==a['id'] and x['resource_id']==resource['id'] and x.get('activity_basis')==digest(a) and valid_source(x)]
+                basis=_calendar_basis(plan,a['id'],resource['id'])
+                assignments=[x for x in p.get('resource_assignments',[]) if x.get('status')=='approved' and x['activity_id']==a['id'] and x['resource_id']==resource['id'] and x.get('activity_basis')==digest(a) and x.get('schedule_basis')==basis and valid_source(x)]
                 for day in occupied:
-                    allocated=sum((num(x['allocation'],'تخصیص') for x in assignments if x['start']<=day<=x['end']),Decimal(0))
-                    if allocated<num(need['quantity'],'نیاز'):reasons.append('تخصیص کافی نیست: '+resource['id']+' '+day);status='insufficient_information'
                     available=capacity(p,resource,day)
+                    allocated=sum((num(x['allocation'],'تخصیص') for x in assignments if x['start']<=day<=x['end']),Decimal(0)) if available else Decimal(0)
+                    if allocated<num(need['quantity'],'نیاز'):reasons.append('تخصیص کافی نیست: '+resource['id']+' '+day);status='insufficient_information'
                     total=sum((num(x['allocation'],'تخصیص') for x in p.get('resource_assignments',[]) if x.get('status')=='approved' and x['resource_id']==resource['id'] and x['start']<=day<=x['end']),Decimal(0))
                     if available is None:reasons.append('دسترسی نامشخص: '+day);status='insufficient_information'
-                    elif total>available:
+                    elif max(total,num(need['quantity'],'نیاز'))>available:
                         reasons.append('تداخل یا توقف منبع: '+resource['id']+' '+day)
                         status='resource_conflict'; resource_conflict_found=True
             if req['materials']:
@@ -173,7 +208,7 @@ def lookahead(p,*,start,days=None,end=None):
             for rel in a['schedule']['relationships']:
                 pred=find(p['project_schedule_tasks'],rel['pred'],'پیش‌نیاز')
                 q=max((num(x['quantity'],'کارکرد') for x in observations if x['activity_id']==pred['id']),default=None)
-                if rel['type']=='FS' and rel['lag']>=0:
+                if rel['type']=='FS' and integer(rel['lag'],'وقفه کاری',signed=True)>=0:
                     if q is None or pred.get('measurement',{}).get('total') is None or q<num(pred['measurement']['total'],'مبنا'):
                         reasons.append('تکمیل پیش‌نیاز تأیید نشده: '+pred['id']);status='dependent'
                 else:reasons.append('کنترل انسانی رابطه اجرایی: '+pred['id']);status='human_decision'

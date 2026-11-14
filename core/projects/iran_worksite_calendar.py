@@ -188,7 +188,9 @@ def apply_calendar(plan):
         task["finish_jalali"]=(
             day_map[end_index-1] if end_index>start_index else day_map[start_index]
         )
-    plan["scheduled_end_jalali"]=day_map[count-1] if count else day_map[0]
+    plan["scheduled_end_jalali"] = max(
+        (task["finish_jalali"] for task in plan.get("tasks", [])), default=day_map[0]
+    )
     plan["unreviewed_holiday_years"]=sorted(unreviewed)
     plan["calendar_approved"]=bool(calendar.get("approved")) and not unreviewed
     plan["calendar_holiday_revision_required"]=bool(unreviewed)

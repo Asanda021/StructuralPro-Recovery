@@ -1,10 +1,10 @@
 """A corrupted project DB must be refused *before* initialization can write DDL."""
 import hashlib
-import os
 import sqlite3
 import pytest
 
 from core.projects.store import ProjectStore
+from core.platform.identity import SystemIdentityProvider
 from tests.test_phase4_sqlite_rescue import make_source, corrupt_overflow
 
 
@@ -20,9 +20,9 @@ def test_corrupted_existing_database_refused_without_writes(tmp_path):
 
 def test_healthy_existing_database_and_new_database_open(tmp_path):
     source=make_source(tmp_path)
-    if os.name == 'nt':
-        # An unaudited legacy database has no trusted Windows owner proof.
-        # It must NOT be silently claimed or granted project permissions.
+    provider=SystemIdentityProvider()
+    identity=provider.current()
+    if not provider.owns_path(identity,source):
         with pytest.raises(RuntimeError,match='audit integrity'):
             ProjectStore(source)
         with sqlite3.connect(source) as db:
@@ -33,6 +33,10 @@ def test_healthy_existing_database_and_new_database_open(tmp_path):
         try:
             assert store.get('P')['_meta']['version']==3
             assert store.integrity_check()['ok']
+            principal=store.current_principal('P')
+            assert (principal.user_id,principal.role)==(identity.subject_id,'owner')
+            assert store.verify_audit('P')
+            assert store.audit_events('P')[-1]['reference']=='migration:legacy-file-owner'
         finally: store.close()
     new=tmp_path/'new.db'
     store=ProjectStore(new)
@@ -42,3 +46,20 @@ def test_healthy_existing_database_and_new_database_open(tmp_path):
         assert result['version']==1
     finally:store.close()
     assert new.exists()
+
+
+@pytest.mark.parametrize('proof',['mismatch','unreadable'])
+def test_unaudited_legacy_database_requires_owner_proof(tmp_path,monkeypatch,proof):
+    source=make_source(tmp_path)
+    before=hashlib.sha256(source.read_bytes()).hexdigest()
+    def owner_check(self,identity,path):
+        if proof=='unreadable':
+            raise OSError('synthetic unavailable owner proof')
+        return False
+    monkeypatch.setattr(SystemIdentityProvider,'owns_path',owner_check)
+    with pytest.raises(RuntimeError,match='audit integrity'):
+        ProjectStore(source)
+    assert hashlib.sha256(source.read_bytes()).hexdigest()==before
+    with sqlite3.connect(source) as db:
+        assert db.execute('SELECT version FROM projects WHERE id=?',('P',)).fetchone()[0]==3
+        assert db.execute('SELECT count(*) FROM revisions WHERE project_id=?',('P',)).fetchone()[0]==3

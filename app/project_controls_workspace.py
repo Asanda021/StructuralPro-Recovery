@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt,QCalendar,QDate,Signal,QLocale
 from PySide6.QtGui import QBrush,QColor,QPen,QPainterPath,QPainter
 from PySide6.QtWidgets import (QDialog,QWidget,QVBoxLayout,QHBoxLayout,QFormLayout,QLineEdit,QPushButton,QLabel,
  QComboBox,QTabWidget,QTreeWidget,QTreeWidgetItem,QTableWidget,QTableWidgetItem,QSplitter,QGraphicsView,
- QGraphicsScene,QGraphicsItem,QScrollArea,QFileDialog,QCalendarWidget,QDialogButtonBox)
+ QGraphicsScene,QGraphicsItem,QScrollArea,QFileDialog,QCalendarWidget,QDialogButtonBox,QPlainTextEdit,QCheckBox)
 from core.reports.exporters import report_date,FA_UNITS
 
 
@@ -156,13 +156,29 @@ class ProjectControlsWorkspace(QDialog):
             floor_ids=self.list('activity_floors'),zone_ids=self.list('activity_zones'),member_ids=self.list('activity_members'),discipline_id=self.text('activity_discipline'),unit=self.text('activity_unit'),responsible=self.text('activity_responsible'),status=self.activity_status.currentData(),measurement=m)
     def schedule_tab(self):
         outer=self.tab('تقویم، زمان‌بندی و گانت');controls=QWidget();v=QVBoxLayout(controls);form=QFormLayout()
-        self.field(form,'calendar_start','شروع پروژه — شمسی',True);self.field(form,'weekdays','روزهای کاری: دوشنبه=0 … یکشنبه=6');self.field(form,'holidays','تعطیلات شمسی؛ با ویرگول');v.addLayout(form)
-        self.button(v,'ثبت تقویم صریح','ScheduleCalendarSave',lambda:self.execute('schedule_calendar',start=iso(self.text('calendar_start')),calendar={'weekdays':[int(x) for x in self.list('weekdays')],'holidays':[iso(x) for x in self.list('holidays')]}))
+        self.field(form,'calendar_start','شروع پروژه — شمسی',True);self.field(form,'weekdays','روزهای کاری: دوشنبه=0 … یکشنبه=6');self.field(form,'holidays','تعطیلات شمسی؛ با ویرگول')
+        self.field(form,'project_exceptions','روزهای کاری استثنایی شمسی؛ با ویرگول');v.addLayout(form)
+        self.button(v,'ثبت تقویم صریح','ScheduleCalendarSave',self.save_project_calendar)
         form=QFormLayout();self.field(form,'duration','مدت فعالیت انتخاب‌شده؛ روز کاری');self.field(form,'not_before','زودتر از این تاریخ آغاز نشود؛ اختیاری',True)
         self.field(form,'relationships','روابط: شناسه:FS:وقفه, شناسه:SS:وقفه');v.addLayout(form)
+        form=QFormLayout();self.field(form,'schedule_activity_calendar','شناسه تقویم فعالیت؛ خالی یعنی تقویم پروژه')
+        self.field(form,'schedule_resources','شناسه اکیپ/تجهیز دارای تقویم؛ با ویرگول');v.addLayout(form)
         self.button(v,'ثبت مدت و روابط فعالیت','ScheduleActivitySave',self.save_schedule)
+        form=QFormLayout();self.field(form,'named_calendar','شناسه تقویم مستقل')
+        self.field(form,'named_weekdays','روزهای کاری تقویم مستقل؛ دوشنبه=0')
+        self.field(form,'named_holidays','تعطیلات شمسی تقویم مستقل؛ با ویرگول')
+        self.field(form,'named_exceptions','روزهای کاری استثنایی شمسی؛ با ویرگول')
+        self.field(form,'calendar_resources','شناسه منابعی که از این تقویم استفاده می‌کنند');v.addLayout(form)
+        self.button(v,'ثبت تقویم مستقل','ScheduleNamedCalendarSave',self.save_named_calendar)
         form=QFormLayout();self.field(form,'baseline_reference','مرجع یکتای Baseline');self.field(form,'baseline_approver','تأییدکننده مبنا');v.addLayout(form)
         self.button(v,'تثبیت نسخه جدید مبنا','ScheduleBaselineSave',lambda:self.execute('schedule_baseline',reference=self.text('baseline_reference'),approved_by=self.text('baseline_approver')))
+        form=QFormLayout();self.field(form,'schedule_data_date','تاریخ وضعیت شمسی — ابتدای روز',True)
+        self.field(form,'schedule_status_correction','شماره نسخه قبلی برای اصلاح همین تاریخ؛ اختیاری');v.addLayout(form)
+        self.status_observations=QPlainTextEdit();self.status_observations.setObjectName('ScheduleStatusObservations')
+        self.status_observations.setPlaceholderText('آرایه JSON مشاهدات مستند با تاریخ میلادی ISO')
+        self.status_observations.setMaximumHeight(95);v.addWidget(self.status_observations)
+        self.status_policy=QCheckBox('حفظ منطق روابط و فرض شروع‌نشده برای موارد گزارش‌نشده');v.addWidget(self.status_policy)
+        self.button(v,'ثبت نسخه تاریخ وضعیت','ScheduleStatusSave',self.save_schedule_status)
         chart=QWidget();chart_layout=QVBoxLayout(chart);bar=QHBoxLayout()
         self.gantt=GanttView();self.gantt.activitySelected.connect(self.select_activity)
         for title,name,scale in [('روز','Day',24),('هفته','Week',6),('ماه','Month',2)]:self.button(bar,title,'GanttZoom'+name,lambda scale=scale:self.gantt.zoom(scale))
@@ -174,7 +190,37 @@ class ProjectControlsWorkspace(QDialog):
         rels=[]
         for raw in self.list('relationships'):
             pred,typ,lag=raw.split(':');rels.append({'pred':pred.strip(),'succ':self.selected_id,'type':typ.strip().upper(),'lag':lag.strip()})
-        self.execute('schedule_activity',id=self.selected_id,duration=self.text('duration'),not_before=iso(self.text('not_before')) if self.text('not_before') else None,relationships=rels)
+        self.execute('schedule_activity',id=self.selected_id,duration=self.text('duration'),not_before=iso(self.text('not_before')) if self.text('not_before') else None,relationships=rels,
+                     calendar_id=self.text('schedule_activity_calendar') or None,resource_ids=self.list('schedule_resources'))
+
+    def save_project_calendar(self):
+        self.execute('schedule_calendar',start=iso(self.text('calendar_start')),calendar={
+            'weekdays':[int(x) for x in self.list('weekdays')],
+            'holidays':[iso(x) for x in self.list('holidays')],
+            'working_exceptions':[iso(x) for x in self.list('project_exceptions')],
+        })
+
+    def save_named_calendar(self):
+        current=self.project.get('project_control_config',{}).get('schedule')
+        if not current:raise ValueError('ابتدا تقویم پروژه را ثبت کنید')
+        name=self.text('named_calendar')
+        calendar={'weekdays':[int(x) for x in self.list('named_weekdays')],
+                  'holidays':[iso(x) for x in self.list('named_holidays')],
+                  'working_exceptions':[iso(x) for x in self.list('named_exceptions')]}
+        calendars={**current.get('calendars',{}),name:calendar}
+        mappings={key:value for key,value in current.get('resource_calendars',{}).items() if value!=name}
+        mappings.update(dict.fromkeys(self.list('calendar_resources'),name))
+        self.execute('schedule_calendar',start=current['start'],calendar=current['calendar'],
+                     calendars=calendars,resource_calendars=mappings)
+
+    def save_schedule_status(self):
+        from json import loads
+        if not self.status_policy.isChecked():
+            raise ValueError('سیاست پیش‌بینی را صریحاً انتخاب کنید')
+        correction=self.text('schedule_status_correction')
+        self.execute('schedule_status',data_date=iso(self.text('schedule_data_date')),policy='RETAINED_LOGIC',
+                     unreported='NOT_STARTED',observations=loads(self.status_observations.toPlainText()),
+                     **({'corrects_version':int(correction)} if correction else {}))
     def progress_tab(self):
         v=self.tab('کارکرد و پیشرفت وزنی');form=QFormLayout()
         self.field(form,'report_date','تاریخ شمسی گزارش',True);self.field(form,'executed','مقدار تجمعی مشاهده‌شده فعالیت انتخاب‌شده');self.field(form,'supersedes','شناسه سند قبلی برای اصلاحیه؛ اختیاری');self.field(form,'progress_id','شناسه سند کارکرد');self.field(form,'weight_id','شناسه نسخه وزن');self.field(form,'decimal_places','تعداد اعشار درصد؛ صریح')
@@ -226,7 +272,7 @@ class ProjectControlsWorkspace(QDialog):
         v=self.tab('گزارش و ریزمنابع');self.details=QLabel();self.details.setWordWrap(True);v.addWidget(self.details)
         self.location_choice=QComboBox();v.addWidget(self.location_choice);self.button(v,'نمایش و هایلایت موقعیت معتبر','ActivityHighlight',self.open_location)
         self.report_kind=QComboBox()
-        for label,key in [('WBS','wbs'),('فعالیت‌ها','activities'),('زمان‌بندی و مسیر بحرانی','schedule'),('پیشرفت و انحراف','progress'),('منحنی S','curve')]:self.report_kind.addItem(label,key)
+        for label,key in [('WBS','wbs'),('فعالیت‌ها','activities'),('زمان‌بندی و فعالیت‌های بحرانی','schedule'),('پیشرفت و انحراف','progress'),('منحنی S','curve')]:self.report_kind.addItem(label,key)
         v.addWidget(self.report_kind);self.report_format=QComboBox()
         for fmt in ['pdf','xlsx','docx','csv']:self.report_format.addItem(fmt.upper(),fmt)
         v.addWidget(self.report_format);self.button(v,'تولید گزارش فارسی','ProjectControlsExport',self.export)
@@ -263,6 +309,13 @@ class ProjectControlsWorkspace(QDialog):
         t.resizeColumnsToContents();t.blockSignals(False)
     def refresh(self):
         p=self.service.open_project(self.pid);self.version=p['_meta']['version'];self.project=p
+        setup=p.get('project_control_config',{}).get('schedule')
+        if setup:
+            self.fields['calendar_start'].setText(report_date(date.fromisoformat(setup['start'])))
+            calendar=setup['calendar']
+            self.fields['weekdays'].setText(','.join(map(str,calendar['weekdays'])))
+            for field,key in [('holidays','holidays'),('project_exceptions','working_exceptions')]:
+                self.fields[field].setText(','.join(report_date(date.fromisoformat(day)) for day in calendar.get(key,[])))
         self.tree.clear();nodes={}
         for b in p.get('buildings',[]):
             root=QTreeWidgetItem(self.tree,[b.get('title',b['id'])]);root.setData(0,Qt.UserRole,('building',b['id']))
@@ -288,7 +341,20 @@ class ProjectControlsWorkspace(QDialog):
         try:
             schedule=self.service.project_schedule(self.pid);base=(p.get('schedule_baselines') or [None])[-1]
             self.gantt.render(schedule,base['result'] if base else None)
-            self.schedule_info.setText('مسیر بحرانی: '+', '.join(schedule['critical_ids'])+' | مدت کاری: '+str(schedule['duration']))
+            driving=schedule['driving']
+            scope='تقویم مشترک پروژه' if schedule['cpm_scope']=='SHARED_PROJECT_WORKDAYS' else 'تقویم مؤثر هر فعالیت'
+            self.schedule_info.setText('فعالیت‌های بحرانی: '+', '.join(schedule['critical_ids'])
+                +' | مدت: '+str(schedule['duration'])+' | '+scope
+                +' | زنجیره‌های محرک پایان: '+str(driving['path_count'])+('+' if driving['path_count_capped'] else ''))
+            paths=[' ← '.join(reversed(path)) for path in driving['paths'][:8]]
+            self.schedule_info.setToolTip('\n'.join(paths))
+            if p.get('schedule_status_records'):
+                try:
+                    forecast=self.service.project_schedule_forecast(self.pid)
+                    self.schedule_info.setText(self.schedule_info.text()+' | پایان پیش‌بینی پیشنهادی: '
+                                               +report_date(date.fromisoformat(forecast['finish_boundary'])))
+                except ValueError:
+                    self.schedule_info.setText(self.schedule_info.text()+' | پیش‌بینی نیازمند بازبینی')
         except ValueError as e:self.gantt.render(None);self.schedule_info.setText(str(e))
         self.curve.render(self.service.project_progress_curve(self.pid,frequency=self.curve_frequency.currentData()))
         if self.selected_id:self.select_activity(self.selected_id)
@@ -323,6 +389,8 @@ class ProjectControlsWorkspace(QDialog):
         self.measurement_kind.setCurrentIndex(self.measurement_kind.findData(a['measurement']['kind']));self.activity_status.setCurrentIndex(self.activity_status.findData(a['status']))
         sc=a.get('schedule',{});self.fields['duration'].setText(str(sc.get('duration','')));self.fields['not_before'].setText(report_date(date.fromisoformat(sc['not_before'])) if sc.get('not_before') else '')
         self.fields['relationships'].setText(','.join(f"{r['pred']}:{r['type']}:{r['lag']}" for r in sc.get('relationships',[])))
+        self.fields['schedule_activity_calendar'].setText(sc.get('calendar_id') or '')
+        self.fields['schedule_resources'].setText(','.join(sc.get('resource_ids',[])))
         self.details.setText('فعالیت: '+a['title']+' | طبقات: '+','.join(a['floor_ids'])+' | اعضا: '+','.join(a['member_ids'])+' | مبنا: '+str(a['measurement']))
         self.location_choice.clear()
         try:

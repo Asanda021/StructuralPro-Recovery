@@ -13,7 +13,7 @@ from core.projects.project_model import _identity
 from core.takeoff.units import normalize_unit
 
 KEYS = ('buildings','floors','zones','disciplines','project_wbs','project_schedule_tasks',
-        'project_control_history','project_control_config','schedule_baselines',
+        'project_control_history','project_control_config','schedule_baselines','schedule_status_records',
         'progress_documents','progress_weight_sets','progress_reports')
 
 
@@ -184,7 +184,7 @@ def guard(before,after,command):
     from core.projects.site_operations import keys
     site_keys=keys()
     protected=KEYS+site_keys
-    official=('project_control_config','project_control_history','project_wbs','schedule_baselines','progress_documents','progress_weight_sets','progress_reports')
+    official=('project_control_config','project_control_history','project_wbs','schedule_baselines','schedule_status_records','progress_documents','progress_weight_sets','progress_reports')
     new_keys=tuple(k for k in site_keys if k not in {'project_resources','project_materials','project_daily_reports','project_meetings'})
     if not before.get('project_control_config') and not after.get('project_control_config') and all(before.get(k)==after.get(k) for k in official+new_keys):return
     if command is None:

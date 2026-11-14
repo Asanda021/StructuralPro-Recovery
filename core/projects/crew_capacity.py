@@ -8,7 +8,7 @@ scenario and never overwrites a saved contractual baseline.
 from __future__ import annotations
 from copy import deepcopy
 from collections import defaultdict
-from core.projects.precedence_model import calculate_precedence
+from core.projects.precedence_model import calculate_precedence, precedence_order
 
 
 def _request(task,limits):
@@ -29,8 +29,9 @@ def _request(task,limits):
 
 
 def _relations(task):
-    mapped={x["predecessor"]:(x["type"],x["lag_days"]) for x in task.get("links",[])}
-    return [(pid,*mapped.get(pid,("FS",0))) for pid in task["predecessors"]]
+    mapped = {link["predecessor"]: (link["type"], link.get("lag_days", 0))
+              for link in task.get("links") or []}
+    return [(pid, *mapped.get(pid, ("FS", 0))) for pid in task.get("predecessors", [])]
 
 
 def _earliest(task,scheduled):
@@ -84,14 +85,7 @@ def level_shared_crew_resources(plan,limits,max_offset=3650):
     if not isinstance(limits,dict):raise ValueError("ظرفیت منابع باید جدول باشد")
     calculate_precedence(draft)  # fail-fast for cycles and invalid links
     by_id={task["id"]:task for task in draft["tasks"]}
-    visited=set()
-    order=[]
-    def visit(name):
-        if name in visited:return
-        visited.add(name)
-        for pred in by_id[name]["predecessors"]:visit(pred)
-        order.append(name)
-    for key in by_id:visit(key)
+    order = precedence_order({key: task.get("predecessors", []) for key, task in by_id.items()})
     scheduled={}
     usage=defaultdict(lambda:defaultdict(int))
     for key in order:
