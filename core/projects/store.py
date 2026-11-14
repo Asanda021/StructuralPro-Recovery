@@ -90,6 +90,7 @@ class ProjectStore:
                     raise RuntimeError("SQLite integrity check failed: project database could not be read") from exc
             # The file can also change during integrity/schema initialization.
             self._assert_database_identity()
+            self.db.execute('BEGIN IMMEDIATE')
             self.db.execute("""CREATE TABLE IF NOT EXISTS projects(
                 id TEXT PRIMARY KEY, name TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
                 updated_at REAL NOT NULL, payload TEXT NOT NULL)""")
