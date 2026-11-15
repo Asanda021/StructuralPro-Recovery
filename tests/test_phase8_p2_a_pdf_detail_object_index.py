@@ -243,3 +243,41 @@ def test_foreign_zone_id_does_not_misbind():
     cover['region_inventory'][0]['region_id']='PDF002:p9:r1:c1'
     with pytest.raises(ValueError,match='source zone'):
         build_pdf_detail_object_index(cover)
+
+def test_persian_stair_detail_not_misclassified_as_beam_due_to_short_word_overlap():
+    graph = build_pdf_detail_object_index(_coverage(title='جزئیات راه پله و رمپ'))
+    title = graph['detail_candidates'][0]
+    assert title['family_candidates'] == ['stair_ramp']
+    assert title['status'] == 'SINGLE_FAMILY_DETAIL_TITLE_CANDIDATE'
+    assert title['quantity_approved'] is False
+
+
+def test_isolated_persian_bridge_word_still_classifies_beam():
+    graph = build_pdf_detail_object_index(_coverage(title='جزئیات اتصال پل به ستون'))
+    title = graph['detail_candidates'][0]
+    assert set(title['family_candidates']) == {'beam', 'column', 'reinforcement_connection'}
+    assert title['status'] == 'MULTI_FAMILY_DETAIL_TITLE_CANDIDATE'
+
+
+def test_blocked_source_title_cannot_create_proposed_type_link():
+    cover = _coverage(title='Beam detail B1', title_box=(95, 5, 115, 22),
+                      marks=(), blocked=True, vector_regions=(1,))
+    cover['region_inventory'][1]['searchable_member_marks'] = ['B1']
+    graph = build_pdf_detail_object_index(cover)
+    title = next(x for x in graph['detail_candidates'] if x['kind'] == 'EXPLICIT_DETAIL_TITLE')
+    mark = next(x for x in graph['detail_candidates'] if x['kind'] == 'EXPLICIT_TEXT_TYPE_MARK')
+    assert title['status'] == 'BLOCKED_DETAIL_TITLE_SOURCE_INCOMPLETE'
+    assert mark['status'] == 'TYPE_MARK_WITH_VISUAL_EVIDENCE_CANDIDATE'
+    assert mark['proposed_detail_title_id'] is None
+    assert mark['title_association_status'] == 'BLOCKED_AMBIGUOUS_OR_INCOMPATIBLE_TITLE_ASSOCIATION'
+    assert graph['blocked_source_region_count'] == 1
+    assert graph['blocked_source_region_ids'] == ['PDF001:p1:r1:c1']
+    assert graph['quantity_approval_count'] == 0
+
+
+def test_blocked_empty_looking_region_remains_explicitly_unverified():
+    graph = build_pdf_detail_object_index(_coverage(vector_regions=(), blocked=True))
+    assert graph['visual_region_count'] == 0
+    assert graph['blocked_source_region_count'] == 1
+    assert graph['blocked_source_region_ids'] == ['PDF001:p1:r1:c1']
+    assert graph['complete'] is False

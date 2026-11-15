@@ -30,6 +30,7 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه با وضعیت پوشش | "
             f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد عنوان/تیپ دیتیل | "
             f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
+            f"{(report.get('detail_object_index') or {}).get('blocked_source_region_count',0)} ناحیه با استخراج ناقص | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
             f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "

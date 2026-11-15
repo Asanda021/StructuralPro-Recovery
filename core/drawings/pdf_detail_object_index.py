@@ -71,8 +71,18 @@ def _touches(a: tuple, b: tuple) -> bool:
 
 def _family_words(title: object, *, sheet_kind: object = None) -> list[str]:
     norm = _norm(title)
+    readable = unicodedata.normalize('NFKC', str(title or '')).casefold()
+    readable = readable.translate(str.maketrans({'ي': 'ی', 'ى': 'ی', 'ك': 'ک', 'ة': 'ه'}))
+    readable = readable.replace('ـ', '').replace('\\u200c', ' ')
+    def matches(word: str) -> bool:
+        # The short Persian "پل" (bridge/beam) is a prefix of "پله" (stair).
+        # It must be an isolated term; otherwise a stair detail gains a
+        # fabricated beam family even though no beam evidence exists.
+        if word == 'پل':
+            return re.search(r'(?<!\\w)پل(?!\\w)', readable) is not None
+        return _norm(word) in norm
     families = {family for family, words in _TITLE_WORDS.items()
-                if any(_norm(word) in norm for word in words)}
+                if any(matches(word) for word in words)}
     if not families and sheet_kind in _SHEET_FAMILY:
         families.add(_SHEET_FAMILY[sheet_kind])
     return sorted(families)
@@ -158,7 +168,11 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
             # Full-width bill rows and paragraph descriptions often contain
             # 'detail' or 'connection'. They are NOT isolated drawing headings.
             broad = (abox is not None and (abox[2]-abox[0]) > .62*page_width)
-            status = ('BLOCKED_BROAD_TITLE_TEXT_NOT_DETAIL' if broad else
+            # A text label must not be promoted when any underlying source
+            # tile has an incomplete extraction, even if its words are clear.
+            blocked_source = any(zone_ref[rid]['status'] == 'BLOCKED' for rid in matched)
+            status = ('BLOCKED_DETAIL_TITLE_SOURCE_INCOMPLETE' if blocked_source else
+                      'BLOCKED_BROAD_TITLE_TEXT_NOT_DETAIL' if broad else
                       'BLOCKED_UNKNOWN_DETAIL_FAMILY' if not family else
                       'MULTI_FAMILY_DETAIL_TITLE_CANDIDATE' if len(family) > 1 else
                       'SINGLE_FAMILY_DETAIL_TITLE_CANDIDATE')
@@ -174,7 +188,9 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
                 'status': status, 'detail_boundary_verified': False,
                 'physical_member_verified': False, 'financially_payable': False,
                 'quantity_approved': False,
-                'reason': 'Title is located, but exact drawing/section boundary and member ownership remain unverified',
+                'reason': ('A source tile has incomplete PDF extraction; detail evidence cannot be trusted'
+                           if blocked_source else
+                           'Title is located, but exact drawing/section boundary and member ownership remain unverified'),
             }
             objects.append(object_rec)
             title_candidate_ids[k].append(object_rec)
@@ -213,7 +229,7 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         compatible = [o for o in related_titles
                       if type_tag_family and type_tag_family in o['family_candidates']]
         if (len(compatible) == 1 and len(related_titles) == 1 and
-                compatible[0]['status'] != 'BLOCKED_BROAD_TITLE_TEXT_NOT_DETAIL' and
+                not compatible[0]['status'].startswith('BLOCKED_') and
                 status != 'BLOCKED_TYPE_MARK_SOURCE_INCOMPLETE'):
             proposed = compatible[0]['candidate_id']
             association = 'PROPOSED_SAME_REGION_TITLE_ASSOCIATION'
@@ -289,6 +305,10 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         'candidate_status_counts': dict(sorted(statuses.items())),
         'family_candidate_counts': dict(sorted(families.items())),
         'unassigned_visual_regions': unassigned,
+        # Empty-looking tiles after failed extraction are NOT proof of a
+        # blank drawing; show these separately from visible orphan geometry.
+        'blocked_source_region_ids': sorted(z['region_id'] for z in zones if z['status'] == 'BLOCKED'),
+        'blocked_source_region_count': sum(z['status'] == 'BLOCKED' for z in zones),
         'visual_region_count': len(visual),
         'visual_regions_accounted_for': len(visual),
         'visual_semantics_unresolved_region_count': len(visual),
