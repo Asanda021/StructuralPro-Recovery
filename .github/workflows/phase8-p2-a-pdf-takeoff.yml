@@ -8,6 +8,8 @@ on:
       - tests/test_phase8_p2_a_pdf_integrity.py
       - tests/test_phase8_p2_a_pdf_excel_crosswalk.py
       - tests/test_phase8_p2_a_pdf_auto_intake.py
+      - tests/test_phase8_p2_a_pdf_column_position_ledger.py
+      - core/drawings/pdf_column_position_ledger.py
       - tests/test_phase8_p2_a_pdf_grid_instances.py
       - tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
       - tests/test_phase8_p2_a_pdf_vector_type_labels.py
@@ -75,6 +77,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_integrity.py
           tests/test_phase8_p2_a_pdf_excel_crosswalk.py
           tests/test_phase8_p2_a_pdf_auto_intake.py
+          tests/test_phase8_p2_a_pdf_column_position_ledger.py
           tests/test_phase8_p2_a_pdf_grid_instances.py
           tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
           tests/test_phase8_p2_a_pdf_vector_type_labels.py
