@@ -340,7 +340,7 @@ class PDFSheetEvidenceDialog(QDialog):
         self.geometry_title_coverage_table=QTableWidget(0,3,linkage_tab)
         self.geometry_title_coverage_table.setObjectName('PDFAutoGeometryTitleCoverage')
         self.geometry_title_coverage_table.setHorizontalHeaderLabels([
-            'عنوان شناسایی‌شده','گروه‌های احتمالی','وضعیت')
+            'عنوان شناسایی‌شده','گروه‌های احتمالی','وضعیت'])
         self.geometry_title_coverage_table.setRowCount(len(tabs_titles))
         self.geometry_title_coverage_table.horizontalHeader().setSectionResizeMode(
             QHeaderView.ResizeMode.Stretch)
