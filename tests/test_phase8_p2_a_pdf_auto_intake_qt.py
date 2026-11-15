@@ -224,3 +224,48 @@ def test_full_pdf_sheet_region_title_index_visible_without_amounts():
     assert dialog.detail_title_table.item(0,1).text()=='Beam Detail B1'
     assert dialog.ledger.answers=={}
     dialog.close()
+
+
+def test_multi_family_detail_object_and_orphan_zones_shown_with_no_boq_changes():
+    app=QApplication.instance() or QApplication([])
+    source={'documents':[{'document_id':'PDF001','page_count':1,'sha256':'a'*64}],
+            'page_count':1,'member_type_candidates':[],
+            'grid_location_candidates':[],'unresolved_pages':[],'questions':[],
+            'detail_object_index':{
+              'detail_candidates':[
+                {'candidate_id':'DETAIL_TITLE:PDF001:p1:title1',
+                 'document_id':'PDF001','page':1,
+                 'title_preview':'Beam to Column Connection',
+                 'type_tag':None,'family_candidates':['beam','column','reinforcement_connection'],
+                 'region_ids':['PDF001:p1:r1:c1'],'kind':'EXPLICIT_DETAIL_TITLE',
+                 'status':'MULTI_FAMILY_DETAIL_TITLE_CANDIDATE',
+                 'financially_payable':False,'detail_boundary_verified':False},
+                {'candidate_id':'TYPE_MARK:PDF001:p1:F2',
+                 'document_id':'PDF001','page':1,'type_tag':'F2',
+                 'family_candidates':['foundation'],'region_ids':['PDF001:p1:r2:c2'],
+                 'kind':'EXPLICIT_TEXT_TYPE_MARK',
+                 'status':'TYPE_MARK_WITH_VISUAL_EVIDENCE_CANDIDATE',
+                 'financially_payable':False,'physical_member_verified':False}],
+              'unassigned_visual_regions':[
+                {'region_id':'PDF001:p1:r2:c1','document_id':'PDF001','page':1,
+                 'vector_path_count':20,'image_block_count':0,
+                 'reason':'Source vector drawing must be interpreted',
+                 'status':'UNRESOLVED_UNLABELED_VISUAL_REGION',
+                 'financially_payable':False}],
+              'potential_same_document_type_references':[{
+                'document_id':'PDF001','type_tag':'F2','pages':[1,3],
+                'status':'POSSIBLE_SAME_DOCUMENT_TYPE_REFERENCE_UNVERIFIED'}],
+              'semantic_details_fully_interpreted':False,
+              'physical_member_count':None,'quantity_approval_count':0}
+            }
+    dialog=PDFSheetEvidenceDialog(source)
+    assert dialog.detail_object_table.rowCount()==2
+    assert 'beam' in dialog.detail_object_table.item(0,3).text()
+    assert 'column' in dialog.detail_object_table.item(0,3).text()
+    assert dialog.detail_object_table.item(1,2).text()=='F2'
+    assert dialog.unassigned_visual_region_table.rowCount()==1
+    assert 'UNRESOLVED' in dialog.unassigned_visual_region_table.item(0,3).text()
+    assert dialog.type_reference_table.rowCount()==1
+    assert dialog.type_reference_table.item(0,2).text()=='1, 3'
+    assert dialog.ledger.answers=={}
+    dialog.close()
