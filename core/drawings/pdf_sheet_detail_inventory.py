@@ -15,6 +15,7 @@ import unicodedata
 from typing import Iterable, Mapping
 
 from core.drawings.pdf_vector_detail_groups import index_pdf_vector_path_groups
+from core.drawings.pdf_type_word_witness import index_pdf_type_words
 
 _DEFAULT_ROWS = 4
 _DEFAULT_COLS = 4
@@ -120,6 +121,10 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
     except (RuntimeError,ValueError,MemoryError):
         extraction_errors.append('BLOCKED_VECTOR_EXTRACTION')
     title_anchors=_source_title_candidates(blocks,document_id,page_number)
+    word_index=index_pdf_type_words(page, document_id=document_id,
+                                    page_number=page_number, title_anchors=title_anchors)
+    if word_index['status'].startswith('BLOCKED_'):
+        extraction_errors.append(word_index['status'])
     # Notes are independent evidence and must be inventoried as well. This is
     # a title/keyword anchor, not proof that all note text was understood.
     note_anchors=[]
@@ -243,6 +248,7 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'tile_rows':rows,'tile_columns':columns,
       'detail_title_anchors':title_anchors,
       'note_anchors':note_anchors,
+      'type_word_index':word_index,
       'explicit_detail_anchor_count':len(title_anchors),
       'explicit_note_anchor_count':len(note_anchors),
       'table_or_grid_candidate_region_count':sum(z['possible_table_or_grid'] for z in zones),
@@ -273,6 +279,8 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     all_anchors=[]
     all_notes=[]
     vector_group_pages=[]
+    type_word_pages=[]
+    all_type_word_witnesses=[]
     summary=[]
     for page in pages:
         regs=page.get('regions',())
@@ -310,6 +318,14 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
         all_regions.extend(regs)
         all_anchors.extend(page.get('detail_title_anchors',()))
         all_notes.extend(page.get('note_anchors',()))
+        word_index=page.get('type_word_index')
+        if isinstance(word_index, Mapping):
+            if (word_index.get('document_id'), word_index.get('page')) != (page['document_id'], page['page']):
+                errors.append(f"INVALID_TYPE_WORD_INDEX_PAGE:{page['document_id']}:p{page['page']}")
+            type_word_pages.append(word_index)
+            all_type_word_witnesses.extend(word_index.get('type_word_witnesses', ()))
+        else:
+            errors.append(f"MISSING_TYPE_WORD_INDEX:{page['document_id']}:p{page['page']}")
         groups=page.get('vector_geometry_grouping')
         if not isinstance(groups, Mapping):
             errors.append(f"MISSING_VECTOR_GROUPING:{page['document_id']}:p{page['page']}")
@@ -338,6 +354,12 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     return {'documents':docs,'page_count':len(pages),
       'sheet_inventory':summary,'detail_title_anchors':all_anchors,
       'note_anchors':all_notes,
+      'type_word_page_index':type_word_pages,
+      'type_word_index_page_count':len(type_word_pages),
+      'localized_type_word_witnesses':all_type_word_witnesses,
+      'localized_type_word_witness_count':len(all_type_word_witnesses),
+      'all_type_word_pages_examined':len(type_word_pages)==len(pages) and all(
+          item.get('all_words_examined') is True for item in type_word_pages),
       'vector_geometry_groupings':vector_group_pages,
       'vector_grouping_page_count':len(vector_group_pages),
       'all_vector_paths_grouped':len(vector_group_pages)==len(pages) and all(
