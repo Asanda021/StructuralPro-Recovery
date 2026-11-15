@@ -336,3 +336,46 @@ def test_architectural_floors_with_axis_but_no_column_layout_no_multiplier(tmp_p
     assert r['independently_registered_grid_positions']==0
     assert not any(q['tag']=='COLUMN_FLOOR_SCOPE' for q in r['questions'])
     assert r['floor_repetition_multiplier'] is None
+
+def test_multi_sheet_four_way_column_ledger_with_floor_guard(tmp_path):
+    import pymupdf
+    from core.drawings.pdf_vector_type_labels import _C, _ONE
+    d=pymupdf.open()
+    x=(180,300,440);y=(150,300,450)
+    a=d.new_page(width=842,height=595)
+    a.insert_text((25,35),'Axis Plan',fontsize=12)
+    for xx in x:a.draw_line((xx,y[0]),(xx,y[-1]))
+    for yy in y:a.draw_line((x[0],yy),(x[-1],yy))
+    c=d.new_page(width=842,height=595)
+    c.insert_text((25,35),'Column Type Plan',fontsize=12)
+    for xx in x:c.draw_line((xx,y[0]),(xx,y[-1]))
+    for yy in y:c.draw_line((x[0],yy),(x[-1],yy))
+    c.draw_rect(pymupdf.Rect(177,147,183,153))
+    def strokes(template,at_x,at_y,w,h):
+        pts=[(at_x+u*w,at_y+v*h) for u,v in template]
+        shape=c.new_shape()
+        for start,end in zip(pts,pts[1:]):shape.draw_line(start,end)
+        shape.finish(color=(0,0,0),width=.15,closePath=False)
+        shape.commit()
+    strokes(_C,188,160,6,9)
+    strokes(_ONE,197,160,1.5,9)
+    detail=d.new_page(width=842,height=595)
+    detail.insert_text((70,110),'C-1 L= 10.70 m',fontsize=10)
+    floor=d.new_page(width=842,height=595)
+    floor.insert_text((70,110),'Pilot Floor Plan',fontsize=10)
+    path=tmp_path/'four_way_position.pdf';d.save(path);d.close()
+    result=inspect_pdf_sheet_set([path])
+    ledger=result['column_position_ledger']
+    assert len(ledger['positions'])==1
+    row=ledger['positions'][0]
+    assert row['candidate_id']=='PDF001:p2:r1:c1'
+    assert row['status']=='FOUR_WAY_DRAWING_EVIDENCE_CANDIDATE'
+    assert row['axis_evidence']['page']==1
+    assert row['proposed_type']=='C1'
+    assert row['type_detail_evidence']['page']==3
+    assert row['type_detail_evidence']['type_detail_length_m']=='10.70'
+    assert ledger['per_sheet'][0]['type_label_position_candidates']=={'C1':1}
+    assert result['physical_member_count'] is None
+    assert ledger['floor_multiplier'] is None and len(ledger['source_floor_plan_inventory'])==1
+    assert not row['financially_payable'] and ledger['quantity_approval_count']==0
+    assert result['complete'] is False
