@@ -15,7 +15,8 @@ import unicodedata
 from typing import Iterable, Mapping
 
 from core.drawings.pdf_vector_detail_groups import index_pdf_vector_path_groups
-from core.drawings.pdf_type_word_witness import index_pdf_type_words
+from core.drawings.pdf_type_word_witness import index_pdf_type_words, unrotated_page_bounds
+from core.drawings.pdf_detail_topology import scan_detail_topology
 
 _DEFAULT_ROWS = 4
 _DEFAULT_COLS = 4
@@ -87,7 +88,8 @@ def _source_title_candidates(blocks: Iterable[tuple], document_id: str, page_num
 def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
                                sheet_kind: str | None = None,
                                rows: int = _DEFAULT_ROWS, columns: int = _DEFAULT_COLS,
-                               max_paths: int = _MAX_PATHS) -> dict:
+                               max_paths: int = _MAX_PATHS,
+                               include_topology: bool = False) -> dict:
     """Inventory every grid tile of one PDF sheet with source provenance.
 
     EXAMINED means content was indexed; it does NOT mean a measurement was
@@ -100,12 +102,13 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
         raise ValueError('Region tiling must be bounded between 2 and 8')
     if type(max_paths) is not int or not 1 <= max_paths <= 100000:
         raise ValueError('Positive bounded path budget required')
-    bounds=_rect(page.rect)
+    bounds=_rect(unrotated_page_bounds(page))
     if bounds is None or bounds[2]-bounds[0] <= 1 or bounds[3]-bounds[1] <= 1:
         raise ValueError('Invalid PDF page dimensions')
     extraction_errors=[]
     blocks=[]
     paths=[]
+    image_placements=[]
     try:
         blocks=list(page.get_text('blocks'))
         if len(blocks)>_MAX_BLOCKS:
@@ -120,6 +123,23 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
             paths=[]
     except (RuntimeError,ValueError,MemoryError):
         extraction_errors.append('BLOCKED_VECTOR_EXTRACTION')
+    if include_topology:
+        try:
+            for i, image in enumerate(page.get_image_info(), 1):
+                if i > _MAX_BLOCKS:
+                    extraction_errors.append('BLOCKED_IMAGE_PLACEMENT_BUDGET')
+                    break
+                box = _rect(image.get("bbox"))
+                if box and box[2] > box[0] and box[3] > box[1]:
+                    image_placements.append({
+                        'anchor_id': f'{document_id}:p{page_number}:image{i}',
+                        'document_id': document_id, 'page': page_number, 'kind': 'IMAGE_PLACEMENT',
+                        'bbox_pt': [round(v, 3) for v in box],
+                    })
+                else:
+                    extraction_errors.append('BLOCKED_INVALID_IMAGE_PLACEMENT')
+        except (RuntimeError, ValueError, TypeError, MemoryError):
+            extraction_errors.append('BLOCKED_IMAGE_EXTRACTION')
     title_anchors=_source_title_candidates(blocks,document_id,page_number)
     word_index=index_pdf_type_words(page, document_id=document_id,
                                     page_number=page_number, title_anchors=title_anchors)
@@ -141,12 +161,14 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
                 'status':'UNRESOLVED','financially_payable':False})
     box_data=[]
     for block in blocks:
-        if len(block)<7:continue
+        if len(block) < 7 or (include_topology and block[6] != 0):
+            continue
         box=_rect(block)
         if box:
             box_data.append((box,block[6],str(block[4]) if block[6]==0 else ''))
         else:
             extraction_errors.append('BLOCKED_INVALID_TEXT_BLOCK_BBOX')
+    box_data.extend((item['bbox_pt'], 1, '') for item in image_placements)
     path_boxes=[]
     axis_aligned=[]
     for path in paths:
@@ -241,7 +263,7 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
                 family_candidates.add(family)
     family_candidates=sorted(family_candidates)
     status_count=Counter(x['status'] for x in zones)
-    return {'document_id':document_id,'page':page_number,
+    result = {'document_id':document_id,'page':page_number,
       'sheet_kind':classification,'discipline_candidates':family_candidates,
       'source_bbox_pt':[round(v,2) for v in bounds],
       'regions':zones,'region_count':len(zones),'expected_region_count':rows*columns,
@@ -261,6 +283,14 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'vector_geometry_grouping':path_grouping,
       'all_regions_indexed':len(zones)==rows*columns,
       'financially_payable':False}
+    if include_topology:
+        result['image_placements'] = image_placements
+        result['detail_topology'] = scan_detail_topology(
+            page, document_id=document_id, page_number=page_number, paths=paths,
+            source_blocked=bool({'BLOCKED_EXCESSIVE_VECTOR_PATHS', 'BLOCKED_VECTOR_EXTRACTION',
+                                 'BLOCKED_INVALID_VECTOR_PATH_BBOX'} & set(extraction_errors)),
+        )
+    return result
 
 
 def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],

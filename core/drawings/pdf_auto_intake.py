@@ -13,7 +13,7 @@ from hashlib import sha256
 from pathlib import Path
 import math
 import re
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from core.drawings.pdf_grid_instances import detect_vector_grid_positions
 from core.drawings.pdf_vector_symbol_witness import compact_symbol_witness
@@ -26,6 +26,10 @@ from core.drawings.pdf_sheet_detail_inventory import (
     inventory_pdf_page_regions, assemble_pdf_detail_inventory,
 )
 from core.drawings.pdf_detail_object_index import build_pdf_detail_object_index
+from core.drawings.pdf_detail_evidence_graph import (
+    build_pdf_detail_evidence_graph, read_pdf_page_declarations,
+)
+from core.drawings.pdf_engine import require_current_pdf
 
 
 _MEMBER_MARK = re.compile(
@@ -100,6 +104,7 @@ def _parse_pdf_lines(page) -> tuple[list[dict], list[dict]]:
 
 def inspect_pdf_sheet_set(
     paths: Iterable[str | Path], *, max_documents: int = 100, max_pages: int = 500,
+    revision_registry: Mapping | None = None,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -112,7 +117,8 @@ def inspect_pdf_sheet_set(
     except ImportError as exc:
         raise RuntimeError("PyMuPDF is required for PDF multi-sheet intake") from exc
     received = [Path(item) for item in paths]
-    if not received or len(received) > max_documents or max_pages < 1:
+    if (type(max_documents) is not int or type(max_pages) is not int or
+            not received or len(received) > max_documents or max_pages < 1):
         raise ValueError("PDF intake requires a bounded, nonempty set of sheets")
     if len({str(p.resolve()) for p in received}) != len(received):
         raise ValueError("Duplicate PDF source selection is not allowed")
@@ -124,11 +130,16 @@ def inspect_pdf_sheet_set(
     page_view_summaries: list[dict] = []
     page_detail_summaries: list[dict] = []
     page_reasons: list[dict] = []
+    source_digests: set[str] = set()
     total_pages = 0
     for path in received:
         if path.suffix.lower() != ".pdf" or not path.is_file():
             raise ValueError("Every selected drawing must be an existing PDF")
         data = path.read_bytes()
+        digest = sha256(data).hexdigest()
+        if digest in source_digests:
+            raise ValueError("Duplicate PDF source identity")
+        source_digests.add(digest)
         with pymupdf.open(stream=data, filetype="pdf") as doc:
             if doc.needs_pass or doc.is_repaired or not doc.is_pdf or not len(doc):
                 raise ValueError("PDF source is unreadable, repaired or encrypted")
@@ -136,26 +147,46 @@ def inspect_pdf_sheet_set(
             if total_pages > max_pages:
                 raise ValueError("PDF page-count limit exceeded")
             doc_id = f"PDF{len(documents) + 1:03d}"
+            pdf_metadata = doc.metadata or {}
             documents.append({"document_id": doc_id, "page_count": len(doc),
-                              "source_name": path.name, "sha256": sha256(data).hexdigest()})
+                              "source_name": path.name, "sha256": digest,
+                              "metadata": {key: str(pdf_metadata[key])[:250]
+                                           for key in ("title", "creationDate", "modDate") if pdf_metadata.get(key)}})
             for number, page in enumerate(doc, 1):
-                title_scope = classify_sheet_title(page.get_text())
+                try:
+                    title_scope = classify_sheet_title(page.get_text())
+                except (RuntimeError, ValueError, MemoryError):
+                    title_scope = classify_sheet_title("")
                 page_view_summaries.append({
                     'document_id': doc_id, 'page': number, **title_scope,
                 })
                 # Inventory the whole source page, including untitled details
                 # and all vector/raster zones; indexing is NOT engineering approval.
-                page_detail_summaries.append(inventory_pdf_page_regions(
+                detail = inventory_pdf_page_regions(
                     page, document_id=doc_id, page_number=number,
-                    sheet_kind=title_scope.get('sheet_kind'),
-                ))
-                marks, dims = _parse_pdf_lines(page)
-                grid = detect_vector_grid_positions(
-                    page, document_id=doc_id, page_number=number,
-                    text_type_marks=marks,
+                    sheet_kind=title_scope.get('sheet_kind'), include_topology=True,
                 )
-                symbols = compact_symbol_witness(page, grid['nodes'])
-                recognized = vector_column_type_labels(page, symbols['nodes'])
+                detail["sheet_declarations"] = read_pdf_page_declarations(page)
+                page_detail_summaries.append(detail)
+                try:
+                    marks, dims = _parse_pdf_lines(page)
+                    grid = detect_vector_grid_positions(
+                        page, document_id=doc_id, page_number=number, text_type_marks=marks,
+                    )
+                    symbols = compact_symbol_witness(page, grid['nodes'])
+                    recognized = vector_column_type_labels(page, symbols['nodes'])
+                except (RuntimeError, ValueError, MemoryError, KeyError, TypeError):
+                    failure = "BLOCKED_LEGACY_PAGE_EXTRACTION"
+                    detail["extraction_errors"].append(failure)
+                    detail["coverage_status"] = "BLOCKED"
+                    detail["status_counts"] = {"BLOCKED": len(detail["regions"])}
+                    for region in detail["regions"]:
+                        region.update(status="BLOCKED", reason="One or more PDF sheet readers did not complete.")
+                    page_reasons.append({
+                        "document_id": doc_id, "page": number, "status": failure,
+                        "reason": "The sheet is retained, but its legacy text or grid extraction failed.",
+                    })
+                    continue
                 grid_locations.extend(recognized['nodes'])
                 if recognized['attached']:
                     vector_type_label_evidence.append({
@@ -435,6 +466,11 @@ def inspect_pdf_sheet_set(
     report["detail_object_index"] = build_pdf_detail_object_index(
         report["sheet_detail_inventory"],
     )
+    graph = build_pdf_detail_evidence_graph(report, page_detail_summaries, revision_registry=revision_registry)
+    report["detail_evidence_graph"] = graph
+    report["questions"].extend(graph["review_questions"])
+    for path, document in zip(received, documents, strict=True):
+        require_current_pdf(path, document["sha256"])
     # Every page/zone must be accounted for, but unresolved drawing geometry
     # must never be silently promoted to complete member takeoff or BOQ.
     return report

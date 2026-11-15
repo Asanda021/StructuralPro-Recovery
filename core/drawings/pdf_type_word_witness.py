@@ -12,6 +12,14 @@ import re
 TYPE_MARK = re.compile(r'^(SC|SW|C|B|F|T|W|S|P)[-–]?([1-9][0-9]{0,2})$', re.I)
 
 
+def unrotated_page_bounds(page):
+    """Return the extent in the same coordinates as extracted words and paths."""
+    extent = page.rect
+    if getattr(page, "rotation", 0):
+        extent = extent * page.derotation_matrix
+    return extent
+
+
 def _box(value):
     try:
         nums = tuple(float(value[i]) for i in range(4))
@@ -38,7 +46,7 @@ def index_pdf_type_words(page, *, document_id: str, page_number: int,
         raise ValueError('Stable PDF document and page required')
     if type(max_words) is not int or not 1 <= max_words <= 100000:
         raise ValueError('Bounded PDF word budget required')
-    page_box = _box(page.rect)
+    page_box = _box(unrotated_page_bounds(page))
     if page_box is None:
         raise ValueError('Invalid PDF page extent')
     anchors = {}

@@ -12,6 +12,8 @@ from collections import defaultdict
 from math import dist, isfinite
 from typing import Iterable, Mapping
 
+from core.drawings.pdf_type_word_witness import unrotated_page_bounds
+
 
 def _merged(values: Iterable[float], eps: float = 0.9) -> list[float]:
     groups: list[list[float]] = []
@@ -27,7 +29,8 @@ def _merged(values: Iterable[float], eps: float = 0.9) -> list[float]:
 
 def _segment_evidence(page) -> tuple[list[tuple[float, float, float]], list[tuple[float, float, float]]]:
     """Extract long stroked axis-aligned vector segments in PDF page points."""
-    width, height = float(page.rect.width), float(page.rect.height)
+    bounds = unrotated_page_bounds(page)
+    width, height = float(bounds.width), float(bounds.height)
     if not (width > 0 and height > 0):
         return [], []
     min_vertical = max(34.0, height * 0.18)
@@ -116,7 +119,9 @@ def detect_vector_grid_positions(page, *, document_id: str, page_number: int,
         return {'status': 'BLOCKED_DENSE_VECTOR_PATTERN', 'axes_x_pt': [], 'levels_y_pt': [], 'nodes': []}
     if len(axes) < 3 or len(horizontal) < 3:
         return {'status': 'NO_GRID_EVIDENCE', 'axes_x_pt': [], 'levels_y_pt': [], 'nodes': []}
-    tol = max(6.0, min(8.5, float(page.rect.width)*0.01))
+    bounds = unrotated_page_bounds(page)
+    width, height = float(bounds.width), float(bounds.height)
+    tol = max(6.0, min(8.5, width*0.01))
     axis_support = [(axis, _matching_y(axis, horizontal, x_tolerance=tol)) for axis in axes]
     axis_support = [(axis, ys) for axis, ys in axis_support if len(ys) >= 3]
     candidates = []
@@ -134,12 +139,11 @@ def detect_vector_grid_positions(page, *, document_id: str, page_number: int,
             continue
         min_dx = min(xx[k+1]-xx[k] for k in range(len(xx)-1))
         min_dy = min(yy[k+1]-yy[k] for k in range(len(yy)-1))
-        if (min_dx < max(25.0, float(page.rect.width)*0.04) or
-                min_dy < max(25.0, float(page.rect.height)*0.04)):
+        if min_dx < max(25.0, width*0.04) or min_dy < max(25.0, height*0.04):
             continue
         if (len(xx) < 3 or len(yy) < 3 or
-                xx[-1]-xx[0] < max(60.0, float(page.rect.width)*0.10) or
-                yy[-1]-yy[0] < max(90.0, float(page.rect.height)*0.24)):
+                xx[-1]-xx[0] < max(60.0, width*0.10) or
+                yy[-1]-yy[0] < max(90.0, height*0.24)):
             continue
         if len(xx) * len(yy) > max_nodes:
             continue

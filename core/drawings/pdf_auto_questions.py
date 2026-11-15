@@ -15,8 +15,11 @@ class PDFQuestionDecisionLedger:
 
     def __init__(self, report: Mapping):
         self.questions = {q['tag']: q for q in report.get('questions', ())}
+        if len(self.questions) != len(report.get('questions', ())):
+            raise ValueError('duplicate PDF review question')
         self.sources = {d['document_id']: str(d['sha256']) for d in report.get('documents', ())
                         if d.get('document_id') and d.get('sha256')}
+        self.graph_sha256 = (report.get('detail_evidence_graph') or {}).get('graph_sha256')
         if self.questions and len(self.sources) != len(report.get('documents', ())):
             raise ValueError('source-bound responses require source hashes')
         self.answers: dict[str, dict] = {}
@@ -50,13 +53,16 @@ class PDFQuestionDecisionLedger:
             'status': 'REVIEW_ANSWER_RECORDED_NOT_ENGINEERING_APPROVED',
             'financially_payable': False,
         }
+        if tag.startswith("PDF_GRAPH_"):
+            record["graph_sha256"] = self.graph_sha256
         self.answers[tag] = record
         return dict(record)
 
     def reconcile_sources(self, new_report: Mapping) -> bool:
         new = {d['document_id']: str(d['sha256']) for d in new_report.get('documents', ())
                if d.get('document_id') and d.get('sha256')}
-        if new != self.sources:
+        current_graph = (new_report.get('detail_evidence_graph') or {}).get('graph_sha256')
+        if new != self.sources or current_graph != self.graph_sha256:
             self.answers.clear()
             return False
         return True
@@ -66,6 +72,7 @@ class PDFQuestionDecisionLedger:
             'schema_version': 1,
             'state': 'PRELIMINARY_REVIEW_ONLY',
             'source_sha256': self.sources,
+            **({'graph_sha256': self.graph_sha256} if self.graph_sha256 else {}),
             'answers': list(self.answers.values()),
             'financial_approvals': 0,
         }, ensure_ascii=False, indent=2)

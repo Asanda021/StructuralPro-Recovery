@@ -1291,39 +1291,71 @@ class GraphicalTakeoffDialog(QDialog):
             return
         try:
             from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
-            from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
-            from shiboken6 import isValid
 
-            report = inspect_pdf_sheet_set(selected)
-            existing = self._pdf_auto_review_dialog
-            if existing is not None and isValid(existing):
-                existing.close()
-            dialog = PDFSheetEvidenceDialog(report, self)
-            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
-            self._pdf_auto_review_dialog = dialog
-            self._pdf_auto_sources = tuple(selected)
-            self._pdf_auto_report = report
-            dialog.show()
-            self.status.setText(
-                f"تحلیل {report['page_count']} صفحه | "
-                f"{len(report['member_type_candidates'])} شاهد تیپ | "
-                f"{len(report.get('grid_location_candidates', ()))} نامزد شبکه (غیرقطعی) | "
-                f"{report.get('column_layout_symbol_candidate_count',0)} شاهد نماد ستون (تأییدنشده) | "
-                f"{report.get('vector_type_label_candidate_count',0)} برچسب تیپ برداری (پیشنهادی) | "
-                f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
-                f"{report.get('independently_registered_grid_positions',0)} تطبیق مستقل آکس (غیرقطعی) | "
-                f"{len((report.get('column_position_ledger') or {}).get('positions',()))} پرونده شواهد موقعیت ستون (غیرمالی) | "
-                f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
-                f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه پوشش | "
-                f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد دیتیل و تیپ | "
-                f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
-                f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
-                f"{len(report['questions'])} اختلاف مؤثر؛ "
-                "هیچ مقدار مالی از این بررسی ایجاد نشد."
-            )
+            self._show_pdf_sheet_evidence(inspect_pdf_sheet_set(selected), selected)
         except Exception as exc:
             QMessageBox.warning(self, "تحلیل مجموعه PDF",
                                 "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
+
+    def _show_pdf_sheet_evidence(self, report, sources):
+        from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
+        from shiboken6 import isValid
+
+        status = (
+            f"تحلیل {report['page_count']} صفحه | "
+            f"{len(report['member_type_candidates'])} شاهد تیپ | "
+            f"{len(report.get('grid_location_candidates', ()))} نامزد شبکه (غیرقطعی) | "
+            f"{report.get('column_layout_symbol_candidate_count',0)} شاهد نماد ستون (تأییدنشده) | "
+            f"{report.get('vector_type_label_candidate_count',0)} برچسب تیپ برداری (پیشنهادی) | "
+            f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
+            f"{report.get('independently_registered_grid_positions',0)} تطبیق مستقل آکس (غیرقطعی) | "
+            f"{len((report.get('column_position_ledger') or {}).get('positions',()))} پرونده شواهد موقعیت ستون (غیرمالی) | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه پوشش | "
+            f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد دیتیل و تیپ | "
+            f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
+            f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
+            f"{len(report['questions'])} اختلاف مؤثر؛ "
+            "هیچ مقدار مالی از این بررسی ایجاد نشد."
+        )
+        dialog = PDFSheetEvidenceDialog(
+            report, self,
+            attach_revision_register=lambda path: self._attach_pdf_revision_register(path, report),
+        )
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        existing = self._pdf_auto_review_dialog
+        existing_is_live = existing is not None and isValid(existing)
+        if existing_is_live and existing.ledger.sources == dialog.ledger.sources:
+            for tag, answer in existing.ledger.answers.items():
+                if (dialog.ledger.questions.get(tag) == existing.ledger.questions[tag] and
+                        (not tag.startswith("PDF_GRAPH_") or dialog.ledger.graph_sha256 == existing.ledger.graph_sha256)):
+                    dialog.ledger.answers[tag] = answer.copy()
+        dialog.show()
+        self._pdf_auto_review_dialog = dialog
+        self._pdf_auto_sources = tuple(sources)
+        self._pdf_auto_report = report
+        self.status.setText(status)
+        if existing_is_live:
+            existing.close()
+
+    def _attach_pdf_revision_register(self, path, previous_report):
+        from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+        from core.drawings.pdf_detail_evidence_graph import load_pdf_revision_register
+
+        if self._pdf_auto_report is not previous_report:
+            raise ValueError("این رسید دیگر گزارش جاری نیست.")
+        sources = self._pdf_auto_sources
+        previous_fingerprints = tuple(
+            (doc['document_id'], doc['sha256']) for doc in previous_report['documents']
+        )
+        registry = load_pdf_revision_register(path)
+        report = inspect_pdf_sheet_set(sources, revision_registry=registry)
+        new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
+        if not previous_fingerprints or new_fingerprints != previous_fingerprints:
+            raise ValueError("هش سندهای PDF تغییر کرده است. مجموعهٔ فعلی را دوباره انتخاب کنید.")
+        if not (report.get('detail_evidence_graph') or {}).get('graph_sha256'):
+            raise ValueError("رسید معتبر گراف برای ثبت نسخهٔ جدید تولید نشد.")
+        self._show_pdf_sheet_evidence(report, sources)
 
     def select_drawing(self):
         path = QFileDialog.getOpenFileName(

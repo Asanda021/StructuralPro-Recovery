@@ -15,7 +15,7 @@ from core.drawings.pdf_auto_questions import PDFQuestionDecisionLedger
 
 
 class PDFSheetEvidenceDialog(QDialog):
-    def __init__(self, report: dict, parent=None):
+    def __init__(self, report: dict, parent=None, *, attach_revision_register=None):
         super().__init__(parent)
         self.setObjectName('PDFSheetEvidenceReview')
         self.setWindowTitle('تحلیل خودکار شیت‌های PDF | شواهد و ابهام‌ها')
@@ -520,7 +520,7 @@ class PDFSheetEvidenceDialog(QDialog):
                          '، '.join(suggestion['candidate_types_from_details']) +
                          '؛ انتساب به هر موقعیت نامعلوم است')
             else:
-                guess = 'سند حاکم معلوم نیست؛ حدس قطعی مجاز نیست'
+                guess = suggestion.get('reason') or 'سند حاکم باید مشخص شود'
             for j, text in enumerate((question.get('tag',''), question.get('question',''), guess)):
                 cell = QTableWidgetItem(str(text))
                 cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -567,6 +567,23 @@ class PDFSheetEvidenceDialog(QDialog):
                 self.coverage_table.setItem(i, j, cell)
         coverage_layout.addWidget(self.coverage_table)
         tabs.addTab(coverage, 'صفحات نیازمند شواهد بیشتر')
+
+        if report.get('detail_evidence_graph') is not None:
+            from app.pdf_detail_graph_review import PDFDetailGraphReview
+
+            question_index = {item['tag']: index for index, item in enumerate(question_rows)}
+
+            def open_question(tag):
+                if tag in question_index:
+                    tabs.setCurrentWidget(questions)
+                    self.question_table.selectRow(question_index[tag])
+                    self.question_action.setCurrentIndex(0)
+
+            self.graph_review = PDFDetailGraphReview(
+                report, tabs, attach_revision_register=attach_revision_register, open_question=open_question,
+            )
+            tabs.insertTab(0, self.graph_review, 'گراف شواهد دیتیل')
+            tabs.setCurrentWidget(self.graph_review)
 
         row = QHBoxLayout()
         row.addWidget(QLabel('این پنجره فقط‌خواندنی است و مقدار پیشنهادی را به BOQ نمی‌فرستد.'))
