@@ -140,3 +140,36 @@ def test_batch_pdf_intake_preserves_grid_evidence_without_member_count(tmp_path)
     assert len(report['vector_grid_summaries'])==1
     assert sum(x['suggested_type']=='C1' for x in report['grid_location_candidates'])==1
     assert all(not x['financially_payable'] for x in report['grid_location_candidates'])
+
+
+def test_auto_intake_compact_symbols_stay_provisional(tmp_path):
+    import pymupdf
+    d=pymupdf.open(); page=d.new_page(width=842,height=595)
+    page.insert_text((30,30),'Column Plan',fontsize=10)
+    xs=(180,300,450); ys=(150,300,450)
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    for x,y in ((180,150),(300,300)):
+        page.draw_rect(pymupdf.Rect(x-2,y-2,x+2,y+2))
+    path=tmp_path/'column-layout.pdf';d.save(path);d.close()
+    report=inspect_pdf_sheet_set([path])
+    assert len(report['grid_location_candidates'])==9
+    assert report['compact_symbol_candidate_count']==2
+    assert report['column_layout_symbol_candidate_count']==2
+    assert report['physical_member_count'] is None
+    assert report['quantity_approval_count']==0 and report['complete'] is False
+    assert sum(x['column_context_candidate'] for x in report['grid_location_candidates'])==2
+
+
+def test_auto_intake_unlabeled_grid_has_zero_column_context(tmp_path):
+    import pymupdf
+    d=pymupdf.open(); page=d.new_page(width=842,height=595)
+    xs=(180,300,450); ys=(150,300,450)
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    page.draw_rect(pymupdf.Rect(178,148,182,152))
+    path=tmp_path/'table-like-grid.pdf';d.save(path);d.close()
+    report=inspect_pdf_sheet_set([path])
+    assert report['compact_symbol_candidate_count']==1
+    assert report['column_layout_symbol_candidate_count']==0
+    assert all(not x['financially_payable'] for x in report['grid_location_candidates'])
