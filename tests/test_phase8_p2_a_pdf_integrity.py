@@ -319,3 +319,20 @@ def test_qt_does_not_reattach_measurements_to_replaced_pdf(dialog, app, monkeypa
     assert errors and "تغییر" in errors[0]
     assert ui.table.rowCount() == 0
     assert unchanged(app) == before
+
+
+def test_csv_preserves_the_explicit_decimal_quantity_summary(tmp_path):
+    import csv
+    from core.reports.exporters import export_csv
+
+    label = "جمع مقدار ـ m2"
+    path = export_csv(
+        [{"description": "مصنوعی A", "quantity": Decimal("0.1")},
+         {"description": "مصنوعی B", "quantity": Decimal("0.2")}],
+        tmp_path / "readback.csv",
+        summary={"report_totals": {label: Decimal("0.3")}},
+    )
+    with path.open(encoding="utf-8-sig", newline="") as stream:
+        rows = list(csv.reader(stream, strict=True))
+    assert [label, "0.3"] in rows
+    assert ["مصنوعی A", "0.1"] in rows and ["مصنوعی B", "0.2"] in rows
