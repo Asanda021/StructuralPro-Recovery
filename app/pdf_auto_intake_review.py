@@ -28,6 +28,8 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len(report.get('documents', ()))} PDF | {report.get('page_count', 0)} صفحه | "
             f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
             f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه با وضعیت پوشش | "
+            f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد عنوان/تیپ دیتیل | "
+            f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
             f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "
@@ -153,6 +155,103 @@ class PDFSheetEvidenceDialog(QDialog):
         note_layout.addWidget(self.note_anchor_table)
         cover_subtabs.addTab(note_page, 'یادداشت‌ها')
         tabs.addTab(coverage_root, 'پوشش همه شیت‌ها و دیتیل‌ها')
+
+        # Candidate objects have source evidence but NOT verified detail
+        # boundaries or quantities. The orphan list preserves unknown ink.
+        detail_index = report.get('detail_object_index') or {}
+        obj_tab = QWidget(tabs)
+        obj_layout = QVBoxLayout(obj_tab)
+        obj_notice = QLabel(
+            'عنوان دیتیل، شناسه تیپ و ناحیه ترسیمی سه شاهد متفاوت‌اند. '
+            'اتصال‌های پیشنهادی هنوز قطعی نیستند و هیچ مبلغی تولید نمی‌کنند.'
+        )
+        obj_notice.setWordWrap(True)
+        obj_layout.addWidget(obj_notice)
+        obj_sub = QTabWidget(obj_tab)
+        obj_layout.addWidget(obj_sub)
+
+        candidates_tab = QWidget(obj_sub)
+        candidates_layout = QVBoxLayout(candidates_tab)
+        self.detail_object_table = QTableWidget(0, 6, candidates_tab)
+        self.detail_object_table.setObjectName('PDFAutoDetailObjectCandidates')
+        self.detail_object_table.setHorizontalHeaderLabels([
+            'شناسه شاهد', 'فایل/صفحه', 'عنوان یا تیپ', 'خانواده احتمالی',
+            'ناحیه‌های منبع', 'وضعیت',
+        ])
+        objs = detail_index.get('detail_candidates', ())
+        self.detail_object_table.setRowCount(len(objs))
+        self.detail_object_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, obj in enumerate(objs):
+            values=(
+                obj.get('candidate_id',''),
+                f"{obj.get('document_id','')}:p{obj.get('page','')}",
+                obj.get('type_tag') or obj.get('title_preview') or '',
+                '، '.join(obj.get('family_candidates') or ()) or 'نامعلوم',
+                ', '.join(obj.get('region_ids') or ()),
+                obj.get('status','BLOCKED'),
+            )
+            for j, val in enumerate(values):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j == 5:
+                    cell.setToolTip(obj.get('reason',''))
+                self.detail_object_table.setItem(i,j,cell)
+        candidates_layout.addWidget(self.detail_object_table)
+        obj_sub.addTab(candidates_tab, 'نامزدهای دیتیل و تیپ')
+
+        orphan_tab = QWidget(obj_sub)
+        orphan_layout = QVBoxLayout(orphan_tab)
+        self.unassigned_visual_region_table = QTableWidget(0, 4, orphan_tab)
+        self.unassigned_visual_region_table.setObjectName('PDFAutoUnassignedVisualRegions')
+        self.unassigned_visual_region_table.setHorizontalHeaderLabels([
+            'ناحیه', 'فایل/صفحه', 'خط برداری / تصویر', 'وضعیت',
+        ])
+        orphan_rows=detail_index.get('unassigned_visual_regions', ())
+        self.unassigned_visual_region_table.setRowCount(len(orphan_rows))
+        self.unassigned_visual_region_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, obj in enumerate(orphan_rows):
+            values=(obj.get('region_id',''),
+                    f"{obj.get('document_id','')}:p{obj.get('page','')}",
+                    f"{obj.get('vector_path_count',0)} / {obj.get('image_block_count',0)}",
+                    obj.get('status','UNRESOLVED'))
+            for j, val in enumerate(values):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j==3:
+                    cell.setToolTip(obj.get('reason',''))
+                self.unassigned_visual_region_table.setItem(i,j,cell)
+        orphan_layout.addWidget(self.unassigned_visual_region_table)
+        obj_sub.addTab(orphan_tab, 'ناحیه‌های ترسیمی بی‌ارتباط')
+
+        links_tab=QWidget(obj_sub)
+        links_layout=QVBoxLayout(links_tab)
+        self.type_reference_table=QTableWidget(0,4,links_tab)
+        self.type_reference_table.setObjectName('PDFAutoProvisionalTypeReferences')
+        self.type_reference_table.setHorizontalHeaderLabels([
+            'سند', 'شناسه تیپ', 'صفحات محتمل', 'وضعیت اعتبار',
+        ])
+        refs=detail_index.get('potential_same_document_type_references', ())
+        self.type_reference_table.setRowCount(len(refs))
+        self.type_reference_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, obj in enumerate(refs):
+            vals=(obj.get('document_id',''),obj.get('type_tag',''),
+                  ', '.join(map(str,obj.get('pages',()))),
+                  obj.get('status','UNRESOLVED'))
+            for j, val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.type_reference_table.setItem(i,j,cell)
+        links_layout.addWidget(self.type_reference_table)
+        obj_sub.addTab(links_tab, 'ارتباط احتمالی بین شیت‌ها')
+        tabs.addTab(obj_tab, 'دیتیل‌های شناسایی‌شده و موارد باز')
+
+
 
         candidates = QWidget(tabs)
         candidate_layout = QVBoxLayout(candidates)
