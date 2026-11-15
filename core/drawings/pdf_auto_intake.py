@@ -21,6 +21,7 @@ from core.drawings.pdf_vector_type_labels import vector_column_type_labels
 from core.drawings.pdf_sheet_scope_registration import (
     classify_sheet_title, register_column_grid_against_axes,
 )
+from core.drawings.pdf_column_position_ledger import compile_column_position_ledger
 
 
 _MEMBER_MARK = re.compile(
@@ -391,7 +392,7 @@ def inspect_pdf_sheet_set(
         })
 
     status_counts = Counter(x["status"] for x in raw_members)
-    return {"documents": documents, "page_count": total_pages,
+    report = {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
             "page_view_summaries": page_view_summaries,
             "architectural_floor_plan_candidates": architectural_floor_sheets,
@@ -414,3 +415,5 @@ def inspect_pdf_sheet_set(
             "physical_member_count": None, "quantity_approval_count": 0,
             "complete": False, "acceptance": "PARTIAL_NO_GO",
             "source_type": "PDF_ONLY", "excel_required": False}
+    report["column_position_ledger"] = compile_column_position_ledger(report)
+    return report
