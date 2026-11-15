@@ -120,3 +120,23 @@ def test_cross_view_type_reference_without_physical_instance_inference(tmp_path)
     assert linked['type_reference']['status'] == 'PROPOSED_UNVERIFIED'
     assert linked['physical_instances_verified'] is False
     assert result['physical_member_count'] is None and result['quantity_approval_count'] == 0
+
+
+def test_batch_pdf_intake_preserves_grid_evidence_without_member_count(tmp_path):
+    import pymupdf
+    doc=pymupdf.open()
+    page=doc.new_page(width=842,height=595)
+    xs=[180,253,358,452,531];ys=[156,297,439]
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    # One explicit tag, otherwise geometry cannot infer member type/count.
+    page.insert_text((187,171),'C1',fontsize=9)
+    f=tmp_path/'gridded_plan.pdf';doc.save(f);doc.close()
+    report=inspect_pdf_sheet_set([f])
+    assert len(report['grid_location_candidates'])==15
+    assert report['physical_member_count'] is None
+    assert report['quantity_approval_count']==0
+    assert report['complete'] is False
+    assert len(report['vector_grid_summaries'])==1
+    assert sum(x['suggested_type']=='C1' for x in report['grid_location_candidates'])==1
+    assert all(not x['financially_payable'] for x in report['grid_location_candidates'])
