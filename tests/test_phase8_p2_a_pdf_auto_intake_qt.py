@@ -193,3 +193,34 @@ def test_column_position_ledger_tab_preserves_unverified_floor_scope():
     assert 'غیرقطعی' in dlg.summary.text()
     assert dlg.ledger.answers=={}
     dlg.close()
+
+
+def test_full_pdf_sheet_region_title_index_visible_without_amounts():
+    app = QApplication.instance() or QApplication([])
+    page = {'document_id':'PDF001','page':1,'sheet_kind':'beam_layout_plan',
+            'region_count':2,'detail_anchor_count':2,'coverage_status':'UNRESOLVED'}
+    region = {'region_id':'PDF001:p1:r1:c1',
+              'bbox_pt':[0,0,150,125], 'text_block_count':1,
+              'vector_path_count':17,'image_block_count':0,
+              'status':'UNRESOLVED',
+              'reason':'Vector content requires interpretation'}
+    title = {'document_id':'PDF001','page':1,'title_preview':'Beam Detail B1',
+             'bbox_pt':[10,12,80,25],'status':'UNRESOLVED'}
+    report={'documents':[{'document_id':'PDF001','page_count':1,'sha256':'a'*64}],
+            'page_count':1,'member_type_candidates':[],
+            'grid_location_candidates':[],'unresolved_pages':[],'questions':[],
+            'sheet_detail_inventory':{
+              'sheet_inventory':[page], 'region_inventory':[region],
+              'detail_title_anchors':[title],
+              'all_input_pages_indexed':True,'complete':False,
+              'quantity_approval_count':0}}
+    dialog=PDFSheetEvidenceDialog(report)
+    assert dialog.sheet_coverage_table.rowCount()==1
+    assert dialog.sheet_coverage_table.item(0,1).text()=='beam_layout_plan'
+    assert dialog.detail_region_table.rowCount()==1
+    assert dialog.detail_region_table.item(0,5).text()=='UNRESOLVED'
+    assert dialog.detail_region_table.item(0,5).toolTip().startswith('Vector')
+    assert dialog.detail_title_table.rowCount()==1
+    assert dialog.detail_title_table.item(0,1).text()=='Beam Detail B1'
+    assert dialog.ledger.answers=={}
+    dialog.close()
