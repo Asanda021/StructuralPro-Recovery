@@ -27,6 +27,7 @@ class PDFSheetEvidenceDialog(QDialog):
         self.summary = QLabel(
             f"{len(report.get('documents', ()))} PDF | {report.get('page_count', 0)} صفحه | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
+            f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
             f"{len(report.get('unresolved_pages', ()))} صفحه با پوشش نامعلوم | "
             f"{len(report.get('questions', ()))} ابهام بین شیت‌ها")
         self.summary.setWordWrap(True)
@@ -57,6 +58,33 @@ class PDFSheetEvidenceDialog(QDialog):
                 self.candidate_table.setItem(i, j, cell)
         candidate_layout.addWidget(self.candidate_table)
         tabs.addTab(candidates, 'شواهد تیپ‌ها')
+
+        grid_tab = QWidget(tabs)
+        grid_layout = QVBoxLayout(grid_tab)
+        self.grid_table = QTableWidget(0, 5, grid_tab)
+        self.grid_table.setObjectName('PDFAutoIntakeGridLocations')
+        self.grid_table.setHorizontalHeaderLabels([
+            'شناسه موقعیت', 'سند / صفحه', 'مختصات PDF (pt)',
+            'تیپ پیشنهادی (غیرقطعی)', 'وضعیت',
+        ])
+        locations = report.get('grid_location_candidates', ())
+        self.grid_table.setRowCount(len(locations))
+        self.grid_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(locations):
+            values = (
+                item.get('candidate_id', ''),
+                f"{item.get('document_id','')}:p{item.get('page','')}",
+                f"({item.get('x_pt','')}, {item.get('y_pt','')})",
+                item.get('suggested_type') or 'شناسایی نشده',
+                item.get('status', ''),
+            )
+            for j, value in enumerate(values):
+                cell = QTableWidgetItem(str(value))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.grid_table.setItem(i, j, cell)
+        grid_layout.addWidget(self.grid_table)
+        tabs.addTab(grid_tab, 'موقعیت‌های احتمالی شبکه')
+
 
         questions = QWidget(tabs)
         question_layout = QVBoxLayout(questions)
