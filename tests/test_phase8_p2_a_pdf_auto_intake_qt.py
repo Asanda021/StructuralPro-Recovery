@@ -167,3 +167,29 @@ def test_axis_witness_and_floor_scope_are_review_only():
     assert 'تعداد تکرار' in dialog.question_table.item(0,2).text()
     assert dialog.ledger.answers=={}
     dialog.close()
+
+
+def test_column_position_ledger_tab_preserves_unverified_floor_scope():
+    app = QApplication.instance() or QApplication([])
+    report = {
+        'documents':[{'document_id':'PDF001','sha256':'a'*64}],
+        'page_count':19,'member_type_candidates':[], 'grid_location_candidates':[],
+        'unresolved_pages':[], 'questions':[],
+        'column_position_ledger':{'positions':[{ 
+            'candidate_id':'PDF001:p14:r1:c1',
+            'axis_evidence':{'document_id':'PDF001','page':13},
+            'proposed_type':'C2',
+            'type_detail_evidence':{'page':19,'type_detail_length_m':'14.00'},
+            'floor_instances_verified':None,'physical_member_quantity':None,
+            'financially_payable':False,'status':'FOUR_WAY_DRAWING_EVIDENCE_CANDIDATE',
+        }], 'floor_multiplier':None,'verified_total_physical_members':None},
+    }
+    dlg=PDFSheetEvidenceDialog(report)
+    assert dlg.column_position_table.rowCount()==1
+    assert dlg.column_position_table.item(0,1).text()=='آکس‌بندی صفحه 13'
+    assert dlg.column_position_table.item(0,2).text()=='C2'
+    assert '14.00' in dlg.column_position_table.item(0,3).text()
+    assert 'نامعلوم' in dlg.column_position_table.item(0,4).text()
+    assert 'غیرقطعی' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()
