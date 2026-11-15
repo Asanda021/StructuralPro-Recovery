@@ -156,3 +156,29 @@ def test_real_pdf_intake_has_same_source_title_and_geometry_link_candidates(tmp_
     assert all(x['financially_payable'] is False for x in ledger['geometry_group_link_records'])
     assert ledger['quantity_approval_count']==0
     assert ledger['complete'] is False
+
+
+
+def test_two_independent_details_on_one_sheet_link_only_to_nearby_title(tmp_path):
+    doc=pymupdf.open()
+    page=doc.new_page(width=500,height=400)
+    page.insert_text((30,50),'Beam Detail B1')
+    page.draw_rect(pymupdf.Rect(40,80,100,140))
+    page.insert_text((250,225),'Column Detail C2')
+    page.draw_rect(pymupdf.Rect(260,255,315,320))
+    path=tmp_path/'two_provisional_details.pdf'
+    doc.save(path);doc.close()
+    graph=inspect_pdf_sheet_set([path])['detail_object_index']
+    ledger=graph['geometry_detail_link_ledger']
+    assert ledger['title_coverage_count']==2
+    assert ledger['geometry_group_link_count']==2
+    assert ledger['possible_page_local_links']==2
+    assert len({x['proposed_title_candidate_id'] for x in
+                ledger['geometry_group_link_records']})==2
+    assert all(x['status']=='PROPOSED_GROUP_NEAR_SINGLE_EXPLICIT_TITLE'
+               and x['financially_payable'] is False
+               and x['type_verified'] is False
+               and x['physical_member_verified'] is False
+               for x in ledger['geometry_group_link_records'])
+    assert ledger['quantity_approval_count']==0
+    assert graph['physical_member_count'] is None
