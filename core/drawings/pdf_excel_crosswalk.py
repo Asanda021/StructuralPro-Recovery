@@ -190,5 +190,6 @@ def reconcile_pdf_excel(
     return {'rows': results, 'invalid': invalid, 'questions': questions,
             'summary': dict(sorted(counts.items())),
             'approved_financial_rows': 0,
-            'complete': bool(results) and not invalid and not questions,
+            'complete': False,  # Matched rows cannot establish exhaustive project coverage.
+            'input_pairs_reconciled': bool(results) and not invalid and not questions,
             'acceptance': 'NOT_VERIFIED'}
