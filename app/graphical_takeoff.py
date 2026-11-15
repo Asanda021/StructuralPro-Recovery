@@ -1311,6 +1311,8 @@ class GraphicalTakeoffDialog(QDialog):
                 f"{report.get('column_layout_symbol_candidate_count',0)} شاهد نماد ستون (تأییدنشده) | "
                 f"{report.get('vector_type_label_candidate_count',0)} برچسب تیپ برداری (پیشنهادی) | "
                 f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
+                f"{report.get('independently_registered_grid_positions',0)} تطبیق مستقل آکس (غیرقطعی) | "
+                f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
                 f"{len(report['questions'])} اختلاف مؤثر؛ "
                 "هیچ مقدار مالی از این بررسی ایجاد نشد."
             )
