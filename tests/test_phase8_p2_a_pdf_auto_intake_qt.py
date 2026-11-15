@@ -269,3 +269,24 @@ def test_multi_family_detail_object_and_orphan_zones_shown_with_no_boq_changes()
     assert dialog.type_reference_table.item(0,2).text()=='1, 3'
     assert dialog.ledger.answers=={}
     dialog.close()
+
+
+
+def test_pdf_vector_proximity_groups_visible_as_nonfinancial_candidates():
+    app=QApplication.instance() or QApplication([])
+    report={'documents':[{'document_id':'PDF001'}],'page_count':1,
+            'member_type_candidates':[],'unresolved_pages':[],'questions':[],
+            'detail_object_index':{
+                'vector_geometry_groups':[{
+                    'candidate_id':'PDF001:p1:vector_group00001',
+                    'bbox_pt':[20,30,100,130], 'source_path_count':2,
+                    'nearby_title_anchor_ids':['PDF001:p1:title1'],
+                    'status':'PROVISIONAL_BBOX_PROXIMITY_GROUP',
+                    'reason':'Candidate only','financially_payable':False}],
+                'vector_geometry_group_count':1,'vector_grouping_blocked_pages':[]}}
+    dlg=PDFSheetEvidenceDialog(report)
+    assert dlg.vector_group_table.rowCount()==1
+    assert 'title1' in dlg.vector_group_table.item(0,3).text()
+    assert 'نه دیتیل قطعی' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()

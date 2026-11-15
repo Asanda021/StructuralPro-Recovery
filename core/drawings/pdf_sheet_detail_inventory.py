@@ -14,6 +14,8 @@ import re
 import unicodedata
 from typing import Iterable, Mapping
 
+from core.drawings.pdf_vector_detail_groups import index_pdf_vector_path_groups
+
 _DEFAULT_ROWS = 4
 _DEFAULT_COLS = 4
 _MAX_PATHS = 30000
@@ -165,6 +167,10 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
         else:
             extraction_errors.append('BLOCKED_INVALID_VECTOR_PATH_BBOX')
     blocked=bool(extraction_errors)
+    path_grouping=index_pdf_vector_path_groups(
+        path_boxes, title_anchors, document_id=document_id,
+        page=page_number, source_blocked=blocked,
+    )
     x0,y0,x1,y1=bounds
     dx=(x1-x0)/columns;dy=(y1-y0)/rows
     zones=[]
@@ -246,6 +252,7 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'coverage_status':'BLOCKED' if blocked else ('UNRESOLVED' if status_count['UNRESOLVED'] else 'EXAMINED'),
       'status_counts':dict(sorted(status_count.items())),
       'detail_geometry_interpreted':False,
+      'vector_geometry_grouping':path_grouping,
       'all_regions_indexed':len(zones)==rows*columns,
       'financially_payable':False}
 
@@ -265,6 +272,7 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     all_regions=[]
     all_anchors=[]
     all_notes=[]
+    vector_group_pages=[]
     summary=[]
     for page in pages:
         regs=page.get('regions',())
@@ -302,6 +310,20 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
         all_regions.extend(regs)
         all_anchors.extend(page.get('detail_title_anchors',()))
         all_notes.extend(page.get('note_anchors',()))
+        groups=page.get('vector_geometry_grouping')
+        if not isinstance(groups, Mapping):
+            errors.append(f"MISSING_VECTOR_GROUPING:{page['document_id']}:p{page['page']}")
+        else:
+            if (groups.get('document_id') != page['document_id'] or
+                    groups.get('page') != page['page']):
+                errors.append(f"INVALID_VECTOR_GROUPING_ID:{page['document_id']}:p{page['page']}")
+            if (groups.get('status') not in
+                    ('BLOCKED_SOURCE_EVIDENCE_INCOMPLETE',
+                     'BLOCKED_VECTOR_GROUP_PATH_BUDGET',
+                     'BLOCKED_VECTOR_GROUP_PAIR_BUDGET') and
+                    groups.get('source_path_count') != page.get('vector_path_count')):
+                errors.append(f"INVALID_VECTOR_GROUPING_COUNT:{page['document_id']}:p{page['page']}")
+            vector_group_pages.append(groups)
         summary.append({'document_id':page['document_id'],'page':page['page'],
           'sheet_kind':page['sheet_kind'],'coverage_status':page['coverage_status'],
           'region_count':len(regs),'detail_anchor_count':page['explicit_detail_anchor_count'],
@@ -316,6 +338,10 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     return {'documents':docs,'page_count':len(pages),
       'sheet_inventory':summary,'detail_title_anchors':all_anchors,
       'note_anchors':all_notes,
+      'vector_geometry_groupings':vector_group_pages,
+      'vector_grouping_page_count':len(vector_group_pages),
+      'all_vector_paths_grouped':len(vector_group_pages)==len(pages) and all(
+          g.get('all_source_paths_grouped') is True for g in vector_group_pages),
       'region_inventory':all_regions,
       'region_count':len(all_regions),'expected_region_count':sum(p['expected_region_count'] for p in pages),
       'region_status_counts':dict(sorted(counts.items())),

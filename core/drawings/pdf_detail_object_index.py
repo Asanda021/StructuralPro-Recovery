@@ -148,6 +148,35 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         seen_title_ids.add(aid)
         anchors_by_page[k].append(title)
 
+    # Geometric candidates are kept separate from explicit text/title
+    # candidates. A proximity group cannot become a semantic detail or BOQ.
+    vector_group_pages = list(coverage.get('vector_geometry_groupings', ()))
+    vector_groups = []
+    vector_group_blockers = []
+    if vector_group_pages:
+        by_key = {(g.get('document_id'), g.get('page')): g for g in vector_group_pages}
+        if len(by_key) != len(vector_group_pages) or set(by_key) != set(page_ref):
+            raise ValueError('Missing or duplicate vector grouping page identity')
+        for key in sorted(by_key):
+            g = by_key[key]
+            if not g.get('all_source_paths_grouped'):
+                vector_group_blockers.append({
+                    'document_id': key[0], 'page': key[1],
+                    'status': g.get('status', 'BLOCKED_VECTOR_GROUPING'),
+                    'ungrouped_path_count': g.get('ungrouped_path_count'),
+                    'financially_payable': False,
+                })
+                continue
+            members = g.get('groups', ())
+            if type(g.get('source_path_count')) is not int or len(members) != g.get('group_count'):
+                raise ValueError('Invalid vector grouping counts')
+            all_path_ids = [i for item in members for i in item.get('source_path_indices', ())]
+            if sorted(all_path_ids) != list(range(1, g['source_path_count']+1)):
+                raise ValueError('Missing or duplicate source PDF path in grouped evidence')
+            for item in members:
+                if (item.get('document_id'), item.get('page')) != key or item.get('financially_payable') is not False:
+                    raise ValueError('Invalid or financially approved vector group')
+            vector_groups.extend(members)
     objects = []
     used_visual_zones = set()
     title_candidate_ids = defaultdict(list)
@@ -305,6 +334,11 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         'candidate_status_counts': dict(sorted(statuses.items())),
         'family_candidate_counts': dict(sorted(families.items())),
         'unassigned_visual_regions': unassigned,
+        'vector_geometry_groups': vector_groups,
+        'vector_geometry_group_count': len(vector_groups),
+        'vector_grouping_blocked_pages': vector_group_blockers,
+        'vector_grouping_page_count': len(vector_group_pages),
+        'all_vector_paths_grouped': bool(vector_group_pages) and not vector_group_blockers,
         # Empty-looking tiles after failed extraction are NOT proof of a
         # blank drawing; show these separately from visible orphan geometry.
         'blocked_source_region_ids': sorted(z['region_id'] for z in zones if z['status'] == 'BLOCKED'),

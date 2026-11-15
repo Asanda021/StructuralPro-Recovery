@@ -30,6 +30,8 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه با وضعیت پوشش | "
             f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد عنوان/تیپ دیتیل | "
             f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
+            f"{(report.get('detail_object_index') or {}).get('vector_geometry_group_count',0)} گروه هندسی احتمالی (نه دیتیل قطعی) | "
+            f"{len((report.get('detail_object_index') or {}).get('vector_grouping_blocked_pages',()))} صفحه هندسه گروه‌بندی‌نشده | "
             f"{(report.get('detail_object_index') or {}).get('blocked_source_region_count',0)} ناحیه با استخراج ناقص | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
@@ -250,6 +252,37 @@ class PDFSheetEvidenceDialog(QDialog):
                 self.type_reference_table.setItem(i,j,cell)
         links_layout.addWidget(self.type_reference_table)
         obj_sub.addTab(links_tab, 'ارتباط احتمالی بین شیت‌ها')
+        geometry_tab=QWidget(obj_sub)
+        geometry_layout=QVBoxLayout(geometry_tab)
+        geometry_notice=QLabel(
+            'گروه هندسی صرفاً از نزدیکی مستطیل‌های مسیر برداری ساخته می‌شود؛ '
+            'مرز واقعی دیتیل، اتصال قطعات و مالکیت عضو احراز نشده‌اند. هیچ مبلغی ایجاد نمی‌شود.'
+        )
+        geometry_notice.setWordWrap(True)
+        geometry_layout.addWidget(geometry_notice)
+        self.vector_group_table=QTableWidget(0,5,geometry_tab)
+        self.vector_group_table.setObjectName('PDFAutoVectorGeometryGroups')
+        self.vector_group_table.setHorizontalHeaderLabels([
+            'شناسه گروه', 'محدوده (pt)', 'مسیرهای منبع', 'عنوان‌های نزدیک', 'وضعیت',
+        ])
+        vector_groups=detail_index.get('vector_geometry_groups',())
+        self.vector_group_table.setRowCount(len(vector_groups))
+        self.vector_group_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, entry in enumerate(vector_groups):
+            vals=(entry.get('candidate_id',''),
+                  ', '.join(map(str,entry.get('bbox_pt',()))),
+                  entry.get('source_path_count',0),
+                  ', '.join(entry.get('nearby_title_anchor_ids',())) or 'نامشخص',
+                  entry.get('status','UNRESOLVED'))
+            for j, val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j==4:cell.setToolTip(entry.get('reason',''))
+                self.vector_group_table.setItem(i,j,cell)
+        geometry_layout.addWidget(self.vector_group_table)
+        obj_sub.addTab(geometry_tab,'گروه‌های هندسی احتمالی')
         tabs.addTab(obj_tab, 'دیتیل‌های شناسایی‌شده و موارد باز')
 
 
