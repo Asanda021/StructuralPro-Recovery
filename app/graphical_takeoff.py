@@ -1313,6 +1313,8 @@ class GraphicalTakeoffDialog(QDialog):
                 f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
                 f"{report.get('independently_registered_grid_positions',0)} تطبیق مستقل آکس (غیرقطعی) | "
                 f"{len((report.get('column_position_ledger') or {}).get('positions',()))} پرونده شواهد موقعیت ستون (غیرمالی) | "
+                f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
+                f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه پوشش | "
                 f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
                 f"{len(report['questions'])} اختلاف مؤثر؛ "
                 "هیچ مقدار مالی از این بررسی ایجاد نشد."
