@@ -146,3 +146,24 @@ def test_empty_input_has_no_pass_or_financial_promotion():
     r=reconcile_column_profile_components([],[],[])
     assert r['matched_component_type_rows']==0 and r['rows']==[]
     assert r['approved_financial_rows']==0 and r['complete'] is False
+
+
+def test_multiple_competing_type_detail_dimensions_do_not_pass_any_match():
+    x=nodes();x[0]['cross_sheet_type_reference']['details'].append(
+        dict(document_id='PDF001',page=19,dimension_kind='length',dimension_m='12.00'))
+    r=reconcile_column_profile_components(x,specs(),ref())
+    assert next(y for y in r['rows'] if y['tag']=='C1')['status']=='BLOCKED_DETAIL_IDENTITY_OR_LENGTH'
+
+
+def test_detail_from_other_unverified_pdf_is_not_authoritative():
+    x=specs();x[0]['document_id']='PDF_EXTERNAL'
+    sample=nodes()
+    sample[0]['cross_sheet_type_reference']['details'][0]['document_id']='PDF_EXTERNAL'
+    r=reconcile_column_profile_components(sample,x,ref())
+    assert next(y for y in r['rows'] if y['tag']=='C1')['status']=='BLOCKED_DETAIL_IDENTITY_OR_LENGTH'
+
+
+def test_scientific_notation_for_textual_quantities_requires_explicit_source_unit():
+    x=ref();x[0]['unit_mass_kg_per_m']='1.58e1'
+    r=reconcile_column_profile_components(nodes(),specs(),x)
+    assert r['invalid'][0]['status']=='BLOCKED_INVALID_REFERENCE'
