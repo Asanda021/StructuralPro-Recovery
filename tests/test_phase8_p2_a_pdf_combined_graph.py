@@ -101,17 +101,17 @@ def test_approved_issue_gives_explicit_reference_without_member_payment(tmp_path
     ("unregistered", "UNVERIFIED_DOCUMENT_SCOPE"),
     ("foreign", "DIFFERENT_PROJECT_OR_ISSUE"),
     ("superseded", "SUPERSEDED_SOURCE"),
-    ("revision", "REVISION_CONFLICT"),
+    ("printed_revision_mismatch", "REVISION_CONFLICT"),
     ("family", "TYPE_FAMILY_CONFLICT"),
     ("wrong_sheet", "REFERENCE_TARGET_NOT_FOUND"),
 ])
 def test_explicit_references_do_not_route_around_scope_and_identity(tmp_path, change, reason):
     p = plan(tmp_path, target="S-900" if change == "wrong_sheet" else "S-201")
     d = details(tmp_path, family="Column" if change == "family" else "Beam",
-                revision="R2" if change == "revision" else "R1")
+                revision="R2" if change == "printed_revision_mismatch" else "R1")
     reg = registry((p, "P-1", "R1", "CURRENT"),
                    (d, "P-2" if change == "foreign" else "P-1",
-                    "R2" if change == "revision" else "R1",
+                    "R1",
                     "SUPERSEDED" if change == "superseded" else "CURRENT"))
     value = graph([p, d], None if change == "unregistered" else reg)
     link, = of(value["edges"], "relationship", "DETAIL_CALLOUT")
@@ -293,3 +293,61 @@ def test_missing_or_duplicate_evidence_page_does_not_publish_graph(tmp_path, mon
                           lambda report, pages, **options: build(report, modify(pages), **options))
             with pytest.raises(ValueError, match="evidence page"):
                 graph([source])
+
+
+
+def test_different_valid_sheet_revisions_in_one_issued_set_can_cross_reference(tmp_path):
+    """R1 for the plan and R3 for detail are both current in the same issue."""
+    p = plan(tmp_path, revision="R1")
+    d = details(tmp_path, revision="R3")
+    authority = registry((p, "P-1", "R1", "CURRENT"),
+                         (d, "P-1", "R3", "CURRENT"))
+    result = graph([p, d], authority)
+    links = of(result["edges"], "relationship", "DETAIL_CALLOUT")
+    assert len(links) == 1
+    assert links[0]["status"] == "VALIDATED_REFERENCE"
+    assert links[0]["reason_code"] is None
+    assert not any(i["reason_code"] == "REVISION_CONFLICT" for i in result["issues"])
+    assert result["quantity_approval_count"] == 0
+    assert result["physical_member_count"] is None
+
+
+def test_duplicate_current_sheet_identifiers_in_same_issue_block_all_candidates(tmp_path):
+    """Two current sources claiming S-201 are not a unique governing detail."""
+    p = plan(tmp_path)
+    d1 = details(tmp_path, name="details1.pdf", family="Beam")
+    d2 = details(tmp_path, name="details2.pdf", family="Column")
+    authority = registry((p, "P-1", "R1", "CURRENT"),
+                         (d1, "P-1", "R1", "CURRENT"),
+                         (d2, "P-1", "R1", "CURRENT"))
+    result = graph([p, d1, d2], authority)
+    conflicts = [i for i in result["issues"] if
+                 i["reason_code"] == "DUPLICATE_CURRENT_SHEET_ID"]
+    assert len(conflicts) == 2
+    duplicates = [page for page in result["pages"] if page["sheet_id"] == "S-201"]
+    assert len(duplicates) == 2
+    assert all(page["authority_status"] == "DUPLICATE_CURRENT_SHEET_ID"
+               and page["status"] == "BLOCKED" for page in duplicates)
+    links = of(result["edges"], "relationship", "DETAIL_CALLOUT")
+    assert len(links) == 1
+    assert links[0]["status"] != "VALIDATED_REFERENCE"
+    assert result["quantity_approval_count"] == 0
+
+
+def test_duplicate_current_sheet_is_unsafe_even_if_only_one_contains_target(tmp_path):
+    """A second empty same-ID sheet must not silently validate the first."""
+    p = plan(tmp_path)
+    d1 = details(tmp_path, name="details1.pdf", family="Beam")
+    d2 = sheets(tmp_path, "shadow.pdf", [
+        {"text": [(24, 25, "SHEET S-201 | REV R1"),
+                  (30, 60, "GENERAL NOTES")]}
+    ])
+    authority = registry((p, "P-1", "R1", "CURRENT"),
+                         (d1, "P-1", "R1", "CURRENT"),
+                         (d2, "P-1", "R1", "CURRENT"))
+    result = graph([p, d1, d2], authority)
+    links = of(result["edges"], "relationship", "DETAIL_CALLOUT")
+    assert len(links) == 1
+    assert links[0]["status"] == "BLOCKED"
+    assert links[0]["reason_code"] == "DUPLICATE_CURRENT_SHEET_ID"
+    assert result["quantity_approval_count"] == 0

@@ -97,10 +97,12 @@ _REASONS = {
     "SUPERSEDED_SOURCE": ("حداقل یک سند منسوخ ثبت شده است", "مدرک حاکم جاری"),
     "REVISION_CONFLICT": ("ویرایش چاپ‌شده یا ویرایش دو سند ناسازگار است", "برگهٔ ابلاغ و ویرایش حاکم"),
     "DIFFERENT_PROJECT_OR_ISSUE": ("شناسهٔ پروژه یا مجموعه ابلاغ دو سند متفاوت است", "شاهد عضویت در مجموعه حاکم"),
+    "DUPLICATE_CURRENT_SHEET_ID": ("بیش از یک صفحه با شناسهٔ شیت یکسان در مجموعه ابلاغ جاری ثبت شده است", "فهرست مصوب شیت‌های جاری و تعیین نسخهٔ حاکم هر شیت"),
     "LEGACY_GRID_LEVEL_UNKNOWN": ("شاهد موقعیت شبکه برای تکرار عضو در ترازها کافی نیست", "شناسه عضو و تراز اجرایی مستقل"),
 }
 _REVIEWABLE = {
     "REVISION_CONFLICT", "SUPERSEDED_SOURCE", "DIFFERENT_PROJECT_OR_ISSUE", "UNVERIFIED_DOCUMENT_SCOPE",
+    "DUPLICATE_CURRENT_SHEET_ID",
     "TYPE_FAMILY_CONFLICT", "MULTIPLE_DETAIL_TYPE_MARKS", "AMBIGUOUS_LOCAL_TYPE_MARK",
     "REFERENCE_TARGET_NOT_FOUND", "AMBIGUOUS_REFERENCE_TARGET", "REFERENCE_SUBJECT_NOT_FOUND",
     "REFERENCE_TARGET_UNRESOLVED", "REFERENCE_SOURCE_UNRESOLVED", "CONFLICTING_DETAIL_REFERENCES",
@@ -301,9 +303,13 @@ class _Graph:
 
 
 def _document_scope(page):
+    # An issue can legitimately contain sheets with different *per-sheet*
+    # revision numbers. Each sheet revision is separately checked against
+    # its authoritative registration in _page_record. The shared scope for
+    # cross-sheet identities is the governing project + issue, NOT revision.
     registration = page["authority"]
     if registration and not page["authority_block"]:
-        return tuple(registration[k] for k in ("project_id", "issue_id", "revision"))
+        return registration["project_id"], registration["issue_id"]
     return ("UNREGISTERED_DOCUMENT", page["sha256"])
 
 
@@ -316,8 +322,10 @@ def _scope_disagreement(left, right):
         return "UNVERIFIED_DOCUMENT_SCOPE"
     if (a["project_id"], a["issue_id"]) != (b["project_id"], b["issue_id"]):
         return "DIFFERENT_PROJECT_OR_ISSUE"
-    if a["revision"] != b["revision"]:
-        return "REVISION_CONFLICT"
+    # Do not require the same drawing revision across *different* sheets:
+    # R1 of S-101 and R3 of S-201 can be jointly current in one issue.
+    # A mismatch against each sheet's own printed revision is already vetoed
+    # through authority_block on that page.
     return None
 
 
@@ -724,6 +732,26 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
                status="VALIDATED_REFERENCE", reason="شماره صفحه در فایل منبع")
         shapes[key], details[key] = _add_views(g, page, type_sources)
         _add_local_evidence(g, page, shapes[key])
+    # Two CURRENT pages claiming the same sheet ID in one registered issue
+    # cannot both act as the governing source. Veto them before constructing
+    # member identities or accepting cross-sheet references, even if only one
+    # happens to contain the requested detail callout.
+    current_sheets = defaultdict(list)
+    for key, page in pages.items():
+        auth = page["authority"]
+        if (auth and auth["status"] == "CURRENT" and page["sheet_id"]
+                and not page["authority_block"]):
+            current_sheets[(auth["project_id"], auth["issue_id"], page["sheet_id"])].append(key)
+    for candidates in current_sheets.values():
+        if len(candidates) <= 1:
+            continue
+        for key in candidates:
+            page = pages[key]
+            page["authority_block"] = "DUPLICATE_CURRENT_SHEET_ID"
+            page["status"] = "BLOCKED"
+            page["authority_status"] = "DUPLICATE_CURRENT_SHEET_ID"
+            page["node"]["status"] = "BLOCKED"
+            g.issue(page["node"], "DUPLICATE_CURRENT_SHEET_ID", status="BLOCKED")
     type_nodes = {}
     for identity, views in type_sources.items():
         _, tag, family = identity
