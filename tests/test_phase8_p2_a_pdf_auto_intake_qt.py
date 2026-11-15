@@ -317,3 +317,35 @@ def test_pdf_vector_grouping_blocked_page_is_visible_with_reason():
     assert '1 صفحه هندسه گروه‌بندی‌نشده' in dlg.summary.text()
     assert dlg.ledger.answers=={}
     dlg.close()
+
+
+
+def test_pdf_geometry_detail_linkage_is_review_only_and_displays_unresolved_titles():
+    app=QApplication.instance() or QApplication([])
+    dlg=PDFSheetEvidenceDialog({
+        'documents':[{'document_id':'PDF001'}], 'page_count':1,
+        'member_type_candidates':[], 'unresolved_pages':[], 'questions':[],
+        'detail_object_index':{
+            'geometry_detail_link_ledger':{
+                'possible_page_local_links':1,
+                'geometry_group_link_records':[{
+                    'vector_group_candidate_id':'PDF001:p1:vector_group00001',
+                    'proposed_title_candidate_id':'DETAIL_TITLE:PDF001:p1:title1',
+                    'coarse_zone_type_mark_candidate_ids':[],
+                    'status':'PROPOSED_GROUP_NEAR_SINGLE_EXPLICIT_TITLE',
+                    'financially_payable':False,
+                }],
+                'title_coverage_records':[{
+                    'title_candidate_id':'DETAIL_TITLE:PDF001:p1:title1',
+                    'possible_vector_group_ids':['PDF001:p1:vector_group00001'],
+                    'status':'PROPOSED_TITLE_NEAR_SINGLE_VECTOR_GROUP',
+                }],
+            },
+        },
+    })
+    assert dlg.geometry_detail_link_table.rowCount()==1
+    assert 'غیرقابل پرداخت' in dlg.geometry_detail_link_table.item(0,4).text()
+    assert dlg.geometry_title_coverage_table.rowCount()==1
+    assert '1 پیوند عنوان و هندسه پیشنهادی' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()

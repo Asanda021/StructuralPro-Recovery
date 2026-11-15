@@ -11,6 +11,8 @@ on:
       - tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
       - core/drawings/pdf_detail_object_index.py
       - core/drawings/pdf_vector_detail_groups.py
+      - core/drawings/pdf_detail_evidence_links.py
+      - tests/test_phase8_p2_a_pdf_detail_evidence_links.py
       - tests/test_phase8_p2_a_pdf_vector_detail_groups.py
       - tests/test_phase8_p2_a_pdf_detail_object_index.py
       - tests/test_phase8_p2_a_pdf_detail_object_integration.py
@@ -88,6 +90,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
           tests/test_phase8_p2_a_pdf_detail_object_index.py
           tests/test_phase8_p2_a_pdf_vector_detail_groups.py
+          tests/test_phase8_p2_a_pdf_detail_evidence_links.py
           tests/test_phase8_p2_a_pdf_detail_object_integration.py
           tests/test_phase8_p2_a_pdf_sheet_detail_intake_integration.py
           tests/test_phase8_p2_a_pdf_column_position_ledger.py

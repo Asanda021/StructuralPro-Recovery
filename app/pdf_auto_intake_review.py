@@ -31,6 +31,7 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد عنوان/تیپ دیتیل | "
             f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
             f"{(report.get('detail_object_index') or {}).get('vector_geometry_group_count',0)} گروه هندسی احتمالی (نه دیتیل قطعی) | "
+            f"{((report.get('detail_object_index') or {}).get('geometry_detail_link_ledger') or {}).get('possible_page_local_links',0)} پیوند عنوان و هندسه پیشنهادی | "
             f"{len((report.get('detail_object_index') or {}).get('vector_grouping_blocked_pages',()))} صفحه هندسه گروه‌بندی‌نشده | "
             f"{(report.get('detail_object_index') or {}).get('blocked_source_region_count',0)} ناحیه با استخراج ناقص | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
@@ -303,6 +304,56 @@ class PDFSheetEvidenceDialog(QDialog):
                 self.vector_group_blocked_table.setItem(i,j,cell)
         geometry_layout.addWidget(self.vector_group_blocked_table)
         obj_sub.addTab(geometry_tab,'گروه‌های هندسی احتمالی')
+
+        linkage_tab=QWidget(obj_sub)
+        linkage_layout=QVBoxLayout(linkage_tab)
+        link_notice=QLabel(
+            'پیوند تک‌عنوان/تک‌گروه فقط حدس مبتنی بر نزدیکی است؛ '
+            'شناسه تیپ از شبکه درشت صفحه می‌آید و برای اثبات عضو فیزیکی کافی نیست.'
+        )
+        link_notice.setWordWrap(True)
+        linkage_layout.addWidget(link_notice)
+        self.geometry_detail_link_table=QTableWidget(0,5,linkage_tab)
+        self.geometry_detail_link_table.setObjectName('PDFAutoGeometryDetailLinkEvidence')
+        self.geometry_detail_link_table.setHorizontalHeaderLabels([
+            'گروه برداری', 'عنوان پیشنهادی', 'تیپ از ناحیه درشت', 'وضعیت', 'پرداخت',
+        ])
+        links=((detail_index.get('geometry_detail_link_ledger') or {})
+               .get('geometry_group_link_records',()))
+        self.geometry_detail_link_table.setRowCount(len(links))
+        self.geometry_detail_link_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, edge in enumerate(links):
+            vals=(edge.get('vector_group_candidate_id',''),
+                  edge.get('proposed_title_candidate_id') or 'نامعلوم/مبهم',
+                  ', '.join(edge.get('coarse_zone_type_mark_candidate_ids',())) or 'فاقد شاهد معتبر',
+                  edge.get('status','BLOCKED'),
+                  'غیرقابل پرداخت')
+            for j,val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.geometry_detail_link_table.setItem(i,j,cell)
+        linkage_layout.addWidget(self.geometry_detail_link_table)
+        tabs_titles=((detail_index.get('geometry_detail_link_ledger') or {})
+                     .get('title_coverage_records',()))
+        self.geometry_title_coverage_table=QTableWidget(0,3,linkage_tab)
+        self.geometry_title_coverage_table.setObjectName('PDFAutoGeometryTitleCoverage')
+        self.geometry_title_coverage_table.setHorizontalHeaderLabels([
+            'عنوان شناسایی‌شده','گروه‌های احتمالی','وضعیت')
+        self.geometry_title_coverage_table.setRowCount(len(tabs_titles))
+        self.geometry_title_coverage_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch)
+        for i,item in enumerate(tabs_titles):
+            vals=(item.get('title_candidate_id',''),
+                  ', '.join(item.get('possible_vector_group_ids',())) or 'بدون گروه',
+                  item.get('status','BLOCKED'))
+            for j,val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.geometry_title_coverage_table.setItem(i,j,cell)
+        linkage_layout.addWidget(self.geometry_title_coverage_table)
+        obj_sub.addTab(linkage_tab,'پیوند پیشنهادی دیتیل و هندسه')
         tabs.addTab(obj_tab, 'دیتیل‌های شناسایی‌شده و موارد باز')
 
 

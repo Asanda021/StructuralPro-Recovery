@@ -19,6 +19,8 @@ import re
 import unicodedata
 from typing import Mapping
 
+from core.drawings.pdf_detail_evidence_links import link_pdf_detail_geometry_evidence
+
 _MAX_SHEETS = 600
 _MAX_REGIONS = 40000
 _MAX_TITLES = 10000
@@ -324,6 +326,9 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
             'physical_member_count': None,
             'quantity_approved': False, 'financially_payable': False,
         })
+    link_ledger = link_pdf_detail_geometry_evidence(
+        coverage, objects, vector_group_pages,
+    )
     families = Counter(fam for c in objects for fam in c['family_candidates'])
     statuses = Counter(c['status'] for c in objects)
     return {
@@ -335,6 +340,7 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         'family_candidate_counts': dict(sorted(families.items())),
         'unassigned_visual_regions': unassigned,
         'vector_geometry_groups': vector_groups,
+        'geometry_detail_link_ledger': link_ledger,
         'vector_geometry_group_count': len(vector_groups),
         'vector_grouping_blocked_pages': vector_group_blockers,
         'vector_grouping_page_count': len(vector_group_pages),
