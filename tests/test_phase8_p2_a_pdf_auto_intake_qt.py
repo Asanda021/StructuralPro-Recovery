@@ -8,7 +8,7 @@ from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
 
 def test_pdf_intake_dialog_present_questions_no_auto_approval():
     app = QApplication.instance() or QApplication([])
-    report = {'documents':[{'document_id':'PDF001'}], 'page_count':2,
+    report = {'documents':[{'document_id':'PDF001', 'sha256':'a'*64}], 'page_count':2,
               'member_type_candidates':[
                   {'tag':'C1','document_id':'PDF001','page':1,
                    'dimension_m':'10.70','status':'TYPE_DIMENSION_CANDIDATE'}],
@@ -19,6 +19,12 @@ def test_pdf_intake_dialog_present_questions_no_auto_approval():
     assert dialog.candidate_table.rowCount() == 1
     assert dialog.question_table.rowCount() == 1
     assert dialog.coverage_table.rowCount() == 1
+    assert dialog.record_question.isEnabled()
+    assert dialog.ledger.answers == {}
+    dialog.question_table.selectRow(0)
+    dialog._record_question_answer()
+    assert dialog.ledger.answers['C1']['decision'] == 'request_document'
+    assert dialog.ledger.answers['C1']['financially_payable'] is False
     assert dialog.question_table.item(0,2).text().startswith('سند حاکم')
     assert 'تأیید مالی' in dialog.findChild(type(dialog.summary), 'PDFAutoIntakeNoFinanceWarning').text()
     dialog.close()
