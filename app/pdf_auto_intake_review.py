@@ -31,6 +31,8 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "
             f"{report.get('vector_type_label_candidate_count', 0)} برچسب برداری تیپ (پیشنهادی) | "
             f"{report.get('vector_type_detail_link_count', 0)} ارتباط پیشنهادی با دیتیل | "
+            f"{report.get('independently_registered_grid_positions',0)} تطبیق شبکه با آکس‌بندی (غیرقطعی) | "
+            f"{len(report.get('architectural_floor_plan_candidates',()))} پلان معماریِ تراز (بدون ضریب تکرار) | "
             f"{len(report.get('unresolved_pages', ()))} صفحه با پوشش نامعلوم | "
             f"{len(report.get('questions', ()))} ابهام بین شیت‌ها")
         self.summary.setWordWrap(True)
@@ -96,9 +98,41 @@ class PDFSheetEvidenceDialog(QDialog):
                         hint += (f" دیتیل پیشنهادی: صفحه {r.get('page','؟')}، "
                                  f"{r.get('dimension_kind','')} = {r.get('dimension_m','')} m.")
                     cell.setToolTip(hint)
+                if j == 4 and item.get('independent_axis_grid_witness'):
+                    witness = item['independent_axis_grid_witness']
+                    cell.setToolTip(
+                        f"تطبیق هندسی با آکس‌بندی صفحه {witness['axis_page']}، "
+                        f"حداکثر اختلاف {witness['max_residual_pt']} pt. "
+                        "این تطبیق اثبات عضو فیزیکی یا تکرار در طبقات نیست."
+                    )
                 self.grid_table.setItem(i, j, cell)
         grid_layout.addWidget(self.grid_table)
         tabs.addTab(grid_tab, 'موقعیت‌های احتمالی شبکه')
+
+
+        # Sheet-title coverage is shown separately from member/BOQ approvals.
+        floor_tab = QWidget(tabs)
+        floor_layout = QVBoxLayout(floor_tab)
+        self.floor_table = QTableWidget(0, 3, floor_tab)
+        self.floor_table.setObjectName('PDFAutoIntakeFloorScope')
+        self.floor_table.setHorizontalHeaderLabels([
+            'سند / صفحه', 'پلان شناسایی‌شده', 'تکرار ستون در این تراز'])
+        floor_items = report.get('architectural_floor_plan_candidates', ())
+        self.floor_table.setRowCount(len(floor_items))
+        self.floor_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        floor_names = {'pilot_floor_plan':'پیلوت',
+                       'ground_floor_plan':'همکف',
+                       'first_floor_plan':'طبقه اول'}
+        for i, item in enumerate(floor_items):
+            values = (f"{item.get('document_id','')}:p{item.get('page','')}",
+                      floor_names.get(item.get('sheet_kind'), item.get('sheet_kind','')),
+                      'نامعلوم؛ مدرک تراز/مقطع لازم است')
+            for j, value in enumerate(values):
+                cell = QTableWidgetItem(str(value))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.floor_table.setItem(i, j, cell)
+        floor_layout.addWidget(self.floor_table)
+        tabs.addTab(floor_tab, 'دامنه طبقات؛ بدون تکرار حدسی')
 
 
         questions = QWidget(tabs)
@@ -121,6 +155,11 @@ class PDFSheetEvidenceDialog(QDialog):
                 guess = ('خوانش برچسب‌های برداری: ' +
                          '، '.join(f'{k}: {types[k]}' for k in sorted(types)) +
                          '؛ انتساب‌ها هنوز پیشنهادی و غیرمالی‌اند')
+            elif suggestion.get('floor_plan_candidates'):
+                sheets = suggestion['floor_plan_candidates']
+                guess = ('پلان‌های موجود: ' +
+                         '، '.join(f"صفحه {x.get('page','؟')}" for x in sheets) +
+                         '؛ تعداد تکرار ستون در طبقات با اسناد موجود اثبات نشده است')
             elif suggestion.get('candidate_types_from_details'):
                 guess = ('تیپ‌های موجود در دیتیل‌ها: ' +
                          '، '.join(suggestion['candidate_types_from_details']) +
