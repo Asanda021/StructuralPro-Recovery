@@ -25,6 +25,7 @@ from core.drawings.pdf_column_position_ledger import compile_column_position_led
 from core.drawings.pdf_sheet_detail_inventory import (
     inventory_pdf_page_regions, assemble_pdf_detail_inventory,
 )
+from core.drawings.pdf_detail_object_index import build_pdf_detail_object_index
 
 
 _MEMBER_MARK = re.compile(
@@ -428,6 +429,11 @@ def inspect_pdf_sheet_set(
     report["column_position_ledger"] = compile_column_position_ledger(report)
     report["sheet_detail_inventory"] = assemble_pdf_detail_inventory(
         page_detail_summaries, documents,
+    )
+    # Explicit detail titles and member-type labels are kept as separate,
+    # non-payable source candidates. Untitled geometry remains unresolved.
+    report["detail_object_index"] = build_pdf_detail_object_index(
+        report["sheet_detail_inventory"],
     )
     # Every page/zone must be accounted for, but unresolved drawing geometry
     # must never be silently promoted to complete member takeoff or BOQ.
