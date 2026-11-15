@@ -25,6 +25,8 @@ def test_agreement_is_candidate_not_financial_approval():
     assert r['rows'][0]['approved'] is False
     assert r['approved_financial_rows'] == 0
     assert r['acceptance'] == 'NOT_VERIFIED'
+    assert r['input_pairs_reconciled'] is True
+    assert r['complete'] is False  # Pair agreement does not prove whole-project coverage.
 
 
 def test_real_difference_has_excel_suggestion_but_cannot_pay():
