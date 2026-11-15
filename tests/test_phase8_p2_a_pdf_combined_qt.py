@@ -200,3 +200,46 @@ def test_revision_attachment_preserves_receipt_for_invalid_or_changed_sources(qt
         workspace.close()
         qt_app.processEvents()
         service.store.close()
+
+
+
+def test_revision_draft_ui_exports_non_authoritative_json_without_overwriting(qt_app, tmp_path, monkeypatch):
+    from app.pdf_detail_graph_review import PDFDetailGraphReview
+    from core.drawings.pdf_detail_evidence_graph import load_pdf_revision_register
+
+    report = {
+        'documents': [{'document_id':'PDF001','source_name':'issued.pdf',
+                       'sha256':'d'*64,'page_count':1}],
+        'detail_evidence_graph': {
+            'nodes':[], 'edges':[], 'issues':[], 'topology_pages':[],
+            'pages':[{'document_id':'PDF001','page':1,
+                      'printed_revisions':['R3'], 'status':'UNRESOLVED'}],
+            'graph_sha256':'a'*64, 'quantity_approval_count':0,
+        },
+    }
+    output=tmp_path/'unverified_draft.json'
+    monkeypatch.setattr(QFileDialog, 'getSaveFileName',
+                        lambda *args, **kwargs: (str(output), ''))
+    dlg=PDFDetailGraphReview(report)
+    try:
+        button=dlg.findChild(QPushButton,'PDFDetailExportRevisionRegisterDraft')
+        assert button.isEnabled()
+        button.click()
+        contents=output.read_text(encoding='utf-8')
+        parsed=json.loads(contents)
+        item=parsed['documents'][0]
+        assert item['sha256']=='d'*64
+        assert all(item[key] is None for key in (
+            'project_id','issue_id','revision','status','authority_reference'))
+        with pytest.raises(ValueError):
+            load_pdf_revision_register(output)
+        assert 'پیش‌نویس' in dlg.export_draft_status.text()
+        button.click()
+        assert output.read_text(encoding='utf-8')==contents
+        assert 'بازنویسی' in dlg.export_draft_status.text()
+        assert dlg.tables['documents'].model().rowCount()==1
+        assert 'R3' in dlg.tables['documents'].model().data(
+            dlg.tables['documents'].model().index(0,6))
+        assert report['detail_evidence_graph']['quantity_approval_count']==0
+    finally:
+        dlg.close()

@@ -2,6 +2,10 @@
 from __future__ import annotations
 
 from functools import partial
+import json
+from pathlib import Path
+
+from core.drawings.pdf_revision_preflight import build_pdf_revision_register_draft
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
@@ -15,6 +19,8 @@ _TABLES = {
         ('شناسه سند', 'document_id'), ('نام فایل', 'source_name'),
         ('تعداد صفحات', 'page_count'), ('وضعیت نسخه', 'revision_status'),
         ('نسخهٔ ثبت‌شده', 'revision'), ('هش SHA-256', 'sha256'),
+        ('ویرایش‌های چاپ‌شده', 'printed_revision_candidates'),
+        ('موانع ثبت', 'revision_draft_problems'),
     )),
     'pages': ('صفحات', (
         ('شناسه سند', 'document_id'), ('صفحه', 'page'), ('شیت', 'sheet_id'),
@@ -89,16 +95,28 @@ class PDFDetailGraphReview(QWidget):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         graph = report['detail_evidence_graph']
+        self._source_report = report
+        try:
+            self._revision_draft = build_pdf_revision_register_draft(report)
+        except ValueError:
+            # Incomplete preview may still be browsed, but cannot produce
+            # an operator template pretending to be a verified source list.
+            self._revision_draft = None
         self._nodes = graph.get('nodes', ())
         self._node_rows = {node['node_id']: row for row, node in enumerate(self._nodes)}
         authorities = {node.get('document_id'): node.get('authority') or {}
                        for node in self._nodes if node['kind'] == 'DOCUMENT'}
         self._documents = {}
+        draft_review = {item['document_id']: item
+                        for item in (self._revision_draft or {}).get('review', ())}
         for doc in report.get('documents', ()):
             doc_id = doc['document_id']
             authority = authorities.get(doc_id, {})
+            audit = draft_review.get(doc_id, {})
             self._documents[doc_id] = {
                 **authority, **doc, 'revision_status': authority.get('status', 'UNREGISTERED'),
+                'printed_revision_candidates': audit.get('printed_revision_candidates', ()),
+                'revision_draft_problems': audit.get('required_actions', ()),
             }
         documents = tuple(self._documents.values())
         self._attach_revision_register = attach_revision_register
@@ -132,6 +150,18 @@ class PDFDetailGraphReview(QWidget):
         receipt.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         receipt.setWordWrap(True)
         layout.addWidget(receipt)
+
+        self.export_draft_button = QPushButton('ساخت پیش‌نویس ثبت نسخه (بدون تأیید)')
+        self.export_draft_button.setObjectName('PDFDetailExportRevisionRegisterDraft')
+        self.export_draft_button.clicked.connect(self._export_revision_register_draft)
+        self.export_draft_button.setEnabled(self._revision_draft is not None)
+        layout.addWidget(self.export_draft_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.export_draft_status = QLabel()
+        self.export_draft_status.setObjectName('PDFDetailExportRevisionRegisterStatus')
+        self.export_draft_status.setTextFormat(Qt.TextFormat.PlainText)
+        self.export_draft_status.setWordWrap(True)
+        self.export_draft_status.hide()
+        layout.addWidget(self.export_draft_status)
 
         if attach_revision_register is not None:
             self.attach_button = QPushButton('پیوست ثبت نسخهٔ نقشه (JSON)')
@@ -204,6 +234,38 @@ class PDFDetailGraphReview(QWidget):
         split.setStretchFactor(1, 2)
         self.sections.currentChanged.connect(self._refresh_selection)
         self._refresh_selection()
+
+    def _export_revision_register_draft(self):
+        if self._revision_draft is None:
+            self.export_draft_status.setText('ثبت پیش‌نویس مسدود: فهرست سند یا صفحات نامعتبر است.')
+            self.export_draft_status.show()
+            return
+        name, _ = QFileDialog.getSaveFileName(
+            self, 'ذخیره پیش‌نویس ثبت نسخه', '', 'JSON (*.json)'
+        )
+        if not name:
+            return
+        try:
+            path = Path(name)
+            if path.suffix.lower() != '.json':
+                raise ValueError('فایل باید پسوند .json داشته باشد.')
+            # Exclusive creation prevents damage to a completed signed
+            # register or to a previous draft. No project DB writes.
+            with path.open('x', encoding='utf-8') as stream:
+                json.dump(self._revision_draft['template'], stream,
+                          ensure_ascii=False, indent=2)
+                stream.write('\n')
+        except (OSError, ValueError) as exc:
+            self.export_draft_status.setText(
+                f'فایل پیش‌نویس ذخیره نشد؛ فایل موجود بازنویسی نمی‌شود: {exc}'
+            )
+        else:
+            self.export_draft_status.setText(
+                'پیش‌نویس فقط هش منابع را دارد و ثبت معتبر نیست. '
+                'پروژه، ابلاغ، ویرایش سند، وضعیت جاری/منسوخ و مرجع '
+                'رسمی باید از دفتر ابلاغ مستقل تأیید و تکمیل شوند.'
+            )
+        self.export_draft_status.show()
 
     def _pick_revision_register(self):
         name, _ = QFileDialog.getOpenFileName(
