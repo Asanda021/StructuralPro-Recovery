@@ -28,3 +28,23 @@ def test_pdf_intake_dialog_present_questions_no_auto_approval():
     assert dialog.question_table.item(0,2).text().startswith('سند حاکم')
     assert 'تأیید مالی' in dialog.findChild(type(dialog.summary), 'PDFAutoIntakeNoFinanceWarning').text()
     dialog.close()
+
+def test_pdf_grid_location_candidates_are_visible_but_not_members_or_boq():
+    app = QApplication.instance() or QApplication([])
+    report = {
+        'documents': [{'document_id': 'PDF001', 'sha256': 'b'*64}],
+        'page_count': 1, 'member_type_candidates': [],
+        'unresolved_pages': [], 'questions': [],
+        'grid_location_candidates': [{
+            'candidate_id': 'PDF001:p1:r1:c1', 'document_id': 'PDF001', 'page': 1,
+            'x_pt': 180, 'y_pt': 156, 'suggested_type': None,
+            'status': 'GRID_LOCATION_TYPE_UNKNOWN', 'financially_payable': False,
+        }],
+    }
+    dialog = PDFSheetEvidenceDialog(report)
+    assert dialog.grid_table.rowCount() == 1
+    assert dialog.grid_table.item(0, 3).text() == 'شناسایی نشده'
+    assert 'تأییدنشده' in dialog.summary.text()
+    assert not dialog.record_question.isEnabled()
+    assert dialog.ledger.answers == {}
+    dialog.close()
