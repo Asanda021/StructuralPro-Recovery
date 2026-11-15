@@ -77,3 +77,22 @@ def test_sheet_inventory_preserves_all_word_witnesses_without_boq():
                for x in cov['localized_type_word_witnesses'])
     assert all(not x['quantity_approved'] for x in cov['localized_type_word_witnesses'])
     assert cov['quantity_approval_count']==0
+
+
+def test_bracing_and_baseplate_tags_keep_distinct_member_families():
+    from core.drawings.pdf_detail_object_index import _tag, _family_words
+    from core.drawings.pdf_auto_intake import _parse_pdf_lines
+    d=pymupdf.open();p=d.new_page(width=480,height=240)
+    p.insert_text((30,40),'BR.1 BP1 BP-2 B1')
+    indices=index_pdf_type_words(p,document_id='PDF001',page_number=1,title_anchors=[])
+    assert [w['type_tag'] for w in indices['type_word_witnesses']] == ['BR1','BP1','BP2','B1']
+    assert _tag('BR.1') == ('BR1','bracing')
+    assert _tag('BP-2') == ('BP2','reinforcement_connection')
+    assert _tag('B1') == ('B1','beam')
+    assert _family_words('BR.1 brace detail') == ['bracing']
+    assert _family_words('BP1 base plate detail') == ['reinforcement_connection']
+    marks,_ = _parse_pdf_lines(p)
+    assert {m['tag'] for m in marks} == {'BR1','BP1','BP2','B1'}
+    assert all(not w['financially_payable'] and not w['physical_member_verified']
+               for w in indices['type_word_witnesses'])
+    d.close()

@@ -14,7 +14,8 @@ from typing import Mapping
 
 
 _TYPE_FAMILY = {'B': 'beam', 'C': 'column', 'SC': 'column',
-                'F': 'foundation', 'SW': 'wall_opening', 'W': 'wall_opening'}
+                'F': 'foundation', 'SW': 'wall_opening', 'W': 'wall_opening',
+                'BR': 'bracing', 'BP': 'reinforcement_connection'}
 
 
 def _rect4(value):

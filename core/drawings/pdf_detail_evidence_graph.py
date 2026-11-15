@@ -14,7 +14,7 @@ from core.drawings.pdf_type_word_witness import _box
 
 _CODE = r"[A-Z0-9][A-Z0-9_.-]{0,31}"
 _DETAIL = r"(?:[A-Z0-9.-]{0,15}[0-9][A-Z0-9.-]{0,16}|[A-Z]{1,4}-[A-Z]{1,4})"
-_TYPE = r"[A-Z]{1,4}[-–]?[0-9]{1,4}"
+_TYPE = r"[A-Z]{1,4}[-–.]?[0-9]{1,4}"
 _AXIS = r"[A-Z0-9-]{1,16}\s*/\s*[A-Z0-9-]{1,16}"
 _DEFINITIONS = (
     ("SHEET_ID", rf"(?:SHEET(?: NO\.)?|شیت)(?:\s*[:#]\s*|\s+)(?P<code>{_CODE})"),
@@ -56,7 +56,7 @@ _LEGACY_ROLES = {
     "column_detail": "DETAIL",
 }
 _FAMILIES = (
-    "beam", "column", "foundation", "slab_roof", "wall_opening", "stair_ramp",
+    "bracing",     "beam", "column", "foundation", "slab_roof", "wall_opening", "stair_ramp",
     "reinforcement_connection", "architecture_finishes", "mechanical", "electrical", "unknown",
 )
 _LOCAL_LINK_PAIR_LIMIT = 1_000_000
@@ -219,7 +219,7 @@ def read_pdf_page_declarations(page, *, max_lines=12000):
 
 
 def _type(raw):
-    return (raw or "").upper().replace("-", "").replace("–", "")
+    return (raw or "").upper().replace("-", "").replace("–", "").replace(".", "")
 
 
 def _title_types(title):
