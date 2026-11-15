@@ -410,6 +410,14 @@ class GraphicalTakeoffDialog(QDialog):
         header.addWidget(self.calibrate)
 
         self.open_pdf = QPushButton("بازکردن نقشه")
+        self.auto_pdf_button = QPushButton("تحلیل خودکار مجموعه PDF")
+        self.auto_pdf_button.setObjectName("OpenAutoPDFSheetIntake")
+        self.auto_pdf_button.setToolTip(
+            "انتخاب یکجای شیت‌های PDF؛ استخراج شواهد تیپ و اختلافات، بدون ساخت مقدار مالی"
+        )
+        self._pdf_auto_review_dialog = None
+        self._pdf_auto_report = None
+        self._pdf_auto_sources = ()
         self.workflow_button = QPushButton("چه چیزی متره شود؟")
         self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
         self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
@@ -485,7 +493,7 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.workflow_button, self.schedule_button,
+            self.open_pdf, self.auto_pdf_button, self.workflow_button, self.schedule_button,
             self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
@@ -622,6 +630,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.mode.currentTextChanged.connect(self.apply_tool)
         self.calibrate.clicked.connect(self.calibrate_scale)
         self.open_pdf.clicked.connect(self.select_drawing)
+        self.auto_pdf_button.clicked.connect(self.select_pdf_sheet_set)
         self.prev.clicked.connect(lambda: self.load_page(self.page - 1))
         self.next.clicked.connect(lambda: self.load_page(self.page + 1))
         self.page_no.valueChanged.connect(self.load_page)
@@ -1269,6 +1278,41 @@ class GraphicalTakeoffDialog(QDialog):
             )
         except Exception as exc:
             QMessageBox.critical(self, "انتقال به BOQ", "انتقال انجام نشد؛ BOQ بدون تغییر باقی ماند.\n" + str(exc))
+
+    def select_pdf_sheet_set(self):
+        """Load all PDF sheets and display source-backed candidates/questions.
+
+        Never creates member instances or BOQ amounts from type labels alone.
+        """
+        selected, _ = QFileDialog.getOpenFileNames(
+            self, "انتخاب مجموعه شیت‌های PDF", "", "فایل‌های PDF (*.pdf)"
+        )
+        if not selected:
+            return
+        try:
+            from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+            from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
+            from shiboken6 import isValid
+
+            report = inspect_pdf_sheet_set(selected)
+            existing = self._pdf_auto_review_dialog
+            if existing is not None and isValid(existing):
+                existing.close()
+            dialog = PDFSheetEvidenceDialog(report, self)
+            dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+            self._pdf_auto_review_dialog = dialog
+            self._pdf_auto_sources = tuple(selected)
+            self._pdf_auto_report = report
+            dialog.show()
+            self.status.setText(
+                f"تحلیل {report['page_count']} صفحه | "
+                f"{len(report['member_type_candidates'])} شاهد تیپ | "
+                f"{len(report['questions'])} اختلاف مؤثر؛ "
+                "هیچ مقدار مالی از این بررسی ایجاد نشد."
+            )
+        except Exception as exc:
+            QMessageBox.warning(self, "تحلیل مجموعه PDF",
+                                "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
 
     def select_drawing(self):
         path = QFileDialog.getOpenFileName(
