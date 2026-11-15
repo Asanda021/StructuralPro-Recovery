@@ -185,3 +185,22 @@ def test_missing_tile_row_fails_even_if_region_count_matches():
     result=assemble_pdf_detail_inventory([row],[{'document_id':'PDF001','page_count':1}])
     assert not result['all_input_pages_indexed']
     assert any('MISSING_TILE_CELL' in e for e in result['errors'])
+
+
+def test_explicit_notes_are_separately_indexed():
+    d,p=_page('blank')
+    p.insert_text((40,60),'General Notes',fontsize=12)
+    x=_inspect(p);d.close()
+    assert len(x['note_anchors'])==1
+    assert any(z['explicit_note_anchor_ids'] for z in x['regions'])
+    assert x['note_anchors'][0]['status']=='UNRESOLVED'
+
+
+def test_orthogonal_table_or_grid_is_only_visual_candidate():
+    d,p=_page('blank')
+    for y in (50,80,110,140):p.draw_line((50,y),(250,y))
+    for x in (50,100,150,200):p.draw_line((x,50),(x,140))
+    x=_inspect(p);d.close()
+    assert any(z['possible_table_or_grid'] for z in x['regions'])
+    assert x['coverage_status']=='UNRESOLVED'
+    assert not x['detail_geometry_interpreted']
