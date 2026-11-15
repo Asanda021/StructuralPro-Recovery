@@ -101,7 +101,14 @@ class PDFSheetEvidenceDialog(QDialog):
         for i, question in enumerate(question_rows):
             suggestion = question.get('suggestion') or {}
             value = suggestion.get('value')
-            guess = str(value) if value is not None else 'سند حاکم معلوم نیست؛ حدس قطعی مجاز نیست'
+            if value is not None:
+                guess = str(value)
+            elif suggestion.get('candidate_types_from_details'):
+                guess = ('تیپ‌های موجود در دیتیل‌ها: ' +
+                         '، '.join(suggestion['candidate_types_from_details']) +
+                         '؛ انتساب به هر موقعیت نامعلوم است')
+            else:
+                guess = 'سند حاکم معلوم نیست؛ حدس قطعی مجاز نیست'
             for j, text in enumerate((question.get('tag',''), question.get('question',''), guess)):
                 cell = QTableWidgetItem(str(text))
                 cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
