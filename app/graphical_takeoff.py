@@ -1307,6 +1307,7 @@ class GraphicalTakeoffDialog(QDialog):
             self.status.setText(
                 f"تحلیل {report['page_count']} صفحه | "
                 f"{len(report['member_type_candidates'])} شاهد تیپ | "
+                f"{len(report.get('grid_location_candidates', ()))} نامزد شبکه (غیرقطعی) | "
                 f"{len(report['questions'])} اختلاف مؤثر؛ "
                 "هیچ مقدار مالی از این بررسی ایجاد نشد."
             )
