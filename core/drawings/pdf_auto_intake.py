@@ -30,6 +30,9 @@ from core.drawings.pdf_detail_evidence_graph import (
     build_pdf_detail_evidence_graph, read_pdf_page_declarations,
 )
 from core.drawings.pdf_engine import require_current_pdf
+from core.drawings.pdf_rendered_text_recovery import (
+    recover_page_rendered_type_words, should_recover_rendered_labels,
+)
 
 
 _MEMBER_MARK = re.compile(
@@ -105,6 +108,8 @@ def _parse_pdf_lines(page) -> tuple[list[dict], list[dict]]:
 def inspect_pdf_sheet_set(
     paths: Iterable[str | Path], *, max_documents: int = 100, max_pages: int = 500,
     revision_registry: Mapping | None = None,
+    rendered_ocr: bool = False, ocr_language: str = "eng+fas",
+    max_ocr_pages: int = 25,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -116,6 +121,10 @@ def inspect_pdf_sheet_set(
         import pymupdf
     except ImportError as exc:
         raise RuntimeError("PyMuPDF is required for PDF multi-sheet intake") from exc
+    if type(rendered_ocr) is not bool or type(max_ocr_pages) is not int or not 1 <= max_ocr_pages <= 50:
+        raise ValueError("PDF optional rendered OCR requires bounded explicit opt-in")
+    if rendered_ocr and ocr_language not in {"eng", "fas", "eng+fas", "fas+eng"}:
+        raise ValueError("Invalid PDF rendered OCR language")
     received = [Path(item) for item in paths]
     if (type(max_documents) is not int or type(max_pages) is not int or
             not received or len(received) > max_documents or max_pages < 1):
@@ -129,6 +138,8 @@ def inspect_pdf_sheet_set(
     vector_grid_summaries: list[dict] = []
     page_view_summaries: list[dict] = []
     page_detail_summaries: list[dict] = []
+    rendered_ocr_pages: list[dict] = []
+    ocr_attempts = 0
     page_reasons: list[dict] = []
     source_digests: set[str] = set()
     total_pages = 0
@@ -167,6 +178,29 @@ def inspect_pdf_sheet_set(
                     sheet_kind=title_scope.get('sheet_kind'), include_topology=True,
                 )
                 detail["sheet_declarations"] = read_pdf_page_declarations(page)
+                if rendered_ocr and should_recover_rendered_labels(detail):
+                    if ocr_attempts >= max_ocr_pages:
+                        recovered = {
+                            "document_id": doc_id, "page": number,
+                            "status": "BLOCKED_OCR_PAGE_BUDGET",
+                            "type_word_witness_count": 0, "type_word_witnesses": [],
+                            "all_ocr_words_examined": False, "financially_payable": False,
+                        }
+                    else:
+                        ocr_attempts += 1
+                        recovered = recover_page_rendered_type_words(
+                            page, document_id=doc_id, page_number=number,
+                            native_witnesses=detail["type_word_index"]["type_word_witnesses"],
+                            language=ocr_language,
+                        )
+                    detail["rendered_type_word_index"] = recovered
+                    rendered_ocr_pages.append({
+                        "document_id": doc_id, "page": number, "status": recovered["status"],
+                        "type_word_witness_count": recovered["type_word_witness_count"],
+                        "all_ocr_words_examined": recovered["all_ocr_words_examined"],
+                        "source_quality": "RENDERED_OCR_NOT_VERIFIED",
+                        "financially_payable": False,
+                    })
                 page_detail_summaries.append(detail)
                 try:
                     marks, dims = _parse_pdf_lines(page)
@@ -435,6 +469,9 @@ def inspect_pdf_sheet_set(
 
     status_counts = Counter(x["status"] for x in raw_members)
     report = {"documents": documents, "page_count": total_pages,
+            "rendered_ocr_enabled": rendered_ocr,
+            "rendered_ocr_page_index": rendered_ocr_pages,
+            "rendered_ocr_candidate_count": sum(x["type_word_witness_count"] for x in rendered_ocr_pages),
             "member_type_candidates": raw_members,
             "page_view_summaries": page_view_summaries,
             "architectural_floor_plan_candidates": architectural_floor_sheets,

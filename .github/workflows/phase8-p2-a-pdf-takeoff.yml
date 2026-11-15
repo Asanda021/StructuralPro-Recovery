@@ -12,6 +12,8 @@ on:
       - core/drawings/pdf_detail_object_index.py
       - core/drawings/pdf_detail_topology.py
       - core/drawings/pdf_detail_evidence_graph.py
+      - core/drawings/pdf_rendered_text_recovery.py
+      - tests/test_phase8_p2_a_pdf_rendered_text_recovery.py
       - core/drawings/pdf_revision_preflight.py
       - tests/test_phase8_p2_a_pdf_revision_preflight.py
       - app/pdf_detail_graph_review.py
@@ -102,6 +104,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_detail_topology.py
           tests/test_phase8_p2_a_pdf_combined_graph.py
           tests/test_phase8_p2_a_pdf_revision_preflight.py
+          tests/test_phase8_p2_a_pdf_rendered_text_recovery.py
           tests/test_phase8_p2_a_pdf_combined_qt.py
           tests/test_phase8_p2_a_pdf_vector_detail_groups.py
           tests/test_phase8_p2_a_pdf_type_word_witness.py
