@@ -243,3 +243,45 @@ def test_revision_draft_ui_exports_non_authoritative_json_without_overwriting(qt
         assert report['detail_evidence_graph']['quantity_approval_count']==0
     finally:
         dlg.close()
+
+
+
+def test_pdf_auto_ocr_opt_in_is_explicit_and_preserved_when_attaching_register(
+        qt_app, tmp_path, monkeypatch):
+    from app.graphical_takeoff import GraphicalTakeoffDialog
+    from core.platform.application import StructuralProApp
+    import core.drawings.pdf_auto_intake as intake
+
+    pdf = tmp_path / 'source.pdf'
+    pdf.write_bytes(b'%PDF-1.7 synthetic selector identity, not parsed')
+    monkeypatch.setattr(QFileDialog, 'getOpenFileNames',
+                        lambda *args: ([str(pdf)], ''))
+    arguments = []
+
+    def fake_inspect(sources, **kwargs):
+        arguments.append(kwargs)
+        return {"fake": True}
+    monkeypatch.setattr(intake, 'inspect_pdf_sheet_set', fake_inspect)
+
+    service = StructuralProApp(tmp_path/'store')
+    service.create_project('OCR checkbox test', 'P')
+    workspace = GraphicalTakeoffDialog(app_service=service, project_id='P')
+    try:
+        checkbox = workspace.findChild(
+            __import__('PySide6.QtWidgets', fromlist=['QCheckBox']).QCheckBox,
+            'PDFAutoRenderedOCR',
+        )
+        assert checkbox is not None and not checkbox.isChecked()
+        receipts = []
+        monkeypatch.setattr(workspace, '_show_pdf_sheet_evidence',
+                            lambda report, source: receipts.append((report, source)))
+        workspace.select_pdf_sheet_set()
+        assert arguments[-1] == {'rendered_ocr': False}
+        checkbox.setChecked(True)
+        workspace.select_pdf_sheet_set()
+        assert arguments[-1] == {'rendered_ocr': True}
+        assert len(receipts) == 2
+    finally:
+        workspace.close()
+        qt_app.processEvents()
+        service.store.close()

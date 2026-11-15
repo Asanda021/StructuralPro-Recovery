@@ -415,6 +415,13 @@ class GraphicalTakeoffDialog(QDialog):
         self.auto_pdf_button.setToolTip(
             "انتخاب یکجای شیت‌های PDF؛ استخراج شواهد تیپ و اختلافات، بدون ساخت مقدار مالی"
         )
+        self.rendered_ocr_checkbox = QCheckBox("OCR نوشته‌های ترسیمی")
+        self.rendered_ocr_checkbox.setObjectName("PDFAutoRenderedOCR")
+        self.rendered_ocr_checkbox.setToolTip(
+            "بازیابی کندِ متن از حروف برداری/صفحات تصویری با PyMuPDF و Tesseract محلی؛ "
+            "نامزدهای OCR معتبر برای متره نیستند. پیش‌فرض خاموش."
+        )
+        self.rendered_ocr_checkbox.setChecked(False)
         self._pdf_auto_review_dialog = None
         self._pdf_auto_report = None
         self._pdf_auto_sources = ()
@@ -493,7 +500,7 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.auto_pdf_button, self.workflow_button, self.schedule_button,
+            self.open_pdf, self.auto_pdf_button, self.rendered_ocr_checkbox, self.workflow_button, self.schedule_button,
             self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
@@ -1292,7 +1299,10 @@ class GraphicalTakeoffDialog(QDialog):
         try:
             from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
 
-            self._show_pdf_sheet_evidence(inspect_pdf_sheet_set(selected), selected)
+            self._show_pdf_sheet_evidence(
+                inspect_pdf_sheet_set(selected, rendered_ocr=self.rendered_ocr_checkbox.isChecked()),
+                selected,
+            )
         except Exception as exc:
             QMessageBox.warning(self, "تحلیل مجموعه PDF",
                                 "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
@@ -1315,6 +1325,8 @@ class GraphicalTakeoffDialog(QDialog):
             f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد دیتیل و تیپ | "
             f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
             f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
+            f"{len(report.get('rendered_ocr_page_index', ()))} صفحه بررسی OCR "
+            f"({report.get('rendered_ocr_candidate_count', 0)} نامزد غیرقطعی) | "
             f"{len(report['questions'])} اختلاف مؤثر؛ "
             "هیچ مقدار مالی از این بررسی ایجاد نشد."
         )
@@ -1349,7 +1361,10 @@ class GraphicalTakeoffDialog(QDialog):
             (doc['document_id'], doc['sha256']) for doc in previous_report['documents']
         )
         registry = load_pdf_revision_register(path)
-        report = inspect_pdf_sheet_set(sources, revision_registry=registry)
+        report = inspect_pdf_sheet_set(
+            sources, revision_registry=registry,
+            rendered_ocr=previous_report.get('rendered_ocr_enabled', False),
+        )
         new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
         if not previous_fingerprints or new_fingerprints != previous_fingerprints:
             raise ValueError("هش سندهای PDF تغییر کرده است. مجموعهٔ فعلی را دوباره انتخاب کنید.")

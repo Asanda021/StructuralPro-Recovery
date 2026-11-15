@@ -25,7 +25,8 @@ _TABLES = {
     'pages': ('صفحات', (
         ('شناسه سند', 'document_id'), ('صفحه', 'page'), ('شیت', 'sheet_id'),
         ('نقش صفحه', 'page_role'), ('وضعیت', 'status'), ('محتوا', 'content_kind'),
-        ('وضعیت نسخه', 'authority_status'), ('علت', 'reason'),
+        ('وضعیت نسخه', 'authority_status'), ('OCR محلی', 'rendered_ocr_status'),
+        ('نامزد OCR', 'rendered_ocr_type_count'), ('علت', 'reason'),
     )),
     'nodes': ('شواهد و اجزا', (
         ('شناسه گره', 'node_id'), ('نوع', 'kind'), ('عنوان', 'label'),
@@ -55,6 +56,7 @@ _DETAIL_FIELDS = {
     'nodes': (('تیپ', 'type_tag'), ('تراز', 'level'), ('آکس', 'axis'),
               ('خانواده‌های نامزد', 'family_candidates'),
               ('کد دیتیل', 'detail_code'), ('مقیاس چاپی', 'printed_scale'),
+        ('اعتبار شواهد', 'evidence_quality'),
               ('وضعیت مقیاس', 'scale_status')),
     'edges': (('کد علت', 'reason_code'),),
     'topology': (('تعداد عملگرهای گروه', 'operator_count'), ('اندیس مسیرها', 'source_path_indices'),),
