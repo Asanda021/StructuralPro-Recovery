@@ -17,6 +17,7 @@ from typing import Iterable
 
 from core.drawings.pdf_grid_instances import detect_vector_grid_positions
 from core.drawings.pdf_vector_symbol_witness import compact_symbol_witness
+from core.drawings.pdf_vector_type_labels import vector_column_type_labels
 
 
 _MEMBER_MARK = re.compile(
@@ -110,6 +111,7 @@ def inspect_pdf_sheet_set(
     documents: list[dict] = []
     raw_members: list[dict] = []
     grid_locations: list[dict] = []
+    vector_type_label_evidence: list[dict] = []
     vector_grid_summaries: list[dict] = []
     page_reasons: list[dict] = []
     total_pages = 0
@@ -133,7 +135,15 @@ def inspect_pdf_sheet_set(
                     text_type_marks=marks,
                 )
                 symbols = compact_symbol_witness(page, grid['nodes'])
-                grid_locations.extend(symbols['nodes'])
+                recognized = vector_column_type_labels(page, symbols['nodes'])
+                grid_locations.extend(recognized['nodes'])
+                if recognized['attached']:
+                    vector_type_label_evidence.append({
+                        'document_id': doc_id, 'page': number,
+                        'attached': recognized['attached'],
+                        'source_class': 'VECTOR_STROKE_LABEL',
+                        'approval': 'PROPOSED_UNVERIFIED',
+                    })
                 if grid['status'] != 'NO_GRID_EVIDENCE':
                     vector_grid_summaries.append({
                         'document_id': doc_id, 'page': number,
@@ -141,6 +151,7 @@ def inspect_pdf_sheet_set(
                         'candidate_count': len(grid['nodes']),
                         'compact_symbol_candidates': symbols['symbol_candidate_count'],
                         'column_layout_symbol_candidates': symbols['column_context_candidates'],
+                        'vector_label_attached_candidates': recognized['attached'],
                         'sheet_context': symbols['sheet_context'],
                         'axes_x_pt': grid['axes_x_pt'],
                         'levels_y_pt': grid['levels_y_pt'],
@@ -231,33 +242,77 @@ def inspect_pdf_sheet_set(
                               "evidence": [{"document_id": e["document_id"], "page": e["page"],
                                             "dimension": e["dimension_m"], "kind": e["dimension_kind"]} for e in entries],
                               "options": ["confirm_document", "correct", "request_revised_sheet"]})
+    # Tie a vector-read TYPE label to an unambiguous, text-backed type detail.
+    # This is a *provisional reference to a dimension*, not a column instance,
+    # replication factor, height, volume or accepted BOQ quantity.
+    unique_type_details: dict[str, list[dict]] = {}
+    for tag, entries in grouped.items():
+        valid = [e for e in entries if e['status'] in
+                 ('TYPE_DIMENSION_CANDIDATE', 'CROSS_VIEW_TYPE_REFERENCE_CANDIDATE')
+                 and e.get('dimension_kind') and e.get('dimension_m')]
+        distinct = {(e['dimension_kind'], e['dimension_m']) for e in valid}
+        if len(distinct) == 1 and valid:
+            unique_type_details[tag] = [
+                {'document_id': e['document_id'], 'page': e['page'],
+                 'dimension_kind': e['dimension_kind'],
+                 'dimension_m': e['dimension_m'],
+                 'status': 'PROPOSED_UNVERIFIED',
+                 'source_class': 'PDF_TEXT_TYPE_DETAIL'}
+                for e in valid]
+    for node in grid_locations:
+        tag = node.get('suggested_type')
+        if (node.get('status') == 'GRID_LOCATION_VECTOR_TYPE_CANDIDATE' and
+                tag in unique_type_details):
+            node['cross_sheet_type_reference'] = {
+                'tag': tag,
+                'details': unique_type_details[tag],
+                'status': 'PROPOSED_UNVERIFIED',
+                'physical_member_verified': False,
+                'quantity_approved': False,
+            }
+
     # One review question per relevant *sheet*, never one interrupting modal
     # per individual grid node.  Column symbols may be clear as vector marks,
     # while their C1/C2/C3 annotation is outlined rather than searchable text.
     # A type candidate list from details does not establish per-node ownership.
     unresolved_column_grids: dict[tuple[str, int], list[dict]] = defaultdict(list)
     for node in grid_locations:
-        if node.get('column_context_candidate') and not node.get('suggested_type'):
+        if node.get('column_context_candidate') and not node.get('type_verified'):
             unresolved_column_grids[(node['document_id'], node['page'])].append(node)
     known_types = sorted({e['tag'] for e in raw_members
-                          if e['status'] in ('TYPE_DIMENSION_CANDIDATE',
-                                             'CROSS_VIEW_TYPE_REFERENCE_CANDIDATE')})
+                          if e['tag'].startswith('C') and
+                          e['status'] in ('TYPE_DIMENSION_CANDIDATE',
+                                          'CROSS_VIEW_TYPE_REFERENCE_CANDIDATE')})
     for (doc_id, page_no), nodes in sorted(unresolved_column_grids.items()):
+        parsed_labels = [
+            {'candidate_id': node['candidate_id'], 'type': node['suggested_type'],
+             'status': 'PROPOSED_UNVERIFIED',
+             'source_class': 'VECTOR_STROKE_LABEL',
+             'bbox_pt': node.get('vector_type_label_evidence', {}).get('bbox_pt'),
+             'cross_sheet_type_reference': node.get('cross_sheet_type_reference')}
+            for node in nodes if node.get('suggested_type') and
+            isinstance(node.get('vector_type_label_evidence'), dict)
+        ]
         questions.append({
             'tag': f'GRID_TYPE:{doc_id}:p{page_no}',
             'status': 'REVIEW_REQUIRED',
-            'question': 'تیپ‌های ستون در موقعیت‌های علامت‌دار این شیت چگونه تعیین می‌شوند؟',
+            'question': 'انتساب تیپ‌های خوانده‌شده از علائم برداری این شیت برای متره معتبر است؟' if parsed_labels else 'تیپ‌های ستون در موقعیت‌های علامت‌دار این شیت چگونه تعیین می‌شوند؟',
             'suggestion': {
                 'status': 'PROPOSED_UNVERIFIED',
                 'value': None,
                 'candidate_types_from_details': known_types,
-                'reason': 'وجود نماد و عنوان پلان ستون ثابت شد؛ تیپ تک‌تک موقعیت‌ها با شواهد متنی قابل اثبات نیست.'
+                'per_location_type_candidates': parsed_labels,
+                'reason': ('برچسب‌های برداری با هندسه قلم شناسایی شده‌اند؛ انتساب برای متره قطعی نیازمند بررسی مستقل اعتبار نقشه و نسخه آن است.'
+                           if parsed_labels else
+                           'وجود نماد و عنوان پلان ستون ثابت شد؛ تیپ تک‌تک موقعیت‌ها با شواهد متنی قابل اثبات نیست.')
             },
             'evidence': [
                 {'document_id': node['document_id'], 'page': node['page'],
                  'candidate_id': node['candidate_id'],
                  'x_pt': node['x_pt'], 'y_pt': node['y_pt'],
-                 'symbol_status': node['symbol_status']}
+                 'symbol_status': node['symbol_status'],
+                 'vector_type_candidate': node.get('suggested_type'),
+                 'label_provenance': node.get('vector_type_label_evidence')}
                 for node in nodes
             ],
             'options': ['confirm_suggestion', 'correct', 'request_document'],
@@ -267,6 +322,12 @@ def inspect_pdf_sheet_set(
     return {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
             "grid_location_candidates": grid_locations,
+            "vector_type_label_evidence": vector_type_label_evidence,
+            "vector_type_detail_link_count": sum(
+                bool(node.get("cross_sheet_type_reference")) for node in grid_locations),
+            "vector_type_label_candidate_count": sum(
+                node.get("status") == "GRID_LOCATION_VECTOR_TYPE_CANDIDATE"
+                for node in grid_locations),
             "compact_symbol_candidate_count": sum(x["symbol_status"] == "COMPACT_VECTOR_SYMBOL_CANDIDATE" for x in grid_locations),
             "column_layout_symbol_candidate_count": sum(bool(x["column_context_candidate"]) for x in grid_locations),
             "vector_grid_summaries": vector_grid_summaries,
