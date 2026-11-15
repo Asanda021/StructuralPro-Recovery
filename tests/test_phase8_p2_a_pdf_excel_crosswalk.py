@@ -26,7 +26,7 @@ def test_agreement_is_candidate_not_financial_approval():
     assert r['approved_financial_rows'] == 0
     assert r['acceptance'] == 'NOT_VERIFIED'
     assert r['input_pairs_reconciled'] is True
-    assert r['complete'] is False  # Pair agreement does not prove whole-project coverage.
+    assert r['complete'] is False  # Matching two supplied rows cannot prove full project coverage.
 
 
 def test_real_difference_has_excel_suggestion_but_cannot_pay():
@@ -115,3 +115,42 @@ def test_mixed_batch_does_not_block_other_items():
     r = reconcile_pdf_excel([pdf(), pdf(member_id='D1', quantity='2')], [excel()])
     assert r['summary']['AGREED_CANDIDATE'] == 1
     assert r['summary']['BLOCKED_MISSING_COUNTERPART'] == 1
+
+
+def test_document_comparison_uses_printed_precision_not_fake_exact_equality():
+    from core.drawings.pdf_excel_crosswalk import compare_pdf_printed_quantity
+    r = compare_pdf_printed_quantity('13.94', '13.944')
+    assert r['status'] == 'AGREED_DISPLAY_CANDIDATE'
+    assert r['excel_at_pdf_precision'] == '13.94'
+    assert r['pdf_minus_excel_exact'] == '-0.004'
+    assert not r['member_identity_verified'] and not r['approved']
+
+
+def test_document_comparison_rejects_material_mismatch():
+    from core.drawings.pdf_excel_crosswalk import compare_pdf_printed_quantity
+    r = compare_pdf_printed_quantity('4510', '4473')
+    assert r['status'] == 'BLOCKED_DOCUMENT_MISMATCH'
+    assert not r['financially_payable']
+
+
+def test_document_comparison_half_up_boundary_and_persian_digits():
+    from core.drawings.pdf_excel_crosswalk import compare_pdf_printed_quantity
+    r = compare_pdf_printed_quantity('۱٫۲۵', '1.245')
+    assert r['status'] == 'AGREED_DISPLAY_CANDIDATE'
+    assert r['excel_at_pdf_precision'] == '1.25'
+
+
+def test_document_comparison_never_accepts_ambiguous_number_or_nonfinite():
+    from core.drawings.pdf_excel_crosswalk import compare_pdf_printed_quantity
+    import pytest
+    for value in ('1,250', 'NaN', '1e3', ''):
+        with pytest.raises(ValueError):
+            compare_pdf_printed_quantity(value, '1')
+
+
+def test_signed_deduction_document_row_does_not_turn_into_payable_quantity():
+    from core.drawings.pdf_excel_crosswalk import compare_pdf_printed_quantity
+    r = compare_pdf_printed_quantity('-1.37', '-1.372')
+    assert r['status'] == 'AGREED_DISPLAY_CANDIDATE'
+    assert r['excel_at_pdf_precision'] == '-1.37'
+    assert not r['financially_payable'] and not r['member_identity_verified']
