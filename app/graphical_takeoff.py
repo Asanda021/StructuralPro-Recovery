@@ -1309,6 +1309,8 @@ class GraphicalTakeoffDialog(QDialog):
                 f"{len(report['member_type_candidates'])} شاهد تیپ | "
                 f"{len(report.get('grid_location_candidates', ()))} نامزد شبکه (غیرقطعی) | "
                 f"{report.get('column_layout_symbol_candidate_count',0)} شاهد نماد ستون (تأییدنشده) | "
+                f"{report.get('vector_type_label_candidate_count',0)} برچسب تیپ برداری (پیشنهادی) | "
+                f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
                 f"{len(report['questions'])} اختلاف مؤثر؛ "
                 "هیچ مقدار مالی از این بررسی ایجاد نشد."
             )
