@@ -23,17 +23,18 @@ _DEFAULT_COLS = 4
 _MAX_PATHS = 30000
 _MAX_BLOCKS = 30000
 _MAX_PAGES = 600
-_MARKS = re.compile(r'(?<![A-Za-z0-9])(?:SC|SW|C|B|F|T|W|S|P)\s*[-–]?\s*[1-9][0-9]{0,2}(?![A-Za-z0-9])',re.I)
+_MARKS = re.compile(r'(?<![A-Za-z0-9])(?:BR|BP|SC|SW|C|B|F|T|W|S|P)\s*[-–.]?\s*[1-9][0-9]{0,2}(?![A-Za-z0-9])',re.I)
 _DETAIL_TERMS = ('جزئیات', 'جزییات', 'اتصال', 'مقطع', 'برش', 'detail', 'connection', 'section')
 _NOTE_TERMS = ('توضیحات', 'یادداشت', 'note', 'notes', 'generalnotes')
 _COMPONENT_TERMS = {
+    'bracing': ('بادبند', 'مهاربند', 'brace', 'bracing'),
     'beam': ('تیر', 'پل', 'beam', 'girder'),
     'column': ('ستون', 'column'),
     'foundation': ('پی', 'فنداسیون', 'foundation', 'footing'),
     'slab_roof': ('سقف', 'دال', 'بام', 'roof', 'slab'),
     'wall_opening': ('دیوار', 'بازشو', 'پنجره', 'wall', 'opening'),
     'stair_ramp': ('پله', 'رمپ', 'stair', 'ramp'),
-    'reinforcement_connection': ('آرماتور', 'خاموت', 'میلگرد', 'اتصال', 'rebar', 'connection'),
+    'reinforcement_connection': ('آرماتور', 'خاموت', 'میلگرد', 'اتصال', 'صفحه ستون', 'بیس پلیت', 'base plate', 'baseplate', 'rebar', 'connection'),
     'mechanical': ('مکانیک', 'لوله', 'کانال', 'mechanical', 'pipe', 'duct'),
     'electrical': ('برق', 'کابل', 'electrical', 'cable'),
 }

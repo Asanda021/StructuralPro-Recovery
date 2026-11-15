@@ -25,13 +25,15 @@ _MAX_SHEETS = 600
 _MAX_REGIONS = 40000
 _MAX_TITLES = 10000
 _MAX_TYPE_MARKS = 10000
-_MARK = re.compile(r'^\s*(SC|SW|C|B|F|T|W|S|P)\s*[-–]?\s*([1-9][0-9]{0,2})\s*$', re.I)
+_MARK = re.compile(r'^\s*(BR|BP|SC|SW|C|B|F|T|W|S|P)\s*[-–.]?\s*([1-9][0-9]{0,2})\s*$', re.I)
 
 # Type-letter families are only hypotheses without a classified context.
 _FAMILY_FOR_MARK = {'B': 'beam', 'C': 'column', 'F': 'foundation',
-                    'SC': 'column', 'SW': 'wall_opening', 'W': 'wall_opening'}
+                    'SC': 'column', 'SW': 'wall_opening', 'W': 'wall_opening',
+                    'BR': 'bracing', 'BP': 'reinforcement_connection'}
 # Long/explicit words, not short ambiguous syllables such as Persian "پی".
 _TITLE_WORDS = {
+    'bracing': ('بادبند', 'مهاربند', 'brace', 'bracing'),
     'beam': ('تیر', 'پل', 'beam', 'girder'),
     'column': ('ستون', 'column'),
     'foundation': ('فونداسیون', 'فنداسیون', 'شناژ', 'footing', 'foundation', 'grade beam'),
@@ -39,6 +41,7 @@ _TITLE_WORDS = {
     'wall_opening': ('دیوار', 'تیغه', 'بازشو', 'پنجره', 'wall', 'partition', 'opening', 'window'),
     'stair_ramp': ('پله', 'رمپ', 'stair', 'ramp'),
     'reinforcement_connection': ('آرماتور', 'میلگرد', 'خاموت', 'اتصال', 'مدفون',
+                                 'صفحه ستون', 'بیس پلیت', 'base plate', 'baseplate',
                                  'rebar', 'reinforcement', 'joint', 'connection', 'embedment'),
     'architecture_finishes': ('معماری', 'نازک کاری', 'کاشی', 'سرامیک', 'architectural', 'finish', 'tilework'),
     'mechanical': ('لوله', 'کانال', 'مکانیکی', 'mechanical', 'pipe', 'duct'),

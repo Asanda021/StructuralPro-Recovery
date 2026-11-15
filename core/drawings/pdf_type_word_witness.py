@@ -9,7 +9,7 @@ from __future__ import annotations
 from math import isfinite
 import re
 
-TYPE_MARK = re.compile(r'^(SC|SW|C|B|F|T|W|S|P)[-–]?([1-9][0-9]{0,2})$', re.I)
+TYPE_MARK = re.compile(r'^(BR|BP|SC|SW|C|B|F|T|W|S|P)[-–.]?([1-9][0-9]{0,2})$', re.I)
 
 
 def unrotated_page_bounds(page):

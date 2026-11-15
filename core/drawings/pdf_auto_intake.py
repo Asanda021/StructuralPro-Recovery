@@ -33,7 +33,7 @@ from core.drawings.pdf_engine import require_current_pdf
 
 
 _MEMBER_MARK = re.compile(
-    r"(?<![A-Za-z0-9])(?P<family>SC|SW|C|B|W|F|P|S)\s*[-–]?\s*(?P<index>[1-9][0-9]{0,2})(?![A-Za-z0-9])",
+    r"(?<![A-Za-z0-9])(?P<family>BR|BP|SC|SW|C|B|W|F|P|S)\s*[-–.]?\s*(?P<index>[1-9][0-9]{0,2})(?![A-Za-z0-9])",
     re.IGNORECASE,
 )
 _EXPLICIT_DIM = re.compile(
