@@ -99,3 +99,53 @@ def test_dense_outlined_pdf_and_scanned_textless_pdf_need_recovery():
         "vector_path_count": 3, "image_block_count": 0,
         "searchable_text_block_count": 15,
     })
+
+
+
+def test_ocr_cad_outline_evidence_enters_graph_only_as_proposed(tmp_path, monkeypatch):
+    import pymupdf
+    import core.drawings.pdf_auto_intake as intake
+
+    drawing=tmp_path/"cad-outlined-labels.pdf"
+    with pymupdf.open() as pdf:
+        page=pdf.new_page(width=600,height=400)
+        page.draw_rect(pymupdf.Rect(20,20,110,110))
+        pdf.save(drawing)
+
+    monkeypatch.setattr(intake, "should_recover_rendered_labels", lambda _: True)
+
+    def synthetic_ocr(page, *, document_id, page_number, native_witnesses, language):
+        assert document_id=="PDF001" and page_number==1
+        assert language=="eng"
+        assert native_witnesses==[]
+        return {
+            "document_id":document_id, "page":page_number,
+            "status":"INDEXED_RENDERED_OCR_TYPE_CANDIDATES",
+            "type_word_witness_count":1, "all_ocr_words_examined":True,
+            "type_word_witnesses":[{
+                "document_id":document_id, "page":page_number,
+                "source_word_index":1,"source_token":"BP1",
+                "witness_id":"PDF001:p1:ocrword000001", "type_tag":"BP1",
+                "bbox_pt":[35,35,64,49],"status":"OCR_TYPE_MARK_UNVERIFIED",
+                "source_quality":"RENDERED_OCR_NOT_VERIFIED",
+                "financially_payable":False,"quantity_approved":False,
+                "physical_member_verified":False,
+            }],
+        }
+    monkeypatch.setattr(intake, "recover_page_rendered_type_words", synthetic_ocr)
+    result=intake.inspect_pdf_sheet_set([drawing], rendered_ocr=True, ocr_language="eng")
+    assert result["rendered_ocr_enabled"] is True
+    assert result["rendered_ocr_candidate_count"]==1
+    graph=result["detail_evidence_graph"]
+    assert graph["quantity_approval_count"]==0
+    assert graph["physical_member_count"] is None
+    ocr_nodes=[n for n in graph["nodes"] if
+               n.get("evidence_quality")=="RENDERED_OCR_NOT_VERIFIED"]
+    assert len(ocr_nodes)==1
+    assert ocr_nodes[0]["type_tag"]=="BP1"
+    assert ocr_nodes[0]["family"]=="reinforcement_connection"
+    assert any(i["reason_code"]=="RENDERED_OCR_TYPE_UNVERIFIED" for i in graph["issues"])
+    assert all(n["financially_payable"] is False for n in ocr_nodes)
+    assert not [n for n in graph["nodes"] if n["kind"]=="INSTANCE_CANDIDATE"]
+    assert not [n for n in graph["nodes"] if n["kind"]=="TYPE_DEFINITION"]
+    assert any(q["tag"].startswith("PDF_GRAPH_") for q in graph["review_questions"])

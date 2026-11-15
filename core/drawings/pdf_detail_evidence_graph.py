@@ -99,6 +99,7 @@ _REASONS = {
     "DIFFERENT_PROJECT_OR_ISSUE": ("شناسهٔ پروژه یا مجموعه ابلاغ دو سند متفاوت است", "شاهد عضویت در مجموعه حاکم"),
     "DUPLICATE_CURRENT_SHEET_ID": ("بیش از یک صفحه با شناسهٔ شیت یکسان در مجموعه ابلاغ جاری ثبت شده است", "فهرست مصوب شیت‌های جاری و تعیین نسخهٔ حاکم هر شیت"),
     "LEGACY_GRID_LEVEL_UNKNOWN": ("شاهد موقعیت شبکه برای تکرار عضو در ترازها کافی نیست", "شناسه عضو و تراز اجرایی مستقل"),
+    "RENDERED_OCR_TYPE_UNVERIFIED": ("تشخیص برچسب از تصویر/خطوط PDF با OCR محلی احتمالی است", "مقابله با متن خوانای نقشه حاکم و محل دقیق عضو"),
 }
 _REVIEWABLE = {
     "REVISION_CONFLICT", "SUPERSEDED_SOURCE", "DIFFERENT_PROJECT_OR_ISSUE", "UNVERIFIED_DOCUMENT_SCOPE",
@@ -107,7 +108,7 @@ _REVIEWABLE = {
     "REFERENCE_TARGET_NOT_FOUND", "AMBIGUOUS_REFERENCE_TARGET", "REFERENCE_SUBJECT_NOT_FOUND",
     "REFERENCE_TARGET_UNRESOLVED", "REFERENCE_SOURCE_UNRESOLVED", "CONFLICTING_DETAIL_REFERENCES",
     "INSTANCE_SCOPE_CONFLICT", "INSTANCE_GEOMETRY_AMBIGUOUS", "AMBIGUOUS_VIEW_SCALE", "MISSING_TARGET_TYPE",
-    "SCHEDULE_CONTEXT_UNVERIFIED",
+    "SCHEDULE_CONTEXT_UNVERIFIED", "RENDERED_OCR_TYPE_UNVERIFIED",
 }
 
 
@@ -362,10 +363,13 @@ def _page_record(g, doc, raw, authority):
     raster_only = raster and not raw["vector_path_count"]
     extraction_blocked = extraction["status"] != "EXAMINED" or bool(raw["extraction_errors"])
     word_witnesses = raw["type_word_index"]["type_word_witnesses"]
+    rendered_ocr = raw.get("rendered_type_word_index") or {}
+    ocr_witnesses = rendered_ocr.get("type_word_witnesses", ())
     geometric_labels = sum(len(lookup[kind]) for kind in ("DETAIL_TITLE", "PRINTED_SCALE", "INSTANCE"))
     structured_count = sum(len(lookup[kind]) for kind in ("DETAIL_TITLE", "INSTANCE", "SCHEDULE_ROW"))
-    local_pairs = (len(topo["groups"]) * (geometric_labels + len(word_witnesses) + len(raw["image_placements"])) +
-                   len(word_witnesses) * structured_count)
+    local_pairs = (len(topo["groups"]) * (geometric_labels + len(word_witnesses) +
+                   len(ocr_witnesses) + len(raw["image_placements"])) +
+                   (len(word_witnesses) + len(ocr_witnesses)) * structured_count)
     local_links_blocked = local_pairs > _LOCAL_LINK_PAIR_LIMIT
     state = ("BLOCKED" if conflict or raster_only or extraction_blocked or geometry_blocked or local_links_blocked
              else "UNRESOLVED" if raster or role == "UNKNOWN" else "EXAMINED")
@@ -406,6 +410,8 @@ def _page_record(g, doc, raw, authority):
         "source_errors": sorted(set(raw["extraction_errors"] + (
             [extraction["status"]] if extraction["status"] != "EXAMINED" else []))),
         "printed_scales": sorted({f'1:{item["denominator"]}' for item in lookup["PRINTED_SCALE"]}),
+        "rendered_ocr_status": rendered_ocr.get("status", "NOT_REQUESTED"),
+        "rendered_ocr_type_count": len(ocr_witnesses),
     }
 
 
@@ -519,6 +525,23 @@ def _add_local_evidence(g, page, shapes):
         words.append({
             **mark, "kind": "TYPE_WORD", "anchor_id": _stable("WORD", digest, number, mark["source_word_index"]),
         })
+    # OCR is deliberately separate from the authoritative native text index.
+    # Unknown/duplicate OCR words are still preserved in the recovery receipt,
+    # but cannot fabricate another member or a type-definition node.
+    ocr = raw.get("rendered_type_word_index") or {}
+    for mark in ocr.get("type_word_witnesses", ()):
+        if (mark.get("document_id") != page["document_id"] or mark.get("page") != number
+                or mark.get("financially_payable") is not False
+                or mark.get("source_quality") != "RENDERED_OCR_NOT_VERIFIED"):
+            raise ValueError("Foreign or unsupported PDF OCR evidence")
+        if mark.get("status") == "OCR_DUPLICATE_NATIVE_TYPE_MARK":
+            continue
+        if mark.get("status") != "OCR_TYPE_MARK_UNVERIFIED":
+            raise ValueError("Invalid OCR type witness status")
+        words.append({
+            **mark, "kind": "RENDERED_OCR_TYPE_WORD",
+            "anchor_id": _stable("OCR_WORD", digest, number, mark["source_word_index"]),
+        })
     by_word, by_shape = _nearby(shapes if page["linkable"] else [], words, limit=16)
     for word in words:
         _, family = _tag(word["type_tag"])
@@ -527,15 +550,23 @@ def _add_local_evidence(g, page, shapes):
         code = ("UNBOUND_LOCAL_TYPE_MARK" if not options else "AMBIGUOUS_LOCAL_TYPE_MARK" if not unique else
                 "TYPE_FAMILY_CONFLICT" if family and options[0]["family"] not in {"unknown", family} else None)
         status = ("BLOCKED" if not page["linkable"] or (options and code) else "UNRESOLVED")
+        is_ocr = word["kind"] == "RENDERED_OCR_TYPE_WORD"
         evidence = g.node("EVIDENCE", (word["anchor_id"],), word["type_tag"], status, [word],
-                          family=family or "unknown", type_tag=word["type_tag"])
+                          family=family or "unknown", type_tag=word["type_tag"],
+                          evidence_quality=("RENDERED_OCR_NOT_VERIFIED" if is_ocr else
+                                            "PDF_NATIVE_WORD_BBOX_NOT_MEMBER"))
+        if is_ocr:
+            g.issue(evidence, "RENDERED_OCR_TYPE_UNVERIFIED", status="UNRESOLVED")
         refs = [word, *(a for option in options for a in option["anchors"])]
         if code:
             g.issue(evidence, code, refs, status=status)
         if options:
-            g.edge("TYPE_WORD_NEAR_VIEW", evidence, options[0] if unique else None, refs,
+            g.edge("RENDERED_OCR_TYPE_NEAR_VIEW" if is_ocr else "TYPE_WORD_NEAR_VIEW",
+                   evidence, options[0] if unique else None, refs,
                    status="REJECTED" if code == "TYPE_FAMILY_CONFLICT" else "AMBIGUOUS" if code else "PROPOSED",
-                   reason=_REASONS[code][0] if code else "جای واژه و شکل در مختصات یک صفحه",
+                   reason=_REASONS[code][0] if code else (
+                       "برچسب OCR نامطمئن و مجاورت شکل؛ نیازمند تأیید مستقل" if is_ocr else
+                       "جای واژه و شکل در مختصات یک صفحه"),
                    code=code, candidates=[option["node_id"] for option in options])
     for note in raw["note_anchors"]:
         anchor = {**note, "kind": "NOTE", "anchor_id": _stable("NOTE", digest, number, note["anchor_id"].split(":")[-1])}
