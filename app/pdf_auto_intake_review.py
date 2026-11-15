@@ -26,6 +26,8 @@ class PDFSheetEvidenceDialog(QDialog):
         root = QVBoxLayout(self)
         self.summary = QLabel(
             f"{len(report.get('documents', ()))} PDF | {report.get('page_count', 0)} صفحه | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه با وضعیت پوشش | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
             f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "
@@ -46,6 +48,91 @@ class PDFSheetEvidenceDialog(QDialog):
         root.addWidget(disclaimer)
         tabs = QTabWidget(self)
         root.addWidget(tabs)
+        # The coverage index is an audit of EVERY page and evidence zone.
+        # A indexed cell is not an identified detail nor a financial quantity.
+        coverage = report.get('sheet_detail_inventory') or {}
+        coverage_root = QWidget(tabs)
+        coverage_layout = QVBoxLayout(coverage_root)
+        inventory_notice = QLabel(
+            'فهرست‌برداری، تحلیل و متره قطعی دیتیل نیست. '
+            'ناحیه‌های برداری و تصویری نامفسر با وضعیت UNRESOLVED ثبت می‌شوند.'
+        )
+        inventory_notice.setWordWrap(True)
+        coverage_layout.addWidget(inventory_notice)
+        cover_subtabs = QTabWidget(coverage_root)
+        coverage_layout.addWidget(cover_subtabs)
+        sheet_page = QWidget(cover_subtabs)
+        sheet_layout = QVBoxLayout(sheet_page)
+        self.sheet_coverage_table = QTableWidget(0, 5, sheet_page)
+        self.sheet_coverage_table.setObjectName('PDFAutoIntakeAllSheetsCoverage')
+        self.sheet_coverage_table.setHorizontalHeaderLabels([
+            'فایل/صفحه', 'نوع شیت احتمالی', 'ناحیه‌ها', 'عنوان دیتیل', 'وضعیت پوشش'
+        ])
+        page_rows = coverage.get('sheet_inventory', ())
+        self.sheet_coverage_table.setRowCount(len(page_rows))
+        self.sheet_coverage_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(page_rows):
+            vals = (f"{item.get('document_id', '')}:p{item.get('page', '')}",
+                    item.get('sheet_kind') or 'نامعلوم',
+                    item.get('region_count', 0),
+                    item.get('detail_anchor_count', 0),
+                    item.get('coverage_status') or 'BLOCKED')
+            for j, value in enumerate(vals):
+                cell = QTableWidgetItem(str(value))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.sheet_coverage_table.setItem(i, j, cell)
+        sheet_layout.addWidget(self.sheet_coverage_table)
+        cover_subtabs.addTab(sheet_page, 'تمام صفحات')
+
+        zones_page = QWidget(cover_subtabs)
+        zones_layout = QVBoxLayout(zones_page)
+        self.detail_region_table = QTableWidget(0, 6, zones_page)
+        self.detail_region_table.setObjectName('PDFAutoIntakeAllDetailRegions')
+        self.detail_region_table.setHorizontalHeaderLabels([
+            'منبع/ناحیه', 'حدود صفحه (pt)', 'متن', 'هندسه برداری', 'تصویر', 'وضعیت'
+        ])
+        region_rows = coverage.get('region_inventory', ())
+        self.detail_region_table.setRowCount(len(region_rows))
+        self.detail_region_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(region_rows):
+            values = (item.get('region_id',''),
+                      ', '.join(map(str,item.get('bbox_pt',()))),
+                      item.get('text_block_count',0),
+                      item.get('vector_path_count',0),
+                      item.get('image_block_count',0),
+                      item.get('status','BLOCKED'))
+            for j, value in enumerate(values):
+                cell = QTableWidgetItem(str(value))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j == 5:
+                    cell.setToolTip(item.get('reason',''))
+                self.detail_region_table.setItem(i, j, cell)
+        zones_layout.addWidget(self.detail_region_table)
+        cover_subtabs.addTab(zones_page, 'تمام ناحیه‌ها')
+
+        title_page = QWidget(cover_subtabs)
+        title_layout = QVBoxLayout(title_page)
+        self.detail_title_table = QTableWidget(0, 4, title_page)
+        self.detail_title_table.setObjectName('PDFAutoIntakeDetailTitleAnchors')
+        self.detail_title_table.setHorizontalHeaderLabels([
+            'فایل/صفحه', 'عنوان یافت‌شده', 'محدوده عنوان (pt)', 'وضعیت'
+        ])
+        anchors = coverage.get('detail_title_anchors', ())
+        self.detail_title_table.setRowCount(len(anchors))
+        self.detail_title_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(anchors):
+            vals = (f"{item.get('document_id','')}:p{item.get('page','')}",
+                    item.get('title_preview',''),
+                    ', '.join(map(str,item.get('bbox_pt',()))),
+                    item.get('status','UNRESOLVED'))
+            for j, value in enumerate(vals):
+                cell = QTableWidgetItem(str(value))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.detail_title_table.setItem(i,j,cell)
+        title_layout.addWidget(self.detail_title_table)
+        cover_subtabs.addTab(title_page, 'عنوان‌های دیتیل')
+        tabs.addTab(coverage_root, 'پوشش همه شیت‌ها و دیتیل‌ها')
+
         candidates = QWidget(tabs)
         candidate_layout = QVBoxLayout(candidates)
         self.candidate_table = QTableWidget(0, 5, candidates)
