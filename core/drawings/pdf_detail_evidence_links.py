@@ -53,11 +53,14 @@ def link_pdf_detail_geometry_evidence(
     title_to_groups = defaultdict(set)
     seen_group_ids = set()
     blocked_pages = set()
+    rejected_partial_groups = 0
     for key, entry in sorted(page_groups.items()):
         if not entry.get('all_source_paths_grouped'):
             blocked_pages.add(key)
-            if entry.get('groups'):
-                raise ValueError('Blocked grouping page must not expose partial candidate links')
+            # Keep the page blocked if an upstream grouping attempt returned
+            # partial candidates. Never let those provisional groups influence
+            # title or type linking, but record how many were discarded.
+            rejected_partial_groups += len(entry.get('groups', ()))
             continue
         for group in entry.get('groups', ()):
             group_id = group.get('candidate_id')
@@ -163,6 +166,7 @@ def link_pdf_detail_geometry_evidence(
         'source_page_count': len(pages),
         'pages_with_vector_group_index': len(page_groups),
         'blocked_geometry_page_count': len(blocked_pages),
+        'rejected_partial_group_count': rejected_partial_groups,
         'geometry_group_link_records': linked_groups,
         'geometry_group_link_count': len(linked_groups),
         'geometry_group_link_status_counts': dict(sorted(status_counts.items())),
