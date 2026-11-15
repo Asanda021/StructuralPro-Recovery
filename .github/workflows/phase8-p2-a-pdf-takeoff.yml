@@ -10,6 +10,8 @@ on:
       - tests/test_phase8_p2_a_pdf_auto_intake.py
       - tests/test_phase8_p2_a_pdf_grid_instances.py
       - tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
+      - tests/test_phase8_p2_a_pdf_vector_type_labels.py
+      - core/drawings/pdf_vector_type_labels.py
       - core/drawings/pdf_vector_symbol_witness.py
       - core/drawings/pdf_grid_instances.py
       - tests/test_phase8_p2_a_pdf_auto_intake_qt.py
@@ -71,6 +73,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_auto_intake.py
           tests/test_phase8_p2_a_pdf_grid_instances.py
           tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
+          tests/test_phase8_p2_a_pdf_vector_type_labels.py
           tests/test_phase8_p2_a_pdf_auto_intake_qt.py
           tests/test_phase8_p2_a_pdf_auto_questions.py
           tests/test_pdf_dimension_text_regression.py
