@@ -126,6 +126,12 @@ class PDFSheetEvidenceDialog(QDialog):
 
     def _record_question_answer(self):
         row = self.question_table.currentRow()
+        if row < 0:
+            selected = self.question_table.selectionModel().selectedRows()
+            if selected:
+                row = selected[0].row()
+            elif self.question_table.rowCount() == 1:
+                row = 0
         if row < 0 or row >= len(self.report.get('questions', ())):
             QMessageBox.information(self, 'پرسش مهندسی', 'برای ثبت پاسخ، یک سؤال را انتخاب کنید.')
             return
