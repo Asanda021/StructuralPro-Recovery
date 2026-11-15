@@ -21,6 +21,7 @@ _MAX_BLOCKS = 30000
 _MAX_PAGES = 600
 _MARKS = re.compile(r'(?<![A-Za-z0-9])(?:SC|SW|C|B|F|T|W|S|P)\s*[-–]?\s*[1-9][0-9]{0,2}(?![A-Za-z0-9])',re.I)
 _DETAIL_TERMS = ('جزئیات', 'جزییات', 'اتصال', 'مقطع', 'برش', 'detail', 'connection', 'section')
+_NOTE_TERMS = ('توضیحات', 'یادداشت', 'note', 'notes', 'generalnotes')
 _COMPONENT_TERMS = {
     'beam': ('تیر', 'پل', 'beam', 'girder'),
     'column': ('ستون', 'column'),
@@ -117,6 +118,20 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
     except (RuntimeError,ValueError,MemoryError):
         extraction_errors.append('BLOCKED_VECTOR_EXTRACTION')
     title_anchors=_source_title_candidates(blocks,document_id,page_number)
+    # Notes are independent evidence and must be inventoried as well. This is
+    # a title/keyword anchor, not proof that all note text was understood.
+    note_anchors=[]
+    for idx,block in enumerate(blocks):
+        if len(block)<7 or block[6]!=0:continue
+        key=_compact(str(block[4]))
+        if not any(_compact(term) in key for term in _NOTE_TERMS):continue
+        bbox=_rect(block)
+        if bbox:
+            note_anchors.append({'anchor_id':f'{document_id}:p{page_number}:note{idx+1}',
+                'document_id':document_id,'page':page_number,
+                'bbox_pt':[round(v,2) for v in bbox],
+                'text_preview':str(block[4]).strip()[:100],
+                'status':'UNRESOLVED','financially_payable':False})
     box_data=[]
     for block in blocks:
         if len(block)<7:continue
@@ -126,6 +141,7 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
         else:
             extraction_errors.append('BLOCKED_INVALID_TEXT_BLOCK_BBOX')
     path_boxes=[]
+    axis_aligned=[]
     for path in paths:
         box=_rect(path.get('rect'))
         if box:
@@ -137,6 +153,15 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
             if ax0==ax1:ax0-=pad;ax1+=pad
             if ay0==ay1:ay0-=pad;ay1+=pad
             path_boxes.append((ax0,ay0,ax1,ay1))
+            for item in (path.get('items') or ()):
+                if len(item)<3 or item[0]!='l':continue
+                p0,p1=item[1],item[2]
+                xx0,yy0,xx1,yy1=float(p0.x),float(p0.y),float(p1.x),float(p1.y)
+                if all(isfinite(z) for z in (xx0,yy0,xx1,yy1)):
+                    if abs(yy0-yy1)<0.2 and abs(xx0-xx1)>=8:
+                        axis_aligned.append(((min(xx0,xx1),yy0-0.2,max(xx0,xx1),yy0+0.2),'h'))
+                    elif abs(xx0-xx1)<0.2 and abs(yy0-yy1)>=8:
+                        axis_aligned.append(((xx0-0.2,min(yy0,yy1),xx0+0.2,max(yy0,yy1)),'v'))
         else:
             extraction_errors.append('BLOCKED_INVALID_VECTOR_PATH_BBOX')
     blocked=bool(extraction_errors)
@@ -149,6 +174,12 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
             text_items=[v for v in box_data if v[1]==0 and _overlaps(tile,v[0])]
             images=sum(v[1]!=0 and _overlaps(tile,v[0]) for v in box_data)
             vectors=sum(_overlaps(tile,box) for box in path_boxes)
+            h_lines=sum(kind=='h' and _overlaps(tile,b) for b,kind in axis_aligned)
+            v_lines=sum(kind=='v' and _overlaps(tile,b) for b,kind in axis_aligned)
+            # A gridded geometric zone might be a table, frame or a plan.
+            # Never silently classify a structural grid as a schedule.
+            possible_table_or_grid=(h_lines>=3 and v_lines>=3)
+            notes=[n['anchor_id'] for n in note_anchors if _overlaps(tile,n['bbox_pt'])]
             titles=[v['anchor_id'] for v in title_anchors if _overlaps(tile,v['bbox_pt'])]
             raw=' '.join(v[2] for v in text_items)
             marks=sorted(set(m.group().upper().replace('-','').replace(' ','') for m in _MARKS.finditer(raw)))[:100]
@@ -175,6 +206,9 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
               'status':status,'reason':reason,'text_block_count':len(text_items),
               'vector_path_count':vectors,'image_block_count':images,
               'has_visible_evidence':has_ink,'explicit_detail_title_ids':titles,
+              'explicit_note_anchor_ids':notes,
+              'possible_table_or_grid':possible_table_or_grid,
+              'horizontal_line_count':h_lines,'vertical_line_count':v_lines,
               'searchable_member_marks':marks,
               'role':'PAGE_EVIDENCE_ZONE_NOT_SEGMENTED_DETAIL',
               'physical_member_verified':False,'financially_payable':False})
@@ -202,7 +236,10 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'regions':zones,'region_count':len(zones),'expected_region_count':rows*columns,
       'tile_rows':rows,'tile_columns':columns,
       'detail_title_anchors':title_anchors,
+      'note_anchors':note_anchors,
       'explicit_detail_anchor_count':len(title_anchors),
+      'explicit_note_anchor_count':len(note_anchors),
+      'table_or_grid_candidate_region_count':sum(z['possible_table_or_grid'] for z in zones),
       'searchable_text_block_count':sum(v[1]==0 for v in box_data),
       'vector_path_count':len(paths),'image_block_count':sum(v[1]!=0 for v in box_data),
       'extraction_errors':sorted(set(extraction_errors)),
@@ -227,6 +264,7 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     errors=[]
     all_regions=[]
     all_anchors=[]
+    all_notes=[]
     summary=[]
     for page in pages:
         regs=page.get('regions',())
@@ -263,9 +301,12 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
                     break
         all_regions.extend(regs)
         all_anchors.extend(page.get('detail_title_anchors',()))
+        all_notes.extend(page.get('note_anchors',()))
         summary.append({'document_id':page['document_id'],'page':page['page'],
           'sheet_kind':page['sheet_kind'],'coverage_status':page['coverage_status'],
           'region_count':len(regs),'detail_anchor_count':page['explicit_detail_anchor_count'],
+          'note_anchor_count':page['explicit_note_anchor_count'],
+          'table_or_grid_candidate_region_count':page['table_or_grid_candidate_region_count'],
           'discipline_candidates':page['discipline_candidates'],
           'vector_path_count':page['vector_path_count'],
           'image_block_count':page['image_block_count'],
@@ -274,6 +315,7 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
     pages_count=Counter(s['coverage_status'] for s in summary)
     return {'documents':docs,'page_count':len(pages),
       'sheet_inventory':summary,'detail_title_anchors':all_anchors,
+      'note_anchors':all_notes,
       'region_inventory':all_regions,
       'region_count':len(all_regions),'expected_region_count':sum(p['expected_region_count'] for p in pages),
       'region_status_counts':dict(sorted(counts.items())),
