@@ -73,3 +73,23 @@ def test_pdf_vector_symbol_witness_visible_without_promoting_to_member():
     assert 'غیرقطعی' in dialog.summary.text()
     assert dialog.ledger.answers == {}
     dialog.close()
+
+
+def test_grouped_column_question_shows_known_types_without_auto_assignment():
+    app = QApplication.instance() or QApplication([])
+    report = {
+        'documents':[{'document_id':'PDF001','sha256':'a'*64}],
+        'page_count':1,'member_type_candidates':[],'grid_location_candidates':[],
+        'unresolved_pages':[],
+        'questions':[{'tag':'GRID_TYPE:PDF001:p1','status':'REVIEW_REQUIRED',
+            'question':'تیپ علائم ستون‌ها چیست؟',
+            'suggestion':{'status':'PROPOSED_UNVERIFIED','value':None,
+                          'candidate_types_from_details':['C1','C2','C3']},
+            'evidence':[{'document_id':'PDF001','page':1}]}],
+    }
+    dialog=PDFSheetEvidenceDialog(report)
+    cell=dialog.question_table.item(0,2).text()
+    assert 'C1' in cell and 'C2' in cell and 'C3' in cell
+    assert 'نامعلوم' in cell
+    assert dialog.ledger.answers=={}
+    dialog.close()
