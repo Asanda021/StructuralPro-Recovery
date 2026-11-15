@@ -190,6 +190,41 @@ def reconcile_pdf_excel(
     return {'rows': results, 'invalid': invalid, 'questions': questions,
             'summary': dict(sorted(counts.items())),
             'approved_financial_rows': 0,
-            'complete': False,  # Matched rows cannot establish exhaustive project coverage.
+            'complete': False,  # No proof of exhaustive source-sheet/member coverage.
             'input_pairs_reconciled': bool(results) and not invalid and not questions,
             'acceptance': 'NOT_VERIFIED'}
+
+
+def compare_pdf_printed_quantity(pdf_printed: str, excel_exact: Any) -> dict:
+    """Compare Excel's exact number at the *verified PDF display precision*.
+
+    The printed decimal places determine the rounding step. This confirms only
+    a document-row transcription, never physical member identity or finance.
+    """
+    from decimal import ROUND_HALF_UP
+
+    if not isinstance(pdf_printed, str):
+        raise ValueError('printed PDF value must preserve its literal precision')
+    literal = pdf_printed.strip().translate(_DIGITS).replace('٫', '.')
+    if not re.fullmatch(r'[+-]?\d+(?:\.\d+)?', literal):
+        raise ValueError('printed PDF value must be an unambiguous decimal')
+    printed = Decimal(literal)  # Signed deductions are legal *document rows*.
+    if isinstance(excel_exact, bool) or excel_exact is None:
+        raise ValueError('invalid Excel document value')
+    excel_text = str(excel_exact).strip().translate(_DIGITS).replace('٫', '.')
+    if not re.fullmatch(r'[+-]?\d+(?:\.\d+)?', excel_text):
+        raise ValueError('Excel document value must be unambiguous')
+    exact = Decimal(excel_text)
+    quantum = Decimal(1).scaleb(printed.as_tuple().exponent)
+    try:
+        rounded = exact.quantize(quantum, rounding=ROUND_HALF_UP)
+    except InvalidOperation as exc:
+        raise ValueError('rounding precision unsupported') from exc
+    agrees = rounded == printed
+    return {'status': 'AGREED_DISPLAY_CANDIDATE' if agrees else 'BLOCKED_DOCUMENT_MISMATCH',
+            'pdf_printed': str(printed), 'excel_exact': str(exact),
+            'excel_at_pdf_precision': str(rounded),
+            'pdf_minus_excel_exact': str(printed - exact),
+            'rounding_mode': 'ROUND_HALF_UP',
+            'approved': False, 'member_identity_verified': False,
+            'financially_payable': False}
