@@ -290,3 +290,30 @@ def test_pdf_vector_proximity_groups_visible_as_nonfinancial_candidates():
     assert 'نه دیتیل قطعی' in dlg.summary.text()
     assert dlg.ledger.answers=={}
     dlg.close()
+
+
+
+def test_pdf_vector_grouping_blocked_page_is_visible_with_reason():
+    app=QApplication.instance() or QApplication([])
+    dlg=PDFSheetEvidenceDialog({
+        'documents':[{'document_id':'PDF007'}],
+        'page_count':1, 'member_type_candidates':[],
+        'unresolved_pages':[], 'questions':[],
+        'detail_object_index':{
+            'vector_geometry_groups':[],
+            'vector_geometry_group_count':0,
+            'vector_grouping_blocked_pages':[{
+                'document_id':'PDF007','page':3,
+                'status':'BLOCKED_VECTOR_GROUP_PATH_BUDGET',
+                'ungrouped_path_count':3001,
+                'financially_payable':False,
+            }]
+        }
+    })
+    assert dlg.vector_group_blocked_table.rowCount()==1
+    assert dlg.vector_group_blocked_table.item(0,0).text()=='PDF007:p3'
+    assert dlg.vector_group_blocked_table.item(0,1).text()=='BLOCKED_VECTOR_GROUP_PATH_BUDGET'
+    assert dlg.vector_group_blocked_table.item(0,2).text()=='3001'
+    assert '1 صفحه هندسه گروه‌بندی‌نشده' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()
