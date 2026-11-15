@@ -15,6 +15,8 @@ import math
 import re
 from typing import Iterable
 
+from core.drawings.pdf_grid_instances import detect_vector_grid_positions
+
 
 _MEMBER_MARK = re.compile(
     r"(?<![A-Za-z0-9])(?P<family>SC|SW|C|B|W|F|P|S)\s*[-–]?\s*(?P<index>[1-9][0-9]{0,2})(?![A-Za-z0-9])",
@@ -106,6 +108,8 @@ def inspect_pdf_sheet_set(
         raise ValueError("Duplicate PDF source selection is not allowed")
     documents: list[dict] = []
     raw_members: list[dict] = []
+    grid_locations: list[dict] = []
+    vector_grid_summaries: list[dict] = []
     page_reasons: list[dict] = []
     total_pages = 0
     for path in received:
@@ -123,6 +127,20 @@ def inspect_pdf_sheet_set(
                               "source_name": path.name, "sha256": sha256(data).hexdigest()})
             for number, page in enumerate(doc, 1):
                 marks, dims = _parse_pdf_lines(page)
+                grid = detect_vector_grid_positions(
+                    page, document_id=doc_id, page_number=number,
+                    text_type_marks=marks,
+                )
+                grid_locations.extend(grid['nodes'])
+                if grid['status'] != 'NO_GRID_EVIDENCE':
+                    vector_grid_summaries.append({
+                        'document_id': doc_id, 'page': number,
+                        'status': grid['status'],
+                        'candidate_count': len(grid['nodes']),
+                        'axes_x_pt': grid['axes_x_pt'],
+                        'levels_y_pt': grid['levels_y_pt'],
+                        'member_count_verified': False,
+                    })
                 # Only source text is visible to this detector. Raster/SHX/path
                 # encodings are NOT silently interpreted as absence of members.
                 if not marks:
@@ -211,6 +229,8 @@ def inspect_pdf_sheet_set(
     status_counts = Counter(x["status"] for x in raw_members)
     return {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
+            "grid_location_candidates": grid_locations,
+            "vector_grid_summaries": vector_grid_summaries,
             "questions": questions, "unresolved_pages": page_reasons,
             "status_counts": dict(sorted(status_counts.items())),
             "physical_member_count": None, "quantity_approval_count": 0,
