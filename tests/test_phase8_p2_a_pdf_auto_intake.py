@@ -270,3 +270,69 @@ def test_auto_intake_vector_stroke_column_labels_and_grouped_review(tmp_path):
     assert report['physical_member_count'] is None
     assert report['quantity_approval_count']==0
     assert report['complete'] is False
+
+
+def test_axis_plan_verifies_column_grid_but_floor_titles_do_not_multiply(tmp_path):
+    """Five synthetic sheets; no guessed repeat count across three architectural floors."""
+    import pymupdf
+    doc=pymupdf.open()
+    for label in ('Pilot Floor Plan','Ground Floor Plan','First Floor Plan',
+                  'Axis Plan','Column Type Plan'):
+        page=doc.new_page(width=842,height=595)
+        page.insert_text((18,30),label,fontsize=12)
+        if label in ('Axis Plan','Column Type Plan'):
+            xs=(180,253,358,452,531);ys=(156,297,439)
+            for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+            for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    p=tmp_path/'floor-guard.pdf';doc.save(p);doc.close()
+    report=inspect_pdf_sheet_set([p])
+    assert report['page_count']==5
+    assert report['independently_registered_grid_positions']==15
+    assert report['independent_axis_grid_registrations'][0]['axis_plan']['page']==4
+    assert report['independent_axis_grid_registrations'][0]['column_plan']['page']==5
+    assert [v['sheet_kind'] for v in report['architectural_floor_plan_candidates']]==[
+        'pilot_floor_plan','ground_floor_plan','first_floor_plan']
+    nodes=[n for n in report['grid_location_candidates'] if n['page']==5]
+    assert len(nodes)==15
+    assert all(n['independent_axis_grid_witness']['axis_page']==4 for n in nodes)
+    assert all(n['independent_axis_grid_witness']['axis_candidate_id'].startswith('PDF001:p4:') for n in nodes)
+    assert sum(q['tag']=='COLUMN_FLOOR_SCOPE' for q in report['questions'])==1
+    q=next(q for q in report['questions'] if q['tag']=='COLUMN_FLOOR_SCOPE')
+    assert len(q['suggestion']['floor_plan_candidates'])==3
+    assert q['suggestion']['value'] is None
+    assert q['financially_payable'] is False
+    assert report['floor_repetition_multiplier'] is None
+    assert report['floor_repetition_verified'] is False
+    assert report['physical_member_count'] is None
+    assert report['quantity_approval_count']==0
+    assert report['complete'] is False
+
+
+def test_column_grid_without_axis_layout_never_has_independent_axis_witness(tmp_path):
+    import pymupdf
+    doc=pymupdf.open();page=doc.new_page(width=842,height=595)
+    page.insert_text((25,30),'Column Type Plan')
+    xs=(180,253,358,452,531);ys=(156,297,439)
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    p=tmp_path/'no-independent-axis.pdf';doc.save(p);doc.close()
+    r=inspect_pdf_sheet_set([p])
+    assert r['independently_registered_grid_positions']==0
+    assert r['independent_axis_grid_registrations'][0]['status']=='BLOCKED_MISSING_MATCHED_AXIS_PLAN'
+    assert all('independent_axis_grid_witness' not in n for n in r['grid_location_candidates'])
+
+
+def test_architectural_floors_with_axis_but_no_column_layout_no_multiplier(tmp_path):
+    import pymupdf
+    d=pymupdf.open()
+    for label in ('Pilot Floor Plan','Ground Floor Plan','Axis Plan'):
+        p=d.new_page(width=842,height=595);p.insert_text((30,30),label)
+        if label=='Axis Plan':
+            xs=(180,253,358,452,531);ys=(156,297,439)
+            for x in xs:p.draw_line((x,ys[0]),(x,ys[-1]))
+            for y in ys:p.draw_line((xs[0],y),(xs[-1],y))
+    f=tmp_path/'no-column-layout.pdf';d.save(f);d.close()
+    r=inspect_pdf_sheet_set([f])
+    assert r['independently_registered_grid_positions']==0
+    assert not any(q['tag']=='COLUMN_FLOOR_SCOPE' for q in r['questions'])
+    assert r['floor_repetition_multiplier'] is None
