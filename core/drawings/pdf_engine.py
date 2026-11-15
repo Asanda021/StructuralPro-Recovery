@@ -2,9 +2,24 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from hashlib import file_digest, sha256
 from pathlib import Path
 from typing import Iterable
 import math
+
+
+PDF_SCENE_DPI = 150
+
+
+def require_current_pdf(path: Path, expected_sha256: str) -> None:
+    """Verify live source bytes without disclosing source paths or hashes."""
+    try:
+        with path.open("rb") as stream:
+            current = file_digest(stream, "sha256").hexdigest()
+    except OSError as exc:
+        raise ValueError("فایل منبع PDF در دسترس نیست؛ بازبینی مجدد لازم است") from exc
+    if not expected_sha256 or current != expected_sha256:
+        raise ValueError("فایل منبع PDF تغییر کرده یا اثر انگشت آن احراز نشده است")
 
 
 @dataclass(frozen=True)
@@ -23,13 +38,14 @@ class SnapPoint:
 
 
 class PDFDrawingEngine:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path, *, expected_sha256: str | None = None):
         self.path = Path(path)
         if not self.path.exists():
             raise FileNotFoundError(self.path)
         if not self.path.is_file():
             raise ValueError(f"مسیر PDF یک فایل نیست: {self.path}")
         self._doc = None
+        self._expected_sha256 = expected_sha256
 
     def open(self):
         if self._doc is not None:
@@ -43,11 +59,19 @@ class PDFDrawingEngine:
             raise RuntimeError("برای نمایش واقعی PDF، وابستگی PyMuPDF باید نصب باشد.") from exc
         doc = None
         try:
-            doc = fitz.open(str(self.path))
+            if self._expected_sha256 is None:
+                doc = fitz.open(str(self.path))
+            else:
+                data = self.path.read_bytes()
+                if sha256(data).hexdigest() != self._expected_sha256:
+                    raise ValueError("فایل منبع PDF تغییر کرده؛ نشست به نقشه متصل نشد")
+                doc = fitz.open(stream=data, filetype="pdf")
             if not getattr(doc, "is_pdf", False):
                 raise ValueError("فایل انتخاب‌شده یک PDF معتبر نیست.")
             if getattr(doc, "needs_pass", False):
                 raise RuntimeError("این PDF رمزگذاری شده است؛ ابتدا نسخه قابل‌خواندن را با مجوز لازم باز کن.")
+            if doc.is_repaired:
+                raise ValueError("ساختار PDF آسیب‌دیده است؛ نسخه معتبر منبع لازم است.")
             if len(doc) < 1:
                 raise ValueError("فایل PDF هیچ صفحه قابل‌نمایشی ندارد.")
             for index, page in enumerate(doc):

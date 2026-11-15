@@ -161,20 +161,58 @@ class TemplateStore:
             if target.read_bytes()!=data:raise ValueError("لوگوی موجود ناسازگار است")
         return name
 
+def _drawing_report_sources(project, records):
+    """Resolve each effective measurement to its saved session or applied PDF correction."""
+    from core.takeoff.manual_formula_amendments import beam_current, DRAWING_POLICY
+
+    groups = {}
+    hashes = {}
+    for row in records:
+        if row.get("domain") != "drawing":
+            continue
+        sid = row["drawing_session_id"]
+        params = row.get("params") or {}
+        amendment_id = params.get("amendment_id")
+        record = project["drawing_sessions"][sid]
+        amended_pdf = amendment_id and Path(params.get("drawing_source", "")).suffix.lower() == ".pdf"
+        key = sid, amendment_id if amended_pdf else None
+        if key not in groups:
+            if amended_pdf:
+                effective = beam_current(project, row["source_id"])
+                amendment = project["beam_amendments"][amendment_id]
+                data = effective["data"]
+                if (effective.get("amendment_id") != amendment_id
+                        or data.get("measurement_policy") != DRAWING_POLICY
+                        or data.get("root_source_id") != row["source_id"]
+                        or effective["revision"] != row["revision"]):
+                    raise ValueError("اصلاحیه PDF با برداشت مؤثر تطبیق ندارد")
+                proof = amendment["evidence"]
+                path, expected = proof["evidence_path"], proof["evidence_sha256"]
+                if path in hashes and hashes[path] != expected:
+                    raise ValueError("نسخه‌های مدرک اصلاحیه ناسازگارند")
+                hashes[path] = expected
+                session = data["proposed_session"]
+                record = {"id": sid, "session": session, "drawing_source": session["drawing_source"],
+                          "source_sha256": session["source_sha256"]}
+            groups[key] = record, []
+            path, expected = record["drawing_source"], record["source_sha256"]
+            if path in hashes and hashes[path] != expected:
+                raise ValueError("نسخه‌های منبع مشترک ناسازگارند")
+            hashes[path] = expected
+        groups[key][1].append(row["drawing_takeoff_id"])
+    return groups, hashes
+
+
 def _source_rows(p,kind):
     from core.reports.aec_office_package import audit_boq,flatten_takeoffs
     from core.takeoff.manual_formula_amendments import effective_takeoffs
     from core.drawings.takeoff_bridge import session_to_boq_rows,verified_measurement_identities
     audit_boq(p,require_pricebook=kind=="estimate")
     records=effective_takeoffs(p,p.get("takeoffs") or []);record_by_source={r["source_id"]:r for r in records}
-    groups={}
-    for r in records:
-        if r.get("domain")=="drawing":groups.setdefault(r["drawing_session_id"],[]).append(r["drawing_takeoff_id"])
-    hashes={}
-    for sid,ids in groups.items():
-        record=p["drawing_sessions"][sid]
+    groups, hashes = _drawing_report_sources(p, records)
+    for (sid, _), (record, ids) in groups.items():
         measured=session_to_boq_rows(record["session"],session_id=sid,selected_item_ids=tuple(ids))
-        verified_measurement_identities(record,measured);hashes[record["drawing_source"]]=record["source_sha256"]
+        verified_measurement_identities(record,measured)
         for row in measured:
             saved=record_by_source[row["source_id"]]
             params=saved.get("params");proof=saved.get("provenance");quantities=saved.get("quantities")
@@ -308,13 +346,21 @@ def _finalize_and_check(path,fmt,t,logo):
 def _verify_source_files(snapshot,*,require_pricebook):
     """Final two-pass physical source freshness, as in the accepted P2 adapter."""
     from hashlib import file_digest
-    references={}
-    for takeoff in snapshot.get("takeoffs",[]):
-        if takeoff.get("domain")!="drawing":continue
-        record=snapshot["drawing_sessions"][takeoff["drawing_session_id"]]
-        path=Path(record["drawing_source"]);expected=record["source_sha256"]
-        if path in references and references[path]!=expected:raise ValueError("نسخه‌های منبع مشترک ناسازگارند")
-        references[path]=expected
+    from core.takeoff.manual_formula_amendments import effective_takeoffs
+    records = snapshot.get("takeoffs", [])
+    if snapshot.get("beam_amendment_applied"):
+        _, sources = _drawing_report_sources(snapshot, effective_takeoffs(snapshot, records))
+        references = {Path(path): expected for path, expected in sources.items()}
+    else:
+        references = {}
+        for row in records:
+            if row.get("domain") != "drawing":
+                continue
+            saved = snapshot["drawing_sessions"][row["drawing_session_id"]]
+            path, expected = Path(saved["drawing_source"]), saved["source_sha256"]
+            if path in references and references[path] != expected:
+                raise ValueError("نسخه‌های منبع مشترک ناسازگارند")
+            references[path] = expected
     if require_pricebook:
         review=snapshot.get("user_pricebook_review") or {}
         path=Path(review["path"]);expected=review["sha256"].lower()

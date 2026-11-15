@@ -27,7 +27,10 @@ from core.drawings.model_registry import ModelRegistry, ModelSource, ModelObject
 from core.performance.project_performance import paginate, project_performance_snapshot
 from core.recovery.recovery import export_project, import_project
 from core.aec.disciplines import takeoff_domain
-from core.drawings.takeoff_bridge import session_to_boq_rows, validate_session_payload, verified_measurement_identities, assert_new_measurements
+from core.drawings.takeoff_bridge import (
+    assert_new_measurements, protect_committed_pdf_session, session_to_boq_rows,
+    validate_session_payload, verified_measurement_identities,
+)
 from core.takeoff.ai_output_guard import validate_ai_takeoff_proposal
 
 
@@ -974,6 +977,27 @@ class StructuralProApp:
         from core.takeoff.manual_formula_amendments import drawing_create
         return drawing_create(self,project_id,source_id,payload,**kwargs)
 
+    @staticmethod
+    def _next_drawing_record(sid, previous, payload, expected_revision):
+        if previous is None:
+            if expected_revision not in (None, 0):
+                raise RuntimeError("نشست نقشه تغییر کرده یا وجود ندارد؛ نسخه را دوباره بخوانید")
+            revision, committed, ai_committed = 1, [], []
+        else:
+            current_revision = int(previous.get("revision", 1))
+            if expected_revision is None or int(expected_revision) != current_revision:
+                raise RuntimeError(f"تعارض نسخه نشست نقشه؛ نسخه فعلی {current_revision} است")
+            protect_committed_pdf_session(previous, payload)
+            revision = current_revision + 1
+            committed = list(previous.get("committed_item_ids", []))
+            ai_committed = list(previous.get("ai_committed_item_ids", []))
+        return {
+            "id": sid, "revision": revision, "drawing_source": str(payload.get("drawing_source", "")),
+            "session": deepcopy(payload), "source_sha256": str(payload.get("source_sha256", "")),
+            "committed_item_ids": committed, "ai_committed_item_ids": ai_committed,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+
     def save_drawing_takeoff_session(self, project_id: str, session_payload: dict[str, Any] | Any, *,
                                      session_id: str | None = None,
                                      expected_revision: int | None = None) -> dict[str, Any]:
@@ -996,29 +1020,11 @@ class StructuralProApp:
         sessions = project.setdefault("drawing_sessions", {})
         if not isinstance(sessions, dict):
             raise ValueError("ساختار نشست‌های نقشه در پروژه ناسازگار است")
-        previous = sessions.get(sid)
-        if previous is None:
-            if expected_revision not in (None, 0):
-                raise RuntimeError("نشست نقشه تغییر کرده یا وجود ندارد؛ نسخه را دوباره بخوانید")
-            revision = 1
-            committed = []
-            ai_committed = []
-        else:
-            current_revision = int(previous.get("revision", 1))
-            if expected_revision is None or int(expected_revision) != current_revision:
-                raise RuntimeError(f"تعارض نسخه نشست نقشه؛ نسخه فعلی {current_revision} است")
-            revision = current_revision + 1
-            committed = list(previous.get("committed_item_ids", []))
-            ai_committed = list(previous.get("ai_committed_item_ids", []))
-        sessions[sid] = {
-            "id": sid, "revision": revision, "drawing_source": str(payload.get("drawing_source", "")),
-            "session": deepcopy(payload), "source_sha256": str(payload.get("source_sha256", "")), "committed_item_ids": committed,
-            "ai_committed_item_ids": ai_committed,
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
+        record = self._next_drawing_record(sid, sessions.get(sid), payload, expected_revision)
+        sessions[sid] = record
         self.store.save(pid, project, expected_digest=digest)
-        return {"session_id": sid, "revision": revision, "item_count": len(payload.get("items", [])),
-                "committed_item_ids": committed, "validation": report}
+        return {"session_id": sid, "revision": record["revision"], "item_count": len(payload.get("items", [])),
+                "committed_item_ids": record["committed_item_ids"], "validation": report}
 
     def load_drawing_takeoff_session(self, project_id: str, session_id: str) -> dict[str, Any]:
         """Return a copy of a persisted drawing session; no caller can mutate stored state."""
@@ -1033,11 +1039,19 @@ class StructuralProApp:
             raise ValueError("نشست ذخیره‌شده نامعتبر است: " + "؛ ".join(report["issues"]))
         return deepcopy(record)
 
-    def commit_drawing_takeoff_to_boq(self, project_id: str, session_id: str,
+    def commit_drawing_takeoff_to_boq(self, project_id: str, session_id: str | None,
                                       selected_item_ids: list[str], *,
-                                      expected_session_revision: int) -> dict[str, Any]:
-        """Atomically persist explicitly selected drawing measurements into takeoffs and BOQ."""
+                                      expected_session_revision: int,
+                                      pdf_draft=None) -> dict[str, Any]:
+        """Atomically persist selected measurements and, optionally, the current PDF draft."""
         pid, sid = str(project_id or "").strip(), str(session_id or "").strip()
+        draft = None
+        if pdf_draft is not None:
+            draft = pdf_draft.to_dict() if hasattr(pdf_draft, "to_dict") else deepcopy(pdf_draft)
+            if not isinstance(draft, dict) or Path(draft.get("drawing_source", "")).suffix.lower() != ".pdf":
+                raise ValueError("ذخیره و انتقال هم‌زمان به نشست PDF نیاز دارد")
+            if not sid and expected_session_revision == 0:
+                sid = uuid4().hex
         if not pid or not sid:
             raise ValueError("شناسه پروژه و نشست نقشه الزامی هستند")
         if not selected_item_ids:
@@ -1048,12 +1062,19 @@ class StructuralProApp:
         if project is None:
             raise KeyError(pid)
         sessions = project.get("drawing_sessions", {})
-        record = sessions.get(sid) if isinstance(sessions, dict) else None
-        if not isinstance(record, dict):
-            raise KeyError(f"نشست نقشه پیدا نشد: {sid}")
-        current_revision = int(record.get("revision", 1))
-        if int(expected_session_revision) != current_revision:
-            raise RuntimeError(f"تعارض نسخه نشست نقشه؛ نسخه فعلی {current_revision} است")
+        if not isinstance(sessions, dict):
+            raise ValueError("ساختار نشست‌های نقشه در پروژه ناسازگار است")
+        previous = sessions.get(sid)
+        if draft is None:
+            if not isinstance(previous, dict):
+                raise KeyError(f"نشست نقشه پیدا نشد: {sid}")
+            record = previous
+            current_revision = int(record.get("revision", 1))
+            if int(expected_session_revision) != current_revision:
+                raise RuntimeError(f"تعارض نسخه نشست نقشه؛ نسخه فعلی {current_revision} است")
+        else:
+            record = self._next_drawing_record(sid, previous, draft, expected_session_revision)
+            current_revision = record["revision"] - 1
         selected = list(dict.fromkeys(str(x) for x in selected_item_ids))
         already = set(record.get("committed_item_ids", []))
         ai_already = set(record.get("ai_committed_item_ids", []))
@@ -1074,7 +1095,13 @@ class StructuralProApp:
                 self, project_id=pid,
                 expected_project_version=project["_meta"]["version"],
                 session_id=sid, selected_item_ids=e8_area_ids,
+                pdf_draft_record=record if draft is not None else None,
             )
+        if draft is not None:
+            links = project.get("ifc_2d_crosswalks", [])
+            if any(link.get("session_id") == sid and link.get("item_id") in selected
+                   for link in links if isinstance(link, dict)):
+                raise ValueError("برداشت PDF متصل به Crosswalk باید از نشست ذخیره‌شده و بازبینی‌شده منتقل شود")
         from core.reports.ifc_crosswalk_source_audit import require_reviewed_ifc_crosswalks_for_boq
         require_reviewed_ifc_crosswalks_for_boq(
             self, project_id=pid,
@@ -1119,10 +1146,20 @@ class StructuralProApp:
             project, new_takeoffs, source_id=f"drawing-session:{sid}:{current_revision}")
         project["takeoffs"], project["boq"] = rebuild_project_boq(
             project, (project.get("takeoffs") or []) + validated)
+        if draft is not None and draft.get("workflow_preferences"):
+            from core.commercial.statement_basis import choose_statement_mode
+            settings = draft["workflow_preferences"]
+            choose_statement_mode(project, settings["pricing_mode"],
+                                  settings.get("contract_price_entry") or "prefilled")
         record["committed_item_ids"] = sorted(already.union(selected))
         record["ai_committed_item_ids"] = sorted(ai_already)
         record["revision"] = current_revision + 1
         record["updated_at"] = datetime.now(timezone.utc).isoformat()
+        project.setdefault("drawing_sessions", {})[sid] = record
+        path = Path(record["drawing_source"])
+        if path.suffix.lower() == ".pdf":
+            from core.drawings.pdf_engine import require_current_pdf
+            require_current_pdf(path, record["source_sha256"])
         self.store.save(pid, project, expected_digest=digest)
         return {"session_id": sid, "revision": record["revision"],
                 "committed_item_ids": record["committed_item_ids"],
@@ -1267,6 +1304,10 @@ class StructuralProApp:
         record["ai_committed_item_ids"] = sorted(set(record.get("ai_committed_item_ids", [])) | seen_session_items)
         record["revision"] = expected_session_revision + 1
         record["updated_at"] = datetime.now(timezone.utc).isoformat()
+        source = Path(record["drawing_source"])
+        if source.suffix.lower() == ".pdf":
+            from core.drawings.pdf_engine import require_current_pdf
+            require_current_pdf(source, record["source_sha256"])
         self.store.save(pid, project, expected_digest=digest)
         return {"approved": True, "takeoffs_added": deepcopy(new_rows), "boq_count": len(project["boq"]),
                 "drawing_session_id": sid, "drawing_session_revision": record["revision"]}

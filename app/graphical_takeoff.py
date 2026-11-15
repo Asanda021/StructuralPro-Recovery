@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.drawings.graphical_takeoff import Point
-from core.drawings.pdf_engine import PDFDrawingEngine
+from core.drawings.pdf_engine import PDFDrawingEngine, PDF_SCENE_DPI, require_current_pdf
 from core.drawings.takeoff_session import DrawingTakeoffSession
 from core.drawings.viewer_model import DrawingViewerModel
 from core.drawings.viewport_tools import ViewportRect
@@ -1174,14 +1174,26 @@ class GraphicalTakeoffDialog(QDialog):
             source = Path(restored.drawing_source)
             if not source.is_file():
                 raise FileNotFoundError("فایل نقشه اصلی در این مسیر در دسترس نیست؛ نشست ذخیره‌شده تغییر نکرد.")
+            if source.suffix.lower() == ".pdf":
+                require_current_pdf(source, restored.source_sha256)
             new_viewer = DrawingViewerModel()
             new_viewer.open(source)
             if restored.cad_unit_evidence:
                 from core.drawings.dwg_takeoff import apply_documented_units
                 new_viewer.cad_document=apply_documented_units(new_viewer.cad_document,restored.cad_unit_evidence)
-            new_engine = PDFDrawingEngine(source) if new_viewer.kind == "pdf" else None
+            new_engine = None
+            if new_viewer.kind == "pdf":
+                new_engine = PDFDrawingEngine(source, expected_sha256=restored.source_sha256).open()
+                try:
+                    require_current_pdf(source, restored.source_sha256)
+                except Exception:
+                    new_engine.close()
+                    raise
+            if self.engine is not None:
+                self.engine.close()
             self.viewer = new_viewer
             self.engine = new_engine
+            self._w1_pdf_source = (str(source), restored.source_sha256) if new_engine else None
             self.cad_document = new_viewer.cad_document
             self.session = restored
             self.canvas.session = restored
@@ -1222,12 +1234,17 @@ class GraphicalTakeoffDialog(QDialog):
         if not selected_ids:
             QMessageBox.warning(self, "انتقال به BOQ", "شناسه ردیف انتخاب‌شده قابل خواندن نیست.")
             return
-        if not self.save_session_to_project():
+        project_id = self.project_id_input.text().strip()
+        if not project_id:
+            QMessageBox.warning(self, "شناسه پروژه", "برای انتقال، شناسه پروژه را وارد کنید.")
+            return
+        is_pdf = self.viewer.kind == "pdf"
+        if is_pdf and self.persisted_session_id and self.persisted_project_id != project_id:
+            QMessageBox.warning(self, "انتقال به BOQ", "نشست ذخیره‌شده به پروژه دیگری تعلق دارد.")
             return
         answer = QMessageBox.question(
             self, "تأیید انتقال به BOQ",
-            f"تعداد {len(selected_ids)} متره از نشست «{self.persisted_session_id}» به پروژه "
-            f"«{self.persisted_project_id}» منتقل شود؟\n"
+            f"تعداد {len(selected_ids)} متره به BOQ پروژه «{project_id}» منتقل شود؟\n"
             "منبع نقشه، صفحه، هندسه و فرمول حفظ می‌شود. ثبت تکراری رد خواهد شد.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -1236,10 +1253,15 @@ class GraphicalTakeoffDialog(QDialog):
             self.status.setText("انتقال به BOQ لغو شد؛ هیچ ردیفی منتقل نشد.")
             return
         try:
+            if not is_pdf and not self.save_session_to_project():
+                return
+            optional = {"pdf_draft": self.session} if is_pdf else {}
             result = self.app_service.commit_drawing_takeoff_to_boq(
-                self.persisted_project_id, self.persisted_session_id, selected_ids,
-                expected_session_revision=self.persisted_session_revision,
+                project_id, self.persisted_session_id, selected_ids,
+                expected_session_revision=self.persisted_session_revision or 0, **optional,
             )
+            self.persisted_project_id = project_id
+            self.persisted_session_id = result["session_id"]
             self.persisted_session_revision = result["revision"]
             self.status.setText(
                 f"🟢 انتقال به BOQ انجام شد | ردیف جدید: {len(result['takeoffs_added'])} | "
@@ -1267,7 +1289,13 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         candidate = str(path)
-        changed_source = bool(self.session.drawing_source and self.session.drawing_source != candidate)
+        pdf_sha = None
+        if Path(candidate).suffix.lower() == ".pdf":
+            with open(candidate, "rb") as source_file:
+                pdf_sha = hashlib.file_digest(source_file, "sha256").hexdigest()
+        changed_source = bool(self.session.drawing_source and (
+            self.session.drawing_source != candidate or
+            (pdf_sha is not None and self.session.source_sha256 != pdf_sha)))
         if changed_source and self.session.items:
             answer = QMessageBox.question(
                 self, "تغییر نقشه",
@@ -1278,33 +1306,35 @@ class GraphicalTakeoffDialog(QDialog):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return
-        # Bind the displayed PDF to the bytes actually validated by the viewer.
-        pdf_sha=None
-        if Path(candidate).suffix.lower()=='.pdf':
-            with open(candidate,'rb') as source_file:
-                pdf_sha=hashlib.file_digest(source_file,'sha256').hexdigest()
         previous_path=str(self.viewer.path) if self.viewer.path else None
-        # Open first: if parsing fails, retain the currently displayed drawing/session.
-        self.viewer.open(candidate)
+        new_engine = None
+        if pdf_sha is not None:
+            from core.drawings.viewer_model import DrawingViewerModel
+            next_viewer = DrawingViewerModel(candidate)
+            new_engine = PDFDrawingEngine(candidate, expected_sha256=pdf_sha).open()
+            try:
+                require_current_pdf(Path(candidate), pdf_sha)
+            except Exception:
+                new_engine.close()
+                raise
+            self.viewer = next_viewer
+        else:
+            self.viewer.open(candidate)
         if previous_path and previous_path != str(self.viewer.path):
             from shiboken6 import isValid
             old_view=getattr(self,'_ifc_3d_dialog',None)
             if old_view is not None and isValid(old_view):
                 old_view.close()
                 self._ifc_3d_dialog=None
-        if pdf_sha is not None:
-            with open(candidate,'rb') as source_file:
-                if hashlib.file_digest(source_file,'sha256').hexdigest()!=pdf_sha:
-                    self._w1_pdf_source=None
-                    raise ValueError('فایل PDF هنگام بازکردن تغییر کرد؛ دوباره باز کنید.')
         self._w1_pdf_source=(str(self.viewer.path),pdf_sha) if pdf_sha else None
-        if previous_path and previous_path!=str(self.viewer.path) and self.viewer.kind=='pdf':
+        if changed_source and self.viewer.kind == "pdf":
             self.ifc_revision.clear()
-        new_engine = PDFDrawingEngine(candidate) if self.viewer.kind == "pdf" else None
         if self.engine is not None:
             self.engine.close()
-        if self.session.drawing_source != candidate:
+        if changed_source or self.session.drawing_source != candidate:
             self.session = DrawingTakeoffSession(candidate)
+            if pdf_sha is not None:
+                self.session.source_sha256 = pdf_sha
             self.canvas.session = self.session
             self.persisted_session_id = None
             self.persisted_session_revision = None
@@ -1381,13 +1411,14 @@ class GraphicalTakeoffDialog(QDialog):
         """
         import math
         page=self.engine.pages()[self.page-1]
-        dpi=next((d for d in (150,100,72,36)
+        dpi=next((d for d in (PDF_SCENE_DPI,100,72,36)
                   if math.ceil(page.width_pt*d/72)*math.ceil(page.height_pt*d/72)<=40_000_000),None)
         if dpi is None:raise ValueError("ابعاد صفحه حتی در وضوح پایین از بودجه حافظه نمایش بیشتر است")
         data=self.engine.render(self.page,dpi);pix=QPixmap()
         if not pix.loadFromData(QByteArray(data),"PNG"):raise RuntimeError("رندر PDF ناموفق بود")
-        image=self.canvas.scene.addPixmap(pix);image.setScale(150/dpi)
-        self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*150/72),math.ceil(page.height_pt*150/72))
+        image=self.canvas.scene.addPixmap(pix);image.setScale(PDF_SCENE_DPI/dpi)
+        self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*PDF_SCENE_DPI/72),
+                                 math.ceil(page.height_pt*PDF_SCENE_DPI/72))
         self.display_dpi=dpi
         self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
 
@@ -2891,22 +2922,31 @@ class GraphicalTakeoffDialog(QDialog):
         if self.viewer.kind == "ifc":
             self._ifc_status()
             return
+        view = self.canvas._selected_region_rect if self.viewer.kind == "pdf" else None
+        pdf_view = None
         if self.canvas.mode == 'length' and len(self.canvas.points) == 2:
             from math import hypot
             first, second = self.canvas.points
             px = hypot(second.x-first.x, second.y-first.y)
             prompt = f"فاصله معلوم بین دو نقطه انتخابی ({px:g} پیکسل مرجع) طبق مدرک (متر):"
+            if view is not None:
+                pdf_view = {"bounds": [view.left(), view.top(), view.right(), view.bottom()],
+                            "reference_points": [[first.x, first.y], [second.x, second.y]]}
         else:
+            if view is not None:
+                QMessageBox.warning(self, "کالیبراسیون", "دو نقطه مرجع را داخل محدوده نما انتخاب کنید.")
+                return
             px, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله اندازه‌گیری‌شده روی صفحه (پیکسل؛ مقدار صریح):")
             if not ok:return
             prompt = "فاصله معلوم طبق مدرک (متر؛ مقدار صریح):"
         meters, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس",prompt)
         if not ok:return
         try:
-            cal = self.session.calibrate(self.page, px, meters)
-            px,meters=float(px),float(meters)
+            meters = str(meters).strip().replace("٫", ".") if self.viewer.kind == "pdf" else meters
+            cal = self.session.calibrate(self.page, px, meters, pdf_view=pdf_view)
+            px, meters = float(px), float(meters)
             self.scale_label.setText(
-                f"مقیاس: {cal.meters_per_pixel} m/px"
+                f"مقیاس: {cal.meters_per_pixel} m/px" + (" | نمای انتخاب‌شده" if pdf_view else "")
             )
             self.status.setText(
                 f"کالیبراسیون ثبت شد | {px:g} px = {meters:g} m"
