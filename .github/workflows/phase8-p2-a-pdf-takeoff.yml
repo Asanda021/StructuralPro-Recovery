@@ -7,7 +7,12 @@ on:
       - .github/workflows/phase8-p2-a-pdf-takeoff.yml
       - tests/test_phase8_p2_a_pdf_integrity.py
       - tests/test_phase8_p2_a_pdf_excel_crosswalk.py
+      - tests/test_phase8_p2_a_pdf_auto_intake.py
+      - tests/test_phase8_p2_a_pdf_auto_intake_qt.py
       - core/drawings/pdf_excel_crosswalk.py
+      - core/drawings/pdf_auto_intake.py
+      - app/pdf_auto_intake_review.py
+      - app/graphical_takeoff.py
 
 permissions:
   contents: read
@@ -57,6 +62,8 @@ jobs:
           python -m pytest -q --junitxml=p8-p2-a.xml
           tests/test_phase8_p2_a_pdf_integrity.py
           tests/test_phase8_p2_a_pdf_excel_crosswalk.py
+          tests/test_phase8_p2_a_pdf_auto_intake.py
+          tests/test_phase8_p2_a_pdf_auto_intake_qt.py
           tests/test_pdf_dimension_text_regression.py
           tests/test_work_pdf_precision.py
           tests/test_chat7_pdf_scale_fail_closed.py
