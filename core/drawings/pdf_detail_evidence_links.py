@@ -162,9 +162,9 @@ def _attach_localized_word_candidates(coverage, detail_objects, pages, records, 
         'unlinked_localized_type_word_witness_ids': unlinked,
         'localized_word_witnesses_accounted_for': len(used | set(unlinked)) == len(words),
         'blocked_word_extraction_pages': sorted(
-            {'document_id': k[0], 'page': k[1], 'status': report['status']}
-            for k, report in word_pages.items() if not report.get('all_words_examined')
-        , key=lambda x: (x['document_id'], x['page'])),
+            [{'document_id': k[0], 'page': k[1], 'status': report['status']}
+             for k, report in word_pages.items() if not report.get('all_words_examined')],
+            key=lambda x: (x['document_id'], x['page'])),
     }
 
 def link_pdf_detail_geometry_evidence(
