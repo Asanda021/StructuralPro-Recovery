@@ -29,6 +29,7 @@ def _source(*, two_titles=False, separate_groups=False, blocked=False):
         groups.append({'candidate_id':f'PDF001:p1:vector_group{i+1:05d}',
                        'document_id':'PDF001','page':1,
                        'source_path_indices':[i+1],
+                       'bbox_pt':[20+i*130,40,100+i*130,140],
                        'nearby_title_anchor_ids':names.copy(),
                        'financially_payable':False,'detail_boundary_verified':False})
     pages=[{'document_id':'PDF001','page':1,'groups':groups if not blocked else [],
