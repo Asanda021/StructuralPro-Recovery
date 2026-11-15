@@ -16,6 +16,7 @@ import re
 from typing import Iterable
 
 from core.drawings.pdf_grid_instances import detect_vector_grid_positions
+from core.drawings.pdf_vector_symbol_witness import compact_symbol_witness
 
 
 _MEMBER_MARK = re.compile(
@@ -131,12 +132,16 @@ def inspect_pdf_sheet_set(
                     page, document_id=doc_id, page_number=number,
                     text_type_marks=marks,
                 )
-                grid_locations.extend(grid['nodes'])
+                symbols = compact_symbol_witness(page, grid['nodes'])
+                grid_locations.extend(symbols['nodes'])
                 if grid['status'] != 'NO_GRID_EVIDENCE':
                     vector_grid_summaries.append({
                         'document_id': doc_id, 'page': number,
                         'status': grid['status'],
                         'candidate_count': len(grid['nodes']),
+                        'compact_symbol_candidates': symbols['symbol_candidate_count'],
+                        'column_layout_symbol_candidates': symbols['column_context_candidates'],
+                        'sheet_context': symbols['sheet_context'],
                         'axes_x_pt': grid['axes_x_pt'],
                         'levels_y_pt': grid['levels_y_pt'],
                         'member_count_verified': False,
@@ -230,6 +235,8 @@ def inspect_pdf_sheet_set(
     return {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
             "grid_location_candidates": grid_locations,
+            "compact_symbol_candidate_count": sum(x["symbol_status"] == "COMPACT_VECTOR_SYMBOL_CANDIDATE" for x in grid_locations),
+            "column_layout_symbol_candidate_count": sum(bool(x["column_context_candidate"]) for x in grid_locations),
             "vector_grid_summaries": vector_grid_summaries,
             "questions": questions, "unresolved_pages": page_reasons,
             "status_counts": dict(sorted(status_counts.items())),
