@@ -73,13 +73,13 @@ def _family_words(title: object, *, sheet_kind: object = None) -> list[str]:
     norm = _norm(title)
     readable = unicodedata.normalize('NFKC', str(title or '')).casefold()
     readable = readable.translate(str.maketrans({'ي': 'ی', 'ى': 'ی', 'ك': 'ک', 'ة': 'ه'}))
-    readable = readable.replace('ـ', '').replace('\\u200c', ' ')
+    readable = readable.replace('ـ', '').replace('\u200c', ' ')
     def matches(word: str) -> bool:
         # The short Persian "پل" (bridge/beam) is a prefix of "پله" (stair).
         # It must be an isolated term; otherwise a stair detail gains a
         # fabricated beam family even though no beam evidence exists.
         if word == 'پل':
-            return re.search(r'(?<!\\w)پل(?!\\w)', readable) is not None
+            return re.search(r'(?<!\w)پل(?!\w)', readable) is not None
         return _norm(word) in norm
     families = {family for family, words in _TITLE_WORDS.items()
                 if any(matches(word) for word in words)}
