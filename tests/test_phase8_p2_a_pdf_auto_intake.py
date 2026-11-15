@@ -173,3 +173,40 @@ def test_auto_intake_unlabeled_grid_has_zero_column_context(tmp_path):
     assert report['compact_symbol_candidate_count']==1
     assert report['column_layout_symbol_candidate_count']==0
     assert all(not x['financially_payable'] for x in report['grid_location_candidates'])
+
+
+def test_untyped_column_vector_nodes_generate_one_nonpayable_sheet_question(tmp_path):
+    import pymupdf
+    from core.drawings.pdf_auto_questions import PDFQuestionDecisionLedger
+    d=pymupdf.open(); page=d.new_page(width=842,height=595)
+    page.insert_text((30,30),'Column Plan',fontsize=10)
+    xs=(180,300,450);ys=(150,300,450)
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    for x,y in ((180,150),(300,300)):
+        page.draw_rect(pymupdf.Rect(x-2,y-2,x+2,y+2))
+    path=tmp_path/'column-type-outline.pdf'; d.save(path); d.close()
+    report=inspect_pdf_sheet_set([path]); questions=report['questions']
+    assert len(questions)==1
+    q=questions[0]
+    assert q['tag']=='GRID_TYPE:PDF001:p1'
+    assert len(q['evidence'])==2
+    assert q['suggestion']['value'] is None
+    assert q['suggestion']['candidate_types_from_details']==[]
+    assert q['financially_payable'] is False
+    ledger=PDFQuestionDecisionLedger(report)
+    with pytest.raises(ValueError):ledger.answer(q['tag'],'confirm_suggestion')
+    assert ledger.answer(q['tag'],'request_document')['financially_payable'] is False
+
+
+def test_non_column_symbol_grid_does_not_trigger_type_assignment_question(tmp_path):
+    import pymupdf
+    d=pymupdf.open();page=d.new_page(width=842,height=595)
+    xs=(180,300,450);ys=(150,300,450)
+    for x in xs:page.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:page.draw_line((xs[0],y),(xs[-1],y))
+    page.draw_rect(pymupdf.Rect(178,148,182,152))
+    path=tmp_path/'unknown-grid.pdf';d.save(path);d.close()
+    report=inspect_pdf_sheet_set([path])
+    assert report['column_layout_symbol_candidate_count']==0
+    assert report['questions']==[]
