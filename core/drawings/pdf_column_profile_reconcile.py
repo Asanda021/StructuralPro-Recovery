@@ -14,6 +14,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Iterable, Mapping
+import re
 
 _DIGITS = str.maketrans('۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩', '01234567890123456789')
 
@@ -22,7 +23,7 @@ def _decimal(value, *, zero_allowed=False):
     if isinstance(value, bool) or value is None:
         raise ValueError('decimal quantity missing')
     string = str(value).strip().translate(_DIGITS).replace('٫', '.')
-    if not string or ',' in string:
+    if not re.fullmatch(r'\+?\d+(?:\.\d+)?', string):
         raise ValueError('unverified decimal convention')
     try:
         value = Decimal(string)
@@ -167,11 +168,16 @@ def reconcile_column_profile_components(
             spec_ref=(spec['document_id'],spec['page'])
             try:
                 consistent_all=all(
-                any((d.get('document_id'),d.get('page'))==spec_ref and
-                    d.get('dimension_kind')=='length' and
-                    _decimal(d.get('dimension_m'))==spec['length_m']
-                    for d in node['type_reference'].get('details',()))
-                for node in plan
+                    len(node['type_reference'].get('details', ())) == 1 and
+                    all((d.get('document_id'),d.get('page')) == spec_ref and
+                        d.get('dimension_kind') == 'length' and
+                        _decimal(d.get('dimension_m')) == spec['length_m']
+                        for d in node['type_reference']['details'])
+                    for node in plan
+                )
+                consistent_all = consistent_all and all(
+                    node['source']['document_id'] == spec['document_id'] and
+                    node['source']['page'] != spec['page'] for node in plan
                 )
             except (ValueError,TypeError):
                 consistent_all=False
