@@ -161,3 +161,27 @@ def test_more_than_one_pdf_document_all_pages_accounted_for():
       [{'document_id':'PDF001','page_count':1},{'document_id':'PDF002','page_count':1}])
     assert x['page_count']==2 and x['all_input_pages_indexed']
     assert x['region_count']==32
+
+
+def test_line_only_cad_sheet_is_unresolved_not_empty():
+    d,p=_page('blank')
+    p.draw_line((100,0),(100,490))
+    result=_inspect(p);d.close()
+    assert result['coverage_status']=='UNRESOLVED'
+    assert any(x['vector_path_count'] for x in result['regions'])
+
+
+def test_forced_incorrect_bbox_fails_tile_coverage_check():
+    d,p=_page();row=_inspect(p);d.close()
+    row['regions'][0]['bbox_pt'][0] += 50.0
+    result=assemble_pdf_detail_inventory([row],[{'document_id':'PDF001','page_count':1}])
+    assert not result['all_input_pages_indexed']
+    assert any(e.startswith('INVALID_TILE_BBOX') for e in result['errors'])
+
+
+def test_missing_tile_row_fails_even_if_region_count_matches():
+    d,p=_page();row=_inspect(p);d.close()
+    row['regions'][1]['tile_row']=20
+    result=assemble_pdf_detail_inventory([row],[{'document_id':'PDF001','page_count':1}])
+    assert not result['all_input_pages_indexed']
+    assert any('MISSING_TILE_CELL' in e for e in result['errors'])
