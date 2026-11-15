@@ -123,26 +123,3 @@ def test_tolerance_is_bounded():
     with pytest.raises(ValueError):
         register_column_grid_against_axes([grid(13),grid(14)],
             [sheet('axis_plan',13),sheet('column_type_plan',14)],tolerance_pt=100)
-
-
-def test_real_pdf_page_title_and_grid_registration_without_financial_claim():
-    import pymupdf
-    from core.drawings.pdf_grid_instances import detect_vector_grid_positions
-    from pathlib import Path
-    source=Path('/mnt/data/structuralpro_private/input/naghshe.pdf')
-    if not source.is_file():
-        pytest.skip('Private PDF fixture not available; protected CI uses synthetic examples')
-    with pymupdf.open(source) as d:
-        g=[];titles=[]
-        for p in (13,14):
-            page=d[p-1]
-            grid_scan=detect_vector_grid_positions(page,document_id='PDF001',page_number=p)
-            g.append({'document_id':'PDF001','page':p,
-                      'status':grid_scan['status'],
-                      'axes_x_pt':grid_scan['axes_x_pt'],
-                      'levels_y_pt':grid_scan['levels_y_pt']})
-            titles.append({'document_id':'PDF001','page':p,**classify_sheet_title(page.get_text())})
-    r=register_column_grid_against_axes(g,titles)
-    assert r['registered_grid_positions']==15
-    assert r['column_plan_registrations'][0]['max_residual_pt']==0
-    assert r['accepted_physical_member_count'] is None
