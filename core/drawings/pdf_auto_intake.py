@@ -22,6 +22,9 @@ from core.drawings.pdf_sheet_scope_registration import (
     classify_sheet_title, register_column_grid_against_axes,
 )
 from core.drawings.pdf_column_position_ledger import compile_column_position_ledger
+from core.drawings.pdf_sheet_detail_inventory import (
+    inventory_pdf_page_regions, assemble_pdf_detail_inventory,
+)
 
 
 _MEMBER_MARK = re.compile(
@@ -118,6 +121,7 @@ def inspect_pdf_sheet_set(
     vector_type_label_evidence: list[dict] = []
     vector_grid_summaries: list[dict] = []
     page_view_summaries: list[dict] = []
+    page_detail_summaries: list[dict] = []
     page_reasons: list[dict] = []
     total_pages = 0
     for path in received:
@@ -138,6 +142,12 @@ def inspect_pdf_sheet_set(
                 page_view_summaries.append({
                     'document_id': doc_id, 'page': number, **title_scope,
                 })
+                # Inventory the whole source page, including untitled details
+                # and all vector/raster zones; indexing is NOT engineering approval.
+                page_detail_summaries.append(inventory_pdf_page_regions(
+                    page, document_id=doc_id, page_number=number,
+                    sheet_kind=title_scope.get('sheet_kind'),
+                ))
                 marks, dims = _parse_pdf_lines(page)
                 grid = detect_vector_grid_positions(
                     page, document_id=doc_id, page_number=number,
@@ -416,4 +426,9 @@ def inspect_pdf_sheet_set(
             "complete": False, "acceptance": "PARTIAL_NO_GO",
             "source_type": "PDF_ONLY", "excel_required": False}
     report["column_position_ledger"] = compile_column_position_ledger(report)
+    report["sheet_detail_inventory"] = assemble_pdf_detail_inventory(
+        page_detail_summaries, documents,
+    )
+    # Every page/zone must be accounted for, but unresolved drawing geometry
+    # must never be silently promoted to complete member takeoff or BOQ.
     return report
