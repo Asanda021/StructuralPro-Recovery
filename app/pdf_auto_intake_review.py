@@ -63,10 +63,10 @@ class PDFSheetEvidenceDialog(QDialog):
         coverage_layout.addWidget(cover_subtabs)
         sheet_page = QWidget(cover_subtabs)
         sheet_layout = QVBoxLayout(sheet_page)
-        self.sheet_coverage_table = QTableWidget(0, 5, sheet_page)
+        self.sheet_coverage_table = QTableWidget(0, 7, sheet_page)
         self.sheet_coverage_table.setObjectName('PDFAutoIntakeAllSheetsCoverage')
         self.sheet_coverage_table.setHorizontalHeaderLabels([
-            'فایل/صفحه', 'نوع شیت احتمالی', 'ناحیه‌ها', 'عنوان دیتیل', 'وضعیت پوشش'
+            'فایل/صفحه', 'نوع شیت احتمالی', 'ناحیه‌ها', 'عنوان دیتیل', 'یادداشت', 'ناحیه جدول/شبکه', 'وضعیت پوشش'
         ])
         page_rows = coverage.get('sheet_inventory', ())
         self.sheet_coverage_table.setRowCount(len(page_rows))
@@ -76,6 +76,8 @@ class PDFSheetEvidenceDialog(QDialog):
                     item.get('sheet_kind') or 'نامعلوم',
                     item.get('region_count', 0),
                     item.get('detail_anchor_count', 0),
+                    item.get('note_anchor_count', 0),
+                    item.get('table_or_grid_candidate_region_count', 0),
                     item.get('coverage_status') or 'BLOCKED')
             for j, value in enumerate(vals):
                 cell = QTableWidgetItem(str(value))
@@ -131,6 +133,25 @@ class PDFSheetEvidenceDialog(QDialog):
                 self.detail_title_table.setItem(i,j,cell)
         title_layout.addWidget(self.detail_title_table)
         cover_subtabs.addTab(title_page, 'عنوان‌های دیتیل')
+        note_page = QWidget(cover_subtabs)
+        note_layout = QVBoxLayout(note_page)
+        self.note_anchor_table = QTableWidget(0, 3, note_page)
+        self.note_anchor_table.setObjectName('PDFAutoIntakeNotesInventory')
+        self.note_anchor_table.setHorizontalHeaderLabels([
+            'فایل/صفحه', 'متن یادداشت شناسایی‌شده', 'وضعیت'
+        ])
+        note_rows = coverage.get('note_anchors', ())
+        self.note_anchor_table.setRowCount(len(note_rows))
+        self.note_anchor_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(note_rows):
+            vals=(f"{item.get('document_id','')}:p{item.get('page','')}",
+                  item.get('text_preview',''),item.get('status','UNRESOLVED'))
+            for j, val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.note_anchor_table.setItem(i,j,cell)
+        note_layout.addWidget(self.note_anchor_table)
+        cover_subtabs.addTab(note_page, 'یادداشت‌ها')
         tabs.addTab(coverage_root, 'پوشش همه شیت‌ها و دیتیل‌ها')
 
         candidates = QWidget(tabs)
