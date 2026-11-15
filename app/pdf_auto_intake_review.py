@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QHeaderView, QPushButton, QTabWidget, QWidget, QComboBox, QLineEdit,
     QFileDialog, QMessageBox,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QItemSelectionModel, Qt
 from core.drawings.pdf_auto_questions import PDFQuestionDecisionLedger
 
 
@@ -576,7 +576,10 @@ class PDFSheetEvidenceDialog(QDialog):
             def open_question(tag):
                 if tag in question_index:
                     tabs.setCurrentWidget(questions)
-                    self.question_table.selectRow(question_index[tag])
+                    row = question_index[tag]
+                    selection = QItemSelectionModel.SelectionFlag
+                    self.question_table.setCurrentCell(row, 0, selection.ClearAndSelect | selection.Rows)
+                    self.question_table.scrollToItem(self.question_table.item(row, 0))
                     self.question_action.setCurrentIndex(0)
 
             self.graph_review = PDFDetailGraphReview(
