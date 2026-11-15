@@ -349,3 +349,32 @@ def test_pdf_geometry_detail_linkage_is_review_only_and_displays_unresolved_titl
     assert '1 پیوند عنوان و هندسه پیشنهادی' in dlg.summary.text()
     assert dlg.ledger.answers=={}
     dlg.close()
+
+
+
+def test_localized_pdf_word_reference_displayed_but_not_payable():
+    app=QApplication.instance() or QApplication([])
+    dlg=PDFSheetEvidenceDialog({
+        'documents':[{'document_id':'PDF001'}], 'page_count':1,
+        'member_type_candidates':[],'unresolved_pages':[],'questions':[],
+        'detail_object_index':{'geometry_detail_link_ledger':{
+            'localized_word_proposed_link_count':1,
+            'geometry_group_link_records':[{
+                'vector_group_candidate_id':'PDF001:p1:vector_group00001',
+                'proposed_title_candidate_id':'DETAIL_TITLE:PDF001:p1:title1',
+                'localized_proposed_type_tag':'B1',
+                'localized_word_link_status':'PROPOSED_LOCALIZED_TYPE_WORD_NEAR_DETAIL_GROUP',
+                'localized_type_word_witness_ids':['PDF001:p1:word000004'],
+                'localized_type_word_bbox_pt':[20,30,40,45],
+                'status':'PROPOSED_GROUP_NEAR_SINGLE_EXPLICIT_TITLE',
+                'financially_payable':False,
+            }],
+        }}}
+    )
+    assert dlg.geometry_detail_link_table.rowCount()==1
+    assert 'B1' in dlg.geometry_detail_link_table.item(0,5).text()
+    assert 'باکس واژه' in dlg.geometry_detail_link_table.item(0,5).toolTip()
+    assert 'غیرقابل پرداخت' in dlg.geometry_detail_link_table.item(0,4).text()
+    assert '1 برچسب موضعی پیشنهادشده' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()

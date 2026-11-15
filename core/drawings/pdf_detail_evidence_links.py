@@ -7,8 +7,165 @@ Every provisional group and every explicit title gets an auditable status.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from math import isfinite
 from typing import Mapping
 
+
+
+
+_TYPE_FAMILY = {'B': 'beam', 'C': 'column', 'SC': 'column',
+                'F': 'foundation', 'SW': 'wall_opening', 'W': 'wall_opening'}
+
+
+def _rect4(value):
+    if not isinstance(value, (list, tuple)) or len(value) != 4:
+        raise ValueError('Invalid localized PDF word or vector group bbox')
+    try:
+        b = tuple(float(x) for x in value)
+    except (ValueError, TypeError):
+        raise ValueError('Invalid localized PDF word or vector group bbox') from None
+    if not all(isfinite(x) for x in b) or b[0] >= b[2] or b[1] >= b[3]:
+        raise ValueError('Invalid localized PDF word or vector group bbox')
+    return b
+
+
+def _rect_distance(a, b):
+    return max(0.0, a[0] - b[2], b[0] - a[2],
+               a[1] - b[3], b[1] - a[3])
+
+
+def _attach_localized_word_candidates(coverage, detail_objects, pages, records, *,
+                                      max_records):
+    """Add word-box evidence without changing provisional title-link decisions.
+
+    A source word near two groups or two words near one group cannot assign a
+    type. Title-text mentions never count as isolated drawing labels. Word
+    positions are not a verified glyph, physical member or scale.
+    """
+    reports = list(coverage.get('type_word_page_index', ()))
+    words = list(coverage.get('localized_type_word_witnesses', ()))
+    if len(words) + len(records) > max_records:
+        raise ValueError('Localized PDF type word budget exhausted')
+    expected_pages = {(p['document_id'], p['page'])
+                      for p in coverage.get('sheet_inventory', ())}
+    word_pages = {}
+    for report in reports:
+        key = (report.get('document_id'), report.get('page'))
+        if key in word_pages or key not in expected_pages:
+            raise ValueError('Duplicate or foreign PDF word index page')
+        word_pages[key] = report
+    if reports and set(word_pages) != expected_pages:
+        raise ValueError('Missing PDF type word index pages')
+    if words and not reports:
+        raise ValueError('Localized type words require document/page extraction records')
+    if reports and sum(len(x.get('type_word_witnesses', ())) for x in reports) != len(words):
+        raise ValueError('Localized word source count mismatch')
+    if coverage.get('localized_type_word_witness_count', len(words)) != len(words):
+        raise ValueError('Localized word manifest count mismatch')
+
+    by_page = defaultdict(list)
+    seen = set()
+    for w in words:
+        key = (w.get('document_id'), w.get('page'))
+        wid = w.get('witness_id')
+        if (key not in word_pages or not isinstance(wid, str)
+                or not wid.startswith(f'{key[0]}:p{key[1]}:word')
+                or wid in seen or w.get('financially_payable') is not False
+                or w.get('status') not in (
+                    'TITLE_TEXT_MENTION_NOT_MEMBER',
+                    'ISOLATED_TYPE_WORD_POSITION_CANDIDATE')
+                or not isinstance(w.get('type_tag'), str)):
+            raise ValueError('Invalid or duplicate localized PDF word provenance')
+        _rect4(w.get('bbox_pt'))
+        seen.add(wid)
+        by_page[key].append(w)
+
+    group_boxes = {}
+    for page in pages:
+        key = (page.get('document_id'), page.get('page'))
+        if not page.get('all_source_paths_grouped'):
+            continue
+        for g in page.get('groups', ()):
+            gid = g.get('candidate_id')
+            if gid in group_boxes:
+                raise ValueError('Repeated geometry group in word-localization ledger')
+            group_boxes[gid] = _rect4(g.get('bbox_pt'))
+
+    title_by_id = {r['candidate_id']: r for r in detail_objects
+                   if r.get('kind') == 'EXPLICIT_DETAIL_TITLE'}
+    candidate_map = {}
+    owners = defaultdict(set)
+    for rec in records:
+        gid = rec['vector_group_candidate_id']
+        if gid not in group_boxes:
+            raise ValueError('Missing source vector geometry for word-localization')
+        page_key = (rec['document_id'], rec['page'])
+        candidates = [
+            w for w in by_page[page_key]
+            if w['status'] == 'ISOLATED_TYPE_WORD_POSITION_CANDIDATE'
+            and _rect_distance(_rect4(w['bbox_pt']), group_boxes[gid]) <= 16.0
+        ]
+        candidate_map[gid] = candidates
+        for w in candidates:
+            owners[w['witness_id']].add(gid)
+
+    used = set()
+    statuses = Counter()
+    for rec in records:
+        gid = rec['vector_group_candidate_id']
+        key = (rec['document_id'], rec['page'])
+        matches = candidate_map[gid]
+        rec['localized_type_word_witness_ids'] = sorted(w['witness_id'] for w in matches)
+        rec['localized_proposed_type_tag'] = None
+        rec['localized_type_word_bbox_pt'] = None
+        rec['localized_source_quality'] = 'PDF_WORD_BBOX_NOT_GLYPH_OR_MEMBER'
+        used.update(rec['localized_type_word_witness_ids'])
+        if not reports:
+            status = 'NOT_INDEXED_IN_LEGACY_COVERAGE'
+        elif not word_pages[key].get('all_words_examined'):
+            status = 'BLOCKED_TYPE_WORD_EXTRACTION'
+        elif not matches:
+            status = 'UNRESOLVED_NO_ISOLATED_WORD_NEAR_GEOMETRY'
+        elif any(len(owners[w['witness_id']]) > 1 for w in matches):
+            status = 'BLOCKED_WORD_NEAR_MULTIPLE_VECTOR_GROUPS'
+        elif len(matches) > 1:
+            status = 'BLOCKED_MULTIPLE_LOCAL_TYPE_WORDS'
+        elif rec['proposed_title_candidate_id'] is None:
+            status = 'UNRESOLVED_LOCAL_TYPE_WORD_NO_UNIQUE_DETAIL_TITLE'
+        else:
+            word = matches[0]
+            tag = word['type_tag']
+            prefix = ''.join(c for c in tag if c.isalpha())
+            family = _TYPE_FAMILY.get(prefix)
+            title = title_by_id[rec['proposed_title_candidate_id']]
+            if family is None or not title.get('family_candidates'):
+                status = 'UNRESOLVED_WORD_OR_DETAIL_FAMILY_UNKNOWN'
+            elif family not in title['family_candidates']:
+                status = 'BLOCKED_WORD_DETAIL_FAMILY_MISMATCH'
+            else:
+                status = 'PROPOSED_LOCALIZED_TYPE_WORD_NEAR_DETAIL_GROUP'
+                rec['localized_proposed_type_tag'] = tag
+                rec['localized_type_word_bbox_pt'] = list(word['bbox_pt'])
+        rec['localized_word_link_status'] = status
+        statuses[status] += 1
+
+    unlinked = sorted(w['witness_id'] for w in words if w['witness_id'] not in used)
+    return {
+        'localized_word_witness_count': len(words),
+        'localized_title_word_mentions': sum(
+            w['status'] == 'TITLE_TEXT_MENTION_NOT_MEMBER' for w in words),
+        'localized_isolated_word_count': sum(
+            w['status'] == 'ISOLATED_TYPE_WORD_POSITION_CANDIDATE' for w in words),
+        'localized_word_proposed_link_count': statuses[
+            'PROPOSED_LOCALIZED_TYPE_WORD_NEAR_DETAIL_GROUP'],
+        'localized_word_link_status_counts': dict(sorted(statuses.items())),
+        'unlinked_localized_type_word_witness_ids': unlinked,
+        'localized_word_witnesses_accounted_for': len(used | set(unlinked)) == len(words),
+        'blocked_word_extraction_pages': sorted(
+            {'document_id': k[0], 'page': k[1], 'status': report['status']}
+            for k, report in word_pages.items() if not report.get('all_words_examined')
+        , key=lambda x: (x['document_id'], x['page'])),
+    }
 
 def link_pdf_detail_geometry_evidence(
     coverage: Mapping, detail_objects: list[dict], vector_group_pages: list[dict],
@@ -161,9 +318,14 @@ def link_pdf_detail_geometry_evidence(
         })
     if {g['vector_group_candidate_id'] for g in linked_groups} != seen_group_ids:
         raise AssertionError('Geometry candidate disappeared in title/link processing')
+    localized = _attach_localized_word_candidates(
+        coverage, detail_objects, vector_group_pages, linked_groups,
+        max_records=max_records,
+    )
     status_counts = Counter(x['status'] for x in linked_groups)
     return {
         'source_page_count': len(pages),
+        **localized,
         'pages_with_vector_group_index': len(page_groups),
         'blocked_geometry_page_count': len(blocked_pages),
         'rejected_partial_group_count': rejected_partial_groups,

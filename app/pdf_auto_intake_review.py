@@ -32,6 +32,7 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
             f"{(report.get('detail_object_index') or {}).get('vector_geometry_group_count',0)} گروه هندسی احتمالی (نه دیتیل قطعی) | "
             f"{((report.get('detail_object_index') or {}).get('geometry_detail_link_ledger') or {}).get('possible_page_local_links',0)} پیوند عنوان و هندسه پیشنهادی | "
+            f"{((report.get('detail_object_index') or {}).get('geometry_detail_link_ledger') or {}).get('localized_word_proposed_link_count',0)} برچسب موضعی پیشنهادشده (غیرقطعی) | "
             f"{len((report.get('detail_object_index') or {}).get('vector_grouping_blocked_pages',()))} صفحه هندسه گروه‌بندی‌نشده | "
             f"{(report.get('detail_object_index') or {}).get('blocked_source_region_count',0)} ناحیه با استخراج ناقص | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
@@ -313,10 +314,10 @@ class PDFSheetEvidenceDialog(QDialog):
         )
         link_notice.setWordWrap(True)
         linkage_layout.addWidget(link_notice)
-        self.geometry_detail_link_table=QTableWidget(0,5,linkage_tab)
+        self.geometry_detail_link_table=QTableWidget(0,6,linkage_tab)
         self.geometry_detail_link_table.setObjectName('PDFAutoGeometryDetailLinkEvidence')
         self.geometry_detail_link_table.setHorizontalHeaderLabels([
-            'گروه برداری', 'عنوان پیشنهادی', 'تیپ از ناحیه درشت', 'وضعیت', 'پرداخت',
+            'گروه برداری', 'عنوان پیشنهادی', 'تیپ از ناحیه درشت', 'وضعیت', 'پرداخت', 'تیپ موضعی و وضعیت',
         ])
         links=((detail_index.get('geometry_detail_link_ledger') or {})
                .get('geometry_group_link_records',()))
@@ -329,10 +330,18 @@ class PDFSheetEvidenceDialog(QDialog):
                   edge.get('proposed_title_candidate_id') or 'نامعلوم/مبهم',
                   ', '.join(edge.get('coarse_zone_type_mark_candidate_ids',())) or 'فاقد شاهد معتبر',
                   edge.get('status','BLOCKED'),
-                  'غیرقابل پرداخت')
+                  'غیرقابل پرداخت',
+                  f"{edge.get('localized_proposed_type_tag') or 'نامعلوم'} | "
+                  f"{edge.get('localized_word_link_status') or 'ثبت نشده'}")
             for j,val in enumerate(vals):
                 cell=QTableWidgetItem(str(val))
                 cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j==5:
+                    cell.setToolTip(
+                        f"واژه‌های نزدیک: {', '.join(edge.get('localized_type_word_witness_ids',())) or 'ندارد'}؛ "
+                        f"مختصات باکس واژه: {edge.get('localized_type_word_bbox_pt') or 'نامعلوم'}؛ "
+                        "دیتیل و عضو فیزیکی تأیید نشده‌اند."
+                    )
                 self.geometry_detail_link_table.setItem(i,j,cell)
         linkage_layout.addWidget(self.geometry_detail_link_table)
         tabs_titles=((detail_index.get('geometry_detail_link_ledger') or {})

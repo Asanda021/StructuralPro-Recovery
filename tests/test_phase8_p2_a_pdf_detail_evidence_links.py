@@ -195,3 +195,103 @@ def test_partially_returned_groups_from_blocked_page_are_rejected_but_audited():
     assert ledger['title_coverage_records'][0]['status']=='BLOCKED_GEOMETRY_GROUPING_INCOMPLETE'
     assert ledger['possible_page_local_links']==0
     assert ledger['quantity_approval_count']==0
+
+
+
+def _put_word(cov, word_id, tag, box, *, status='ISOLATED_TYPE_WORD_POSITION_CANDIDATE'):
+    word={'witness_id':f'PDF001:p1:word{word_id:06d}',
+          'document_id':'PDF001','page':1,'source_word_index':word_id,
+          'type_tag':tag,'bbox_pt':box,'status':status,'financially_payable':False,
+          'localization':'PDF_WORD_BBOX_NOT_GLYPH_OR_MEMBER'}
+    cov.setdefault('localized_type_word_witnesses',[]).append(word)
+    cov['type_word_page_index']=[{
+        'document_id':'PDF001','page':1,'status':'INDEXED_TYPE_WORD_POSITIONS',
+        'all_words_examined':True,
+        'type_word_witnesses':cov['localized_type_word_witnesses']}]
+    cov['localized_type_word_witness_count']=len(cov['localized_type_word_witnesses'])
+    return word
+
+
+def test_isolated_type_word_near_unique_beam_geometry_is_only_proposed():
+    cov,objects,pages=_source()
+    objects[0]['family_candidates']=['beam']
+    pages[0]['groups'][0]['bbox_pt']=[40,60,130,160]
+    witness=_put_word(cov,1,'B1',[60,85,78,98])
+    title=_put_word(cov,2,'B1',[20,25,38,38],status='TITLE_TEXT_MENTION_NOT_MEMBER')
+    out=link_pdf_detail_geometry_evidence(cov,objects,pages)
+    rec=out['geometry_group_link_records'][0]
+    assert rec['localized_proposed_type_tag']=='B1'
+    assert rec['localized_type_word_witness_ids']==[witness['witness_id']]
+    assert rec['localized_word_link_status']=='PROPOSED_LOCALIZED_TYPE_WORD_NEAR_DETAIL_GROUP'
+    assert out['localized_word_proposed_link_count']==1
+    assert out['localized_title_word_mentions']==1
+    assert title['witness_id'] in out['unlinked_localized_type_word_witness_ids']
+    assert rec['type_verified'] is False and rec['physical_member_verified'] is False
+    assert out['quantity_approval_count']==0
+
+
+def test_incompatible_type_word_is_blocked_without_guessing():
+    cov,objects,pages=_source()
+    objects[0]['family_candidates']=['column']
+    pages[0]['groups'][0]['bbox_pt']=[40,60,130,160]
+    _put_word(cov,1,'B1',[60,85,78,98])
+    out=link_pdf_detail_geometry_evidence(cov,objects,pages)
+    rec=out['geometry_group_link_records'][0]
+    assert rec['localized_word_link_status']=='BLOCKED_WORD_DETAIL_FAMILY_MISMATCH'
+    assert rec['localized_proposed_type_tag'] is None
+
+
+def test_multiple_localized_words_near_one_geometry_are_ambiguous():
+    cov,objects,pages=_source()
+    objects[0]['family_candidates']=['beam']
+    pages[0]['groups'][0]['bbox_pt']=[40,60,130,160]
+    _put_word(cov,1,'B1',[60,85,78,98])
+    _put_word(cov,2,'B2',[90,85,108,98])
+    out=link_pdf_detail_geometry_evidence(cov,objects,pages)
+    assert out['geometry_group_link_records'][0]['localized_word_link_status']=='BLOCKED_MULTIPLE_LOCAL_TYPE_WORDS'
+    assert out['localized_word_proposed_link_count']==0
+
+
+def test_one_localized_word_near_two_groups_is_not_assigned_twice():
+    cov,objects,pages=_source(separate_groups=True)
+    objects[0]['family_candidates']=['beam']
+    pages[0]['groups'][0]['bbox_pt']=[0,0,10,10]
+    pages[0]['groups'][1]['bbox_pt']=[35,0,45,10]
+    _put_word(cov,1,'B1',[18,0,26,10])
+    out=link_pdf_detail_geometry_evidence(cov,objects,pages)
+    assert all(x['localized_word_link_status']=='BLOCKED_WORD_NEAR_MULTIPLE_VECTOR_GROUPS'
+               for x in out['geometry_group_link_records'])
+    assert out['localized_word_proposed_link_count']==0
+
+
+def test_cross_page_words_and_missing_index_cannot_attach():
+    cov,objects,pages=_source()
+    pages[0]['groups'][0]['bbox_pt']=[40,60,130,160]
+    w=_put_word(cov,1,'B1',[60,85,78,98])
+    w['document_id']='PDF002'
+    with pytest.raises(ValueError,match='Invalid or duplicate'):
+        link_pdf_detail_geometry_evidence(cov,objects,pages)
+    cov,objects,pages=_source()
+    cov['localized_type_word_witnesses']=[{
+        'witness_id':'PDF001:p1:word000001','document_id':'PDF001',
+        'page':1,'type_tag':'B1','bbox_pt':[60,85,78,98],
+        'status':'ISOLATED_TYPE_WORD_POSITION_CANDIDATE','financially_payable':False,
+    }]
+    with pytest.raises(ValueError,match='require document'):
+        link_pdf_detail_geometry_evidence(cov,objects,pages)
+
+
+def test_pdf_integration_word_inside_title_is_not_physical_mark(tmp_path):
+    d=pymupdf.open();p=d.new_page(width=400,height=300)
+    p.insert_text((25,35),'Beam Detail B1')
+    p.draw_rect(pymupdf.Rect(40,60,120,150))
+    p.insert_text((65,105),'B-1')
+    src=tmp_path/'beam_word_position.pdf';d.save(src);d.close()
+    out=inspect_pdf_sheet_set([src])['detail_object_index']
+    ledger=out['geometry_detail_link_ledger']
+    assert ledger['localized_word_witness_count']>=2
+    assert ledger['localized_title_word_mentions']>=1
+    assert ledger['localized_isolated_word_count']>=1
+    assert ledger['localized_word_proposed_link_count']>=1
+    assert all(not x['type_verified'] and not x['financially_payable']
+               for x in ledger['geometry_group_link_records'])
