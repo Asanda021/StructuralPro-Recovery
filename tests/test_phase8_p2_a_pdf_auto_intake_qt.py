@@ -93,3 +93,40 @@ def test_grouped_column_question_shows_known_types_without_auto_assignment():
     assert 'نامعلوم' in cell
     assert dialog.ledger.answers=={}
     dialog.close()
+
+
+def test_vector_type_and_detail_evidence_display_without_finance():
+    app = QApplication.instance() or QApplication([])
+    report = {
+        'documents': [{'document_id':'PDF001','sha256':'a'*64}],
+        'page_count':2,'member_type_candidates':[],
+        'column_layout_symbol_candidate_count':1,
+        'vector_type_label_candidate_count':1,'vector_type_detail_link_count':1,
+        'unresolved_pages':[],
+        'grid_location_candidates':[{
+            'candidate_id':'PDF001:p1:r1:c1','document_id':'PDF001','page':1,
+            'x_pt':180,'y_pt':150,'suggested_type':'C2',
+            'status':'GRID_LOCATION_VECTOR_TYPE_CANDIDATE',
+            'symbol_status':'COMPACT_VECTOR_SYMBOL_CANDIDATE',
+            'vector_type_label_evidence':{'tag':'C2','status':'PROPOSED_UNVERIFIED'},
+            'cross_sheet_type_reference':{'tag':'C2','status':'PROPOSED_UNVERIFIED',
+                'details':[{'page':2,'dimension_kind':'length','dimension_m':'12.50'}]},
+            'type_verified':False,'physical_member_verified':False,
+            'financially_payable':False,
+        }],
+        'questions':[{'tag':'GRID_TYPE:PDF001:p1',
+          'question':'آیا انتساب تیپ‌ها معتبر است؟',
+          'suggestion':{'value':None,'status':'PROPOSED_UNVERIFIED',
+            'per_location_type_candidates':[{'candidate_id':'PDF001:p1:r1:c1',
+              'type':'C2','status':'PROPOSED_UNVERIFIED'}]},
+          'evidence':[{'document_id':'PDF001','page':1}]}],
+    }
+    dlg=PDFSheetEvidenceDialog(report)
+    assert dlg.grid_table.item(0,3).text()=='C2'
+    assert 'تأیید مهندسی نشده' in dlg.grid_table.item(0,3).toolTip()
+    assert '12.50 m' in dlg.grid_table.item(0,3).toolTip()
+    assert 'C2: 1' in dlg.question_table.item(0,2).text()
+    assert 'غیرمالی' in dlg.question_table.item(0,2).text()
+    assert 'ارتباط پیشنهادی با دیتیل' in dlg.summary.text()
+    assert dlg.ledger.answers=={}
+    dlg.close()
