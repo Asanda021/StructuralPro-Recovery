@@ -130,3 +130,40 @@ def test_vector_type_and_detail_evidence_display_without_finance():
     assert 'ارتباط پیشنهادی با دیتیل' in dlg.summary.text()
     assert dlg.ledger.answers=={}
     dlg.close()
+
+
+
+def test_axis_witness_and_floor_scope_are_review_only():
+    app=QApplication.instance() or QApplication([])
+    floor=[{'document_id':'PDF001','page':2,'sheet_kind':'ground_floor_plan'}]
+    report={'documents':[{'document_id':'PDF001','sha256':'a'*64}],
+       'page_count':2,'member_type_candidates':[],
+       'independently_registered_grid_positions':1,
+       'architectural_floor_plan_candidates':floor,
+       'unresolved_pages':[],
+       'grid_location_candidates':[{
+           'candidate_id':'PDF001:p2:r1:c1',
+           'document_id':'PDF001','page':2,'x_pt':180,'y_pt':156,
+           'suggested_type':'C1','status':'GRID_LOCATION_VECTOR_TYPE_CANDIDATE',
+           'independent_axis_grid_witness':{
+               'axis_document_id':'PDF001','axis_page':1,
+               'axis_candidate_id':'PDF001:p1:r1:c1',
+               'max_residual_pt':0.0,
+               'status':'PROPOSED_INDEPENDENT_GRID_REGISTRATION',
+               'physical_member_verified':False,'financially_payable':False,
+           },
+           'type_verified':False,'financially_payable':False,
+       }],
+       'questions':[{'tag':'COLUMN_FLOOR_SCOPE',
+           'question':'ستون‌ها در کدام طبقات اجرا شده‌اند؟',
+           'suggestion':{'value':None,'status':'PROPOSED_UNVERIFIED',
+                         'floor_plan_candidates':floor},
+           'evidence':[{'document_id':'PDF001','page':2}]}]}
+    dialog=PDFSheetEvidenceDialog(report)
+    assert dialog.floor_table.rowCount()==1
+    assert 'نامعلوم' in dialog.floor_table.item(0,2).text()
+    assert 'آکس‌بندی صفحه 1' in dialog.grid_table.item(0,4).toolTip()
+    assert 'بدون ضریب تکرار' in dialog.summary.text()
+    assert 'تعداد تکرار' in dialog.question_table.item(0,2).text()
+    assert dialog.ledger.answers=={}
+    dialog.close()
