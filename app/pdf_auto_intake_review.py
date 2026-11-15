@@ -282,6 +282,26 @@ class PDFSheetEvidenceDialog(QDialog):
                 if j==4:cell.setToolTip(entry.get('reason',''))
                 self.vector_group_table.setItem(i,j,cell)
         geometry_layout.addWidget(self.vector_group_table)
+        blocked_rows=detail_index.get('vector_grouping_blocked_pages',())
+        self.vector_group_blocked_table=QTableWidget(0,3,geometry_tab)
+        self.vector_group_blocked_table.setObjectName('PDFAutoVectorGroupingBlockedPages')
+        self.vector_group_blocked_table.setHorizontalHeaderLabels([
+            'فایل/صفحه مسدود', 'علت مسدودسازی', 'تعداد مسیر تعیین‌تکلیف‌نشده',
+        ])
+        self.vector_group_blocked_table.setRowCount(len(blocked_rows))
+        self.vector_group_blocked_table.horizontalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.Stretch
+        )
+        for i, item in enumerate(blocked_rows):
+            vals=(f"{item.get('document_id','')}:p{item.get('page','')}",
+                  item.get('status','BLOCKED'),
+                  item.get('ungrouped_path_count')
+                  if item.get('ungrouped_path_count') is not None else 'نامشخص')
+            for j, val in enumerate(vals):
+                cell=QTableWidgetItem(str(val))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                self.vector_group_blocked_table.setItem(i,j,cell)
+        geometry_layout.addWidget(self.vector_group_blocked_table)
         obj_sub.addTab(geometry_tab,'گروه‌های هندسی احتمالی')
         tabs.addTab(obj_tab, 'دیتیل‌های شناسایی‌شده و موارد باز')
 
