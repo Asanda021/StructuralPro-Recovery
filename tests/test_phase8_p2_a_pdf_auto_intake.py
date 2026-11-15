@@ -210,3 +210,63 @@ def test_non_column_symbol_grid_does_not_trigger_type_assignment_question(tmp_pa
     report=inspect_pdf_sheet_set([path])
     assert report['column_layout_symbol_candidate_count']==0
     assert report['questions']==[]
+
+
+def test_auto_intake_vector_stroke_column_labels_and_grouped_review(tmp_path):
+    """Synthetic complete PDF roundtrip: 3 distinct type shapes, no BOQ write."""
+    import pymupdf
+    from core.drawings.pdf_vector_type_labels import (
+        _C, _ONE, _TWO, _THREE_TOP, _THREE_BOTTOM,
+    )
+    d=pymupdf.open();p=d.new_page(width=842,height=595)
+    p.insert_text((25,35),'Column Plan',fontsize=12)
+    xs=(180,300,440);ys=(150,300,450)
+    for x in xs:p.draw_line((x,ys[0]),(x,ys[-1]))
+    for y in ys:p.draw_line((xs[0],y),(xs[-1],y))
+    for x,y in ((180,150),(300,300),(440,450)):
+        p.draw_rect(pymupdf.Rect(x-3,y-3,x+3,y+3))
+    def vector_glyph(template,x,y,w,h):
+        pts=[(x+u*w,y+v*h) for u,v in template]
+        shape=p.new_shape()
+        for a,b in zip(pts,pts[1:]):
+            shape.draw_line(a,b)
+        shape.finish(color=(0,0,0),width=.15,closePath=False)
+        shape.commit()
+    def text_strokes(digit,x,y):
+        vector_glyph(_C,x,y,6,9)
+        if digit=='1':vector_glyph(_ONE,x+9,y,1.5,9)
+        elif digit=='2':vector_glyph(_TWO,x+9,y,5.7,9)
+        else:
+            vector_glyph(_THREE_TOP,x+9,y,5.7,9)
+            vector_glyph(_THREE_BOTTOM,x+9,y,5.7,9)
+    text_strokes('1',188,160)
+    text_strokes('2',308,308)
+    text_strokes('3',420,425)
+    detail=d.new_page(width=842,height=595)
+    for j,(name,length) in enumerate((('C-1','10.70'),('C-2','14.00'),('C-3','12.00'))):
+        detail.insert_text((60,80+35*j),f'{name} L= {length} m',fontsize=10)
+    file=tmp_path/'vector-labels.pdf';d.save(file);d.close()
+    report=inspect_pdf_sheet_set([file])
+    assert report['page_count']==2
+    assert report['vector_type_label_candidate_count']==3
+    types={n['candidate_id']:n['suggested_type'] for n in report['grid_location_candidates']
+           if n.get('vector_type_label_evidence')}
+    assert types=={'PDF001:p1:r1:c1':'C1',
+                   'PDF001:p1:r2:c2':'C2',
+                   'PDF001:p1:r3:c3':'C3'}
+    assert len(report['questions'])==1
+    q=report['questions'][0]
+    assert q['tag']=='GRID_TYPE:PDF001:p1'
+    assert len(q['suggestion']['per_location_type_candidates'])==3
+    assert report['vector_type_detail_link_count']==3
+    references={n['suggested_type']: n['cross_sheet_type_reference']['details'][0]['dimension_m']
+                for n in report['grid_location_candidates'] if n.get('cross_sheet_type_reference')}
+    assert references=={'C1':'10.70','C2':'14.00','C3':'12.00'}
+    assert all(n['cross_sheet_type_reference']['status']=='PROPOSED_UNVERIFIED'
+               for n in report['grid_location_candidates'] if n.get('cross_sheet_type_reference'))
+    assert all(row['status']=='PROPOSED_UNVERIFIED' for row in
+               q['suggestion']['per_location_type_candidates'])
+    assert all(e['financially_payable'] is False for e in report['grid_location_candidates'])
+    assert report['physical_member_count'] is None
+    assert report['quantity_approval_count']==0
+    assert report['complete'] is False
