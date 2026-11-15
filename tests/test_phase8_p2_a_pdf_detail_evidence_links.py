@@ -182,3 +182,16 @@ def test_two_independent_details_on_one_sheet_link_only_to_nearby_title(tmp_path
                for x in ledger['geometry_group_link_records'])
     assert ledger['quantity_approval_count']==0
     assert graph['physical_member_count'] is None
+
+
+
+def test_partially_returned_groups_from_blocked_page_are_rejected_but_audited():
+    cov,objects,pages=_source()
+    pages[0]['all_source_paths_grouped']=False
+    ledger=link_pdf_detail_geometry_evidence(cov,objects,pages)
+    assert ledger['blocked_geometry_page_count']==1
+    assert ledger['rejected_partial_group_count']==1
+    assert ledger['geometry_group_link_records']==[]
+    assert ledger['title_coverage_records'][0]['status']=='BLOCKED_GEOMETRY_GROUPING_INCOMPLETE'
+    assert ledger['possible_page_local_links']==0
+    assert ledger['quantity_approval_count']==0
