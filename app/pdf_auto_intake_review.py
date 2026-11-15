@@ -33,6 +33,7 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{report.get('vector_type_detail_link_count', 0)} ارتباط پیشنهادی با دیتیل | "
             f"{report.get('independently_registered_grid_positions',0)} تطبیق شبکه با آکس‌بندی (غیرقطعی) | "
             f"{len(report.get('architectural_floor_plan_candidates',()))} پلان معماریِ تراز (بدون ضریب تکرار) | "
+            f"{len((report.get('column_position_ledger') or {}).get('positions',()))} موقعیت ستون با پرونده شواهد (غیرقطعی) | "
             f"{len(report.get('unresolved_pages', ()))} صفحه با پوشش نامعلوم | "
             f"{len(report.get('questions', ()))} ابهام بین شیت‌ها")
         self.summary.setWordWrap(True)
@@ -134,6 +135,39 @@ class PDFSheetEvidenceDialog(QDialog):
         floor_layout.addWidget(self.floor_table)
         tabs.addTab(floor_tab, 'دامنه طبقات؛ بدون تکرار حدسی')
 
+
+        # Grid candidates never count as installed columns or payable BOQ.
+        proof_tab = QWidget(tabs)
+        proof_layout = QVBoxLayout(proof_tab)
+        self.column_position_table = QTableWidget(0, 6, proof_tab)
+        self.column_position_table.setObjectName('PDFAutoIntakeColumnPositionProof')
+        self.column_position_table.setHorizontalHeaderLabels([
+            'موقعیت شبکه', 'آکس مستقل', 'تیپ پیشنهادی',
+            'دیتیل تیپ / طول اسمی', 'تکرار در طبقات', 'وضعیت شواهد',
+        ])
+        proof_rows = (report.get('column_position_ledger') or {}).get('positions', ())
+        self.column_position_table.setRowCount(len(proof_rows))
+        self.column_position_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        for i, item in enumerate(proof_rows):
+            axis = item.get('axis_evidence') or {}
+            detail = item.get('type_detail_evidence') or {}
+            labels = (
+                item.get('candidate_id', ''),
+                (f"آکس‌بندی صفحه {axis.get('page')}" if axis else 'نامشخص'),
+                item.get('proposed_type') or 'نامشخص',
+                (f"صفحه {detail.get('page')} | L={detail.get('type_detail_length_m')} m (صرفاً دیتیل تیپ)"
+                 if detail else 'دیتیل مستقل احراز نشد'),
+                'تکرار طبقات نامعلوم',
+                item.get('status', ''),
+            )
+            for j, label in enumerate(labels):
+                cell = QTableWidgetItem(str(label))
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j == 4:
+                    cell.setToolTip('پلان معماری به‌تنهایی تعداد ستون اجرایی در هر طبقه را ثابت نمی‌کند.')
+                self.column_position_table.setItem(i, j, cell)
+        proof_layout.addWidget(self.column_position_table)
+        tabs.addTab(proof_tab, 'دفتر شواهد ستون (غیرمالی)')
 
         questions = QWidget(tabs)
         question_layout = QVBoxLayout(questions)
