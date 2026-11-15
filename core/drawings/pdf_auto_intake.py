@@ -18,6 +18,9 @@ from typing import Iterable
 from core.drawings.pdf_grid_instances import detect_vector_grid_positions
 from core.drawings.pdf_vector_symbol_witness import compact_symbol_witness
 from core.drawings.pdf_vector_type_labels import vector_column_type_labels
+from core.drawings.pdf_sheet_scope_registration import (
+    classify_sheet_title, register_column_grid_against_axes,
+)
 
 
 _MEMBER_MARK = re.compile(
@@ -113,6 +116,7 @@ def inspect_pdf_sheet_set(
     grid_locations: list[dict] = []
     vector_type_label_evidence: list[dict] = []
     vector_grid_summaries: list[dict] = []
+    page_view_summaries: list[dict] = []
     page_reasons: list[dict] = []
     total_pages = 0
     for path in received:
@@ -129,6 +133,10 @@ def inspect_pdf_sheet_set(
             documents.append({"document_id": doc_id, "page_count": len(doc),
                               "source_name": path.name, "sha256": sha256(data).hexdigest()})
             for number, page in enumerate(doc, 1):
+                title_scope = classify_sheet_title(page.get_text())
+                page_view_summaries.append({
+                    'document_id': doc_id, 'page': number, **title_scope,
+                })
                 marks, dims = _parse_pdf_lines(page)
                 grid = detect_vector_grid_positions(
                     page, document_id=doc_id, page_number=number,
@@ -210,6 +218,33 @@ def inspect_pdf_sheet_set(
                                   "confidence": "tag_only", "physical_instances_verified": False,
                                   "financially_payable": False}
                     raw_members.append(record)
+
+    # Register source-backed column-layout grids against the *separate* axis
+    # layout sheet, not against a floor plan.  Such a registration proves only
+    # the positional witness in document coordinates, not physical members.
+    registration = register_column_grid_against_axes(
+        vector_grid_summaries, page_view_summaries,
+    )
+    accepted_grids = {
+        (r['column_plan']['document_id'], r['column_plan']['page']): r
+        for r in registration['column_plan_registrations']
+        if r['status'] == 'PROPOSED_INDEPENDENT_GRID_REGISTRATION'
+    }
+    for node in grid_locations:
+        reg = accepted_grids.get((node['document_id'], node['page']))
+        if reg:
+            node['independent_axis_grid_witness'] = {
+                'axis_document_id': reg['axis_plan']['document_id'],
+                'axis_page': reg['axis_plan']['page'],
+                'axis_candidate_id': (
+                    f"{reg['axis_plan']['document_id']}:p{reg['axis_plan']['page']}"
+                    f":r{node['row']}:c{node['column']}"
+                ),
+                'max_residual_pt': reg['max_residual_pt'],
+                'status': 'PROPOSED_INDEPENDENT_GRID_REGISTRATION',
+                'physical_member_verified': False,
+                'financially_payable': False,
+            }
 
     grouped: dict[str, list[dict]] = defaultdict(list)
     for candidate in raw_members:
@@ -318,9 +353,52 @@ def inspect_pdf_sheet_set(
             'options': ['confirm_suggestion', 'correct', 'request_document'],
             'financially_payable': False,
         })
+    # Independent architectural floor titles are an inventory of available
+    # drawings, NOT proof that the single column type layout is repeated over
+    # those floors. Raise one grouped *end-user* question where the reference
+    # structure and floor sheets coexist but no level/stacking authority does.
+    architectural_floor_sheets = [
+        {'document_id': view['document_id'], 'page': view['page'],
+         'sheet_kind': view['sheet_kind']}
+        for view in page_view_summaries
+        if view['status'] == 'EXPLICIT_SHEET_TITLE'
+        and view['sheet_kind'] in (
+            'pilot_floor_plan', 'ground_floor_plan', 'first_floor_plan',
+        )
+    ]
+    if registration['registered_grid_positions'] and architectural_floor_sheets:
+        questions.append({
+            'tag': 'COLUMN_FLOOR_SCOPE',
+            'status': 'REVIEW_REQUIRED',
+            'question': 'برای برآورد ستون‌های این پلان، هر تیپ در کدام طبقات و ترازهای واقعی اجرا شده است؟',
+            'suggestion': {
+                'status': 'PROPOSED_UNVERIFIED',
+                'value': None,
+                'floor_plan_candidates': architectural_floor_sheets,
+                'reason': ('پلان‌های معماری این ترازها در مجموعه موجودند، '
+                           'ولی از حضور پلان، تکرار ستون و طول اجرایی در هر تراز اثبات نمی‌شود.'),
+            },
+            'evidence': [
+                {'document_id': r['column_plan']['document_id'],
+                 'page': r['column_plan']['page'],
+                 'axis_page': r['axis_plan']['page'],
+                 'registered_positions': r['supported_positions']}
+                for r in registration['column_plan_registrations']
+                if r['status'] == 'PROPOSED_INDEPENDENT_GRID_REGISTRATION'
+            ] + architectural_floor_sheets,
+            'options': ['confirm_suggestion', 'correct', 'request_document'],
+            'financially_payable': False,
+        })
+
     status_counts = Counter(x["status"] for x in raw_members)
     return {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
+            "page_view_summaries": page_view_summaries,
+            "architectural_floor_plan_candidates": architectural_floor_sheets,
+            "independent_axis_grid_registrations": registration['column_plan_registrations'],
+            "independently_registered_grid_positions": registration['registered_grid_positions'],
+            "floor_repetition_multiplier": None,
+            "floor_repetition_verified": False,
             "grid_location_candidates": grid_locations,
             "vector_type_label_evidence": vector_type_label_evidence,
             "vector_type_detail_link_count": sum(
