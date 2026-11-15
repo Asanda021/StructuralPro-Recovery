@@ -231,6 +231,38 @@ def inspect_pdf_sheet_set(
                               "evidence": [{"document_id": e["document_id"], "page": e["page"],
                                             "dimension": e["dimension_m"], "kind": e["dimension_kind"]} for e in entries],
                               "options": ["confirm_document", "correct", "request_revised_sheet"]})
+    # One review question per relevant *sheet*, never one interrupting modal
+    # per individual grid node.  Column symbols may be clear as vector marks,
+    # while their C1/C2/C3 annotation is outlined rather than searchable text.
+    # A type candidate list from details does not establish per-node ownership.
+    unresolved_column_grids: dict[tuple[str, int], list[dict]] = defaultdict(list)
+    for node in grid_locations:
+        if node.get('column_context_candidate') and not node.get('suggested_type'):
+            unresolved_column_grids[(node['document_id'], node['page'])].append(node)
+    known_types = sorted({e['tag'] for e in raw_members
+                          if e['status'] in ('TYPE_DIMENSION_CANDIDATE',
+                                             'CROSS_VIEW_TYPE_REFERENCE_CANDIDATE')})
+    for (doc_id, page_no), nodes in sorted(unresolved_column_grids.items()):
+        questions.append({
+            'tag': f'GRID_TYPE:{doc_id}:p{page_no}',
+            'status': 'REVIEW_REQUIRED',
+            'question': 'تیپ‌های ستون در موقعیت‌های علامت‌دار این شیت چگونه تعیین می‌شوند؟',
+            'suggestion': {
+                'status': 'PROPOSED_UNVERIFIED',
+                'value': None,
+                'candidate_types_from_details': known_types,
+                'reason': 'وجود نماد و عنوان پلان ستون ثابت شد؛ تیپ تک‌تک موقعیت‌ها با شواهد متنی قابل اثبات نیست.'
+            },
+            'evidence': [
+                {'document_id': node['document_id'], 'page': node['page'],
+                 'candidate_id': node['candidate_id'],
+                 'x_pt': node['x_pt'], 'y_pt': node['y_pt'],
+                 'symbol_status': node['symbol_status']}
+                for node in nodes
+            ],
+            'options': ['confirm_suggestion', 'correct', 'request_document'],
+            'financially_payable': False,
+        })
     status_counts = Counter(x["status"] for x in raw_members)
     return {"documents": documents, "page_count": total_pages,
             "member_type_candidates": raw_members,
