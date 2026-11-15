@@ -128,8 +128,16 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
     path_boxes=[]
     for path in paths:
         box=_rect(path.get('rect'))
-        if box and box[2]>box[0] and box[3]>box[1]:path_boxes.append(box)
-        elif box is None:
+        if box:
+            # CAD centre-lines commonly have ZERO width or height. Expand
+            # their visible evidence by a tiny page-point radius rather than
+            # silently omitting pure horizontal/vertical line drawings.
+            ax0,ay0,ax1,ay1=box
+            pad=0.25
+            if ax0==ax1:ax0-=pad;ax1+=pad
+            if ay0==ay1:ay0-=pad;ay1+=pad
+            path_boxes.append((ax0,ay0,ax1,ay1))
+        else:
             extraction_errors.append('BLOCKED_INVALID_VECTOR_PATH_BBOX')
     blocked=bool(extraction_errors)
     x0,y0,x1,y1=bounds
@@ -192,6 +200,7 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'sheet_kind':classification,'discipline_candidates':family_candidates,
       'source_bbox_pt':[round(v,2) for v in bounds],
       'regions':zones,'region_count':len(zones),'expected_region_count':rows*columns,
+      'tile_rows':rows,'tile_columns':columns,
       'detail_title_anchors':title_anchors,
       'explicit_detail_anchor_count':len(title_anchors),
       'searchable_text_block_count':sum(v[1]==0 for v in box_data),
@@ -226,6 +235,32 @@ def assemble_pdf_detail_inventory(page_summaries: Iterable[Mapping],
         expected_ids={r['region_id'] for r in regs}
         if len(expected_ids)!=len(regs):
             errors.append(f"DUPLICATE_REGION:{page['document_id']}:p{page['page']}")
+        # Validate the entire tile envelope and every grid coordinate, not
+        # merely row count. A mis-positioned tile must never pass coverage.
+        nr=page.get('tile_rows',0);nc=page.get('tile_columns',0)
+        envelope=page.get('source_bbox_pt')
+        if (type(nr) is not int or type(nc) is not int or nr<2 or nc<2 or
+            not isinstance(envelope,(list,tuple)) or len(envelope)!=4):
+            errors.append(f"INVALID_GRID_METADATA:{page['document_id']}:p{page['page']}")
+        else:
+            x0,y0,x1,y1=map(float,envelope)
+            expected_cells={(ri,ci) for ri in range(1,nr+1) for ci in range(1,nc+1)}
+            real_cells={(r.get('tile_row'),r.get('tile_column')) for r in regs}
+            if real_cells!=expected_cells:
+                errors.append(f"MISSING_TILE_CELL:{page['document_id']}:p{page['page']}")
+            for region in regs:
+                ri,ci=region.get('tile_row'),region.get('tile_column')
+                bbox=region.get('bbox_pt')
+                if (not isinstance(ri,int) or not isinstance(ci,int) or
+                    not isinstance(bbox,(list,tuple)) or len(bbox)!=4 or
+                    not 1<=ri<=nr or not 1<=ci<=nc):
+                    errors.append(f"INVALID_TILE_BBOX:{page['document_id']}:p{page['page']}")
+                    break
+                expected_bbox=(x0+(ci-1)*(x1-x0)/nc,y0+(ri-1)*(y1-y0)/nr,
+                               x0+ci*(x1-x0)/nc,y0+ri*(y1-y0)/nr)
+                if any(abs(float(bbox[j])-expected_bbox[j])>0.02 for j in range(4)):
+                    errors.append(f"INVALID_TILE_BBOX:{page['document_id']}:p{page['page']}")
+                    break
         all_regions.extend(regs)
         all_anchors.extend(page.get('detail_title_anchors',()))
         summary.append({'document_id':page['document_id'],'page':page['page'],
