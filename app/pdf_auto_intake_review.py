@@ -29,6 +29,8 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
             f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "
+            f"{report.get('vector_type_label_candidate_count', 0)} برچسب برداری تیپ (پیشنهادی) | "
+            f"{report.get('vector_type_detail_link_count', 0)} ارتباط پیشنهادی با دیتیل | "
             f"{len(report.get('unresolved_pages', ()))} صفحه با پوشش نامعلوم | "
             f"{len(report.get('questions', ()))} ابهام بین شیت‌ها")
         self.summary.setWordWrap(True)
@@ -85,6 +87,15 @@ class PDFSheetEvidenceDialog(QDialog):
             for j, value in enumerate(values):
                 cell = QTableWidgetItem(str(value))
                 cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if j == 3 and item.get('vector_type_label_evidence'):
+                    detail = item.get('cross_sheet_type_reference') or {}
+                    references = detail.get('details') or []
+                    hint = 'شناسه از هندسه خطوط خود برچسب PDF استخراج شده و هنوز تأیید مهندسی نشده است.'
+                    if references:
+                        r = references[0]
+                        hint += (f" دیتیل پیشنهادی: صفحه {r.get('page','؟')}، "
+                                 f"{r.get('dimension_kind','')} = {r.get('dimension_m','')} m.")
+                    cell.setToolTip(hint)
                 self.grid_table.setItem(i, j, cell)
         grid_layout.addWidget(self.grid_table)
         tabs.addTab(grid_tab, 'موقعیت‌های احتمالی شبکه')
@@ -103,6 +114,13 @@ class PDFSheetEvidenceDialog(QDialog):
             value = suggestion.get('value')
             if value is not None:
                 guess = str(value)
+            elif suggestion.get('per_location_type_candidates'):
+                from collections import Counter
+                types = Counter(x.get('type', '?') for x in
+                                suggestion['per_location_type_candidates'])
+                guess = ('خوانش برچسب‌های برداری: ' +
+                         '، '.join(f'{k}: {types[k]}' for k in sorted(types)) +
+                         '؛ انتساب‌ها هنوز پیشنهادی و غیرمالی‌اند')
             elif suggestion.get('candidate_types_from_details'):
                 guess = ('تیپ‌های موجود در دیتیل‌ها: ' +
                          '، '.join(suggestion['candidate_types_from_details']) +
