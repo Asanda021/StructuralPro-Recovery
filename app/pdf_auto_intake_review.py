@@ -28,6 +28,7 @@ class PDFSheetEvidenceDialog(QDialog):
             f"{len(report.get('documents', ()))} PDF | {report.get('page_count', 0)} صفحه | "
             f"{len(report.get('member_type_candidates', ()))} شاهد تیپ | "
             f"{len(report.get('grid_location_candidates', ()))} نامزد موقعیت شبکه (تأییدنشده) | "
+            f"{report.get('column_layout_symbol_candidate_count', 0)} شاهد نماد در پلان ستون (غیرقطعی) | "
             f"{len(report.get('unresolved_pages', ()))} صفحه با پوشش نامعلوم | "
             f"{len(report.get('questions', ()))} ابهام بین شیت‌ها")
         self.summary.setWordWrap(True)
@@ -61,11 +62,11 @@ class PDFSheetEvidenceDialog(QDialog):
 
         grid_tab = QWidget(tabs)
         grid_layout = QVBoxLayout(grid_tab)
-        self.grid_table = QTableWidget(0, 5, grid_tab)
+        self.grid_table = QTableWidget(0, 6, grid_tab)
         self.grid_table.setObjectName('PDFAutoIntakeGridLocations')
         self.grid_table.setHorizontalHeaderLabels([
             'شناسه موقعیت', 'سند / صفحه', 'مختصات PDF (pt)',
-            'تیپ پیشنهادی (غیرقطعی)', 'وضعیت',
+            'تیپ پیشنهادی (غیرقطعی)', 'وضعیت', 'شاهد نماد برداری',
         ])
         locations = report.get('grid_location_candidates', ())
         self.grid_table.setRowCount(len(locations))
@@ -77,6 +78,9 @@ class PDFSheetEvidenceDialog(QDialog):
                 f"({item.get('x_pt','')}, {item.get('y_pt','')})",
                 item.get('suggested_type') or 'شناسایی نشده',
                 item.get('status', ''),
+                ('شاهد فشرده، غیرقطعی' if
+                 item.get('symbol_status') == 'COMPACT_VECTOR_SYMBOL_CANDIDATE'
+                 else 'شاهد مستقل پیدا نشد'),
             )
             for j, value in enumerate(values):
                 cell = QTableWidgetItem(str(value))
