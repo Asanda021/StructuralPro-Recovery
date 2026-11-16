@@ -14,6 +14,7 @@ from core.drawings.pdf_member_review import validate_pdf_member_review
 from core.drawings.pdf_occurrence_review import build_pdf_occurrence_reviews
 from core.drawings.pdf_structural_plan_review import build_pdf_structural_plan_reviews
 from core.drawings.pdf_beam_profile_review import correlate_pdf_beam_profile_witnesses
+from core.drawings.pdf_beam_axis_crosscheck import reconcile_pdf_beam_grid_labels
 from core.drawings.pdf_type_word_witness import _box
 
 
@@ -1067,7 +1068,7 @@ def _add_structural_plan_reviews(g, pages):
 
 
 def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=None, member_review=None,
-                                    beam_profile_witnesses=None, max_records=80000):
+                                    beam_profile_witnesses=None, beam_axis_labels=None, max_records=80000):
     """Combine immutable PDF primitives with explicit, issue-scoped source relationships."""
     authorities = _parse_registry(revision_registry)
     documents = {doc["document_id"]: doc for doc in report["documents"]}
@@ -1148,6 +1149,56 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
                       status="BLOCKED" if row["status"] == "BLOCKED" else "PROPOSED",
                       code=row["reason_code"], reason="مجاورت هندسی؛ انتساب اجرایی تأیید نشده")
         row.update(node_id=node["node_id"], source_id=sheet["node_id"], edge_ids=[edge["edge_id"]])
+    independent_axis_crosscheck = None
+    if beam_axis_labels is not None:
+        grids = [grid for grid in report.get("beam_axis_grid_candidates", ())
+                 if grid.get("status") == "PROPOSED_UNLABELED_AXIS_GRID"]
+        if len(grids) != 1 or not beam_profile_witnesses or len(beam_profile_reviews) != len(beam_profile_witnesses):
+            raise ValueError("Unique independent axis grid and beam visual observations required")
+        grid = grids[0]
+        axis_key = (grid["document_id"], grid["page"])
+        beam_key = (grid["document_id"], beam_axis_labels.get("beam_page"))
+        if (axis_key not in pages or beam_key not in pages or
+                pages[axis_key]["sha256"] != grid["source_sha256"] or
+                pages[beam_key]["sha256"] != grid["source_sha256"] or
+                pages[axis_key]["sheet_kind"] != "axis_plan" or
+                pages[beam_key]["sheet_kind"] != "beam_layout_plan" or
+                pages[axis_key]["authority_block"] or pages[beam_key]["authority_block"] or
+                not pages[axis_key]["linkable"] or not pages[beam_key]["linkable"]):
+            raise ValueError("Foreign, unclassified or blocked independent axis/beam sheet")
+        independent_axis_crosscheck = reconcile_pdf_beam_grid_labels(
+            grid, beam_axis_labels, beam_profile_witnesses,
+        )
+        if independent_axis_crosscheck["status"].startswith("BLOCKED_"):
+            for review in beam_profile_reviews:
+                review["spatial_reason_code"] = review["reason_code"]
+                review["status"] = "BLOCKED"
+                review["reason_code"] = "BEAM_AXIS_PRINTED_CHAIN_BLOCKED"
+                g.nodes[review["node_id"]]["status"] = "BLOCKED"
+        else:
+            if len(independent_axis_crosscheck["profiles"]) != len(beam_profile_reviews):
+                raise ValueError("Axis profile evidence count mismatch")
+            for row, match in zip(beam_profile_reviews, independent_axis_crosscheck["profiles"], strict=True):
+                row["independent_axis_status"] = match["status"]
+                row["independent_axis_review_id"] = match["review_id"]
+                row["independent_axis_page"] = grid["page"]
+                if match["status"].startswith("BLOCKED_"):
+                    row["spatial_reason_code"] = row["reason_code"]
+                    row["status"] = "BLOCKED"
+                    row["reason_code"] = "BEAM_AXIS_LOCATION_REVIEW_BLOCKED"
+                    g.nodes[row["node_id"]]["status"] = "BLOCKED"
+                source = pages[axis_key]["node"]
+                target = g.nodes[row["node_id"]]
+                anchor = {"anchor_id": _stable("BEAM_AXIS_GRID_WITNESS", grid["source_sha256"], grid["page"]),
+                          "document_id": grid["document_id"], "page": grid["page"],
+                          "source_name": grid["source_name"], "source_sha256": grid["source_sha256"],
+                          "kind": "INDEPENDENT_AXIS_GRID_BOUNDS",
+                          "bbox_pt": grid["source_bounds_pt"],
+                          "coordinate_space": "unrotated_pdf_points"}
+                edge = g.edge("BEAM_PROFILE_INDEPENDENT_AXIS_LOCATION", source, target,
+                              [anchor, *row["anchors"]], status="BLOCKED" if row["status"] == "BLOCKED" else "PROPOSED",
+                              reason="تطبیق موقعیت با شبکه آکس مستقل؛ بدون اثبات تراز، طول یا واحد")
+                row["edge_ids"].append(edge["edge_id"])
     temporary = sum(row["status"] == "COMPLETE_NONFINANCIAL" for row in occurrence_reviews)
     if len({edge["edge_id"] for edge in g.edges}) != len(g.edges):
         raise ValueError("Duplicate PDF evidence graph edge")
@@ -1166,6 +1217,8 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
         "occurrence_reviews": occurrence_reviews,
         "structural_plan_reviews": structural_plan_reviews,
         "beam_profile_reviews": beam_profile_reviews,
+        "beam_axis_grid_candidates": list(report.get("beam_axis_grid_candidates", ())),
+        "beam_axis_profile_crosscheck": independent_axis_crosscheck,
         "fully_evidenced_member_count": temporary, "temporary_quantity_count": temporary,
         "quantity_approval_count": 0, "complete": False, "acceptance": "PARTIAL_NO_GO",
     }
