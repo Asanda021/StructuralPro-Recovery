@@ -376,3 +376,35 @@ def test_rejected_connection_detail_never_mutates_current_qt_receipt(qt_app, eng
         assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+def test_beam_document_requests_are_nonfinancial_and_readable(qt_app, engineering_report):
+    graph = engineering_report['detail_evidence_graph']
+    anchor = {'anchor_id': 'beam-visual:1', 'document_id': 'PDF001', 'page': 1,
+              'source_name': 'synthetic-plan.pdf', 'source_sha256': 'a'*64,
+              'kind': 'VISUALLY_READ_BEAM_PROFILE', 'bbox_pt': [70, 80, 85, 95]}
+    graph['beam_span_evidence_requests'] = [{
+        'request_id': 'BEAM_MISSING_DOCUMENT:test', 'span_axes': 'A-B',
+        'printed_axis_row': '3', 'printed_mark': '1', 'profile_visual': '2IPE16',
+        'status': 'BLOCKED_REQUIRES_GOVERNING_ENGINEERING_DOCUMENTS',
+        'beam_page': 1, 'axis_page': 2, 'detail_page': 3,
+        'type_only_detail_matches': 1,
+        'required_evidence_codes': ['SPAN_SPECIFIC_CONNECTION_DETAIL', 'FABRICATION_CUT_LENGTH'],
+        'missing_evidence': ['SPAN_SPECIFIC_CONNECTION_DETAIL', 'FABRICATION_CUT_LENGTH'],
+        'physical_member_verified': False, 'member_quantity': None,
+        'financially_payable': False, 'anchors': [anchor],
+    }]
+    original = deepcopy(engineering_report)
+    dialog = PDFSheetEvidenceDialog(engineering_report)
+    try:
+        review = dialog.graph_review
+        _select(review, 'beam_span_evidence_requests')
+        visible = review.details.toPlainText()
+        for token in ('A-B', '2IPE16', 'BLOCKED_REQUIRES_GOVERNING_ENGINEERING_DOCUMENTS',
+                      'SPAN_SPECIFIC_CONNECTION_DETAIL', 'FABRICATION_CUT_LENGTH',
+                      'ارجاع اختصاصی دهانه', 'قابل پرداخت مالی — خیر', 'synthetic-plan.pdf'):
+            assert token in visible
+        assert engineering_report == original
+        assert graph['quantity_approval_count'] == 0
+    finally:
+        dialog.close()

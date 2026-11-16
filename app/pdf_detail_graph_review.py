@@ -67,6 +67,11 @@ _TABLES = {
         ('وضعیت', 'status'), ('نمادهای متمایز', 'marker_count'),
         ('مسیرهای هم‌مکان', 'duplicate_source_strokes'),
     )),
+    'beam_span_evidence_requests': ('مدارک ناقص دهانه‌های تیر', (
+        ('آکس دهانه', 'span_axes'), ('ردیف آکس', 'printed_axis_row'),
+        ('شماره چاپی', 'printed_mark'), ('پروفیل تصویری', 'profile_visual'),
+        ('وضعیت', 'status'), ('شواهد مورد نیاز', 'required_evidence_codes'),
+    )),
     'beam_end_support_reviews': ('بازبینی دو سر تیر و دیتیل', (
         ('آکس', 'span_axes'), ('ردیف', 'printed_axis_row'),
         ('پروفیل', 'profile_text'), ('دو سر دهانه', 'status'),
@@ -86,7 +91,7 @@ _TABLES = {
     )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews'}
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests'}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
@@ -123,6 +128,12 @@ _DETAIL_FIELDS = {
                                   ('قابل پرداخت مالی', 'financially_payable')),
     'beam_end_marker_pages': (('هش منبع', 'source_sha256'),
                               ('قابل پرداخت مالی', 'financially_payable')),
+    'beam_span_evidence_requests': (('شناسه درخواست', 'request_id'),
+                                    ('صفحه تیر', 'beam_page'), ('صفحه آکس', 'axis_page'),
+                                    ('صفحه دیتیل', 'detail_page'),
+                                    ('شاهد هم‌نام دیتیل', 'type_only_detail_matches'),
+                                    ('تراز تأییدشده', 'installed_length_verified'),
+                                    ('قابل پرداخت مالی', 'financially_payable')),
     'beam_end_support_reviews': (('شناسه بازبینی', 'review_id'),
                                  ('منبع آکس', 'axis_page'), ('صفحه دیتیل', 'detail_page'),
                                  ('شناسه دو انتها', 'endpoint_marker_ids'),
@@ -138,6 +149,16 @@ _DETAIL_FIELDS = {
 }
 
 _EVIDENCE_LABELS = {
+    'GOVERNING_DRAWING_ISSUE': 'فهرست شیت‌ها و اصلاحیه ابلاغ‌شده',
+    'PHYSICAL_SUPPORT_IDENTITY': 'هویت تکیه‌گاه‌های واقعی دو سر دهانه',
+    'SPAN_SPECIFIC_CONNECTION_DETAIL': 'ارجاع اختصاصی دهانه به دیتیل اتصال',
+    'INSTALLATION_LEVEL': 'تراز واقعی نصب و محدوده طبقات',
+    'FABRICATION_CUT_LENGTH': 'طول برش و کسورات ساخت با تأیید طراح',
+    'DIMENSION_UNIT_AND_CALIBRATION': 'واحد و کالیبراسیون معتبر نما',
+    'PROFILE_VISUAL_GLYPH_CONFIRMATION': 'رفع ابهام خوانش برداری پروفیل',
+    'BOTH_ENDPOINT_MARKERS_RECONCILIATION': 'شاهد مستقل دو نماد انتهایی',
+    'TYPE_ONLY_DETAIL_IS_NOT_SPAN_REFERENCE': 'هم‌نامی نوع، ارجاع اختصاصی نیست',
+
     'OCCURRENCE_IDENTITY': 'شناسهٔ یکتای عضو اجرایی',
     'INDEPENDENT_AXIS': 'شاهد مستقل آکس‌بندی',
     'GOVERNING_REVISION': 'نسخهٔ حاکم سند',
