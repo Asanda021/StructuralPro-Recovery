@@ -56,6 +56,12 @@ _TABLES = {
         ('وضعیت بازبینی', 'status'), ('تصمیم', 'decision_code'), ('کد علت', 'reason_code'),
         ('وضعیت متره', 'quantity_status'),
     )),
+    'beam_profile_reviews': ('تطبیق مکانی پروفیل تیر', (
+        ('پروفیل تصویری', 'profile_text'), ('آکس دهانه', 'span_axes'),
+        ('ردیف آکس', 'printed_axis_row'), ('شمارهٔ چاپی', 'circled_mark_raw'),
+        ('مرزهای نامزد', 'candidate_region_count'), ('وضعیت', 'status'),
+        ('کد علت', 'reason_code'),
+    )),
     'structural_plan_reviews': ('بازبینی پلان سازه', (
         ('نقش پلان', 'role'), ('خانواده', 'family'), ('تیپ', 'type_tag'),
         ('وضعیت بازبینی', 'status'), ('کد علت', 'reason_code'), ('علت', 'reason'),
@@ -63,7 +69,7 @@ _TABLES = {
     )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews'}
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews'}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
@@ -95,6 +101,8 @@ _DETAIL_FIELDS = {
                            ('ردیف شبکه', 'grid_row'), ('ستون شبکه', 'grid_column'),
                            ('مقدار عضو', 'member_quantity'), ('واحد متره', 'quantity_unit'),
                            ('فرمول متره', 'quantity_formula'), ('قابل پرداخت مالی', 'financially_payable')),
+    'beam_profile_reviews': (('شناسه بازبینی', 'review_id'), ('شناسه مرزهای نامزد', 'candidate_review_ids'),
+                             ('قابل پرداخت مالی', 'financially_payable')),
     'structural_plan_reviews': (('شناسه بازبینی', 'review_id'), *_DRAWING_SCOPE_FIELDS,
                                 ('قابل پرداخت مالی', 'financially_payable')),
 }
@@ -166,7 +174,8 @@ class _EvidenceTableModel(QAbstractTableModel):
 
 
 class PDFDetailGraphReview(QWidget):
-    def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None, open_question=None):
+    def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None,
+                 attach_beam_profile_witnesses=None, open_question=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -206,6 +215,7 @@ class PDFDetailGraphReview(QWidget):
         documents = tuple(self._documents.values())
         self._attach_revision_register = attach_revision_register
         self._attach_member_review = attach_member_review
+        self._attach_beam_profile_witnesses = attach_beam_profile_witnesses
         self._open_question = open_question
         self._question_tag = None
         geometry = []
@@ -271,6 +281,17 @@ class PDFDetailGraphReview(QWidget):
             self.member_review_status.setWordWrap(True)
             self.member_review_status.hide()
             layout.addWidget(self.member_review_status)
+
+        if attach_beam_profile_witnesses is not None:
+            self.beam_profile_button = QPushButton('پیوست قرائت تصویری پروفیل‌های تیر (JSON)', self)
+            self.beam_profile_button.setObjectName('PDFDetailAttachBeamProfileWitnesses')
+            self.beam_profile_button.clicked.connect(self._pick_beam_profile_witnesses)
+            layout.addWidget(self.beam_profile_button, alignment=Qt.AlignmentFlag.AlignRight)
+            self.beam_profile_status = QLabel(self)
+            self.beam_profile_status.setTextFormat(Qt.TextFormat.PlainText)
+            self.beam_profile_status.setWordWrap(True)
+            self.beam_profile_status.hide()
+            layout.addWidget(self.beam_profile_status)
 
         split = QSplitter(Qt.Orientation.Vertical, self)
         layout.addWidget(split)
@@ -395,6 +416,16 @@ class PDFDetailGraphReview(QWidget):
         except (OSError, ValueError, RuntimeError) as exc:
             self.member_review_status.setText(f'پیوست بازخوانی پذیرفته نشد. گزارش پیشین در دسترس است.\n{exc}')
             self.member_review_status.show()
+
+    def _pick_beam_profile_witnesses(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'انتخاب مشاهدات تصویری پروفیل تیر', '', 'JSON (*.json)')
+        if not path:
+            return
+        try:
+            self._attach_beam_profile_witnesses(path)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.beam_profile_status.setText(f'قرائت تصویری پیوست نشد؛ گزارش قبلی محفوظ است.\\n{exc}')
+            self.beam_profile_status.show()
 
     def _refresh_selection(self, *_):
         key = self._section_keys[self.sections.currentIndex()]
