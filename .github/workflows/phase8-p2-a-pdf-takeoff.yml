@@ -18,6 +18,8 @@ on:
       - core/drawings/pdf_beam_profile_review.py
       - core/drawings/pdf_beam_axis_crosscheck.py
       - core/drawings/pdf_beam_end_support_review.py
+      - core/drawings/pdf_private_19sheet_replay.py
+      - tests/test_phase8_p2_a_pdf_private_19sheet_replay.py
       - tests/test_phase8_p2_a_pdf_beam_end_support_review.py
       - tests/test_phase8_p2_a_pdf_beam_axis_crosscheck.py
       - tests/test_phase8_p2_a_pdf_beam_profile_review.py
@@ -123,6 +125,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_beam_profile_review.py
           tests/test_phase8_p2_a_pdf_beam_axis_crosscheck.py
           tests/test_phase8_p2_a_pdf_beam_end_support_review.py
+          tests/test_phase8_p2_a_pdf_private_19sheet_replay.py
           tests/test_phase8_p2_a_pdf_engineering_review_qt.py
           tests/test_phase8_p2_a_pdf_cad_stroke_words.py
           tests/test_phase8_p2_a_pdf_revision_preflight.py
