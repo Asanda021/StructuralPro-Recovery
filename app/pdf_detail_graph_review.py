@@ -26,7 +26,8 @@ _TABLES = {
         ('شناسه سند', 'document_id'), ('صفحه', 'page'), ('شیت', 'sheet_id'),
         ('نقش صفحه', 'page_role'), ('وضعیت', 'status'), ('محتوا', 'content_kind'),
         ('وضعیت نسخه', 'authority_status'), ('OCR محلی', 'rendered_ocr_status'),
-        ('نامزد OCR', 'rendered_ocr_type_count'), ('علت', 'reason'),
+        ('نامزد OCR', 'rendered_ocr_type_count'), ('شاهد برداری', 'vector_text_type_count'),
+        ('علت', 'reason'),
     )),
     'nodes': ('شواهد و اجزا', (
         ('شناسه گره', 'node_id'), ('نوع', 'kind'), ('عنوان', 'label'),
@@ -44,11 +45,20 @@ _TABLES = {
         ('شناسه مورد', 'issue_id'), ('وضعیت', 'status'), ('کد علت', 'reason_code'),
         ('گره مرتبط', 'node_id'), ('علت', 'reason'), ('مدرک لازم', 'required_evidence'),
     )),
+    'member_review_groups': ('شناسه‌های پلان و دیتیل', (
+        ('تیپ', 'type_tag'), ('وضعیت', 'status'), ('تعداد شناسه پلان', 'plan_mark_count'),
+        ('شمار چاپی دیتیل', 'detail_printed_count'), ('تعداد شناسه دیتیل', 'detail_id_count'),
+        ('شناسه‌های مشترک', 'shared_printed_ids'),
+    )),
 }
 
 _DETAIL_FIELDS = {
     'documents': (('پروژه', 'project_id'), ('ابلاغ', 'issue_id'), ('سند مرجع', 'authority_reference')),
     'pages': (('نسخهٔ چاپ‌شده', 'printed_revisions'), ('چرخش', 'rotation'),
+              ('عنوان شیت', 'sheet_kind'), ('واژهٔ بومی', 'native_pdf_word_count'),
+              ('ابهام OCR', 'rendered_ocr_ambiguous_glyph_count'),
+              ('ابهام نوشتهٔ برداری', 'vector_text_ambiguous_count'),
+              ('خوانش نوشتهٔ برداری', 'vector_text_status'),
               ('مقیاس‌های چاپی', 'printed_scales'), ('خطاهای ورودی صفحه', 'source_errors'),
               ('وضعیت خوانش مسیرها', 'topology_status'), ('کد علت خوانش مسیرها', 'topology_reason_code'),
               ('تعداد مسیرها', 'source_path_count'),
@@ -56,10 +66,13 @@ _DETAIL_FIELDS = {
     'nodes': (('تیپ', 'type_tag'), ('تراز', 'level'), ('آکس', 'axis'),
               ('خانواده‌های نامزد', 'family_candidates'),
               ('کد دیتیل', 'detail_code'), ('مقیاس چاپی', 'printed_scale'),
-        ('اعتبار شواهد', 'evidence_quality'),
+              ('اعتبار شواهد', 'evidence_quality'), ('شناسه چاپی', 'printed_member_id'),
+              ('وضعیت بازبینی شناسه', 'printed_id_review_status'),
+              ('وضعیت متره', 'quantity_status'), ('علت توقف متره', 'quantity_reason'),
               ('وضعیت مقیاس', 'scale_status')),
     'edges': (('کد علت', 'reason_code'),),
     'topology': (('تعداد عملگرهای گروه', 'operator_count'), ('اندیس مسیرها', 'source_path_indices'),),
+    'member_review_groups': (('فقط در پلان', 'plan_only_printed_ids'), ('فقط در دیتیل', 'detail_only_printed_ids')),
 }
 
 
@@ -93,7 +106,7 @@ class _EvidenceTableModel(QAbstractTableModel):
 
 
 class PDFDetailGraphReview(QWidget):
-    def __init__(self, report, parent=None, *, attach_revision_register=None, open_question=None):
+    def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None, open_question=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         graph = report['detail_evidence_graph']
@@ -122,6 +135,7 @@ class PDFDetailGraphReview(QWidget):
             }
         documents = tuple(self._documents.values())
         self._attach_revision_register = attach_revision_register
+        self._attach_member_review = attach_member_review
         self._open_question = open_question
         self._question_tag = None
         geometry = []
@@ -176,6 +190,17 @@ class PDFDetailGraphReview(QWidget):
             self.attach_status.setWordWrap(True)
             self.attach_status.hide()
             layout.addWidget(self.attach_status)
+
+        if attach_member_review is not None:
+            self.member_review_button = QPushButton('پیوست بازخوانی شناسه‌های پلان و دیتیل', self)
+            self.member_review_button.setObjectName('PDFDetailAttachMemberReview')
+            self.member_review_button.clicked.connect(self._pick_member_review)
+            layout.addWidget(self.member_review_button, alignment=Qt.AlignmentFlag.AlignRight)
+            self.member_review_status = QLabel(self)
+            self.member_review_status.setTextFormat(Qt.TextFormat.PlainText)
+            self.member_review_status.setWordWrap(True)
+            self.member_review_status.hide()
+            layout.addWidget(self.member_review_status)
 
         split = QSplitter(Qt.Orientation.Vertical, self)
         layout.addWidget(split)
@@ -281,6 +306,16 @@ class PDFDetailGraphReview(QWidget):
             self.attach_status.setText(f'ثبت نسخه پیوست نشد. رسید پیشین در دسترس است.\n{exc}')
             self.attach_status.show()
 
+    def _pick_member_review(self):
+        name, _ = QFileDialog.getOpenFileName(self, 'انتخاب رسید بازخوانی شناسه‌ها', '', 'JSON (*.json)')
+        if not name:
+            return
+        try:
+            self._attach_member_review(name)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.member_review_status.setText(f'پیوست بازخوانی پذیرفته نشد. گزارش پیشین در دسترس است.\n{exc}')
+            self.member_review_status.show()
+
     def _refresh_selection(self, *_):
         key = self._section_keys[self.sections.currentIndex()]
         view = self.tables[key]
@@ -349,6 +384,13 @@ class PDFDetailGraphReview(QWidget):
             coords = '[' + ', '.join(str(coord) for coord in box) + ']' if box else '—'
             witness = f'{_display(anchor.get("kind"))} {_display(anchor.get("anchor_id"))}'
             lines.append(f'{source} | صفحه {_display(anchor.get("page"))} | کادر (pt) {coords} | {witness}')
+            for label, field in (
+                ('نوشتهٔ خام', 'raw_token'), ('خوانش استاندارد', 'normalized_tag'),
+                ('خوانش‌های ممکن', 'glyph_interpretations'), ('علت ابهام برداری', 'glyph_ambiguity_reason'),
+                ('طول نوشته‌شدهٔ تیپ (m)', 'dimension_m'),
+            ):
+                if field in anchor:
+                    lines.append(f'{label} — {_display(anchor[field])}')
         return lines
 
     def _navigate_to_endpoint(self, role):

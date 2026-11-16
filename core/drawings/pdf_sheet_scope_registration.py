@@ -9,6 +9,7 @@ from __future__ import annotations
 from collections import Counter
 from math import isfinite
 import unicodedata
+import re
 from typing import Iterable, Mapping
 
 
@@ -27,8 +28,15 @@ def classify_sheet_title(raw: str) -> dict:
     Floor plan titles are *not* evidence that column marks recur on each floor.
     """
     key = _title_key(raw)
+    lines = [_title_key(line) for line in str(raw or '').splitlines()]
     known = []
     if 'پلان' in key or 'plan' in key:
+        if any(line.startswith(('پلانکفسازی', 'floorpreparationplan')) for line in lines):
+            known.append('floor_preparation_plan')
+        if any(line.startswith(('پلانپیکنی', 'excavationplan')) for line in lines):
+            known.append('excavation_plan')
+        if any(line.startswith(('پلانآرماتور', 'reinforcementplan')) for line in lines):
+            known.append('reinforcement_plan')
         if 'آکسبندی' in key or 'اکسبندی' in key or 'axisplan' in key:
             known.append('axis_plan')
         if ('ستون' in key and ('تیپ' in key or 'تیپبندی' in key)) or 'columntypeplan' in key:
@@ -47,8 +55,14 @@ def classify_sheet_title(raw: str) -> dict:
             known.append('first_floor_plan')
         if 'آبروبام' in key or 'roofdrainageplan' in key:
             known.append('roof_drainage_plan')
-    if ('جزئیات' in key or 'جزییات' in key or 'details' in key) and 'ستون' in key:
+    if (('جزئیات' in key or 'جزییات' in key or 'details' in key) and 'ستون' in key
+            or 'columndetail' in key):
         known.append('column_detail')
+    if not known and any(re.fullmatch(r"(?:[a-z]{0,6}برش[a-z0-9]{0,8}|buildingsection[a-z0-9]{0,8})", line)
+                         for line in lines):
+        known.append('building_section')
+    if not known and any(line.startswith(('نمای', 'buildingelevation')) for line in lines):
+        known.append('building_elevation')
     distinct = sorted(set(known))
     if len(distinct) == 1:
         status, kind = 'EXPLICIT_SHEET_TITLE', distinct[0]

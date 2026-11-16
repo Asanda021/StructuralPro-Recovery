@@ -109,7 +109,7 @@ def inspect_pdf_sheet_set(
     paths: Iterable[str | Path], *, max_documents: int = 100, max_pages: int = 500,
     revision_registry: Mapping | None = None,
     rendered_ocr: bool = False, ocr_language: str = "eng+fas",
-    max_ocr_pages: int = 25,
+    max_ocr_pages: int = 25, member_review: dict | None = None,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -191,12 +191,13 @@ def inspect_pdf_sheet_set(
                         recovered = recover_page_rendered_type_words(
                             page, document_id=doc_id, page_number=number,
                             native_witnesses=detail["type_word_index"]["type_word_witnesses"],
-                            language=ocr_language,
+                            language=ocr_language, source_sha256=digest,
                         )
                     detail["rendered_type_word_index"] = recovered
                     rendered_ocr_pages.append({
                         "document_id": doc_id, "page": number, "status": recovered["status"],
                         "type_word_witness_count": recovered["type_word_witness_count"],
+                        "ambiguous_glyph_count": recovered.get("ambiguous_glyph_count", 0),
                         "all_ocr_words_examined": recovered["all_ocr_words_examined"],
                         "source_quality": "RENDERED_OCR_NOT_VERIFIED",
                         "financially_payable": False,
@@ -204,6 +205,8 @@ def inspect_pdf_sheet_set(
                 page_detail_summaries.append(detail)
                 try:
                     marks, dims = _parse_pdf_lines(page)
+                    if title_scope["sheet_kind"] == "floor_preparation_plan":
+                        marks = [mark for mark in marks if not re.fullmatch(r"B[0-9]+", mark["tag"])]
                     grid = detect_vector_grid_positions(
                         page, document_id=doc_id, page_number=number, text_type_marks=marks,
                     )
@@ -470,8 +473,10 @@ def inspect_pdf_sheet_set(
     status_counts = Counter(x["status"] for x in raw_members)
     report = {"documents": documents, "page_count": total_pages,
             "rendered_ocr_enabled": rendered_ocr,
+            "rendered_ocr_language": ocr_language if rendered_ocr else None,
             "rendered_ocr_page_index": rendered_ocr_pages,
             "rendered_ocr_candidate_count": sum(x["type_word_witness_count"] for x in rendered_ocr_pages),
+            "rendered_ocr_ambiguous_glyph_count": sum(x["ambiguous_glyph_count"] for x in rendered_ocr_pages),
             "member_type_candidates": raw_members,
             "page_view_summaries": page_view_summaries,
             "architectural_floor_plan_candidates": architectural_floor_sheets,
@@ -503,7 +508,9 @@ def inspect_pdf_sheet_set(
     report["detail_object_index"] = build_pdf_detail_object_index(
         report["sheet_detail_inventory"],
     )
-    graph = build_pdf_detail_evidence_graph(report, page_detail_summaries, revision_registry=revision_registry)
+    graph = build_pdf_detail_evidence_graph(
+        report, page_detail_summaries, revision_registry=revision_registry, member_review=member_review,
+    )
     report["detail_evidence_graph"] = graph
     report["questions"].extend(graph["review_questions"])
     for path, document in zip(received, documents, strict=True):

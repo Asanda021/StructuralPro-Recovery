@@ -279,8 +279,11 @@ def test_pdf_auto_ocr_opt_in_is_explicit_and_preserved_when_attaching_register(
         assert arguments[-1] == {'rendered_ocr': False}
         checkbox.setChecked(True)
         workspace.select_pdf_sheet_set()
-        assert arguments[-1] == {'rendered_ocr': True}
-        assert len(receipts) == 2
+        assert arguments[-1] == {'rendered_ocr': True, 'ocr_language': 'eng'}
+        workspace.rendered_ocr_language.setCurrentIndex(1)
+        workspace.select_pdf_sheet_set()
+        assert arguments[-1] == {'rendered_ocr': True, 'ocr_language': 'eng+fas'}
+        assert len(receipts) == 3
     finally:
         workspace.close()
         qt_app.processEvents()

@@ -17,6 +17,7 @@ from typing import Iterable, Mapping
 from core.drawings.pdf_vector_detail_groups import index_pdf_vector_path_groups
 from core.drawings.pdf_type_word_witness import index_pdf_type_words, unrotated_page_bounds
 from core.drawings.pdf_detail_topology import scan_detail_topology
+from core.drawings.pdf_vector_type_labels import recover_page_vector_type_words
 
 _DEFAULT_ROWS = 4
 _DEFAULT_COLS = 4
@@ -286,10 +287,17 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'financially_payable':False}
     if include_topology:
         result['image_placements'] = image_placements
+        vector_source_blocked = bool({'BLOCKED_EXCESSIVE_VECTOR_PATHS', 'BLOCKED_VECTOR_EXTRACTION',
+                                      'BLOCKED_INVALID_VECTOR_PATH_BBOX'} & set(extraction_errors))
         result['detail_topology'] = scan_detail_topology(
-            page, document_id=document_id, page_number=page_number, paths=paths,
-            source_blocked=bool({'BLOCKED_EXCESSIVE_VECTOR_PATHS', 'BLOCKED_VECTOR_EXTRACTION',
-                                 'BLOCKED_INVALID_VECTOR_PATH_BBOX'} & set(extraction_errors)),
+            page, document_id=document_id, page_number=page_number, paths=paths, source_blocked=vector_source_blocked,
+        )
+        result['vector_type_word_index'] = (
+            {'document_id': document_id, 'page': page_number, 'status': 'BLOCKED_VECTOR_SOURCE_INCOMPLETE',
+             'type_word_witnesses': [], 'type_word_witness_count': 0, 'rejections': [],
+             'all_vector_strokes_examined': False, 'financially_payable': False}
+            if vector_source_blocked else recover_page_vector_type_words(
+                page, document_id=document_id, page_number=page_number, paths=paths)
         )
     return result
 

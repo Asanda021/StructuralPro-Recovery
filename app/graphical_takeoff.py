@@ -418,13 +418,21 @@ class GraphicalTakeoffDialog(QDialog):
         self.rendered_ocr_checkbox = QCheckBox("OCR نوشته‌های ترسیمی")
         self.rendered_ocr_checkbox.setObjectName("PDFAutoRenderedOCR")
         self.rendered_ocr_checkbox.setToolTip(
-            "بازیابی کندِ متن از حروف برداری/صفحات تصویری با PyMuPDF و Tesseract محلی؛ "
-            "نامزدهای OCR معتبر برای متره نیستند. پیش‌فرض خاموش."
+            "خواندن برچسب‌های احتمالی با Tesseract نصب‌شده در سیستم. پیش‌فرض خاموش است."
         )
         self.rendered_ocr_checkbox.setChecked(False)
+        self.rendered_ocr_language = QComboBox()
+        self.rendered_ocr_language.setObjectName("PDFAutoRenderedOCRLanguage")
+        self.rendered_ocr_language.setToolTip("زبان OCR برای برچسب‌های نقشه")
+        self.rendered_ocr_language.addItem("OCR انگلیسی", "eng")
+        self.rendered_ocr_language.addItem("OCR فارسی و انگلیسی", "eng+fas")
+        self.rendered_ocr_language.setEnabled(False)
+        self.rendered_ocr_checkbox.toggled.connect(self.rendered_ocr_language.setEnabled)
         self._pdf_auto_review_dialog = None
         self._pdf_auto_report = None
         self._pdf_auto_sources = ()
+        self._pdf_auto_revision_registry = None
+        self._pdf_auto_member_review = None
         self.workflow_button = QPushButton("چه چیزی متره شود؟")
         self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
         self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
@@ -500,7 +508,8 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.auto_pdf_button, self.rendered_ocr_checkbox, self.workflow_button, self.schedule_button,
+            self.open_pdf, self.auto_pdf_button, self.rendered_ocr_checkbox, self.rendered_ocr_language,
+            self.workflow_button, self.schedule_button,
             self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
@@ -1299,15 +1308,14 @@ class GraphicalTakeoffDialog(QDialog):
         try:
             from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
 
-            self._show_pdf_sheet_evidence(
-                inspect_pdf_sheet_set(selected, rendered_ocr=self.rendered_ocr_checkbox.isChecked()),
-                selected,
-            )
+            requested = self.rendered_ocr_checkbox.isChecked()
+            language = {"ocr_language": self.rendered_ocr_language.currentData()} if requested else {}
+            self._show_pdf_sheet_evidence(inspect_pdf_sheet_set(selected, rendered_ocr=requested, **language), selected)
         except Exception as exc:
             QMessageBox.warning(self, "تحلیل مجموعه PDF",
                                 "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
 
-    def _show_pdf_sheet_evidence(self, report, sources):
+    def _show_pdf_sheet_evidence(self, report, sources, *, revision_registry=None, member_review=None):
         from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
         from shiboken6 import isValid
 
@@ -1333,6 +1341,7 @@ class GraphicalTakeoffDialog(QDialog):
         dialog = PDFSheetEvidenceDialog(
             report, self,
             attach_revision_register=lambda path: self._attach_pdf_revision_register(path, report),
+            attach_member_review=lambda path: self._attach_pdf_member_review(path, report),
         )
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         existing = self._pdf_auto_review_dialog
@@ -1346,31 +1355,45 @@ class GraphicalTakeoffDialog(QDialog):
         self._pdf_auto_review_dialog = dialog
         self._pdf_auto_sources = tuple(sources)
         self._pdf_auto_report = report
+        self._pdf_auto_revision_registry = revision_registry
+        self._pdf_auto_member_review = member_review
         self.status.setText(status)
         if existing_is_live:
             existing.close()
 
     def _attach_pdf_revision_register(self, path, previous_report):
-        from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
         from core.drawings.pdf_detail_evidence_graph import load_pdf_revision_register
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=load_pdf_revision_register(path),
+            member_review=self._pdf_auto_member_review,
+        )
 
+    def _attach_pdf_member_review(self, path, previous_report):
+        from core.drawings.pdf_member_review import load_pdf_member_review
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=load_pdf_member_review(path),
+        )
+
+    def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review):
+        from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
         if self._pdf_auto_report is not previous_report:
             raise ValueError("این رسید دیگر گزارش جاری نیست.")
         sources = self._pdf_auto_sources
         previous_fingerprints = tuple(
             (doc['document_id'], doc['sha256']) for doc in previous_report['documents']
         )
-        registry = load_pdf_revision_register(path)
+        requested = previous_report.get('rendered_ocr_enabled', False)
         report = inspect_pdf_sheet_set(
-            sources, revision_registry=registry,
-            rendered_ocr=previous_report.get('rendered_ocr_enabled', False),
+            sources, revision_registry=revision_registry, member_review=member_review,
+            rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
         )
         new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
         if not previous_fingerprints or new_fingerprints != previous_fingerprints:
             raise ValueError("هش سندهای PDF تغییر کرده است. مجموعهٔ فعلی را دوباره انتخاب کنید.")
         if not (report.get('detail_evidence_graph') or {}).get('graph_sha256'):
             raise ValueError("رسید معتبر گراف برای ثبت نسخهٔ جدید تولید نشد.")
-        self._show_pdf_sheet_evidence(report, sources)
+        self._show_pdf_sheet_evidence(report, sources, revision_registry=revision_registry, member_review=member_review)
 
     def select_drawing(self):
         path = QFileDialog.getOpenFileName(
