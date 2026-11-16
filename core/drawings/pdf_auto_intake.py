@@ -31,6 +31,7 @@ from core.drawings.pdf_detail_evidence_graph import (
 )
 from core.drawings.pdf_engine import require_current_pdf
 from core.drawings.pdf_beam_axis_crosscheck import extract_pdf_axis_grid_witness
+from core.drawings.pdf_beam_end_support_review import extract_pdf_beam_end_markers
 from core.drawings.pdf_rendered_text_recovery import (
     recover_page_rendered_type_words, should_recover_rendered_labels,
 )
@@ -113,6 +114,7 @@ def inspect_pdf_sheet_set(
     max_ocr_pages: int = 25, member_review: dict | None = None,
     beam_profile_witnesses: list[dict] | None = None,
     beam_axis_labels: dict | None = None,
+    beam_detail_profile_witnesses: list[dict] | None = None,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -143,6 +145,7 @@ def inspect_pdf_sheet_set(
     page_detail_summaries: list[dict] = []
     rendered_ocr_pages: list[dict] = []
     beam_axis_grid_candidates: list[dict] = []
+    beam_end_marker_pages: list[dict] = []
     ocr_attempts = 0
     page_reasons: list[dict] = []
     source_digests: set[str] = set()
@@ -179,6 +182,15 @@ def inspect_pdf_sheet_set(
                     beam_axis_grid_candidates.append(extract_pdf_axis_grid_witness(
                         page, document_id=doc_id, page_number=number,
                         source_sha256=digest, source_name=path.name,
+                    ))
+                if title_scope.get('status') == 'EXPLICIT_SHEET_TITLE' and title_scope.get('sheet_kind') == 'beam_layout_plan':
+                    grids = [grid for grid in beam_axis_grid_candidates
+                             if (grid['document_id'], grid['source_sha256']) == (doc_id, digest)
+                             and grid.get('status') == 'PROPOSED_UNLABELED_AXIS_GRID']
+                    beam_end_marker_pages.append(extract_pdf_beam_end_markers(
+                        page, document_id=doc_id, page_number=number,
+                        source_sha256=digest, source_name=path.name,
+                        grid=grids[0] if len(grids) == 1 else None,
                     ))
                 # Inventory the whole source page, including untitled details
                 # and all vector/raster zones; indexing is NOT engineering approval.
@@ -504,6 +516,7 @@ def inspect_pdf_sheet_set(
             "column_layout_symbol_candidate_count": sum(bool(x["column_context_candidate"]) for x in grid_locations),
             "vector_grid_summaries": vector_grid_summaries,
             "beam_axis_grid_candidates": beam_axis_grid_candidates,
+            "beam_end_marker_pages": beam_end_marker_pages,
             "questions": questions, "unresolved_pages": page_reasons,
             "status_counts": dict(sorted(status_counts.items())),
             "physical_member_count": None, "quantity_approval_count": 0,
@@ -521,6 +534,7 @@ def inspect_pdf_sheet_set(
     graph = build_pdf_detail_evidence_graph(
         report, page_detail_summaries, revision_registry=revision_registry, member_review=member_review,
         beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
+        beam_detail_profile_witnesses=beam_detail_profile_witnesses,
     )
     report["detail_evidence_graph"] = graph
     report["questions"].extend(graph["review_questions"])
