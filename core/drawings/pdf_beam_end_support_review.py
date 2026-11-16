@@ -12,6 +12,18 @@ from math import isfinite
 import re
 
 
+def load_pdf_beam_connection_detail_witnesses(path):
+    """Load a bounded local, visual, nonfinancial connection-detail review JSON."""
+    from pathlib import Path
+    source = Path(path)
+    if source.stat().st_size > 65536:
+        raise ValueError('Beam connection detail JSON exceeds review budget')
+    records = json.loads(source.read_text(encoding='utf-8-sig'))
+    if not isinstance(records, list) or len(records) > 128:
+        raise ValueError('Beam connection detail JSON must be a bounded array')
+    return records
+
+
 def _id(*items):
     return 'BEAM_END_REVIEW:' + sha256(json.dumps(items, sort_keys=True, ensure_ascii=False, separators=(',', ':')).encode('utf8')).hexdigest()[:32]
 
