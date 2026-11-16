@@ -7,6 +7,10 @@ import json
 from pathlib import Path
 
 from core.drawings.pdf_revision_preflight import build_pdf_revision_register_draft
+from core.drawings.pdf_designer_rfi_gate import (
+    build_designer_rfi_packet, inspect_designer_reply, load_designer_reply,
+    write_designer_rfi_package,
+)
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
@@ -313,6 +317,27 @@ class PDFDetailGraphReview(QWidget):
         self.export_draft_status.hide()
         layout.addWidget(self.export_draft_status)
 
+        self.designer_rfi_button = QPushButton('ایجاد درخواست رسمی مدارک طراح (بدون ارسال)', self)
+        self.designer_rfi_button.setObjectName('PDFDetailExportDesignerRFI')
+        self.designer_rfi_button.setEnabled(
+            graph.get('beam_span_request_status') == 'BLOCKED_AWAITING_GOVERNING_ENGINEERING_DOCUMENTS'
+            and bool(graph.get('beam_span_evidence_requests'))
+        )
+        self.designer_rfi_button.clicked.connect(self._export_designer_rfi)
+        layout.addWidget(self.designer_rfi_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.designer_reply_button = QPushButton('بررسی فایل پاسخ طراح، فقط ثبت دریافت', self)
+        self.designer_reply_button.setObjectName('PDFDetailInspectDesignerReply')
+        self.designer_reply_button.setEnabled(self.designer_rfi_button.isEnabled())
+        self.designer_reply_button.clicked.connect(self._inspect_designer_reply)
+        layout.addWidget(self.designer_reply_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.designer_reply_status = QLabel(self)
+        self.designer_reply_status.setObjectName('PDFDetailDesignerReplyStatus')
+        self.designer_reply_status.setTextFormat(Qt.TextFormat.PlainText)
+        self.designer_reply_status.setWordWrap(True)
+        self.designer_reply_status.hide()
+        layout.addWidget(self.designer_reply_status)
+        self._designer_reply_receipt = None
+
         if attach_revision_register is not None:
             self.attach_button = QPushButton('پیوست ثبت نسخهٔ نقشه (JSON)')
             self.attach_button.setObjectName('PDFDetailAttachRevisionRegister')
@@ -438,6 +463,58 @@ class PDFDetailGraphReview(QWidget):
         split.setStretchFactor(1, 2)
         self.sections.currentChanged.connect(self._refresh_selection)
         self._refresh_selection()
+
+    def _current_designer_rfi_packet(self):
+        graph = self._source_report['detail_evidence_graph']
+        docs = self._source_report.get('documents') or []
+        if len(docs) != 1 or not graph.get('graph_sha256'):
+            raise ValueError('برای ثبت درخواست طراح، یک PDF و رسید معتبر گراف لازم است.')
+        data = {'status': graph.get('beam_span_request_status'),
+                'requests': graph.get('beam_span_evidence_requests', [])}
+        return build_designer_rfi_packet(
+            data, source_sha256=docs[0]['sha256'], source_name=docs[0]['source_name'],
+            graph_sha256=graph['graph_sha256'],
+        )
+
+    def _export_designer_rfi(self):
+        folder = QFileDialog.getExistingDirectory(self, 'انتخاب پوشه خصوصی ذخیره درخواست طراح')
+        if not folder:
+            return
+        try:
+            packet = self._current_designer_rfi_packet()
+            directory = Path(folder) / ('StructuralPro_RFI_' + packet['packet_sha256'][:12])
+            if directory.exists():
+                raise ValueError('پوشه درخواست قبلاً وجود دارد؛ بازنویسی ممنوع است.')
+            write_designer_rfi_package(packet, directory)
+        except (OSError, ValueError, KeyError) as exc:
+            self.designer_reply_status.setText('خروجی درخواست مدارک ساخته نشد: ' + str(exc))
+        else:
+            self.designer_reply_status.setText(
+                'درخواست مدارک فقط در مسیر انتخابی ذخیره شد، ارسال نشده و هیچ مقدار مالی تأیید نشد: '
+                + str(directory)
+            )
+        self.designer_reply_status.show()
+
+    def _inspect_designer_reply(self):
+        name, _ = QFileDialog.getOpenFileName(self, 'انتخاب پاسخ مستند طراح', '', 'JSON (*.json)')
+        if not name:
+            return
+        try:
+            packet = self._current_designer_rfi_packet()
+            source = Path(name)
+            response = inspect_designer_reply(
+                packet, load_designer_reply(source), attachment_directory=source.parent,
+            )
+        except (OSError, ValueError, KeyError) as exc:
+            self.designer_reply_status.setText('پاسخ رد شد؛ گراف قبلی تغییری نکرد: ' + str(exc))
+        else:
+            self._designer_reply_receipt = response
+            self.designer_reply_status.setText(
+                f"{response['received_evidence_count']} فایل/ارجاع شاهد بررسی شد؛ "
+                'صرفاً دریافت و یکسانی بایت‌ها کنترل شده است، نه اصالت یا تأیید مهندسی. '
+                'همه اعضا و متره‌ها همچنان مسدود هستند.'
+            )
+        self.designer_reply_status.show()
 
     def _export_revision_register_draft(self):
         if self._revision_draft is None:

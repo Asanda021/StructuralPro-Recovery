@@ -408,3 +408,71 @@ def test_beam_document_requests_are_nonfinancial_and_readable(qt_app, engineerin
         assert graph['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+
+def _synthetic_beam_rfi_report(engineering_report):
+    report = deepcopy(engineering_report)
+    report['documents'] = report['documents'][:1]
+    graph = report['detail_evidence_graph']
+    graph['beam_span_request_status'] = 'BLOCKED_AWAITING_GOVERNING_ENGINEERING_DOCUMENTS'
+    graph['beam_span_evidence_requests'] = [{
+        'request_id': 'BEAM_MISSING_DOCUMENT:'+'c'*32,
+        'source_sha256': 'a'*64, 'beam_page': 15, 'detail_page': 17,
+        'span_axes': 'A-B', 'printed_axis_row': '1', 'printed_mark': '5',
+        'profile_visual': '2IPE18', 'end_review_id': 'END-RFI-1',
+        'required_evidence_codes': ['GOVERNING_DRAWING_ISSUE','FABRICATION_CUT_LENGTH'],
+        'status': 'BLOCKED_REQUIRES_GOVERNING_ENGINEERING_DOCUMENTS',
+        'financially_payable': False, 'physical_member_verified': False,
+        'quantity_approved': False, 'member_quantity': None,
+    }]
+    return report
+
+
+def test_designer_rfi_export_is_private_and_not_sent(qt_app, engineering_report, tmp_path, monkeypatch):
+    import json
+    report = _synthetic_beam_rfi_report(engineering_report)
+    unchanged = deepcopy(report)
+    dialog = PDFSheetEvidenceDialog(report)
+    try:
+        review = dialog.graph_review
+        button = review.findChild(QPushButton, 'PDFDetailExportDesignerRFI')
+        assert button is not None and button.isEnabled()
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getExistingDirectory',
+                            lambda *args, **kwargs: str(tmp_path))
+        button.click()
+        children = list(tmp_path.glob('StructuralPro_RFI_*'))
+        assert len(children) == 1
+        packet=json.loads((children[0]/'PRIVATE_ENGINEERING_RFI_PACKET.json').read_text('utf-8'))
+        assert len(packet['questions']) == 3
+        assert packet['response_received'] is False and packet['approved_financial_rows'] == 0
+        assert 'ارسال نشده' in review.designer_reply_status.text()
+        assert report == unchanged
+        button.click()
+        assert 'بازنویسی ممنوع' in review.designer_reply_status.text()
+        assert len(list(tmp_path.glob('StructuralPro_RFI_*'))) == 1
+    finally:
+        dialog.close()
+
+
+def test_designer_empty_reply_is_receipt_only_not_engineering_approval(qt_app, engineering_report, tmp_path, monkeypatch):
+    report = _synthetic_beam_rfi_report(engineering_report)
+    unchanged = deepcopy(report)
+    dialog = PDFSheetEvidenceDialog(report)
+    try:
+        review = dialog.graph_review
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getExistingDirectory',
+                            lambda *args, **kwargs: str(tmp_path))
+        review.findChild(QPushButton, 'PDFDetailExportDesignerRFI').click()
+        template, = tmp_path.glob('StructuralPro_RFI_*/DESIGNER_RESPONSE_TEMPLATE.json')
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *args, **kwargs: (str(template), 'JSON (*.json)'))
+        button = review.findChild(QPushButton, 'PDFDetailInspectDesignerReply')
+        assert button is not None and button.isEnabled()
+        button.click()
+        assert review._designer_reply_receipt['received_evidence_count'] == 0
+        assert 'هیچ' not in review.designer_reply_status.text() or 'متره' in review.designer_reply_status.text()
+        assert report == unchanged
+        assert report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
