@@ -126,3 +126,19 @@ def test_missing_or_rotated_source_fails_closed():
         assert _markers(doc,None)['status']=='BLOCKED_NO_INDEPENDENT_GRID'
         doc[0].set_rotation(90)
         assert _markers(doc)['status']=='BLOCKED_ROTATED_BEAM_PLAN'
+
+def test_same_type_multiple_spans_still_have_no_span_specific_connection():
+    # Two beams can have the same printed profile but different supports.
+    # One generic detail type name cannot prove it governs either span.
+    with _picture() as doc:
+        markers = _markers(doc)
+    different_span = _profile(span_axes='B-C', bbox_pt=[265, 160, 330, 174])
+    result = review_beam_ends_against_independent_grid(
+        markers, GRID, AXES, [_profile(), different_span], [_detail()])
+    assert len(result['profiles']) == 2
+    assert all(row['status'] == 'PROPOSED_BOTH_END_GRID_SYMBOLS'
+               for row in result['profiles'])
+    assert all(row['detail_status'] == 'PROPOSED_TYPE_ONLY_NOT_SPAN_SPECIFIC'
+               for row in result['profiles'])
+    assert all(row['detail_link_verified'] is False and row['member_quantity'] is None
+               and row['financially_payable'] is False for row in result['profiles'])
