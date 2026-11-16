@@ -30,6 +30,7 @@ from core.drawings.pdf_detail_evidence_graph import (
     build_pdf_detail_evidence_graph, read_pdf_page_declarations,
 )
 from core.drawings.pdf_engine import require_current_pdf
+from core.drawings.pdf_beam_axis_crosscheck import extract_pdf_axis_grid_witness
 from core.drawings.pdf_rendered_text_recovery import (
     recover_page_rendered_type_words, should_recover_rendered_labels,
 )
@@ -140,6 +141,7 @@ def inspect_pdf_sheet_set(
     page_view_summaries: list[dict] = []
     page_detail_summaries: list[dict] = []
     rendered_ocr_pages: list[dict] = []
+    beam_axis_grid_candidates: list[dict] = []
     ocr_attempts = 0
     page_reasons: list[dict] = []
     source_digests: set[str] = set()
@@ -172,6 +174,11 @@ def inspect_pdf_sheet_set(
                 page_view_summaries.append({
                     'document_id': doc_id, 'page': number, **title_scope,
                 })
+                if title_scope.get('status') == 'EXPLICIT_SHEET_TITLE' and title_scope.get('sheet_kind') == 'axis_plan':
+                    beam_axis_grid_candidates.append(extract_pdf_axis_grid_witness(
+                        page, document_id=doc_id, page_number=number,
+                        source_sha256=digest, source_name=path.name,
+                    ))
                 # Inventory the whole source page, including untitled details
                 # and all vector/raster zones; indexing is NOT engineering approval.
                 detail = inventory_pdf_page_regions(
@@ -495,6 +502,7 @@ def inspect_pdf_sheet_set(
             "compact_symbol_candidate_count": sum(x["symbol_status"] == "COMPACT_VECTOR_SYMBOL_CANDIDATE" for x in grid_locations),
             "column_layout_symbol_candidate_count": sum(bool(x["column_context_candidate"]) for x in grid_locations),
             "vector_grid_summaries": vector_grid_summaries,
+            "beam_axis_grid_candidates": beam_axis_grid_candidates,
             "questions": questions, "unresolved_pages": page_reasons,
             "status_counts": dict(sorted(status_counts.items())),
             "physical_member_count": None, "quantity_approval_count": 0,
