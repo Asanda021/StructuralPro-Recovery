@@ -76,6 +76,10 @@ def verify_engine_result(report: dict, preflight: dict, *, expected_beam_witness
             or docs[0].get("page_count") != EXPECTED_PAGES
             or report.get("page_count") != EXPECTED_PAGES):
         raise ValueError("Engine document identity or page count mismatch")
+    document_id = docs[0].get("document_id")
+    if (not isinstance(document_id, str) or not document_id
+            or docs[0].get("source_name") != preflight["source_name"]):
+        raise ValueError("Engine source filename or document ID mismatch")
     graph = report.get("detail_evidence_graph")
     if (not isinstance(graph, dict) or len(graph.get("pages", [])) != EXPECTED_PAGES
             or not _EXPECTED_HASH.fullmatch(str(graph.get("graph_sha256", "")))
@@ -84,6 +88,12 @@ def verify_engine_result(report: dict, preflight: dict, *, expected_beam_witness
             or report.get("quantity_approval_count") != 0
             or graph.get("quantity_approval_count") != 0):
         raise ValueError("Incomplete or financially promoted engineering graph")
+    observed_pages = [(row.get("document_id"), row.get("page")) for row in graph["pages"]]
+    if set(observed_pages) != {(document_id, number) for number in range(1, EXPECTED_PAGES + 1)}:
+        raise ValueError("Source page coverage contains gaps, duplicates or foreign sheets")
+    for table in ("nodes", "edges", "issues"):
+        if any(row.get("financially_payable") is not False for row in graph.get(table, ())):
+            raise ValueError("Financially payable graph evidence is not allowed in PDF replay")
     for field in ("beam_profile_reviews", "beam_end_support_reviews", "occurrence_reviews"):
         for row in graph.get(field, ()):
             if (row.get("financially_payable") is not False
