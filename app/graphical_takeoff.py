@@ -433,6 +433,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._pdf_auto_sources = ()
         self._pdf_auto_revision_registry = None
         self._pdf_auto_member_review = None
+        self._pdf_auto_beam_profile_witnesses = None
         self.workflow_button = QPushButton("چه چیزی متره شود؟")
         self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
         self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
@@ -1315,7 +1316,8 @@ class GraphicalTakeoffDialog(QDialog):
             QMessageBox.warning(self, "تحلیل مجموعه PDF",
                                 "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
 
-    def _show_pdf_sheet_evidence(self, report, sources, *, revision_registry=None, member_review=None):
+    def _show_pdf_sheet_evidence(self, report, sources, *, revision_registry=None, member_review=None,
+                                 beam_profile_witnesses=None):
         from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
         from shiboken6 import isValid
 
@@ -1342,6 +1344,7 @@ class GraphicalTakeoffDialog(QDialog):
             report, self,
             attach_revision_register=lambda path: self._attach_pdf_revision_register(path, report),
             attach_member_review=lambda path: self._attach_pdf_member_review(path, report),
+            attach_beam_profile_witnesses=lambda path: self._attach_pdf_beam_profile_witnesses(path, report),
         )
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         existing = self._pdf_auto_review_dialog
@@ -1357,6 +1360,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._pdf_auto_report = report
         self._pdf_auto_revision_registry = revision_registry
         self._pdf_auto_member_review = member_review
+        self._pdf_auto_beam_profile_witnesses = beam_profile_witnesses
         self.status.setText(status)
         if existing_is_live:
             existing.close()
@@ -1366,6 +1370,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._refresh_pdf_sheet_evidence(
             previous_report, revision_registry=load_pdf_revision_register(path),
             member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
         )
 
     def _attach_pdf_member_review(self, path, previous_report):
@@ -1375,9 +1380,20 @@ class GraphicalTakeoffDialog(QDialog):
         self._refresh_pdf_sheet_evidence(
             previous_report, revision_registry=self._pdf_auto_revision_registry,
             member_review=review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
         )
 
-    def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review):
+    def _attach_pdf_beam_profile_witnesses(self, path, previous_report):
+        from core.drawings.pdf_beam_profile_review import load_pdf_beam_profile_witnesses
+        witnesses = load_pdf_beam_profile_witnesses(path)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=witnesses,
+        )
+
+    def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review,
+                                    beam_profile_witnesses=None):
         from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
         if self._pdf_auto_report is not previous_report:
             raise ValueError("این رسید دیگر گزارش جاری نیست.")
@@ -1388,14 +1404,17 @@ class GraphicalTakeoffDialog(QDialog):
         requested = previous_report.get('rendered_ocr_enabled', False)
         report = inspect_pdf_sheet_set(
             sources, revision_registry=revision_registry, member_review=member_review,
-            rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
+            beam_profile_witnesses=beam_profile_witnesses, rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
         )
         new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
         if not previous_fingerprints or new_fingerprints != previous_fingerprints:
             raise ValueError("هش سندهای PDF تغییر کرده است. مجموعهٔ فعلی را دوباره انتخاب کنید.")
         if not (report.get('detail_evidence_graph') or {}).get('graph_sha256'):
             raise ValueError("رسید معتبر گراف برای ثبت نسخهٔ جدید تولید نشد.")
-        self._show_pdf_sheet_evidence(report, sources, revision_registry=revision_registry, member_review=member_review)
+        self._show_pdf_sheet_evidence(
+            report, sources, revision_registry=revision_registry, member_review=member_review,
+            beam_profile_witnesses=beam_profile_witnesses,
+        )
 
     def select_drawing(self):
         path = QFileDialog.getOpenFileName(
