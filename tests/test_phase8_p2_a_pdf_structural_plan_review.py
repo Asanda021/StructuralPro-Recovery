@@ -141,3 +141,36 @@ def test_authority_block_keeps_native_witness_and_disables_cross_phase_counts():
     assert row['role'] == 'FOUNDATION_TYPE_MARK_REVIEW'
     assert row['status'] == 'BLOCKED' and row['reason_code'] == 'STRUCTURAL_PLAN_AUTHORITY_BLOCKED'
     assert row['type_tag'] == 'F7' and row['anchors'][0]['kind'] == 'NATIVE_TYPE_WORD'
+
+
+def test_coincident_cad_beam_strokes_are_one_nonpayable_review_envelope():
+    # Two pairs with identical PDF-point extents produce four alternatives,
+    # but there is only one spatial review envelope, not four beam members.
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=400, height=400)
+        for y in (52, 52, 62, 62):
+            page.draw_line((37, y), (218, y))
+        rows = _run(_record(page, 'beam_layout_plan'))
+    _validate(rows)
+    lanes = [r for r in rows if r['reason_code'] == 'BEAM_SPAN_BOUNDARY_UNRESOLVED']
+    assert len(lanes) == 1
+    one, = lanes
+    assert one['parallel_pair_alternatives'] == 4
+    assert one['status'] == 'BLOCKED' and one['financially_payable'] is False
+    assert one['type_tag'] is None
+    witness, *strokes = one['anchors']
+    assert witness['parallel_pair_alternatives'] == 4
+    assert witness['geometry_status'] == 'COINCIDENT_VECTOR_PAIRS_UNRESOLVED'
+    assert len(strokes) == len(set(a['source_ref'] for a in strokes)) == 4
+
+
+def test_noncoincident_beam_lanes_must_not_be_merged():
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=400, height=400)
+        for y in (52, 62, 72):
+            page.draw_line((37, y), (218, y))
+        rows = _run(_record(page, 'beam_layout_plan'))
+    lanes = [r for r in rows if r['reason_code'] == 'BEAM_SPAN_BOUNDARY_UNRESOLVED']
+    assert len(lanes) == 2
+    assert all(r['status'] == 'BLOCKED' and r['parallel_pair_alternatives'] == 1 for r in lanes)
+    assert all(r['financially_payable'] is False for r in lanes)

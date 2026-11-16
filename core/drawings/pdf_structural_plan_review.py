@@ -251,6 +251,43 @@ def _lane_regions(page, groups):
         yield _Region(region, ((x, y), (right, y), (right, bottom), (x, bottom)), tuple(operators))
 
 
+def _coalesce_parallel_region_envelopes(page, regions):
+    """Retain every vector operator, but review one identical envelope once.
+
+    Repeated coincident CAD strokes can produce a Cartesian product of
+    candidate lane pairs.  Such pairs are *alternatives*, not new spans.
+    Only the same normalized local PDF-point envelope is coalesced;
+    near/misaligned envelopes remain separate and require review.
+    """
+    groups = {}
+    for region in regions:
+        if not region.operators:
+            key = ('CLOSED', region.anchor['anchor_id'])
+        else:
+            key = ('PARALLEL', tuple(round(v, 3) for v in region.anchor['bbox_pt']))
+        groups.setdefault(key, []).append(region)
+    for key, alternatives in groups.items():
+        if key[0] != 'PARALLEL':
+            yield alternatives[0]
+            continue
+        if len(alternatives) == 1:
+            region = alternatives[0]
+            region.anchor['parallel_pair_alternatives'] = 1
+            yield region
+            continue
+        operators = {op['source_ref']: op for alt in alternatives for op in alt.operators}
+        refs = sorted(operators)
+        first = alternatives[0]
+        anchor = _anchor(
+            page, 'VECTOR_PARALLEL_REVIEW_REGION', ('COINCIDENT_ALTERNATIVES', key[1], refs),
+            '+'.join(refs), first.anchor['bbox_pt'], source_operator_ids=refs,
+            parallel_pair_alternatives=len(alternatives),
+            distinct_source_operator_count=len(refs),
+            geometry_status='COINCIDENT_VECTOR_PAIRS_UNRESOLVED',
+        )
+        yield _Region(anchor, first.polygon, tuple(operators[ref] for ref in refs))
+
+
 def _beam_regions(page, words, groups, closed):
     bounds = page['source_bbox_pt']
     short = min(bounds[2] - bounds[0], bounds[3] - bounds[1])
@@ -266,6 +303,7 @@ def _beam_regions(page, words, groups, closed):
             raise _LocalSearchLimit
     if len(regions) > _MAX_BEAM_REGIONS:
         raise _LocalSearchLimit
+    regions = list(_coalesce_parallel_region_envelopes(page, regions))
     by_region, by_word = _associations(regions, words)
     for rid, region in enumerate(regions):
         options = by_region[rid]
@@ -283,7 +321,8 @@ def _beam_regions(page, words, groups, closed):
         else:
             code = 'BEAM_LOCAL_TYPE_AMBIGUOUS'
         yield _review(_BEAM_ROLE, 'beam', code, (region.anchor, *region.operators, *(words[i] for i in options)),
-                      type_tag=tag, blocked=blocked)
+                      type_tag=tag, blocked=blocked,
+                      parallel_pair_alternatives=region.anchor.get('parallel_pair_alternatives', 1))
     for i, word in enumerate(words):
         if not by_word[i] and _WORD_PREFIX['beam'].fullmatch(word['type_tag']):
             yield _review(_BEAM_ROLE, 'beam', 'BEAM_TYPE_MARK_WITHOUT_BOUNDARY', (word,), type_tag=word['type_tag'])

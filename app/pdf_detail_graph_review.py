@@ -59,6 +59,7 @@ _TABLES = {
     'structural_plan_reviews': ('بازبینی پلان سازه', (
         ('نقش پلان', 'role'), ('خانواده', 'family'), ('تیپ', 'type_tag'),
         ('وضعیت بازبینی', 'status'), ('کد علت', 'reason_code'), ('علت', 'reason'),
+        ('جفت‌خط‌های جایگزین', 'parallel_pair_alternatives'),
     )),
 }
 
