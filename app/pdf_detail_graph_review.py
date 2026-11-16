@@ -56,10 +56,17 @@ _TABLES = {
         ('وضعیت بازبینی', 'status'), ('تصمیم', 'decision_code'), ('کد علت', 'reason_code'),
         ('وضعیت متره', 'quantity_status'),
     )),
+    'beam_axis_grid_candidates': ('شبکه آکس مستقل', (
+        ('شناسه سند', 'document_id'), ('صفحه آکس', 'page'),
+        ('وضعیت', 'status'), ('محورهای قائم (pt)', 'grid_x_pt'),
+        ('محورهای افقی (pt)', 'grid_y_pt'),
+        ('نام‌گذاری آکس', 'axis_label_witness_status'),
+    )),
     'beam_profile_reviews': ('تطبیق مکانی پروفیل تیر', (
         ('پروفیل تصویری', 'profile_text'), ('آکس دهانه', 'span_axes'),
         ('ردیف آکس', 'printed_axis_row'), ('شمارهٔ چاپی', 'circled_mark_raw'),
         ('مرزهای نامزد', 'candidate_region_count'), ('وضعیت', 'status'),
+        ('تطبیق آکس مستقل', 'independent_axis_status'),
         ('کد علت', 'reason_code'),
     )),
     'structural_plan_reviews': ('بازبینی پلان سازه', (
@@ -101,7 +108,12 @@ _DETAIL_FIELDS = {
                            ('ردیف شبکه', 'grid_row'), ('ستون شبکه', 'grid_column'),
                            ('مقدار عضو', 'member_quantity'), ('واحد متره', 'quantity_unit'),
                            ('فرمول متره', 'quantity_formula'), ('قابل پرداخت مالی', 'financially_payable')),
-    'beam_profile_reviews': (('شناسه بازبینی', 'review_id'), ('شناسه مرزهای نامزد', 'candidate_review_ids'),
+    'beam_axis_grid_candidates': (('نام فایل', 'source_name'), ('هش SHA-256', 'source_sha256'),
+                                  ('منابع اپراتور', 'source_operator_refs'), ('واحد چاپی', 'printed_unit'),
+                                  ('قابل پرداخت مالی', 'financially_payable')),
+    'beam_profile_reviews': (('شناسه بازبینی', 'review_id'),
+                             ('شیت آکس مستقل', 'independent_axis_page'),
+                             ('شناسه بازبینی آکس', 'independent_axis_review_id'), ('شناسه مرزهای نامزد', 'candidate_review_ids'),
                              ('قابل پرداخت مالی', 'financially_payable')),
     'structural_plan_reviews': (('شناسه بازبینی', 'review_id'), *_DRAWING_SCOPE_FIELDS,
                                 ('قابل پرداخت مالی', 'financially_payable')),
@@ -175,7 +187,7 @@ class _EvidenceTableModel(QAbstractTableModel):
 
 class PDFDetailGraphReview(QWidget):
     def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None,
-                 attach_beam_profile_witnesses=None, open_question=None):
+                 attach_beam_profile_witnesses=None, attach_beam_axis_labels=None, open_question=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -216,6 +228,7 @@ class PDFDetailGraphReview(QWidget):
         self._attach_revision_register = attach_revision_register
         self._attach_member_review = attach_member_review
         self._attach_beam_profile_witnesses = attach_beam_profile_witnesses
+        self._attach_beam_axis_labels = attach_beam_axis_labels
         self._open_question = open_question
         self._question_tag = None
         geometry = []
@@ -292,6 +305,17 @@ class PDFDetailGraphReview(QWidget):
             self.beam_profile_status.setWordWrap(True)
             self.beam_profile_status.hide()
             layout.addWidget(self.beam_profile_status)
+
+        if attach_beam_axis_labels is not None:
+            self.beam_axis_button = QPushButton('پیوست برچسب و فاصله آکس مستقل (JSON)', self)
+            self.beam_axis_button.setObjectName('PDFDetailAttachIndependentBeamAxis')
+            self.beam_axis_button.clicked.connect(self._pick_beam_axis_labels)
+            layout.addWidget(self.beam_axis_button, alignment=Qt.AlignmentFlag.AlignRight)
+            self.beam_axis_status = QLabel(self)
+            self.beam_axis_status.setTextFormat(Qt.TextFormat.PlainText)
+            self.beam_axis_status.setWordWrap(True)
+            self.beam_axis_status.hide()
+            layout.addWidget(self.beam_axis_status)
 
         split = QSplitter(Qt.Orientation.Vertical, self)
         layout.addWidget(split)
@@ -426,6 +450,16 @@ class PDFDetailGraphReview(QWidget):
         except (OSError, ValueError, RuntimeError) as exc:
             self.beam_profile_status.setText(f'قرائت تصویری پیوست نشد؛ گزارش قبلی محفوظ است.\\n{exc}')
             self.beam_profile_status.show()
+
+    def _pick_beam_axis_labels(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'انتخاب رسید مستقل آکس', '', 'JSON (*.json)')
+        if not path:
+            return
+        try:
+            self._attach_beam_axis_labels(path)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.beam_axis_status.setText(f'شاهد آکس مستقل پیوست نشد؛ گزارش قبلی محفوظ است.\\n{exc}')
+            self.beam_axis_status.show()
 
     def _refresh_selection(self, *_):
         key = self._section_keys[self.sections.currentIndex()]
