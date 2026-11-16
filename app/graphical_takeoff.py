@@ -435,6 +435,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._pdf_auto_member_review = None
         self._pdf_auto_beam_profile_witnesses = None
         self._pdf_auto_beam_axis_labels = None
+        self._pdf_auto_beam_detail_profile_witnesses = None
         self.workflow_button = QPushButton("چه چیزی متره شود؟")
         self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
         self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
@@ -1318,7 +1319,8 @@ class GraphicalTakeoffDialog(QDialog):
                                 "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
 
     def _show_pdf_sheet_evidence(self, report, sources, *, revision_registry=None, member_review=None,
-                                 beam_profile_witnesses=None, beam_axis_labels=None):
+                                 beam_profile_witnesses=None, beam_axis_labels=None,
+                                 beam_detail_profile_witnesses=None):
         from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
         from shiboken6 import isValid
 
@@ -1347,6 +1349,7 @@ class GraphicalTakeoffDialog(QDialog):
             attach_member_review=lambda path: self._attach_pdf_member_review(path, report),
             attach_beam_profile_witnesses=lambda path: self._attach_pdf_beam_profile_witnesses(path, report),
             attach_beam_axis_labels=lambda path: self._attach_pdf_beam_axis_labels(path, report),
+            attach_beam_detail_profile_witnesses=lambda path: self._attach_pdf_beam_connection_detail(path, report),
         )
         dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         existing = self._pdf_auto_review_dialog
@@ -1364,6 +1367,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._pdf_auto_member_review = member_review
         self._pdf_auto_beam_profile_witnesses = beam_profile_witnesses
         self._pdf_auto_beam_axis_labels = beam_axis_labels
+        self._pdf_auto_beam_detail_profile_witnesses = beam_detail_profile_witnesses
         self.status.setText(status)
         if existing_is_live:
             existing.close()
@@ -1375,6 +1379,7 @@ class GraphicalTakeoffDialog(QDialog):
             member_review=self._pdf_auto_member_review,
             beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
             beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
         )
 
     def _attach_pdf_member_review(self, path, previous_report):
@@ -1386,6 +1391,7 @@ class GraphicalTakeoffDialog(QDialog):
             member_review=review,
             beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
             beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
         )
 
     def _attach_pdf_beam_profile_witnesses(self, path, previous_report):
@@ -1395,6 +1401,7 @@ class GraphicalTakeoffDialog(QDialog):
             previous_report, revision_registry=self._pdf_auto_revision_registry,
             member_review=self._pdf_auto_member_review,
             beam_profile_witnesses=witnesses, beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
         )
 
     def _attach_pdf_beam_axis_labels(self, path, previous_report):
@@ -1405,10 +1412,23 @@ class GraphicalTakeoffDialog(QDialog):
             member_review=self._pdf_auto_member_review,
             beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
             beam_axis_labels=reviewed,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
+        )
+
+    def _attach_pdf_beam_connection_detail(self, path, previous_report):
+        from core.drawings.pdf_beam_end_support_review import load_pdf_beam_connection_detail_witnesses
+        reviewed = load_pdf_beam_connection_detail_witnesses(path)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
+            beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=reviewed,
         )
 
     def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review,
-                                    beam_profile_witnesses=None, beam_axis_labels=None):
+                                    beam_profile_witnesses=None, beam_axis_labels=None,
+                                    beam_detail_profile_witnesses=None):
         from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
         if self._pdf_auto_report is not previous_report:
             raise ValueError("این رسید دیگر گزارش جاری نیست.")
@@ -1420,7 +1440,7 @@ class GraphicalTakeoffDialog(QDialog):
         report = inspect_pdf_sheet_set(
             sources, revision_registry=revision_registry, member_review=member_review,
             beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
-            rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
+            beam_detail_profile_witnesses=beam_detail_profile_witnesses, rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
         )
         new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
         if not previous_fingerprints or new_fingerprints != previous_fingerprints:
@@ -1430,6 +1450,7 @@ class GraphicalTakeoffDialog(QDialog):
         self._show_pdf_sheet_evidence(
             report, sources, revision_registry=revision_registry, member_review=member_review,
             beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
+            beam_detail_profile_witnesses=beam_detail_profile_witnesses,
         )
 
     def select_drawing(self):
