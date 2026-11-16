@@ -62,6 +62,16 @@ _TABLES = {
         ('محورهای افقی (pt)', 'grid_y_pt'),
         ('نام‌گذاری آکس', 'axis_label_witness_status'),
     )),
+    'beam_end_marker_pages': ('نمادهای انتهای دهانه', (
+        ('سند', 'document_id'), ('صفحه تیر', 'page'),
+        ('وضعیت', 'status'), ('نمادهای متمایز', 'marker_count'),
+        ('مسیرهای هم‌مکان', 'duplicate_source_strokes'),
+    )),
+    'beam_end_support_reviews': ('بازبینی دو سر تیر و دیتیل', (
+        ('آکس', 'span_axes'), ('ردیف', 'printed_axis_row'),
+        ('پروفیل', 'profile_text'), ('دو سر دهانه', 'status'),
+        ('ارتباط دیتیل', 'detail_status'), ('شواهد نوع', 'candidate_detail_count'),
+    )),
     'beam_profile_reviews': ('تطبیق مکانی پروفیل تیر', (
         ('پروفیل تصویری', 'profile_text'), ('آکس دهانه', 'span_axes'),
         ('ردیف آکس', 'printed_axis_row'), ('شمارهٔ چاپی', 'circled_mark_raw'),
@@ -76,7 +86,7 @@ _TABLES = {
     )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews'}
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews'}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
@@ -111,6 +121,14 @@ _DETAIL_FIELDS = {
     'beam_axis_grid_candidates': (('نام فایل', 'source_name'), ('هش SHA-256', 'source_sha256'),
                                   ('منابع اپراتور', 'source_operator_refs'), ('واحد چاپی', 'printed_unit'),
                                   ('قابل پرداخت مالی', 'financially_payable')),
+    'beam_end_marker_pages': (('هش منبع', 'source_sha256'),
+                              ('قابل پرداخت مالی', 'financially_payable')),
+    'beam_end_support_reviews': (('شناسه بازبینی', 'review_id'),
+                                 ('منبع آکس', 'axis_page'), ('صفحه دیتیل', 'detail_page'),
+                                 ('شناسه دو انتها', 'endpoint_marker_ids'),
+                                 ('تکیه‌گاه اثبات‌شده', 'support_verified'),
+                                 ('ارجاع دیتیل اثبات‌شده', 'detail_link_verified'),
+                                 ('قابل پرداخت مالی', 'financially_payable')),
     'beam_profile_reviews': (('شناسه بازبینی', 'review_id'),
                              ('شیت آکس مستقل', 'independent_axis_page'),
                              ('شناسه بازبینی آکس', 'independent_axis_review_id'), ('شناسه مرزهای نامزد', 'candidate_review_ids'),
@@ -187,7 +205,8 @@ class _EvidenceTableModel(QAbstractTableModel):
 
 class PDFDetailGraphReview(QWidget):
     def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None,
-                 attach_beam_profile_witnesses=None, attach_beam_axis_labels=None, open_question=None):
+                 attach_beam_profile_witnesses=None, attach_beam_axis_labels=None,
+                 attach_beam_detail_profile_witnesses=None, open_question=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -229,6 +248,7 @@ class PDFDetailGraphReview(QWidget):
         self._attach_member_review = attach_member_review
         self._attach_beam_profile_witnesses = attach_beam_profile_witnesses
         self._attach_beam_axis_labels = attach_beam_axis_labels
+        self._attach_beam_detail_profile_witnesses = attach_beam_detail_profile_witnesses
         self._open_question = open_question
         self._question_tag = None
         geometry = []
@@ -316,6 +336,17 @@ class PDFDetailGraphReview(QWidget):
             self.beam_axis_status.setWordWrap(True)
             self.beam_axis_status.hide()
             layout.addWidget(self.beam_axis_status)
+
+        if attach_beam_detail_profile_witnesses is not None:
+            self.beam_detail_button = QPushButton('پیوست شاهد تصویری دیتیل اتصال تیر (JSON)', self)
+            self.beam_detail_button.setObjectName('PDFDetailAttachBeamConnectionDetails')
+            self.beam_detail_button.clicked.connect(self._pick_beam_detail_profile_witnesses)
+            layout.addWidget(self.beam_detail_button, alignment=Qt.AlignmentFlag.AlignRight)
+            self.beam_detail_status = QLabel(self)
+            self.beam_detail_status.setTextFormat(Qt.TextFormat.PlainText)
+            self.beam_detail_status.setWordWrap(True)
+            self.beam_detail_status.hide()
+            layout.addWidget(self.beam_detail_status)
 
         split = QSplitter(Qt.Orientation.Vertical, self)
         layout.addWidget(split)
@@ -460,6 +491,16 @@ class PDFDetailGraphReview(QWidget):
         except (OSError, ValueError, RuntimeError) as exc:
             self.beam_axis_status.setText(f'شاهد آکس مستقل پیوست نشد؛ گزارش قبلی محفوظ است.\\n{exc}')
             self.beam_axis_status.show()
+
+    def _pick_beam_detail_profile_witnesses(self):
+        path, _ = QFileDialog.getOpenFileName(self, 'انتخاب شاهد تصویری اتصال تیر', '', 'JSON (*.json)')
+        if not path:
+            return
+        try:
+            self._attach_beam_detail_profile_witnesses(path)
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.beam_detail_status.setText('شاهد دیتیل پذیرفته نشد؛ گزارش پیشین محفوظ است.\\n' + str(exc))
+            self.beam_detail_status.show()
 
     def _refresh_selection(self, *_):
         key = self._section_keys[self.sections.currentIndex()]
