@@ -172,6 +172,19 @@ jobs:
           tests/test_p231_p240_report_export_integrity.py
           tests/test_phase7_p5_source_discrepancy_gate.py
           tests/test_phase7_p5_real_commit_integration.py
+      # Source-only checkout for private local engine execution. No user drawings,
+      # Library data, test fixtures or non-Git workspace content are included.
+      - name: Package committed engine source for private local replay
+        if: matrix.scope == 'targeted' && matrix.os == 'ubuntu-24.04'
+        run: git archive --format=zip --output=structuralpro-engine-source.zip HEAD core app contracts recovery requirements.txt pytest.ini
+      - name: Retain source-only private replay bootstrap for 1 day
+        if: matrix.scope == 'targeted' && matrix.os == 'ubuntu-24.04'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8-p2-a-source-bootstrap
+          path: structuralpro-engine-source.zip
+          retention-days: 1
+          if-no-files-found: error
       - name: Retain JUnit for this SHA
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
