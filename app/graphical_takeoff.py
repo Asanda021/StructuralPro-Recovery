@@ -1369,10 +1369,12 @@ class GraphicalTakeoffDialog(QDialog):
         )
 
     def _attach_pdf_member_review(self, path, previous_report):
-        from core.drawings.pdf_member_review import load_pdf_member_review
+        from core.drawings.pdf_member_review import load_pdf_member_review, require_preserved_occurrence_conflicts
+        review = load_pdf_member_review(path)
+        require_preserved_occurrence_conflicts(self._pdf_auto_member_review, review)
         self._refresh_pdf_sheet_evidence(
             previous_report, revision_registry=self._pdf_auto_revision_registry,
-            member_review=load_pdf_member_review(path),
+            member_review=review,
         )
 
     def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review):

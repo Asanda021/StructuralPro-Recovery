@@ -11,6 +11,8 @@ import unicodedata
 
 from core.drawings.pdf_detail_object_index import _family_words, _tag
 from core.drawings.pdf_member_review import validate_pdf_member_review
+from core.drawings.pdf_occurrence_review import build_pdf_occurrence_reviews
+from core.drawings.pdf_structural_plan_review import build_pdf_structural_plan_reviews
 from core.drawings.pdf_type_word_witness import _box
 
 
@@ -18,6 +20,8 @@ _CODE = r"[A-Z0-9][A-Z0-9_.-]{0,31}"
 _DETAIL = r"(?:[A-Z0-9.-]{0,15}[0-9][A-Z0-9.-]{0,16}|[A-Z]{1,4}-[A-Z]{1,4})"
 _TYPE = r"[A-Z]{1,4}[-–.]?[0-9]{1,4}"
 _AXIS = r"[A-Z0-9-]{1,16}\s*/\s*[A-Z0-9-]{1,16}"
+_DECIMAL = r"[0-9]{1,8}(?:\.[0-9]{1,8})?"
+_DISTANCE_UNIT = r"(?:MM|CM|M)"
 _DEFINITIONS = (
     ("SHEET_ID", rf"(?:SHEET(?: NO\.)?|شیت)(?:\s*[:#]\s*|\s+)(?P<code>{_CODE})"),
     ("REVISION", rf"(?:REV(?:ISION)?\.?|ویرایش|نسخه)(?:\s*[:#]\s*|\s+)(?P<code>{_CODE})"),
@@ -26,6 +30,16 @@ _DEFINITIONS = (
                  rf"\s+(?:GRID|آکس)\s+(?P<axis>{_AXIS})\s+(?:LEVEL|تراز)\s+(?P<level>{_CODE})"),
     ("AXIS", rf"(?:GRID|AXIS|آکس)\s+(?P<code>{_AXIS})"),
     ("LEVEL", rf"(?:LEVEL|FLOOR|تراز|طبقه)\s+(?P<code>{_CODE})"),
+    ("COLUMN_DIMENSION", rf"COLUMN DIM\s+(?P<member>{_CODE})\s+TYPE\s+(?P<tag>{_TYPE})"
+                         rf"\s+(?P<dimension>WIDTH|DEPTH)\s+(?P<value>{_DECIMAL})"
+                         rf"(?:\s*(?P<unit>{_DISTANCE_UNIT}))?"),
+    ("COLUMN_SPEC", rf"COLUMN SPEC\s+(?P<member>{_CODE})\s+TYPE\s+(?P<tag>{_TYPE})"
+                    rf"\s+RECTANGULAR CONCRETE CONNECTIONS INCLUDED DEDUCTIONS\s+(?P<deductions>{_DECIMAL})\s*M3"),
+    ("COLUMN_RANGE", rf"COLUMN RANGE\s+(?P<member>{_CODE})\s+GRID\s+(?P<axis>{_AXIS})\s+LEVEL\s+(?P<level>{_CODE})"
+                     rf"\s+FROM\s+(?P<bottom>[+-]?{_DECIMAL})\s*(?P<bottom_unit>{_DISTANCE_UNIT})"
+                     rf"\s+TO\s+(?P<top>[+-]?{_DECIMAL})\s*(?P<top_unit>{_DISTANCE_UNIT})"
+                     rf"\s+LENGTH\s+(?P<length>{_DECIMAL})\s*(?P<length_unit>{_DISTANCE_UNIT})"
+                     rf"\s+COUNT\s+(?P<occurrence_count>[1-9][0-9]{{0,3}})"),
     ("CALLOUT", rf"(?:(?:FOR INSTANCE|برای عضو)\s+(?P<member>{_CODE})\s+|(?:SEE|رجوع به)\s+)?"
                 rf"(?P<reference>DETAIL|SECTION|ELEVATION|دیتیل|مقطع|نما)\s+(?P<detail>{_DETAIL})"
                 rf"\s*(?:/|ON|در شیت)\s*(?P<sheet>{_CODE})"),
@@ -117,6 +131,8 @@ _REASONS = {
     "COLUMN_DETAIL_MARK_UNRESOLVED": ("برچسب تیپ در یک ردیف یکتای دیتیل پیدا نشد", "شیت دیتیل و عنوان تیپ با محدودهٔ مشخص"),
     "BLOCKED_PRINTED_MEMBER_ID_CONFLICT": ("شناسه‌های چاپی پلان و دیتیل برای این تیپ یکسان نیستند", "اصلاحیه یا تعیین تکلیف شناسه‌ها در سند حاکم"),
     "BLOCKED_PRINTED_MEMBER_COUNT_CONFLICT": ("شمار چاپی دیتیل با شاهد پلان یا فهرست دیتیل نمی‌خواند", "ردیف و شمار بازبینی‌شده در نقشه حاکم"),
+    "DESIGN_AUTHORITY_REQUIRED": ("انتساب چاپی عضو بین پلان و دیتیل متعارض است",
+                                  "تخصیص صریح شناسه‌های درگیر در پاسخ ابلاغی طراح و شماره و تاریخ ویرایش نقشه حاکم"),
 }
 _REVIEWABLE = {
     "REVISION_CONFLICT", "SUPERSEDED_SOURCE", "DIFFERENT_PROJECT_OR_ISSUE", "UNVERIFIED_DOCUMENT_SCOPE",
@@ -126,7 +142,7 @@ _REVIEWABLE = {
     "REFERENCE_TARGET_UNRESOLVED", "REFERENCE_SOURCE_UNRESOLVED", "CONFLICTING_DETAIL_REFERENCES",
     "INSTANCE_SCOPE_CONFLICT", "INSTANCE_GEOMETRY_AMBIGUOUS", "AMBIGUOUS_VIEW_SCALE", "MISSING_TARGET_TYPE",
     "SCHEDULE_CONTEXT_UNVERIFIED", "RENDERED_OCR_TYPE_UNVERIFIED", "AMBIGUOUS_GLYPH",
-    "BLOCKED_PRINTED_MEMBER_ID_CONFLICT", "BLOCKED_PRINTED_MEMBER_COUNT_CONFLICT",
+    "BLOCKED_PRINTED_MEMBER_ID_CONFLICT", "BLOCKED_PRINTED_MEMBER_COUNT_CONFLICT", "DESIGN_AUTHORITY_REQUIRED",
 }
 
 
@@ -362,6 +378,7 @@ def _page_record(g, doc, raw, authority):
     anchors = [{
         **item, "anchor_id": _stable("LINE", digest, number, item["source_line"], item["part"]),
         "document_id": doc_id, "page": number, "coordinate_space": "unrotated_pdf_points",
+        "source_sha256": digest, "source_name": doc["source_name"],
     } for item in extraction["declarations"]]
     if len({item["anchor_id"] for item in anchors}) != len(anchors):
         raise ValueError("Duplicate PDF declaration source line")
@@ -459,7 +476,7 @@ def _add_views(g, page, type_sources):
             "anchor_id": _stable("PATH", digest, number, number_on_page),
             "document_id": page["document_id"], "page": number, "kind": "VECTOR_TOPOLOGY",
             "bbox_pt": item["bbox_pt"], "source_operator_ids": [op["source_id"] for op in item["source_operators"]],
-            "coordinate_space": "unrotated_pdf_points",
+            "coordinate_space": "unrotated_pdf_points", "source_sha256": digest, "source_name": page["source_name"],
         }
         raster = _overlapping_images(page, item["bbox_pt"]) if role == "CLOSED_CONTOUR" and page["linkable"] else []
         shape = g.node("VIEW", (digest, number, number_on_page), role,
@@ -924,7 +941,7 @@ def _add_column_id_review(g, pages, positions, detail_hints, review):
     plan_locations = defaultdict(list)
     for position, node in positions.items():
         plan_locations[position[:2]].append(node)
-    rows = []
+    rows, plan_observations, disputes = [], {}, []
     for group in checked["groups"]:
         tag, detail = group["type_tag"], group["detail"]
         detail_key = doc_id, detail["page"]
@@ -956,9 +973,10 @@ def _add_column_id_review(g, pages, positions, detail_hints, review):
                 **mark, "anchor_id": _stable("PLAN_PRINTED_MEMBER_ID", checked["source_sha256"], *key[1:], mark_id),
                 "kind": "VISUALLY_READ_PLAN_MEMBER_ID", "document_id": doc_id,
                 "source_sha256": checked["source_sha256"], "source_name": plan_page["source_name"],
-                "raw_token": mark_id, "coordinate_space": "unrotated_pdf_points",
+                "raw_token": mark_id, "type_tag": tag, "coordinate_space": "unrotated_pdf_points",
             }
             plan_mark_nodes[mark_id] = (candidate, anchor)
+            plan_observations[(mark["page"], mark_id)] = (candidate, anchor)
         for mark in detail["marks"]:
             if not _inside(mark["bbox_pt"], box):
                 raise ValueError("PDF member review identifier is outside its detail row bounds")
@@ -967,7 +985,7 @@ def _add_column_id_review(g, pages, positions, detail_hints, review):
                 **mark, "anchor_id": _stable("DETAIL_PRINTED_MEMBER_ID", checked["source_sha256"], detail["page"], tag, mid),
                 "kind": "VISUALLY_READ_DETAIL_MEMBER_ID", "document_id": doc_id, "page": detail["page"],
                 "source_sha256": checked["source_sha256"], "source_name": detail_page["source_name"],
-                "raw_token": mid, "coordinate_space": "unrotated_pdf_points",
+                "raw_token": mid, "type_tag": tag, "coordinate_space": "unrotated_pdf_points",
             }
         all_anchors = [*target["anchors"], *(a for _, a in plan_mark_nodes.values()), *detail_marks.values()]
         shared = sorted(plan_mark_nodes.keys() & detail_marks.keys())
@@ -991,6 +1009,8 @@ def _add_column_id_review(g, pages, positions, detail_hints, review):
         })
         if blocked:
             g.issue(target, status, all_anchors, status="BLOCKED")
+            disputes.append((group["plan"][0]["page"], tag, set(plan_mark_nodes) | set(detail_marks),
+                             target, all_anchors))
         for mid, (candidate, anchor) in plan_mark_nodes.items():
             candidate["anchors"].append(anchor)
             candidate["printed_member_id"] = mid
@@ -1007,7 +1027,42 @@ def _add_column_id_review(g, pages, positions, detail_hints, review):
                               reason=_REASONS[status][0] if blocked else "تطبیق مستقیم شناسه‌های خوانده‌شده از پلان و دیتیل همان فایل",
                               code=status if blocked else None)
                 edge["printed_id_review_status"] = status
+    # A disputed schedule can name a position which the plan assigns to a
+    # different type. Apply the conflict only after all plan groups are mapped.
+    for plan_page, tag, printed_ids, target, anchors in disputes:
+        reason = f"{tag}_PRINTED_SCHEDULE_CONFLICT"
+        root = {"reason_code": reason, "type_tag": tag, "anchors": list(anchors)}
+        for mid in sorted(printed_ids):
+            bound = plan_observations.get((plan_page, mid))
+            if bound is None:
+                continue
+            candidate, own_anchor = bound
+            refs = [own_anchor, *anchors]
+            candidate["status"] = "BLOCKED"
+            candidate.setdefault("printed_schedule_conflicts", []).append({**root, "anchors": refs})
+            g.issue(candidate, "DESIGN_AUTHORITY_REQUIRED", refs, status="BLOCKED")
+            g.edge("PRINTED_SCHEDULE_CONFLICT", candidate, target, refs, status="BLOCKED", code=reason,
+                   reason=_REASONS["DESIGN_AUTHORITY_REQUIRED"][0])
     return rows
+
+
+def _add_structural_plan_reviews(g, pages):
+    reviews = build_pdf_structural_plan_reviews(pages)
+    for review in reviews:
+        source = review["anchors"][0]
+        page_key = source["document_id"], source["page"]
+        sheet = pages[page_key]["node"]
+        others = {(a["document_id"], a["page"]) for a in review["anchors"]} - {page_key}
+        target = pages[next(iter(others))]["node"] if len(others) == 1 else None
+        node = g.node("STRUCTURAL_PLAN_REVIEW", (review["review_id"],), review["type_tag"] or review["role"],
+                      review["status"], review["anchors"], family=review["family"],
+                      type_tag=review["type_tag"], reason_code=review["reason_code"], reason=review["reason"])
+        edge = g.edge("STRUCTURAL_SHEET_REVIEW", sheet, node, review["anchors"],
+                      status="BLOCKED" if review["status"] == "BLOCKED" else "PROPOSED",
+                      code=review["reason_code"], reason=review["reason"])
+        review.update(node_id=node["node_id"], source_id=sheet["node_id"],
+                      target_id=target["node_id"] if target else None, edge_ids=[edge["edge_id"]])
+    return reviews
 
 
 def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=None, member_review=None, max_records=80000):
@@ -1077,6 +1132,9 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
     detail_hints = _column_detail_marks(g, pages, report)
     positions = _column_plan_locations(g, pages, report, detail_hints)
     member_review_groups = _add_column_id_review(g, pages, positions, detail_hints, member_review)
+    occurrence_reviews = build_pdf_occurrence_reviews(pages, g.nodes, g.edges)
+    structural_plan_reviews = _add_structural_plan_reviews(g, pages)
+    temporary = sum(row["status"] == "COMPLETE_NONFINANCIAL" for row in occurrence_reviews)
     if len({edge["edge_id"] for edge in g.edges}) != len(g.edges):
         raise ValueError("Duplicate PDF evidence graph edge")
     result = {
@@ -1091,6 +1149,9 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
                                       if n.get("family") == family)) for family in _FAMILIES},
         "physical_member_count": None, "floor_repetition_multiplier": None,
         "member_review_groups": member_review_groups,
+        "occurrence_reviews": occurrence_reviews,
+        "structural_plan_reviews": structural_plan_reviews,
+        "fully_evidenced_member_count": temporary, "temporary_quantity_count": temporary,
         "quantity_approval_count": 0, "complete": False, "acceptance": "PARTIAL_NO_GO",
     }
     result["review_questions"] = _group_review_questions(result["issues"])

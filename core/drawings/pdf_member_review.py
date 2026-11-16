@@ -93,3 +93,39 @@ def load_pdf_member_review(path):
     if len(data) > 512 * 1024:
         raise ValueError("PDF member review file budget exceeded")
     return validate_pdf_member_review(json.loads(data.decode("utf-8-sig"), object_pairs_hook=fields))
+
+
+def require_preserved_occurrence_conflicts(earlier, replacement):
+    """Retain disagreements observed against identical source bytes in this review."""
+    if not earlier or earlier["source_sha256"] != replacement["source_sha256"]:
+        return
+    prior = validate_pdf_member_review(earlier)
+    proposed = validate_pdf_member_review(replacement)
+    groups = {g["type_tag"]: g for g in proposed["groups"]}
+
+    def observations(group):
+        ids = {a["printed_id"] for a in group["plan"]}
+        printed = {a["printed_id"] for a in group["detail"]["marks"]}
+        return ids, printed, group["detail"]["printed_count"]
+
+    def evidence(group):
+        if group is None:
+            return None
+        return (sorted(group["plan"], key=lambda a: a["printed_id"]),
+                {k: v for k, v in group["detail"].items() if k != "marks"},
+                sorted(group["detail"]["marks"], key=lambda a: a["printed_id"]))
+
+    protected = set()
+    for group in prior["groups"]:
+        ids, printed, count = observations(group)
+        if len(ids) != count or (printed and (printed != ids or len(printed) != count)):
+            if evidence(group) != evidence(groups.get(group["type_tag"])):
+                raise ValueError("برای تغییر تعارض ثبت‌شده، اصلاحیهٔ حاکم طراح لازم است.")
+            protected.update((group["plan"][0]["page"], printed_id) for printed_id in ids | printed)
+
+    def affected_plan(review):
+        return {(a["page"], a["printed_id"]): (g["type_tag"], a) for g in review["groups"] for a in g["plan"]
+                if (a["page"], a["printed_id"]) in protected}
+
+    if affected_plan(prior) != affected_plan(proposed):
+        raise ValueError("برای تغییر شناسهٔ درگیر در تعارض، اصلاحیهٔ حاکم طراح لازم است.")

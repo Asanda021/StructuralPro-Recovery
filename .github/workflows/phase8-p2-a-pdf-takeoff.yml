@@ -13,6 +13,11 @@ on:
       - core/drawings/pdf_detail_topology.py
       - core/drawings/pdf_detail_evidence_graph.py
       - core/drawings/pdf_member_review.py
+      - core/drawings/pdf_occurrence_review.py
+      - core/drawings/pdf_structural_plan_review.py
+      - tests/test_phase8_p2_a_pdf_occurrence_review.py
+      - tests/test_phase8_p2_a_pdf_structural_plan_review.py
+      - tests/test_phase8_p2_a_pdf_engineering_review_qt.py
       - tests/test_phase8_p2_a_pdf_member_review.py
       - tests/test_phase8_p2_a_pdf_cad_stroke_words.py
       - core/drawings/pdf_rendered_text_recovery.py
@@ -107,6 +112,9 @@ jobs:
           tests/test_phase8_p2_a_pdf_detail_topology.py
           tests/test_phase8_p2_a_pdf_combined_graph.py
           tests/test_phase8_p2_a_pdf_member_review.py
+          tests/test_phase8_p2_a_pdf_occurrence_review.py
+          tests/test_phase8_p2_a_pdf_structural_plan_review.py
+          tests/test_phase8_p2_a_pdf_engineering_review_qt.py
           tests/test_phase8_p2_a_pdf_cad_stroke_words.py
           tests/test_phase8_p2_a_pdf_revision_preflight.py
           tests/test_phase8_p2_a_pdf_rendered_text_recovery.py

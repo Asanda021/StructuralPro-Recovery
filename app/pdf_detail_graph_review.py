@@ -1,6 +1,7 @@
 """Qt inspection of source-bound PDF detail evidence."""
 from __future__ import annotations
 
+from collections import defaultdict
 from functools import partial
 import json
 from pathlib import Path
@@ -9,8 +10,8 @@ from core.drawings.pdf_revision_preflight import build_pdf_revision_register_dra
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
 from PySide6.QtWidgets import (
-    QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit,
-    QPushButton, QSplitter, QTabWidget, QTableView, QVBoxLayout, QWidget,
+    QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMenu, QPlainTextEdit,
+    QPushButton, QSplitter, QTabWidget, QTableView, QToolButton, QVBoxLayout, QWidget,
 )
 
 
@@ -50,10 +51,26 @@ _TABLES = {
         ('شمار چاپی دیتیل', 'detail_printed_count'), ('تعداد شناسه دیتیل', 'detail_id_count'),
         ('شناسه‌های مشترک', 'shared_printed_ids'),
     )),
+    'occurrence_reviews': ('بازبینی اعضا', (
+        ('شناسه چاپی عضو', 'printed_member_id'), ('تیپ', 'type_tag'), ('خانواده', 'family'),
+        ('وضعیت بازبینی', 'status'), ('تصمیم', 'decision_code'), ('کد علت', 'reason_code'),
+        ('وضعیت متره', 'quantity_status'),
+    )),
+    'structural_plan_reviews': ('بازبینی پلان سازه', (
+        ('نقش پلان', 'role'), ('خانواده', 'family'), ('تیپ', 'type_tag'),
+        ('وضعیت بازبینی', 'status'), ('کد علت', 'reason_code'), ('علت', 'reason'),
+    )),
 }
 
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews'}
+_DRAWING_SCOPE_FIELDS = (
+    ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
+    ('نسخهٔ حاکم', 'governing_revision'),
+)
+
 _DETAIL_FIELDS = {
-    'documents': (('پروژه', 'project_id'), ('ابلاغ', 'issue_id'), ('سند مرجع', 'authority_reference')),
+    'documents': (('عنوان PDF', 'pdf_title'), ('پروژه', 'project_id'), ('ابلاغ', 'issue_id'),
+                  ('سند مرجع', 'authority_reference')),
     'pages': (('نسخهٔ چاپ‌شده', 'printed_revisions'), ('چرخش', 'rotation'),
               ('عنوان شیت', 'sheet_kind'), ('واژهٔ بومی', 'native_pdf_word_count'),
               ('ابهام OCR', 'rendered_ocr_ambiguous_glyph_count'),
@@ -69,14 +86,56 @@ _DETAIL_FIELDS = {
               ('اعتبار شواهد', 'evidence_quality'), ('شناسه چاپی', 'printed_member_id'),
               ('وضعیت بازبینی شناسه', 'printed_id_review_status'),
               ('وضعیت متره', 'quantity_status'), ('علت توقف متره', 'quantity_reason'),
-              ('وضعیت مقیاس', 'scale_status')),
+              ('وضعیت مقیاس', 'scale_status'), ('دامنهٔ ابعاد', 'dimension_scope')),
     'edges': (('کد علت', 'reason_code'),),
     'topology': (('تعداد عملگرهای گروه', 'operator_count'), ('اندیس مسیرها', 'source_path_indices'),),
     'member_review_groups': (('فقط در پلان', 'plan_only_printed_ids'), ('فقط در دیتیل', 'detail_only_printed_ids')),
+    'occurrence_reviews': (*_DRAWING_SCOPE_FIELDS, ('علت', 'reason'),
+                           ('ردیف شبکه', 'grid_row'), ('ستون شبکه', 'grid_column'),
+                           ('مقدار عضو', 'member_quantity'), ('واحد متره', 'quantity_unit'),
+                           ('فرمول متره', 'quantity_formula'), ('قابل پرداخت مالی', 'financially_payable')),
+    'structural_plan_reviews': (('شناسه بازبینی', 'review_id'), *_DRAWING_SCOPE_FIELDS,
+                                ('قابل پرداخت مالی', 'financially_payable')),
+}
+
+_EVIDENCE_LABELS = {
+    'OCCURRENCE_IDENTITY': 'شناسهٔ یکتای عضو اجرایی',
+    'INDEPENDENT_AXIS': 'شاهد مستقل آکس‌بندی',
+    'GOVERNING_REVISION': 'نسخهٔ حاکم سند',
+    'OCCURRENCE_DETAIL': 'دیتیل اجرایی این عضو',
+    'INSTALLATION_LEVEL_RANGE': 'تراز ابتدا و انتهای نصب',
+    'SECTION_DIMENSIONS': 'ابعاد مقطع',
+    'MATERIAL': 'جنس و مشخصات مصالح',
+    'CONNECTION_SCOPE': 'محدودهٔ اتصال',
+    'EXECUTED_LENGTH': 'طول اجرایی',
+    'MEASUREMENT_UNIT': 'واحد اندازه‌گیری',
+    'DEDUCTIONS': 'کسورات',
+    'LOCAL_SCALE_CALIBRATION': 'کالیبراسیون مقیاس موضعی',
+    'FLOOR_AND_OVERLAP_SCOPE': 'دامنهٔ طبقات و هم‌پوشانی',
+    'DESIGN_AUTHORITY_DECISION': 'تصمیم مرجع طراحی',
+}
+
+_OBSERVATION_LABELS = {
+    'detail_id_kind': 'وضعیت شناسهٔ دیتیل',
+    'section_width_m': 'عرض مقطع (m)',
+    'section_depth_m': 'عمق مقطع (m)',
+    'length_m': 'طول اجرایی (m)',
+    'installation_from_m': 'تراز ابتدای نصب (m)',
+    'installation_to_m': 'تراز انتهای نصب (m)',
+    'deductions_m3': 'کسورات (m³)',
+    'material': 'جنس مصالح',
+    'printed_scale': 'مقیاس چاپی',
+}
+
+_FOUNDATION_SHEETS = {
+    'excavation_plan': 'پلان پی‌کنی',
+    'foundation_plan': 'پلان فونداسیون',
 }
 
 
 def _display(value):
+    if isinstance(value, bool):
+        return 'بله' if value else 'خیر'
     if isinstance(value, (list, tuple)):
         return '، '.join(_display(item) for item in value)
     return '—' if value is None or value == '' else str(value)
@@ -109,6 +168,7 @@ class PDFDetailGraphReview(QWidget):
     def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None, open_question=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         graph = report['detail_evidence_graph']
         self._source_report = report
         try:
@@ -119,6 +179,12 @@ class PDFDetailGraphReview(QWidget):
             self._revision_draft = None
         self._nodes = graph.get('nodes', ())
         self._node_rows = {node['node_id']: row for row, node in enumerate(self._nodes)}
+        self._edges = graph.get('edges', ())
+        self._edge_rows = {}
+        self._edges_from_node = defaultdict(list)
+        for row, edge in enumerate(self._edges):
+            self._edge_rows[edge['edge_id']] = row
+            self._edges_from_node[edge.get('source_id')].append(edge)
         authorities = {node.get('document_id'): node.get('authority') or {}
                        for node in self._nodes if node['kind'] == 'DOCUMENT'}
         self._documents = {}
@@ -133,6 +199,9 @@ class PDFDetailGraphReview(QWidget):
                 'printed_revision_candidates': audit.get('printed_revision_candidates', ()),
                 'revision_draft_problems': audit.get('required_actions', ()),
             }
+            title = (doc.get('metadata') or {}).get('title')
+            if title:
+                self._documents[doc_id]['pdf_title'] = title
         documents = tuple(self._documents.values())
         self._attach_revision_register = attach_revision_register
         self._attach_member_review = attach_member_review
@@ -207,8 +276,11 @@ class PDFDetailGraphReview(QWidget):
         self.sections = QTabWidget(split)
         self.tables = {}
         self.filters = {}
-        self._section_keys = list(_TABLES)
+        self._section_keys = []
         for key, (title, columns) in _TABLES.items():
+            if key in _ENGINEERING_REVIEWS and key not in rows_by_table:
+                continue
+            self._section_keys.append(key)
             panel = QWidget(self.sections)
             panel_layout = QVBoxLayout(panel)
             search = QLineEdit(panel)
@@ -252,6 +324,13 @@ class PDFDetailGraphReview(QWidget):
             button.clicked.connect(partial(self._navigate_to_endpoint, role))
             navigation.addWidget(button)
             self._endpoint_buttons[role] = button
+        self.related_evidence_button = QToolButton(detail_panel)
+        self.related_evidence_button.setObjectName('PDFDetailGraphRelatedEvidence')
+        self.related_evidence_button.setText('آکس‌ها و پیوندها')
+        self.related_evidence_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self.related_evidence_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.related_evidence_button.setMenu(QMenu(self.related_evidence_button))
+        navigation.addWidget(self.related_evidence_button)
         self.question_button = QPushButton('ثبت اصلاح یا درخواست مدرک', detail_panel)
         self.question_button.setObjectName('PDFDetailGraphOpenReviewQuestion')
         self.question_button.clicked.connect(self._review_selected_issue)
@@ -323,6 +402,7 @@ class PDFDetailGraphReview(QWidget):
         selected = view.selectionModel().selectedRows()
         self._endpoint_ids = {}
         self._question_tag = None
+        has_related_evidence = False
         if not selected:
             self.details.setPlainText('برای مشاهدهٔ جزئیات و نشانی شواهد، یک ردیف را انتخاب کنید.')
         else:
@@ -348,6 +428,9 @@ class PDFDetailGraphReview(QWidget):
                     'document_id': record['document_id'], 'page': record['page'],
                     'bbox_pt': record.get('source_bbox_pt'), 'kind': 'PAGE',
                 }]))
+            elif key in _ENGINEERING_REVIEWS:
+                lines.extend(self._engineering_review_lines(key, record))
+                has_related_evidence = self._populate_related_evidence(record)
             if key != 'documents':
                 anchors = record.get('anchors', ())
                 if key != 'pages' or anchors:
@@ -356,7 +439,69 @@ class PDFDetailGraphReview(QWidget):
         for role, button in self._endpoint_buttons.items():
             button.setVisible(role in self._endpoint_ids)
             button.setEnabled(self._endpoint_ids.get(role) in self._node_rows)
+        self.related_evidence_button.setVisible(has_related_evidence)
         self.question_button.setVisible(bool(self._question_tag and self._open_question))
+
+    def _engineering_review_lines(self, key, record):
+        lines = []
+        missing = record.get('missing_evidence', ())
+        if missing:
+            lines.extend(['', 'مدارک لازم برای رفع ابهام'])
+            for code in missing:
+                label = _EVIDENCE_LABELS.get(code)
+                lines.append(f'{label} [{code}]' if label else code)
+        observations = [
+            f'{_OBSERVATION_LABELS.get(name, name)} — {_display(value)}'
+            for name, value in (record.get('observations') or {}).items() if value is not None
+        ]
+        if observations:
+            lines.extend(['', 'مشاهدات نقشه'])
+            lines.extend(observations)
+        sheet_counts = record.get('sheet_mark_counts', ())
+        if sheet_counts:
+            lines.extend(['', 'فراوانی نشانه‌های چاپی'])
+            for sheet in sheet_counts:
+                sheet_kind = _FOUNDATION_SHEETS.get(sheet['sheet_kind'], sheet['sheet_kind'])
+                lines.append(f"{self._source_label(sheet)} | صفحه {sheet['page']} | {sheet_kind} — {sheet['count']}")
+        source_id = record.get('source_id')
+        target_id = record.get('target_id')
+        self._endpoint_ids = {'source': source_id, 'target': target_id}
+        if record.get('node_id') not in (None, source_id, target_id):
+            self._endpoint_ids['related'] = record['node_id']
+        conflicts = record.get('conflicting_anchors', ())
+        if conflicts:
+            lines.extend(self._anchor_lines('شواهد ناسازگار', conflicts))
+        lines.extend(self._endpoint_lines('شاهد پلان', source_id))
+        target_label = 'شاهد دیتیل' if key == 'occurrence_reviews' else 'شاهد مرتبط'
+        lines.extend(self._endpoint_lines(target_label, target_id))
+        for axis_id in record.get('axis_node_ids', ()):
+            lines.extend(self._endpoint_lines('شاهد آکس', axis_id))
+        return lines
+
+    def _populate_related_evidence(self, record):
+        menu = self.related_evidence_button.menu()
+        menu.clear()
+        axes = record.get('axis_node_ids', ())
+        for axis_id in dict.fromkeys(axes):
+            row = self._node_rows.get(axis_id)
+            if row is not None:
+                label = self._nodes[row]['label'].replace('&', '&&')
+                menu.addAction(f'آکس — {label}', partial(self._navigate_to_record, 'nodes', axis_id))
+
+        source_ids = dict.fromkeys((record.get('source_id'), record.get('node_id')))
+        targets = {record.get('target_id'), *axes}
+        edge_ids = dict.fromkeys(record.get('edge_ids', ()))
+        for source_id in source_ids:
+            for edge in self._edges_from_node.get(source_id, ()):
+                if edge.get('target_id') in targets:
+                    edge_ids[edge['edge_id']] = None
+        for edge_id in edge_ids:
+            row = self._edge_rows.get(edge_id)
+            if row is not None:
+                edge = self._edges[row]
+                label = f"پیوند — {edge['relationship']} | {edge['status']} | {edge_id}"
+                menu.addAction(label, partial(self._navigate_to_record, 'edges', edge_id))
+        return not menu.isEmpty()
 
     def _review_selected_issue(self):
         if self._question_tag and self._open_question:
@@ -376,34 +521,54 @@ class PDFDetailGraphReview(QWidget):
         lines = ['', f'{title} (مختصات بدون چرخش)']
         if not anchors:
             return lines + ['نشانی ثبت نشده است.']
+        displayed_sources = set()
         for anchor in anchors:
             doc_id = anchor.get('document_id')
-            name = self._documents.get(doc_id, {}).get('source_name')
-            source = f'{name} ({doc_id})' if name else _display(doc_id)
+            document = self._documents.get(doc_id, {})
+            source = self._source_label(anchor)
             box = anchor.get('bbox_pt')
             coords = '[' + ', '.join(str(coord) for coord in box) + ']' if box else '—'
             witness = f'{_display(anchor.get("kind"))} {_display(anchor.get("anchor_id"))}'
             lines.append(f'{source} | صفحه {_display(anchor.get("page"))} | کادر (pt) {coords} | {witness}')
+            digest = anchor.get('source_sha256') or document.get('sha256')
+            if (doc_id, digest) not in displayed_sources:
+                title = document.get('pdf_title')
+                if title:
+                    lines.append(f'عنوان PDF — {title}')
+                if digest:
+                    lines.append(f'هش سند SHA-256 — {digest}')
+                displayed_sources.add((doc_id, digest))
             for label, field in (
                 ('نوشتهٔ خام', 'raw_token'), ('خوانش استاندارد', 'normalized_tag'),
+                ('نوشتهٔ چاپ‌شده', 'printed'), ('عنوان منبع', 'title'),
+                ('نوشتهٔ بومی PDF', 'source_token'), ('معرف شاهد در منبع', 'source_ref'),
                 ('خوانش‌های ممکن', 'glyph_interpretations'), ('علت ابهام برداری', 'glyph_ambiguity_reason'),
-                ('طول نوشته‌شدهٔ تیپ (m)', 'dimension_m'),
+                ('نوع بُعد', 'dimension_kind'), ('بُعد چاپی (m)', 'dimension_m'),
             ):
                 if field in anchor:
                     lines.append(f'{label} — {_display(anchor[field])}')
         return lines
 
+    def _source_label(self, evidence):
+        doc_id = evidence.get('document_id')
+        name = evidence.get('source_name') or self._documents.get(doc_id, {}).get('source_name')
+        return f'{name} ({doc_id})' if name else _display(doc_id)
+
     def _navigate_to_endpoint(self, role):
-        row = self._node_rows.get(self._endpoint_ids.get(role))
+        self._navigate_to_record('nodes', self._endpoint_ids.get(role))
+
+    def _navigate_to_record(self, key, record_id):
+        rows = self._node_rows if key == 'nodes' else self._edge_rows
+        row = rows.get(record_id)
         if row is None:
             return
-        table = self.tables['nodes']
+        table = self.tables[key]
         proxy = table.model()
         source_index = proxy.sourceModel().index(row, 0)
         index = proxy.mapFromSource(source_index)
         if not index.isValid():
-            self.filters['nodes'].clear()
+            self.filters[key].clear()
             index = proxy.mapFromSource(source_index)
-        self.sections.setCurrentIndex(self._section_keys.index('nodes'))
+        self.sections.setCurrentIndex(self._section_keys.index(key))
         table.setCurrentIndex(index)
         table.scrollTo(index)
