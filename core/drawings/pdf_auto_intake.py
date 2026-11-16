@@ -110,6 +110,7 @@ def inspect_pdf_sheet_set(
     revision_registry: Mapping | None = None,
     rendered_ocr: bool = False, ocr_language: str = "eng+fas",
     max_ocr_pages: int = 25, member_review: dict | None = None,
+    beam_profile_witnesses: list[dict] | None = None,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -510,6 +511,7 @@ def inspect_pdf_sheet_set(
     )
     graph = build_pdf_detail_evidence_graph(
         report, page_detail_summaries, revision_registry=revision_registry, member_review=member_review,
+        beam_profile_witnesses=beam_profile_witnesses,
     )
     report["detail_evidence_graph"] = graph
     report["questions"].extend(graph["review_questions"])
