@@ -15,6 +15,8 @@ on:
       - core/drawings/pdf_member_review.py
       - core/drawings/pdf_occurrence_review.py
       - core/drawings/pdf_structural_plan_review.py
+      - core/drawings/pdf_beam_profile_review.py
+      - tests/test_phase8_p2_a_pdf_beam_profile_review.py
       - tests/test_phase8_p2_a_pdf_occurrence_review.py
       - tests/test_phase8_p2_a_pdf_structural_plan_review.py
       - tests/test_phase8_p2_a_pdf_engineering_review_qt.py
@@ -114,6 +116,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_member_review.py
           tests/test_phase8_p2_a_pdf_occurrence_review.py
           tests/test_phase8_p2_a_pdf_structural_plan_review.py
+          tests/test_phase8_p2_a_pdf_beam_profile_review.py
           tests/test_phase8_p2_a_pdf_engineering_review_qt.py
           tests/test_phase8_p2_a_pdf_cad_stroke_words.py
           tests/test_phase8_p2_a_pdf_revision_preflight.py
