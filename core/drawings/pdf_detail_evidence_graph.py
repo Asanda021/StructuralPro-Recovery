@@ -15,6 +15,7 @@ from core.drawings.pdf_occurrence_review import build_pdf_occurrence_reviews
 from core.drawings.pdf_structural_plan_review import build_pdf_structural_plan_reviews
 from core.drawings.pdf_beam_profile_review import correlate_pdf_beam_profile_witnesses
 from core.drawings.pdf_beam_axis_crosscheck import reconcile_pdf_beam_grid_labels
+from core.drawings.pdf_beam_end_support_review import review_beam_ends_against_independent_grid
 from core.drawings.pdf_type_word_witness import _box
 
 
@@ -1068,7 +1069,8 @@ def _add_structural_plan_reviews(g, pages):
 
 
 def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=None, member_review=None,
-                                    beam_profile_witnesses=None, beam_axis_labels=None, max_records=80000):
+                                    beam_profile_witnesses=None, beam_axis_labels=None,
+                                    beam_detail_profile_witnesses=None, max_records=80000):
     """Combine immutable PDF primitives with explicit, issue-scoped source relationships."""
     authorities = _parse_registry(revision_registry)
     documents = {doc["document_id"]: doc for doc in report["documents"]}
@@ -1199,6 +1201,81 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
                               [anchor, *row["anchors"]], status="BLOCKED" if row["status"] == "BLOCKED" else "PROPOSED",
                               reason="تطبیق موقعیت با شبکه آکس مستقل؛ بدون اثبات تراز، طول یا واحد")
                 row["edge_ids"].append(edge["edge_id"])
+    beam_end_review = None
+    if beam_detail_profile_witnesses is not None and beam_axis_labels is None:
+        raise ValueError("Independent axis labels are required for beam-connection review")
+    if beam_axis_labels is not None and independent_axis_crosscheck is not None:
+        witnesses = report.get("beam_end_marker_pages", ())
+        correct = [m for m in witnesses
+                   if (m["document_id"], m["page"]) == (grid["document_id"], beam_axis_labels["beam_page"])
+                   and m["source_sha256"] == grid["source_sha256"]]
+        if len(correct) != 1 or correct[0]["status"] != "PROPOSED_UNVERIFIED_SQUARE_MARKERS":
+            raise ValueError("Missing unique beam end-marker source")
+        marker_page = correct[0]
+        detail_samples = beam_detail_profile_witnesses or []
+        if detail_samples:
+            page_ids = {sample.get("page") for sample in detail_samples if isinstance(sample, dict)}
+            if len(page_ids) != 1:
+                raise ValueError("Ambiguous beam connection detail page")
+            detail_page_number = next(iter(page_ids))
+            key = (grid["document_id"], detail_page_number)
+            detail_source = pages.get(key)
+            if (detail_source is None or detail_source["sha256"] != grid["source_sha256"]
+                    or detail_source["authority_block"]):
+                raise ValueError("Foreign or blocked beam connection detail source")
+            for sample in detail_samples:
+                bbox = _box(sample.get("bbox_pt")) if isinstance(sample, dict) else None
+                if bbox is None or not all(detail_source["source_bbox_pt"][i] <= bbox[i]
+                    and bbox[i+2] <= detail_source["source_bbox_pt"][i+2] for i in (0, 1)):
+                    raise ValueError("Beam detail crop outside original PDF source")
+        beam_end_review = review_beam_ends_against_independent_grid(
+            marker_page, grid, beam_axis_labels, beam_profile_witnesses,
+            detail_samples, detail_page=detail_samples[0]["page"] if detail_samples else None,
+        )
+        if len(beam_end_review["profiles"]) != len(beam_profile_reviews):
+            raise ValueError("Inconsistent beam support and profile witness counts")
+        marker_index = {m["candidate_id"]: m for m in marker_page["marker_candidates"]}
+        for end, profile in zip(beam_end_review["profiles"], beam_profile_reviews, strict=True):
+            base = profile["anchors"][0]
+            related = [base]
+            for marker_id in end["endpoint_marker_ids"]:
+                if marker_id is None:
+                    continue
+                marker = marker_index.get(marker_id)
+                if marker is None:
+                    raise ValueError("Missing beam end-marker provenance")
+                related.append({
+                    "anchor_id": _stable("BEAM_GRID_END_MARKER", marker_id),
+                    "document_id": marker["document_id"], "page": marker["page"],
+                    "source_name": marker["source_name"], "source_sha256": marker["source_sha256"],
+                    "kind": "FILLED_GRID_END_MARKER_CANDIDATE", "bbox_pt": marker["bbox_pt"],
+                    "source_operator_refs": marker["source_refs"],
+                })
+            for detail_box in end["detail_bbox_candidates_pt"]:
+                related.append({
+                    "anchor_id": _stable("BEAM_TYPE_ONLY_DETAIL", grid["source_sha256"], end["detail_page"], detail_box, end["profile_text"]),
+                    "document_id": grid["document_id"], "page": end["detail_page"],
+                    "source_name": grid["source_name"], "source_sha256": grid["source_sha256"],
+                    "kind": "VISUAL_TYPE_ONLY_CONNECTION_DETAIL", "bbox_pt": detail_box,
+                })
+            node = g.node("BEAM_END_SUPPORT_REVIEW", (end["review_id"],),
+                          end["profile_text"], "BLOCKED" if end["status"].startswith("BLOCKED_") else "UNRESOLVED",
+                          related, family="beam", physical_member_verified=False,
+                          support_verified=False, connection_detail_verified=False, member_quantity=None)
+            plan_node = pages[(grid["document_id"], marker_page["page"])]["node"]
+            edge = g.edge("BEAM_END_GRID_SYMBOL_CORROBORATION", plan_node, node, related,
+                          status="BLOCKED" if end["status"].startswith("BLOCKED_") else "PROPOSED",
+                          code=end["status"] if end["status"].startswith("BLOCKED_") else None,
+                          reason="دو نماد انتهایی نامزد؛ تکیه‌گاه واقعی و طول نصب نامعلوم")
+            end.update(node_id=node["node_id"], source_id=plan_node["node_id"],
+                       edge_ids=[edge["edge_id"]], anchors=related)
+            if end["candidate_detail_count"]:
+                detail_node = pages[(grid["document_id"], end["detail_page"])]["node"]
+                detail_anchors = [a for a in related if a["kind"] == "VISUAL_TYPE_ONLY_CONNECTION_DETAIL"]
+                type_edge = g.edge("BEAM_TYPE_ONLY_CONNECTION_REFERENCE", detail_node, node,
+                                   detail_anchors, status="PROPOSED",
+                                   reason="تطبیق نام پروفیل در دیتیل عمومی؛ تعلق به دهانه احراز نشده")
+                end["edge_ids"].append(type_edge["edge_id"])
     temporary = sum(row["status"] == "COMPLETE_NONFINANCIAL" for row in occurrence_reviews)
     if len({edge["edge_id"] for edge in g.edges}) != len(g.edges):
         raise ValueError("Duplicate PDF evidence graph edge")
@@ -1219,6 +1296,10 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
         "beam_profile_reviews": beam_profile_reviews,
         "beam_axis_grid_candidates": list(report.get("beam_axis_grid_candidates", ())),
         "beam_axis_profile_crosscheck": independent_axis_crosscheck,
+        "beam_end_marker_pages": list(report.get("beam_end_marker_pages", ())),
+        "beam_end_support_reviews": beam_end_review["profiles"] if beam_end_review else [],
+        "beam_end_support_summary": ({k:v for k,v in beam_end_review.items() if k != "profiles"}
+                                      if beam_end_review else None),
         "fully_evidenced_member_count": temporary, "temporary_quantity_count": temporary,
         "quantity_approval_count": 0, "complete": False, "acceptance": "PARTIAL_NO_GO",
     }
