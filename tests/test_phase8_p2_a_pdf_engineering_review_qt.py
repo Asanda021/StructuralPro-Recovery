@@ -258,3 +258,56 @@ def test_rejected_beam_profile_receipt_leaves_previous_report_visible(qt_app, en
         assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+def test_independent_axis_tab_and_import_keep_original_receipt_readonly(qt_app, engineering_report, monkeypatch):
+    original = deepcopy(engineering_report)
+    graph = engineering_report['detail_evidence_graph']
+    graph['beam_axis_grid_candidates'] = [{
+        'document_id': 'PDF001', 'page': 13, 'source_name': 'synthetic-plan.pdf',
+        'source_sha256': 'a'*64, 'status': 'PROPOSED_UNLABELED_AXIS_GRID',
+        'grid_x_pt': [10, 45, 80, 115, 150],
+        'grid_y_pt': [12, 60, 108],
+        'axis_label_witness_status': 'NOT_INFERRED_FROM_LINES',
+        'source_operator_refs': ['p13:d1:s1'],
+        'printed_unit': None, 'financially_payable': False,
+    }]
+    original = deepcopy(engineering_report)
+    choices = []
+    dialog = PDFSheetEvidenceDialog(
+        engineering_report,
+        attach_beam_axis_labels=lambda path: choices.append(path),
+    )
+    try:
+        review = dialog.graph_review
+        _select(review, 'beam_axis_grid_candidates')
+        visible = review.details.toPlainText()
+        for label in ('PROPOSED_UNLABELED_AXIS_GRID', 'NOT_INFERRED_FROM_LINES',
+                      'synthetic-plan.pdf', 'قابل پرداخت مالی — خیر', 'p13:d1:s1'):
+            assert label in visible
+        button = review.findChild(QPushButton, 'PDFDetailAttachIndependentBeamAxis')
+        assert button is not None
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *a, **kw: ('/private/axes.json', 'JSON (*.json)'))
+        button.click()
+        assert choices == ['/private/axes.json']
+        assert engineering_report == original
+        assert graph['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
+
+
+def test_bad_independent_axis_receipt_stays_fail_closed(qt_app, engineering_report, monkeypatch):
+    def bad_input(_):
+        raise ValueError('source hash mismatch')
+    dialog = PDFSheetEvidenceDialog(engineering_report, attach_beam_axis_labels=bad_input)
+    try:
+        review = dialog.graph_review
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *a, **kw: ('/private/wrong.json', 'JSON (*.json)'))
+        review.findChild(QPushButton, 'PDFDetailAttachIndependentBeamAxis').click()
+        assert 'source hash mismatch' in review.beam_axis_status.text()
+        assert review.tables['occurrence_reviews'].model().rowCount() == 1
+        assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
