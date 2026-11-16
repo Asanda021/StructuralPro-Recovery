@@ -205,3 +205,56 @@ def test_foundation_discrepancy_shows_per_sheet_printed_mark_counts(qt_app, engi
         assert 'synthetic-detail.pdf (PDF002) | صفحه 2 | پلان فونداسیون — 2' in selected
     finally:
         dialog.close()
+
+
+def test_private_beam_profile_receipt_displays_nonpayable_spatial_review(qt_app, engineering_report, monkeypatch):
+    calls = []
+    graph = engineering_report['detail_evidence_graph']
+    anchor = {'anchor_id': 'visual-beam15', 'document_id': 'PDF001', 'page': 1,
+              'source_name': 'synthetic-plan.pdf', 'source_sha256': 'a'*64,
+              'bbox_pt': [200, 155, 252, 195], 'kind': 'VISUALLY_READ_BEAM_PROFILE',
+              'raw_token': '2IPE16', 'source_ref': 'test-visual-profile'}
+    graph['beam_profile_reviews'] = [{
+        'review_id': 'visual-review-1', 'role': 'BEAM_PROFILE_SPATIAL_REVIEW',
+        'family': 'beam', 'profile_text': '2IPE16', 'type_tag': None,
+        'printed_axis_row': '3', 'span_axes': 'A-B', 'circled_mark_raw': '1',
+        'candidate_region_count': 1, 'candidate_review_ids': ['L1'],
+        'status': 'REVIEW_REQUIRED', 'reason_code': 'BEAM_PROFILE_PROXIMITY_ONLY',
+        'financially_payable': False, 'member_quantity': None,
+        'missing_evidence': ['آکس، تکیه‌گاه و تراز نصب'],
+        'anchors': [anchor],
+    }]
+    dialog = PDFSheetEvidenceDialog(engineering_report,
+                                   attach_beam_profile_witnesses=lambda path: calls.append(path))
+    review = dialog.graph_review
+    try:
+        _select(review, 'beam_profile_reviews')
+        text = review.details.toPlainText()
+        for token in ('2IPE16', 'A-B', 'REVIEW_REQUIRED', 'BEAM_PROFILE_PROXIMITY_ONLY',
+                      'آکس، تکیه‌گاه و تراز نصب', 'قابل پرداخت مالی — خیر', 'synthetic-plan.pdf'):
+            assert token in text
+        button = review.findChild(QPushButton, 'PDFDetailAttachBeamProfileWitnesses')
+        assert button is not None
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *args, **kwargs: ('/private/beam-witness.json', 'JSON (*.json)'))
+        button.click()
+        assert calls == ['/private/beam-witness.json']
+        assert graph['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
+
+
+def test_rejected_beam_profile_receipt_leaves_previous_report_visible(qt_app, engineering_report, monkeypatch):
+    def reject(_path):
+        raise ValueError('SHA mismatch')
+    dialog = PDFSheetEvidenceDialog(engineering_report, attach_beam_profile_witnesses=reject)
+    review = dialog.graph_review
+    try:
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *args, **kwargs: ('/private/foreign.json', 'JSON (*.json)'))
+        review.findChild(QPushButton, 'PDFDetailAttachBeamProfileWitnesses').click()
+        assert 'SHA mismatch' in review.beam_profile_status.text()
+        assert review.tables['occurrence_reviews'].model().rowCount() == 1
+        assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
