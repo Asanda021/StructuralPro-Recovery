@@ -1272,9 +1272,12 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
             if end["candidate_detail_count"]:
                 detail_node = pages[(grid["document_id"], end["detail_page"])]["node"]
                 detail_anchors = [a for a in related if a["kind"] == "VISUAL_TYPE_ONLY_CONNECTION_DETAIL"]
+                # A type-only visual match cannot prove that this detail governs
+                # this physical span. Keep even unique same-name matches BLOCKED.
                 type_edge = g.edge("BEAM_TYPE_ONLY_CONNECTION_REFERENCE", detail_node, node,
-                                   detail_anchors, status="PROPOSED",
-                                   reason="تطبیق نام پروفیل در دیتیل عمومی؛ تعلق به دهانه احراز نشده")
+                                   detail_anchors, status="BLOCKED",
+                                   code="BEAM_DETAIL_NOT_SPAN_SPECIFIC",
+                                   reason="صرفاً هم‌نامی پروفیل؛ ارجاع اختصاصی به دهانه و مرجع ابلاغ احراز نشده")
                 end["edge_ids"].append(type_edge["edge_id"])
     temporary = sum(row["status"] == "COMPLETE_NONFINANCIAL" for row in occurrence_reviews)
     if len({edge["edge_id"] for edge in g.edges}) != len(g.edges):
