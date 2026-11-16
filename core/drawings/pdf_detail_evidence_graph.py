@@ -13,6 +13,7 @@ from core.drawings.pdf_detail_object_index import _family_words, _tag
 from core.drawings.pdf_member_review import validate_pdf_member_review
 from core.drawings.pdf_occurrence_review import build_pdf_occurrence_reviews
 from core.drawings.pdf_structural_plan_review import build_pdf_structural_plan_reviews
+from core.drawings.pdf_beam_profile_review import correlate_pdf_beam_profile_witnesses
 from core.drawings.pdf_type_word_witness import _box
 
 
@@ -1065,7 +1066,8 @@ def _add_structural_plan_reviews(g, pages):
     return reviews
 
 
-def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=None, member_review=None, max_records=80000):
+def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=None, member_review=None,
+                                    beam_profile_witnesses=None, max_records=80000):
     """Combine immutable PDF primitives with explicit, issue-scoped source relationships."""
     authorities = _parse_registry(revision_registry)
     documents = {doc["document_id"]: doc for doc in report["documents"]}
@@ -1134,6 +1136,18 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
     member_review_groups = _add_column_id_review(g, pages, positions, detail_hints, member_review)
     occurrence_reviews = build_pdf_occurrence_reviews(pages, g.nodes, g.edges)
     structural_plan_reviews = _add_structural_plan_reviews(g, pages)
+    beam_profile_reviews = correlate_pdf_beam_profile_witnesses(pages, structural_plan_reviews, beam_profile_witnesses)
+    for row in beam_profile_reviews:
+        first = row["anchors"][0]
+        sheet = pages[(first["document_id"], first["page"])]["node"]
+        node = g.node("BEAM_PROFILE_REVIEW", (row["review_id"],), row["profile_text"],
+                      "BLOCKED" if row["status"] == "BLOCKED" else "UNRESOLVED", row["anchors"],
+                      family="beam", evidence_quality="VISUAL_REVIEW_NOT_ENGINEERING_APPROVAL",
+                      physical_member_verified=False, member_quantity=None)
+        edge = g.edge("BEAM_PROFILE_NEAR_VECTOR_REGION", sheet, node, row["anchors"],
+                      status="BLOCKED" if row["status"] == "BLOCKED" else "PROPOSED",
+                      code=row["reason_code"], reason="مجاورت هندسی؛ انتساب اجرایی تأیید نشده")
+        row.update(node_id=node["node_id"], source_id=sheet["node_id"], edge_ids=[edge["edge_id"]])
     temporary = sum(row["status"] == "COMPLETE_NONFINANCIAL" for row in occurrence_reviews)
     if len({edge["edge_id"] for edge in g.edges}) != len(g.edges):
         raise ValueError("Duplicate PDF evidence graph edge")
@@ -1151,6 +1165,7 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
         "member_review_groups": member_review_groups,
         "occurrence_reviews": occurrence_reviews,
         "structural_plan_reviews": structural_plan_reviews,
+        "beam_profile_reviews": beam_profile_reviews,
         "fully_evidenced_member_count": temporary, "temporary_quantity_count": temporary,
         "quantity_approval_count": 0, "complete": False, "acceptance": "PARTIAL_NO_GO",
     }
