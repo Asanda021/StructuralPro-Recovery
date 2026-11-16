@@ -21,9 +21,9 @@ def _fake_pdf(tmp_path, count=19):
 
 
 def _report(digest, count=19):
-    return {'documents': [{'sha256': digest, 'page_count': count}], 'page_count': count,
+    return {'documents': [{'sha256': digest, 'page_count': count, 'document_id':'PDF001', 'source_name':'fake.pdf'}], 'page_count': count,
             'quantity_approval_count': 0, 'detail_evidence_graph': {
-                'graph_sha256': 'a' * 64, 'pages': [{} for _ in range(count)],
+                'graph_sha256': 'a' * 64, 'pages': [{'document_id':'PDF001','page':i+1} for i in range(count)],
                 'acceptance': 'PARTIAL_NO_GO', 'complete': False,
                 'quantity_approval_count': 0, 'fully_evidenced_member_count': 0,
                 'beam_profile_reviews': [], 'beam_end_support_reviews': [],
@@ -81,6 +81,9 @@ def test_preflight_only_cannot_claim_full_engine_run(tmp_path):
     lambda r: r['detail_evidence_graph'].update(quantity_approval_count=1),
     lambda r: r['detail_evidence_graph'].update(graph_sha256='unverified'),
     lambda r: r.update(quantity_approval_count=1),
+    lambda r: r['detail_evidence_graph']['pages'][1].update(page=1),
+    lambda r: r['detail_evidence_graph']['edges'].append({'financially_payable':True}),
+    lambda r: r['documents'][0].update(source_name='foreign.pdf'),
     lambda r: r['detail_evidence_graph']['beam_profile_reviews'].append({'financially_payable':True}),
     lambda r: r['detail_evidence_graph']['beam_end_support_reviews'].append({'financially_payable':False,'physical_member_verified':True}),
     lambda r: r['detail_evidence_graph']['occurrence_reviews'].append({'financially_payable':False,'quantity_approved':True}),
