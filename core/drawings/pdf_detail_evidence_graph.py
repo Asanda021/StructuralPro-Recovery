@@ -70,6 +70,10 @@ _QUANTITY_PENDING = {
     "quantity_status": "NO_QUANTITY", "quantity_reason": "MISSING_DIMENSION_EVIDENCE",
     "physical_member_verified": False, "member_quantity": None,
 }
+_AMBIGUOUS_STROKE_REASONS = {
+    "AMBIGUOUS_UPRIGHT", "AMBIGUOUS_GLYPH_OWNERSHIP", "MULTIPLE_GLYPH_INTERPRETATIONS",
+    "MULTIPLE_NUMERAL_INTERPRETATIONS", "UNEXPECTED_GLYPH_STROKE", "POSSIBLE_ADJACENT_GLYPH",
+}
 _REASONS = {
     "RASTER_SEMANTICS_UNVERIFIED": ("خوانش معنایی تصویر تأیید نشده است", "رندر یا OCR کنترل‌شده و مدرک اصلی"),
     "RASTER_VECTOR_OVERLAP": ("تصویر در محدوده شاهد برداری حضور دارد", "مقابلهٔ تصویر با هندسهٔ همان نما"),
@@ -344,6 +348,10 @@ def _scope_disagreement(left, right):
     return None
 
 
+def _ambiguous_stroke_words(index):
+    return [word for word in index.get("rejections", ()) if word.get("reason") in _AMBIGUOUS_STROKE_REASONS]
+
+
 def _page_record(g, doc, raw, authority):
     doc_id, number = doc["document_id"], raw["page"]
     digest = doc["sha256"]
@@ -431,8 +439,7 @@ def _page_record(g, doc, raw, authority):
         "rendered_ocr_ambiguous_glyph_count": sum(w.get("status") == "AMBIGUOUS_GLYPH" for w in ocr_witnesses),
         "vector_text_status": vector_index.get("status", "NOT_INDEXED"),
         "vector_text_type_count": sum(bool(w.get("type_tag")) for w in vector_witnesses),
-        "vector_text_ambiguous_count": sum(str(w.get("status", "")).startswith("AMBIGUOUS_")
-                                           for w in vector_index.get("rejections", ())),
+        "vector_text_ambiguous_count": len(_ambiguous_stroke_words(vector_index)),
         "native_pdf_word_count": raw["type_word_index"].get("source_word_count"),
         "native_type_word_count": len(word_witnesses),
     }
@@ -569,16 +576,16 @@ def _add_local_evidence(g, page, shapes):
             continue
         words.append(_source_word_anchor(page, mark, "TYPE_WORD"))
     scanned = raw.get("vector_type_word_index") or {}
-    undecided = [w for w in scanned.get("rejections", ()) if str(w.get("status", "")).startswith("AMBIGUOUS_")]
+    undecided = _ambiguous_stroke_words(scanned)
     for mark in [*scanned.get("type_word_witnesses", ()), *undecided]:
         if ((mark.get("document_id"), mark.get("page")) != (page["document_id"], number)
                 or mark.get("financially_payable") is not False
                 or not _box(mark.get("bbox_pt")) or not mark.get("source_operator_ids")):
             raise ValueError("Foreign or unsupported PDF stroke word evidence")
         item = _source_word_anchor(page, mark, "VECTOR_STROKE_TYPE_WORD")
-        if str(mark.get("status", "")).startswith("AMBIGUOUS_"):
+        if mark.get("reason") in _AMBIGUOUS_STROKE_REASONS:
             item.update(status="AMBIGUOUS_GLYPH", type_tag=None, normalized_tag=None,
-                        glyph_ambiguity_reason=mark["status"])
+                        glyph_ambiguity_reason=mark["reason"])
         words.append(item)
     # OCR is deliberately separate from the authoritative native text index.
     # Unknown/duplicate OCR words are still preserved in the recovery receipt,

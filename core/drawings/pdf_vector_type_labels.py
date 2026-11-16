@@ -322,7 +322,16 @@ def _adjacent_stroke(reading, stroke_index):
     return set()
 
 
-def _record_stroke_mark(glyphs, *, document_id, page_number, reason=None, extra=()):
+def _possible_spellings(readings):
+    alternatives = set()
+    for glyphs in readings:
+        prefix = ''.join(g.char for g in glyphs[:-1])
+        endings = ('1', 'I', 'l') if glyphs[-1].char == 'upright' else (glyphs[-1].char,)
+        alternatives.update(prefix + ending for ending in endings)
+    return sorted(alternatives)
+
+
+def _record_stroke_mark(glyphs, *, document_id, page_number, reason=None, extra=(), alternatives=()):
     bounds = _union_box(g.box for g in glyphs)
     refs = sorted(_refs(glyphs) | set(extra))
     pi, oi = _glyph_anchor(glyphs[0])
@@ -333,7 +342,7 @@ def _record_stroke_mark(glyphs, *, document_id, page_number, reason=None, extra=
             'text': token, 'source_token': token,
             'status': ('ISOLATED_TYPE_WORD_POSITION_CANDIDATE' if reason is None else
                        'UNRESOLVED_VECTOR_STROKE_MARK'),
-            'reason': reason, 'title_anchor_ids': [],
+            'reason': reason, 'glyph_interpretations': list(alternatives), 'title_anchor_ids': [],
             'bbox_pt': [round(v, 3) for v in bounds],
             'source_class': 'VECTOR_STROKE_LABEL', 'localization': 'TEMPLATE_MATCHED_PDF_STROKE_BBOX',
             'source_path_indices': sorted({p for p, _ in refs}),
@@ -419,7 +428,8 @@ def recover_page_vector_type_words(page, *, document_id, page_number, paths=None
                     reason = 'POSSIBLE_ADJACENT_GLYPH'
                     refs.update(adjacent)
             record = _record_stroke_mark(reading, document_id=document_id, page_number=page_number,
-                                         reason=reason, extra=refs)
+                                         reason=reason, extra=refs,
+                                         alternatives=_possible_spellings(readings) if reason else ())
             (witnesses if reason is None else rejections).append(record)
     except _StrokeWorkLimit:
         return {**result, 'status': 'BLOCKED_VECTOR_STROKE_LOCAL_BUDGET'}

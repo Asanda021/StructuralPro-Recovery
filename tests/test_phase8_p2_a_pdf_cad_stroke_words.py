@@ -96,6 +96,29 @@ def test_upright_and_grid_edges_never_turn_a_prefix_into_a_digit():
     assert all(row['type_tag'] is None and row['source_operator_ids'] for row in result['rejections'])
 
 
+def test_ambiguous_strokes_reach_intake_page_count_and_graph_review(tmp_path):
+    from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+
+    source = tmp_path / 'synthetic-uprights.pdf'
+    with pymupdf.open() as pdf:
+        page = pdf.new_page()
+        _mark(page, 'CI', (42, 25), 15)
+        _mark(page, 'Cl', (42, 66), 15)
+        pdf.save(source)
+    graph = inspect_pdf_sheet_set([source])['detail_evidence_graph']
+    assert graph['pages'][0]['vector_text_ambiguous_count'] == 2
+    assert graph['pages'][0]['vector_text_type_count'] == 0
+    cases = [node for node in graph['nodes'] if node.get('evidence_quality') == 'AMBIGUOUS_GLYPH']
+    assert len(cases) == 2
+    for node in cases:
+        witness = node['anchors'][0]
+        assert node['type_tag'] is None and node['financially_payable'] is False
+        assert witness['glyph_ambiguity_reason'] == 'AMBIGUOUS_UPRIGHT'
+        assert witness['glyph_interpretations'] == ['C1', 'CI', 'Cl']
+        assert witness['source_operator_ids']
+    assert not [node for node in graph['nodes'] if node['kind'] == 'INSTANCE_CANDIDATE']
+
+
 def test_hooked_one_can_have_a_centered_baseline_foot():
     with pymupdf.open() as doc:
         page = doc.new_page()
