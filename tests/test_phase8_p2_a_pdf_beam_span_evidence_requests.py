@@ -106,9 +106,18 @@ def test_mismatched_source_anchor_rejected():
         build_beam_span_evidence_requests(graph)
 
 
-def test_gap_between_profile_and_end_rejected():
+def test_profile_only_intermediate_review_is_blocked_not_rejected():
     graph = sample()
     graph["beam_end_support_reviews"] = []
+    result = build_beam_span_evidence_requests(graph)
+    assert result["status"] == "BLOCKED_PENDING_INDEPENDENT_AXIS_AND_END_MARKERS"
+    assert result["summary"]["open_document_request_count"] == 1
+    assert result["requests"] == []
+
+
+def test_orphan_end_review_rejected():
+    graph = sample()
+    graph["beam_profile_reviews"] = []
     with pytest.raises(ValueError, match="Incomplete"):
         build_beam_span_evidence_requests(graph)
 

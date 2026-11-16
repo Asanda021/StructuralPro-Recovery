@@ -69,6 +69,16 @@ def build_beam_span_evidence_requests(graph, *, expected_sha256=None):
                 "summary": {"candidate_spans": 0, "source_identity_verified": False,
                             "open_document_request_count": 0, "verified_beam_members": 0,
                             "quantity_approval_count": 0, "financially_payable": False}}
+    # Incremental review accepts profile-only receipts before axis labels.
+    # Remain blocked: no physical span, end witness or payment is certified.
+    if profiles and not ends:
+        if len(profiles) > 256 or any(p.get("financially_payable") is not False
+                                      for p in profiles if isinstance(p, dict)):
+            raise ValueError("Unsafe or unbounded partial beam profile witnesses")
+        return {"status": "BLOCKED_PENDING_INDEPENDENT_AXIS_AND_END_MARKERS", "requests": [],
+                "summary": {"candidate_spans": len(profiles), "source_identity_verified": False,
+                            "open_document_request_count": len(profiles), "verified_beam_members": 0,
+                            "quantity_approval_count": 0, "financially_payable": False}}
     if not profiles or len(profiles) != len(ends) or len(profiles) > 256:
         raise ValueError("Incomplete visual beam profile / end-of-span correspondence")
 
