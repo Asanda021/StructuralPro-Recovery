@@ -14,6 +14,18 @@ from statistics import median
 import re
 
 
+def load_pdf_beam_axis_labels(path):
+    """Read a bounded local JSON witness; it never grants approval."""
+    from pathlib import Path
+    source = Path(path)
+    if source.stat().st_size > 65536:
+        raise ValueError("Axis-label review file exceeds the resource budget")
+    data = json.loads(source.read_text(encoding="utf-8-sig"))
+    if not isinstance(data, dict):
+        raise ValueError("Axis-label review must be a JSON object")
+    return data
+
+
 def _id(*items):
     raw = json.dumps(items, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
     return 'BEAM_AXIS:' + sha256(raw.encode('utf-8')).hexdigest()[:32]
