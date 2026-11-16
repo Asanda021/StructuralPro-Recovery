@@ -311,3 +311,68 @@ def test_bad_independent_axis_receipt_stays_fail_closed(qt_app, engineering_repo
         assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+def test_beam_two_end_symbols_and_type_only_detail_are_readonly(qt_app, engineering_report, monkeypatch):
+    graph = engineering_report['detail_evidence_graph']
+    image = {'anchor_id': 'p15-square-1', 'document_id': 'PDF001', 'page': 1,
+             'source_name': 'synthetic-plan.pdf', 'source_sha256': 'a'*64,
+             'kind': 'FILLED_GRID_END_MARKER_CANDIDATE', 'bbox_pt': [35, 50, 41, 56],
+             'source_operator_refs': ['p1:d1','p1:d2']}
+    graph['beam_end_marker_pages'] = [{
+        'document_id': 'PDF001', 'page': 1, 'source_sha256': 'a'*64,
+        'status': 'PROPOSED_UNVERIFIED_SQUARE_MARKERS', 'marker_count': 15,
+        'duplicate_source_strokes': 17, 'financially_payable': False,
+    }]
+    graph['beam_end_support_reviews'] = [{
+        'review_id': 'beam-two-end-1', 'node_id': 'beam-node', 'source_id': 'sheet',
+        'span_axes': 'A-B', 'printed_axis_row': '3', 'profile_text': '2IPE16',
+        'status': 'PROPOSED_BOTH_END_GRID_SYMBOLS',
+        'detail_status': 'PROPOSED_TYPE_ONLY_NOT_SPAN_SPECIFIC',
+        'candidate_detail_count': 1, 'endpoint_marker_ids': ['square-1', 'square-2'],
+        'axis_page': 13, 'detail_page': 17,
+        'missing_evidence': ['EXPLICIT_DETAIL_CALLOUT_FOR_THIS_SPAN', 'CUT_LENGTH'],
+        'support_verified': False, 'detail_link_verified': False,
+        'member_quantity': None, 'financially_payable': False,
+        'anchors': [image], 'edge_ids': [],
+    }]
+    import_calls = []
+    original = deepcopy(engineering_report)
+    dialog = PDFSheetEvidenceDialog(engineering_report,
+                   attach_beam_detail_profile_witnesses=lambda path: import_calls.append(path))
+    review = dialog.graph_review
+    try:
+        _select(review, 'beam_end_marker_pages')
+        assert '15' in review.details.toPlainText()
+        _select(review, 'beam_end_support_reviews')
+        selected = review.details.toPlainText()
+        for token in ('A-B', '2IPE16', 'PROPOSED_BOTH_END_GRID_SYMBOLS',
+                      'PROPOSED_TYPE_ONLY_NOT_SPAN_SPECIFIC', 'CUT_LENGTH',
+                      'قابل پرداخت مالی — خیر', 'synthetic-plan.pdf'):
+            assert token in selected
+        button = review.findChild(QPushButton, 'PDFDetailAttachBeamConnectionDetails')
+        assert button is not None
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *args, **kwargs: ('/private/p17-typed.json', 'JSON (*.json)'))
+        button.click()
+        assert import_calls == ['/private/p17-typed.json']
+        assert engineering_report == original
+    finally:
+        dialog.close()
+
+
+def test_rejected_connection_detail_never_mutates_current_qt_receipt(qt_app, engineering_report, monkeypatch):
+    def reject(_path):
+        raise ValueError('foreign PDF sha256')
+    dialog = PDFSheetEvidenceDialog(engineering_report,
+                                   attach_beam_detail_profile_witnesses=reject)
+    try:
+        review = dialog.graph_review
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getOpenFileName',
+                            lambda *args, **kwargs: ('/private/foreign17.json', 'JSON (*.json)'))
+        review.findChild(QPushButton, 'PDFDetailAttachBeamConnectionDetails').click()
+        assert 'foreign PDF sha256' in review.beam_detail_status.text()
+        assert review.tables['occurrence_reviews'].model().rowCount() == 1
+        assert engineering_report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
