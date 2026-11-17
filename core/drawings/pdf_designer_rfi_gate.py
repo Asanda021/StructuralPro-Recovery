@@ -218,15 +218,88 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
         bool(x["received_code_count"] > 0 and x["missing_evidence_codes"]) for x in question_coverage
     )
     unanswered = len(questions)-fully_received-partially_received
-    return {"status":"RECEIPT_ONLY_NOT_DESIGN_APPROVAL", "packet_sha256":packet["packet_sha256"],
+    # This is a correspondence between *citations*, not a semantic match
+    # between drawing revisions or a physical beam/member. It covers missing
+    # questions as well as received document references.
+    linked_by_question = {}
+    for receipt in checked:
+        linked_by_question.setdefault(receipt["question_id"], []).append({
+            "evidence_code": receipt["evidence_code"],
+            "designer_document_reference": receipt["document_reference"],
+            "designer_document_revision_declared": receipt["document_revision"],
+            "designer_pdf_sha256": receipt["attachment_sha256"],
+            "designer_pdf_page": receipt["page_number"],
+            "status": "DECLARED_DOCUMENT_CITATION_REQUIRES_ENGINEERING_REVIEW",
+        })
+    evidence_crosswalk = []
+    for question, coverage in zip(packet["questions"], question_coverage):
+        linked = sorted(linked_by_question.get(question["question_id"], []),
+                        key=lambda x: (x["evidence_code"], x["designer_document_reference"],
+                                       x["designer_pdf_page"]))
+        evidence_crosswalk.append({
+            "question_id": question["question_id"],
+            "category": question["category"],
+            "source_pdf_name": packet["source_name"],
+            "source_pdf_sha256": packet["source_sha256"],
+            "source_graph_sha256": packet.get("graph_sha256"),
+            "original_pdf_page_refs": list(question["sheet_refs"]),
+            "span_axes_unverified": question.get("span_axes"),
+            "axis_row_unverified": question.get("axis_row"),
+            "beam_end_review_id": question.get("review_id"),
+            "conflict_code": question.get("conflict_code"),
+            "required_evidence_codes": list(question["required_evidence_codes"]),
+            "missing_evidence_codes": list(coverage["missing_evidence_codes"]),
+            "attachment_citations": linked,
+            "status": coverage["status"],
+            "span_specific_detail_verified": False,
+            "physical_member_verified": False,
+            "financially_payable": False,
+        })
+    result = {"status":"RECEIPT_ONLY_NOT_DESIGN_APPROVAL", "packet_sha256":packet["packet_sha256"],
             "received_evidence_count":len(checked), "question_count":len(questions),
             "questions_with_some_response":sum(x["received_code_count"] > 0 for x in question_coverage),
             "questions_with_all_evidence_received":fully_received,
             "questions_partially_received":partially_received,
             "questions_still_without_response":unanswered,
             "question_coverage":question_coverage,
+            "evidence_crosswalk":evidence_crosswalk,
             "responses":checked,"physical_member_verified":False,"approved_financial_rows":0,
             "acceptance":"PARTIAL_NO_GO"}
+    result["receipt_sha256"] = _digest(result)
+    return result
+
+
+def write_designer_reply_crosswalk(packet, receipt, destination):
+    """Export a provenance-only review register. Never infer design approval."""
+    if (not isinstance(packet, dict) or packet.get("packet_sha256") !=
+            _digest({k: v for k, v in packet.items() if k != "packet_sha256"})
+            or not isinstance(receipt, dict)
+            or receipt.get("packet_sha256") != packet["packet_sha256"]
+            or receipt.get("receipt_sha256") !=
+                _digest({k: v for k, v in receipt.items() if k != "receipt_sha256"})
+            or receipt.get("acceptance") != "PARTIAL_NO_GO"
+            or receipt.get("approved_financial_rows") != 0
+            or receipt.get("physical_member_verified") is not False):
+        raise ValueError("Source packet or designer response receipt identity mismatch")
+    rows = receipt.get("evidence_crosswalk")
+    if not isinstance(rows, list) or len(rows) != len(packet.get("questions", [])):
+        raise ValueError("Incomplete correspondence review register")
+    for question, row in zip(packet["questions"], rows):
+        if (row.get("question_id") != question["question_id"]
+                or row.get("original_pdf_page_refs") != question["sheet_refs"]
+                or row.get("source_pdf_sha256") != packet["source_sha256"]
+                or row.get("span_specific_detail_verified") is not False
+                or row.get("physical_member_verified") is not False
+                or row.get("financially_payable") is not False):
+            raise ValueError("Foreign or approved engineering crosswalk row")
+    path = Path(destination)
+    if path.suffix.lower() != ".json":
+        raise ValueError("Crosswalk must be exported as JSON")
+    # Exclusive file creation protects an existing private engineering receipt.
+    with path.open("x", encoding="utf-8") as stream:
+        json.dump(receipt, stream, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)
+        stream.write("\n")
+    return path
 
 def write_designer_rfi_package(packet, destination):
     """Write private draft and empty response template, never send."""
