@@ -143,7 +143,7 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
         raise ValueError("Unbounded response set")
     questions = {x["question_id"]: x for x in packet["questions"]}
     checked, used = [], set()
-    document_revisions = {}
+    document_fingerprints = {}
     folder = Path(attachment_directory).resolve() if attachment_directory is not None else None
     for item in answers:
         allowed = {"question_id", "evidence_code", "attachment_name", "attachment_sha256", "page_number", "document_reference", "document_revision"}
@@ -162,20 +162,32 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
                        for f in ("document_reference", "document_revision"))):
             raise ValueError("Missing local provenance or revision citation")
         # Different sheet IDs can have different revisions. One document ID
-        # with two revisions cannot silently enter the same receipt.
+        # cannot silently refer to divergent revisions OR distinct PDF bytes.
         document_ref = item["document_reference"]
-        previous_revision = document_revisions.setdefault(document_ref, item["document_revision"])
-        if previous_revision != item["document_revision"]:
+        fingerprint = (item["document_revision"], digest)
+        previous_fingerprint = document_fingerprints.setdefault(document_ref, fingerprint)
+        if previous_fingerprint[0] != fingerprint[0]:
             raise ValueError("Conflicting revisions for the same designer document")
+        if previous_fingerprint[1] != fingerprint[1]:
+            raise ValueError("Conflicting PDF files for the same designer document")
         if folder is None:
             raise ValueError("Received design PDF bytes must be checked locally")
         asset = folder / name
         if asset.is_symlink() or not asset.is_file() or asset.resolve().parent != folder or asset.stat().st_size > 128*1024*1024:
             raise ValueError("Designer PDF attachment missing, unsafe or oversized")
-        if sha256(asset.read_bytes()).hexdigest() != digest:
+        # Parse exactly the bytes that passed the SHA-256 check: reopening a
+        # pathname after hashing permits a time-of-check/time-of-use swap.
+        pdf_bytes = asset.read_bytes()
+        if not pdf_bytes or len(pdf_bytes) > 128*1024*1024:
+            raise ValueError("Designer PDF attachment empty or oversized")
+        if sha256(pdf_bytes).hexdigest() != digest:
             raise ValueError("Designer attachment SHA-256 mismatch")
         import pymupdf
-        with pymupdf.open(asset) as document:
+        try:
+            document = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+        except Exception as exc:
+            raise ValueError("Unreadable designer PDF attachment") from exc
+        with document:
             if not document.is_pdf or page > len(document) or len(document) < 1:
                 raise ValueError("Designer page outside real PDF")
         checked.append({"question_id":item["question_id"], "evidence_code":item["evidence_code"],
