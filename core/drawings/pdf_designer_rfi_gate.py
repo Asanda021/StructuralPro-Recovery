@@ -139,10 +139,11 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
     if not isinstance(ref, str) or not _REF.fullmatch(ref):
         raise ValueError("Missing reference number for response receipt")
     answers = reply["responses"]
-    if not isinstance(answers, list) or len(answers) > len(packet["questions"]):
+    if not isinstance(answers, list) or len(answers) > sum(len(q["required_evidence_codes"]) for q in packet["questions"]):
         raise ValueError("Unbounded response set")
     questions = {x["question_id"]: x for x in packet["questions"]}
     checked, used = [], set()
+    document_revisions = {}
     folder = Path(attachment_directory).resolve() if attachment_directory is not None else None
     for item in answers:
         allowed = {"question_id", "evidence_code", "attachment_name", "attachment_sha256", "page_number", "document_reference", "document_revision"}
@@ -160,6 +161,12 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
                 or any(not isinstance(item[f], str) or not _REF.fullmatch(item[f])
                        for f in ("document_reference", "document_revision"))):
             raise ValueError("Missing local provenance or revision citation")
+        # Different sheet IDs can have different revisions. One document ID
+        # with two revisions cannot silently enter the same receipt.
+        document_ref = item["document_reference"]
+        previous_revision = document_revisions.setdefault(document_ref, item["document_revision"])
+        if previous_revision != item["document_revision"]:
+            raise ValueError("Conflicting revisions for the same designer document")
         if folder is None:
             raise ValueError("Received design PDF bytes must be checked locally")
         asset = folder / name
@@ -175,14 +182,39 @@ def inspect_designer_reply(packet, reply, *, attachment_directory=None):
                         "attachment_sha256":digest,"page_number":page,
                         "document_reference":item["document_reference"],"document_revision":item["document_revision"],
                         "status":"SOURCE_BYTES_MATCHED_ENGINEERING_REVIEW_REQUIRED", "financially_payable":False})
-    answered_questions={item["question_id"] for item in checked}
+    # Coverage is per required evidence code, not per merely answered
+    # question. Full coverage is an unverified receipt, never design or BOQ approval.
+    received_codes = {}
+    for receipt in checked:
+        received_codes.setdefault(receipt["question_id"], set()).add(receipt["evidence_code"])
+    question_coverage = []
+    for question in packet["questions"]:
+        codes = set(question["required_evidence_codes"])
+        seen = received_codes.get(question["question_id"], set())
+        missing = sorted(codes - seen)
+        status = ("NO_EVIDENCE_RECEIVED" if not seen
+                  else "ALL_CODES_RECEIVED_ENGINEERING_REVIEW_REQUIRED" if not missing
+                  else "PARTIAL_CODES_RECEIVED_ENGINEERING_REVIEW_REQUIRED")
+        question_coverage.append({
+            "question_id": question["question_id"], "category": question["category"],
+            "status": status, "received_code_count": len(seen),
+            "required_code_count": len(codes), "missing_evidence_codes": missing,
+            "engineering_approved": False, "financially_payable": False,
+        })
+    fully_received = sum(not x["missing_evidence_codes"] for x in question_coverage)
+    partially_received = sum(
+        bool(x["received_code_count"] > 0 and x["missing_evidence_codes"]) for x in question_coverage
+    )
+    unanswered = len(questions)-fully_received-partially_received
     return {"status":"RECEIPT_ONLY_NOT_DESIGN_APPROVAL", "packet_sha256":packet["packet_sha256"],
             "received_evidence_count":len(checked), "question_count":len(questions),
-            "questions_with_some_response":len(answered_questions),
-            "questions_still_without_response":len(questions)-len(answered_questions),
+            "questions_with_some_response":sum(x["received_code_count"] > 0 for x in question_coverage),
+            "questions_with_all_evidence_received":fully_received,
+            "questions_partially_received":partially_received,
+            "questions_still_without_response":unanswered,
+            "question_coverage":question_coverage,
             "responses":checked,"physical_member_verified":False,"approved_financial_rows":0,
             "acceptance":"PARTIAL_NO_GO"}
-
 
 def write_designer_rfi_package(packet, destination):
     """Write private draft and empty response template, never send."""
