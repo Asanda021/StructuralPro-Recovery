@@ -445,6 +445,11 @@ def _page_record(g, doc, raw, authority):
                         else "NO_DETECTED_CONTENT",
         "source_path_count": topo.get("source_path_count"),
         "source_operator_count": topo.get("source_operator_count"),
+        "source_operators_accounted_for": topo.get("source_operators_accounted_for"),
+        "source_degenerate_operator_count": topo.get("source_degenerate_operator_count", 0),
+        "source_degenerate_operator_ids": topo.get("source_degenerate_operator_ids", []),
+        "source_degenerate_quads_review_required": topo.get(
+            "source_degenerate_quads_review_required", False),
         "topology_status": topo["status"], "topology_group_count": len(topo["groups"]),
         "printed_revisions": sorted(printed_revisions),
         "authority_status": conflict or (authority["status"] if authority else "UNREGISTERED"),
