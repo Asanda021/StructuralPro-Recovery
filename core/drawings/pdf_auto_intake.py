@@ -27,6 +27,7 @@ from core.drawings.pdf_sheet_detail_inventory import (
 )
 from core.drawings.pdf_detail_object_index import build_pdf_detail_object_index
 from core.drawings.pdf_multidiscipline_gap_register import build_pdf_multidiscipline_gap_register
+from core.drawings.pdf_operator_component_review import build_pdf_operator_component_review
 from core.drawings.pdf_detail_evidence_graph import (
     build_pdf_detail_evidence_graph, read_pdf_page_declarations,
 )
@@ -534,6 +535,10 @@ def inspect_pdf_sheet_set(
     )
     report["multidiscipline_gap_register"] = build_pdf_multidiscipline_gap_register(
         report["sheet_detail_inventory"], report["detail_object_index"],
+    )
+    report["operator_component_review"] = build_pdf_operator_component_review(
+        page_detail_summaries, report["sheet_detail_inventory"],
+        report["detail_object_index"], report["member_type_candidates"],
     )
     graph = build_pdf_detail_evidence_graph(
         report, page_detail_summaries, revision_registry=revision_registry, member_review=member_review,
