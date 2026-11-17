@@ -232,13 +232,21 @@ def write_designer_rfi_package(packet, destination):
     """Write private draft and empty response template, never send."""
     path = Path(destination)
     path.mkdir(parents=True, exist_ok=True)
-    (path/"PRIVATE_ENGINEERING_RFI_PACKET.json").write_text(
-        json.dumps(packet, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)+"\n", encoding="utf-8")
+    output_names = (
+        "PRIVATE_ENGINEERING_RFI_PACKET.json",
+        "DESIGNER_RESPONSE_TEMPLATE.json",
+        "PRIVATE_RFI_QUESTIONS.csv",
+        "PRIVATE_RFI_TO_STRUCTURAL_DESIGNER_FA.md",
+    )
+    if any((path/name).exists() or (path/name).is_symlink() for name in output_names):
+        raise FileExistsError("Existing RFI package output may not be overwritten")
+    with (path/output_names[0]).open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(packet, ensure_ascii=False, indent=2, sort_keys=True, allow_nan=False)+"\n")
     template = {"schema_version":1,"packet_sha256":packet["packet_sha256"],
                 "reply_reference":"FILL_REFERENCE", "responses":[]}
-    (path/"DESIGNER_RESPONSE_TEMPLATE.json").write_text(
-        json.dumps(template, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
-    with (path/"PRIVATE_RFI_QUESTIONS.csv").open("w", newline="", encoding="utf-8-sig") as f:
+    with (path/output_names[1]).open("x", encoding="utf-8") as stream:
+        stream.write(json.dumps(template, ensure_ascii=False, indent=2)+"\n")
+    with (path/output_names[2]).open("x", newline="", encoding="utf-8-sig") as f:
         fields = ["question_id","category","span_axes","axis_row","printed_mark","visual_profile_unverified","sheet_refs","required_evidence_codes","request_fa","status"]
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()
@@ -255,5 +263,6 @@ def write_designer_rfi_package(packet, destination):
             body.extend([f"**تعارض {x['conflict_code']} (صفحات {', '.join(map(str,x['sheet_refs']))}):** {x['request_fa']}", ""])
     body.extend([f"۱۲ پرونده دهانه تیر در فایل پیوست `PRIVATE_RFI_QUESTIONS.csv` با شناسه مستقل و مدارک موردنیاز درج شده است.",
                  "", "لطفاً پاسخ را با شماره و تاریخ نامه، شماره/ویرایش شیت‌های اصلاحی و فایل PDF اصلیِ ابلاغ‌شده همراه فرمایید. این پیش‌نویس به‌صورت خودکار ارسال نشده است.", ""])
-    (path/"PRIVATE_RFI_TO_STRUCTURAL_DESIGNER_FA.md").write_text("\n".join(body), encoding="utf-8")
+    with (path/output_names[3]).open("x", encoding="utf-8") as stream:
+        stream.write("\n".join(body))
     return path
