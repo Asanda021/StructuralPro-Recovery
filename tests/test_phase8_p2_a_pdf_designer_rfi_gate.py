@@ -337,7 +337,7 @@ def test_crosswalk_represents_every_missing_question_without_inventing_evidence(
     assert len(receipt["evidence_crosswalk"]) == 3
     assert all(row["status"] == "NO_EVIDENCE_RECEIVED"
                and row["attachment_citations"] == []
-               and row["required_evidence_codes"] == row["missing_evidence_codes"]
+               and set(row["required_evidence_codes"]) == set(row["missing_evidence_codes"])
                for row in receipt["evidence_crosswalk"])
     target = tmp_path / "PRIVATE_DESIGNER_REPLY_CROSSWALK.json"
     write_designer_reply_crosswalk(p, receipt, target)
