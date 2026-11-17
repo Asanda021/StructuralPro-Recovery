@@ -109,6 +109,15 @@ _DRAWING_SCOPE_FIELDS = (
 )
 
 _DETAIL_FIELDS = {
+    'multidiscipline_gaps': (('شناسه پوشش', 'coverage_id'),
+                             ('هش PDF مرجع', 'source_pdf_sha256'),
+                             ('شناسه‌های نواحی', 'source_region_ids'),
+                             ('نامزدهای متنی/دیتیل', 'candidate_evidence_ids'),
+                             ('نسخه معتبر بررسی‌شده', 'governing_revision_verified'),
+                             ('مقیاس معتبر بررسی‌شده', 'drawing_scale_verified'),
+                             ('تراز معتبر بررسی‌شده', 'level_scope_verified'),
+                             ('تعداد فیزیکی عضو', 'physical_member_count'),
+                             ('قابل پرداخت مالی', 'financially_payable')),
     'documents': (('عنوان PDF', 'pdf_title'), ('پروژه', 'project_id'), ('ابلاغ', 'issue_id'),
                   ('سند مرجع', 'authority_reference')),
     'pages': (('نسخهٔ چاپ‌شده', 'printed_revisions'), ('چرخش', 'rotation'),
