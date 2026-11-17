@@ -154,3 +154,66 @@ def test_load_json_rejects_duplicate_keys_and_bad_shape(tmp_path):
     bad.write_text(" "* (256*1024+1))
     with pytest.raises(ValueError,match="Oversized"):
         load_designer_reply(bad)
+
+def test_two_codes_for_one_question_are_legal_and_not_engineering_approval(tmp_path):
+    p = packet()
+    path = _pdf(tmp_path)
+    r = _reply(p, path)
+    second = deepcopy(r["responses"][0])
+    second["evidence_code"] = "GOVERNING_DRAWING_ISSUE"
+    r["responses"].append(second)
+    receipt = inspect_designer_reply(p, r, attachment_directory=tmp_path)
+    assert receipt["received_evidence_count"] == 2
+    assert receipt["questions_with_some_response"] == 1
+    assert receipt["questions_with_all_evidence_received"] == 1
+    assert receipt["questions_partially_received"] == 0
+    assert receipt["questions_still_without_response"] == 2
+    assert receipt["question_coverage"][0]["missing_evidence_codes"] == []
+    assert receipt["question_coverage"][0]["status"] == "ALL_CODES_RECEIVED_ENGINEERING_REVIEW_REQUIRED"
+    assert not receipt["question_coverage"][0]["engineering_approved"]
+    assert not receipt["physical_member_verified"]
+    assert receipt["approved_financial_rows"] == 0
+
+
+def test_partial_receipt_exposes_exact_missing_evidence_codes(tmp_path):
+    p = packet()
+    path = _pdf(tmp_path)
+    result = inspect_designer_reply(p, _reply(p, path), attachment_directory=tmp_path)
+    row = result["question_coverage"][0]
+    assert row["received_code_count"] == 1
+    assert row["required_code_count"] == 2
+    assert row["missing_evidence_codes"] == ["GOVERNING_DRAWING_ISSUE"]
+    assert row["status"] == "PARTIAL_CODES_RECEIVED_ENGINEERING_REVIEW_REQUIRED"
+    assert result["questions_partially_received"] == 1
+    assert result["questions_with_all_evidence_received"] == 0
+    assert result["questions_still_without_response"] == 2
+    assert all(x["status"] == "NO_EVIDENCE_RECEIVED" for x in result["question_coverage"][1:])
+
+
+def test_conflicting_same_document_revision_is_rejected_but_other_sheet_allowed(tmp_path):
+    p = packet()
+    path = _pdf(tmp_path)
+    base = _reply(p, path)
+    second = deepcopy(base["responses"][0])
+    second["evidence_code"] = "GOVERNING_DRAWING_ISSUE"
+    second["document_revision"] = "R3"
+    base["responses"].append(second)
+    with pytest.raises(ValueError, match="Conflicting revisions"):
+        inspect_designer_reply(p, base, attachment_directory=tmp_path)
+    second["document_reference"] = "STRUCT-DRG-002"
+    receipt = inspect_designer_reply(p, base, attachment_directory=tmp_path)
+    assert receipt["received_evidence_count"] == 2
+    assert receipt["questions_with_all_evidence_received"] == 1
+    assert receipt["approved_financial_rows"] == 0
+
+
+def test_no_reply_has_per_code_coverage_without_auto_acceptance():
+    p = packet()
+    empty = {"schema_version":1, "packet_sha256":p["packet_sha256"],
+             "reply_reference":"RFI-OPEN-01", "responses":[]}
+    receipt = inspect_designer_reply(p, empty)
+    assert len(receipt["question_coverage"]) == len(p["questions"])
+    assert receipt["questions_with_all_evidence_received"] == 0
+    assert receipt["questions_partially_received"] == 0
+    assert receipt["questions_still_without_response"] == 3
+    assert receipt["acceptance"] == "PARTIAL_NO_GO"
