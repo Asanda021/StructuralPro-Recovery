@@ -93,9 +93,16 @@ _TABLES = {
         ('وضعیت بازبینی', 'status'), ('کد علت', 'reason_code'), ('علت', 'reason'),
         ('جفت‌خط‌های جایگزین', 'parallel_pair_alternatives'),
     )),
+    'multidiscipline_gaps': ('شکاف پوشش سازه، معماری و تأسیسات', (
+        ('شناسه سند', 'document_id'), ('صفحه', 'page'),
+        ('رشته نامزد', 'candidate_family'), ('وضعیت', 'status'),
+        ('نوع شیت', 'sheet_kind'), ('کدهای بررسی لازم', 'required_review'),
+        ('ناحیه تصویری بی‌نام', 'unassigned_visual_region_ids'),
+        ('شواهد ناقص', 'blocked_region_ids'),
+    )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests'}
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps'}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
@@ -291,6 +298,9 @@ class PDFDetailGraphReview(QWidget):
                     'source_path_indices': [item['path_index']],
                 })
         rows_by_table = {**graph, 'documents': documents, 'topology': geometry}
+        gap_register = report.get('multidiscipline_gap_register')
+        if isinstance(gap_register, dict):
+            rows_by_table['multidiscipline_gaps'] = gap_register.get('coverage_rows', [])
 
         layout = QVBoxLayout(self)
         receipt = QLabel(
