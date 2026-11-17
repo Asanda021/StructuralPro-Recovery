@@ -50,6 +50,8 @@ on:
       - tests/test_phase8_p2_a_pdf_detail_object_integration.py
       - tests/test_phase8_p2_a_pdf_sheet_detail_intake_integration.py
       - core/drawings/pdf_sheet_detail_inventory.py
+      - core/drawings/pdf_multidiscipline_gap_register.py
+      - tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
       - tests/test_phase8_p2_a_pdf_column_position_ledger.py
       - core/drawings/pdf_column_position_ledger.py
       - tests/test_phase8_p2_a_pdf_grid_instances.py
@@ -120,6 +122,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_excel_crosswalk.py
           tests/test_phase8_p2_a_pdf_auto_intake.py
           tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
+          tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
           tests/test_phase8_p2_a_pdf_detail_object_index.py
           tests/test_phase8_p2_a_pdf_detail_topology.py
           tests/test_phase8_p2_a_pdf_combined_graph.py
