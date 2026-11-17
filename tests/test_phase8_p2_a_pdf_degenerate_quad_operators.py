@@ -93,7 +93,8 @@ def test_ambiguous_or_zero_length_quad_must_stay_blocked(coords):
     result = scan_detail_topology(page, document_id="PDF001", page_number=1, paths=paths)
     assert result["status"] == "BLOCKED"
     assert result["reason_code"] == "BLOCKED_UNSUPPORTED_VECTOR_OPERATORS"
-    assert result["source_operators_accounted_for"] is False
+    assert result["source_operators_accounted_for"] is True
+    assert result["all_source_operators_decoded"] is False
     assert result["source_operator_count"] == 1
     assert len(result["unresolved_operators"]) == 1
     assert result["unresolved_operators"][0]["source_id"] == "PDF001:p1:d1:s1"
