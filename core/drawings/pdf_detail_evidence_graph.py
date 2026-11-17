@@ -446,6 +446,7 @@ def _page_record(g, doc, raw, authority):
         "source_path_count": topo.get("source_path_count"),
         "source_operator_count": topo.get("source_operator_count"),
         "source_operators_accounted_for": topo.get("source_operators_accounted_for"),
+        "all_source_operators_decoded": topo.get("all_source_operators_decoded", False),
         "source_degenerate_operator_count": topo.get("source_degenerate_operator_count", 0),
         "source_degenerate_operator_ids": topo.get("source_degenerate_operator_ids", []),
         "source_degenerate_quads_review_required": topo.get(
