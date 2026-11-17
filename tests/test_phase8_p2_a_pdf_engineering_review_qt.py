@@ -534,3 +534,53 @@ def test_multidiscipline_gap_review_is_readonly_and_never_approves_boq(qt_app, e
         assert report['detail_evidence_graph']['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+def test_operator_component_and_plan_type_reference_are_readonly(qt_app, engineering_report):
+    report = deepcopy(engineering_report)
+    report['operator_component_review'] = {
+        'operator_components': [{
+            'component_id': 'PDF001:p1:topology1.1', 'document_id': 'PDF001', 'page': 1,
+            'source_pdf_sha256': 'a'*64, 'bbox_pt': [40, 50, 140, 160],
+            'stroke_topology_role': 'CLOSED_CONTOUR',
+            'status': 'PROPOSED_SINGLE_OPERATOR_COMPONENT_NEAR_UNIQUE_TITLE',
+            'proposed_title_anchor_id': 'PDF001:p1:title1',
+            'proposed_title_candidate_id': 'DETAIL_TITLE:PDF001:p1:title1',
+            'bbox_group_candidate_ids': ['PDF001:p1:vector_group00001'],
+            'source_operator_ids': ['PDF001:p1:d1:s1'],
+            'detail_boundary_verified': False, 'span_specific_detail_verified': False,
+            'physical_member_verified': False, 'financially_payable': False,
+        }],
+        'plan_detail_type_only_references': [{
+            'plan_document_id': 'PDF001', 'plan_pdf_sha256': 'a'*64,
+            'plan_page': 1, 'plan_sheet_kind': 'beam_layout_plan',
+            'printed_type_tag': 'B1', 'plan_mark_bbox_pt': [20, 30, 40, 45],
+            'candidate_detail_type_ids': ['TYPE_MARK:PDF001:p2:B1'],
+            'nearby_operator_component_ids': ['PDF001:p2:topology1.1'],
+            'status': 'PROPOSED_TYPE_NAME_ONLY_NOT_SPAN_REFERENCE',
+            'plan_to_section_detail_verified': False,
+            'span_specific_detail_verified': False,
+            'physical_member_verified': False, 'financially_payable': False,
+        }],
+    }
+    before = deepcopy(report)
+    dialog = PDFSheetEvidenceDialog(report)
+    try:
+        view = dialog.graph_review
+        for key, terms in (
+            ('operator_components', ('CLOSED_CONTOUR', 'PDF001:p1:d1:s1',
+                                     'مرز دیتیل معتبر — خیر', 'قابل پرداخت مالی — خیر')),
+            ('plan_detail_type_only_references', ('B1', 'PROPOSED_TYPE_NAME_ONLY',
+                                                  'ارجاع پلان به دیتیل — خیر',
+                                                  'قابل پرداخت مالی — خیر')),
+        ):
+            idx = _select(view, key)
+            assert not idx.flags() & Qt.ItemFlag.ItemIsEditable
+            assert view.details.isReadOnly()
+            content = view.details.toPlainText()
+            for term in terms:
+                assert term in content
+        assert report == before
+        assert report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
