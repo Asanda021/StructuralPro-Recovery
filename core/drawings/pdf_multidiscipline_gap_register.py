@@ -69,6 +69,7 @@ def build_pdf_multidiscipline_gap_register(coverage: Mapping, detail_index: Mapp
 
     region_by_page = defaultdict(list)
     seen_ids = set()
+    region_page_ids = {}
     for region in regions:
         key = (region.get("document_id"), region.get("page"))
         ident = region.get("region_id")
@@ -79,19 +80,25 @@ def build_pdf_multidiscipline_gap_register(coverage: Mapping, detail_index: Mapp
                 or region.get("financially_payable") is not False):
             raise ValueError("Unbound, duplicate or promoted PDF zone")
         seen_ids.add(ident)
+        region_page_ids[ident] = key
         region_by_page[key].append(region)
     if (len(regions) != coverage.get("region_count") or
             any(len(region_by_page[k]) != page_map[k].get("region_count") for k in expected)):
         raise ValueError("Incomplete PDF source region crosswalk")
 
     unknown_by_page = defaultdict(list)
+    seen_unknown = set()
+    if len(unknown_visual) > len(regions):
+        raise ValueError("Unbounded unknown visual coverage")
     for zone in unknown_visual:
         key = (zone.get("document_id"), zone.get("page"))
         ident = zone.get("region_id")
-        if (key not in expected or ident not in seen_ids or
-                zone.get("status") != "UNRESOLVED_UNLABELED_VISUAL_REGION"
+        if (key not in expected or region_page_ids.get(ident) != key
+                or ident in seen_unknown
+                or zone.get("status") != "UNRESOLVED_UNLABELED_VISUAL_REGION"
                 or zone.get("financially_payable") is not False):
-            raise ValueError("Unknown visual evidence is foreign or promoted")
+            raise ValueError("Unknown visual evidence is foreign, duplicated or promoted")
+        seen_unknown.add(ident)
         unknown_by_page[key].append(ident)
     candidate_by_page = defaultdict(list)
     seen_candidates = set()
@@ -103,6 +110,12 @@ def build_pdf_multidiscipline_gap_register(coverage: Mapping, detail_index: Mapp
                 candidate.get("physical_member_verified") is not False or
                 candidate.get("financially_payable") is not False):
             raise ValueError("Foreign, duplicate or approved detail candidate")
+        candidate_regions = candidate.get("region_ids")
+        candidate_families = candidate.get("family_candidates")
+        if (not isinstance(candidate_regions, list) or not candidate_regions
+                or any(region_page_ids.get(rid) != key for rid in candidate_regions)
+                or not isinstance(candidate_families, list)):
+            raise ValueError("Detail candidate has foreign region or malformed family provenance")
         seen_candidates.add(ident)
         candidate_by_page[key].append(candidate)
 
