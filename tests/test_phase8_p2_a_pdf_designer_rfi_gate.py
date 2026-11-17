@@ -8,7 +8,7 @@ import pytest
 
 from core.drawings.pdf_designer_rfi_gate import (
     build_designer_rfi_packet, inspect_designer_reply, load_designer_reply,
-    write_designer_rfi_package,
+    write_designer_rfi_package, write_designer_reply_crosswalk,
 )
 
 PDF_HASH = "a"*64
@@ -292,3 +292,120 @@ def test_package_writer_cannot_replace_existing_complete_package(tmp_path):
     with pytest.raises(FileExistsError):
         write_designer_rfi_package(p, tmp_path)
     assert {x.name: x.read_bytes() for x in tmp_path.iterdir()} == before
+
+
+def test_crosswalk_binds_designer_citation_to_original_source_and_question(tmp_path):
+    p = packet()
+    file = _pdf(tmp_path)
+    reply = _reply(p, file)
+    receipt = inspect_designer_reply(p, reply, attachment_directory=tmp_path)
+    rows = receipt["evidence_crosswalk"]
+    assert len(rows) == 3
+    beam = rows[0]
+    assert beam["question_id"] == p["questions"][0]["question_id"]
+    assert beam["original_pdf_page_refs"] == [13, 15, 17]
+    assert beam["source_pdf_sha256"] == PDF_HASH
+    assert beam["source_graph_sha256"] == GRAPH_HASH
+    assert beam["span_axes_unverified"] == "A-B"
+    assert beam["axis_row_unverified"] == "1"
+    assert beam["beam_end_review_id"] == "BEAM_END_REVIEW:1234"
+    assert beam["attachment_citations"] == [{
+        "evidence_code": "FABRICATION_CUT_LENGTH",
+        "designer_document_reference": "STRUCT-DRG-001",
+        "designer_document_revision_declared": "R2",
+        "designer_pdf_sha256": sha256(file.read_bytes()).hexdigest(),
+        "designer_pdf_page": 1,
+        "status": "DECLARED_DOCUMENT_CITATION_REQUIRES_ENGINEERING_REVIEW",
+    }]
+    assert beam["missing_evidence_codes"] == ["GOVERNING_DRAWING_ISSUE"]
+    assert all(r["physical_member_verified"] is False
+               and r["financially_payable"] is False
+               and r["span_specific_detail_verified"] is False for r in rows)
+    assert rows[1]["conflict_code"] == "C2"
+    assert rows[1]["original_pdf_page_refs"] == [14, 19]
+    assert rows[1]["attachment_citations"] == []
+    assert rows[2]["conflict_code"] == "F3"
+    assert rows[2]["original_pdf_page_refs"] == [9, 12]
+    assert receipt["receipt_sha256"]
+
+
+def test_crosswalk_represents_every_missing_question_without_inventing_evidence(tmp_path):
+    p = packet()
+    empty = {"schema_version": 1, "packet_sha256": p["packet_sha256"],
+             "reply_reference": "RFI-EMPTY-01", "responses": []}
+    receipt = inspect_designer_reply(p, empty)
+    assert len(receipt["evidence_crosswalk"]) == 3
+    assert all(row["status"] == "NO_EVIDENCE_RECEIVED"
+               and row["attachment_citations"] == []
+               and row["required_evidence_codes"] == row["missing_evidence_codes"]
+               for row in receipt["evidence_crosswalk"])
+    target = tmp_path / "PRIVATE_DESIGNER_REPLY_CROSSWALK.json"
+    write_designer_reply_crosswalk(p, receipt, target)
+    assert json.loads(target.read_text("utf-8")) == receipt
+    with pytest.raises(FileExistsError):
+        write_designer_reply_crosswalk(p, receipt, target)
+
+
+def test_crosswalk_two_documents_and_codes_preserve_span_and_no_payments(tmp_path):
+    p = packet()
+    first = _pdf(tmp_path, "first.pdf")
+    with pymupdf.open() as d:
+        page = d.new_page()
+        page.insert_text((40, 40), "another document")
+        d.save(tmp_path / "second.pdf")
+    second = tmp_path / "second.pdf"
+    reply = _reply(p, first)
+    reply["responses"].append({
+        **reply["responses"][0],
+        "evidence_code": "GOVERNING_DRAWING_ISSUE",
+        "attachment_name": second.name,
+        "attachment_sha256": sha256(second.read_bytes()).hexdigest(),
+        "document_reference": "STRUCT-DRG-002",
+        "document_revision": "R3",
+    })
+    receipt = inspect_designer_reply(p, reply, attachment_directory=tmp_path)
+    row = receipt["evidence_crosswalk"][0]
+    assert len(row["attachment_citations"]) == 2
+    assert row["missing_evidence_codes"] == []
+    assert row["status"] == "ALL_CODES_RECEIVED_ENGINEERING_REVIEW_REQUIRED"
+    assert [x["evidence_code"] for x in row["attachment_citations"]] == [
+        "FABRICATION_CUT_LENGTH", "GOVERNING_DRAWING_ISSUE"
+    ]
+    assert all(x["status"].endswith("REQUIRES_ENGINEERING_REVIEW")
+               for x in row["attachment_citations"])
+    assert row["physical_member_verified"] is False
+    assert receipt["approved_financial_rows"] == 0
+
+
+@pytest.mark.parametrize("change", [
+    lambda r: r["evidence_crosswalk"][0].update(financially_payable=True),
+    lambda r: r["evidence_crosswalk"][0].update(original_pdf_page_refs=[99]),
+    lambda r: r["evidence_crosswalk"][0].update(source_pdf_sha256="f"*64),
+    lambda r: r.update(receipt_sha256="f"*64),
+    lambda r: r.update(approved_financial_rows=1),
+])
+def test_crosswalk_export_rejects_tampering(tmp_path, change):
+    p = packet()
+    receipt = inspect_designer_reply(p, {
+        "schema_version":1, "packet_sha256":p["packet_sha256"],
+        "reply_reference":"RFI-EMPTY-01", "responses":[]
+    })
+    change(receipt)
+    target = tmp_path / "never-export.json"
+    with pytest.raises(ValueError):
+        write_designer_reply_crosswalk(p, receipt, target)
+    assert not target.exists()
+
+
+def test_crosswalk_rejects_other_packet_and_non_json_filename(tmp_path):
+    p = packet()
+    receipt = inspect_designer_reply(p, {
+        "schema_version":1, "packet_sha256":p["packet_sha256"],
+        "reply_reference":"RFI-EMPTY-01", "responses":[]
+    })
+    other = deepcopy(p)
+    other["source_name"] = "other.pdf"
+    with pytest.raises(ValueError):
+        write_designer_reply_crosswalk(other, receipt, tmp_path / "forbidden.json")
+    with pytest.raises(ValueError, match="JSON"):
+        write_designer_reply_crosswalk(p, receipt, tmp_path / "forbidden.txt")
