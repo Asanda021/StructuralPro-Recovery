@@ -471,6 +471,9 @@ def test_designer_empty_reply_is_receipt_only_not_engineering_approval(qt_app, e
         assert button is not None and button.isEnabled()
         button.click()
         assert review._designer_reply_receipt['received_evidence_count'] == 0
+        assert review._designer_reply_receipt['questions_with_all_evidence_received'] == 0
+        assert review._designer_reply_receipt['questions_partially_received'] == 0
+        assert '3 بدون پاسخ' in review.designer_reply_status.text()
         assert 'هیچ' not in review.designer_reply_status.text() or 'متره' in review.designer_reply_status.text()
         assert report == unchanged
         assert report['detail_evidence_graph']['quantity_approval_count'] == 0
