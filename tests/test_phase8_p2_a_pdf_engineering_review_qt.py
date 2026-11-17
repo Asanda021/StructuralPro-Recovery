@@ -495,3 +495,42 @@ def test_designer_empty_reply_is_receipt_only_not_engineering_approval(qt_app, e
         assert report['detail_evidence_graph']['quantity_approval_count'] == 0
     finally:
         dialog.close()
+
+
+def test_multidiscipline_gap_review_is_readonly_and_never_approves_boq(qt_app, engineering_report):
+    report = deepcopy(engineering_report)
+    row = {
+        'coverage_id': 'PDF001:p1:family:mechanical',
+        'document_id': 'PDF001', 'page': 1,
+        'source_pdf_sha256': 'a'*64,
+        'candidate_family': 'mechanical', 'sheet_kind': 'UNKNOWN_SHEET_KIND',
+        'status': 'UNRESOLVED_CANDIDATE_FAMILY_NO_MEMBER_RECONCILIATION',
+        'source_region_ids': ['PDF001:p1:r1:c1'],
+        'unassigned_visual_region_ids': ['PDF001:p1:r2:c2'],
+        'blocked_region_ids': [],
+        'required_review': ['VERIFY_GOVERNING_SHEET_REVISION', 'REVIEW_DETAIL_REGIONS_AND_SCALES'],
+        'governing_revision_verified': False,
+        'detail_boundary_verified': False,
+        'physical_member_count': None,
+        'quantity_approval_count': 0, 'financially_payable': False,
+    }
+    report['multidiscipline_gap_register'] = {
+        'coverage_rows': [row], 'acceptance': 'PARTIAL_NO_GO',
+        'quantity_approval_count': 0, 'all_trades_reviewed': False,
+    }
+    before = deepcopy(report)
+    dialog = PDFSheetEvidenceDialog(report)
+    try:
+        review = dialog.graph_review
+        idx = _select(review, 'multidiscipline_gaps')
+        assert not idx.flags() & Qt.ItemFlag.ItemIsEditable
+        assert review.details.isReadOnly()
+        detail = review.details.toPlainText()
+        for word in ('mechanical', 'UNRESOLVED_CANDIDATE_FAMILY',
+                     'VERIFY_GOVERNING_SHEET_REVISION', 'PDF001:p1:r2:c2',
+                     'قابل پرداخت مالی — خیر'):
+            assert word in detail
+        assert report == before
+        assert report['detail_evidence_graph']['quantity_approval_count'] == 0
+    finally:
+        dialog.close()
