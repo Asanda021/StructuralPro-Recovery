@@ -24,6 +24,10 @@ _REASONS = {
     "PARALLEL_STROKES": "Three or more equally spaced parallel segments share one source path.",
     "BRANCHED_STROKES": "Branches, overlapping segments or non-endpoint contacts need manual separation.",
     "OPEN_CHAIN": "Stroke endpoints form an open chain. Its drawing role needs independent evidence.",
+    "DEGENERATE_QUAD_STROKE_REVIEW_ONLY": (
+        "Source Quad contains only two unique endpoints. Original four vertices "
+        "are preserved; topology uses a single segment, never a certified area or member."
+    ),
 }
 
 
@@ -58,8 +62,17 @@ def _operator_points(item):
             return (x0, y0), (x1, y0), (x1, y1), (x0, y1)
     elif op == "qu":
         ul, ur, ll, lr = (_coordinates(p, 2) for p in item[1])
-        if len({ul, ur, ll, lr}) == 4:
+        unique = {ul, ur, ll, lr}
+        if len(unique) == 4:
             return ul, ur, lr, ll
+        # PyMuPDF can return a zero-area Quad for CAD strokes: four
+        # source corners collapse onto the two ends of ONE line. Retain the
+        # operator and its four original vertices (below), but normalize
+        # topology to one explicit straight segment. No fake quad area.
+        if len(unique) == 2 and all(
+            (ul, ur, ll, lr).count(point) == 2 for point in unique
+        ):
+            return tuple(sorted(unique))
     raise ValueError("Invalid or degenerate PDF vector operator")
 
 
@@ -83,7 +96,7 @@ class _Stroke:
 def _stroke_parts(operator, points, owner):
     if operator == "c":
         return [_Stroke(owner, points[0], points[-1], _bounds(points), curved=True)]
-    if operator in {"re", "qu"}:
+    if operator == "re" or (operator == "qu" and len(points) == 4):
         points = (*points, points[0])
     return [_Stroke(owner, a, b, _bounds((a, b))) for a, b in pairwise(points)]
 
@@ -248,6 +261,9 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
         "rotation": page.rotation, "coordinate_space": _SPACE, "source_path_count": None,
         "source_operator_count": None, "source_operators_accounted_for": False,
         "group_count": 0, "groups": [], "unresolved_operators": [], "unresolved_paths": [],
+        "source_degenerate_operator_count": 0,
+        "source_degenerate_operator_ids": [],
+        "source_degenerate_quads_review_required": False,
         "detail_boundary_verified": False, "physical_member_count": None,
         "quantity_approval_count": 0, "financially_payable": False,
     }
@@ -294,10 +310,27 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
                     **record, "status": "BLOCKED", "reason": "Unsupported or invalid vector operator.",
                 })
                 continue
+            geometry_quality = "EXACT_OPERATOR_GEOMETRY"
+            original_quad = None
+            if op == "qu" and len(points) == 2:
+                # Never discard the source four-corner record, even though
+                # it collapses into a 2-point zero-area stroke.
+                original_quad = [list(_coordinates(p, 2)) for p in item[1]]
+                geometry_quality = "DEGENERATE_QUAD_STROKE_REVIEW_ONLY"
+                out["source_degenerate_operator_ids"].append(record["source_id"])
             strokes.extend(_stroke_parts(op, points, len(operators)))
             paint = source_paths[path_index-1].get("type")
             operators.append({**record, "points_pt": [list(p) for p in points],
+                              "source_quad_corners_pt": original_quad,
+                              "geometry_quality": geometry_quality,
                               "paint": paint if paint in ("s", "f", "fs", "sf") else None})
+    out["source_degenerate_operator_count"] = len(out["source_degenerate_operator_ids"])
+    out["source_degenerate_quads_review_required"] = bool(out["source_degenerate_operator_ids"])
+    # Independently compare the source operator manifest with accounted source
+    # operators; a missing/duplicated operator is never a successful intake.
+    if len(operators) + len(out["unresolved_operators"]) != out["source_operator_count"]:
+        return finish("BLOCKED", "BLOCKED_VECTOR_OPERATOR_MANIFEST_DISAGREEMENT",
+                      "The source operator count differs from parsed/rejected records.")
     parts, crossings = _connected_strokes(operators, strokes, max_pair_checks)
     if parts is None:
         return finish("BLOCKED", "BLOCKED_VECTOR_TOPOLOGY_PAIR_BUDGET",
@@ -312,7 +345,12 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
         box = _bounds(p for i in ids for p in operators[i]["points_pt"])
         role = _disposition(connected, degree, bounds, box, crossing=part_index in crossings,
                             parallel=all(i in parallels for i in ids))
-        if role == "OPEN_CHAIN" and any(w["paint"] in ("f", "fs", "sf") for w in witnesses):
+        if any(w["geometry_quality"] == "DEGENERATE_QUAD_STROKE_REVIEW_ONLY"
+               for w in witnesses):
+            # Even if nearby strokes form a plausible contour, the origin
+            # includes a degenerate operator. Do not infer a valid section.
+            role = "DEGENERATE_QUAD_STROKE_REVIEW_ONLY"
+        elif role == "OPEN_CHAIN" and any(w["paint"] in ("f", "fs", "sf") for w in witnesses):
             role = "FILL_BOUNDARY_UNRESOLVED"
         reference = witnesses[0]
         candidate_id = f"{prefix}:topology{reference['path_index']}.{reference['operator_index']}"
@@ -333,11 +371,15 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
         return finish("BLOCKED", "BLOCKED_VECTOR_TOPOLOGY_ENCLOSURE_BUDGET",
                       "Containment budget exceeded. No partial connected groups are retained.")
     out["group_count"] = len(out["groups"])
-    out["source_operators_accounted_for"] = True
+    out["source_operators_accounted_for"] = not incomplete
     if incomplete:
         return finish("BLOCKED", "BLOCKED_UNSUPPORTED_VECTOR_OPERATORS",
                       "Unsupported or unreadable vector data remains in the source ledger.")
     if not operators:
         return finish("EXAMINED", "NO_VECTOR_PATHS", "No vector operators were present in the page snapshot.")
+    if out["source_degenerate_quads_review_required"]:
+        return finish("UNRESOLVED", "DEGENERATE_QUAD_STROKES_ACCOUNTED_FOR",
+                      "All source operators were indexed; collapsed zero-area Quads require "
+                      "manual geometry interpretation and cannot certify areas or members.")
     return finish("UNRESOLVED", "VECTOR_TOPOLOGY_CANDIDATES_INDEXED",
                   "Stroke topology is available. Verify the drawing role and semantic boundary.")
