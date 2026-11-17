@@ -510,8 +510,11 @@ class PDFDetailGraphReview(QWidget):
         else:
             self._designer_reply_receipt = response
             self.designer_reply_status.setText(
-                f"{response['received_evidence_count']} فایل/ارجاع شاهد بررسی شد؛ "
-                'صرفاً دریافت و یکسانی بایت‌ها کنترل شده است، نه اصالت یا تأیید مهندسی. '
+                f"{response['received_evidence_count']} شاهد دریافت شد؛ "
+                f"{response['questions_with_all_evidence_received']} درخواست با همه کدهای مدرک، "
+                f"{response['questions_partially_received']} ناقص، "
+                f"{response['questions_still_without_response']} بدون پاسخ. "
+                'کامل بودن کدها فقط رسید دریافت است، نه اصالت یا تأیید مهندسی. '
                 'همه اعضا و متره‌ها همچنان مسدود هستند.'
             )
         self.designer_reply_status.show()
