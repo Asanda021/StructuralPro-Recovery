@@ -140,6 +140,13 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             })
             continue
         operators_seen = set()
+        degenerate_seen = set()
+        expected_degenerate = topology.get("source_degenerate_operator_ids", [])
+        if (not isinstance(expected_degenerate, list) or
+                len(expected_degenerate) != len(set(expected_degenerate)) or
+                topology.get("source_degenerate_operator_count", 0) != len(expected_degenerate) or
+                topology.get("source_degenerate_quads_review_required", False) != bool(expected_degenerate)):
+            raise ValueError("Invalid or duplicated degenerate Quad source manifest")
         path_to_bbox = {}
         bbox_to_components = defaultdict(set)
         for item in bbox_groups:
@@ -182,6 +189,23 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                     raise ValueError("Missing, repeated or foreign PDF vector operator")
                 operators_seen.add(ident)
                 bbox_links.add(path_to_bbox[ident[0]])
+                if op.get("geometry_quality") == "DEGENERATE_QUAD_STROKE_REVIEW_ONLY":
+                    corners = op.get("source_quad_corners_pt")
+                    points = op.get("points_pt")
+                    if (op.get("operator") != "qu" or
+                            not isinstance(corners, list) or len(corners) != 4 or
+                            not isinstance(points, list) or len(points) != 2 or
+                            not all(isinstance(p, list) and len(p) == 2 for p in corners)
+                            or not all(isinstance(p, list) and len(p) == 2 for p in points)):
+                        raise ValueError("Missing collapsed Quad source coordinates")
+                    corners2 = [tuple(p) for p in corners]
+                    ends = {tuple(p) for p in points}
+                    if (len(ends) != 2 or set(corners2) != ends or
+                            any(corners2.count(end) != 2 for end in ends)):
+                        raise ValueError("Collapsed Quad does not match original source")
+                    degenerate_seen.add(op["source_id"])
+                elif op.get("geometry_quality") not in (None, "EXACT_OPERATOR_GEOMETRY"):
+                    raise ValueError("Unknown operator geometry quality")
             for bbox_id in bbox_links:
                 bbox_to_components[bbox_id].add(cid)
             near_titles = sorted(aid for aid, anchor_box in titles[key]
@@ -204,15 +228,20 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             if len(components) > _MAX_COMPONENTS:
                 raise ValueError("Operator component review budget exhausted")
         if (len(operators_seen) != topology.get("source_operator_count") or
-                len(top_groups) != topology.get("group_count")):
+                len(top_groups) != topology.get("group_count") or
+                degenerate_seen != set(expected_degenerate)):
             raise ValueError("Independent PDF vector operators not fully accounted for")
         page_checks.append({
             "document_id": doc, "page": page, "source_pdf_sha256": hashes[doc],
-            "status": "REVIEW_OPEN_OPERATOR_COMPONENTS_ACCOUNTED_FOR",
+            "status": ("REVIEW_OPEN_DEGENERATE_QUAD_OPERATORS_ACCOUNTED_FOR"
+                       if degenerate_seen else "REVIEW_OPEN_OPERATOR_COMPONENTS_ACCOUNTED_FOR"),
+            "source_degenerate_operator_count": len(degenerate_seen),
+            "source_degenerate_operator_ids": sorted(degenerate_seen),
             "operator_component_count": len(top_groups),
             "recorded_component_count": len(top_groups),
             "bbox_group_count": len(bbox_groups),
             "geometry_coverage_verified": True,
+            "source_geometry_semantics_verified": False,
             "detail_boundaries_verified": False, "financially_payable": False,
         })
         # Each title or bbox group can refer to multiple distinct operator
