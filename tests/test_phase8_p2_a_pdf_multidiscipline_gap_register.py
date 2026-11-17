@@ -137,3 +137,42 @@ def test_unknown_discipline_hint_survives_in_unclassified_remainder(tmp_path):
                      and r["candidate_family"] == "UNCLASSIFIED_OR_OTHER_TRADES")
     assert remainder["required_review"]
     assert ledger["all_trades_reviewed"] is False
+
+
+def test_foreign_unassigned_zone_page_is_never_inherited_by_another_sheet(tmp_path):
+    report = _report(tmp_path)
+    coverage = deepcopy(report["sheet_detail_inventory"])
+    index = deepcopy(report["detail_object_index"])
+    original_zone = next(z for z in coverage["region_inventory"]
+                         if z["document_id"] == "PDF001" and z["page"] == 1)
+    index["unassigned_visual_regions"].append({
+        "region_id": original_zone["region_id"],
+        "document_id": "PDF002", "page": 2,
+        "status": "UNRESOLVED_UNLABELED_VISUAL_REGION",
+        "financially_payable": False,
+    })
+    with pytest.raises(ValueError, match="Unknown visual evidence"):
+        build_pdf_multidiscipline_gap_register(coverage, index)
+
+
+def test_candidate_region_must_be_in_the_same_source_sheet(tmp_path):
+    report = _report(tmp_path)
+    coverage = deepcopy(report["sheet_detail_inventory"])
+    index = deepcopy(report["detail_object_index"])
+    assert index["detail_candidates"]
+    foreign = next(z for z in coverage["region_inventory"] if
+                   (z["document_id"], z["page"]) !=
+                   (index["detail_candidates"][0]["document_id"],
+                    index["detail_candidates"][0]["page"]))
+    index["detail_candidates"][0]["region_ids"] = [foreign["region_id"]]
+    with pytest.raises(ValueError, match="foreign region"):
+        build_pdf_multidiscipline_gap_register(coverage, index)
+
+
+def test_malformed_candidate_family_list_is_not_accepted(tmp_path):
+    report = _report(tmp_path)
+    coverage = deepcopy(report["sheet_detail_inventory"])
+    index = deepcopy(report["detail_object_index"])
+    index["detail_candidates"][0]["family_candidates"] = "mechanical"
+    with pytest.raises(ValueError, match="malformed family"):
+        build_pdf_multidiscipline_gap_register(coverage, index)
