@@ -27,9 +27,15 @@ def _box(raw):
         value = tuple(float(x) for x in raw)
     except (ValueError, TypeError):
         raise ValueError("Invalid operator component coordinates") from None
-    if not all(isfinite(x) for x in value) or value[0] >= value[2] or value[1] >= value[3]:
+    if not all(isfinite(x) for x in value) or value[0] > value[2] or value[1] > value[3]:
         raise ValueError("Invalid operator component rectangle")
-    return value
+    # A perfectly horizontal/vertical CAD stroke has a zero-height/width
+    # topology envelope. Keep it as source evidence, without inventing area.
+    x0, y0, x1, y1 = value
+    return (x0 - .01 if x0 == x1 else x0,
+            y0 - .01 if y0 == y1 else y0,
+            x1 + .01 if x0 == x1 else x1,
+            y1 + .01 if y0 == y1 else y1)
 
 
 def _distance(a, b):
@@ -97,6 +103,11 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
         title_ids.add(aid)
         titles[key].append((aid, _box(item.get("bbox_pt"))))
 
+    detail_titles = {
+        obj.get("title_anchor_id"): obj
+        for obj in detail_index.get("detail_candidates", ())
+        if obj.get("kind") == "EXPLICIT_DETAIL_TITLE"
+    }
     components = []
     page_checks = []
     seen_components = set()
@@ -222,16 +233,16 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                 status = "UNRESOLVED_COMPONENT_WITHOUT_EXPLICIT_TITLE"
             elif len(tids) != 1 or near_owner_count[tids[0]] != 1:
                 status = "BLOCKED_AMBIGUOUS_TITLE_COMPONENT_CORRESPONDENCE"
+            elif (tids[0] not in detail_titles or
+                  detail_titles[tids[0]].get("status") not in
+                  ("SINGLE_FAMILY_DETAIL_TITLE_CANDIDATE",
+                   "MULTI_FAMILY_DETAIL_TITLE_CANDIDATE")):
+                status = "BLOCKED_TITLE_NOT_ISOLATED_OR_SOURCE_UNVERIFIED"
             else:
                 status = "PROPOSED_SINGLE_OPERATOR_COMPONENT_NEAR_UNIQUE_TITLE"
                 row["proposed_title_anchor_id"] = tids[0]
             row["status"] = status
 
-    detail_titles = {
-        obj.get("title_anchor_id"): obj
-        for obj in detail_index.get("detail_candidates", ())
-        if obj.get("kind") == "EXPLICIT_DETAIL_TITLE"
-    }
     for row in components:
         title_id = row["proposed_title_anchor_id"]
         row["proposed_title_candidate_id"] = (detail_titles[title_id]["candidate_id"]
@@ -258,8 +269,11 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
         if sheet_map[key].get("sheet_kind") not in _PLAN_KINDS:
             continue
         tag = marker.get("tag")
+        if marker.get("physical_instances_verified") is not False:
+            raise ValueError("Plan member was promoted without independent proof")
         if not isinstance(tag, str) or not _TAG.fullmatch(tag):
             continue
+        _box(marker.get("mark_bbox_pt"))
         candidates = [obj for obj in details
                       if obj.get("document_id") == key[0] and obj.get("page") != key[1]
                       and obj.get("type_tag") == tag]
