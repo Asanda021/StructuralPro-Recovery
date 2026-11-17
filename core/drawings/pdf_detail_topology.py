@@ -260,6 +260,7 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
         "document_id": document_id, "page": page_number, "page_bbox_pt": list(bounds),
         "rotation": page.rotation, "coordinate_space": _SPACE, "source_path_count": None,
         "source_operator_count": None, "source_operators_accounted_for": False,
+        "all_source_operators_decoded": False,
         "group_count": 0, "groups": [], "unresolved_operators": [], "unresolved_paths": [],
         "source_degenerate_operator_count": 0,
         "source_degenerate_operator_ids": [],
@@ -371,7 +372,10 @@ def scan_detail_topology(page, *, document_id: str, page_number: int, paths=None
         return finish("BLOCKED", "BLOCKED_VECTOR_TOPOLOGY_ENCLOSURE_BUDGET",
                       "Containment budget exceeded. No partial connected groups are retained.")
     out["group_count"] = len(out["groups"])
-    out["source_operators_accounted_for"] = not incomplete
+    # Accounted-for includes explicitly rejected operators. Decoded means
+    # every source operator has a usable topology representation.
+    out["source_operators_accounted_for"] = True
+    out["all_source_operators_decoded"] = not incomplete
     if incomplete:
         return finish("BLOCKED", "BLOCKED_UNSUPPORTED_VECTOR_OPERATORS",
                       "Unsupported or unreadable vector data remains in the source ledger.")
