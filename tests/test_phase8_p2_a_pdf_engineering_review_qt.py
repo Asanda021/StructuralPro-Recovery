@@ -474,6 +474,22 @@ def test_designer_empty_reply_is_receipt_only_not_engineering_approval(qt_app, e
         assert review._designer_reply_receipt['questions_with_all_evidence_received'] == 0
         assert review._designer_reply_receipt['questions_partially_received'] == 0
         assert '3 بدون پاسخ' in review.designer_reply_status.text()
+        export = review.findChild(QPushButton, 'PDFDetailExportDesignerReplyCrosswalk')
+        assert export is not None and export.isEnabled()
+        destination = tmp_path / 'private-crosswalk.json'
+        monkeypatch.setattr('app.pdf_detail_graph_review.QFileDialog.getSaveFileName',
+                            lambda *args, **kwargs: (str(destination), 'JSON (*.json)'))
+        export.click()
+        import json
+        crosswalk = json.loads(destination.read_text('utf-8'))
+        assert len(crosswalk['evidence_crosswalk']) == 3
+        assert crosswalk['approved_financial_rows'] == 0
+        assert crosswalk['evidence_crosswalk'][0]['span_axes_unverified'] == 'A-B'
+        assert 'متره مالی' in review.designer_reply_status.text()
+        original = destination.read_bytes()
+        export.click()
+        assert 'بازنویسی' in review.designer_reply_status.text()
+        assert destination.read_bytes() == original
         assert 'هیچ' not in review.designer_reply_status.text() or 'متره' in review.designer_reply_status.text()
         assert report == unchanged
         assert report['detail_evidence_graph']['quantity_approval_count'] == 0
