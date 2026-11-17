@@ -100,15 +100,41 @@ _TABLES = {
         ('ناحیه تصویری بی‌نام', 'unassigned_visual_region_ids'),
         ('شواهد ناقص', 'blocked_region_ids'),
     )),
+    'operator_components': ('تطبیق مستقل اجزای هندسی دیتیل', (
+        ('سند', 'document_id'), ('صفحه', 'page'), ('نقش هندسی', 'stroke_topology_role'),
+        ('وضعیت تطبیق', 'status'), ('کادر هندسه (pt)', 'bbox_pt'),
+        ('عنوان نامزد', 'proposed_title_anchor_id'),
+        ('گروه‌های مرزی', 'bbox_group_candidate_ids'),
+    )),
+    'plan_detail_type_only_references': ('ارتباط احتمالی پلان با دیتیل', (
+        ('شناسه پلان', 'plan_document_id'), ('صفحه پلان', 'plan_page'),
+        ('نوع پلان', 'plan_sheet_kind'), ('تیپ چاپی', 'printed_type_tag'),
+        ('نتیجه', 'status'), ('نامزدهای دیتیل', 'candidate_detail_type_ids'),
+        ('اجزای هندسی مجاور', 'nearby_operator_component_ids'),
+    )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps'}
+_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps', 'operator_components', 'plan_detail_type_only_references'}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
 )
 
 _DETAIL_FIELDS = {
+    'operator_components': (('شناسه هندسه', 'component_id'),
+                            ('هش PDF مرجع', 'source_pdf_sha256'),
+                            ('شناسه عملگرها', 'source_operator_ids'),
+                            ('شناسه عنوان', 'proposed_title_candidate_id'),
+                            ('مرز دیتیل معتبر', 'detail_boundary_verified'),
+                            ('ارجاع اختصاصی دهانه', 'span_specific_detail_verified'),
+                            ('عضو فیزیکی معتبر', 'physical_member_verified'),
+                            ('قابل پرداخت مالی', 'financially_payable')),
+    'plan_detail_type_only_references': (('هش PDF پلان', 'plan_pdf_sha256'),
+                                         ('کادر نشان تیپ', 'plan_mark_bbox_pt'),
+                                         ('ارجاع پلان به دیتیل', 'plan_to_section_detail_verified'),
+                                         ('ارتباط اختصاصی دهانه', 'span_specific_detail_verified'),
+                                         ('عضو فیزیکی معتبر', 'physical_member_verified'),
+                                         ('قابل پرداخت مالی', 'financially_payable')),
     'multidiscipline_gaps': (('شناسه پوشش', 'coverage_id'),
                              ('هش PDF مرجع', 'source_pdf_sha256'),
                              ('شناسه‌های نواحی', 'source_region_ids'),
@@ -310,6 +336,12 @@ class PDFDetailGraphReview(QWidget):
         gap_register = report.get('multidiscipline_gap_register')
         if isinstance(gap_register, dict):
             rows_by_table['multidiscipline_gaps'] = gap_register.get('coverage_rows', [])
+        component_review = report.get('operator_component_review')
+        if isinstance(component_review, dict):
+            rows_by_table['operator_components'] = component_review.get('operator_components', [])
+            rows_by_table['plan_detail_type_only_references'] = component_review.get(
+                'plan_detail_type_only_references', []
+            )
 
         layout = QVBoxLayout(self)
         receipt = QLabel(
