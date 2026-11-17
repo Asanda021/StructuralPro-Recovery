@@ -9,7 +9,7 @@ from pathlib import Path
 from core.drawings.pdf_revision_preflight import build_pdf_revision_register_draft
 from core.drawings.pdf_designer_rfi_gate import (
     build_designer_rfi_packet, inspect_designer_reply, load_designer_reply,
-    write_designer_rfi_package,
+    write_designer_rfi_package, write_designer_reply_crosswalk,
 )
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
@@ -337,6 +337,13 @@ class PDFDetailGraphReview(QWidget):
         self.designer_reply_status.hide()
         layout.addWidget(self.designer_reply_status)
         self._designer_reply_receipt = None
+        self.designer_crosswalk_button = QPushButton(
+            'ذخیره تطبیق سؤال، شیت و مدرک طراح (فقط بررسی، JSON)', self
+        )
+        self.designer_crosswalk_button.setObjectName('PDFDetailExportDesignerReplyCrosswalk')
+        self.designer_crosswalk_button.setEnabled(False)
+        self.designer_crosswalk_button.clicked.connect(self._export_designer_reply_crosswalk)
+        layout.addWidget(self.designer_crosswalk_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         if attach_revision_register is not None:
             self.attach_button = QPushButton('پیوست ثبت نسخهٔ نقشه (JSON)')
@@ -506,9 +513,12 @@ class PDFDetailGraphReview(QWidget):
                 packet, load_designer_reply(source), attachment_directory=source.parent,
             )
         except (OSError, ValueError, KeyError) as exc:
+            self._designer_reply_receipt = None
+            self.designer_crosswalk_button.setEnabled(False)
             self.designer_reply_status.setText('پاسخ رد شد؛ گراف قبلی تغییری نکرد: ' + str(exc))
         else:
             self._designer_reply_receipt = response
+            self.designer_crosswalk_button.setEnabled(True)
             self.designer_reply_status.setText(
                 f"{response['received_evidence_count']} شاهد دریافت شد؛ "
                 f"{response['questions_with_all_evidence_received']} درخواست با همه کدهای مدرک، "
@@ -516,6 +526,29 @@ class PDFDetailGraphReview(QWidget):
                 f"{response['questions_still_without_response']} بدون پاسخ. "
                 'کامل بودن کدها فقط رسید دریافت است، نه اصالت یا تأیید مهندسی. '
                 'همه اعضا و متره‌ها همچنان مسدود هستند.'
+            )
+        self.designer_reply_status.show()
+
+    def _export_designer_reply_crosswalk(self):
+        if self._designer_reply_receipt is None:
+            self.designer_reply_status.setText('هیچ رسید پاسخ معتبر برای خروجی وجود ندارد.')
+            self.designer_reply_status.show()
+            return
+        name, _ = QFileDialog.getSaveFileName(
+            self, 'ذخیره تطبیق خصوصی ارجاعات پاسخ طراح',
+            'PRIVATE_DESIGNER_REPLY_CROSSWALK.json', 'JSON (*.json)'
+        )
+        if not name:
+            return
+        try:
+            packet = self._current_designer_rfi_packet()
+            write_designer_reply_crosswalk(packet, self._designer_reply_receipt, name)
+        except (OSError, ValueError, KeyError) as exc:
+            self.designer_reply_status.setText('تطبیق ذخیره نشد؛ فایل موجود بازنویسی نمی‌شود: ' + str(exc))
+        else:
+            self.designer_reply_status.setText(
+                'تطبیق منبع و ارجاعات PDF پاسخ در فایل خصوصی ثبت شد، نه تأیید '
+                'هویت عضو، اتصال دهانه، ابعاد، نسخه حاکم یا متره مالی.'
             )
         self.designer_reply_status.show()
 
