@@ -269,3 +269,26 @@ def test_invalid_pdf_with_matching_bytes_is_gracefully_rejected(tmp_path):
     reply = _reply(p, fake)
     with pytest.raises(ValueError, match="Unreadable designer PDF"):
         inspect_designer_reply(p, reply, attachment_directory=tmp_path)
+
+
+@pytest.mark.parametrize("existing", [
+    "PRIVATE_ENGINEERING_RFI_PACKET.json", "DESIGNER_RESPONSE_TEMPLATE.json",
+    "PRIVATE_RFI_QUESTIONS.csv", "PRIVATE_RFI_TO_STRUCTURAL_DESIGNER_FA.md",
+])
+def test_package_writer_refuses_overwrite_before_creating_other_outputs(tmp_path, existing):
+    p = packet()
+    original = tmp_path / existing
+    original.write_text("PREVIOUS PRIVATE DATA", encoding="utf-8")
+    with pytest.raises(FileExistsError, match="may not be overwritten"):
+        write_designer_rfi_package(p, tmp_path)
+    assert original.read_text(encoding="utf-8") == "PREVIOUS PRIVATE DATA"
+    assert sorted(x.name for x in tmp_path.iterdir()) == [existing]
+
+
+def test_package_writer_cannot_replace_existing_complete_package(tmp_path):
+    p = packet()
+    write_designer_rfi_package(p, tmp_path)
+    before = {x.name: x.read_bytes() for x in tmp_path.iterdir()}
+    with pytest.raises(FileExistsError):
+        write_designer_rfi_package(p, tmp_path)
+    assert {x.name: x.read_bytes() for x in tmp_path.iterdir()} == before
