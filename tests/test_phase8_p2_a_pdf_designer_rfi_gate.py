@@ -217,3 +217,55 @@ def test_no_reply_has_per_code_coverage_without_auto_acceptance():
     assert receipt["questions_partially_received"] == 0
     assert receipt["questions_still_without_response"] == 3
     assert receipt["acceptance"] == "PARTIAL_NO_GO"
+
+
+def test_same_document_reference_with_different_pdf_bytes_is_rejected(tmp_path):
+    p = packet()
+    first = _pdf(tmp_path, "first.pdf")
+    second = tmp_path / "second.pdf"
+    with pymupdf.open() as document:
+        page = document.new_page()
+        page.insert_text((35, 35), "different certified-sheet bytes")
+        document.save(second)
+    reply = _reply(p, first)
+    other = deepcopy(reply["responses"][0])
+    other.update(
+        evidence_code="GOVERNING_DRAWING_ISSUE",
+        attachment_name=second.name,
+        attachment_sha256=sha256(second.read_bytes()).hexdigest(),
+    )
+    reply["responses"].append(other)
+    with pytest.raises(ValueError, match="Conflicting PDF files"):
+        inspect_designer_reply(p, reply, attachment_directory=tmp_path)
+    # Separate document IDs may legitimately use different sheet bytes.
+    other["document_reference"] = "STRUCT-DRG-002"
+    receipt = inspect_designer_reply(p, reply, attachment_directory=tmp_path)
+    assert receipt["received_evidence_count"] == 2
+    assert receipt["approved_financial_rows"] == 0
+
+
+def test_pdf_parser_uses_exact_hash_checked_bytes_not_a_reopened_path(tmp_path, monkeypatch):
+    p = packet()
+    document = _pdf(tmp_path)
+    original_open = pymupdf.open
+    checked = []
+    def guarded_open(*args, **kwargs):
+        assert args == (), "PDF parser must not reopen an unverified path"
+        assert kwargs.get("filetype") == "pdf"
+        assert kwargs.get("stream") == document.read_bytes()
+        checked.append(True)
+        return original_open(*args, **kwargs)
+    monkeypatch.setattr(pymupdf, "open", guarded_open)
+    receipt = inspect_designer_reply(p, _reply(p, document), attachment_directory=tmp_path)
+    assert checked == [True]
+    assert receipt["received_evidence_count"] == 1
+    assert receipt["approved_financial_rows"] == 0
+
+
+def test_invalid_pdf_with_matching_bytes_is_gracefully_rejected(tmp_path):
+    p = packet()
+    fake = tmp_path / "issued.pdf"
+    fake.write_bytes(b"%PDF-1.7\\nnot a real or parseable PDF\\n")
+    reply = _reply(p, fake)
+    with pytest.raises(ValueError, match="Unreadable designer PDF"):
+        inspect_designer_reply(p, reply, attachment_directory=tmp_path)
