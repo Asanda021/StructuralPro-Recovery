@@ -11,6 +11,8 @@ from collections import Counter, defaultdict
 from math import isfinite
 import re
 
+from core.drawings.pdf_component_boundaries import build_pdf_component_boundary_page
+from core.drawings.pdf_component_source_links import build_pdf_component_source_links
 from core.drawings.pdf_type_word_witness import pdf_type_mark_family
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -78,14 +80,17 @@ def _page_word_witnesses(summary, key, digest):
     """Preserve localized text sources without promoting OCR or glyph ambiguity."""
     doc, page = key
     words = {}
-    for field, method in (
-        ("type_word_index", "NATIVE_TYPE_WORD"),
-        ("vector_type_word_index", "VECTOR_STROKE_LABEL"),
-        ("rendered_type_word_index", "RENDERED_OCR"),
+    for field, entries, method in (
+        ("type_word_index", "type_word_witnesses", "NATIVE_TYPE_WORD"),
+        ("vector_type_word_index", "type_word_witnesses", "VECTOR_STROKE_LABEL"),
+        ("vector_type_word_index", "rejections", "VECTOR_STROKE_REJECTION"),
+        ("rendered_type_word_index", "type_word_witnesses", "RENDERED_OCR"),
     ):
         index = summary.get(field) or {}
-        for witness in index.get("type_word_witnesses", ()):
+        for position, witness in enumerate(index.get(entries, ()), 1):
             ident = witness.get("witness_id")
+            if method == "VECTOR_STROKE_REJECTION" and isinstance(ident, str):
+                ident = f"{ident}:rejected{position}"
             ordinal = witness.get("source_word_index")
             if (ident is None and method == "RENDERED_OCR"
                     and type(ordinal) is int and ordinal > 0):
@@ -103,7 +108,9 @@ def _page_word_witnesses(summary, key, digest):
                 "type_tag": witness.get("type_tag"),
                 "source_token": witness.get("raw_token") or witness.get("source_token"),
                 "source_operator_ids": witness.get("source_operator_ids", []),
+                "title_anchor_ids": witness.get("title_anchor_ids", []),
                 "glyph_interpretations": witness.get("glyph_interpretations", []),
+                "glyph_ambiguity_reason": witness.get("reason"),
                 "financially_payable": False,
             })
     return tuple(words.values())
@@ -238,6 +245,8 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
     page_checks = []
     classifications = []
     text_witnesses = []
+    boundary_components = []
+    boundary_pages = []
     seen_components = set()
     for key in sorted(expected):
         doc, page = key
@@ -260,6 +269,13 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                    grouping.get("all_source_paths_grouped") is not True or
                    sheet_map[key].get("coverage_status") == "BLOCKED")
         if blocked:
+            boundary_rows, boundary_page = build_pdf_component_boundary_page(
+                topology, document_id=doc, page=page, digest=digest, sheet_kind=sheet_kind,
+                path_groups={}, paint_sequences=summaries[key].get("source_paint_sequences", ()),
+                source_blocked=True,
+            )
+            boundary_components.extend(boundary_rows)
+            boundary_pages.append(boundary_page)
             classifications.extend(_classify_source_regions(
                 regions_by_page[key], (), words, key, digest, sheet_kind, source_blocked=True))
             page_checks.append({
@@ -371,6 +387,13 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                 len(top_groups) != topology.get("group_count") or
                 degenerate_seen != set(expected_degenerate)):
             raise ValueError("Independent PDF vector operators not fully accounted for")
+        boundary_rows, boundary_page = build_pdf_component_boundary_page(
+            topology, document_id=doc, page=page, digest=digest, sheet_kind=sheet_kind,
+            path_groups=path_to_bbox, paint_sequences=summaries[key].get("source_paint_sequences", ()),
+            words=tuple(word for _, word in words), axis_witness=summaries[key].get("drawing_axis_witness"),
+        )
+        boundary_components.extend(boundary_rows)
+        boundary_pages.append(boundary_page)
         page_checks.append({
             "document_id": doc, "page": page, "source_pdf_sha256": hashes[doc],
             "status": ("REVIEW_OPEN_DEGENERATE_QUAD_OPERATORS_ACCOUNTED_FOR"
@@ -478,6 +501,10 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             "financially_payable": False,
         })
     states = Counter(c["status"] for c in components)
+    links = build_pdf_component_source_links(
+        boundary_components, detail_titles.values(), text_witnesses, summaries,
+        {key: hashes[key[0]] for key in expected},
+    )
     return {
         "status": "PARTIAL_OPERATOR_COMPONENT_AND_TYPE_ONLY_REVIEW",
         "page_count": len(expected), "page_reviews": page_checks,
@@ -489,6 +516,11 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
         "region_classifications": classifications,
         "region_classification_counts": dict(Counter(row["classification_status"] for row in classifications)),
         "classification_text_witnesses": text_witnesses,
+        "boundary_pages": boundary_pages,
+        "boundary_components": boundary_components,
+        "boundary_component_status_counts": dict(Counter(r["classification_status"] for r in boundary_components)),
+        "component_source_links": links,
+        "component_source_link_status_counts": dict(Counter(r["status"] for r in links)),
         "plan_detail_type_only_candidate_count": len(plan_links),
         "plan_detail_type_only_references": plan_links,
         "all_source_pages_accounted_for": len(page_checks) == len(expected),

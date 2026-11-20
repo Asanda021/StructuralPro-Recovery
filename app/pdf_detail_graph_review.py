@@ -117,6 +117,14 @@ _TABLES = {
         ('خانوادهٔ پیشنهادی', 'family_candidates'), ('مبنای طبقه‌بندی', 'family_basis'),
         ('عنوان شاهد', 'title_preview'), ('وضعیت بررسی', 'status'),
     )),
+    'boundary_components': ('مرزهای برداری و غیرعضوها', (
+        ('سند', 'document_id'), ('صفحه', 'page'), ('شناسه جزء', 'component_id'),
+        ('وضعیت مرز', 'classification_status'), ('نقش هندسی', 'boundary_role'), ('علت', 'reason_code'),
+    )),
+    'component_source_links': ('دفتر پیوند جزء، عنوان و تیپ', (
+        ('سند', 'document_id'), ('صفحه', 'page'), ('شناسه جزء', 'component_id'),
+        ('وضعیت پیوند', 'status'), ('علت', 'reason_code'), ('تیپ', 'type_tag'), ('عنوان', 'title_text'),
+    )),
     'plan_detail_type_only_references': ('ارتباط احتمالی پلان با دیتیل', (
         ('شناسه پلان', 'plan_document_id'), ('صفحه پلان', 'plan_page'),
         ('نوع پلان', 'plan_sheet_kind'), ('تیپ چاپی', 'printed_type_tag'),
@@ -129,7 +137,7 @@ _ENGINEERING_REVIEWS = {
     'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews',
     'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps',
     'operator_components', 'plan_detail_type_only_references', 'component_source_regions',
-    'component_text_candidates',
+    'component_text_candidates', 'boundary_components', 'component_source_links',
 }
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
@@ -153,6 +161,15 @@ _DETAIL_FIELDS = {
                                  ('بررسی لازم', 'review_required')),
     'component_text_candidates': (('هش PDF مرجع', 'source_pdf_sha256'), ('شناسهٔ نامزد', 'candidate_id'),
                                   ('شناسهٔ نواحی', 'region_ids'), ('علت بررسی', 'reason')),
+    'boundary_components': (('هش PDF مرجع', 'source_pdf_sha256'), ('نقش شیت', 'sheet_kind'),
+                            ('کادر (pt)', 'bbox_pt'), ('شناسه عملگرهای اصلی', 'source_operator_ids'),
+                            ('گروه‌های توپولوژی', 'parent_component_ids'),
+                            ('گروه‌های تقریبی', 'bbox_group_candidate_ids'),
+                            ('وضعیت هم‌پوشانی', 'relation_flags'), ('شناسه شاهد نقش', 'role_witness_id')),
+    'component_source_links': (('هش PDF مرجع', 'source_pdf_sha256'), ('نقش شیت', 'sheet_kind'),
+                               ('شناسه پیوند', 'link_id'), ('دامنه پیوند', 'scope'),
+                               ('کادر جزء (pt)', 'bbox_pt'), ('شناسه عملگرهای اصلی', 'source_operator_ids'),
+                               ('مقیاس‌های چاپی شیت', 'printed_scale_denominators')),
     'plan_detail_type_only_references': (('هش PDF پلان', 'plan_pdf_sha256'),
                                          ('کادر نشان تیپ', 'plan_mark_bbox_pt'),
                                          ('ارجاع پلان به دیتیل', 'plan_to_section_detail_verified'),
@@ -238,6 +255,15 @@ _EVIDENCE_LABELS = {
     'OCCURRENCE_IDENTITY': 'شناسهٔ یکتای عضو اجرایی',
     'INDEPENDENT_AXIS': 'شاهد مستقل آکس‌بندی',
     'GOVERNING_REVISION': 'نسخهٔ حاکم سند',
+    'PLAN_AXIS_AND_LEVEL': 'آکس و تراز معتبر در پلان',
+    'SECTION_AND_SUPPORT_REFERENCE': 'ارجاع مقطع و تکیه‌گاه همین رخداد',
+    'INDEPENDENT_BOUNDARY_AND_DIMENSIONS': 'مرز و ابعاد از مدرک مستقل',
+    'EXPLICIT_LOCAL_DETAIL_TITLE_WITH_TYPE': 'عنوان صریح دیتیل و تیپ در همین نما',
+    'UNIQUE_TITLE_AND_DRAWING_SCOPE': 'مدرک مالکیت یکتای عنوان و دامنهٔ نما',
+    'SCALE_SCOPE_OF_THIS_DETAIL': 'تعیین دامنهٔ مقیاس همین دیتیل',
+    'ISSUED_SHEET_AND_DETAIL_ID': 'شناسهٔ ابلاغ‌شدهٔ شیت و دیتیل',
+    'INDEPENDENT_TYPE_WORD_IN_OUTLINE': 'نشان تیپ مستقل در داخل مرز',
+    'INDEPENDENT_GLYPH_AND_TYPE_REVIEW': 'بازبینی مستقل خوانش حرف و تیپ',
     'OCCURRENCE_DETAIL': 'دیتیل اجرایی این عضو',
     'INSTALLATION_LEVEL_RANGE': 'تراز ابتدا و انتهای نصب',
     'SECTION_DIMENSIONS': 'ابعاد مقطع',
@@ -271,8 +297,10 @@ _FOUNDATION_SHEETS = {
 
 _COMPONENT_STATUS_LABELS = {
     'CLASSIFIED_CANDIDATE': 'شناسایی پیشنهادی',
+    'CANDIDATE': 'مرز هندسی پیشنهادی',
     'AMBIGUOUS': 'مبهم، نیازمند بازبینی',
     'NON_MEMBER': 'شاهد غیرعضو',
+    'UNCLASSIFIED': 'نقش نامشخص',
 }
 
 
@@ -391,6 +419,9 @@ class PDFDetailGraphReview(QWidget):
                 self._component_text_sources = {
                     row['source_id']: row for row in component_review.get('classification_text_witnesses', ())
                 }
+            for name in ('boundary_components', 'component_source_links'):
+                if name in component_review:
+                    rows_by_table[name] = component_review[name]
         detail_index = report.get('detail_object_index')
         if isinstance(detail_index, dict) and 'detail_candidates' in detail_index:
             rows_by_table['component_text_candidates'] = detail_index['detail_candidates']
@@ -788,6 +819,8 @@ class PDFDetailGraphReview(QWidget):
 
     def _engineering_review_lines(self, key, record):
         lines = []
+        if key in {'boundary_components', 'component_source_links'}:
+            lines.extend(self._component_provenance_lines(record))
         if key in {'operator_components', 'component_source_regions', 'component_text_candidates'}:
             lines.append('تأیید مهندسی نشده | قابل پرداخت مالی — خیر')
             source = {
@@ -840,6 +873,29 @@ class PDFDetailGraphReview(QWidget):
         lines.extend(self._endpoint_lines(target_label, target_id))
         for axis_id in record.get('axis_node_ids', ()):
             lines.extend(self._endpoint_lines('شاهد آکس', axis_id))
+        return lines
+
+    def _component_provenance_lines(self, record):
+        lines = ['تأیید مهندسی نشده | قابل پرداخت مالی — خیر']
+        for path in record.get('source_paths', ()):
+            lines.append(f"مسیر {path['path_index']} | رنگ‌آمیزی {_display(path['paint'])} | ترتیب {_display(path['paint_sequence'])}")
+        source = {'document_id': record['document_id'], 'page': record['page'],
+                  'source_sha256': record['source_pdf_sha256']}
+        titles = [{**source, **title, 'kind': 'NATIVE_TITLE_BLOCK'}
+                  for title in record.get('nearby_title_witnesses', ())]
+        anchors = {word['source_id']: word for word in record.get('local_type_witnesses', ())}
+        for name in ('title_type_source', 'type_source'):
+            if word := record.get(name):
+                anchors[word['source_id']] = word
+        if word := self._component_text_sources.get(record.get('role_witness_id')):
+            anchors[word['source_id']] = word
+        words = [{**source, **word, 'kind': word['method'], 'anchor_id': word['source_id'],
+                  'raw_token': word.get('source_token'), 'source_ref': word['status']}
+                 for word in anchors.values()]
+        if titles or words:
+            lines.extend(self._anchor_lines('عنوان‌ها و شاهدهای تیپ', [*titles, *words]))
+        for requirement in record.get('required_evidence', ()):
+            lines.append(f'مدرک لازم — {_EVIDENCE_LABELS.get(requirement, requirement)} [{requirement}]')
         return lines
 
     def _populate_related_evidence(self, record):

@@ -264,6 +264,10 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
       'financially_payable':False}
     if include_topology:
         result['image_placements'] = image_placements
+        result['source_paint_sequences'] = [
+            seq if type(seq) is int and seq >= 0 else None
+            for seq in (path.get('seqno') for path in paths)
+        ]
         vector_source_blocked = bool({'BLOCKED_EXCESSIVE_VECTOR_PATHS', 'BLOCKED_VECTOR_EXTRACTION',
                                       'BLOCKED_INVALID_VECTOR_PATH_BBOX'} & set(extraction_errors))
         result['detail_topology'] = scan_detail_topology(

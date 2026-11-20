@@ -180,11 +180,13 @@ def inspect_pdf_sheet_set(
                 page_view_summaries.append({
                     'document_id': doc_id, 'page': number, **title_scope,
                 })
+                axis_witness = None
                 if title_scope.get('status') == 'EXPLICIT_SHEET_TITLE' and title_scope.get('sheet_kind') == 'axis_plan':
-                    beam_axis_grid_candidates.append(extract_pdf_axis_grid_witness(
+                    axis_witness = extract_pdf_axis_grid_witness(
                         page, document_id=doc_id, page_number=number,
                         source_sha256=digest, source_name=path.name,
-                    ))
+                    )
+                    beam_axis_grid_candidates.append(axis_witness)
                 if title_scope.get('status') == 'EXPLICIT_SHEET_TITLE' and title_scope.get('sheet_kind') == 'beam_layout_plan':
                     grids = [grid for grid in beam_axis_grid_candidates
                              if (grid['document_id'], grid['source_sha256']) == (doc_id, digest)
@@ -201,6 +203,8 @@ def inspect_pdf_sheet_set(
                     sheet_kind=title_scope.get('sheet_kind'), include_topology=True,
                 )
                 detail["sheet_declarations"] = read_pdf_page_declarations(page)
+                if axis_witness is not None:
+                    detail["drawing_axis_witness"] = axis_witness
                 if rendered_ocr and should_recover_rendered_labels(detail):
                     if ocr_attempts >= max_ocr_pages:
                         recovered = {
