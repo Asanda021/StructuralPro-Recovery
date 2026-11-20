@@ -12,7 +12,7 @@ import re
 
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _FAMILIES = frozenset((
-    "bracing", "beam", "column", "foundation", "slab_roof", "wall_opening",
+    "bracing", "beam", "column", "foundation", "grade_beam", "slab_roof", "wall_opening",
     "stair_ramp", "reinforcement_connection", "architecture_finishes",
     "mechanical", "electrical",
 ))

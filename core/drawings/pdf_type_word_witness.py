@@ -10,6 +10,23 @@ from math import isfinite
 import re
 
 TYPE_MARK = re.compile(r'^(BR|BP|SC|SW|C|B|F|T|W|S|P)[-–.]?([1-9][0-9]{0,2})$', re.I)
+_TYPE_FAMILIES = {'B': 'beam', 'C': 'column', 'F': 'foundation', 'SC': 'column',
+                  'SW': 'wall_opening', 'W': 'wall_opening', 'BR': 'bracing',
+                  'BP': 'reinforcement_connection'}
+
+
+def pdf_type_mark_family(tag: str, sheet_kind: str | None = None) -> tuple[str | None, str]:
+    """Return a family hypothesis and its scope for a normalized PDF type tag."""
+    match = TYPE_MARK.fullmatch(tag)
+    if match is None:
+        return None, 'TYPE_FAMILY_CONTEXT_REQUIRED'
+    prefix = match[1].upper()
+    if prefix == 'B' and sheet_kind == 'floor_preparation_plan':
+        return 'architecture_finishes', 'FLOOR_PREPARATION_MARK_CONTEXT'
+    if prefix == 'T' and sheet_kind in {'excavation_plan', 'foundation_plan'}:
+        return 'grade_beam', 'FOUNDATION_PHASE_MARK_CONTEXT'
+    family = _TYPE_FAMILIES.get(prefix)
+    return family, 'TYPE_PREFIX_CANDIDATE' if family else 'TYPE_FAMILY_CONTEXT_REQUIRED'
 
 
 def unrotated_page_bounds(page):

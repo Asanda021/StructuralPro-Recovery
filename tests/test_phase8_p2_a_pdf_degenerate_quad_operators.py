@@ -69,6 +69,13 @@ def test_two_page_intake_keeps_collapsed_quad_as_review_only(tmp_path):
     assert review["page_reviews"][1]["source_degenerate_operator_count"] == 2
     assert review["quantity_approval_count"] == 0
     assert review["physical_member_count"] is None
+    collapsed = [row for row in review["operator_components"] if row["source_degenerate_operator_ids"]]
+    assert len(collapsed) == 2
+    assert all(row["classification_status"] == "BLOCKED" and
+               row["classification_reason"] == "COLLAPSED_QUAD_STROKE_REVIEW_ONLY"
+               for row in collapsed)
+    assert {ident for row in collapsed for ident in row["source_degenerate_operator_ids"]} == set(
+        tops[1]["source_degenerate_operator_ids"])
     assert all(row["proposed_title_anchor_id"] is None
                for row in review["operator_components"]
                if row["stroke_topology_role"] == "DEGENERATE_QUAD_STROKE_REVIEW_ONLY")

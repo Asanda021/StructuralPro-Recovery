@@ -20,6 +20,7 @@ import unicodedata
 from typing import Mapping
 
 from core.drawings.pdf_detail_evidence_links import link_pdf_detail_geometry_evidence
+from core.drawings.pdf_type_word_witness import pdf_type_mark_family
 
 _MAX_SHEETS = 600
 _MAX_REGIONS = 40000
@@ -27,18 +28,15 @@ _MAX_TITLES = 10000
 _MAX_TYPE_MARKS = 10000
 _MARK = re.compile(r'^\s*(BR|BP|SC|SW|C|B|F|T|W|S|P)\s*[-–.]?\s*([1-9][0-9]{0,2})\s*$', re.I)
 
-# Type-letter families are only hypotheses without a classified context.
-_FAMILY_FOR_MARK = {'B': 'beam', 'C': 'column', 'F': 'foundation',
-                    'SC': 'column', 'SW': 'wall_opening', 'W': 'wall_opening',
-                    'BR': 'bracing', 'BP': 'reinforcement_connection'}
 # Long/explicit words, not short ambiguous syllables such as Persian "پی".
 _TITLE_WORDS = {
     'bracing': ('بادبند', 'مهاربند', 'brace', 'bracing'),
     'beam': ('تیر', 'پل', 'beam', 'girder'),
     'column': ('ستون', 'column'),
-    'foundation': ('فونداسیون', 'فنداسیون', 'شناژ', 'footing', 'foundation', 'grade beam'),
+    'foundation': ('فونداسیون', 'فنداسیون', 'footing', 'foundation'),
+    'grade_beam': ('شناژ', 'grade beam', 'tie beam'),
     'slab_roof': ('دال', 'سقف', 'بام', 'roof', 'slab'),
-    'wall_opening': ('دیوار', 'تیغه', 'بازشو', 'پنجره', 'wall', 'partition', 'opening', 'window'),
+    'wall_opening': ('دیوار', 'تیغه', 'بازشو', 'پنجره', 'wall', 'partition', 'opening', 'window', 'door'),
     'stair_ramp': ('پله', 'رمپ', 'stair', 'ramp'),
     'reinforcement_connection': ('آرماتور', 'میلگرد', 'خاموت', 'اتصال', 'مدفون',
                                  'صفحه ستون', 'بیس پلیت', 'base plate', 'baseplate',
@@ -49,7 +47,9 @@ _TITLE_WORDS = {
 }
 _SHEET_FAMILY = {'beam_layout_plan': 'beam', 'column_type_plan': 'column',
                  'column_detail': 'column', 'foundation_plan': 'foundation',
-                 'roof_drainage_plan': 'slab_roof', 'formwork_plan': 'slab_roof'}
+                 'excavation_plan': 'foundation', 'roof_drainage_plan': 'slab_roof',
+                 'reinforcement_plan': 'reinforcement_connection',
+                 'floor_preparation_plan': 'architecture_finishes'}
 
 
 def _norm(text: object) -> str:
@@ -85,8 +85,10 @@ def _family_words(title: object, *, sheet_kind: object = None) -> list[str]:
         # The short Persian "پل" (bridge/beam) is a prefix of "پله" (stair).
         # It must be an isolated term; otherwise a stair detail gains a
         # fabricated beam family even though no beam evidence exists.
-        if word == 'پل':
-            return re.search(r'(?<!\w)پل(?!\w)', readable) is not None
+        if word.isascii():
+            return re.search(rf'(?<!\w){re.escape(word)}(?:s|es)?(?!\w)', readable) is not None
+        if word in {'پل', 'برق', 'لوله', 'کانال', 'کابل'}:
+            return re.search(rf'(?<!\w){re.escape(word)}(?!\w)', readable) is not None
         return _norm(word) in norm
     families = {family for family, words in _TITLE_WORDS.items()
                 if any(matches(word) for word in words)}
@@ -100,7 +102,8 @@ def _tag(raw: object) -> tuple[str, str | None] | None:
     if not match:
         return None
     family, num = match.group(1).upper(), int(match.group(2))
-    return f'{family}{num}', _FAMILY_FOR_MARK.get(family)
+    tag = f'{family}{num}'
+    return tag, pdf_type_mark_family(tag)[0]
 
 
 def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20000) -> dict:
@@ -123,6 +126,7 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
     if len(set(doc_ids)) != len(doc_ids) or not doc_ids:
         raise ValueError('Invalid document identity')
     page_ref = {}
+    document_sha = {d['document_id']: d.get('sha256') for d in coverage['documents']}
     expected_pages = {(d['document_id'], i) for d in coverage['documents']
                       for i in range(1, int(d['page_count']) + 1)}
     for p in pages:
@@ -196,7 +200,10 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
                              if abox is not None and _touches(abox, _bbox(z['bbox_pt'])))
             if not matched:
                 raise ValueError('Title anchor has no location in indexed page zones')
-            family = _family_words(title.get('title_preview'), sheet_kind=page.get('sheet_kind'))
+            explicit_family = _family_words(title.get('title_preview'))
+            family = explicit_family or _family_words(None, sheet_kind=page.get('sheet_kind'))
+            family_basis = ('EXPLICIT_NATIVE_TITLE_FAMILY' if explicit_family else
+                            'SHEET_CONTEXT_ONLY' if family else 'TYPE_FAMILY_CONTEXT_REQUIRED')
             # A title such as "beam-column connection" is inherently multi-family.
             # Do NOT silently attach it only to a column or beam instance.
             page_boxes = [_bbox(z['bbox_pt']) for z in pzones]
@@ -216,10 +223,12 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
             object_rec = {
                 'candidate_id': cid, 'kind': 'EXPLICIT_DETAIL_TITLE',
                 'document_id': k[0], 'page': k[1],
+                'source_pdf_sha256': document_sha[k[0]],
                 'title_anchor_id': title['anchor_id'],
                 'title_preview': str(title.get('title_preview', ''))[:96],
                 'bbox_pt': list(title.get('bbox_pt', ())),
                 'region_ids': matched, 'family_candidates': family,
+                'family_basis': family_basis,
                 'type_tag': None, 'linked_type_candidate_ids': [],
                 'status': status, 'detail_boundary_verified': False,
                 'physical_member_verified': False, 'financially_payable': False,
@@ -245,11 +254,14 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
                 norm = _tag(raw)
                 if norm is None:
                     raise ValueError('Unparseable member-type mark in indexed PDF zone')
-                tag, family = norm
+                tag, _ = norm
                 mark_by_source[(k[0], k[1], tag)].append(zone)
     if len(mark_by_source) > _MAX_TYPE_MARKS:
         raise ValueError('Too many member-type marks for bounded detail indexing')
 
+    native_words_by_type = defaultdict(list)
+    for witness in coverage.get('localized_type_word_witnesses', ()):
+        native_words_by_type[(witness['document_id'], witness['page'], witness['type_tag'])].append(witness)
     type_objects = []
     for (doc_id, page, tag), grouped_zones in sorted(mark_by_source.items()):
         ids = sorted({z['region_id'] for z in grouped_zones})
@@ -261,7 +273,8 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
             status = 'TYPE_MARK_TEXT_ONLY_CANDIDATE'
         related_titles = [o for o in title_candidate_ids[(doc_id,page)]
                           if set(o['region_ids']) & set(ids)]
-        type_tag_family = _tag(tag)[1]
+        sheet_kind = page_ref[(doc_id, page)].get('sheet_kind')
+        type_tag_family, family_basis = pdf_type_mark_family(tag, sheet_kind)
         compatible = [o for o in related_titles
                       if type_tag_family and type_tag_family in o['family_candidates']]
         if (len(compatible) == 1 and len(related_titles) == 1 and
@@ -279,6 +292,9 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
             'candidate_id': f'TYPE_MARK:{doc_id}:p{page}:{tag}',
             'kind': 'EXPLICIT_TEXT_TYPE_MARK', 'document_id': doc_id,
             'page': page, 'type_tag': tag,
+            'source_pdf_sha256': document_sha[doc_id],
+            'family_basis': family_basis,
+            'source_word_witnesses': native_words_by_type[(doc_id, page, tag)],
             'family_candidates': [type_tag_family] if type_tag_family else [],
             'region_ids': ids,
             'source_title_candidate_ids': sorted(o['candidate_id'] for o in related_titles),
@@ -318,13 +334,15 @@ def build_pdf_detail_object_index(coverage: Mapping, *, max_candidates: int = 20
         raise AssertionError('Unaccounted visual PDF region')
     tag_sources = defaultdict(list)
     for rec in type_objects:
-        tag_sources[(rec['document_id'], rec['type_tag'])].append(rec)
+        if rec['family_candidates'] and not rec['status'].startswith('BLOCKED_'):
+            family, = rec['family_candidates']
+            tag_sources[(rec['document_id'], rec['type_tag'], family)].append(rec)
     cross_refs = []
-    for (doc, tag), recs in sorted(tag_sources.items()):
+    for (doc, tag, family), recs in sorted(tag_sources.items()):
         if len(recs) < 2:
             continue
         cross_refs.append({
-            'document_id': doc, 'type_tag': tag,
+            'document_id': doc, 'type_tag': tag, 'candidate_family': family,
             'candidate_ids': [r['candidate_id'] for r in recs],
             'pages': [r['page'] for r in recs],
             'status': 'POSSIBLE_SAME_DOCUMENT_TYPE_REFERENCE_UNVERIFIED',

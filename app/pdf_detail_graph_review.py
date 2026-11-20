@@ -101,10 +101,21 @@ _TABLES = {
         ('شواهد ناقص', 'blocked_region_ids'),
     )),
     'operator_components': ('تطبیق مستقل اجزای هندسی دیتیل', (
-        ('سند', 'document_id'), ('صفحه', 'page'), ('نقش هندسی', 'stroke_topology_role'),
-        ('وضعیت تطبیق', 'status'), ('کادر هندسه (pt)', 'bbox_pt'),
+        ('سند', 'document_id'), ('صفحه', 'page'), ('وضعیت شناسایی', 'classification_status'),
+        ('خانوادهٔ پیشنهادی', 'classification_families'), ('نقش هندسی', 'stroke_topology_role'),
+        ('علت شناسایی', 'classification_reason'), ('وضعیت تطبیق', 'status'), ('کادر هندسه (pt)', 'bbox_pt'),
         ('عنوان نامزد', 'proposed_title_anchor_id'),
         ('گروه‌های مرزی', 'bbox_group_candidate_ids'),
+    )),
+    'component_source_regions': ('پوشش نواحی منبع', (
+        ('سند', 'document_id'), ('صفحه', 'page'), ('ناحیه', 'region_id'), ('نقش شیت', 'sheet_kind'),
+        ('وضعیت شناسایی', 'classification_status'), ('خانوادهٔ پیشنهادی', 'classification_families'),
+        ('علت بررسی', 'classification_reason'),
+    )),
+    'component_text_candidates': ('نشان‌ها و عنوان‌های نامزد اجزا', (
+        ('سند', 'document_id'), ('صفحه', 'page'), ('نوع شاهد', 'kind'), ('تیپ', 'type_tag'),
+        ('خانوادهٔ پیشنهادی', 'family_candidates'), ('مبنای طبقه‌بندی', 'family_basis'),
+        ('عنوان شاهد', 'title_preview'), ('وضعیت بررسی', 'status'),
     )),
     'plan_detail_type_only_references': ('ارتباط احتمالی پلان با دیتیل', (
         ('شناسه پلان', 'plan_document_id'), ('صفحه پلان', 'plan_page'),
@@ -114,7 +125,12 @@ _TABLES = {
     )),
 }
 
-_ENGINEERING_REVIEWS = {'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews', 'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps', 'operator_components', 'plan_detail_type_only_references'}
+_ENGINEERING_REVIEWS = {
+    'occurrence_reviews', 'structural_plan_reviews', 'beam_profile_reviews',
+    'beam_end_support_reviews', 'beam_span_evidence_requests', 'multidiscipline_gaps',
+    'operator_components', 'plan_detail_type_only_references', 'component_source_regions',
+    'component_text_candidates',
+}
 _DRAWING_SCOPE_FIELDS = (
     ('شناسه گره', 'node_id'), ('تراز', 'level'), ('آکس', 'axis'),
     ('نسخهٔ حاکم', 'governing_revision'),
@@ -124,11 +140,19 @@ _DETAIL_FIELDS = {
     'operator_components': (('شناسه هندسه', 'component_id'),
                             ('هش PDF مرجع', 'source_pdf_sha256'),
                             ('شناسه عملگرها', 'source_operator_ids'),
+                            ('عملگرهای با گوشه فروریخته', 'source_degenerate_operator_ids'),
+                            ('بررسی لازم', 'review_required'),
                             ('شناسه عنوان', 'proposed_title_candidate_id'),
                             ('مرز دیتیل معتبر', 'detail_boundary_verified'),
                             ('ارجاع اختصاصی دهانه', 'span_specific_detail_verified'),
                             ('عضو فیزیکی معتبر', 'physical_member_verified'),
                             ('قابل پرداخت مالی', 'financially_payable')),
+    'component_source_regions': (('هش PDF مرجع', 'source_pdf_sha256'),
+                                 ('کادر ناحیه (pt)', 'bbox_pt'),
+                                 ('شناسهٔ اجزای هم‌پوشان', 'overlapping_component_ids'),
+                                 ('بررسی لازم', 'review_required')),
+    'component_text_candidates': (('هش PDF مرجع', 'source_pdf_sha256'), ('شناسهٔ نامزد', 'candidate_id'),
+                                  ('شناسهٔ نواحی', 'region_ids'), ('علت بررسی', 'reason')),
     'plan_detail_type_only_references': (('هش PDF پلان', 'plan_pdf_sha256'),
                                          ('کادر نشان تیپ', 'plan_mark_bbox_pt'),
                                          ('ارجاع پلان به دیتیل', 'plan_to_section_detail_verified'),
@@ -245,6 +269,13 @@ _FOUNDATION_SHEETS = {
 }
 
 
+_COMPONENT_STATUS_LABELS = {
+    'CLASSIFIED_CANDIDATE': 'شناسایی پیشنهادی',
+    'AMBIGUOUS': 'مبهم، نیازمند بازبینی',
+    'NON_MEMBER': 'شاهد غیرعضو',
+}
+
+
 def _display(value):
     if isinstance(value, bool):
         return 'بله' if value else 'خیر'
@@ -272,7 +303,13 @@ class _EvidenceTableModel(QAbstractTableModel):
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if index.isValid() and role == Qt.ItemDataRole.DisplayRole:
-            return _display(self.records[index.row()].get(self.columns[index.column()][1]))
+            field = self.columns[index.column()][1]
+            value = self.records[index.row()].get(field)
+            if field == 'classification_status':
+                label = 'مسدود' if value == 'BLOCKED' else _COMPONENT_STATUS_LABELS.get(value)
+                if label is not None:
+                    return f'{label} [{value}]'
+            return _display(value)
         return None
 
 
@@ -343,11 +380,20 @@ class PDFDetailGraphReview(QWidget):
         if isinstance(gap_register, dict):
             rows_by_table['multidiscipline_gaps'] = gap_register.get('coverage_rows', [])
         component_review = report.get('operator_component_review')
+        self._component_text_sources = {}
         if isinstance(component_review, dict):
             rows_by_table['operator_components'] = component_review.get('operator_components', [])
             rows_by_table['plan_detail_type_only_references'] = component_review.get(
                 'plan_detail_type_only_references', []
             )
+            if 'region_classifications' in component_review:
+                rows_by_table['component_source_regions'] = component_review['region_classifications']
+                self._component_text_sources = {
+                    row['source_id']: row for row in component_review.get('classification_text_witnesses', ())
+                }
+        detail_index = report.get('detail_object_index')
+        if isinstance(detail_index, dict) and 'detail_candidates' in detail_index:
+            rows_by_table['component_text_candidates'] = detail_index['detail_candidates']
 
         layout = QVBoxLayout(self)
         receipt = QLabel(
@@ -742,6 +788,26 @@ class PDFDetailGraphReview(QWidget):
 
     def _engineering_review_lines(self, key, record):
         lines = []
+        if key in {'operator_components', 'component_source_regions', 'component_text_candidates'}:
+            lines.append('تأیید مهندسی نشده | قابل پرداخت مالی — خیر')
+            source = {
+                'document_id': record.get('document_id'), 'page': record.get('page'),
+                'source_sha256': record.get('source_pdf_sha256'),
+            }
+            title = record.get('classification_title')
+            words = (self._component_text_sources[ref] for ref in record.get('source_type_word_ids', ())
+                     if ref in self._component_text_sources)
+            anchors = [{**source, **word, 'kind': word['method'], 'anchor_id': word['source_id'],
+                        'raw_token': word.get('source_token'), 'source_ref': word['status']}
+                       for word in words]
+            if title:
+                anchors.append({**source, **title, 'kind': title['method'], 'anchor_id': title['source_id']})
+            anchors.extend({**source, **word, 'kind': 'NATIVE_TYPE_WORD', 'anchor_id': word['witness_id']}
+                           for word in record.get('source_word_witnesses', ()))
+            if record.get('title_preview') and record.get('bbox_pt'):
+                anchors.append({**source, 'kind': 'NATIVE_TITLE_BLOCK', 'anchor_id': record.get('title_anchor_id'),
+                                'bbox_pt': record['bbox_pt'], 'raw_token': record['title_preview']})
+            lines.extend(self._anchor_lines('شاهد متن و عنوان', anchors))
         missing = record.get('missing_evidence', ())
         if missing:
             lines.extend(['', 'مدارک لازم برای رفع ابهام'])

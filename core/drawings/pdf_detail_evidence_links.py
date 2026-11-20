@@ -10,12 +10,7 @@ from collections import Counter, defaultdict
 from math import isfinite
 from typing import Mapping
 
-
-
-
-_TYPE_FAMILY = {'B': 'beam', 'C': 'column', 'SC': 'column',
-                'F': 'foundation', 'SW': 'wall_opening', 'W': 'wall_opening',
-                'BR': 'bracing', 'BP': 'reinforcement_connection'}
+from core.drawings.pdf_type_word_witness import pdf_type_mark_family
 
 
 def _rect4(value):
@@ -49,6 +44,8 @@ def _attach_localized_word_candidates(coverage, detail_objects, pages, records, 
         raise ValueError('Localized PDF type word budget exhausted')
     expected_pages = {(p['document_id'], p['page'])
                       for p in coverage.get('sheet_inventory', ())}
+    sheet_kinds = {(p['document_id'], p['page']): p.get('sheet_kind')
+                   for p in coverage.get('sheet_inventory', ())}
     word_pages = {}
     for report in reports:
         key = (report.get('document_id'), report.get('page'))
@@ -136,8 +133,7 @@ def _attach_localized_word_candidates(coverage, detail_objects, pages, records, 
         else:
             word = matches[0]
             tag = word['type_tag']
-            prefix = ''.join(c for c in tag if c.isalpha())
-            family = _TYPE_FAMILY.get(prefix)
+            family, _ = pdf_type_mark_family(tag, sheet_kinds[key])
             title = title_by_id[rec['proposed_title_candidate_id']]
             if family is None or not title.get('family_candidates'):
                 status = 'UNRESOLVED_WORD_OR_DETAIL_FAMILY_UNKNOWN'

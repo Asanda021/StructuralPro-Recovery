@@ -15,6 +15,7 @@ import unicodedata
 from typing import Iterable, Mapping
 
 from core.drawings.pdf_vector_detail_groups import index_pdf_vector_path_groups
+from core.drawings.pdf_detail_object_index import _family_words
 from core.drawings.pdf_type_word_witness import index_pdf_type_words, unrotated_page_bounds
 from core.drawings.pdf_detail_topology import scan_detail_topology
 from core.drawings.pdf_vector_type_labels import recover_page_vector_type_words
@@ -27,20 +28,6 @@ _MAX_PAGES = 600
 _MARKS = re.compile(r'(?<![A-Za-z0-9])(?:BR|BP|SC|SW|C|B|F|T|W|S|P)\s*[-–.]?\s*[1-9][0-9]{0,2}(?![A-Za-z0-9])',re.I)
 _DETAIL_TERMS = ('جزئیات', 'جزییات', 'اتصال', 'مقطع', 'برش', 'detail', 'connection', 'section')
 _NOTE_TERMS = ('توضیحات', 'یادداشت', 'note', 'notes', 'generalnotes')
-_COMPONENT_TERMS = {
-    'bracing': ('بادبند', 'مهاربند', 'brace', 'bracing'),
-    'beam': ('تیر', 'پل', 'beam', 'girder'),
-    'column': ('ستون', 'column'),
-    'foundation': ('پی', 'فنداسیون', 'foundation', 'footing'),
-    'slab_roof': ('سقف', 'دال', 'بام', 'roof', 'slab'),
-    'wall_opening': ('دیوار', 'بازشو', 'پنجره', 'wall', 'opening'),
-    'stair_ramp': ('پله', 'رمپ', 'stair', 'ramp'),
-    'reinforcement_connection': ('آرماتور', 'خاموت', 'میلگرد', 'اتصال', 'صفحه ستون', 'بیس پلیت', 'base plate', 'baseplate', 'rebar', 'connection'),
-    'mechanical': ('مکانیک', 'لوله', 'کانال', 'mechanical', 'pipe', 'duct'),
-    'electrical': ('برق', 'کابل', 'electrical', 'cable'),
-}
-
-
 def _norm(text: str) -> str:
     t = unicodedata.normalize('NFKC', str(text or '')).casefold()
     t = t.translate(str.maketrans({'ي':'ی','ى':'ی','ك':'ک','ة':'ه'}))
@@ -250,19 +237,9 @@ def inventory_pdf_page_regions(page, *, document_id: str, page_number: int,
     # Only a classified sheet kind or an explicit detail TITLE can suggest
     # disciplines. Arbitrary text and short Persian syllables are too noisy.
     classification=sheet_kind or 'UNKNOWN_SHEET_KIND'
-    known_kind = {
-        'column_type_plan': ['column'], 'column_detail': ['column'],
-        'beam_layout_plan': ['beam'], 'foundation_plan': ['foundation'],
-        'roof_drainage_plan': ['slab_roof'],
-        'formwork_plan': ['slab_roof'],
-    }
-    family_candidates=set(known_kind.get(classification, ()))
+    family_candidates=set(_family_words(None, sheet_kind=classification))
     for anchor in title_anchors:
-        anchor_text = _compact(anchor['title_preview'])
-        for family, phrases in _COMPONENT_TERMS.items():
-            if any(_compact(term) in anchor_text and len(_compact(term)) >= 3
-                   for term in phrases):
-                family_candidates.add(family)
+        family_candidates.update(_family_words(anchor['title_preview']))
     family_candidates=sorted(family_candidates)
     status_count=Counter(x['status'] for x in zones)
     result = {'document_id':document_id,'page':page_number,

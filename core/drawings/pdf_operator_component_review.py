@@ -11,6 +11,8 @@ from collections import Counter, defaultdict
 from math import isfinite
 import re
 
+from core.drawings.pdf_type_word_witness import pdf_type_mark_family
+
 _SHA = re.compile(r"[0-9a-f]{64}\Z")
 _TAG = re.compile(r"(?:BR|BP|SC|SW|B|C|F|T|W|S|P)[1-9][0-9]{0,2}\Z", re.I)
 _PLAN_KINDS = frozenset(("beam_layout_plan", "column_type_plan", "foundation_plan", "formwork_plan"))
@@ -40,6 +42,116 @@ def _box(raw):
 
 def _distance(a, b):
     return max(0, a[0]-b[2], b[0]-a[2], a[1]-b[3], b[1]-a[3])
+
+
+def _component_classification(row, title):
+    """Classify drawing evidence while retaining geometry disagreements."""
+    role = row["stroke_topology_role"]
+    if row["source_degenerate_operator_ids"]:
+        disposition = "BLOCKED", "COLLAPSED_QUAD_STROKE_REVIEW_ONLY"
+    elif role == "FRAME_CANDIDATE":
+        disposition = "NON_MEMBER", "PAGE_ENCLOSING_FRAME"
+    elif row["status"].startswith("BLOCKED"):
+        disposition = "BLOCKED", row["status"]
+    elif role == "TABLE_OR_PLAN_GRID":
+        disposition = "AMBIGUOUS", "TABLE_OR_GRID_CONTENT_REQUIRES_REVIEW"
+    elif role == "OPEN_CHAIN":
+        disposition = "AMBIGUOUS", "OPEN_CHAIN_ROLE_REQUIRES_REVIEW"
+    elif title:
+        disposition = "CLASSIFIED_CANDIDATE", "SOURCE_TITLE_AND_DISTINCT_CLOSED_COMPONENT"
+    else:
+        disposition = "AMBIGUOUS", row["status"]
+    return {
+        "classification_status": disposition[0], "classification_reason": disposition[1],
+        "classification_families": list(title["family_candidates"]) if title else [],
+        "classification_title": ({
+            "source_id": title["title_anchor_id"], "bbox_pt": title["bbox_pt"],
+            "source_token": title["title_preview"], "method": "NATIVE_TITLE_BLOCK",
+        } if title else None),
+        "review_required": ("VERIFY_BOUNDARY_AND_EXPLICIT_MEMBER_REFERENCE" if title else
+                            "EXCLUDE_PAGE_FRAME_FROM_MEMBER_COUNTS" if disposition[0] == "NON_MEMBER" else
+                            "INSPECT_SOURCE_ROLE_AND_INDEPENDENT_GEOMETRY"),
+    }
+
+
+def _page_word_witnesses(summary, key, digest):
+    """Preserve localized text sources without promoting OCR or glyph ambiguity."""
+    doc, page = key
+    words = {}
+    for field, method in (
+        ("type_word_index", "NATIVE_TYPE_WORD"),
+        ("vector_type_word_index", "VECTOR_STROKE_LABEL"),
+        ("rendered_type_word_index", "RENDERED_OCR"),
+    ):
+        index = summary.get(field) or {}
+        for witness in index.get("type_word_witnesses", ()):
+            ident = witness.get("witness_id")
+            ordinal = witness.get("source_word_index")
+            if (ident is None and method == "RENDERED_OCR"
+                    and type(ordinal) is int and ordinal > 0):
+                ident = f"{doc}:p{page}:ocrword{ordinal:06d}"
+            if ((witness.get("document_id"), witness.get("page")) != key
+                    or witness.get("financially_payable") is not False
+                    or witness.get("source_sha256", digest) != digest
+                    or not isinstance(ident, str) or not ident.startswith(f"{doc}:p{page}:")
+                    or ident in words):
+                raise ValueError("Foreign, duplicate or promoted component text witness")
+            box = _box(witness["bbox_pt"])
+            words[ident] = (box, {
+                "source_id": ident, "document_id": doc, "page": page, "source_pdf_sha256": digest,
+                "method": method, "bbox_pt": list(witness["bbox_pt"]), "status": witness["status"],
+                "type_tag": witness.get("type_tag"),
+                "source_token": witness.get("raw_token") or witness.get("source_token"),
+                "source_operator_ids": witness.get("source_operator_ids", []),
+                "glyph_interpretations": witness.get("glyph_interpretations", []),
+                "financially_payable": False,
+            })
+    return tuple(words.values())
+
+
+def _touches_component(box, component):
+    bounds = component["bbox_pt"]
+    if component["stroke_topology_role"] == "FRAME_CANDIDATE":
+        x0, y0, x1, y1 = bounds
+        # A frame owns its four drawn edges. Its enclosing rectangle does
+        # not put all interior tiles in the frame's evidence scope.
+        return any(_distance(box, side) == 0 for side in (
+            (x0, y0, x1, y0), (x0, y1, x1, y1), (x0, y0, x0, y1), (x1, y0, x1, y1)))
+    return _distance(box, bounds) == 0
+
+
+def _classify_source_regions(regions, components, words, key, digest, sheet_kind, source_blocked):
+    doc, page = key
+    rows = []
+    for region in regions:
+        box = _box(region["bbox_pt"])
+        related = [row for row in components if _touches_component(box, row)]
+        word_ids = [w["source_id"] for word_box, w in words if _distance(box, word_box) == 0]
+        families = sorted({family for row in related for family in row["classification_families"]})
+        if source_blocked or region["status"] == "BLOCKED":
+            status, reason = "BLOCKED", "SOURCE_GEOMETRY_OR_REGION_INCOMPLETE"
+        elif related and all(row["classification_status"] == "BLOCKED" for row in related) and not region["image_block_count"]:
+            status, reason = "BLOCKED", "OPERATOR_EVIDENCE_IN_REGION_REQUIRES_SEPARATION"
+        elif region["image_block_count"]:
+            status, reason = "AMBIGUOUS", "RASTER_SCOPE_REQUIRES_INDEPENDENT_REVIEW"
+        elif not region["vector_path_count"] and not related:
+            kind = "INDEXED_TEXT_WITHOUT_MEMBER_GEOMETRY" if region["text_block_count"] else "NO_VISIBLE_CONTENT_INDEXED"
+            status, reason = "NON_MEMBER", kind
+        elif region["possible_table_or_grid"]:
+            status, reason = "AMBIGUOUS", "TABLE_GRID_AND_MEMBER_STROKES_MAY_COEXIST"
+        else:
+            status, reason = "AMBIGUOUS", "INDEXED_TILE_HAS_NO_SEMANTIC_BOUNDARY"
+        rows.append({
+            "region_id": region["region_id"], "document_id": doc, "page": page, "sheet_kind": sheet_kind,
+            "source_pdf_sha256": digest, "bbox_pt": region["bbox_pt"],
+            "classification_status": status, "classification_reason": reason,
+            "classification_families": families,
+            "overlapping_component_ids": [row["component_id"] for row in related],
+            "source_type_word_ids": word_ids,
+            "review_required": "LOCALIZE_MEMBERS_SEPARATELY_FROM_TILE_AND_VERIFY_SCOPE",
+            "physical_member_verified": False, "financially_payable": False,
+        })
+    return rows
 
 
 def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
@@ -92,6 +204,20 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
     sheet_map = keyed(page_rows, "sheet inventory")
     summaries = keyed(page_summaries, "operator source")
     boxes = keyed(bbox_pages, "vector bbox group record")
+    regions_by_page = defaultdict(list)
+    region_ids = set()
+    for region in inventory.get("region_inventory", ()):
+        key = region.get("document_id"), region.get("page")
+        ident = region.get("region_id")
+        if (key not in expected or not isinstance(ident, str) or ident in region_ids
+                or not ident.startswith(f"{key[0]}:p{key[1]}:")
+                or region.get("financially_payable") is not False):
+            raise ValueError("Foreign, duplicate or promoted component source region")
+        region_ids.add(ident)
+        regions_by_page[key].append(region)
+    if (len(region_ids) != inventory.get("region_count")
+            or any(len(regions_by_page[key]) != sheet_map[key].get("region_count") for key in expected)):
+        raise ValueError("Missing source regions in component classification")
     titles = defaultdict(list)
     title_ids = set()
     for item in title_rows:
@@ -110,9 +236,15 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
     }
     components = []
     page_checks = []
+    classifications = []
+    text_witnesses = []
     seen_components = set()
     for key in sorted(expected):
         doc, page = key
+        digest = hashes[doc]
+        sheet_kind = sheet_map[key]["sheet_kind"]
+        words = _page_word_witnesses(summaries[key], key, digest)
+        text_witnesses.extend(row for _, row in words)
         topology = summaries[key].get("detail_topology")
         grouping = boxes[key]
         if (not isinstance(topology, dict) or
@@ -128,12 +260,16 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                    grouping.get("all_source_paths_grouped") is not True or
                    sheet_map[key].get("coverage_status") == "BLOCKED")
         if blocked:
+            classifications.extend(_classify_source_regions(
+                regions_by_page[key], (), words, key, digest, sheet_kind, source_blocked=True))
             page_checks.append({
                 "document_id": doc, "page": page, "source_pdf_sha256": hashes[doc],
                 "status": "BLOCKED_TOPOLOGY_OR_SOURCE_INCOMPLETE",
                 "operator_component_count": len(top_groups),
                 "recorded_component_count": 0,
                 "bbox_group_count": len(bbox_groups),
+                "source_operator_count": topology.get("source_operator_count"),
+                "source_path_count": topology.get("source_path_count"),
                 "geometry_coverage_verified": False,
                 "detail_boundaries_verified": False,
                 "financially_payable": False,
@@ -149,6 +285,7 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             raise ValueError("Invalid or duplicated degenerate Quad source manifest")
         path_to_bbox = {}
         bbox_to_components = defaultdict(set)
+        page_components = []
         for item in bbox_groups:
             gid = item.get("candidate_id")
             inds = item.get("source_path_indices")
@@ -180,6 +317,7 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             if not isinstance(witnesses, list) or not witnesses:
                 raise ValueError("Component requires source operator witnesses")
             bbox_links = set()
+            collapsed = []
             for op in witnesses:
                 ident = (op.get("path_index"), op.get("operator_index"))
                 if (type(ident[0]) is not int or type(ident[1]) is not int
@@ -204,18 +342,20 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                             any(corners2.count(end) != 2 for end in ends)):
                         raise ValueError("Collapsed Quad does not match original source")
                     degenerate_seen.add(op["source_id"])
+                    collapsed.append(op["source_id"])
                 elif op.get("geometry_quality") not in (None, "EXACT_OPERATOR_GEOMETRY"):
                     raise ValueError("Unknown operator geometry quality")
             for bbox_id in bbox_links:
                 bbox_to_components[bbox_id].add(cid)
             near_titles = sorted(aid for aid, anchor_box in titles[key]
                                  if _distance(_box(comp["bbox_pt"]), anchor_box) <= _NEAR_TITLE_PT)
-            components.append({
+            page_components.append({
                 "component_id": cid, "document_id": doc, "page": page,
                 "source_pdf_sha256": hashes[doc], "bbox_pt": list(comp["bbox_pt"]),
                 "stroke_topology_role": comp.get("role"),
                 "source_operator_ids": sorted(op["source_id"] for op in witnesses),
                 "bbox_group_candidate_ids": sorted(bbox_links),
+                "source_degenerate_operator_ids": sorted(collapsed),
                 "nearby_title_anchor_ids": near_titles,
                 "proposed_title_anchor_id": None,
                 "status": "UNRESOLVED_OPERATOR_COMPONENT",
@@ -225,7 +365,7 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                 "physical_member_verified": False, "physical_member_count": None,
                 "quantity_approval_count": 0, "financially_payable": False,
             })
-            if len(components) > _MAX_COMPONENTS:
+            if len(components) + len(page_components) > _MAX_COMPONENTS:
                 raise ValueError("Operator component review budget exhausted")
         if (len(operators_seen) != topology.get("source_operator_count") or
                 len(top_groups) != topology.get("group_count") or
@@ -240,22 +380,29 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             "operator_component_count": len(top_groups),
             "recorded_component_count": len(top_groups),
             "bbox_group_count": len(bbox_groups),
+            "source_operator_count": topology["source_operator_count"],
+            "source_path_count": npaths,
             "geometry_coverage_verified": True,
             "source_geometry_semantics_verified": False,
             "detail_boundaries_verified": False, "financially_payable": False,
         })
         # Each title or bbox group can refer to multiple distinct operator
         # components. That is a VETO, not an opportunity to pick one arbitrarily.
-        near_owner_count = Counter(tid for row in components
-                                   if (row["document_id"], row["page"]) == key
+        near_owner_count = Counter(tid for row in page_components
+                                   if (row["stroke_topology_role"] == "CLOSED_CONTOUR"
+                                       or (row["stroke_topology_role"] == "OPEN_CHAIN"
+                                           and len(row["source_operator_ids"]) > 1))
+                                   and not row["source_degenerate_operator_ids"]
                                    for tid in row["nearby_title_anchor_ids"])
-        for row in components:
-            if (row["document_id"], row["page"]) != key:
-                continue
+        for row in page_components:
             gids, tids = row["bbox_group_candidate_ids"], row["nearby_title_anchor_ids"]
-            unsafe_role = row["stroke_topology_role"] not in ("CLOSED_CONTOUR", "OPEN_CHAIN")
-            if len(gids) != 1 or any(len(bbox_to_components[gid]) != 1 for gid in gids):
+            unsafe_role = row["stroke_topology_role"] != "CLOSED_CONTOUR"
+            if row["source_degenerate_operator_ids"]:
+                status = "BLOCKED_COLLAPSED_QUAD_STROKE_REVIEW_ONLY"
+            elif len(gids) != 1 or any(len(bbox_to_components[gid]) != 1 for gid in gids):
                 status = "BLOCKED_BBOX_GROUP_AND_OPERATOR_COMPONENT_DISAGREE"
+            elif row["stroke_topology_role"] == "OPEN_CHAIN":
+                status = "UNRESOLVED_OPEN_CHAIN_ROLE_REQUIRES_REVIEW"
             elif unsafe_role:
                 status = "UNRESOLVED_FRAME_GRID_OR_COMPLEX_OPERATOR_ROLE"
             elif not tids:
@@ -263,6 +410,7 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
             elif len(tids) != 1 or near_owner_count[tids[0]] != 1:
                 status = "BLOCKED_AMBIGUOUS_TITLE_COMPONENT_CORRESPONDENCE"
             elif (tids[0] not in detail_titles or
+                  detail_titles[tids[0]].get("family_basis") != "EXPLICIT_NATIVE_TITLE_FAMILY" or
                   detail_titles[tids[0]].get("status") not in
                   ("SINGLE_FAMILY_DETAIL_TITLE_CANDIDATE",
                    "MULTI_FAMILY_DETAIL_TITLE_CANDIDATE")):
@@ -271,11 +419,14 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
                 status = "PROPOSED_SINGLE_OPERATOR_COMPONENT_NEAR_UNIQUE_TITLE"
                 row["proposed_title_anchor_id"] = tids[0]
             row["status"] = status
+            row["sheet_kind"] = sheet_kind
+            title = detail_titles.get(row["proposed_title_anchor_id"])
+            row.update(_component_classification(row, title))
+            row["proposed_title_candidate_id"] = title["candidate_id"] if title else None
 
-    for row in components:
-        title_id = row["proposed_title_anchor_id"]
-        row["proposed_title_candidate_id"] = (detail_titles[title_id]["candidate_id"]
-                                              if title_id in detail_titles else None)
+        classifications.extend(_classify_source_regions(
+            regions_by_page[key], page_components, words, key, digest, sheet_kind, source_blocked=False))
+        components.extend(page_components)
     # Cross-sheet type tags are only names, never installed spans. Even a
     # unique detail title/component is not an authorized plan-detail reference.
     details = [
@@ -303,9 +454,10 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
         if not isinstance(tag, str) or not _TAG.fullmatch(tag):
             continue
         _box(marker.get("mark_bbox_pt"))
+        family, _ = pdf_type_mark_family(tag, sheet_map[key].get("sheet_kind"))
         candidates = [obj for obj in details
                       if obj.get("document_id") == key[0] and obj.get("page") != key[1]
-                      and obj.get("type_tag") == tag]
+                      and obj.get("type_tag") == tag and family in obj.get("family_candidates", ())]
         matches = sorted({x["candidate_id"] for x in candidates})
         components_near = sorted({cid for d in candidates
                                   for cid in by_title.get(d["proposed_detail_title_id"], ())})
@@ -332,6 +484,11 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
         "operator_component_review_count": len(components),
         "operator_components": components,
         "operator_component_status_counts": dict(sorted(states.items())),
+        "component_classification_counts": dict(Counter(row["classification_status"] for row in components)),
+        "component_family_counts": dict(Counter(family for row in components for family in row["classification_families"])),
+        "region_classifications": classifications,
+        "region_classification_counts": dict(Counter(row["classification_status"] for row in classifications)),
+        "classification_text_witnesses": text_witnesses,
         "plan_detail_type_only_candidate_count": len(plan_links),
         "plan_detail_type_only_references": plan_links,
         "all_source_pages_accounted_for": len(page_checks) == len(expected),
