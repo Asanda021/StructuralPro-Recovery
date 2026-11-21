@@ -316,6 +316,7 @@ _COMPONENT_STATUS_LABELS = {
 _COMPONENT_CONTEXT_LABELS = {
     'ACCENTED_STROKE_GLYPH_CONTEXT': 'حلقه، نشانه بالای حرف و خطوط حرف مجاور بررسی شوند.',
     'ADJACENT_CONTOUR_TOUCHES_MIXED_INK': 'چهارضلعی مجاور به خطوط مختلط دیتیل متصل است.',
+    'SOURCE_PAIRED_DIMENSION_ARROWHEADS': 'دو پیکانِ پرشده با خط میانی و دو خط امتدادِ گذرنده از نوک‌ها مشخص شده‌اند.',
     'LOCAL_DETAIL_REVISION_UNVERIFIED': 'ویرایش حاکم این سند با همین هش ثبت نشده است.',
     'SCALE_PRINT_OUTSIDE_LOCAL_VIEW': 'نوشته مقیاس از محدوده افقی همین نما بیرون می‌رود.',
 }
@@ -860,7 +861,8 @@ class PDFDetailGraphReview(QWidget):
             with PDFDrawingEngine(self._source_paths[record['document_id']],
                                   expected_sha256=record['source_pdf_sha256'],
                                   max_snapshot_bytes=64 * 1024 * 1024) as engine:
-                crop_box = record.get('competing_context_bbox_pt') or record['bbox_pt']
+                crop_box = (record.get('competing_context_bbox_pt')
+                            or (record.get('role_witness') or {}).get('bbox_pt') or record['bbox_pt'])
                 png = engine.render_evidence_crop(record['page'], crop_box)
             image = QPixmap()
             if not image.loadFromData(png):
@@ -964,8 +966,11 @@ class PDFDetailGraphReview(QWidget):
         if titles or words:
             lines.extend(self._anchor_lines('عنوان‌ها و شاهدهای تیپ', [*titles, *words]))
         if witness := record.get('role_witness'):
-            lines.append(f"نوشته ترسیمی — {witness['normalized_text']} | {witness['status']}")
-            lines.extend(self._anchor_lines('نشانی نوشته ترسیمی', [
+            if text := witness.get('normalized_text'):
+                lines.append(f"نوشته ترسیمی — {text} | {witness['status']}")
+            if context := witness.get('context_source_operator_ids'):
+                lines.append(f"عملگرهای شاهد نقش — {_display(context)}")
+            lines.extend(self._anchor_lines('نشانی شاهد نقش', [
                 {**source, **witness, 'kind': witness['method'], 'anchor_id': witness['source_id']},
             ]))
         scales = [{**source, **scale, 'kind': 'PRINTED_SCALE',

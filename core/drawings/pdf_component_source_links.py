@@ -237,6 +237,7 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
                 "outline_pt": row["outline_pt"],
                 "competing_context_operator_ids": row.get("competing_context_operator_ids", ()),
                 "competing_context_bbox_pt": row.get("competing_context_bbox_pt"),
+                **({"role_witness": row["role_witness"]} if "role_witness" in row else {}),
                 "title_anchor_id": title["title_anchor_id"] if title else None,
                 "title_bbox_pt": title["bbox_pt"] if title else None,
                 "title_text": title["title_preview"] if title else None,

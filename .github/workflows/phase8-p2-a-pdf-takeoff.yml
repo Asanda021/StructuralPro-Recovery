@@ -55,10 +55,12 @@ on:
       - tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
       - core/drawings/pdf_operator_component_review.py
       - core/drawings/pdf_component_boundaries.py
+      - core/drawings/pdf_dimension_arrowheads.py
       - core/drawings/pdf_component_source_links.py
       - core/drawings/pdf_component_evaluation.py
       - tests/test_phase8_p2_a_pdf_operator_component_review.py
       - tests/test_phase8_p2_a_pdf_component_boundaries.py
+      - tests/test_phase8_p2_a_pdf_dimension_arrowheads.py
       - tests/test_phase8_p2_a_pdf_component_semantics.py
       - tests/test_phase8_p2_a_pdf_component_evaluation.py
       - tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py
@@ -135,6 +137,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
           tests/test_phase8_p2_a_pdf_operator_component_review.py
           tests/test_phase8_p2_a_pdf_component_boundaries.py
+          tests/test_phase8_p2_a_pdf_dimension_arrowheads.py
           tests/test_phase8_p2_a_pdf_component_semantics.py
           tests/test_phase8_p2_a_pdf_component_evaluation.py
           tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py

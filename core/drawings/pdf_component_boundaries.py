@@ -13,6 +13,7 @@ from math import isclose
 import re
 
 from core.drawings.pdf_detail_topology import _Stroke, _bounds, _cross, _non_endpoint_contact
+from core.drawings.pdf_dimension_arrowheads import paired_dimension_arrowhead_witnesses
 from core.drawings.pdf_vector_type_labels import stroked_plate_annotations
 
 _MAX_OUTLINE_EDGES = 48
@@ -28,6 +29,7 @@ class _Unit:
     outline: tuple = ()
     witness_id: str | None = None
     annotation_text: str | None = None
+    context_refs: tuple[str, ...] = ()
 
 
 def _simple_outline(points):
@@ -309,6 +311,12 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
     if paint_sequences and len(paint_sequences) != topology["source_path_count"]:
         raise ValueError("PDF paint manifest differs from source paths")
     networks = [group["bbox_pt"] for group in parents if group["role"] == "TABLE_OR_PLAN_GRID"]
+    arrow_pairs = ()
+    if reason is None and paint_sequences:
+        arrow_pairs = paired_dimension_arrowhead_witnesses(operators.values(), paint_sequences,
+                                                           max_checks=max_enclosure_checks)
+        if arrow_pairs is None:
+            reason = "BLOCKED_DIMENSION_WITNESS_BUDGET"
 
     def blocked_units(code):
         by_parent = defaultdict(list)
@@ -359,6 +367,11 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
                 continue
             add(_Unit(refs, "CAD_TEXT", "NON_MEMBER", "SOURCE_STROKES_OF_PLATE_ANNOTATION",
                       witness_id=f"PLATE_TEXT:{refs[0]}", annotation_text=token))
+
+        for refs, context in arrow_pairs:
+            if not used.intersection(refs):
+                add(_Unit(refs, "DIMENSION_ARROWHEADS", "NON_MEMBER", "SOURCE_PAIRED_DIMENSION_ARROWHEADS",
+                          witness_id=f"DIMENSION_HEADS:{refs[0]}", context_refs=context))
 
         outlines = list(_source_path_outlines(op for ref, op in operators.items() if ref not in used))
         outline_refs = {ref for unit in outlines for ref in unit.refs}
@@ -422,6 +435,14 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
                 "source_sha256": digest, "bbox_pt": rows[-1]["bbox_pt"],
                 "method": "ISOLATED_VECTOR_PLATE_ANNOTATION", "normalized_text": unit.annotation_text,
                 "source_operator_ids": source_ids, "status": "TEXT_ONLY_UNCALIBRATED",
+            }
+        if unit.context_refs:
+            context_points = [point for ref in unit.context_refs for point in operators[ref]["points_pt"]]
+            rows[-1]["role_witness"] = {
+                "source_id": unit.witness_id, "document_id": document_id, "page": page,
+                "source_sha256": digest, "bbox_pt": list(_bounds([*points, *context_points])),
+                "method": "VECTOR_DIMENSION_ARROW_PAIR", "status": "ANNOTATION_ONLY_UNCALIBRATED",
+                "source_operator_ids": source_ids, "context_source_operator_ids": list(unit.context_refs),
             }
     if accounted != operators.keys():
         raise ValueError("PDF boundary partition does not account for every retained source operator")

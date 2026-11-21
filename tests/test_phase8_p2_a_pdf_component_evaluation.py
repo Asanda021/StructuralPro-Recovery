@@ -109,6 +109,17 @@ def test_family_micro_counts_correctly_rejected_regions_once(all_non_member):
     assert result["family_micro"]["tn"] == expected
 
 
+def test_abstaining_everywhere_earns_no_true_positives_or_negatives():
+    plan, reference, predictions, manifest = _fixture()
+    for unit in predictions["units"].values():
+        unit.update(decision="AMBIGUOUS", objects=[])
+    result = _evaluate(plan, reference, predictions, manifest)
+    micro = result["family_micro"]
+    assert micro["tp"] == micro["tn"] == micro["recall"] == 0 and micro["precision"] is None
+    assert micro["fn"] == 2 and result["coverage"]["abstention_rate"] == 1
+    assert result["thresholds_met"] is False
+
+
 @pytest.mark.parametrize("invalid", ["foreign", "missing_scope", "duplicate_reviewer", "absent_adjudication",
                                      "duplicate_prediction", "payable", "digest"])
 def test_evaluator_fails_closed_on_ineligible_source_authority(invalid):
