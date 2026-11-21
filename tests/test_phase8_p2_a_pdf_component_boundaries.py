@@ -74,6 +74,31 @@ def test_crossing_grid_keeps_two_outlines_in_a_shared_paint_path(tmp_path):
     assert all(row["classification_status"] == "AMBIGUOUS" for row in outlines)
 
 
+def test_residual_strokes_split_after_their_connecting_outline_is_claimed(tmp_path):
+    def draw(pdf):
+        page = _page(pdf)
+        page.draw_rect((100, 90, 170, 155))
+        page.draw_line((60, 112), (100, 112))
+        page.draw_line((170, 127), (211, 127))
+        page.draw_line((194, 105), (194, 144))
+
+    report, _ = _report(tmp_path, draw)
+    rows = _assert_partition(report)
+    parent, = report["detail_evidence_graph"]["topology_pages"][0]["groups"]
+    by_operators = {tuple(row["source_operator_ids"]): row for row in rows}
+    assert set(by_operators) == {
+        ("PDF001:p1:d1:s1",),
+        ("PDF001:p1:d2:s1",),
+        ("PDF001:p1:d3:s1", "PDF001:p1:d4:s1"),
+    }
+    assert all(row["parent_component_ids"] == [parent["candidate_id"]] for row in rows)
+    assert all(row["classification_status"] == "AMBIGUOUS" for row in rows)
+    assert sorted((path["path_index"], path["paint"], path["paint_sequence"])
+                  for row in rows for path in row["source_paths"]) == [
+        (1, "s", 0), (2, "s", 1), (3, "s", 2), (4, "s", 3),
+    ]
+
+
 def test_explicit_page_frame_and_nested_local_frame_are_not_a_single_detail(tmp_path):
     def draw(pdf):
         p = _page(pdf)
@@ -349,6 +374,31 @@ def test_budget_block_retains_all_known_operator_refs_and_paint_order(tmp_path):
     assert {i for r in records for i in r["source_operator_ids"]} == {f"PDF001:p1:d{i}:s1" for i in (1, 2, 3)}
     assert all(type(s["paint_sequence"]) is int for r in records for s in r["source_paths"])
     pdf.close()
+
+
+def test_residual_connectivity_budget_blocks_without_losing_operator_custody():
+    from core.drawings.pdf_component_boundaries import build_pdf_component_boundary_page
+    from core.drawings.pdf_sheet_detail_inventory import inventory_pdf_page_regions
+
+    with pymupdf.open() as pdf:
+        page = _page(pdf)
+        page.draw_rect((100, 90, 170, 155))
+        page.draw_line((170, 127), (211, 127))
+        page.draw_line((194, 105), (194, 144))
+        page.draw_line((201, 105), (201, 144))
+        summary = inventory_pdf_page_regions(page, document_id="PDF001", page_number=1, include_topology=True)
+
+    records, receipt = build_pdf_component_boundary_page(
+        summary["detail_topology"], document_id="PDF001", page=1, digest="a" * 64, sheet_kind=None,
+        path_groups={}, paint_sequences=summary["source_paint_sequences"], max_enclosure_checks=1,
+    )
+    assert receipt["status"] == "BLOCKED"
+    assert receipt["reason_code"] == "BLOCKED_RESIDUAL_CONNECTIVITY_BUDGET"
+    assert receipt["unaccounted_operator_count"] == 0
+    record, = records
+    assert record["classification_status"] == "BLOCKED"
+    assert record["source_operator_ids"] == [f"PDF001:p1:d{i}:s1" for i in range(1, 5)]
+    assert [path["paint_sequence"] for path in record["source_paths"]] == [0, 1, 2, 3]
 
 
 @pytest.mark.parametrize("wrong_sha", [False, True])

@@ -12,7 +12,9 @@ from itertools import combinations, pairwise
 from math import isclose
 import re
 
-from core.drawings.pdf_detail_topology import _Stroke, _bounds, _cross, _non_endpoint_contact
+from core.drawings.pdf_detail_topology import (
+    _Stroke, _bounds, _connected_strokes, _cross, _non_endpoint_contact, _stroke_parts,
+)
 from core.drawings.pdf_dimension_arrowheads import paired_dimension_arrowhead_witnesses
 from core.drawings.pdf_vector_type_labels import stroked_plate_annotations
 
@@ -392,10 +394,37 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
         else:
             for unit in reviewed:
                 add(unit)
-            for parent in parents:
-                refs = tuple(op["source_id"] for op in parent["source_operators"] if op["source_id"] not in used)
-                if refs:
-                    add(_remaining_unit(parent, refs))
+            residual_by_parent = {
+                parent["candidate_id"]: tuple(op["source_id"] for op in parent["source_operators"]
+                                              if op["source_id"] not in used)
+                for parent in parents
+            }
+            # Removing an owned operator can sever contacts in the original
+            # topology. Recheck only partially consumed parents, with one
+            # page-wide budget and the original stroke contact rules.
+            residual_ops = [
+                operators[ref] for parent in parents
+                if 1 < len(residual_by_parent[parent["candidate_id"]]) < len(parent["source_operators"])
+                for ref in residual_by_parent[parent["candidate_id"]]
+            ]
+            strokes = [
+                stroke for index, op in enumerate(residual_ops)
+                for stroke in _stroke_parts(op["operator"], tuple(map(tuple, op["points_pt"])), index)
+            ]
+            parts, _ = _connected_strokes(residual_ops, strokes, max_enclosure_checks)
+            if parts is None:
+                reason = "BLOCKED_RESIDUAL_CONNECTIVITY_BUDGET"
+                units = blocked_units(reason)
+            else:
+                split_refs = defaultdict(list)
+                for part in parts.values():
+                    refs = tuple(residual_ops[index]["source_id"] for index in sorted({s.owner for s in part}))
+                    split_refs[owner[refs[0]]].append(refs)
+                for parent in parents:
+                    parent_id = parent["candidate_id"]
+                    for refs in split_refs.get(parent_id, [residual_by_parent[parent_id]]):
+                        if refs:
+                            add(_remaining_unit(parent, refs))
 
     rows = []
     parent_uses, bbox_uses = Counter(), Counter()
