@@ -9,9 +9,10 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from itertools import combinations, pairwise
+from math import isclose
 import re
 
-from core.drawings.pdf_detail_topology import _Stroke, _bounds, _non_endpoint_contact
+from core.drawings.pdf_detail_topology import _Stroke, _bounds, _cross, _non_endpoint_contact
 from core.drawings.pdf_vector_type_labels import stroked_plate_annotations
 
 _MAX_OUTLINE_EDGES = 48
@@ -127,6 +128,98 @@ def _same_outline_key(points):
 def _axis_aligned_rectangle(points, box):
     x0, y0, x1, y1 = box
     return len(points) == 4 and set(points) == {(x0, y0), (x0, y1), (x1, y0), (x1, y1)}
+
+
+def _two_stroke_chain(path):
+    if len(path) != 2 or any(op["operator"] != "l" or op["paint"] != "s" for op in path):
+        return ()
+    (a, b), (c, d) = (tuple(map(tuple, op["points_pt"])) for op in path)
+    if b != c:
+        return ()
+    return (a, b, d) if a[0] < d[0] else (d, b, a)
+
+
+def _accented_ring_context(row, paths):
+    """Flag an oval with an independently painted accent and aligned fork/stem."""
+    points = tuple(map(tuple, row["outline_pt"]))
+    (x, y, u, v), refs = row["bbox_pt"], row["source_operator_ids"]
+    width, height = u - x, v - y
+    if not (len(row["source_paths"]) == 1 and 12 <= len(points) == len(refs) <= 28
+            and 3.5 <= height <= 18 and .55 <= width / height <= .95):
+        return ()
+    turns = [_cross(a, b, c) for a, b, c in zip(points, points[1:] + points[:1], points[2:] + points[:2])]
+    # Quantized CAD strokes can introduce a small reverse turn at a joint.
+    turn_tolerance = .005 * width * height
+    if min(turns) < -turn_tolerance and max(turns) > turn_tolerance:
+        return ()
+    path = row["source_paths"][0]["path_index"]
+    if len(paths[path]) != len(refs):
+        return ()
+    accent, fork = paths.get(path - 1, ()), paths.get(path + 1, ())
+    upper, neighbor = _two_stroke_chain(accent), _two_stroke_chain(fork)
+    if not upper or not neighbor:
+        return ()
+    left, tip, right = upper
+    if not (x < left[0] < tip[0] < right[0] < u and .30 * width <= right[0] - left[0] <= .8 * width
+            and .03 * height <= y - max(left[1], right[1]) <= .25 * height
+            and .025 * height <= min(left[1], right[1]) - tip[1] <= .25 * height):
+        return ()
+    left, tip, right = neighbor
+    if not (.10 * height <= left[0] - u <= .42 * height and left[0] < tip[0] < right[0]
+            and .45 * height <= right[0] - left[0] <= 1.1 * height
+            and all(abs(point[1] - y) <= .10 * height for point in (left, right))
+            and .28 * height <= tip[1] - y <= .65 * height):
+        return ()
+    stems = [op for op in paths.get(path + 2, ()) if op["operator"] == "l" and op["paint"] == "s"
+             and sorted(map(tuple, op["points_pt"])) == [tip, (tip[0], v)]]
+    return tuple(op["source_id"] for op in (*accent, *fork, *stems)) if len(stems) == 1 else ()
+
+
+def _adjacent_contact_context(row, by_primitive_path):
+    """Keep separate paint identities when one of two adjacent peers touches mixed ink."""
+    if len(row["source_operator_ids"]) != 1:
+        return ()
+    path, = row["source_paths"]
+    a, b, c, d = row["bbox_pt"]
+    w, h = c - a, d - b
+    if not (0 < w <= .60 * h and _axis_aligned_rectangle(tuple(map(tuple, row["outline_pt"])), row["bbox_pt"])):
+        return ()
+    for other_path in (path["path_index"] - 1, path["path_index"] + 1):
+        other = by_primitive_path.get(other_path)
+        if other is None:
+            continue
+        x, y, u, v = other["bbox_pt"]
+        if (0 < max(x - c, a - u) <= .5 * w
+                and (b, d) == (y, v) and isclose(u - x, w, rel_tol=1e-5, abs_tol=.002)
+                and _axis_aligned_rectangle(tuple(map(tuple, other["outline_pt"])), other["bbox_pt"])
+                and other["source_paths"][0]["paint"] == path["paint"]):
+            return tuple(other["source_operator_ids"])
+    return ()
+
+
+def _hold_mixed_context_outlines(rows, operators):
+    paths = defaultdict(list)
+    for op in operators.values():
+        paths[op["path_index"]].append(op)
+    touching = {
+        r["source_paths"][0]["path_index"]: r for r in rows
+        if r["reason_code"] == "OUTLINE_TOUCHES_OTHER_SOURCE_INK"
+        and len(r["source_operator_ids"]) == 1
+    }
+    for row in rows:
+        if row["classification_status"] != "CANDIDATE":
+            continue
+        context = _accented_ring_context(row, paths)
+        reason = "ACCENTED_STROKE_GLYPH_CONTEXT"
+        if not context:
+            context = _adjacent_contact_context(row, touching)
+            reason = "ADJACENT_CONTOUR_TOUCHES_MIXED_INK"
+        if context:
+            context_points = [point for ref in context for point in operators[ref]["points_pt"]]
+            box = row["bbox_pt"]
+            row.update(classification_status="AMBIGUOUS", reason_code=reason,
+                       competing_context_operator_ids=list(context),
+                       competing_context_bbox_pt=list(_bounds([box[:2], box[2:], *context_points])))
 
 
 def _review_enclosures(outlines, page_box, max_checks):
@@ -345,6 +438,7 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
         if any(bbox_uses[ref] > 1 for ref in row["bbox_group_candidate_ids"]):
             flags.append("SHARED_ROUGH_BBOX_GROUP")
         row["relation_flags"] = flags
+    _hold_mixed_context_outlines(rows, operators)
     return rows, {
         "document_id": document_id, "page": page, "source_pdf_sha256": digest,
         "status": "BLOCKED" if reason else "INDEXED_FOR_REVIEW",

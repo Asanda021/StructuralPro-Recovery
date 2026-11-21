@@ -23,11 +23,13 @@ def _save(pdf, tmp_path, name="synthetic"):
     return saved
 
 
-def _report(tmp_path, draw):
+def _report(tmp_path, draw, *, registered=False):
     pdf = pymupdf.open()
     draw(pdf)
     path = _save(pdf, tmp_path)
-    return inspect_pdf_sheet_set([path]), sha256(path.read_bytes()).hexdigest()
+    digest = sha256(path.read_bytes()).hexdigest()
+    register = _current_revision(digest) if registered else None
+    return inspect_pdf_sheet_set([path], revision_registry=register), digest
 
 
 def _ledger(report):
@@ -154,7 +156,7 @@ def test_unique_local_type_title_has_operator_custody_without_approval(tmp_path)
         p = _page(pdf, "Beam Detail B4")
         _draw_typed_detail(p)
 
-    report, digest = _report(tmp_path, draw)
+    report, digest = _report(tmp_path, draw, registered=True)
     _assert_partition(report)
     link, = [r for r in _ledger(report)["component_source_links"] if r["status"] == "PROPOSED"]
     assert link["source_pdf_sha256"] == digest and link["document_id"] == "PDF001" and link["page"] == 1
@@ -164,8 +166,103 @@ def test_unique_local_type_title_has_operator_custody_without_approval(tmp_path)
     assert link["title_anchor_id"] and len(link["title_bbox_pt"]) == 4
     assert link["type_source"]["source_id"] != link["title_type_source"]["source_id"]
     assert [w["printed"] for w in link["local_printed_scale_witnesses"]] == ["Scale 1:40"]
-    assert link["scale_calibrated"] is False
+    assert link["scale_calibrated"] is link["independently_reviewed"] is False
+    assert link["authority_status"] == "CURRENT" and len(link["scale_scope_bbox_pt"]) == 4
     assert link["span_specific_detail_verified"] is False and link["required_evidence"]
+
+
+def test_stroked_accented_ring_can_be_ink_without_becoming_a_component(tmp_path):
+    def draw(pdf):
+        from math import cos, pi, sin
+
+        page = _page(pdf)
+        # Two loops with identical geometry. Only the first has independent
+        # accent and aligned stem context in the original paint order.
+        page.draw_polyline([(115, 125), (115, 132), (117, 134)], closePath=False)
+        page.draw_polyline([(121, 123), (123, 122), (125, 123)], closePath=False)
+        for center in (123, 289):
+            points = [(center + 3.75 * cos(i * pi / 8), 130 + 5 * sin(i * pi / 8))
+                      for i in range(16)]
+            page.draw_polyline([*points, points[0]], closePath=False)
+            if center == 123:
+                page.draw_polyline([(129, 125), (132, 129), (135, 125)], closePath=False)
+                page.draw_line((132, 129), (132, 135))
+
+    report, _ = _report(tmp_path, draw)
+    rows = _assert_partition(report)
+    reviews = [r for r in rows if r["reason_code"] == "ACCENTED_STROKE_GLYPH_CONTEXT"]
+    record, = reviews
+    assert record["classification_status"] == "AMBIGUOUS"
+    assert len(record["source_operator_ids"]) == len(record["outline_pt"]) == 16
+    assert set(record["competing_context_operator_ids"]) == {
+        "PDF001:p1:d2:s1", "PDF001:p1:d2:s2", "PDF001:p1:d4:s1",
+        "PDF001:p1:d4:s2", "PDF001:p1:d5:s1",
+    }
+    assert any(r["classification_status"] == "CANDIDATE" and len(r["outline_pt"]) == 16 for r in rows)
+    link, = [r for r in _ledger(report)["component_source_links"] if r["component_id"] == record["component_id"]]
+    assert link["status"] == "BLOCKED"
+
+
+@pytest.mark.parametrize("case, expected", [
+    ("touching_pair", True), ("both_independent", False), ("wide_gap", False), ("different_height", False),
+])
+def test_adjacent_outline_keeps_operator_ownership_in_mixed_assembly(tmp_path, case, expected):
+    def draw(pdf):
+        p = _page(pdf)
+        if case != "both_independent":
+            p.draw_line((66, 90), (90, 90))
+        p.draw_rect((90, 90, 104, 141))
+        x = 132 if case == "wide_gap" else 109
+        y = 149 if case == "different_height" else 141
+        p.draw_rect((x, 90, x + 14, y))
+
+    report, _ = _report(tmp_path, draw)
+    rows = _assert_partition(report)
+    peer = [r for r in rows if r["reason_code"] == "ADJACENT_CONTOUR_TOUCHES_MIXED_INK"]
+    assert bool(peer) is expected
+    if peer:
+        candidate, = peer
+        assert candidate["classification_status"] == "AMBIGUOUS"
+        assert candidate["source_operator_ids"] == ["PDF001:p1:d3:s1"]
+        assert candidate["competing_context_operator_ids"] == ["PDF001:p1:d2:s1"]
+        assert candidate["competing_context_bbox_pt"] == [90, 90, 123, 141]
+        other, = [r for r in rows if r["source_operator_ids"] == ["PDF001:p1:d2:s1"]]
+        assert other["reason_code"] == "OUTLINE_TOUCHES_OTHER_SOURCE_INK"
+
+
+def _current_revision(digest):
+    return {"schema_version": 1, "documents": [{
+        "sha256": digest, "project_id": "SYNTHETIC", "issue_id": "TEST-ISSUE",
+        "revision": "R1", "status": "CURRENT", "authority_reference": "Test issue register",
+    }]}
+
+
+@pytest.mark.parametrize("case, reason", [
+    ("unregistered", "LOCAL_DETAIL_REVISION_UNVERIFIED"),
+    ("foreign", "registry SHA does not match"),
+    ("unbound_scale", "SCALE_PRINT_OUTSIDE_LOCAL_VIEW"),
+])
+def test_proposal_rejects_unbound_revision_and_scale(tmp_path, case, reason):
+    doc = pymupdf.open()
+    p = _page(doc, "Beam Detail B4")
+    p.insert_text((240, 55), "REV R1")
+    p.draw_rect((40, 81, 165, 142))
+    p.insert_text((66, 115), "B4")
+    p.insert_text((145 if case == "unbound_scale" else 58, 155), "Scale 1:40")
+    path = _save(doc, tmp_path)
+    options = {} if case == "unregistered" else {
+        "revision_registry": _current_revision("a" * 64 if case == "foreign" else sha256(path.read_bytes()).hexdigest())
+    }
+    if case == "foreign":
+        with pytest.raises(ValueError, match=reason):
+            inspect_pdf_sheet_set([path], **options)
+        return
+    report = inspect_pdf_sheet_set([path], **options)
+    _assert_partition(report)
+    row, = _ledger(report)["component_source_links"]
+    assert row["status"] in {"BLOCKED", "UNRESOLVED"}
+    assert row["reason_code"] == reason
+    assert row["type_tag"] == "B4"
 
 
 @pytest.mark.parametrize("case,reason", [
@@ -298,7 +395,7 @@ def test_qt_filter_readonly_source_link_and_boundary_records(tmp_path):
         _draw_typed_detail(p)
 
     app = QApplication.instance() or QApplication([])
-    report, digest = _report(tmp_path, draw)
+    report, digest = _report(tmp_path, draw, registered=True)
     widget = PDFDetailGraphReview(report)
     try:
         key = "boundary_components"

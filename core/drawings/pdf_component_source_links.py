@@ -21,6 +21,7 @@ _REVIEW_EVIDENCE = {
     "MULTIPLE_SCALE_SCOPES": "SCALE_SCOPE_OF_THIS_DETAIL",
     "NO_APPLICABLE_LOCAL_SCALE": "SCALE_SCOPE_OF_THIS_DETAIL",
     "MULTIPLE_LOCAL_SCALE_WITNESSES": "SCALE_SCOPE_OF_THIS_DETAIL",
+    "SCALE_PRINT_OUTSIDE_LOCAL_VIEW": "SCALE_SCOPE_OF_THIS_DETAIL",
     "SAME_TYPE_ON_OTHER_SHEET": "ISSUED_SHEET_AND_DETAIL_ID",
     "SAME_TYPE_IN_OTHER_DOCUMENT": "ISSUED_SHEET_AND_DETAIL_ID",
     "NO_INDEPENDENT_TYPE_INSIDE_OUTLINE": "INDEPENDENT_TYPE_WORD_IN_OUTLINE",
@@ -133,6 +134,12 @@ def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word
         return "UNRESOLVED", "NO_APPLICABLE_LOCAL_SCALE", title, declared, matched
     if scope["scale_owners"][local_scales[0]["source_line"], local_scales[0]["part"]] > 1:
         return "BLOCKED", "MULTIPLE_SCALE_SCOPES", title, declared, matched
+    a, _, c, _ = boundary["bbox_pt"]
+    x, _, u, _ = local_scales[0]["bbox_pt"]
+    if not a <= x < u <= c:
+        return "UNRESOLVED", "SCALE_PRINT_OUTSIDE_LOCAL_VIEW", title, declared, matched
+    if scope["authority_status"] != "CURRENT":
+        return "BLOCKED", "LOCAL_DETAIL_REVISION_UNVERIFIED", title, declared, matched
     return "PROPOSED", "UNIQUE_TYPED_TITLE_AND_DISTINCT_WORD_INSIDE_OUTLINE", title, declared, matched
 
 
@@ -217,12 +224,19 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
             required = [request] if request else []
             if status != "EXCLUDED_NON_MEMBER":
                 required.extend(_ENGINEERING_EVIDENCE)
+            scale_scope = None
+            if status == "PROPOSED":
+                boxes = (row["bbox_pt"], local_scales[0]["bbox_pt"], title["bbox_pt"])
+                scale_scope = list(_bounds([point for box in boxes for point in (box[:2], box[2:])]))
             links.append({
                 "link_id": f'SOURCE_LINK:{row["component_id"]}', "component_id": row["component_id"],
                 "document_id": key[0], "page": key[1], "source_pdf_sha256": page_sources[key],
                 "bbox_pt": row["bbox_pt"], "sheet_kind": row["sheet_kind"],
                 "scope": "SAME_DOCUMENT_PAGE_ONLY", "boundary_role": row["boundary_role"],
                 "source_operator_ids": row["source_operator_ids"], "source_paths": row["source_paths"],
+                "outline_pt": row["outline_pt"],
+                "competing_context_operator_ids": row.get("competing_context_operator_ids", ()),
+                "competing_context_bbox_pt": row.get("competing_context_bbox_pt"),
                 "title_anchor_id": title["title_anchor_id"] if title else None,
                 "title_bbox_pt": title["bbox_pt"] if title else None,
                 "title_text": title["title_preview"] if title else None,
@@ -231,11 +245,13 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
                     for t in possible
                 ],
                 "type_tag": declared["type_tag"] if declared else None, "title_type_source": declared,
+                "family_candidates": title["family_candidates"] if title else (),
                 "type_source": matched, "local_type_witnesses": list(contained),
                 "printed_scale_denominators": scope["scale_values"],
                 "local_printed_scale_witnesses": local_scales,
                 "authority_status": scope["authority_status"],
-                "scale_calibrated": False,
+                "scale_scope_bbox_pt": scale_scope,
+                "scale_calibrated": False, "independently_reviewed": False,
                 "status": status, "reason_code": reason,
                 "required_evidence": required,
                 "detail_boundary_verified": False, "span_specific_detail_verified": False,

@@ -3,7 +3,7 @@
 Geometry uses both the region IoU and the Jaccard overlap of the original
 operator sets. Convex hulls do not replace reviewed ink. A negative unit is
 an explicitly adjudicated region, so arbitrary empty sheet space adds no TN.
-The caller authenticates signed review receipts and the governing revision.
+Scoring real data requires an external verifier of the signed reference.
 """
 from collections import Counter, defaultdict
 from datetime import date
@@ -30,7 +30,13 @@ def _is_sha(value, size=64):
 def _read_locked(content, expected):
     if not isinstance(content, bytes) or sha256(content).hexdigest() != expected:
         raise ValueError("Holdout artefact digest mismatch")
-    record = json.loads(content)
+    def unique(pairs):
+        record = dict(pairs)
+        if len(record) != len(pairs):
+            raise ValueError("Duplicate key in locked PDF holdout")
+        return record
+
+    record = json.loads(content, object_pairs_hook=unique)
     if not isinstance(record, dict):
         raise ValueError("Holdout artefact must be a JSON object")
     return record
@@ -107,12 +113,14 @@ def _objects(unit, region, allowed_refs, seen, *, reference):
     return result
 
 
-def _match(truths, guesses):
+def _match(truths, guesses, *, match_family=False):
     """Maximum cardinality at fixed thresholds, with deterministic IoU tie ordering."""
     choices = []
     for truth in truths:
         candidates = []
         for j, guess in enumerate(guesses):
+            if match_family and truth["family"] != guess["family"]:
+                continue
             area = _region_iou(truth["box"], guess["box"])
             common = len(truth["refs"] & guess["refs"]) / len(truth["refs"] | guess["refs"])
             if min(area, common) >= _IOU_THRESHOLD:
@@ -158,12 +166,19 @@ def _title_pair(truth, guess, counts):
 
 
 def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, operators_by_page, *,
-                                  plan_sha256, reference_sha256, predictions_sha256, fixture=False):
+                                  plan_sha256, reference_sha256, predictions_sha256, fixture=False,
+                                  verify_reference=None, operators_by_region=None):
     """Compare immutable partitions and return metrics, without modifying a review or BOQ.
 
     Every frozen region must occur in both files. No prediction on a positive
     region is a miss, including explicit abstention. An unreadable reference
     remains in coverage and out of the confusion denominators. `None` is N/A.
+
+    For real data, the caller provides a trusted verifier outside these JSON
+    files. It must authenticate the signed reference (two qualified reviewers
+    and a third for disagreements) and governing revision against the four
+    supplied identifiers. A receipt hash inside the reference is insufficient.
+    Region operator sets come from the frozen, prediction-free source index.
     """
     plan = _read_locked(plan_json, plan_sha256)
     reference = _read_locked(reference_json, reference_sha256)
@@ -184,6 +199,20 @@ def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, 
     if (not isinstance(truth_units, dict) or not isinstance(prediction_units, dict)
             or len(set(ids)) != len(ids) or set(ids) != truth_units.keys() or set(ids) != prediction_units.keys()):
         raise ValueError("Holdout records differ from the frozen region list")
+    provenance = {"source_sha256": source, "governing_revision": revision,
+                  "engine_commit": predictions["engine_commit"], "plan_sha256": plan_sha256,
+                  "reference_sha256": reference_sha256, "predictions_sha256": predictions_sha256}
+    if not fixture and (verify_reference is None or
+                        verify_reference(source, plan_sha256, revision, reference_sha256) is not True):
+        unknown = dict.fromkeys((*_COUNTS, "precision", "recall", "f1"))
+        return {**provenance, "status": "METRICS_NOT_MEASURABLE", "thresholds_met": False,
+                "reference_status": "GOLD_PENDING_INDEPENDENT_REVIEW",
+                "geometry": unknown, "title": unknown.copy(), "family_micro": unknown.copy(),
+                "family": {}, "family_macro": dict.fromkeys(("precision", "recall", "f1")),
+                "counts_by_reference": {"authenticated_regions": 0},
+                "coverage": {"total_regions": len(regions), "abstention_rate": None}}
+    if not fixture and (operators_by_region is None or operators_by_region.keys() != set(ids)):
+        raise ValueError("A verified holdout needs the frozen per-region source operators")
     allow = {page: frozenset(refs) for page, refs in operators_by_page.items()}
     boundaries, titles, families = Counter(), Counter(), defaultdict(Counter)
     coverage = Counter({key: 0 for key in (
@@ -200,9 +229,15 @@ def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, 
         truth_unit, guess_unit = truth_units[ident], prediction_units[ident]
         _check_review(truth_unit)
         box = _box(region["bbox_pt"])
-        truths = _objects(truth_unit, box, allow[page], seen_truth, reference=True)
-        guesses = _objects(guess_unit, box, allow[page], seen_guesses, reference=False)
-        work += len(truths) * len(guesses)
+        permitted = allow[page]
+        if operators_by_region is not None:
+            local_refs = frozenset(operators_by_region[ident])
+            if local_refs - permitted:
+                raise ValueError("Foreign operator in frozen PDF holdout region")
+            permitted = local_refs
+        truths = _objects(truth_unit, box, permitted, seen_truth, reference=True)
+        guesses = _objects(guess_unit, box, permitted, seen_guesses, reference=False)
+        work += 2 * len(truths) * len(guesses)
         if work > 300_000:
             raise ValueError("Holdout matching budget exhausted")
         coverage["abstained_regions"] += guess_unit["decision"] in _ABSTENTIONS
@@ -221,23 +256,22 @@ def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, 
         support["reviewed_title_links"] += sum(row.get("title_reviewed") is True and row.get("title_ref") is not None
                                                for row in truths)
         matches = _match(truths, guesses)
+        family_matches = _match(truths, guesses, match_family=True)
+        family_guess_indices = set(family_matches.values())
         boundaries.update(tp=len(matches), fn=len(truths) - len(matches), fp=len(guesses) - len(matches))
         for i, truth in enumerate(truths):
             guess = guesses[matches[i]] if i in matches else None
             actual = guess["family"] if guess else None
             expected = truth["family"]
-            families[expected]["tp" if actual == expected else "fn"] += 1
-            if guess and actual != expected:
-                if actual is None:
-                    coverage["untyped_matched_objects"] += 1
-                else:
-                    families[actual]["fp"] += 1
+            families[expected]["tp" if i in family_matches else "fn"] += 1
+            if guess and actual is None:
+                coverage["untyped_matched_objects"] += 1
             _title_pair(truth, guess, titles)
         matched_guesses = set(matches.values())
         for j, guess in enumerate(guesses):
+            if j not in family_guess_indices and guess["family"] is not None:
+                families[guess["family"]]["fp"] += 1
             if j not in matched_guesses:
-                if guess.get("family") is not None:
-                    families[guess["family"]]["fp"] += 1
                 titles["fp"] += guess.get("title_ref") is not None
 
     support["decided_sheets"] = len(decided_pages)
@@ -261,12 +295,11 @@ def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, 
     threshold_met = (not fixture and enough and micro["precision"] is not None and micro["recall"] is not None
                      and micro["precision"] >= _PRECISION_TARGET and micro["recall"] >= _RECALL_TARGET)
     return {
-        "status": status, "thresholds_met": threshold_met,
+        **provenance, "status": status, "thresholds_met": threshold_met,
+        "reference_status": "SYNTHETIC_FIXTURE" if fixture else "INDEPENDENT_REFERENCE_VERIFIED",
         "geometry": _score(boundaries, fixture or enough),
         "family": per_family, "family_micro": micro, "family_macro": macro,
         "title": _score(titles, fixture or (enough and support["reviewed_title_links"] >= _FAMILY_SUPPORT)),
         "counts_by_reference": dict(support), "coverage": {**coverage, "total_regions": len(regions),
             "abstention_rate": coverage["abstained_regions"] / len(regions)},
-        "source_sha256": source, "governing_revision": revision, "engine_commit": predictions["engine_commit"],
-        "plan_sha256": plan_sha256, "reference_sha256": reference_sha256, "predictions_sha256": predictions_sha256,
     }

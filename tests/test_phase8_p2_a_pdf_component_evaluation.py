@@ -55,11 +55,11 @@ def _fixture():
     return plan, reference, predictions, {i: [ref] for i, ref in enumerate((a, b, c, d, e), 1)}
 
 
-def _evaluate(plan, reference, predictions, manifest):
+def _evaluate(plan, reference, predictions, manifest, *, fixture=True):
     ref_bytes, pred_bytes = _bytes(reference), _bytes(predictions)
     return evaluate_pdf_component_holdout(
         plan, ref_bytes, pred_bytes, manifest, plan_sha256=_digest(plan),
-        reference_sha256=_digest(ref_bytes), predictions_sha256=_digest(pred_bytes), fixture=True,
+        reference_sha256=_digest(ref_bytes), predictions_sha256=_digest(pred_bytes), fixture=fixture,
     )
 
 
@@ -69,9 +69,9 @@ def test_component_evaluation_counts_duplicates_conflicts_abstention_and_title_s
     assert result["geometry"] == {
         "tp": 1, "fp": 2, "fn": 1, "tn": 1, "precision": 1 / 3, "recall": 0.5, "f1": 0.4
     }
-    assert result["family"]["beam"]["tp"] == 0
-    assert result["family"]["beam"]["fn"] == 1
-    assert result["family"]["beam"]["fp"] == 2
+    assert result["family"]["beam"]["tp"] == 1
+    assert result["family"]["beam"]["fn"] == 0
+    assert result["family"]["beam"]["fp"] == 1
     assert result["family"]["column"]["fn"] == 1
     assert result["family"]["column"]["fp"] == 1
     assert result["title"]["fp"] == result["title"]["fn"] == 1
@@ -122,11 +122,65 @@ def test_zero_denominator_is_na_and_real_insufficient_support_withholds_scores()
     pred["units"]["negative"] = {"decision": "UNCLASSIFIED", "objects": []}
     assert _evaluate(plan, reference, pred, manifest)["geometry"]["precision"] is None
     ref_bytes, pred_bytes = _bytes(reference), _bytes(pred)
+    verified = []
+
+    def test_authenticator(*args):
+        verified.append(args)
+        return True
+
+    frozen_operators = {row["review_id"]: manifest[row["page"]] for row in json.loads(plan)["regions"]}
     result = evaluate_pdf_component_holdout(
         plan, ref_bytes, pred_bytes, manifest, plan_sha256=_digest(plan),
         reference_sha256=_digest(ref_bytes), predictions_sha256=_digest(pred_bytes),
+        verify_reference=test_authenticator, operators_by_region=frozen_operators,
     )
+    assert verified == [("a" * 64, _digest(plan), "SYNTHETIC-R1", _digest(ref_bytes))]
     assert result["status"] == "METRICS_NOT_MEASURABLE"
     assert result["geometry"]["fn"] == 2
     assert result["geometry"]["recall"] is None
     assert result["family"]["beam"]["estimate_status"] == "NOT_ESTIMABLE"
+
+
+def test_another_region_cannot_supply_source_operators():
+    plan, reference, pred, manifest = _fixture()
+    refs = {row["review_id"]: manifest[row["page"]].copy() for row in json.loads(plan)["regions"]}
+    same_page_elsewhere = "test:p1:d88:s1"
+    manifest[1].append(same_page_elsewhere)
+    pred["units"]["positive"]["objects"][0]["source_operator_ids"] = [same_page_elsewhere]
+    ref_bytes, pred_bytes = _bytes(reference), _bytes(pred)
+    with pytest.raises(ValueError, match="out-of-region PDF object"):
+        evaluate_pdf_component_holdout(
+            plan, ref_bytes, pred_bytes, manifest, plan_sha256=_digest(plan),
+            reference_sha256=_digest(ref_bytes), predictions_sha256=_digest(pred_bytes),
+            verify_reference=lambda *_: True, operators_by_region=refs,
+        )
+
+
+def test_duplicate_keys_rejected_even_if_the_bytes_are_pinned():
+    plan, reference, pred, manifest = _fixture()
+    pred_bytes = _bytes(pred).replace(b'"engine_commit": ', b'"engine_commit": "other", "engine_commit": ', 1)
+    ref_bytes = _bytes(reference)
+    with pytest.raises(ValueError, match="Duplicate key"):
+        evaluate_pdf_component_holdout(
+            plan, ref_bytes, pred_bytes, manifest, plan_sha256=_digest(plan),
+            reference_sha256=_digest(ref_bytes), predictions_sha256=_digest(pred_bytes), fixture=True,
+        )
+
+
+def test_unverified_receipt_hashes_never_produce_real_metrics():
+    plan, reference, predictions, manifest = _fixture()
+    result = _evaluate(plan, reference, predictions, manifest, fixture=False)
+    assert result["status"] == "METRICS_NOT_MEASURABLE"
+    assert result["reference_status"] == "GOLD_PENDING_INDEPENDENT_REVIEW"
+    assert result["geometry"]["tp"] is None and result["coverage"]["abstention_rate"] is None
+
+
+def test_family_matching_does_not_prefer_unrelated_prediction_id():
+    plan, reference, predictions, manifest = _fixture()
+    a = _evaluate(plan, reference, predictions, manifest)
+    guesses = predictions["units"]["positive"]["objects"]
+    guesses[0]["object_id"], guesses[1]["object_id"] = guesses[1]["object_id"], guesses[0]["object_id"]
+    b = _evaluate(plan, reference, predictions, manifest)
+    assert a["geometry"] == b["geometry"]
+    assert a["family"] == b["family"]
+    assert a["family"]["beam"]["tp"] == 1

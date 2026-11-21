@@ -165,12 +165,17 @@ _DETAIL_FIELDS = {
                                   ('شناسهٔ نواحی', 'region_ids'), ('علت بررسی', 'reason')),
     'boundary_components': (('هش PDF مرجع', 'source_pdf_sha256'), ('نقش شیت', 'sheet_kind'),
                             ('کادر (pt)', 'bbox_pt'), ('شناسه عملگرهای اصلی', 'source_operator_ids'),
+                            ('نقاط مرز (pt)', 'outline_pt'), ('شناسه‌های شاهد رقیب', 'competing_context_operator_ids'),
                             ('گروه‌های توپولوژی', 'parent_component_ids'),
                             ('گروه‌های تقریبی', 'bbox_group_candidate_ids'),
                             ('وضعیت هم‌پوشانی', 'relation_flags'), ('شناسه شاهد نقش', 'role_witness_id')),
     'component_source_links': (('هش PDF مرجع', 'source_pdf_sha256'), ('نقش شیت', 'sheet_kind'),
                                ('شناسه پیوند', 'link_id'), ('دامنه پیوند', 'scope'),
                                ('کادر جزء (pt)', 'bbox_pt'), ('شناسه عملگرهای اصلی', 'source_operator_ids'),
+                               ('نقاط مرز (pt)', 'outline_pt'), ('شناسه‌های شاهد رقیب', 'competing_context_operator_ids'),
+                               ('خانوادهٔ پیشنهادی', 'family_candidates'),
+                               ('محدوده شاهد مقیاس (pt)', 'scale_scope_bbox_pt'),
+                               ('داوری مستقل پیوند', 'independently_reviewed'),
                                ('مقیاس‌های چاپی شیت', 'printed_scale_denominators'),
                                ('وضعیت نسخه', 'authority_status')),
     'plan_detail_type_only_references': (('هش PDF پلان', 'plan_pdf_sha256'),
@@ -304,6 +309,15 @@ _COMPONENT_STATUS_LABELS = {
     'AMBIGUOUS': 'مبهم، نیازمند بازبینی',
     'NON_MEMBER': 'شاهد غیرعضو',
     'UNCLASSIFIED': 'نقش نامشخص',
+    'PROPOSED': 'پیشنهاد برای داوری',
+    'REVIEW_BACKED': 'دارای داوری مستقل',
+}
+
+_COMPONENT_CONTEXT_LABELS = {
+    'ACCENTED_STROKE_GLYPH_CONTEXT': 'حلقه، نشانه بالای حرف و خطوط حرف مجاور بررسی شوند.',
+    'ADJACENT_CONTOUR_TOUCHES_MIXED_INK': 'چهارضلعی مجاور به خطوط مختلط دیتیل متصل است.',
+    'LOCAL_DETAIL_REVISION_UNVERIFIED': 'ویرایش حاکم این سند با همین هش ثبت نشده است.',
+    'SCALE_PRINT_OUTSIDE_LOCAL_VIEW': 'نوشته مقیاس از محدوده افقی همین نما بیرون می‌رود.',
 }
 
 
@@ -335,8 +349,9 @@ class _EvidenceTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if index.isValid() and role == Qt.ItemDataRole.DisplayRole:
             field = self.columns[index.column()][1]
-            value = self.records[index.row()].get(field)
-            if field == 'classification_status':
+            record = self.records[index.row()]
+            value = record.get(field)
+            if field == 'classification_status' or (field == 'status' and 'link_id' in record):
                 label = 'مسدود' if value == 'BLOCKED' else _COMPONENT_STATUS_LABELS.get(value)
                 if label is not None:
                     return f'{label} [{value}]'
@@ -845,7 +860,8 @@ class PDFDetailGraphReview(QWidget):
             with PDFDrawingEngine(self._source_paths[record['document_id']],
                                   expected_sha256=record['source_pdf_sha256'],
                                   max_snapshot_bytes=64 * 1024 * 1024) as engine:
-                png = engine.render_evidence_crop(record['page'], record['bbox_pt'])
+                crop_box = record.get('competing_context_bbox_pt') or record['bbox_pt']
+                png = engine.render_evidence_crop(record['page'], crop_box)
             image = QPixmap()
             if not image.loadFromData(png):
                 raise ValueError('تصویر شاهد قابل خواندن نیست')
@@ -928,6 +944,8 @@ class PDFDetailGraphReview(QWidget):
 
     def _component_provenance_lines(self, record):
         lines = ['تأیید مهندسی نشده | قابل پرداخت مالی — خیر']
+        if explanation := _COMPONENT_CONTEXT_LABELS.get(record['reason_code']):
+            lines.append(explanation)
         for path in record.get('source_paths', ()):
             lines.append(f"مسیر {path['path_index']} | رنگ‌آمیزی {_display(path['paint'])} | ترتیب {_display(path['paint_sequence'])}")
         source = {'document_id': record['document_id'], 'page': record['page'],
