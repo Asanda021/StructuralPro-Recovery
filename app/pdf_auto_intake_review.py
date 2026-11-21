@@ -17,7 +17,7 @@ from core.drawings.pdf_auto_questions import PDFQuestionDecisionLedger
 class PDFSheetEvidenceDialog(QDialog):
     def __init__(self, report: dict, parent=None, *, attach_revision_register=None, attach_member_review=None,
                  attach_beam_profile_witnesses=None, attach_beam_axis_labels=None,
-                 attach_beam_detail_profile_witnesses=None):
+                 attach_beam_detail_profile_witnesses=None, source_paths=None):
         super().__init__(parent)
         self.setObjectName('PDFSheetEvidenceReview')
         self.setWindowTitle('تحلیل خودکار شیت‌های PDF | شواهد و ابهام‌ها')
@@ -590,7 +590,7 @@ class PDFSheetEvidenceDialog(QDialog):
                 attach_beam_profile_witnesses=attach_beam_profile_witnesses,
                 attach_beam_axis_labels=attach_beam_axis_labels,
                 attach_beam_detail_profile_witnesses=attach_beam_detail_profile_witnesses,
-                open_question=open_question,
+                open_question=open_question, source_paths=source_paths,
             )
             tabs.insertTab(0, self.graph_review, 'گراف شواهد دیتیل')
             tabs.setCurrentWidget(self.graph_review)

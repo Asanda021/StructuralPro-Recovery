@@ -12,6 +12,7 @@ from itertools import combinations, pairwise
 import re
 
 from core.drawings.pdf_detail_topology import _Stroke, _bounds, _non_endpoint_contact
+from core.drawings.pdf_vector_type_labels import stroked_plate_annotations
 
 _MAX_OUTLINE_EDGES = 48
 _MAX_ENCLOSURE_CHECKS = 1_000_000
@@ -25,6 +26,7 @@ class _Unit:
     reason: str
     outline: tuple = ()
     witness_id: str | None = None
+    annotation_text: str | None = None
 
 
 def _simple_outline(points):
@@ -252,6 +254,19 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
                 add(_Unit(refs, "CAD_TEXT", "NON_MEMBER", "SOURCE_OPERATORS_OF_RECOGNIZED_GLYPHS",
                           witness_id=word["source_id"]))
 
+        captions = list(stroked_plate_annotations(operators.values()))
+        caption_claims = Counter(ref for _, refs in captions for ref in refs)
+        parent_refs = {parent["candidate_id"]: {op["source_id"] for op in parent["source_operators"]}
+                       for parent in parents}
+        for token, refs in captions:
+            ref_set = set(refs)
+            if (used.intersection(ref_set) or any(caption_claims[ref] != 1 for ref in refs)
+                    or any(owner[ref] is None for ref in refs)
+                    or any(parent_refs[parent] - ref_set for parent in {owner[ref] for ref in refs})):
+                continue
+            add(_Unit(refs, "CAD_TEXT", "NON_MEMBER", "SOURCE_STROKES_OF_PLATE_ANNOTATION",
+                      witness_id=f"PLATE_TEXT:{refs[0]}", annotation_text=token))
+
         outlines = list(_source_path_outlines(op for ref, op in operators.items() if ref not in used))
         outline_refs = {ref for unit in outlines for ref in unit.refs}
         for parent in parents:
@@ -308,6 +323,13 @@ def build_pdf_component_boundary_page(topology, *, document_id, page, digest, sh
             "physical_member_verified": False, "physical_member_count": None,
             "quantity_approval_count": 0, "financially_payable": False,
         })
+        if unit.annotation_text is not None:
+            rows[-1]["role_witness"] = {
+                "source_id": unit.witness_id, "document_id": document_id, "page": page,
+                "source_sha256": digest, "bbox_pt": rows[-1]["bbox_pt"],
+                "method": "ISOLATED_VECTOR_PLATE_ANNOTATION", "normalized_text": unit.annotation_text,
+                "source_operator_ids": source_ids, "status": "TEXT_ONLY_UNCALIBRATED",
+            }
     if accounted != operators.keys():
         raise ValueError("PDF boundary partition does not account for every retained source operator")
     for row in rows:

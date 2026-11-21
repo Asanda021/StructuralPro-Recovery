@@ -4,6 +4,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from math import floor, hypot, isfinite
+import re
 from typing import Any, Iterable, Mapping
 
 from .pdf_type_word_witness import unrotated_page_bounds
@@ -46,6 +47,18 @@ _SINGLE_GLYPHS = (
     ('1', .12, .36, _ONE),
     ('2', .45, .87, _TWO),
     ('3', .45, .88, _THREE_TOP + _THREE_BOTTOM),
+)
+
+_PLATE_CAPTION = re.compile(r'PL[0-9]{1,4}X[0-9]{1,4}X[0-9]{1,4}')
+_PLATE_GLYPHS = (
+    ('P', .48, .85, ((0, 1), (0, 0), (.75, 0), (1, .17), (1, .33), (.75, .5), (0, .5))),
+    ('L', .48, .85, ((0, 0), (0, 1), (1, 1))),
+    ('0', .40, .60, ((.33, 1), (0, .83), (0, .17), (.33, 0), (.67, 0),
+                    (1, .17), (1, .83), (.67, 1), (.33, 1))),
+    ('6', .48, .85, ((0, .5), (.75, .5), (1, .67), (1, .83), (.75, 1),
+                    (.25, 1), (0, .83), (0, .33), (.5, 0), (.75, 0))),
+    ('7', .48, .85, ((0, 0), (1, 0), (.25, 1))),
+    *(glyph for glyph in _SINGLE_GLYPHS if glyph[0] in {'1', '2', '3'}),
 )
 
 
@@ -211,6 +224,116 @@ def _matches_template(points, expected, box, *, tolerance=.105):
     points = tuple(((px - x) / w, (py - y) / h) for px, py in points)
     return any(all(hypot(px - ex, py - ey) < tolerance for (px, py), (ex, ey) in zip(pts, expected))
                for pts in (points, points[::-1]))
+
+
+def _caption_path_glyph(path):
+    """Recognize whole undivided stroke paths, including an X with two runs."""
+    if not 1 <= len(path) <= 12 or any(op['operator'] != 'l' or op['paint'] != 's' for op in path):
+        return None, None
+    segments = [tuple(map(tuple, op['points_pt'])) for op in path]
+    points = tuple(p for segment in segments for p in segment)
+    box = _point_box(points)
+    x, y, right, bottom = box
+    h, w = bottom - y, right - x
+    if not _MIN_GLYPH_HEIGHT <= h <= 24 or not .11 <= w / h <= 1.2:
+        return None, box
+    if (len(segments) == 2 and .53 <= w / h <= 1.2 and
+            {frozenset(line) for line in segments} ==
+            {frozenset(((x, y), (right, bottom))), frozenset(((x, bottom), (right, y)))}):
+        return 'X', box
+    if any(a[1] != b[0] for a, b in zip(segments, segments[1:])):
+        return None, box
+    chain = (segments[0][0], *(end for _, end in segments))
+    matches = [char for char, lo, hi, template in _PLATE_GLYPHS
+               if lo <= w / h <= hi and _matches_template(chain, template, box, tolerance=.085)]
+    return (matches[0] if len(matches) == 1 else None), box
+
+
+def _caption_aligned(box, reference):
+    h = reference[3] - reference[1]
+    return (abs(box[3] - reference[3]) <= .07 * h and
+            abs(box[1] - reference[1]) <= .07 * h)
+
+
+def _split_caption_three(top, bottom):
+    if len(top) != 6 or len(bottom) != 5:
+        return None
+    if any(op['operator'] != 'l' or op['paint'] != 's' for op in (*top, *bottom)):
+        return None
+    chains = []
+    for run in (top, bottom):
+        segments = [tuple(map(tuple, op['points_pt'])) for op in run]
+        if any(a[1] != b[0] for a, b in zip(segments, segments[1:])):
+            return None
+        chains.append((segments[0][0], *(end for _, end in segments)))
+    upper, lower = chains
+    box = _point_box((*upper, *lower))
+    return box if (_matches_template(upper, _THREE_TOP, box, tolerance=.085)
+                   and _matches_template(lower, _THREE_BOTTOM, box, tolerance=.085)) else None
+
+
+def stroked_plate_annotations(operators):
+    """Find a narrow, isolated PL + three integer fields as text evidence.
+
+    Ordered paint paths, complete glyph shapes, baseline alignment, gaps and
+    a full caption are required. Unsupported or competing shapes stay ink.
+    The caller checks topology ownership before excluding any source strokes.
+    """
+    by_path = defaultdict(list)
+    for op in operators:
+        by_path[op['path_index']].append(op)
+    paths = {idx: sorted(ops, key=lambda op: op['operator_index']) for idx, ops in by_path.items()}
+    glyphs = {idx: _caption_path_glyph(ops) for idx, ops in paths.items()}
+    for start, (char, reference) in glyphs.items():
+        if char != 'P':
+            continue
+        first_x, top, previous_right, baseline = reference
+        h = baseline - top
+        caption, stop = 'P', start + 1
+        while stop < start + 18:
+            char, box = glyphs.get(stop, (None, None))
+            if box is None:
+                break
+            advance = 1
+            if char is None:
+                three = _split_caption_three(paths[stop], paths.get(stop + 1, ()))
+                if three is not None:
+                    char, box, advance = '3', three, 2
+            gap = (box[0] - previous_right) / h
+            is_aligned = (_caption_aligned(box, reference) or
+                          (char == 'X' and abs(box[3] - baseline) <= .07 * h
+                           and .60 * h <= box[3] - box[1] <= .75 * h))
+            if stop == start + 2:
+                in_line = .65 <= gap <= 1.65
+            else:
+                in_line = .12 <= gap <= .51
+            if not (in_line and is_aligned):
+                break
+            if char is None:
+                caption = ''
+                break
+            caption += char
+            previous_right = box[2]
+            stop += advance
+        if not _PLATE_CAPTION.fullmatch(caption):
+            continue
+        # SHX often paints the foot of the terminal 1 as a separate path.
+        foot = next(iter(paths.get(stop, ())), None)
+        extra = ()
+        if caption.endswith('1') and foot and foot['operator'] == 'l' and foot['paint'] == 's':
+            a, b = sorted(foot['points_pt'])
+            if (abs(a[1] - baseline) <= .03 * h and a[1] == b[1] and
+                    abs(a[0] - glyphs[stop - 1][1][0]) <= .035 * h and
+                    a[0] < previous_right < b[0] and b[0] - a[0] <= .39 * h):
+                extra = (foot['source_id'],)
+        # Adjacent unparsed strokes on this baseline may continue the caption.
+        # Look beyond the immediate paint successor (such as a foot or leader).
+        if any(other[0] >= first_x and 0 < other[0] - previous_right <= .5 * h
+               and _caption_aligned(other, reference)
+               for _, other in (glyphs.get(i, (None, None)) for i in range(stop, stop + 3))
+               if other is not None):
+            continue
+        yield caption, (*tuple(op['source_id'] for i in range(start, stop) for op in paths[i]), *extra)
 
 
 def _parts_glyphs(stroke, neighborhood):

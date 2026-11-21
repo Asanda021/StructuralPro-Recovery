@@ -38,7 +38,7 @@ class SnapPoint:
 
 
 class PDFDrawingEngine:
-    def __init__(self, path: str | Path, *, expected_sha256: str | None = None):
+    def __init__(self, path: str | Path, *, expected_sha256: str | None = None, max_snapshot_bytes: int | None = None):
         self.path = Path(path)
         if not self.path.exists():
             raise FileNotFoundError(self.path)
@@ -46,6 +46,7 @@ class PDFDrawingEngine:
             raise ValueError(f"مسیر PDF یک فایل نیست: {self.path}")
         self._doc = None
         self._expected_sha256 = expected_sha256
+        self._max_snapshot_bytes = max_snapshot_bytes
 
     def open(self):
         if self._doc is not None:
@@ -62,7 +63,11 @@ class PDFDrawingEngine:
             if self._expected_sha256 is None:
                 doc = fitz.open(str(self.path))
             else:
-                data = self.path.read_bytes()
+                limit = self._max_snapshot_bytes
+                with self.path.open("rb") as stream:
+                    data = stream.read(limit + 1) if limit is not None else stream.read()
+                if limit is not None and len(data) > limit:
+                    raise ValueError("اندازه PDF از سقف بررسی تصویری بیشتر است")
                 if sha256(data).hexdigest() != self._expected_sha256:
                     raise ValueError("فایل منبع PDF تغییر کرده؛ نشست به نقشه متصل نشد")
                 doc = fitz.open(stream=data, filetype="pdf")
@@ -117,6 +122,24 @@ class PDFDrawingEngine:
             raise ValueError("ابعاد نقشه برای نمایش کامل در این وضوح بسیار بزرگ است؛ وضوح پایین‌تر انتخاب کنید")
         pix = pdf_page.get_pixmap(dpi=dpi, alpha=False)
         return pix.tobytes("png")
+
+    def render_evidence_crop(self, page: int, bbox_pt) -> bytes:
+        """Render a bounded clip in source coordinates from a pinned PDF snapshot."""
+        if not self._expected_sha256:
+            raise ValueError("تصویر شاهد به هش PDF منبع نیاز دارد")
+        x0, y0, x1, y1 = bbox_pt
+        if not all(math.isfinite(v) for v in (x0, y0, x1, y1)) or x0 > x1 or y0 > y1:
+            raise ValueError("مختصات شاهد PDF نامعتبر است")
+        pdf_page = self._page(page)
+        extent = pdf_page.rect * pdf_page.derotation_matrix
+        if not (extent.x0 <= x0 <= x1 <= extent.x1 and extent.y0 <= y0 <= y1 <= extent.y1):
+            raise ValueError("مختصات شاهد از صفحه PDF خارج است")
+        pad = 8
+        clip = type(extent)(x0 - pad, y0 - pad, x1 + pad, y1 + pad) & extent
+        clip = (clip * pdf_page.rotation_matrix) & pdf_page.rect
+        zoom = min(4.0, 880 / clip.width, 620 / clip.height)
+        matrix = type(pdf_page.rotation_matrix)(zoom, zoom)
+        return pdf_page.get_pixmap(matrix=matrix, clip=clip, alpha=False, annots=False).tobytes("png")
 
     def text(self, page: int) -> str:
         return self._page(page).get_text("text") or ""

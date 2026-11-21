@@ -7,14 +7,16 @@ import json
 from pathlib import Path
 
 from core.drawings.pdf_revision_preflight import build_pdf_revision_register_draft
+from core.drawings.pdf_engine import PDFDrawingEngine
 from core.drawings.pdf_designer_rfi_gate import (
     build_designer_rfi_packet, inspect_designer_reply, load_designer_reply,
     write_designer_rfi_package, write_designer_reply_crosswalk,
 )
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMenu, QPlainTextEdit,
+    QAbstractItemView, QDialog, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMenu, QMessageBox, QPlainTextEdit,
     QPushButton, QSplitter, QTabWidget, QTableView, QToolButton, QVBoxLayout, QWidget,
 )
 
@@ -169,7 +171,8 @@ _DETAIL_FIELDS = {
     'component_source_links': (('هش PDF مرجع', 'source_pdf_sha256'), ('نقش شیت', 'sheet_kind'),
                                ('شناسه پیوند', 'link_id'), ('دامنه پیوند', 'scope'),
                                ('کادر جزء (pt)', 'bbox_pt'), ('شناسه عملگرهای اصلی', 'source_operator_ids'),
-                               ('مقیاس‌های چاپی شیت', 'printed_scale_denominators')),
+                               ('مقیاس‌های چاپی شیت', 'printed_scale_denominators'),
+                               ('وضعیت نسخه', 'authority_status')),
     'plan_detail_type_only_references': (('هش PDF پلان', 'plan_pdf_sha256'),
                                          ('کادر نشان تیپ', 'plan_mark_bbox_pt'),
                                          ('ارجاع پلان به دیتیل', 'plan_to_section_detail_verified'),
@@ -344,12 +347,14 @@ class _EvidenceTableModel(QAbstractTableModel):
 class PDFDetailGraphReview(QWidget):
     def __init__(self, report, parent=None, *, attach_revision_register=None, attach_member_review=None,
                  attach_beam_profile_witnesses=None, attach_beam_axis_labels=None,
-                 attach_beam_detail_profile_witnesses=None, open_question=None):
+                 attach_beam_detail_profile_witnesses=None, open_question=None, source_paths=None):
         super().__init__(parent)
         self.setObjectName('PDFDetailEvidenceGraph')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         graph = report['detail_evidence_graph']
         self._source_report = report
+        self._source_paths = dict(source_paths or {})
+        self._component_selection = None
         try:
             self._revision_draft = build_pdf_revision_register_draft(report)
         except ValueError:
@@ -580,6 +585,10 @@ class PDFDetailGraphReview(QWidget):
         self.details.setObjectName('PDFDetailGraphSelection')
         detail_layout.addWidget(self.details)
         navigation = QHBoxLayout()
+        self.component_image_button = QPushButton('تصویر شاهد PDF', detail_panel)
+        self.component_image_button.setObjectName('PDFComponentShowSourceImage')
+        self.component_image_button.clicked.connect(self._show_component_crop)
+        navigation.addWidget(self.component_image_button)
         self._endpoint_buttons = {}
         for role, label in (('source', 'شاهد مبدأ'), ('target', 'شاهد مقصد'),
                             ('related', 'گره مرتبط')):
@@ -777,12 +786,17 @@ class PDFDetailGraphReview(QWidget):
         selected = view.selectionModel().selectedRows()
         self._endpoint_ids = {}
         self._question_tag = None
+        self._component_selection = None
         has_related_evidence = False
         if not selected:
             self.details.setPlainText('برای مشاهدهٔ جزئیات و نشانی شواهد، یک ردیف را انتخاب کنید.')
         else:
             model = proxy.sourceModel()
             record = model.records[proxy.mapToSource(selected[0]).row()]
+            if (key in {'boundary_components', 'component_source_links'} and record.get('bbox_pt')
+                    and record['document_id'] in self._source_paths
+                    and record['source_pdf_sha256'] == self._documents[record['document_id']]['sha256']):
+                self._component_selection = record
             lines = [f'{heading} — {_display(record.get(field))}'
                      for heading, field in (*model.columns, *_DETAIL_FIELDS.get(key, ()))
                      if field in record]
@@ -816,6 +830,43 @@ class PDFDetailGraphReview(QWidget):
             button.setEnabled(self._endpoint_ids.get(role) in self._node_rows)
         self.related_evidence_button.setVisible(has_related_evidence)
         self.question_button.setVisible(bool(self._question_tag and self._open_question))
+        self.component_image_button.setVisible(self._component_selection is not None)
+        self.component_image_button.setEnabled(self._component_selection is not None)
+
+    def _show_component_crop(self):
+        record = self._component_selection
+        if record is None:
+            return
+        previous = self.findChild(QDialog, 'PDFComponentCropDialog')
+        if previous is not None:
+            previous.setParent(None)
+            previous.close()
+        try:
+            with PDFDrawingEngine(self._source_paths[record['document_id']],
+                                  expected_sha256=record['source_pdf_sha256'],
+                                  max_snapshot_bytes=64 * 1024 * 1024) as engine:
+                png = engine.render_evidence_crop(record['page'], record['bbox_pt'])
+            image = QPixmap()
+            if not image.loadFromData(png):
+                raise ValueError('تصویر شاهد قابل خواندن نیست')
+        except (OSError, ValueError, RuntimeError, IndexError, MemoryError):
+            QMessageBox.warning(self, 'تصویر شاهد PDF', 'تصویر نمایش داده نشد. منبع PDF و محدودهٔ شاهد را دوباره بررسی کنید.')
+            return
+        dialog = QDialog(self)
+        dialog.setObjectName('PDFComponentCropDialog')
+        dialog.setWindowTitle('تصویر شاهد PDF')
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        layout = QVBoxLayout(dialog)
+        caption = QLabel(f"صفحه {record['page']} | {record['component_id']} | {record['reason_code']}", dialog)
+        caption.setTextFormat(Qt.TextFormat.PlainText)
+        caption.setWordWrap(True)
+        caption.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(caption)
+        label = QLabel(dialog)
+        label.setObjectName('PDFComponentCropImage')
+        label.setPixmap(image)
+        layout.addWidget(label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        dialog.show()
 
     def _engineering_review_lines(self, key, record):
         lines = []
@@ -894,6 +945,16 @@ class PDFDetailGraphReview(QWidget):
                  for word in anchors.values()]
         if titles or words:
             lines.extend(self._anchor_lines('عنوان‌ها و شاهدهای تیپ', [*titles, *words]))
+        if witness := record.get('role_witness'):
+            lines.append(f"نوشته ترسیمی — {witness['normalized_text']} | {witness['status']}")
+            lines.extend(self._anchor_lines('نشانی نوشته ترسیمی', [
+                {**source, **witness, 'kind': witness['method'], 'anchor_id': witness['source_id']},
+            ]))
+        scales = [{**source, **scale, 'kind': 'PRINTED_SCALE',
+                   'anchor_id': f"LINE:{scale['source_line']}.{scale['part']}", 'raw_token': scale['printed']}
+                  for scale in record.get('local_printed_scale_witnesses', ())]
+        if scales:
+            lines.extend(self._anchor_lines('شاهد مقیاس چاپی بدون کالیبراسیون', scales))
         for requirement in record.get('required_evidence', ()):
             lines.append(f'مدرک لازم — {_EVIDENCE_LABELS.get(requirement, requirement)} [{requirement}]')
         return lines

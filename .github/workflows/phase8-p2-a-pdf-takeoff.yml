@@ -37,6 +37,7 @@ on:
       - core/drawings/pdf_revision_preflight.py
       - tests/test_phase8_p2_a_pdf_revision_preflight.py
       - app/pdf_detail_graph_review.py
+      - core/drawings/pdf_engine.py
       - tests/test_phase8_p2_a_pdf_detail_topology.py
       - tests/test_phase8_p2_a_pdf_combined_graph.py
       - tests/test_phase8_p2_a_pdf_combined_qt.py
@@ -55,9 +56,11 @@ on:
       - core/drawings/pdf_operator_component_review.py
       - core/drawings/pdf_component_boundaries.py
       - core/drawings/pdf_component_source_links.py
+      - core/drawings/pdf_component_evaluation.py
       - tests/test_phase8_p2_a_pdf_operator_component_review.py
       - tests/test_phase8_p2_a_pdf_component_boundaries.py
       - tests/test_phase8_p2_a_pdf_component_semantics.py
+      - tests/test_phase8_p2_a_pdf_component_evaluation.py
       - tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py
       - tests/test_phase8_p2_a_pdf_column_position_ledger.py
       - core/drawings/pdf_column_position_ledger.py
@@ -133,6 +136,7 @@ jobs:
           tests/test_phase8_p2_a_pdf_operator_component_review.py
           tests/test_phase8_p2_a_pdf_component_boundaries.py
           tests/test_phase8_p2_a_pdf_component_semantics.py
+          tests/test_phase8_p2_a_pdf_component_evaluation.py
           tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py
           tests/test_phase8_p2_a_pdf_detail_object_index.py
           tests/test_phase8_p2_a_pdf_detail_topology.py

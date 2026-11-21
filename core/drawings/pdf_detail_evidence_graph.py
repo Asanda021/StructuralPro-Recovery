@@ -623,7 +623,7 @@ def _add_local_evidence(g, page, shapes):
                 or mark.get("financially_payable") is not False
                 or mark.get("source_sha256", digest) != digest
                 or mark.get("source_quality") != "RENDERED_OCR_NOT_VERIFIED"):
-            raise ValueError("Foreign or unsupported PDF OCR evidence")
+            raise ValueError("Foreign or unsupported PDF OCR evidence (text witness)")
         if mark.get("status") == "OCR_DUPLICATE_NATIVE_TYPE_MARK":
             continue
         if mark.get("status") not in {"OCR_TYPE_MARK_UNVERIFIED", "AMBIGUOUS_GLYPH"}:

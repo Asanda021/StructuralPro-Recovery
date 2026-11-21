@@ -145,6 +145,8 @@ def _draw_typed_detail(page, *, repeated_title=False, repeated_outline=False, ty
     if scales:
         page.insert_text((220, 80), "Scale 1:20")
         page.insert_text((220, 107), "Scale 1:50")
+    else:
+        page.insert_text((58, 155), "Scale 1:40")
 
 
 def test_unique_local_type_title_has_operator_custody_without_approval(tmp_path):
@@ -161,6 +163,8 @@ def test_unique_local_type_title_has_operator_custody_without_approval(tmp_path)
     assert link["type_tag"] == "B4" and link["type_source"]["method"] == "NATIVE_TYPE_WORD"
     assert link["title_anchor_id"] and len(link["title_bbox_pt"]) == 4
     assert link["type_source"]["source_id"] != link["title_type_source"]["source_id"]
+    assert [w["printed"] for w in link["local_printed_scale_witnesses"]] == ["Scale 1:40"]
+    assert link["scale_calibrated"] is False
     assert link["span_specific_detail_verified"] is False and link["required_evidence"]
 
 
@@ -316,4 +320,123 @@ def test_qt_filter_readonly_source_link_and_boundary_records(tmp_path):
         _assert_partition(report)
     finally:
         widget.close()
+        app.processEvents()
+
+
+# Generic stroke fixture. Coordinates and caption are synthetic.
+_PLATE_LETTERING = {
+    "P": (((0, 1), (0, 0), (.75, 0), (1, .16), (1, .34), (.75, .5), (0, .5)),),
+    "L": (((0, 0), (0, 1), (1, 1)),),
+    "0": (((.3, 1), (0, .83), (0, .17), (.3, 0), (.7, 0), (1, .17),
+           (1, .83), (.7, 1), (.3, 1)),),
+    "1": (((0, .17), (1, 0), (1, 1)),),
+    "2": (((0, .17), (.25, 0), (.75, 0), (1, .17), (1, .34), (.75, .5),
+           (.25, .5), (0, .67), (0, 1), (1, 1)),),
+    "X": (((0, 1), (1, 0)), ((0, 0), (1, 1))),
+}
+
+
+@pytest.mark.parametrize("case,excludes_label", [
+    ("complete", True), ("crossed", False), ("lacks_plate_prefix", False),
+    ("quarter_turn", False), ("incomplete", False), ("extra_ending_digit", True),
+])
+def test_plate_lettering_cannot_be_mistaken_for_an_outline(tmp_path, case, excludes_label):
+    def draw(pdf):
+        p = _page(pdf)
+        # A real closed box is still a separate outline.
+        p.draw_rect((47, 83, 136, 137))
+        token = {"lacks_plate_prefix": "20X20X1", "incomplete": "PL20X20",
+                 "extra_ending_digit": "PL20X20X12"}.get(case, "PL20X20X1")
+        at = 160
+        for char in token:
+            w = {"0": 5, "1": 2}.get(char, 7)
+            shape = p.new_shape()
+            for chain in _PLATE_LETTERING[char]:
+                points = [(at + x * w, 160 + y * 10) for x, y in chain]
+                if case == "quarter_turn":
+                    points = [(460 - y, x - 120) for x, y in points]
+                shape.draw_polyline(points)
+            shape.finish(closePath=False)
+            shape.commit()
+            at += w + (12 if char == "L" else 3)
+        if case == "crossed":
+            p.draw_line((176, 164), (258, 164))
+
+    report, _ = _report(tmp_path, draw)
+    rows = _assert_partition(report)
+    lettering = [r for r in rows if r["reason_code"] == "SOURCE_STROKES_OF_PLATE_ANNOTATION"]
+    assert bool(lettering) == excludes_label
+    assert any(r["boundary_role"] == "CLOSED_OUTLINE" and len(r["source_operator_ids"]) == 1 for r in rows)
+    if lettering:
+        label, = lettering
+        assert label["boundary_role"] == "CAD_TEXT"
+        assert label["classification_status"] == "NON_MEMBER"
+        assert label["role_witness"]["normalized_text"] == ("PL20X20X12" if case == "extra_ending_digit"
+                                                            else "PL20X20X1")
+        assert label["role_witness"]["source_operator_ids"] == label["source_operator_ids"]
+        assert len(label["source_operator_ids"]) >= 40
+        assert not any(r["status"] == "PROPOSED" for r in _ledger(report)["component_source_links"])
+
+
+@pytest.mark.parametrize("case,reason", [
+    ("no_scale", "NO_APPLICABLE_LOCAL_SCALE"),
+    ("distant_scale", "NO_APPLICABLE_LOCAL_SCALE"),
+    ("two_local_scales", "MULTIPLE_LOCAL_SCALE_WITNESSES"),
+    ("revision_conflict", "REVISION_CONFLICT"),
+])
+def test_local_boundary_link_requires_one_applicable_scale_and_consistent_revision(tmp_path, case, reason):
+    def draw(pdf):
+        p = _page(pdf, "Beam Detail B4")
+        p.draw_rect((40, 81, 165, 142))
+        p.insert_text((66, 115), "B4")
+        if case == "distant_scale":
+            p.insert_text((300, 350), "Scale 1:40")
+        if case == "two_local_scales":
+            p.insert_text((61, 154), "Scale 1:40")
+            p.insert_text((69, 170), "Scale 1:40")
+        if case == "revision_conflict":
+            p.insert_text((61, 154), "Scale 1:40")
+            p.insert_text((255, 151), "Rev A")
+            p.insert_text((255, 171), "Rev B")
+
+    report, _ = _report(tmp_path, draw)
+    _assert_partition(report)
+    row, = _ledger(report)["component_source_links"]
+    assert row["status"] in {"BLOCKED", "UNRESOLVED"}
+    assert row["reason_code"] == reason
+
+
+@pytest.mark.parametrize("rotation", [0, 90])
+def test_qt_source_crop_is_bound_to_selected_pdf_bytes(tmp_path, monkeypatch, rotation):
+    pytest.importorskip("PySide6")
+    from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
+    from app.pdf_detail_graph_review import PDFDetailGraphReview
+
+    app = QApplication.instance() or QApplication([])
+    doc = pymupdf.open()
+    page = _page(doc)
+    page.draw_rect((57, 85, 143, 136), width=2.5)
+    page.set_rotation(rotation)
+    path = _save(doc, tmp_path, "synthetic-image")
+    review = PDFDetailGraphReview(inspect_pdf_sheet_set([path]), source_paths={"PDF001": path})
+    try:
+        key = "boundary_components"
+        review.sections.setCurrentIndex(review._section_keys.index(key))
+        view = review.tables[key]
+        view.setCurrentIndex(view.model().index(0, 0))
+        assert review.component_image_button.isEnabled()
+        review.component_image_button.click()
+        label = review.findChild(QLabel, "PDFComponentCropImage")
+        assert label and not label.pixmap().isNull()
+        image = label.pixmap().toImage()
+        assert all(dim < 1000 for dim in (image.width(), image.height()))
+        assert any(image.pixelColor(x, y).lightness() < 180
+                   for x in range(0, image.width(), 5) for y in range(0, image.height(), 5))
+        warnings = []
+        monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args[2]))
+        path.write_bytes(b"changed")
+        review.component_image_button.click()
+        assert warnings and review.findChild(QLabel, "PDFComponentCropImage") is None
+    finally:
+        review.close()
         app.processEvents()

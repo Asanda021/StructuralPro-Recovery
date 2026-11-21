@@ -19,6 +19,8 @@ _REVIEW_EVIDENCE = {
     "MULTIPLE_LOCAL_DETAIL_TITLES": "UNIQUE_TITLE_AND_DRAWING_SCOPE",
     "TITLE_NEAR_MULTIPLE_OUTLINES": "UNIQUE_TITLE_AND_DRAWING_SCOPE",
     "MULTIPLE_SCALE_SCOPES": "SCALE_SCOPE_OF_THIS_DETAIL",
+    "NO_APPLICABLE_LOCAL_SCALE": "SCALE_SCOPE_OF_THIS_DETAIL",
+    "MULTIPLE_LOCAL_SCALE_WITNESSES": "SCALE_SCOPE_OF_THIS_DETAIL",
     "SAME_TYPE_ON_OTHER_SHEET": "ISSUED_SHEET_AND_DETAIL_ID",
     "SAME_TYPE_IN_OTHER_DOCUMENT": "ISSUED_SHEET_AND_DETAIL_ID",
     "NO_INDEPENDENT_TYPE_INSIDE_OUTLINE": "INDEPENDENT_TYPE_WORD_IN_OUTLINE",
@@ -71,7 +73,7 @@ def _local_context(boundary, titles, words):
 
 
 def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word_owners,
-                 tag_pages, sheet_kind, scale_values, declaration_examined, budget_exceeded):
+                 tag_pages, scope, local_scales, budget_exceeded):
     """Return a single disposition, without selecting nearest competitors."""
     role, state = boundary["boundary_role"], boundary["classification_status"]
     if state == "NON_MEMBER":
@@ -84,6 +86,8 @@ def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word
         return "UNRESOLVED", "NO_ELIGIBLE_CLOSED_BOUNDARY", None, None, None
     if state != "CANDIDATE":
         return "BLOCKED", boundary["reason_code"], None, None, None
+    if scope["authority_status"] in {"REVISION_CONFLICT", "SUPERSEDED_SOURCE", "DUPLICATE_CURRENT_SHEET_ID"}:
+        return "BLOCKED", scope["authority_status"], None, None, None
     if not titles:
         return "UNRESOLVED", "NO_LOCAL_DETAIL_TITLE", None, None, None
     if len(titles) > 1:
@@ -94,9 +98,9 @@ def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word
         return "BLOCKED", "TITLE_NEAR_MULTIPLE_OUTLINES", title, None, None
     if title["status"].startswith("BLOCKED") or title["family_basis"] != "EXPLICIT_NATIVE_TITLE_FAMILY":
         return "BLOCKED", "TITLE_FAMILY_OR_SOURCE_UNVERIFIED", title, None, None
-    if not declaration_examined:
+    if not scope["examined"]:
         return "BLOCKED", "PAGE_DECLARATION_SOURCE_INCOMPLETE", title, None, None
-    if len(scale_values) > 1:
+    if len(scope["scale_values"]) > 1:
         return "BLOCKED", "MULTIPLE_SCALE_SCOPES", title, None, None
     title_type = title_words[title_id]
     if len(title_type) != 1:
@@ -104,7 +108,7 @@ def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word
         return ("BLOCKED" if title_type else "UNRESOLVED"), reason, title, None, None
     declared, = title_type
     tag = declared["type_tag"]
-    family, _ = pdf_type_mark_family(tag, sheet_kind)
+    family, _ = pdf_type_mark_family(tag, boundary["sheet_kind"])
     if not family or family not in title["family_candidates"]:
         return "BLOCKED", "TITLE_AND_TYPE_FAMILY_CONFLICT", title, declared, None
     if len(tag_pages[tag, family]) > 1:
@@ -123,10 +127,17 @@ def _choose_link(boundary, titles, local_words, title_words, nearby_owners, word
     matched, = trusted
     if matched["type_tag"] != tag:
         return "BLOCKED", "LOCAL_TYPE_CONFLICTS_WITH_TITLE", title, declared, matched
+    if len(local_scales) > 1:
+        return "BLOCKED", "MULTIPLE_LOCAL_SCALE_WITNESSES", title, declared, matched
+    if not local_scales or tuple(local_scales[0]["direction"]) != (1, 0):
+        return "UNRESOLVED", "NO_APPLICABLE_LOCAL_SCALE", title, declared, matched
+    if scope["scale_owners"][local_scales[0]["source_line"], local_scales[0]["part"]] > 1:
+        return "BLOCKED", "MULTIPLE_SCALE_SCOPES", title, declared, matched
     return "PROPOSED", "UNIQUE_TYPED_TITLE_AND_DISTINCT_WORD_INSIDE_OUTLINE", title, declared, matched
 
 
-def build_pdf_component_source_links(boundaries, title_rows, witnesses, summaries, page_sources):
+def build_pdf_component_source_links(boundaries, title_rows, witnesses, summaries, page_sources,
+                                     *, page_authority=None):
     """Record what can and cannot be traced without granting member authority."""
     by_page, titles, words = defaultdict(list), defaultdict(list), defaultdict(list)
     boundary_ids, title_pages, word_ids = set(), {}, set()
@@ -174,7 +185,10 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
     for key, rows in by_page.items():
         local_titles, local_words = titles[key], words[key]
         comparable = sum(row["boundary_role"] in _REVIEWABLE_BOUNDARY_ROLES for row in rows)
-        budget_exceeded = len(rows) * len(local_titles) + comparable * len(local_words) > _LOCAL_PAIR_BUDGET
+        declarations = summaries[key].get("sheet_declarations") or {}
+        scales = [item for item in declarations.get("declarations", ()) if item.get("kind") == "PRINTED_SCALE"]
+        budget_exceeded = (len(rows) * len(local_titles) + comparable * (len(local_words) + len(scales))
+                           > _LOCAL_PAIR_BUDGET)
         if budget_exceeded:
             contexts = [((), ())] * len(rows)
         else:
@@ -182,14 +196,22 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
         title_owners = Counter(t["title_anchor_id"] for row, (possible, _) in zip(rows, contexts, strict=True)
                                if row["boundary_role"] in _REVIEWABLE_BOUNDARY_ROLES for t in possible)
         word_owners = Counter(w["source_id"] for _, contained in contexts for w in contained)
-        scope = summaries[key].get("sheet_declarations") or {}
-        scale_values = sorted({item["denominator"] for item in scope.get("declarations", ())
-                               if item.get("kind") == "PRINTED_SCALE"})
-        declaration_examined = scope.get("status") == "EXAMINED"
+        scale_matches = {} if budget_exceeded else {
+            row["component_id"]: [scale for scale in scales if _near_title(row["bbox_pt"], scale["bbox_pt"])]
+            for row in rows if row["boundary_role"] in _REVIEWABLE_BOUNDARY_ROLES
+        }
+        scope = {
+            "examined": declarations.get("status") == "EXAMINED",
+            "scale_values": sorted({item["denominator"] for item in scales}),
+            "scale_owners": Counter((scale["source_line"], scale["part"])
+                                    for local in scale_matches.values() for scale in local),
+            "authority_status": (page_authority or {}).get(key, "UNREGISTERED"),
+        }
         for row, (possible, contained) in zip(rows, contexts, strict=True):
+            local_scales = scale_matches.get(row["component_id"], [])
             status, reason, title, declared, matched = _choose_link(
                 row, possible, contained, title_words, title_owners, word_owners,
-                tag_pages, row["sheet_kind"], scale_values, declaration_examined, budget_exceeded,
+                tag_pages, scope, local_scales, budget_exceeded,
             )
             request = _REVIEW_EVIDENCE.get(reason)
             required = [request] if request else []
@@ -210,7 +232,10 @@ def build_pdf_component_source_links(boundaries, title_rows, witnesses, summarie
                 ],
                 "type_tag": declared["type_tag"] if declared else None, "title_type_source": declared,
                 "type_source": matched, "local_type_witnesses": list(contained),
-                "printed_scale_denominators": scale_values,
+                "printed_scale_denominators": scope["scale_values"],
+                "local_printed_scale_witnesses": local_scales,
+                "authority_status": scope["authority_status"],
+                "scale_calibrated": False,
                 "status": status, "reason_code": reason,
                 "required_evidence": required,
                 "detail_boundary_verified": False, "span_specific_detail_verified": False,

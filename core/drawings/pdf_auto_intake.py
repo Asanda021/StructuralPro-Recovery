@@ -540,16 +540,17 @@ def inspect_pdf_sheet_set(
     report["multidiscipline_gap_register"] = build_pdf_multidiscipline_gap_register(
         report["sheet_detail_inventory"], report["detail_object_index"],
     )
-    report["operator_component_review"] = build_pdf_operator_component_review(
-        page_detail_summaries, report["sheet_detail_inventory"],
-        report["detail_object_index"], report["member_type_candidates"],
-    )
     graph = build_pdf_detail_evidence_graph(
         report, page_detail_summaries, revision_registry=revision_registry, member_review=member_review,
         beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
         beam_detail_profile_witnesses=beam_detail_profile_witnesses,
     )
     report["detail_evidence_graph"] = graph
+    report["operator_component_review"] = build_pdf_operator_component_review(
+        page_detail_summaries, report["sheet_detail_inventory"],
+        report["detail_object_index"], report["member_type_candidates"],
+        page_authority={(page["document_id"], page["page"]): page["authority_status"] for page in graph["pages"]},
+    )
     report["questions"].extend(graph["review_questions"])
     for path, document in zip(received, documents, strict=True):
         require_current_pdf(path, document["sha256"])

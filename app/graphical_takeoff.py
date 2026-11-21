@@ -1345,6 +1345,7 @@ class GraphicalTakeoffDialog(QDialog):
         )
         dialog = PDFSheetEvidenceDialog(
             report, self,
+            source_paths={doc["document_id"]: path for doc, path in zip(report["documents"], sources, strict=True)},
             attach_revision_register=lambda path: self._attach_pdf_revision_register(path, report),
             attach_member_review=lambda path: self._attach_pdf_member_review(path, report),
             attach_beam_profile_witnesses=lambda path: self._attach_pdf_beam_profile_witnesses(path, report),

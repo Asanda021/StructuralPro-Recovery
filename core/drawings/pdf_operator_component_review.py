@@ -162,7 +162,7 @@ def _classify_source_regions(regions, components, words, key, digest, sheet_kind
 
 
 def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
-                                        member_type_candidates=()):
+                                        member_type_candidates=(), *, page_authority=None):
     """Compare *independent* stroke components to bbox groups on every PDF page.
 
     If topology was blocked by an extraction/complexity budget, report that
@@ -503,7 +503,7 @@ def build_pdf_operator_component_review(page_summaries, inventory, detail_index,
     states = Counter(c["status"] for c in components)
     links = build_pdf_component_source_links(
         boundary_components, detail_titles.values(), text_witnesses, summaries,
-        {key: hashes[key[0]] for key in expected},
+        {key: hashes[key[0]] for key in expected}, page_authority=page_authority,
     )
     return {
         "status": "PARTIAL_OPERATOR_COMPONENT_AND_TYPE_ONLY_REVIEW",
