@@ -18,7 +18,7 @@ from core.reports.decimal_values import decimal_value
 
 def inspect_pending_source_discrepancies(
     service, *, project_id: str, expected_project_version: int,
-    session_id: str, selected_item_ids: tuple[str, ...],
+    session_id: str, selected_item_ids: tuple[str, ...], pdf_draft_record=None,
 ) -> dict:
     """Inspect pending drawing evidence against existing committed BOQ sources.
 
@@ -45,7 +45,8 @@ def inspect_pending_source_discrepancies(
         project.get("_meta", {}).get("version") != expected_project_version):
         raise ValueError("نسخه فعلی پروژه تغییر کرده است")
     sessions = project.get("drawing_sessions")
-    record = sessions.get(session_id) if isinstance(sessions, dict) else None
+    record = pdf_draft_record if pdf_draft_record is not None else (
+        sessions.get(session_id) if isinstance(sessions, dict) else None)
     if (not isinstance(record, dict) or record.get("id") != session_id or
         type(record.get("revision")) is not int or
         not isinstance(record.get("session"), dict) or

@@ -13,9 +13,82 @@ from typing import Any, Iterable
 
 from core.drawings.takeoff_session import DrawingTakeoffSession
 from core.drawings.graphical_takeoff import Point, polygon_area, polyline_length
+from core.drawings.pdf_engine import PDF_SCENE_DPI, require_current_pdf
 
 
 _KIND_UNITS = {"length": "m", "area": "m2", "count": "عدد"}
+
+
+def _verify_pdf_regions(data: bytes, rows: list[dict[str, Any]], calibrations: dict) -> None:
+    import pymupdf
+    from core.drawings.planar_geometry import region
+
+    with pymupdf.open(stream=data, filetype="pdf") as document:
+        if document.needs_pass or document.is_repaired:
+            raise ValueError("ساختار یا دسترسی PDF برای تأیید متره معتبر نیست")
+        checked = {}
+        scene_factor = PDF_SCENE_DPI / 72
+        for row in rows:
+            page_index = row["page"] - 1
+            if not 0 <= page_index < len(document):
+                raise ValueError("شماره صفحه متره خارج از محدوده PDF است")
+            if page_index not in checked:
+                page = document[page_index]
+                if not page.get_drawings():
+                    raise ValueError("صفحه PDF فاقد شاهد برداری معتبر است؛ کمیت رستری وارد BOQ نمی‌شود")
+                raster_boxes = [
+                    pymupdf.Rect(image["bbox"]) * page.rotation_matrix
+                    for image in page.get_image_info()
+                ]
+                checked[page_index] = (math.ceil(page.rect.width * scene_factor),
+                                       math.ceil(page.rect.height * scene_factor), raster_boxes)
+            width, height, raster_boxes = checked[page_index]
+            view = (calibrations.get(str(row["page"])) or {}).get("pdf_view")
+            if view:
+                _, _, right, bottom = map(float, view["bounds"])
+                if right > width or bottom > height:
+                    raise ValueError("محدوده کالیبراسیون نما خارج از صفحه PDF است")
+            points = [tuple(p) for p in row["geometry"]]
+            holes = row.get("holes", [])
+            all_points = points + [tuple(p) for hole in holes for p in hole]
+            if any(not (0 <= x <= width and 0 <= y <= height) for x, y in all_points):
+                raise ValueError("هندسه یا بازشو خارج از صفحه نقشه است")
+            if row["kind"] == "area" and not row.get("geometry_evidence"):
+                region(points, holes)
+            if raster_boxes:
+                if not points:
+                    raise ValueError("شمارش بدون محدوده در صفحه ترکیبی PDF نیاز به بازبینی دارد")
+                xs, ys = zip(*points)
+                x0, y0, x1, y1 = min(xs), min(ys), max(xs), max(ys)
+                if any(x0 <= box.x1 * scene_factor and box.x0 * scene_factor <= x1
+                       and y0 <= box.y1 * scene_factor and box.y0 * scene_factor <= y1
+                       for box in raster_boxes):
+                    raise ValueError("محدوده برداشت با تصویر رستری PDF تداخل دارد؛ بازبینی لازم است")
+
+
+def protect_committed_pdf_session(previous: dict, payload: dict) -> None:
+    """Keep the recorded source and measured geometry of committed PDF items."""
+    before = previous["session"]
+    if not any(Path(data.get("drawing_source", "")).suffix.lower() == ".pdf"
+               for data in (before, payload)):
+        return
+    ids = set(previous.get("committed_item_ids", ())) | set(previous.get("ai_committed_item_ids", ()))
+    if not ids:
+        return
+    message = "تغییر یا حذف منبع و اندازه‌گیری ثبت‌شده نیازمند اصلاحیه رسمی است"
+    if any(before.get(key) != payload.get(key) for key in ("drawing_source", "source_sha256")):
+        raise ValueError(message)
+    original = {item["id"]: item for item in before["items"]}
+    incoming = {item["id"]: item for item in payload["items"]}
+    old_cal = before.get("calibrations", {})
+    new_cal = payload.get("calibrations", {})
+    for item_id in ids:
+        if item_id not in original or item_id not in incoming:
+            raise ValueError(message)
+        page = str(original[item_id]["page"])
+        if (json.dumps(original[item_id], sort_keys=True) != json.dumps(incoming[item_id], sort_keys=True)
+                or old_cal.get(page) != new_cal.get(page)):
+            raise ValueError(message)
 
 
 def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -32,15 +105,8 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
     if path.suffix.lower() == ".ifc":
         raise ValueError("متره IFC بدون قرارداد هویت، کمیت و بازبینی مستقل مجاز نیست؛ تصویر Mesh شاهد مالی نیست")
     if path.suffix.lower() == ".pdf":
-        import fitz
-        with fitz.open(stream=data, filetype="pdf") as document:
-            for row in rows:
-                page = int(row["page"])
-                if not 1 <= page <= len(document) or not document[page-1].get_drawings():
-                    raise ValueError("صفحه PDF فاقد شاهد برداری معتبر است؛ کمیت رستری وارد BOQ نمی‌شود")
-                bounds=document[page-1].rect
-                if row.get("geometry_evidence") and any(not (0<=float(x)<=math.ceil(bounds.width*150/72) and 0<=float(y)<=math.ceil(bounds.height*150/72)) for x,y in row["geometry"]):
-                    raise ValueError("هندسه خارج از صفحه نقشه است")
+        _verify_pdf_regions(data, rows, payload.get("calibrations") or {})
+        require_current_pdf(path, expected)
     else:
         from core.drawings.viewer_model import DrawingViewerModel
         try:
@@ -59,10 +125,7 @@ def verified_measurement_identities(record: dict[str, Any], rows: list[dict[str,
         if closed:
             from core.drawings.planar_geometry import canonical_ring
             return canonical_ring(points)
-        variants = [points, points[::-1]]
-        if closed and points:
-            variants = (variant[i:]+variant[:i] for variant in variants for i in range(len(variant)))
-        return min(variants)
+        return min(points, points[::-1])
     seen = set()
     for row in rows:
         cad=items[row["takeoff_id"]].get("cad_evidence")
@@ -101,6 +164,21 @@ def cad_source_keys(meta):
     return {v for v in (meta.get('source_sha256'),conversion.get('source_sha256'),conversion.get('output_sha256')) if v}
 
 
+def _pdf_length_key(row):
+    from core.drawings.planar_geometry import coordinate, on
+
+    points = []
+    for x, y in row["geometry"]:
+        point = (coordinate(x), coordinate(y))
+        if points and point == points[-1]:
+            continue
+        while len(points) >= 2 and on(points[-2], point, points[-1]):
+            points.pop()
+        points.append(point)
+    sequence = tuple(points)
+    return row["source_sha256"], row["page"], row["item_code"], min(sequence, sequence[::-1])
+
+
 def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], rows: list[dict[str, Any]], *, exclude_source_ids=()) -> None:
     from core.drawings.roof_region import reject_reserved_regions
     reject_reserved_regions(project,record,rows)
@@ -109,10 +187,18 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
     existing=[r for r in effective_takeoffs(project,project.get('takeoffs',[])) if r['source_id'] not in exclude_source_ids]
     cad_history=existing+[r for r in project.get('takeoffs',[]) if r.get('source_id') not in exclude_source_ids]+[r for a in project.get('beam_amendments',{}).values() if a.get('status')=='applied' for r in a.get('rows',[]) if r.get('source_id') not in exclude_source_ids]
     candidates=[];cad_claims=set();cad_batch_claims=[]
+    pdf = Path(record.get("session", {}).get("drawing_source", "")).suffix.lower() == ".pdf"
+    pdf_lengths = set()
+    selected_pdf_sources = {row["source_sha256"] for row in rows} if pdf else set()
     for old in existing:
         p=old.get('params') or {}
         if old.get('domain')=='drawing' and old.get('item')=='area' and (p.get('cad_evidence') or {}).get('metric_contract')!='cad_analytic_v1':
-            candidates.append({**p,'kind':'area'})
+            code = (old.get("quantities") or [{}])[0].get("code")
+            candidates.append({**p, "kind": "area", "item_code": code})
+        if (old.get("domain") == "drawing" and old.get("item") == "length"
+                and p.get("source_sha256") in selected_pdf_sources and p.get("geometry")):
+            code = (old.get("quantities") or [{}])[0].get("code")
+            pdf_lengths.add(_pdf_length_key({**p, "item_code": code}))
     for row in rows:
         cad=row.get('cad_evidence')
         if cad:
@@ -153,10 +239,17 @@ def assert_new_measurements(project: dict[str, Any], record: dict[str, Any], row
                     from core.projects.project_model import _identity
                     if all(_identity(meta[k])==_identity(old_meta.get(k,'')) for k in ('floor_id','member_id')):
                         raise ValueError('عضو فیزیکی قبلاً متره شده است؛ نسخه جدید نقشه نیازمند اصلاحیه رسمی است')
-                if (row.get('geometry_evidence') or old.get('geometry_evidence')) and row.get('source_sha256')==old.get('source_sha256') and row.get('page')==old.get('page'):
+                needs_overlap_check = (row.get("geometry_evidence") or old.get("geometry_evidence")
+                                       or (pdf and row.get("item_code") == old.get("item_code")))
+                if needs_overlap_check and row.get('source_sha256')==old.get('source_sha256') and row.get('page')==old.get('page'):
                     if measurement_overlap(row,old):
                         raise ValueError('هم‌پوشانی برداشت با مالکیت نامعلوم؛ بازبینی مستقل پیش از پرداخت لازم است')
             candidates.append(row)
+        if pdf and row["kind"] == "length":
+            key = _pdf_length_key(row)
+            if key in pdf_lengths:
+                raise ValueError("مسیر همان متره طول PDF قبلاً ثبت شده است")
+            pdf_lengths.add(key)
     known = {(row.get("params") or {}).get("measurement_identity") for row in existing}
     if any(row["measurement_identity"] in known for row in rows):
         raise ValueError("اندازه‌گیری با همین منشأ و هندسه قبلاً در نشست دیگری ثبت شده؛ دوباره‌شماری رد شد")

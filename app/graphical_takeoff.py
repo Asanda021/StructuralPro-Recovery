@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.drawings.graphical_takeoff import Point
-from core.drawings.pdf_engine import PDFDrawingEngine
+from core.drawings.pdf_engine import PDFDrawingEngine, PDF_SCENE_DPI, require_current_pdf
 from core.drawings.takeoff_session import DrawingTakeoffSession
 from core.drawings.viewer_model import DrawingViewerModel
 from core.drawings.viewport_tools import ViewportRect
@@ -410,6 +410,32 @@ class GraphicalTakeoffDialog(QDialog):
         header.addWidget(self.calibrate)
 
         self.open_pdf = QPushButton("بازکردن نقشه")
+        self.auto_pdf_button = QPushButton("تحلیل خودکار مجموعه PDF")
+        self.auto_pdf_button.setObjectName("OpenAutoPDFSheetIntake")
+        self.auto_pdf_button.setToolTip(
+            "انتخاب یکجای شیت‌های PDF؛ استخراج شواهد تیپ و اختلافات، بدون ساخت مقدار مالی"
+        )
+        self.rendered_ocr_checkbox = QCheckBox("OCR نوشته‌های ترسیمی")
+        self.rendered_ocr_checkbox.setObjectName("PDFAutoRenderedOCR")
+        self.rendered_ocr_checkbox.setToolTip(
+            "خواندن برچسب‌های احتمالی با Tesseract نصب‌شده در سیستم. پیش‌فرض خاموش است."
+        )
+        self.rendered_ocr_checkbox.setChecked(False)
+        self.rendered_ocr_language = QComboBox()
+        self.rendered_ocr_language.setObjectName("PDFAutoRenderedOCRLanguage")
+        self.rendered_ocr_language.setToolTip("زبان OCR برای برچسب‌های نقشه")
+        self.rendered_ocr_language.addItem("OCR انگلیسی", "eng")
+        self.rendered_ocr_language.addItem("OCR فارسی و انگلیسی", "eng+fas")
+        self.rendered_ocr_language.setEnabled(False)
+        self.rendered_ocr_checkbox.toggled.connect(self.rendered_ocr_language.setEnabled)
+        self._pdf_auto_review_dialog = None
+        self._pdf_auto_report = None
+        self._pdf_auto_sources = ()
+        self._pdf_auto_revision_registry = None
+        self._pdf_auto_member_review = None
+        self._pdf_auto_beam_profile_witnesses = None
+        self._pdf_auto_beam_axis_labels = None
+        self._pdf_auto_beam_detail_profile_witnesses = None
         self.workflow_button = QPushButton("چه چیزی متره شود؟")
         self.workflow_button.setObjectName("OpenDrawingWorkflowIntake")
         self.workflow_button.setToolTip("تشخیص پیشنهادی سازه و انتخاب معماری، برق، مکانیک و برنامه هم‌زمان")
@@ -485,7 +511,8 @@ class GraphicalTakeoffDialog(QDialog):
         actions = ResponsiveFlowLayout()
         toolbar_rows.addLayout(actions)
         for index, x in enumerate([
-            self.open_pdf, self.workflow_button, self.schedule_button,
+            self.open_pdf, self.auto_pdf_button, self.rendered_ocr_checkbox, self.rendered_ocr_language,
+            self.workflow_button, self.schedule_button,
             self.weekly_button, self.prev, self.next, self.page_no,
             self.zoom_out, self.zoom_in, self.fit, self.pan, self.zoom_window,
             self.select_region, self.cancel_selection, self.region_to_takeoff, self.region_to_roof, self.w1_guide_button, self.opening_button, self.edit_button, self.undo, self.redo,
@@ -622,6 +649,7 @@ class GraphicalTakeoffDialog(QDialog):
         self.mode.currentTextChanged.connect(self.apply_tool)
         self.calibrate.clicked.connect(self.calibrate_scale)
         self.open_pdf.clicked.connect(self.select_drawing)
+        self.auto_pdf_button.clicked.connect(self.select_pdf_sheet_set)
         self.prev.clicked.connect(lambda: self.load_page(self.page - 1))
         self.next.clicked.connect(lambda: self.load_page(self.page + 1))
         self.page_no.valueChanged.connect(self.load_page)
@@ -1174,14 +1202,26 @@ class GraphicalTakeoffDialog(QDialog):
             source = Path(restored.drawing_source)
             if not source.is_file():
                 raise FileNotFoundError("فایل نقشه اصلی در این مسیر در دسترس نیست؛ نشست ذخیره‌شده تغییر نکرد.")
+            if source.suffix.lower() == ".pdf":
+                require_current_pdf(source, restored.source_sha256)
             new_viewer = DrawingViewerModel()
             new_viewer.open(source)
             if restored.cad_unit_evidence:
                 from core.drawings.dwg_takeoff import apply_documented_units
                 new_viewer.cad_document=apply_documented_units(new_viewer.cad_document,restored.cad_unit_evidence)
-            new_engine = PDFDrawingEngine(source) if new_viewer.kind == "pdf" else None
+            new_engine = None
+            if new_viewer.kind == "pdf":
+                new_engine = PDFDrawingEngine(source, expected_sha256=restored.source_sha256).open()
+                try:
+                    require_current_pdf(source, restored.source_sha256)
+                except Exception:
+                    new_engine.close()
+                    raise
+            if self.engine is not None:
+                self.engine.close()
             self.viewer = new_viewer
             self.engine = new_engine
+            self._w1_pdf_source = (str(source), restored.source_sha256) if new_engine else None
             self.cad_document = new_viewer.cad_document
             self.session = restored
             self.canvas.session = restored
@@ -1222,12 +1262,17 @@ class GraphicalTakeoffDialog(QDialog):
         if not selected_ids:
             QMessageBox.warning(self, "انتقال به BOQ", "شناسه ردیف انتخاب‌شده قابل خواندن نیست.")
             return
-        if not self.save_session_to_project():
+        project_id = self.project_id_input.text().strip()
+        if not project_id:
+            QMessageBox.warning(self, "شناسه پروژه", "برای انتقال، شناسه پروژه را وارد کنید.")
+            return
+        is_pdf = self.viewer.kind == "pdf"
+        if is_pdf and self.persisted_session_id and self.persisted_project_id != project_id:
+            QMessageBox.warning(self, "انتقال به BOQ", "نشست ذخیره‌شده به پروژه دیگری تعلق دارد.")
             return
         answer = QMessageBox.question(
             self, "تأیید انتقال به BOQ",
-            f"تعداد {len(selected_ids)} متره از نشست «{self.persisted_session_id}» به پروژه "
-            f"«{self.persisted_project_id}» منتقل شود؟\n"
+            f"تعداد {len(selected_ids)} متره به BOQ پروژه «{project_id}» منتقل شود؟\n"
             "منبع نقشه، صفحه، هندسه و فرمول حفظ می‌شود. ثبت تکراری رد خواهد شد.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -1236,10 +1281,15 @@ class GraphicalTakeoffDialog(QDialog):
             self.status.setText("انتقال به BOQ لغو شد؛ هیچ ردیفی منتقل نشد.")
             return
         try:
+            if not is_pdf and not self.save_session_to_project():
+                return
+            optional = {"pdf_draft": self.session} if is_pdf else {}
             result = self.app_service.commit_drawing_takeoff_to_boq(
-                self.persisted_project_id, self.persisted_session_id, selected_ids,
-                expected_session_revision=self.persisted_session_revision,
+                project_id, self.persisted_session_id, selected_ids,
+                expected_session_revision=self.persisted_session_revision or 0, **optional,
             )
+            self.persisted_project_id = project_id
+            self.persisted_session_id = result["session_id"]
             self.persisted_session_revision = result["revision"]
             self.status.setText(
                 f"🟢 انتقال به BOQ انجام شد | ردیف جدید: {len(result['takeoffs_added'])} | "
@@ -1247,6 +1297,162 @@ class GraphicalTakeoffDialog(QDialog):
             )
         except Exception as exc:
             QMessageBox.critical(self, "انتقال به BOQ", "انتقال انجام نشد؛ BOQ بدون تغییر باقی ماند.\n" + str(exc))
+
+    def select_pdf_sheet_set(self):
+        """Load all PDF sheets and display source-backed candidates/questions.
+
+        Never creates member instances or BOQ amounts from type labels alone.
+        """
+        selected, _ = QFileDialog.getOpenFileNames(
+            self, "انتخاب مجموعه شیت‌های PDF", "", "فایل‌های PDF (*.pdf)"
+        )
+        if not selected:
+            return
+        try:
+            from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+
+            requested = self.rendered_ocr_checkbox.isChecked()
+            language = {"ocr_language": self.rendered_ocr_language.currentData()} if requested else {}
+            self._show_pdf_sheet_evidence(inspect_pdf_sheet_set(selected, rendered_ocr=requested, **language), selected)
+        except Exception as exc:
+            QMessageBox.warning(self, "تحلیل مجموعه PDF",
+                                "تحلیل کامل نشد؛ هیچ مقدار/BOQ تغییر نکرد.\n" + str(exc))
+
+    def _show_pdf_sheet_evidence(self, report, sources, *, revision_registry=None, member_review=None,
+                                 beam_profile_witnesses=None, beam_axis_labels=None,
+                                 beam_detail_profile_witnesses=None):
+        from app.pdf_auto_intake_review import PDFSheetEvidenceDialog
+        from shiboken6 import isValid
+
+        status = (
+            f"تحلیل {report['page_count']} صفحه | "
+            f"{len(report['member_type_candidates'])} شاهد تیپ | "
+            f"{len(report.get('grid_location_candidates', ()))} نامزد شبکه (غیرقطعی) | "
+            f"{report.get('column_layout_symbol_candidate_count',0)} شاهد نماد ستون (تأییدنشده) | "
+            f"{report.get('vector_type_label_candidate_count',0)} برچسب تیپ برداری (پیشنهادی) | "
+            f"{report.get('vector_type_detail_link_count',0)} پیوند دیتیل پیشنهادی | "
+            f"{report.get('independently_registered_grid_positions',0)} تطبیق مستقل آکس (غیرقطعی) | "
+            f"{len((report.get('column_position_ledger') or {}).get('positions',()))} پرونده شواهد موقعیت ستون (غیرمالی) | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('sheet_inventory',()))} شیت فهرست‌شده | "
+            f"{len((report.get('sheet_detail_inventory') or {}).get('region_inventory',()))} ناحیه پوشش | "
+            f"{len((report.get('detail_object_index') or {}).get('detail_candidates',()))} نامزد دیتیل و تیپ | "
+            f"{len((report.get('detail_object_index') or {}).get('unassigned_visual_regions',()))} ناحیه ترسیمی بی‌ارتباط | "
+            f"{len(report.get('architectural_floor_plan_candidates',()))} پلان تراز؛ بدون تکرار خودکار | "
+            f"{len(report.get('rendered_ocr_page_index', ()))} صفحه بررسی OCR "
+            f"({report.get('rendered_ocr_candidate_count', 0)} نامزد غیرقطعی) | "
+            f"{len(report['questions'])} اختلاف مؤثر؛ "
+            "هیچ مقدار مالی از این بررسی ایجاد نشد."
+        )
+        dialog = PDFSheetEvidenceDialog(
+            report, self,
+            source_paths={doc["document_id"]: path for doc, path in zip(report["documents"], sources, strict=True)},
+            attach_revision_register=lambda path: self._attach_pdf_revision_register(path, report),
+            attach_member_review=lambda path: self._attach_pdf_member_review(path, report),
+            attach_beam_profile_witnesses=lambda path: self._attach_pdf_beam_profile_witnesses(path, report),
+            attach_beam_axis_labels=lambda path: self._attach_pdf_beam_axis_labels(path, report),
+            attach_beam_detail_profile_witnesses=lambda path: self._attach_pdf_beam_connection_detail(path, report),
+        )
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        existing = self._pdf_auto_review_dialog
+        existing_is_live = existing is not None and isValid(existing)
+        if existing_is_live and existing.ledger.sources == dialog.ledger.sources:
+            for tag, answer in existing.ledger.answers.items():
+                if (dialog.ledger.questions.get(tag) == existing.ledger.questions[tag] and
+                        (not tag.startswith("PDF_GRAPH_") or dialog.ledger.graph_sha256 == existing.ledger.graph_sha256)):
+                    dialog.ledger.answers[tag] = answer.copy()
+        dialog.show()
+        self._pdf_auto_review_dialog = dialog
+        self._pdf_auto_sources = tuple(sources)
+        self._pdf_auto_report = report
+        self._pdf_auto_revision_registry = revision_registry
+        self._pdf_auto_member_review = member_review
+        self._pdf_auto_beam_profile_witnesses = beam_profile_witnesses
+        self._pdf_auto_beam_axis_labels = beam_axis_labels
+        self._pdf_auto_beam_detail_profile_witnesses = beam_detail_profile_witnesses
+        self.status.setText(status)
+        if existing_is_live:
+            existing.close()
+
+    def _attach_pdf_revision_register(self, path, previous_report):
+        from core.drawings.pdf_detail_evidence_graph import load_pdf_revision_register
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=load_pdf_revision_register(path),
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
+            beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
+        )
+
+    def _attach_pdf_member_review(self, path, previous_report):
+        from core.drawings.pdf_member_review import load_pdf_member_review, require_preserved_occurrence_conflicts
+        review = load_pdf_member_review(path)
+        require_preserved_occurrence_conflicts(self._pdf_auto_member_review, review)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
+            beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
+        )
+
+    def _attach_pdf_beam_profile_witnesses(self, path, previous_report):
+        from core.drawings.pdf_beam_profile_review import load_pdf_beam_profile_witnesses
+        witnesses = load_pdf_beam_profile_witnesses(path)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=witnesses, beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
+        )
+
+    def _attach_pdf_beam_axis_labels(self, path, previous_report):
+        from core.drawings.pdf_beam_axis_crosscheck import load_pdf_beam_axis_labels
+        reviewed = load_pdf_beam_axis_labels(path)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
+            beam_axis_labels=reviewed,
+            beam_detail_profile_witnesses=self._pdf_auto_beam_detail_profile_witnesses,
+        )
+
+    def _attach_pdf_beam_connection_detail(self, path, previous_report):
+        from core.drawings.pdf_beam_end_support_review import load_pdf_beam_connection_detail_witnesses
+        reviewed = load_pdf_beam_connection_detail_witnesses(path)
+        self._refresh_pdf_sheet_evidence(
+            previous_report, revision_registry=self._pdf_auto_revision_registry,
+            member_review=self._pdf_auto_member_review,
+            beam_profile_witnesses=self._pdf_auto_beam_profile_witnesses,
+            beam_axis_labels=self._pdf_auto_beam_axis_labels,
+            beam_detail_profile_witnesses=reviewed,
+        )
+
+    def _refresh_pdf_sheet_evidence(self, previous_report, *, revision_registry, member_review,
+                                    beam_profile_witnesses=None, beam_axis_labels=None,
+                                    beam_detail_profile_witnesses=None):
+        from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+        if self._pdf_auto_report is not previous_report:
+            raise ValueError("این رسید دیگر گزارش جاری نیست.")
+        sources = self._pdf_auto_sources
+        previous_fingerprints = tuple(
+            (doc['document_id'], doc['sha256']) for doc in previous_report['documents']
+        )
+        requested = previous_report.get('rendered_ocr_enabled', False)
+        report = inspect_pdf_sheet_set(
+            sources, revision_registry=revision_registry, member_review=member_review,
+            beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
+            beam_detail_profile_witnesses=beam_detail_profile_witnesses, rendered_ocr=requested, ocr_language=previous_report.get('rendered_ocr_language') or 'eng+fas',
+        )
+        new_fingerprints = tuple((doc['document_id'], doc['sha256']) for doc in report['documents'])
+        if not previous_fingerprints or new_fingerprints != previous_fingerprints:
+            raise ValueError("هش سندهای PDF تغییر کرده است. مجموعهٔ فعلی را دوباره انتخاب کنید.")
+        if not (report.get('detail_evidence_graph') or {}).get('graph_sha256'):
+            raise ValueError("رسید معتبر گراف برای ثبت نسخهٔ جدید تولید نشد.")
+        self._show_pdf_sheet_evidence(
+            report, sources, revision_registry=revision_registry, member_review=member_review,
+            beam_profile_witnesses=beam_profile_witnesses, beam_axis_labels=beam_axis_labels,
+            beam_detail_profile_witnesses=beam_detail_profile_witnesses,
+        )
 
     def select_drawing(self):
         path = QFileDialog.getOpenFileName(
@@ -1267,7 +1473,13 @@ class GraphicalTakeoffDialog(QDialog):
         self.cancel_ifc_3d_loading()
         self.cancel_cad_loading()
         candidate = str(path)
-        changed_source = bool(self.session.drawing_source and self.session.drawing_source != candidate)
+        pdf_sha = None
+        if Path(candidate).suffix.lower() == ".pdf":
+            with open(candidate, "rb") as source_file:
+                pdf_sha = hashlib.file_digest(source_file, "sha256").hexdigest()
+        changed_source = bool(self.session.drawing_source and (
+            self.session.drawing_source != candidate or
+            (pdf_sha is not None and self.session.source_sha256 != pdf_sha)))
         if changed_source and self.session.items:
             answer = QMessageBox.question(
                 self, "تغییر نقشه",
@@ -1278,33 +1490,35 @@ class GraphicalTakeoffDialog(QDialog):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return
-        # Bind the displayed PDF to the bytes actually validated by the viewer.
-        pdf_sha=None
-        if Path(candidate).suffix.lower()=='.pdf':
-            with open(candidate,'rb') as source_file:
-                pdf_sha=hashlib.file_digest(source_file,'sha256').hexdigest()
         previous_path=str(self.viewer.path) if self.viewer.path else None
-        # Open first: if parsing fails, retain the currently displayed drawing/session.
-        self.viewer.open(candidate)
+        new_engine = None
+        if pdf_sha is not None:
+            from core.drawings.viewer_model import DrawingViewerModel
+            next_viewer = DrawingViewerModel(candidate)
+            new_engine = PDFDrawingEngine(candidate, expected_sha256=pdf_sha).open()
+            try:
+                require_current_pdf(Path(candidate), pdf_sha)
+            except Exception:
+                new_engine.close()
+                raise
+            self.viewer = next_viewer
+        else:
+            self.viewer.open(candidate)
         if previous_path and previous_path != str(self.viewer.path):
             from shiboken6 import isValid
             old_view=getattr(self,'_ifc_3d_dialog',None)
             if old_view is not None and isValid(old_view):
                 old_view.close()
                 self._ifc_3d_dialog=None
-        if pdf_sha is not None:
-            with open(candidate,'rb') as source_file:
-                if hashlib.file_digest(source_file,'sha256').hexdigest()!=pdf_sha:
-                    self._w1_pdf_source=None
-                    raise ValueError('فایل PDF هنگام بازکردن تغییر کرد؛ دوباره باز کنید.')
         self._w1_pdf_source=(str(self.viewer.path),pdf_sha) if pdf_sha else None
-        if previous_path and previous_path!=str(self.viewer.path) and self.viewer.kind=='pdf':
+        if changed_source and self.viewer.kind == "pdf":
             self.ifc_revision.clear()
-        new_engine = PDFDrawingEngine(candidate) if self.viewer.kind == "pdf" else None
         if self.engine is not None:
             self.engine.close()
-        if self.session.drawing_source != candidate:
+        if changed_source or self.session.drawing_source != candidate:
             self.session = DrawingTakeoffSession(candidate)
+            if pdf_sha is not None:
+                self.session.source_sha256 = pdf_sha
             self.canvas.session = self.session
             self.persisted_session_id = None
             self.persisted_session_revision = None
@@ -1381,13 +1595,14 @@ class GraphicalTakeoffDialog(QDialog):
         """
         import math
         page=self.engine.pages()[self.page-1]
-        dpi=next((d for d in (150,100,72,36)
+        dpi=next((d for d in (PDF_SCENE_DPI,100,72,36)
                   if math.ceil(page.width_pt*d/72)*math.ceil(page.height_pt*d/72)<=40_000_000),None)
         if dpi is None:raise ValueError("ابعاد صفحه حتی در وضوح پایین از بودجه حافظه نمایش بیشتر است")
         data=self.engine.render(self.page,dpi);pix=QPixmap()
         if not pix.loadFromData(QByteArray(data),"PNG"):raise RuntimeError("رندر PDF ناموفق بود")
-        image=self.canvas.scene.addPixmap(pix);image.setScale(150/dpi)
-        self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*150/72),math.ceil(page.height_pt*150/72))
+        image=self.canvas.scene.addPixmap(pix);image.setScale(PDF_SCENE_DPI/dpi)
+        self.canvas.setSceneRect(0,0,math.ceil(page.width_pt*PDF_SCENE_DPI/72),
+                                 math.ceil(page.height_pt*PDF_SCENE_DPI/72))
         self.display_dpi=dpi
         self.source_label.setText(f"منبع: {self.viewer.source_name} | PDF | وضوح نمایش {dpi} DPI؛ مختصات ثابت مرجع ۱۵۰ DPI")
 
@@ -2891,22 +3106,31 @@ class GraphicalTakeoffDialog(QDialog):
         if self.viewer.kind == "ifc":
             self._ifc_status()
             return
+        view = self.canvas._selected_region_rect if self.viewer.kind == "pdf" else None
+        pdf_view = None
         if self.canvas.mode == 'length' and len(self.canvas.points) == 2:
             from math import hypot
             first, second = self.canvas.points
             px = hypot(second.x-first.x, second.y-first.y)
             prompt = f"فاصله معلوم بین دو نقطه انتخابی ({px:g} پیکسل مرجع) طبق مدرک (متر):"
+            if view is not None:
+                pdf_view = {"bounds": [view.left(), view.top(), view.right(), view.bottom()],
+                            "reference_points": [[first.x, first.y], [second.x, second.y]]}
         else:
+            if view is not None:
+                QMessageBox.warning(self, "کالیبراسیون", "دو نقطه مرجع را داخل محدوده نما انتخاب کنید.")
+                return
             px, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس","فاصله اندازه‌گیری‌شده روی صفحه (پیکسل؛ مقدار صریح):")
             if not ok:return
             prompt = "فاصله معلوم طبق مدرک (متر؛ مقدار صریح):"
         meters, ok = QInputDialog.getText(self,"کالیبراسیون مقیاس",prompt)
         if not ok:return
         try:
-            cal = self.session.calibrate(self.page, px, meters)
-            px,meters=float(px),float(meters)
+            meters = str(meters).strip().replace("٫", ".") if self.viewer.kind == "pdf" else meters
+            cal = self.session.calibrate(self.page, px, meters, pdf_view=pdf_view)
+            px, meters = float(px), float(meters)
             self.scale_label.setText(
-                f"مقیاس: {cal.meters_per_pixel} m/px"
+                f"مقیاس: {cal.meters_per_pixel} m/px" + (" | نمای انتخاب‌شده" if pdf_view else "")
             )
             self.status.setText(
                 f"کالیبراسیون ثبت شد | {px:g} px = {meters:g} m"
