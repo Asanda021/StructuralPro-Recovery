@@ -94,6 +94,21 @@ def test_same_box_with_foreign_ink_is_not_a_match():
     assert result["family"]["beam"]["recall"] == 0
 
 
+@pytest.mark.parametrize("all_non_member", [False, True])
+def test_family_micro_counts_correctly_rejected_regions_once(all_non_member):
+    plan, reference, predictions, manifest = _fixture()
+    if all_non_member:
+        for name, unit in reference["units"].items():
+            if unit["decision"] != "NOT_READABLE":
+                unit.update(decision="NON_MEMBER", objects=[])
+                predictions["units"][name].update(decision="NON_MEMBER", objects=[])
+
+    result = _evaluate(plan, reference, predictions, manifest)
+    expected = 4 if all_non_member else 1
+    assert result["geometry"]["tn"] == expected
+    assert result["family_micro"]["tn"] == expected
+
+
 @pytest.mark.parametrize("invalid", ["foreign", "missing_scope", "duplicate_reviewer", "absent_adjudication",
                                      "duplicate_prediction", "payable", "digest"])
 def test_evaluator_fails_closed_on_ineligible_source_authority(invalid):

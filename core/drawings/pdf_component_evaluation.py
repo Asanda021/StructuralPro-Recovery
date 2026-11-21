@@ -285,7 +285,9 @@ def evaluate_pdf_component_holdout(plan_json, reference_json, predictions_json, 
         estimable = fixture or (enough and positives >= _FAMILY_SUPPORT)
         per_family[name] = {**_score(counts, estimable), "support": positives,
                             "estimate_status": "ESTIMABLE" if estimable else "NOT_ESTIMABLE"}
-    micro_counts = {key: sum(f[key] for f in families.values()) for key in _COUNTS}
+    micro_counts = {key: sum(counts[key] for counts in families.values()) for key in ("tp", "fp", "fn")}
+    # Each correctly rejected region is one true negative for the micro result.
+    micro_counts["tn"] = boundaries["tn"]
     micro = _score(micro_counts, fixture or enough)
     macro = {}
     for key in ("precision", "recall", "f1"):
