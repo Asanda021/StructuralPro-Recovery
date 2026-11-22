@@ -123,3 +123,46 @@ def test_arrow_witness_requires_an_intact_operator_manifest(source_damage):
         rows, receipt = build_pdf_component_boundary_page(topology, **kwargs)
         assert receipt["status"] == "BLOCKED" and receipt["unaccounted_operator_count"] == 1
         assert {row["classification_status"] for row in rows} == {"BLOCKED"}
+
+
+@pytest.mark.parametrize("case, expected_pairs", [
+    ("chain", 2), ("isolated", 0), ("competing_extensions", 0), ("fork", 0),
+])
+def test_one_sided_extensions_require_corroborating_dimension_chain(tmp_path, case, expected_pairs):
+    path = tmp_path / "synthetic-chain.pdf"
+    with pymupdf.open() as doc:
+        page = doc.new_page(width=420, height=310)
+        for x in (65, 185, 325):
+            page.draw_line((x, 130), (x, 195))
+            if case == "competing_extensions":
+                page.draw_line((x, 130), (x, 180))
+        intervals = [(65, 185)] if case == "isolated" else [(65, 185), (185, 325)]
+        if case == "fork":
+            page.draw_line((185, 130), (185, 180))
+            page.draw_line((375, 130), (375, 180))
+            intervals.append((185, 375))
+        for left, right in intervals:
+            page.draw_line((left + 10, 130), (right - 10, 130))
+            for tip, base in ((left, left + 10), (right, right - 10)):
+                shape = page.new_shape()
+                shape.draw_polyline([(base, 128), (base, 132), (tip, 130), (base, 128)])
+                shape.finish(color=None, fill=(0, 0, 0), closePath=False)
+                shape.commit()
+        doc.save(path)
+
+    report = inspect_pdf_sheet_set([path])
+    rows = report["operator_component_review"]["boundary_components"]
+    heads = [row for row in rows if row["boundary_role"] == "DIMENSION_ARROWHEADS"]
+    assert len(heads) == expected_pairs
+    assert all(len(row["source_operator_ids"]) == 6 and row["classification_status"] == "NON_MEMBER"
+               and not row["financially_payable"] for row in heads)
+    if heads:
+        first, second = heads
+        for row, neighbor in ((first, second), (second, first)):
+            support = set(row["role_witness"]["context_source_operator_ids"])
+            assert set(neighbor["source_operator_ids"]) <= support
+            assert not support.intersection(row["source_operator_ids"])
+    apportioned = Counter(ref for row in rows for ref in row["source_operator_ids"])
+    originals = {op["source_id"] for topology in report["detail_evidence_graph"]["topology_pages"]
+                 for group in topology["groups"] for op in group["source_operators"]}
+    assert apportioned == Counter(originals)

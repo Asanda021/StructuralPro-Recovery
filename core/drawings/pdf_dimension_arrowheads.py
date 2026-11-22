@@ -58,9 +58,10 @@ def paired_dimension_arrowhead_witnesses(operators, paint_sequences, *, max_chec
     """Return owned heads plus supporting IDs, or ``None`` on comparison exhaustion.
 
     Both complete fills must immediately follow the painted connecting stroke,
-    with matching perpendicular extensions crossing their tips. Identical
-    overpainted extensions keep all their IDs. Distinct competing intervals
-    abstain. The spine and extensions remain in their original boundary review.
+    with matching perpendicular extensions at their tips. Extensions may
+    end at the tips when adjacent pairs corroborate the same dimension chain.
+    Identical overpainted extensions keep their IDs. Distinct competing
+    intervals abstain. Spines and extensions stay in boundary review.
     """
     paths = defaultdict(list)
     for op in operators:
@@ -81,6 +82,8 @@ def paired_dimension_arrowhead_witnesses(operators, paint_sequences, *, max_chec
                     extensions[axis, a[axis]][interval].append(op["source_id"])
 
     checks, matches = 0, []
+    chain_candidates = []
+    starts, ends = defaultdict(list), defaultdict(list)
     for i, first in sorted(heads.items()):
         if i <= 1 or i + 1 not in heads or i - 1 not in paths:
             continue
@@ -110,12 +113,48 @@ def paired_dimension_arrowhead_witnesses(operators, paint_sequences, *, max_chec
         spines = [op["source_id"] for op in paths[i-1] if between_bases(op)]
         clearance = max(left.width, right.width) / 2
         span_limit = 6 * max(left.length, right.length)
-        intervals = [(a, b) for a, b in left_ext.keys() & right_ext.keys()
-                     if cross - a >= clearance and b - cross >= clearance and b - a <= span_limit]
-        if len(spines) != 1 or len(intervals) != 1:
+        if len(spines) != 1:
             continue
-        interval, = intervals
+        shared_intervals = left_ext.keys() & right_ext.keys()
+        crossing = [(a, b) for a, b in shared_intervals
+                    if cross - a >= clearance and b - cross >= clearance and b - a <= span_limit]
+        if len(crossing) > 1:
+            continue
         owned = tuple(op["source_id"] for op in (*paths[i], *paths[i+1]))
-        supporting = (*spines, *sorted(left_ext[interval]), *sorted(right_ext[interval]))
-        matches.append((owned, supporting))
+
+        if crossing:
+            interval, = crossing
+            matches.append((owned, (*spines, *sorted(left_ext[interval]), *sorted(right_ext[interval]))))
+            continue
+
+        # A single one-sided pair can still be non-dimension geometry.
+        # Require a repeated span with a common tip and the same extension.
+        # One-sided extensions can run to the drawing itself. Bound their
+        # length by the witnessed span while requiring exact chain repetition.
+        span = right.tip[axis] - left.tip[axis]
+        one_sided = [(a, b) for a, b in shared_intervals
+                     if cross in (a, b) and clearance <= b - a <= span]
+        if len(one_sided) == 1:
+            interval, = one_sided
+            start_key = (axis, left.tip)
+            end_key = (axis, right.tip)
+            supporting = (*spines, *sorted(left_ext[interval]), *sorted(right_ext[interval]))
+            index = len(chain_candidates)
+            starts[start_key].append(index)
+            ends[end_key].append(index)
+            chain_candidates.append((start_key, end_key, interval, owned, supporting))
+
+    eligible = {index for index, (start, end, _, _, _) in enumerate(chain_candidates)
+                if len(starts[start]) == len(ends[end]) == 1
+                and len(ends[start]) <= 1 and len(starts[end]) <= 1}
+    for index, (start, end, interval, owned, supporting) in enumerate(chain_candidates):
+        if index not in eligible:
+            continue
+        corroborating = []
+        for neighbor in (*ends[start], *starts[end]):
+            _, _, neighbor_interval, neighbor_heads, neighbor_support = chain_candidates[neighbor]
+            if neighbor in eligible and interval == neighbor_interval:
+                corroborating.extend((*neighbor_heads, *neighbor_support))
+        if corroborating:
+            matches.append((owned, tuple(dict.fromkeys((*supporting, *corroborating)))))
     return matches
