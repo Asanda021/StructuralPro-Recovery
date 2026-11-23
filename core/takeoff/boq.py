@@ -40,8 +40,9 @@ def _reject_document_only_evidence(row: Any) -> None:
                    "legacy_financial_audit", "quantity_evidence_preview"):
         if _read(row, marker, None) is not None:
             raise ValueError("داده ممیزی سندی را نباید مستقیماً به BOQ منتقل کرد")
-    if _read(row, "financially_payable", None) is False:
-        raise ValueError("این ردیف صریحاً غیرقابل پرداخت مالی اعلام شده است")
+    payability = _read(row, "financially_payable", None)
+    if payability is not None and payability is not True:
+        raise ValueError("وضعیت پرداخت مالی باید مقدار بولی معتبر و مجاز باشد")
 
 
 @exact
