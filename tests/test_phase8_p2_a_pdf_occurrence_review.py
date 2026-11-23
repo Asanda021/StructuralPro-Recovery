@@ -50,7 +50,7 @@ def test_review_overwrite_and_current_registration_do_not_clear_conflict(tmp_pat
     assert graph["quantity_approval_count"] == graph["temporary_quantity_count"] == 0
 
 
-def _explicit_set(tmp_path, *, length="300 CM", width="400 MM", scale="1:20", duplicate=False):
+def _explicit_set(tmp_path, *, length="300 CM", width="400 MM", scale="1:20", duplicate=False, detail_type="C8"):
     p = sheets(tmp_path, "plan.pdf", [{
         "text": [(28, 28, "SHEET S-61 | REV R2"), (28, 54, "COLUMN PLAN"),
                  (180, 180, "INSTANCE J17 TYPE C8 GRID B/7 LEVEL L09"),
@@ -69,7 +69,7 @@ def _explicit_set(tmp_path, *, length="300 CM", width="400 MM", scale="1:20", du
     points_per_m = 72 / (0.0254 * 20)
     d = sheets(tmp_path, "detail.pdf", [{
         "text": [(28, 28, "SHEET S-73 | REV R2"),
-                 (175, 185, "DETAIL K-4 COLUMN C8"), (175, 205, f"SCALE {scale}"),
+                 (175, 185, f"DETAIL K-4 COLUMN {detail_type}"), (175, 205, f"SCALE {scale}"),
                  (28, 252, f"COLUMN DIM J17 TYPE C8 WIDTH {width}"),
                  (28, 274, "COLUMN DIM J17 TYPE C8 DEPTH 0.50 M"),
                  (28, 302, "COLUMN SPEC J17 TYPE C8 RECTANGULAR CONCRETE CONNECTIONS INCLUDED DEDUCTIONS 0.04 M3")],
@@ -176,3 +176,125 @@ def test_structural_sheet_reviews_are_visible_and_do_not_create_occurrences(tmp_
     assert all(w["anchors"][0]["page"] != 4 and w["financially_payable"] is False for w in open_cases)
     assert any(w["family"] == "beam" and w["anchors"][0]["page"] == 3 for w in open_cases)
     assert not graph["occurrence_reviews"] and graph["temporary_quantity_count"] == 0
+
+
+def test_occurrence_requires_printed_revision_on_page_that_supplies_callout(tmp_path):
+    _, axis, section, detail = _explicit_set(tmp_path)
+    plan = sheets(tmp_path, "scoped-plan.pdf", [{
+        "text": [(28, 28, "SHEET S-61 | REV R2"), (28, 54, "COLUMN PLAN"),
+                 (180, 180, "INSTANCE J17 TYPE C8 GRID B/7 LEVEL L09")],
+        "boxes": [(180, 116, 244, 164)],
+    }])
+    callout = sheets(tmp_path, "unprinted-revision.pdf", [{
+        "text": [(28, 28, "SHEET S-64"), (28, 54, "SECTION A-A"),
+                 (180, 180, "INSTANCE J17 TYPE C8 GRID B/7 LEVEL L09"),
+                 (30, 335, "FOR INSTANCE J17 DETAIL K-4 / S-73")],
+    }])
+    g = _run_explicit([plan, axis, section, detail, callout])
+    row, = g["occurrence_reviews"]
+    assert any(a["kind"] == "CALLOUT" and a["document_id"] == "PDF005" for a in row["anchors"])
+    assert "GOVERNING_REVISION" in row["missing_evidence"]
+    assert row["member_quantity"] is None and g["temporary_quantity_count"] == 0
+
+
+def _review_region(path, *, sample_id="P-01", bbox=(170, 100, 251, 171), refs=("PDF001:p1:d1:s1",)):
+    from hashlib import sha256
+
+    return {"sample_id": sample_id, "document_id": "PDF001", "page": 1,
+            "source_sha256": sha256(path.read_bytes()).hexdigest(),
+            "bbox_pt": list(bbox), "source_operator_ids": list(refs)}
+
+
+def test_quantity_review_keeps_raw_points_and_reuses_the_calibrated_preview(tmp_path):
+    paths = _explicit_set(tmp_path)
+    authority = registry(*[(p, "SYNTHETIC", "R2", "CURRENT") for p in paths])
+    region = _review_region(paths[0])
+    report = inspect_pdf_sheet_set(paths, revision_registry=authority, quantity_review_regions=[region])
+    row, = report["quantity_evidence_review"]["rows"]
+    area, = [v for v in row["raw_measurements"] if v["kind"] == "CLOSED_OUTLINE_AREA"]
+    assert area["value"] == 64 * 48 and area["unit"] == "pt2"
+    assert area["source_operator_ids"] == region["source_operator_ids"]
+    assert area["component_id"] and area["parent_component_ids"] and len(area["points_pt"]) == 4
+    candidate = row["quantity_candidate"]
+    assert row["status"] == "QUANTITY_CANDIDATE" and row["gate_reasons"] == ["ENGINEERING_APPROVAL_REQUIRED"]
+    assert candidate["value"] == "0.56" and candidate["unit"] == "m3"
+    assert candidate["governing_revision"] == "R2" and len(candidate["evidence"]) > 4
+    assert candidate["source_operator_ids"] == region["source_operator_ids"]
+    assert candidate["plan_geometry_evidence"]["source_sha256"] == region["source_sha256"]
+    assert not row["engineering_approved"] and not row["financially_payable"]
+    assert not report["quantity_evidence_review"]["aggregate_permitted"]
+    assert report["quantity_approval_count"] == 0
+
+
+@pytest.mark.parametrize("mode,gate", [
+    ("unregistered", "BLOCKED_REVISION"), ("unit", "BLOCKED_UNIT"),
+    ("conflicting_scale", "BLOCKED_UNIT"), ("wrong_extent", "BLOCKED_TYPE"),
+    ("conflicting_type", "BLOCKED_CONFLICT"),
+    ("repeat_same_geometry", "BLOCKED_CONFLICT"),
+])
+def test_quantity_review_never_routes_around_required_evidence(tmp_path, mode, gate):
+    paths = _explicit_set(tmp_path, **({"width": "400"} if mode == "unit" else
+                                    {"scale": "1:40"} if mode == "conflicting_scale" else
+                                    {"detail_type": "C9"} if mode == "conflicting_type" else {}))
+    authority = None if mode == "unregistered" else registry(*[(p, "SYNTHETIC", "R2", "CURRENT") for p in paths])
+    bbox = (170, 100, 210, 171) if mode == "wrong_extent" else (170, 100, 251, 171)
+    regions = [_review_region(paths[0], bbox=bbox)]
+    if mode == "repeat_same_geometry":
+        regions.append(_review_region(paths[0], sample_id="P-02", bbox=bbox))
+    report = inspect_pdf_sheet_set(paths, revision_registry=authority, quantity_review_regions=regions)
+    for row in report["quantity_evidence_review"]["rows"]:
+        assert gate in row["gate_reasons"]
+        assert row["quantity_candidate"] is None and not row["financially_payable"]
+    if mode == "wrong_extent":
+        assert report["quantity_evidence_review"]["rows"][0]["raw_measurements"] == []
+
+
+
+def test_quantity_review_rejects_foreign_shared_and_duplicate_source_refs(tmp_path):
+    from core.drawings.pdf_quantity_evidence import build_pdf_quantity_evidence_review
+
+    p = sheets(tmp_path, "simple.pdf", [{"boxes": [(180, 116, 244, 164)]}])
+    report = inspect_pdf_sheet_set([p])
+    region = _review_region(p)
+    for change in ({"source_sha256": "f" * 64}, {"source_operator_ids": ["PDF001:p1:d99:s1"]},
+                   {"source_operator_ids": ["PDF001:p1:d1:s1", "PDF001:p1:d1:s1"]}):
+        with pytest.raises(ValueError, match="source selection"):
+            build_pdf_quantity_evidence_review(report, [{**region, **change}])
+    boundaries = report["operator_component_review"]["boundary_components"]
+    boundaries.append(deepcopy(boundaries[0]))
+    with pytest.raises(ValueError, match="Shared source operator"):
+        build_pdf_quantity_evidence_review(report, [region])
+
+
+def test_quantity_preview_cannot_be_attached_to_section_geometry(tmp_path):
+    paths = _explicit_set(tmp_path)
+    other = sheets(tmp_path, "unissued-view.pdf", [{
+        "text": [(28, 28, "SHEET S-64"), (28, 54, "SECTION B-B"),
+                 (180, 180, "INSTANCE J17 TYPE C8 GRID B/7 LEVEL L09")],
+        "boxes": [(180, 116, 244, 164)],
+    }])
+    paths.append(other)
+    authority = registry(*[(p, "SYNTHETIC", "R2", "CURRENT") for p in paths])
+    region = _review_region(other, refs=("PDF005:p1:d1:s1",))
+    region["document_id"] = "PDF005"
+    report = inspect_pdf_sheet_set(paths, revision_registry=authority, quantity_review_regions=[region])
+    row, = report["quantity_evidence_review"]["rows"]
+    assert row["raw_measurements"]
+    assert report["detail_evidence_graph"]["temporary_quantity_count"] == 1
+    assert row["quantity_candidate"] is None
+    assert "BLOCKED_REVISION" in row["gate_reasons"]
+
+
+def test_quantity_gate_rejects_ambiguous_component_even_with_a_complete_preview(tmp_path):
+    from core.drawings.pdf_quantity_evidence import build_pdf_quantity_evidence_review
+
+    paths = _explicit_set(tmp_path)
+    authority = registry(*[(p, "SYNTHETIC", "R2", "CURRENT") for p in paths])
+    report = inspect_pdf_sheet_set(paths, revision_registry=authority)
+    region = _review_region(paths[0])
+    component, = [r for r in report["operator_component_review"]["boundary_components"]
+                  if r["source_operator_ids"] == region["source_operator_ids"]]
+    component.update(classification_status="AMBIGUOUS", relation_flags=["SHARED_TOPOLOGY_PARENT"])
+    row, = build_pdf_quantity_evidence_review(report, [region])["rows"]
+    assert row["raw_measurements"] and row["quantity_candidate"] is None
+    assert "BLOCKED_TYPE" in row["gate_reasons"]

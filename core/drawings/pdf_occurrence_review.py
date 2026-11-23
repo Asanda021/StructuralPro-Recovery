@@ -131,6 +131,9 @@ def _review_one(pages, nodes, seen_ranges, node, links):
     cuts = Decimal(spec["deductions"]) if spec else None
     valid_cuts = cuts is not None and gross is not None and 0 <= cuts < gross
     source_documents = [plan, detail_page, level_page]
+    if len(direct) == 1:
+        source_documents.extend(_page_of(pages, anchor) for anchor in direct[0]["anchors"]
+                                if anchor["kind"] == "CALLOUT")
     if named_axis:
         source_documents.append(_page_of(pages, nodes[named_axis["target_id"]]["anchors"][0]))
     official = bool(native_plan and named_axis and all(

@@ -64,6 +64,59 @@ def unchanged(app):
     return app.store.current_digest("P"), deepcopy(app.open_project("P"))
 
 
+def test_pdf_quantity_review_receipt_cannot_enter_finance(app, tmp_path):
+    from core.drawings.pdf_auto_intake import inspect_pdf_sheet_set
+    from core.drawings.takeoff_bridge import session_to_boq_rows
+    from test_phase8_p2_a_pdf_combined_graph import registry
+    from test_phase8_p2_a_pdf_occurrence_review import _explicit_set, _review_region
+
+    paths = _explicit_set(tmp_path)
+    plan = paths[0]
+    revision_register = registry(*[(path, "SYNTHETIC", "R2", "CURRENT") for path in paths])
+    review_region = _review_region(plan)
+    before_intake = unchanged(app)
+    report = inspect_pdf_sheet_set(paths, revision_registry=revision_register, quantity_review_regions=[review_region])
+    assert unchanged(app) == before_intake
+    receipt = report["quantity_evidence_review"]
+    row, = receipt["rows"]
+    candidate = row["quantity_candidate"]
+    assert Decimal(str(candidate["value"])) == Decimal("0.56") and candidate["unit"] == "m3"
+    assert row["engineering_approved"] is row["financially_payable"] is False
+    assert receipt["quantity_approval_count"] == 0
+    assert receipt["financially_payable"] is receipt["aggregate_permitted"] is False
+
+    # Even an existing valid PDF session cannot accept a source-graph node as
+    # one of its explicitly selected measurement item IDs.
+    session = DrawingTakeoffSession(str(plan))
+    line(session, (100, 75), (180, 75))
+    stored = save(app, session)
+    before = unchanged(app)
+    review_id = candidate["node_id"]
+    with pytest.raises(ValueError):
+        session_to_boq_rows(receipt, session_id=stored["session_id"], selected_item_ids=[review_id])
+    with pytest.raises(ValueError):
+        save(app, receipt)
+    with pytest.raises(ValueError):
+        app.commit_drawing_takeoff_to_boq("P", None, [review_id], expected_session_revision=0,
+                                          pdf_draft=receipt)
+    partial_draft = {**receipt, "drawing_source": str(plan), "source_sha256": review_region["source_sha256"]}
+    with pytest.raises(ValueError, match="شناسه متره در نشست وجود ندارد"):
+        app.commit_drawing_takeoff_to_boq("P", None, [review_id], expected_session_revision=0,
+                                          pdf_draft=partial_draft)
+    with pytest.raises(ValueError, match="نشست نقشه معتبر نیست"):
+        app.commit_drawing_takeoff_to_boq("P", None, [review_id], expected_session_revision=0,
+                                          pdf_draft={**partial_draft, "items": [candidate]})
+    with pytest.raises(ValueError, match="شناسه متره در نشست وجود ندارد"):
+        app.commit_drawing_takeoff_to_boq("P", stored["session_id"], [review_id],
+                                          expected_session_revision=stored["revision"])
+    with pytest.raises(ValueError):
+        app.commit_ai_takeoff_proposal("P", receipt, user_confirmed=True)
+    with pytest.raises(ValueError, match="BOQ"):
+        app.recalculate_estimate("P")
+    assert unchanged(app) == before
+    assert not before[1]["takeoffs"] and not before[1]["boq"] and not before[1].get("estimate")
+
+
 @pytest.mark.parametrize("case", ["outside", "outside-hole", "hybrid", "scan"])
 def test_pdf_commit_rejects_unproven_page_region(app, tmp_path, case):
     path = pdf(tmp_path / "plan.pdf", content=case if case in {"scan", "hybrid"} else "vector")

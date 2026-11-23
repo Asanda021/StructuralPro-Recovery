@@ -28,6 +28,7 @@ from core.drawings.pdf_sheet_detail_inventory import (
 from core.drawings.pdf_detail_object_index import build_pdf_detail_object_index
 from core.drawings.pdf_multidiscipline_gap_register import build_pdf_multidiscipline_gap_register
 from core.drawings.pdf_operator_component_review import build_pdf_operator_component_review
+from core.drawings.pdf_quantity_evidence import build_pdf_quantity_evidence_review
 from core.drawings.pdf_detail_evidence_graph import (
     build_pdf_detail_evidence_graph, read_pdf_page_declarations,
 )
@@ -117,6 +118,7 @@ def inspect_pdf_sheet_set(
     beam_profile_witnesses: list[dict] | None = None,
     beam_axis_labels: dict | None = None,
     beam_detail_profile_witnesses: list[dict] | None = None,
+    quantity_review_regions: list[dict] | None = None,
 ) -> dict:
     """Read every supplied sheet without interactive prompting or any DB/BOQ write.
 
@@ -551,6 +553,8 @@ def inspect_pdf_sheet_set(
         report["detail_object_index"], report["member_type_candidates"],
         page_authority={(page["document_id"], page["page"]): page["authority_status"] for page in graph["pages"]},
     )
+    if quantity_review_regions is not None:
+        report["quantity_evidence_review"] = build_pdf_quantity_evidence_review(report, quantity_review_regions)
     report["questions"].extend(graph["review_questions"])
     for path, document in zip(received, documents, strict=True):
         require_current_pdf(path, document["sha256"])
