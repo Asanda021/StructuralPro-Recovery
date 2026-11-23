@@ -122,6 +122,9 @@ def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     _verify_drawing_pdfs(project, effective)
     details = flatten_takeoffs({**project, "takeoffs": effective})
     boq = project.get("boq") or []
+    from core.takeoff.boq import _reject_document_only_evidence
+    for row in boq:
+        _reject_document_only_evidence(row)
     result = validate_boq_structure(boq)
     if not result["valid"]:
         raise ValueError("ساختار ردیف‌های برآورد نامعتبر است")
