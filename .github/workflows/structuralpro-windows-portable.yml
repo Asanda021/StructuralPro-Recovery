@@ -58,10 +58,17 @@ jobs:
           tests/test_phase8_p2_a_column_weight_preview.py tests/test_phase8_p2_a_column_takeoff_qt.py
       - name: Build, extract and run the exact portable ZIP
         shell: pwsh
-        run: >-
-          ./scripts/build_structuralpro_windows_portable.ps1
-          -OutputDirectory '${{ runner.temp }}/structuralpro-portable-delivery'
-          -ExpectedSourceSha $env:SOURCE_SHA
+        run: |
+          try {
+            & ./scripts/build_structuralpro_windows_portable.ps1 `
+              -OutputDirectory (Join-Path $env:RUNNER_TEMP 'structuralpro-portable-delivery') `
+              -ExpectedSourceSha $env:SOURCE_SHA
+          } catch {
+            $message = "$($_.Exception.Message) $($_.ScriptStackTrace)"
+            $escaped = $message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error title=Windows portable build::$escaped"
+            throw
+          }
       - name: Upload tested ZIP and verification records
         id: portable-artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

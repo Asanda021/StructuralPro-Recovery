@@ -4,6 +4,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$PSNativeCommandUseErrorActionPreference = $false
 if (-not $IsWindows -or -not [Environment]::Is64BitProcess) { throw 'Windows x64 PowerShell is required' }
 $repo = Split-Path -Parent $PSScriptRoot
 Set-Location -LiteralPath $repo
@@ -19,10 +20,15 @@ $dist = Join-Path $scratch 'dist'
 $spec = Join-Path $scratch 'spec'
 New-Item -ItemType Directory -Path $spec | Out-Null
 
-python -m PyInstaller --noconfirm --clean --onedir --windowed --noupx --name StructuralPro `
+$freezeLog = Join-Path $scratch 'pyinstaller.log'
+Write-Host "Freezing StructuralPro desktop from source $sha"
+& python -m PyInstaller --noconfirm --clean --onedir --windowed --noupx --name StructuralPro `
     --paths $repo --distpath $dist --workpath (Join-Path $scratch 'build') --specpath $spec `
-    app/column_takeoff_desktop.py
-if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed with exit code $LASTEXITCODE" }
+    app/column_takeoff_desktop.py 2>&1 | Tee-Object -FilePath $freezeLog
+if ($LASTEXITCODE -ne 0) {
+    $tail = (Get-Content -LiteralPath $freezeLog -Tail 12) -join ' '
+    throw "PyInstaller failed with exit code ${LASTEXITCODE}: $tail"
+}
 $bundle = Join-Path $dist 'StructuralPro'
 $internal = Join-Path $bundle '_internal'
 $exe = Join-Path $bundle 'StructuralPro.exe'
