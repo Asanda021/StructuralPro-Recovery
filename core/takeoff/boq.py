@@ -5,6 +5,18 @@ import math
 from .units import normalize_unit
 from core.commercial.exact_values import number as exact_number,wire,exact
 BOQ_DEFAULT_STATUS="active"
+# These explicit states are document comparisons or read-only PDF quantity
+# candidates, not approved financial operations.
+_DOCUMENT_ONLY_SOURCE_TYPES = frozenset({
+    "pdf_excel_crosswalk", "historical_document_audit", "legacy_financial_audit",
+    "pdf_quantity_candidate", "pdf_quantity_preview", "source_evidence_preview",
+})
+_DOCUMENT_ONLY_STATUSES = frozenset({
+    "AGREED_CANDIDATE", "AGREED_DISPLAY_CANDIDATE",
+    "MATCHED_DOCUMENT_AMOUNT_ONLY", "PROPOSED_UNVERIFIED",
+    "QUANTITY_CANDIDATE", "GEOMETRY_ONLY", "ACCEPTED_WITH_EXCEPTIONS",
+    "ENGINEERING_APPROVAL_REQUIRED", "UNIT_UNVERIFIED",
+})
 def _read(r,name,default=None): return r.get(name,default) if isinstance(r,dict) else getattr(r,name,default)
 def _text(value): return str(value or "").strip()
 def _number(value,field,*,allow_none=True):
@@ -12,12 +24,33 @@ def _number(value,field,*,allow_none=True):
     try:return exact_number(value,field)
     except ValueError as e:
         raise ValueError(f"BOQ total cannot be calculated: {e}") from e
+def _reject_document_only_evidence(row: Any) -> None:
+    """Veto explicitly unverified documentary evidence at the final BOQ sink.
+
+    The absence of this metadata is NOT financial approval. Legacy reviewed
+    workflows still require their independent engineering commit gates.
+    """
+    source_type = _text(_read(row, "source_type", "")).casefold()
+    status = _text(_read(row, "status", "")).upper()
+    if (source_type in _DOCUMENT_ONLY_SOURCE_TYPES
+            or status.startswith("BLOCKED_")
+            or status in _DOCUMENT_ONLY_STATUSES):
+        raise ValueError("ردیف سندی/آزمایشی یا دارای مغایرت مجوز ورود به BOQ ندارد")
+    for marker in ("source_document_audit", "pdf_excel_reconciliation",
+                   "legacy_financial_audit", "quantity_evidence_preview"):
+        if _read(row, marker, None) is not None:
+            raise ValueError("داده ممیزی سندی را نباید مستقیماً به BOQ منتقل کرد")
+    if _read(row, "financially_payable", None) is False:
+        raise ValueError("این ردیف صریحاً غیرقابل پرداخت مالی اعلام شده است")
+
+
 @exact
 def build_boq(rows:Iterable[Any],aggregate:bool=True,factor:float=1.0)->list[dict[str,Any]]:
     factor=_number(factor,"factor",allow_none=False)
     if factor<0: raise ValueError("factor must be finite and non-negative")
     raw=[]
     for r in rows:
+        _reject_document_only_evidence(r)
         source=_text(_read(r,"source","")); source_id=_text(_read(r,"source_id",""))
         source_ids=_read(r,"source_ids",None)
         if source_ids is None: source_ids=[source_id] if source_id else []
