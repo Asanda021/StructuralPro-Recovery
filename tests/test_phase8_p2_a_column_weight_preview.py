@@ -71,3 +71,28 @@ def test_export_preserves_nonfinancial_status(tmp_path):
     assert json.loads(j.read_text())['approved'] is False
     assert 'financially_payable' in c.read_text(encoding='utf-8-sig')
     assert x.exists() and x.stat().st_size>1500
+
+def test_xlsx_contains_live_formulas_and_does_not_execute_label_text(tmp_path):
+    from openpyxl import load_workbook
+
+    source = schedule()
+    source['rows'][0].update(source_operator_ids=['PDF001:p14:d7:s2'], detail_page=19,
+                             printed_dimension_text='L=10.70 m', printed_length_bbox_pt=[2, 4, 8, 11])
+    inputs = scenarios()
+    inputs['C1']['profile_name'] = '=1+1'
+    output = tmp_path / 'متره.xlsx'
+    export_weight_preview_xlsx(source, draft_component_weight_preview(source, inputs), output)
+    with output.open('rb') as stream:
+        book = load_workbook(stream, data_only=False)
+        try:
+            types = book['Types']
+            positions = book['PDF positions']
+            assert types['D2'].value == '=B2*C2'
+            assert types['F2'].value == 15.8 and types['F2'].data_type == 'n'
+            assert types['Q2'].value == '=1+1' and types['Q2'].data_type == 's'
+            assert book['Preview']['B11'].value == '=SUM(Types!O2:O4)'
+            assert book['Preview']['C11'].value == 5362.52
+            assert 'PDF001:p14:d7:s2' in positions['K2'].value
+            assert positions['L2'].value == 19 and positions['M2'].value == 'L=10.70 m'
+        finally:
+            book.close()

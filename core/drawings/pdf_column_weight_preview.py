@@ -131,37 +131,78 @@ def export_weight_preview_xlsx(schedule: Mapping, preview: Mapping, path: str | 
     from openpyxl import Workbook
     from openpyxl.styles import Font, Alignment, PatternFill
     from openpyxl.utils import get_column_letter
-    book=Workbook()
-    overview=book.active;overview.title='Preview'
-    lines=[('StructuralPro | DRAFT NONFINANCIAL STEEL SCENARIO',),
-           ('Source SHA256',schedule['document_sha256']),
-           ('Plan page',schedule['plan_page']), ('Revision status','NOT_VERIFIED'),
-           ('Engineering approved','NO'),('Financially payable','NO'),
-           ('Source grid positions',schedule['grid_node_count']),
-           ('Draft type lengths total m',schedule['draft_extended_length_total_m']),
-           ('Scenario profile mass kg',preview['profile_mass_total_kg']),
-           ('Scenario plate mass kg',preview['plate_mass_total_kg']),
-           ('Scenario total mass kg',preview['draft_weight_total_kg']),
-           ('Excluded','Welds, bolts, splices, waste, unentered reinforcement'),
-           ('WARNING','Assumptions are user-entered; NOT measured or approved steel quantity')]
-    for line in lines:overview.append(list(line))
-    details=book.create_sheet('Types')
-    headers=['Type','Grid candidates','Printed length m','Draft total length m','Profiles/column','Unit mass kg/m',
-             'Profile length m','Profile mass kg','Plates/column','Plate mass kg','Scenario total kg','Status']
-    details.append(headers)
-    for r in preview['groups']:
-        details.append([r.get('type_tag'),r.get('grid_location_candidates'),r.get('printed_type_length_m'),
-                        r.get('draft_extended_length_m'),r.get('profile_count_per_location'),
-                        r.get('profile_unit_mass_kg_m'),r.get('profile_total_length_m'),
-                        r.get('profile_mass_kg'),r.get('plate_count_per_location'),
-                        r.get('plate_mass_kg'),r.get('estimated_total_kg'),r.get('status')])
-    positions=book.create_sheet('PDF positions')
-    ph=['Candidate ID','Row','Column','Plan page','Type','X pt','Y pt','Length m','Status','Source path indices']
-    positions.append(ph)
-    for r in schedule.get('rows',[]):
-        positions.append([r.get('candidate_id'),r.get('grid_row'),r.get('grid_column'),r.get('plan_page'),
-                          r.get('type_tag'),r.get('x_pt'),r.get('y_pt'),r.get('printed_length_m'),
-                          r.get('status'),json.dumps(r.get('label_path_indices',[]))])
+    if schedule['document_sha256'] != preview['document_sha256']:
+        raise ValueError('PDF schedule and scenario belong to different sources')
+
+    def append_literal(sheet, values):
+        sheet.append(values)
+        for cell in sheet[sheet.max_row]:
+            if isinstance(cell.value, str):
+                cell.data_type = 's'
+
+    def numeric(value):
+        return float(Decimal(str(value))) if value is not None else None
+
+    book = Workbook()
+    overview = book.active
+    overview.title = 'Preview'
+    lines = [
+        ('StructuralPro | DRAFT NONFINANCIAL STEEL SCENARIO', 'Live formula', 'At export'),
+        ('Source SHA256', schedule['document_sha256']),
+        ('Plan page', schedule['plan_page']), ('Revision status', 'NOT_VERIFIED'),
+        ('Engineering approved', 'NO'), ('Financially payable', 'NO'),
+        ('Source grid positions', schedule['grid_node_count']),
+        ('Draft type lengths total m', None, numeric(schedule['draft_extended_length_total_m'])),
+        ('Scenario profile mass kg', None, numeric(preview['profile_mass_total_kg'])),
+        ('Scenario plate mass kg', None, numeric(preview['plate_mass_total_kg'])),
+        ('Scenario total mass kg', None, numeric(preview['draft_weight_total_kg'])),
+        ('Excluded', 'Welds, bolts, splices, waste, unentered reinforcement'),
+        ('WARNING', 'Editable inputs are user assumptions; NOT measured or approved steel quantity'),
+        ('Status', preview['status']),
+    ]
+    for line in lines:
+        append_literal(overview, line)
+
+    details = book.create_sheet('Types')
+    details.append(['Type', 'Grid candidates', 'Printed length m', 'Draft total length m',
+                    'Profiles/column', 'Unit mass kg/m', 'Profile length m', 'Profile mass kg',
+                    'Plates/column', 'Plate length mm', 'Plate width mm', 'Plate thickness mm',
+                    'Density kg/m³', 'Plate mass kg', 'Scenario total kg', 'Status', 'Assumed profile'])
+    assumptions_fill = PatternFill('solid', fgColor='FFF2CC')
+    for index, row in enumerate(preview['groups'], 2):
+        plate = row.get('plate_dimensions_mm') or (None, None, None)
+        append_literal(details, [
+            row['type_tag'], row['grid_location_candidates'], numeric(row['printed_type_length_m']), None,
+            row.get('profile_count_per_location'), numeric(row.get('profile_unit_mass_kg_m')), None, None,
+            row.get('plate_count_per_location'), *(numeric(value) for value in plate),
+            numeric(row.get('steel_density_kg_m3')), None, None, row.get('status'), row.get('profile_name'),
+        ])
+        details[f'D{index}'] = f'=B{index}*C{index}'
+        details[f'G{index}'] = f'=IF(E{index}="","",D{index}*E{index})'
+        details[f'H{index}'] = f'=IF(OR(G{index}="",F{index}=""),"",G{index}*F{index})'
+        details[f'N{index}'] = (
+            f'=IF(I{index}="","",IF(I{index}=0,0,IF(OR(COUNT(J{index}:M{index})<>4,'
+            f'MIN(J{index}:M{index})<=0),NA(),B{index}*I{index}*PRODUCT(J{index}:M{index})/1000000000)))'
+        )
+        details[f'O{index}'] = f'=IF(OR(H{index}="",N{index}=""),"",H{index}+N{index})'
+        for column in ('E', 'F', 'I', 'J', 'K', 'L', 'M', 'Q'):
+            details[f'{column}{index}'].fill = assumptions_fill
+    for index, column in enumerate(('D', 'H', 'N', 'O'), 8):
+        overview[f'B{index}'] = f'=SUM(Types!{column}2:{column}{details.max_row})'
+
+    positions = book.create_sheet('PDF positions')
+    positions.append(['Candidate ID', 'Grid row', 'Grid column', 'Plan page', 'Type', 'X pt', 'Y pt',
+                      'Length m', 'Status', 'Zero-based path indices', 'Source operator IDs', 'Detail page',
+                      'Printed evidence', 'Detail bbox pt', 'Type label bbox pt', 'Printed axes (reviewed)'])
+    for row in schedule.get('rows', ()):
+        append_literal(positions, [
+            row.get('candidate_id'), row.get('grid_row'), row.get('grid_column'), row.get('plan_page'),
+            row.get('type_tag'), row.get('x_pt'), row.get('y_pt'), numeric(row.get('printed_length_m')),
+            row.get('status'), json.dumps(row.get('label_path_indices', [])),
+            json.dumps(row.get('source_operator_ids', [])), row.get('detail_page'), row.get('printed_dimension_text'),
+            json.dumps(row.get('printed_length_bbox_pt', [])), json.dumps(row.get('label_bbox_pt', [])),
+            row.get('printed_axis_visual'),
+        ])
     for sheet in book:
         sheet.sheet_view.rightToLeft=True
         sheet.freeze_panes='A2'
@@ -174,3 +215,4 @@ def export_weight_preview_xlsx(schedule: Mapping, preview: Mapping, path: str | 
             sheet.column_dimensions[letter].width=min(54,max(14,max(len(str(c.value or '')) for c in col)+2))
     overview['A13'].font=Font(color='AA0000',bold=True)
     book.save(str(path))
+    book.close()

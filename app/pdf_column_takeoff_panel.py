@@ -9,13 +9,14 @@ from pathlib import Path
 import json
 from hashlib import sha256
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QSignalBlocker, Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QFileDialog,
     QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView, QCheckBox,
+    QAbstractItemView, QPlainTextEdit,
 )
 
-from core.drawings.pdf_column_length_schedule import draft_column_length_schedule, write_schedule
+from core.drawings.pdf_column_length_schedule import draft_column_length_schedule
 from core.drawings.pdf_column_weight_preview import (
     draft_component_weight_preview, write_weight_preview, export_weight_preview_xlsx,
 )
@@ -26,16 +27,14 @@ class PDFColumnTakeoffPanel(QWidget):
     INPUT_FIELDS = ('profile_name', 'profile_count', 'profile_unit_mass_kg_m',
                     'plate_count', 'plate_length_mm', 'plate_width_mm',
                     'plate_thickness_mm', 'steel_density_kg_m3')
+    NO_WEIGHT = 'وزن محاسبه نشده است. ابتدا فرض‌ها را بررسی کنید.'
 
-    def __init__(self, source_paths=None, parent=None):
+    def __init__(self, source_paths=None, parent=None, *, expected_sha256=None):
         super().__init__(parent)
         self.setObjectName('PDFColumnTakeoffPanel')
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.pdf_path = None
-        if source_paths and len(source_paths) == 1:
-            only = next(iter(source_paths.values()))
-            if str(only).lower().endswith('.pdf'):
-                self.pdf_path = str(only)
+        self._expected_sha256 = None
         self.schedule = None
         self.weight_preview = None
         layout = QVBoxLayout(self)
@@ -46,7 +45,7 @@ class PDFColumnTakeoffPanel(QWidget):
         warning.setWordWrap(True)
         layout.addWidget(warning)
         buttons = QHBoxLayout()
-        self.choose_button = QPushButton('انتخاب PDF دیگر')
+        self.choose_button = QPushButton('انتخاب PDF')
         self.choose_button.setObjectName('PDFColumnChooseSource')
         self.choose_button.clicked.connect(self._pick_pdf)
         buttons.addWidget(self.choose_button)
@@ -55,8 +54,15 @@ class PDFColumnTakeoffPanel(QWidget):
         self.extract_button.clicked.connect(self.extract)
         buttons.addWidget(self.extract_button)
         layout.addLayout(buttons)
-        self.receipt = QLabel('فایل PDF را انتخاب و استخراج را اجرا کنید.')
+        self.source_label = QLabel()
+        self.source_label.setObjectName('PDFColumnSourcePath')
+        self.source_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.source_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.source_label.setWordWrap(True)
+        layout.addWidget(self.source_label)
+        self.receipt = QLabel()
         self.receipt.setObjectName('PDFColumnTakeoffReceipt')
+        self.receipt.setTextFormat(Qt.TextFormat.PlainText)
         self.receipt.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.receipt.setWordWrap(True)
         layout.addWidget(self.receipt)
@@ -64,8 +70,17 @@ class PDFColumnTakeoffPanel(QWidget):
         self.positions = QTableWidget(0, 6, self)
         self.positions.setObjectName('PDFColumnSourcePositions')
         self.positions.setHorizontalHeaderLabels(['شناسه PDF','تقاطع','تیپ','طول چاپی (m)','مختصات (pt)','وضعیت'])
+        self.positions.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.positions.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.positions.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.positions)
+        self.position_evidence = QPlainTextEdit()
+        self.position_evidence.setObjectName('PDFColumnPositionEvidence')
+        self.position_evidence.setReadOnly(True)
+        self.position_evidence.setMaximumHeight(92)
+        self.position_evidence.setPlaceholderText('برای مشاهدهٔ شیت‌ها و عملگرهای شاهد، ردیف موقعیت را انتخاب کنید.')
+        self.positions.currentCellChanged.connect(self._position_changed)
+        layout.addWidget(self.position_evidence)
 
         self.assumptions = QTableWidget(0, 11, self)
         self.assumptions.setObjectName('PDFColumnSteelAssumptions')
@@ -75,9 +90,11 @@ class PDFColumnTakeoffPanel(QWidget):
             'طول ورق mm','عرض ورق mm','ضخامت ورق mm','چگالی kg/m³ (فرض)',
         ])
         self.assumptions.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.assumptions.itemChanged.connect(self._assumptions_changed)
         layout.addWidget(self.assumptions)
         self.scenario_ack = QCheckBox('می‌پذیرم که ضرایب و ورق‌های واردشده فرض سناریویی هستند و از PDF تأیید نشده‌اند.')
         self.scenario_ack.setObjectName('PDFColumnScenarioAcknowledgment')
+        self.scenario_ack.toggled.connect(self._scenario_changed)
         layout.addWidget(self.scenario_ack)
         row = QHBoxLayout()
         self.weight_button = QPushButton('۲. محاسبه سناریوی وزن پروفیل و ورق')
@@ -91,31 +108,80 @@ class PDFColumnTakeoffPanel(QWidget):
         self.export_button.setEnabled(False)
         row.addWidget(self.export_button)
         layout.addLayout(row)
-        self.weight_receipt = QLabel('وزن صفر نیست؛ وزن محاسبه نشده است. ابتدا فرض‌ها را بررسی کنید.')
+        self.weight_receipt = QLabel()
         self.weight_receipt.setObjectName('PDFColumnWeightReceipt')
+        self.weight_receipt.setTextFormat(Qt.TextFormat.PlainText)
         self.weight_receipt.setWordWrap(True)
         layout.addWidget(self.weight_receipt)
+        self.export_receipt = QLabel()
+        self.export_receipt.setObjectName('PDFColumnExportReceipt')
+        self.export_receipt.setTextFormat(Qt.TextFormat.PlainText)
+        self.export_receipt.setWordWrap(True)
+        self.export_receipt.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        layout.addWidget(self.export_receipt)
         self.weight_rows = QTableWidget(0, 5, self)
         self.weight_rows.setObjectName('PDFColumnWeightRows')
         self.weight_rows.setHorizontalHeaderLabels(['تیپ','تعداد','جرم پروفیل kg','جرم ورق kg','جرم کل سناریو kg'])
         self.weight_rows.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.weight_rows)
+        path = next(iter(source_paths.values())) if source_paths and len(source_paths) == 1 else None
+        self.set_source(path, expected_sha256=expected_sha256)
 
     def _pick_pdf(self):
-        filename, _ = QFileDialog.getOpenFileName(self,'انتخاب فایل نقشه PDF','','PDF (*.pdf)')
+        filename, _ = QFileDialog.getOpenFileName(self, 'انتخاب فایل نقشه PDF', '', 'PDF (*.pdf)')
         if filename:
-            self.pdf_path = filename
-            self._reset()
-            self.receipt.setText('PDF جدید انتخاب شد. برای بررسی دوباره، استخراج را اجرا کنید.')
+            self.set_source(filename)
+
+    def set_source(self, pdf_path, *, expected_sha256=None):
+        """Select a source and clear all draft results without starting extraction."""
+        self.pdf_path = Path(pdf_path) if pdf_path else None
+        self._expected_sha256 = expected_sha256
+        self._reset()
+        valid_suffix = self.pdf_path is not None and self.pdf_path.suffix.lower() == '.pdf'
+        self.extract_button.setEnabled(valid_suffix)
+        self.source_label.setText(f'PDF منبع: {self.pdf_path}' if self.pdf_path else 'PDF منبع انتخاب نشده است.')
+        self.receipt.setText('برای خواندن نقشه، استخراج ستون‌ها را اجرا کنید.' if valid_suffix
+                             else 'یک فایل با پسوند PDF انتخاب کنید.')
 
     def _reset(self):
-        self.schedule = self.weight_preview = None
+        self.schedule = None
         self.positions.setRowCount(0)
-        self.assumptions.setRowCount(0)
-        self.weight_rows.setRowCount(0)
-        self.scenario_ack.setChecked(False)
+        self.position_evidence.clear()
+        with QSignalBlocker(self.assumptions), QSignalBlocker(self.scenario_ack):
+            self.assumptions.setRowCount(0)
+            self.scenario_ack.setChecked(False)
+        self.scenario_ack.setEnabled(False)
         self.weight_button.setEnabled(False)
+        self._clear_weight(self.NO_WEIGHT)
+
+    def _clear_weight(self, message):
+        self.weight_preview = None
+        self.weight_rows.setRowCount(0)
         self.export_button.setEnabled(False)
+        self.weight_receipt.setText(message)
+        self.export_receipt.clear()
+
+    def _scenario_changed(self):
+        can_compute = bool(self.schedule and self.schedule.get('groups') and self.scenario_ack.isChecked())
+        self.weight_button.setEnabled(can_compute)
+        self._clear_weight('برای محاسبه با فرض‌های فعلی، محاسبه سناریو را بزنید.' if can_compute
+                           else self.NO_WEIGHT)
+
+    def _assumptions_changed(self, item):
+        if item.column() >= 3 and self.weight_button.isEnabled():
+            self.compute_weight()
+
+    def _position_changed(self, index, *_):
+        if not self.schedule or not 0 <= index < len(self.schedule['rows']):
+            self.position_evidence.clear()
+            return
+        row = self.schedule['rows'][index]
+        source_ids = '، '.join(row.get('source_operator_ids') or ()) or '—'
+        self.position_evidence.setPlainText(
+            f"شیت پلان: {row.get('plan_page') or '—'} | شیت دیتیل: {row.get('detail_page') or '—'}\n"
+            f"نوشتهٔ اندازه در دیتیل: {row.get('printed_dimension_text') or '—'}\n"
+            f"شناسه‌های عملگر شاهد در پلان: {source_ids}"
+        )
 
     @staticmethod
     def _read_only(value):
@@ -124,12 +190,15 @@ class PDFColumnTakeoffPanel(QWidget):
         return cell
 
     def extract(self):
-        if not self.pdf_path or not Path(self.pdf_path).is_file():
-            QMessageBox.warning(self,'فایل نقشه','یک فایل PDF موجود انتخاب کنید.')
-            return
         self._reset()
+        if not self.pdf_path or not self.pdf_path.is_file() or self.pdf_path.suffix.lower() != '.pdf':
+            self.receipt.setText('استخراج ناموفق: یک فایل PDF موجود انتخاب کنید.')
+            return
         try:
-            schedule=draft_column_length_schedule(self.pdf_path)
+            if self._expected_sha256 is None:
+                schedule = draft_column_length_schedule(self.pdf_path)
+            else:
+                schedule = draft_column_length_schedule(self.pdf_path, expected_sha256=self._expected_sha256)
         except (OSError, ValueError, RuntimeError) as exc:
             self.receipt.setText('استخراج ناموفق: '+str(exc))
             return
@@ -145,42 +214,51 @@ class PDFColumnTakeoffPanel(QWidget):
                   f"{r.get('x_pt')}, {r.get('y_pt')}",r.get('status'))
             for j,x in enumerate(data):
                 self.positions.setItem(i,j,self._read_only(x))
-        self.assumptions.setRowCount(len(schedule.get('groups',())))
-        for i,group in enumerate(schedule.get('groups',())):
-            # Scenario input defaults are DEMONSTRATION assumptions, NEVER read from the PDF.
-            data=(group['type_tag'],group['grid_location_candidates'],group['draft_extended_length_m'],
-                  'IPE16 (فرض)','2','15.8','0','','','','7850')
-            for j,value in enumerate(data):
-                cell=QTableWidgetItem(str(value))
-                if j<3:
-                    cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                self.assumptions.setItem(i,j,cell)
+        with QSignalBlocker(self.assumptions):
+            self.assumptions.setRowCount(len(schedule.get('groups', ())))
+            for i, group in enumerate(schedule.get('groups', ())):
+                # Scenario defaults are demonstration inputs, not source readings.
+                data = (group['type_tag'], group['grid_location_candidates'], group['draft_extended_length_m'],
+                        'IPE16 (فرض)', '2', '15.8', '0', '', '', '', '7850')
+                for j, value in enumerate(data):
+                    cell = self._read_only(value) if j < 3 else QTableWidgetItem(str(value))
+                    self.assumptions.setItem(i, j, cell)
         self.receipt.setText(
             f"{schedule['status']} | PDF SHA256: {schedule['document_sha256']} | "
+            f"شیت پلان: {schedule.get('plan_page') or '—'} | تعداد شیت: {schedule.get('page_count') or '—'} | "
             f"{schedule.get('grid_node_count')} تقاطع | {schedule.get('draft_node_count')} تیپ خوانده‌شده | "
             f"طول سناریویی {schedule.get('draft_extended_length_total_m')} متر | "
             'بدون تأیید Revision، تعداد تکرار طبقات یا پرداخت مالی'
         )
-        self.weight_button.setEnabled(bool(schedule.get('groups')))
-        self.export_button.setEnabled(bool(schedule.get('groups')))
+        self.positions.setCurrentCell(0, 0)
+        if schedule.get('groups'):
+            self.scenario_ack.setEnabled(True)
+            self.weight_receipt.setText('وزن محاسبه نشده است. فرض‌های هر تیپ را بازبینی و در صورت نیاز ویرایش کنید.')
 
     def _source_unchanged(self):
         if not self.pdf_path or not self.schedule:
             return False
         try:
-            return sha256(Path(self.pdf_path).read_bytes()).hexdigest() == self.schedule['document_sha256']
+            return sha256(self.pdf_path.read_bytes()).hexdigest() == self.schedule['document_sha256']
         except OSError:
             return False
+
+    def _check_current_source(self):
+        if self._source_unchanged():
+            return True
+        self._reset()
+        message = 'فایل PDF پس از استخراج تغییر کرده یا در دسترس نیست؛ دوباره استخراج کنید.'
+        self.receipt.setText(message)
+        self.weight_receipt.setText(message)
+        return False
 
     def compute_weight(self):
         if self.schedule is None or not self.schedule.get('groups'):
             return
-        if not self._source_unchanged():
-            self.weight_receipt.setText('فایل PDF پس از استخراج تغییر کرده یا در دسترس نیست؛ دوباره استخراج کنید.')
-            self.weight_preview = None
+        if not self._check_current_source():
             return
         if not self.scenario_ack.isChecked():
-            QMessageBox.warning(self,'فرض‌های وزن','ابتدا فرضی‌بودن ضرایب سناریو را تأیید کنید.')
+            self._clear_weight('ابتدا فرضی‌بودن ضرایب سناریو را تأیید کنید.')
             return
         scenarios={}
         for i in range(self.assumptions.rowCount()):
@@ -194,10 +272,10 @@ class PDFColumnTakeoffPanel(QWidget):
         try:
             preview=draft_component_weight_preview(self.schedule,scenarios)
         except ValueError as exc:
-            self.weight_receipt.setText('ورودی وزن نامعتبر: '+str(exc))
-            self.weight_preview=None
+            self._clear_weight('ورودی وزن نامعتبر: '+str(exc))
             return
         self.weight_preview=preview
+        self.export_receipt.clear()
         self.weight_rows.setRowCount(len(preview['groups']))
         for i,r in enumerate(preview['groups']):
             for j,x in enumerate((r['type_tag'],r['grid_location_candidates'],r['profile_mass_kg'],
@@ -209,35 +287,38 @@ class PDFColumnTakeoffPanel(QWidget):
             f"جمع سناریو: {preview['draft_weight_total_kg']} kg. "
             'بدون ورق‌های ثبت‌نشده، جوش، پیچ، وصله و پرت. غیرمالی و تأییدنشده.'
         )
+        self.export_button.setEnabled(True)
 
     def export(self):
-        if self.schedule is None or not self.schedule.get('groups'):
+        schedule, preview = self.schedule, self.weight_preview
+        if schedule is None or preview is None or not self.scenario_ack.isChecked():
             return
-        if not self._source_unchanged():
-            self.weight_preview = None
-            self.weight_receipt.setText('PDF منبع تغییر کرده است؛ خروجی قدیمی مجاز نیست. دوباره استخراج کنید.')
+        if not self._check_current_source():
             return
         name, selected = QFileDialog.getSaveFileName(
             self,'ذخیره متره آزمایشی ستون','column_type_weight_preview.xlsx',
             'Excel (*.xlsx);;CSV (*.csv);;JSON (*.json)')
         if not name:
             return
-        path=Path(name)
+        if self.schedule is not schedule or self.weight_preview is not preview or not self._check_current_source():
+            return
+        path = Path(name)
+        if not path.suffix:
+            path = path.with_suffix({'CSV (*.csv)': '.csv', 'JSON (*.json)': '.json'}.get(selected, '.xlsx'))
         if path.suffix.lower() not in ('.xlsx','.csv','.json'):
             QMessageBox.warning(self,'پسوند نامعتبر','فایل خروجی باید xlsx، csv یا json باشد.')
             return
-        if self.weight_preview is None:
-            QMessageBox.warning(self,'محاسبه وزن','ابتدا سناریوی وزن را با فرض‌های تأییدشده محاسبه کنید.')
-            return
         try:
             if path.suffix.lower()=='.xlsx':
-                export_weight_preview_xlsx(self.schedule,self.weight_preview,path)
+                export_weight_preview_xlsx(schedule, preview, path)
             elif path.suffix.lower()=='.csv':
-                write_weight_preview(self.weight_preview,json_path=path.with_suffix('.json'),csv_path=path)
+                write_weight_preview(preview, json_path=path.with_suffix('.json'), csv_path=path)
             else:
-                path.write_text(json.dumps({'source_schedule':self.schedule,'weight_scenario':self.weight_preview},
+                path.write_text(json.dumps({'source_schedule':schedule,'weight_scenario':preview},
                                            ensure_ascii=False,indent=2),encoding='utf-8')
         except (OSError, ValueError, RuntimeError) as exc:
+            self.export_receipt.setText('ذخیرهٔ خروجی ناموفق بود.')
             QMessageBox.warning(self,'خطای خروجی',str(exc))
             return
-        QMessageBox.information(self,'متره آزمایشی','فایل غیرمالی ذخیره شد؛ هیچ مبلغ یا BOQ تغییر نکرد.')
+        saved = f'{path} | {path.with_suffix(".json")}' if path.suffix.lower() == '.csv' else str(path)
+        self.export_receipt.setText(f'خروجی سناریوی غیرمالی ذخیره شد: {saved}')

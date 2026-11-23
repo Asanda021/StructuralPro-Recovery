@@ -7,7 +7,7 @@ L dimensions are not field measurements; no BOQ/statement writes occur.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
+from collections import Counter, defaultdict
 import csv
 from decimal import Decimal
 from hashlib import sha256
@@ -22,42 +22,65 @@ from core.drawings.pdf_auto_intake import _parse_pdf_lines, _score_pair
 
 
 def _collect_dimensions(doc):
-    by_type = {}
-    for index, page in enumerate(doc):
+    by_type = defaultdict(list)
+    for index, page in enumerate(doc, 1):
         kind = classify_sheet_title(page.get_text())
-        if kind.get('status') != 'EXPLICIT_SHEET_TITLE' or kind.get('sheet_kind') != 'column_detail':
+        if kind.get("status") != "EXPLICIT_SHEET_TITLE" or kind.get("sheet_kind") != "column_detail":
             continue
-        marks, dims = _parse_pdf_lines(page)
+        marks, dimensions = _parse_pdf_lines(page)
+        claims = defaultdict(set)
+        page_evidence = []
         for mark in marks:
-            matches = [(score, d) for d in dims
-                       if d['quantity_kind'] == 'length'
-                       if (score := _score_pair(mark, d)) is not None]
+            matches = sorted(
+                (score, ordinal) for ordinal, dimension in enumerate(dimensions)
+                if dimension["quantity_kind"] == "length"
+                if (score := _score_pair(mark, dimension)) is not None
+            )
             if not matches:
                 continue
-            matches.sort(key=lambda x: x[0])
-            closest = matches[0]
-            # Equal-quality but conflicting alternatives cannot be resolved.
-            if any(abs(s - closest[0]) < 5 and d['quantity_m'] != closest[1]['quantity_m']
-                   for s, d in matches[1:]):
-                by_type.setdefault(mark['tag'], []).append({'status':'BLOCKED_CONFLICTING_DIMENSIONS'})
-                continue
-            by_type.setdefault(mark['tag'], []).append({
-                'status':'EXPLICIT_PRINTED_DIMENSION',
-                'length_m':closest[1]['quantity_m'],
-                'page':index+1,
-                'tag_bbox_pt':mark['bbox'],
-                'dimension_bbox_pt':closest[1]['bbox'],
-                'dimension_text':closest[1]['printed'],
-            })
+            best_score = matches[0][0]
+            closest = [ordinal for score, ordinal in matches if score - best_score < 5]
+            distinct_lengths = {Decimal(dimensions[i]["quantity_m"]) for i in closest}
+            for ordinal in closest:
+                claims[ordinal].add(mark["tag"])
+                dimension = dimensions[ordinal]
+                page_evidence.append((mark["tag"], ordinal, {
+                    "status": ("BLOCKED_CONFLICTING_DIMENSIONS" if len(distinct_lengths) > 1
+                               else "EXPLICIT_PRINTED_DIMENSION"),
+                    "length_m": dimension["quantity_m"],
+                    "page": index,
+                    "tag_bbox_pt": mark["bbox"],
+                    "dimension_bbox_pt": dimension["bbox"],
+                    "dimension_text": dimension["printed"],
+                }))
+        for tag, ordinal, witness in page_evidence:
+            if len(claims[ordinal]) > 1:
+                witness["status"] = "BLOCKED_SHARED_DIMENSION_WITNESS"
+                witness["competing_type_tags"] = sorted(claims[ordinal])
+            by_type[tag].append(witness)
+
     indexed = {}
     for tag, evidence in by_type.items():
-        values = {e.get('length_m') for e in evidence if e['status'] == 'EXPLICIT_PRINTED_DIMENSION'}
-        if len(values) != 1 or any(e['status'] != 'EXPLICIT_PRINTED_DIMENSION' for e in evidence):
-            indexed[tag] = {'status':'BLOCKED_CONFLICTING_OR_MISSING_DETAIL', 'evidence':evidence}
+        lengths = {Decimal(witness["length_m"]) for witness in evidence}
+        if len(lengths) != 1 or any(w["status"] != "EXPLICIT_PRINTED_DIMENSION" for w in evidence):
+            indexed[tag] = {"status": "BLOCKED_CONFLICTING_OR_MISSING_DETAIL", "evidence": evidence}
         else:
-            indexed[tag] = {'status':'EXPLICIT_PRINTED_DIMENSION', 'length_m':next(iter(values)),
-                            'evidence':evidence}
+            indexed[tag] = {"status": "EXPLICIT_PRINTED_DIMENSION", "length_m": evidence[0]["length_m"],
+                            "evidence": evidence}
     return indexed
+
+
+def _label_operator_ids(paths, indices, page):
+    if len(indices) != len(set(indices)) or any(type(index) is not int or not 0 <= index < len(paths)
+                                                for index in indices):
+        raise ValueError("PDF column label refers to invalid drawing paths")
+    refs = []
+    for index in indices:
+        items = paths[index]["items"]
+        if paths[index]["type"] != "s" or not items or any(item[0] != "l" for item in items):
+            raise ValueError("PDF column label drawing paths have unsupported operators")
+        refs.extend(f"PDF001:p{page}:d{index + 1}:s{order}" for order in range(1, len(items) + 1))
+    return refs
 
 
 def draft_column_length_schedule(pdf_path: str | Path, *, expected_sha256: str | None = None) -> dict:
@@ -79,33 +102,39 @@ def draft_column_length_schedule(pdf_path: str | Path, *, expected_sha256: str |
                  and classification.get('sheet_kind') == 'column_type_plan']
         if len(plans) != 1:
             return {'status':'BLOCKED_NON_UNIQUE_COLUMN_TYPE_PLAN', 'document_sha256':digest,
-                    'plan_sheet_candidates':[i+1 for i,_ in plans], 'rows':[],
+                    'plan_sheet_candidates':[i+1 for i,_ in plans], 'page_count':len(doc), 'rows':[],
                     'financially_payable':False, 'approved':False}
         index, page = plans[0]
         grid = detect_vector_grid_positions(page,document_id='PDF001',page_number=index+1)
         if grid['status'] != 'VECTOR_GRID_LOCATION_CANDIDATES' or not grid['nodes']:
             return {'status':'BLOCKED_NO_COLUMN_GRID', 'document_sha256':digest,
-                    'plan_page':index+1, 'rows':[], 'financially_payable':False, 'approved':False}
+                    'plan_page':index+1, 'page_count':len(doc), 'rows':[], 'financially_payable':False, 'approved':False}
         symbols = compact_symbol_witness(page,grid['nodes'])
         recognized = vector_column_type_labels(page,symbols['nodes'])
         details = _collect_dimensions(doc)
+        paths = page.get_drawings()
         rows=[]
         for node in recognized['nodes']:
             tag=node.get('suggested_type')
             glyph=node.get('vector_type_label_evidence')
             dim=details.get(tag,{}) if tag else {}
+            label_paths = glyph.get('path_indices', ()) if isinstance(glyph, dict) else ()
+            source_operator_ids = _label_operator_ids(paths, label_paths, index+1)
+            dimension_evidence = dim.get('evidence', [])
             valid=(node.get('status') == 'GRID_LOCATION_VECTOR_TYPE_CANDIDATE'
-                   and isinstance(glyph, dict) and glyph.get('tag') == tag
+                   and isinstance(glyph, dict) and glyph.get('tag') == tag and source_operator_ids
                    and dim.get('status') == 'EXPLICIT_PRINTED_DIMENSION')
             row={'candidate_id':node['candidate_id'], 'grid_row':node['row'],
                  'grid_column':node['column'], 'x_pt':node['x_pt'], 'y_pt':node['y_pt'],
                  'plan_page':index+1, 'type_tag':tag, 'status':
                  'DRAFT_TYPE_LENGTH_CANDIDATE' if valid else 'BLOCKED_MISSING_TYPE_OR_DETAIL',
-                 'label_path_indices':list(glyph.get('path_indices',())) if isinstance(glyph,dict) else [],
+                 'label_path_indices':list(label_paths), 'source_operator_ids':source_operator_ids,
                  'label_bbox_pt':list(glyph.get('bbox_pt',())) if isinstance(glyph,dict) else [],
                  'detail_page':dim['evidence'][0]['page'] if valid else None,
                  'printed_length_m':dim['length_m'] if valid else None,
-                 'printed_length_bbox_pt':list(dim['evidence'][0]['dimension_bbox_pt']) if valid else [],
+                 'printed_length_bbox_pt':list(dimension_evidence[0]['dimension_bbox_pt']) if valid else [],
+                 'printed_dimension_text':dimension_evidence[0].get('dimension_text') if valid else None,
+                 'printed_dimension_evidence':dimension_evidence,
                  'approved':False, 'financially_payable':False}
             rows.append(row)
         tally=Counter(r['type_tag'] for r in rows if r['status'] == 'DRAFT_TYPE_LENGTH_CANDIDATE')
@@ -136,7 +165,8 @@ def write_schedule(result: dict, *, json_path: str | Path, csv_path: str | Path)
     Path(json_path).write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
     columns=('candidate_id','grid_row','grid_column','x_pt','y_pt','plan_page',
              'type_tag','status','detail_page','printed_length_m', 'label_path_indices','label_bbox_pt',
-             'printed_length_bbox_pt','approved','financially_payable')
+             'printed_length_bbox_pt','source_operator_ids','printed_dimension_text',
+             'printed_dimension_evidence','approved','financially_payable')
     with Path(csv_path).open('w',encoding='utf-8-sig',newline='') as f:
         w=csv.DictWriter(f,fieldnames=columns)
         w.writeheader()

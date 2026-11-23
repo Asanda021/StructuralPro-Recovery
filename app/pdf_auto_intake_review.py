@@ -573,7 +573,12 @@ class PDFSheetEvidenceDialog(QDialog):
         # Source-bound steel scenario is confined to this read-only PDF dialog.
         # It neither approves members nor publishes any project/BOQ transaction.
         from app.pdf_column_takeoff_panel import PDFColumnTakeoffPanel
-        self.column_takeoff_panel = PDFColumnTakeoffPanel(source_paths=source_paths, parent=tabs)
+        source_id = next(iter(source_paths)) if source_paths and len(source_paths) == 1 else None
+        reviewed_sha = next((record.get('sha256') for record in report.get('documents', ())
+                             if record.get('document_id') == source_id), None)
+        self.column_takeoff_panel = PDFColumnTakeoffPanel(
+            source_paths=source_paths, parent=tabs, expected_sha256=reviewed_sha,
+        )
         tabs.addTab(self.column_takeoff_panel, 'متره آزمایشی ستون')
 
         if report.get('detail_evidence_graph') is not None:
