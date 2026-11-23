@@ -570,6 +570,12 @@ class PDFSheetEvidenceDialog(QDialog):
         coverage_layout.addWidget(self.coverage_table)
         tabs.addTab(coverage, 'صفحات نیازمند شواهد بیشتر')
 
+        # Source-bound steel scenario is confined to this read-only PDF dialog.
+        # It neither approves members nor publishes any project/BOQ transaction.
+        from app.pdf_column_takeoff_panel import PDFColumnTakeoffPanel
+        self.column_takeoff_panel = PDFColumnTakeoffPanel(source_paths=source_paths, parent=tabs)
+        tabs.addTab(self.column_takeoff_panel, 'متره آزمایشی ستون')
+
         if report.get('detail_evidence_graph') is not None:
             from app.pdf_detail_graph_review import PDFDetailGraphReview
 
