@@ -120,6 +120,8 @@ def validate_boq_structure(rows):
 @exact
 def boq_summary(rows):
     rows=list(rows)
+    for row in rows:
+        _reject_document_only_evidence(row)
     active=[r for r in rows if r.get("status","active")=="active"]
     return wire({"line_count":len(rows),"active_line_count":len(active),
             "quantity_by_unit":_sum_by(active,"unit","quantity"),
