@@ -82,6 +82,8 @@ on:
       - tests/test_phase8_p2_a_pdf_auto_questions.py
       - core/drawings/pdf_auto_questions.py
       - core/drawings/pdf_excel_crosswalk.py
+      - core/drawings/legacy_financial_document_gate.py
+      - tests/test_phase8_p2_a_financial_source_gate.py
       - core/drawings/pdf_auto_intake.py
       - app/pdf_auto_intake_review.py
       - app/graphical_takeoff.py
@@ -134,6 +136,7 @@ jobs:
           python -m pytest -q --junitxml=p8-p2-a.xml
           tests/test_phase8_p2_a_pdf_integrity.py
           tests/test_phase8_p2_a_pdf_excel_crosswalk.py
+          tests/test_phase8_p2_a_financial_source_gate.py
           tests/test_phase8_p2_a_pdf_auto_intake.py
           tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
           tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
