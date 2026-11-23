@@ -63,6 +63,7 @@ jobs:
           -OutputDirectory '${{ runner.temp }}/structuralpro-portable-delivery'
           -ExpectedSourceSha $env:SOURCE_SHA
       - name: Upload tested ZIP and verification records
+        id: portable-artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: StructuralPro-Windows-Portable
@@ -74,3 +75,13 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
+
+      - name: Publish the portable download link
+        shell: pwsh
+        env:
+          PORTABLE_ARTIFACT_URL: ${{ steps.portable-artifact.outputs.artifact-url }}
+        run: |
+          if (-not $env:PORTABLE_ARTIFACT_URL) { throw "Portable artifact upload did not return a download URL" }
+          Write-Host "::notice title=Download the tested Windows portable ZIP::$env:PORTABLE_ARTIFACT_URL"
+          "[Download the tested Windows portable ZIP and SHA-256](${env:PORTABLE_ARTIFACT_URL})" |
+            Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8

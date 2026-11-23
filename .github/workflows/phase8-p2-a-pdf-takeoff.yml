@@ -236,6 +236,30 @@ jobs:
           path: structuralpro-engine-source.zip
           retention-days: 1
           if-no-files-found: error
+      - name: Publish counts from the actual JUnit
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PYCOUNTS'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+
+          result = Path("p8-p2-a.xml")
+          if not result.exists():
+              print("::warning title=PDF JUnit unavailable::The test step did not produce its JUnit XML")
+              raise SystemExit(0)
+          cases = list(ET.parse(result).getroot().iter("testcase"))
+          failed = sum(c.find("failure") is not None or c.find("error") is not None for c in cases)
+          skipped = sum(c.find("skipped") is not None for c in cases)
+          passed = len(cases) - failed - skipped
+          column = sum("test_phase8_p2_a_column_" in c.attrib.get("classname", "") for c in cases)
+          message = (f"SHA {os.environ['PDF_TEST_SHA']} | PASS {passed} | FAIL {failed}"
+                     f" | SKIP {skipped} | column tests {column}")
+          print(f"::notice title=PDF JUnit counts::{message}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(message + "\n")
+          PYCOUNTS
       - name: Retain JUnit for this SHA
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
