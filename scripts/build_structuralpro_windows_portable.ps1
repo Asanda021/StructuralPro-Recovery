@@ -14,7 +14,9 @@ if ($LASTEXITCODE -ne 0 -or $sha -ne $ExpectedSourceSha) { throw 'Unexpected sou
 $delivery = [IO.Path]::GetFullPath($OutputDirectory)
 if (Test-Path -LiteralPath $delivery) { throw 'Output directory must be new' }
 New-Item -ItemType Directory -Path $delivery | Out-Null
-$scratch = Join-Path ([IO.Path]::GetTempPath()) ('structuralpro-portable-' + [Guid]::NewGuid())
+# PyInstaller resolves the entry path relative to the generated spec. On
+# hosted Windows, the checkout and the OS temporary directory can differ in drive.
+$scratch = Join-Path (Split-Path -Parent $repo) ('structuralpro-portable-' + [Guid]::NewGuid())
 New-Item -ItemType Directory -Path $scratch | Out-Null
 $dist = Join-Path $scratch 'dist'
 $spec = Join-Path $scratch 'spec'
