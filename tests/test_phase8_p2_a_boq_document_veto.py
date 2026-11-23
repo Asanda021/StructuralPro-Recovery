@@ -118,3 +118,15 @@ def test_source_reconciliation_still_blocks_payable_work_quantity():
 def test_final_boq_rejects_ambiguous_or_falsy_payability(flag):
     with pytest.raises(ValueError):
         build_boq([work_row(financially_payable=flag)])
+
+def test_core_project_pipeline_cannot_value_blocked_document_row():
+    from core.takeoff.integrity import build_core_pipeline
+    row = work_row(status='BLOCKED_SOURCE_CODE_CONFLICT')
+    with pytest.raises(ValueError):
+        build_core_pipeline({'id': 'SYN', 'name': 'Synthetic'}, [row])
+
+
+def test_professional_estimate_cannot_price_blocked_document_row():
+    from core.takeoff.estimating import build_professional_estimate
+    with pytest.raises(ValueError):
+        build_professional_estimate([work_row(status='MATCHED_DOCUMENT_AMOUNT_ONLY')])
