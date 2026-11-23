@@ -146,7 +146,8 @@ def validate_commit_rows(
         for q in quantities:
             if not isinstance(q, dict):
                 raise ValueError("ساختار ریزکمیت متره نامعتبر است")
-            _reject_document_only_evidence(q)
+            if _is_payable_quantity(row, q):
+                _reject_document_only_evidence(q)
             if not str(q.get("code") or "").strip() or not str(q.get("title") or "").strip():
                 raise ValueError("کد و شرح ریزکمیت الزامی است")
             normalize_unit(q.get("unit"))
@@ -210,9 +211,9 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
         for quantity in quantities:
             if not isinstance(quantity, dict):
                 raise ValueError("ساختار ریزکمیت متره نامعتبر است")
-            _reject_document_only_evidence(quantity)
             if not _is_payable_quantity(takeoff, quantity):
                 continue
+            _reject_document_only_evidence(quantity)
             inputs.append({
                 "source": sid, "source_id": sid, "source_type": "takeoff",
                 "description": quantity["title"], "quantity": quantity["amount"],
