@@ -133,6 +133,12 @@ _TABLES = {
         ('نتیجه', 'status'), ('نامزدهای دیتیل', 'candidate_detail_type_ids'),
         ('اجزای هندسی مجاور', 'nearby_operator_component_ids'),
     )),
+    'reference_links': ('دفتر ارجاع‌های نقشه', (
+        ('شناسه ارجاع', 'link_id'), ('نوشتهٔ ارجاع', 'reference_text'), ('نوع پیوند', 'link_type'),
+        ('سند مبدأ', 'source_document_id'), ('شیت مبدأ', 'source_sheet'),
+        ('سند مقصد', 'target_document_id'), ('شیت مقصد', 'target_sheet'),
+        ('وضعیت نسخه', 'revision_status'), ('وضعیت شاهد', 'verification_state'),
+    )),
 }
 
 _ENGINEERING_REVIEWS = {
@@ -184,6 +190,9 @@ _DETAIL_FIELDS = {
                                          ('ارتباط اختصاصی دهانه', 'span_specific_detail_verified'),
                                          ('عضو فیزیکی معتبر', 'physical_member_verified'),
                                          ('قابل پرداخت مالی', 'financially_payable')),
+    'reference_links': (('کد شیت مقصد', 'target_sheet_code'), ('کادر مبدأ (pt)', 'source_bbox'),
+                        ('کادر مقصد (pt)', 'target_bbox'), ('شناسه عملگرهای مبدأ', 'source_operator_ids'),
+                        ('کد علت', 'reason_code')),
     'multidiscipline_gaps': (('شناسه پوشش', 'coverage_id'),
                              ('هش PDF مرجع', 'source_pdf_sha256'),
                              ('شناسه‌های نواحی', 'source_region_ids'),
@@ -563,7 +572,7 @@ class PDFDetailGraphReview(QWidget):
         self.filters = {}
         self._section_keys = []
         for key, (title, columns) in _TABLES.items():
-            if key in _ENGINEERING_REVIEWS and key not in rows_by_table:
+            if (key in _ENGINEERING_REVIEWS or key == 'reference_links') and key not in rows_by_table:
                 continue
             self._section_keys.append(key)
             panel = QWidget(self.sections)
@@ -605,6 +614,10 @@ class PDFDetailGraphReview(QWidget):
         self.component_image_button.setObjectName('PDFComponentShowSourceImage')
         self.component_image_button.clicked.connect(self._show_component_crop)
         navigation.addWidget(self.component_image_button)
+        self.reference_target_image_button = QPushButton('تصویر شاهد مقصد PDF', detail_panel)
+        self.reference_target_image_button.setObjectName('PDFReferenceShowTargetImage')
+        self.reference_target_image_button.clicked.connect(self._show_reference_target_crop)
+        navigation.addWidget(self.reference_target_image_button)
         self._endpoint_buttons = {}
         for role, label in (('source', 'شاهد مبدأ'), ('target', 'شاهد مقصد'),
                             ('related', 'گره مرتبط')):
@@ -803,6 +816,7 @@ class PDFDetailGraphReview(QWidget):
         self._endpoint_ids = {}
         self._question_tag = None
         self._component_selection = None
+        self._reference_target_selection = None
         has_related_evidence = False
         if not selected:
             self.details.setPlainText('برای مشاهدهٔ جزئیات و نشانی شواهد، یک ردیف را انتخاب کنید.')
@@ -833,6 +847,11 @@ class PDFDetailGraphReview(QWidget):
                     'document_id': record['document_id'], 'page': record['page'],
                     'bbox_pt': record.get('source_bbox_pt'), 'kind': 'PAGE',
                 }]))
+            elif key == 'reference_links':
+                self._component_selection = self._reference_crop_record(record, 'source')
+                self._reference_target_selection = self._reference_crop_record(record, 'target')
+                lines.extend(['', 'تأیید مهندسی نشده | قابل پرداخت مالی — خیر'])
+                lines.extend(self._anchor_lines('نشانی شواهد ارجاع', record.get('evidence', ())))
             elif key in _ENGINEERING_REVIEWS:
                 lines.extend(self._engineering_review_lines(key, record))
                 has_related_evidence = self._populate_related_evidence(record)
@@ -848,9 +867,32 @@ class PDFDetailGraphReview(QWidget):
         self.question_button.setVisible(bool(self._question_tag and self._open_question))
         self.component_image_button.setVisible(self._component_selection is not None)
         self.component_image_button.setEnabled(self._component_selection is not None)
+        self.reference_target_image_button.setVisible(self._reference_target_selection is not None)
+        self.reference_target_image_button.setEnabled(self._reference_target_selection is not None)
+
+    def _reference_crop_record(self, record, side):
+        doc_id = record.get(f'{side}_document_id')
+        page = record.get(f'{side}_sheet')
+        bbox = record.get(f'{side}_bbox')
+        digest = self._documents.get(doc_id, {}).get('sha256')
+        if doc_id not in self._source_paths or type(page) is not int or page < 1 or not bbox or not digest:
+            return None
+        if not any((anchor.get('document_id'), anchor.get('page'), anchor.get('bbox_pt'),
+                    anchor.get('source_sha256')) == (doc_id, page, bbox, digest)
+                   for anchor in record.get('evidence', ())):
+            return None
+        return {
+            'document_id': doc_id, 'page': page, 'bbox_pt': bbox, 'source_pdf_sha256': digest,
+            'component_id': record['link_id'], 'reason_code': record.get('reason_code', record['verification_state']),
+        }
 
     def _show_component_crop(self):
-        record = self._component_selection
+        self._show_source_crop(self._component_selection)
+
+    def _show_reference_target_crop(self):
+        self._show_source_crop(self._reference_target_selection)
+
+    def _show_source_crop(self, record):
         if record is None:
             return
         previous = self.findChild(QDialog, 'PDFComponentCropDialog')

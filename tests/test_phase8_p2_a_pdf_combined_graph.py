@@ -350,4 +350,97 @@ def test_duplicate_current_sheet_is_unsafe_even_if_only_one_contains_target(tmp_
     assert len(links) == 1
     assert links[0]["status"] == "BLOCKED"
     assert links[0]["reason_code"] == "DUPLICATE_CURRENT_SHEET_ID"
+    assert not of(result["nodes"], "kind", "TYPE_DEFINITION")
+    assert not of(result["edges"], "relationship", "INSTANCE_TYPE_CANDIDATE")
     assert result["quantity_approval_count"] == 0
+
+
+def test_conflicting_source_sheet_numbers_cannot_validate_callout(tmp_path):
+    p = sheets(tmp_path, "conflict.pdf", [
+        {"text": [(24, 25, "SHEET S-101 | SHEET S-999 | REV R1"),
+                  (24, 45, "BEAM PLAN"), (24, 155, "INSTANCE I-01 TYPE B1 GRID A/1 LEVEL L1"),
+                  (24, 315, "FOR INSTANCE I-01 DETAIL D-1 / S-201")],
+         "boxes": [(24, 85, 104, 141)]},
+    ])
+    d = details(tmp_path)
+    value = graph([p, d], registry((p, "P-1", "R1", "CURRENT"), (d, "P-1", "R1", "CURRENT")))
+    edge, = of(value["edges"], "relationship", "DETAIL_CALLOUT")
+    assert edge["status"] == "BLOCKED"
+    assert edge["reason_code"] == "CONFLICTING_SOURCE_SHEET_IDS"
+    link, = of(value["reference_links"], "link_type", "PLAN_TO_DETAIL")
+    assert link["verification_state"] == "CONFLICTED"
+    assert link["target_node_id"] is None
+
+
+def test_reference_ledger_exact_many_to_many_and_source_provenance(tmp_path):
+    p = sheets(tmp_path, "references.pdf", [
+        {"text": [(24, 25, "SHEET S-101 | REV R1"), (24, 45, "BEAM PLAN"),
+                  (24, 70, "SEE SHEET S-201"), (24, 95, "SEE SHEET S-301"),
+                  (24, 120, "SEE SECTION A-A / S-201"), (24, 145, "SEE SHEET S-101"),
+                  (24, 170, "SEE SHEET S-20"), (24, 195, "S-201") ]},
+        {"text": [(24, 25, "SHEET S-201 | REV R1"), (26, 150, "SECTION A-A Beam B1"),
+                  (24, 350, "SEE SHEET S-101"), (24, 375, "SEE SHEET S-301")],
+         "boxes": [(28, 85, 105, 137)]},
+        {"text": [(24, 25, "SHEET S-301 | REV R1"), (24, 75, "SEE SHEET S-201")]},
+    ])
+    value = graph([p], registry((p, "P-1", "R1", "CURRENT")))
+    links = value["reference_links"]
+    supported = [(x["source_sheet"], x["target_sheet"]) for x in links
+                 if x["link_type"] == "SHEET_REFERENCE" and x["verification_state"] == "SOURCE_SUPPORTED"]
+    assert sorted(supported) == [(1, 2), (1, 3), (2, 1), (2, 3), (3, 2)]
+    unresolved = of(links, "verification_state", "BLOCKED_MISSING_DOCUMENT")
+    assert any(link["target_sheet_code"] == "S-20" and link["target_sheet"] == "UNKNOWN" for link in unresolved)
+    [self_ref] = [x for x in links if x["link_type"] == "SHEET_REFERENCE" and x["reference_text"] == "SEE SHEET S-101"
+                  and x["source_sheet"] == 1]
+    assert self_ref["verification_state"] == "CONFLICTED" and self_ref["target_node_id"] is None
+    section, = of(links, "link_type", "PLAN_TO_SECTION")
+    assert section["verification_state"] == "SOURCE_SUPPORTED"
+    assert section["source_sheet"] == 1 and section["target_sheet"] == 2
+    assert section["source_operator_ids"] == []  # Native text, no fabricated vector ownership.
+    assert section["target_bbox"] and all(a["source_sha256"] for a in section["evidence"])
+    assert len({x["link_id"] for x in links}) == len(links)
+    assert all(not x["engineering_dependency"] and not x["financially_payable"] for x in links)
+    assert not any(x["reference_text"] == "S-201" for x in links)
+    assert of(links, "link_type", "REVISION_REFERENCE")
+
+
+def test_reference_ledger_retains_excluded_cross_issue_candidates(tmp_path):
+    p, valid = plan(tmp_path), details(tmp_path)
+    foreign = details(tmp_path, "foreign.pdf", revision="R2")
+    authority = registry((p, "P-1", "R1", "CURRENT"), (valid, "P-1", "R1", "CURRENT"),
+                         (foreign, "P-2", "R2", "CURRENT"))
+    value = graph([p, valid, foreign], authority)
+    row, = of(value["reference_links"], "link_type", "PLAN_TO_DETAIL")
+    assert row["verification_state"] == "SOURCE_SUPPORTED"
+    assert row["target_document_id"] == "PDF002"
+    assert {a["document_id"] for a in row["evidence"]} == {"PDF001", "PDF002"}
+    excluded, = of(row["candidate_targets"], "scope_reason", "DIFFERENT_PROJECT_OR_ISSUE")
+    assert {a["document_id"] for a in excluded["evidence"]} == {"PDF003"}
+    assert any(a["source_operator_ids"] for a in excluded["evidence"] if a["kind"] == "VECTOR_TOPOLOGY")
+
+
+def test_reference_ledger_revision_block_preserves_target_without_accepting_link(tmp_path):
+    p = plan(tmp_path)
+    d = details(tmp_path, revision="R2")
+    value = graph([p, d], registry((p, "P-1", "R1", "CURRENT"), (d, "P-1", "R1", "CURRENT")))
+    row, = of(value["reference_links"], "link_type", "PLAN_TO_DETAIL")
+    assert row["verification_state"] == "BLOCKED_REVISION"
+    assert row["revision_status"] == "REVISION_CONFLICT"
+    assert row["target_node_id"] is None and row["target_bbox"] is None
+    assert row["target_document_id"] == "PDF002"
+
+
+def test_reference_keeps_exact_detail_on_conflicting_target_as_blocked_evidence(tmp_path):
+    p = plan(tmp_path)
+    d = sheets(tmp_path, "conflicted-target.pdf", [
+        {"text": [(24, 25, "SHEET S-201 | SHEET S-999 | REV R1"),
+                  (26, 150, "DETAIL D-1 Beam B1")],
+         "boxes": [(28, 85, 105, 137)]},
+    ])
+    value = graph([p, d], registry((p, "P-1", "R1", "CURRENT"), (d, "P-1", "R1", "CURRENT")))
+    row, = of(value["reference_links"], "link_type", "PLAN_TO_DETAIL")
+    assert row["verification_state"] == "CONFLICTED"
+    assert row["target_node_id"] is None and row["target_bbox"] is None
+    [candidate] = row["candidate_targets"]
+    assert candidate["scope_reason"] == "CONFLICTING_SOURCE_SHEET_IDS"
+    assert any(a["document_id"] == "PDF002" and a["kind"] == "DETAIL_TITLE" for a in candidate["evidence"])

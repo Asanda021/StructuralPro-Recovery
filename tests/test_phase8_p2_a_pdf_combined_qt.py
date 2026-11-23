@@ -288,3 +288,93 @@ def test_pdf_auto_ocr_opt_in_is_explicit_and_preserved_when_attaching_register(
         workspace.close()
         qt_app.processEvents()
         service.store.close()
+
+
+def test_reference_links_filter_show_read_only_evidence_and_open_bound_crops(qt_app, tmp_path, monkeypatch):
+    import pymupdf
+    from PySide6.QtWidgets import QLabel
+    from app.pdf_detail_graph_review import PDFDetailGraphReview
+
+    source = tmp_path / 'reference-plan.pdf'
+    target = tmp_path / 'reference-detail.pdf'
+    documents = []
+    for doc_id, path in (('PDF001', source), ('PDF002', target)):
+        with pymupdf.open() as drawing:
+            page = drawing.new_page(width=200, height=150)
+            page.draw_rect([20, 20, 80, 60])
+            drawing.save(path)
+        documents.append({'document_id': doc_id, 'source_name': path.name, 'page_count': 1,
+                          'sha256': sha256(path.read_bytes()).hexdigest()})
+
+    source_anchor = {'anchor_id': 'printed-ref', 'document_id': 'PDF001', 'page': 1,
+                     'kind': 'NATIVE_WORD', 'bbox_pt': [15, 15, 85, 65],
+                     'source_sha256': documents[0]['sha256'], 'printed': 'Detail D1'}
+    target_anchor = {'anchor_id': 'printed-target', 'document_id': 'PDF002', 'page': 1,
+                     'kind': 'NATIVE_TITLE', 'bbox_pt': [15, 15, 85, 65],
+                     'source_sha256': documents[1]['sha256'], 'printed': 'D1'}
+    resolved = {
+        'link_id': 'REF-D1', 'source_document_id': 'PDF001', 'source_sheet': 1,
+        'source_operator_ids': ['PDF001:p1:d1:s1'], 'source_bbox': source_anchor['bbox_pt'],
+        'target_document_id': 'PDF002', 'target_sheet': 1, 'target_bbox': target_anchor['bbox_pt'],
+        'reference_text': 'Detail D1', 'link_type': 'PLAN_TO_DETAIL',
+        'evidence': [source_anchor, target_anchor], 'revision_status': 'CURRENT',
+        'verification_state': 'SOURCE_SUPPORTED', 'financially_payable': False,
+    }
+    unresolved = {**resolved, 'link_id': 'REF-D9', 'reference_text': 'Detail D9',
+                  'target_document_id': None, 'target_sheet': 'UNKNOWN', 'target_bbox': None,
+                  'verification_state': 'BLOCKED_MISSING_DOCUMENT', 'evidence': [source_anchor]}
+    foreign = {**resolved, 'link_id': 'REF-FOREIGN', 'reference_text': 'Foreign target evidence',
+               'evidence': [source_anchor, {**target_anchor, 'source_sha256': 'f' * 64}],
+               'verification_state': 'BLOCKED_REVISION'}
+    report = {'documents': documents, 'detail_evidence_graph': {
+        'nodes': [], 'edges': [], 'issues': [], 'pages': [], 'quantity_approval_count': 0,
+        'reference_links': [resolved, unresolved, foreign],
+    }}
+    widget = PDFDetailGraphReview(report, source_paths={'PDF001': source, 'PDF002': target})
+    try:
+        key = 'reference_links'
+        widget.sections.setCurrentIndex(widget._section_keys.index(key))
+        table = widget.tables[key]
+        assert widget.layoutDirection() == Qt.LayoutDirection.RightToLeft
+        assert table.model().rowCount() == 3
+        widget.filters[key].setText('SOURCE_SUPPORTED')
+        assert table.model().rowCount() == 1
+        index = table.model().index(0, 0)
+        assert not index.flags() & Qt.ItemFlag.ItemIsEditable
+        table.setCurrentIndex(index)
+        details = widget.details.toPlainText()
+        assert all(value in details for value in (
+            'Detail D1', 'PDF001:p1:d1:s1', 'CURRENT', 'SOURCE_SUPPORTED',
+            'printed-ref', 'printed-target', 'تأیید مهندسی نشده',
+        ))
+        assert widget.details.isReadOnly()
+        assert not widget.question_button.isEnabled() or widget.question_button.isHidden()
+        source_button = widget.component_image_button
+        target_button = widget.findChild(QPushButton, 'PDFReferenceShowTargetImage')
+        assert source_button.isEnabled() and target_button.isEnabled()
+        source_button.click()
+        image = widget.findChild(QLabel, 'PDFComponentCropImage')
+        assert image is not None and not image.pixmap().isNull()
+        assert 'REF-D1' in image.parent().layout().itemAt(0).widget().text()
+        target_button.click()
+        target_image = widget.findChild(QLabel, 'PDFComponentCropImage')
+        assert target_image is not None and not target_image.pixmap().isNull()
+
+        widget.filters[key].setText('UNKNOWN')
+        assert table.model().rowCount() == 1
+        table.setCurrentIndex(table.model().index(0, 0))
+        assert source_button.isEnabled() and not target_button.isEnabled()
+
+        widget.filters[key].setText('BLOCKED_REVISION')
+        table.setCurrentIndex(table.model().index(0, 0))
+        assert source_button.isEnabled() and not target_button.isEnabled()
+        warnings = []
+        monkeypatch.setattr(QMessageBox, 'warning', lambda *args: warnings.append(args[2]))
+        source.write_bytes(b'file no longer matches its hash')
+        source_button.click()
+        assert warnings
+        assert report['detail_evidence_graph']['quantity_approval_count'] == 0
+        assert all(not row['financially_payable'] for row in report['detail_evidence_graph'][key])
+    finally:
+        widget.close()
+        qt_app.processEvents()

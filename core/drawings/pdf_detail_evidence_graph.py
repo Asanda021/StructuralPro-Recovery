@@ -17,8 +17,8 @@ from core.drawings.pdf_beam_profile_review import correlate_pdf_beam_profile_wit
 from core.drawings.pdf_beam_axis_crosscheck import reconcile_pdf_beam_grid_labels
 from core.drawings.pdf_beam_end_support_review import review_beam_ends_against_independent_grid
 from core.drawings.pdf_beam_span_evidence_requests import build_beam_span_evidence_requests
+from core.drawings.pdf_reference_links import build_reference_links
 from core.drawings.pdf_type_word_witness import _box
-
 
 _CODE = r"[A-Z0-9][A-Z0-9_.-]{0,31}"
 _DETAIL = r"(?:[A-Z0-9.-]{0,15}[0-9][A-Z0-9.-]{0,16}|[A-Z]{1,4}-[A-Z]{1,4})"
@@ -28,6 +28,7 @@ _DECIMAL = r"[0-9]{1,8}(?:\.[0-9]{1,8})?"
 _DISTANCE_UNIT = r"(?:MM|CM|M)"
 _DEFINITIONS = (
     ("SHEET_ID", rf"(?:SHEET(?: NO\.)?|شیت)(?:\s*[:#]\s*|\s+)(?P<code>{_CODE})"),
+    ("SHEET_REFERENCE", rf"(?:SEE SHEET|REFER TO SHEET|رجوع به شیت)\s+(?P<sheet>{_CODE})"),
     ("REVISION", rf"(?:REV(?:ISION)?\.?|ویرایش|نسخه)(?:\s*[:#]\s*|\s+)(?P<code>{_CODE})"),
     ("PRINTED_SCALE", r"(?:(?:SCALE|مقیاس)(?:\s*:\s*|\s+)|SC\.\s*)1\s*[:/]\s*(?P<denominator>[1-9][0-9]{0,4})"),
     ("INSTANCE", rf"(?:INSTANCE|عضو)\s+(?P<member>{_CODE})\s+(?:TYPE|تیپ)\s+(?P<tag>{_TYPE})"
@@ -114,6 +115,8 @@ _REASONS = {
     "UNVERIFIED_DOCUMENT_SCOPE": ("هم‌پروژه و هم‌نسخه بودن مدارک احراز نشده است", "فهرست مدارک حاکم با اثر انگشت"),
     "MISSING_INDEPENDENT_LEVEL": ("تراز وقوع شاهد مستقل ندارد", "برش، نما یا جدول همان نسخه با تراز صریح"),
     "MISSING_INDEPENDENT_AXIS": ("موقعیت آکس شاهد مستقل ندارد", "پلان آکس‌بندی همان نسخه با شناسه صریح"),
+    "CONFLICTING_SOURCE_SHEET_IDS": ("شناسه‌های چاپ‌شدهٔ شیت با هم تعارض دارند", "شمارهٔ یکتا در شیت ابلاغی"),
+    "SELF_SHEET_REFERENCE": ("ارجاع شیت به خودش مقصد مستقل ندارد", "شماره شیت مقصد"),
     "REFERENCE_TARGET_NOT_FOUND": ("شیت و شناسهٔ دیتیل ارجاع‌شده پیدا نشد", "شیت مقصد و کد دیتیل"),
     "AMBIGUOUS_REFERENCE_TARGET": ("بیش از یک شاهد مقصد با کد ارجاع برابر است", "شیت یا نسخهٔ حاکم و ارجاع یکتا"),
     "REFERENCE_SUBJECT_NOT_FOUND": ("نشانی وقوع ارجاع در همین صفحه احراز نشد", "شناسه وقوع متصل به همان پلان"),
@@ -400,7 +403,7 @@ def _page_record(g, doc, raw, authority):
     conflict = ("SUPERSEDED_SOURCE" if authority and authority["status"] == "SUPERSEDED" else
                 "REVISION_CONFLICT" if len(printed_revisions) > 1 or (
                     authority and printed_revisions and printed_revisions != {authority["revision"]})
-                else None)
+                else "CONFLICTING_SOURCE_SHEET_IDS" if len(sheet_ids) > 1 else None)
     geometry_blocked = str(topo["status"]).startswith("BLOCKED")
     raster = raw["image_block_count"] > 0
     raster_only = raster and not raw["vector_path_count"]
@@ -746,12 +749,43 @@ def _add_instances(g, pages, shapes, type_nodes):
     return local_nodes
 
 
+def _add_sheet_references(g, pages):
+    by_sheet = defaultdict(list)
+    for page in pages.values():
+        for code in {anchor["code"] for anchor in page["anchors_by_kind"]["SHEET_ID"]}:
+            by_sheet[code].append(page)
+
+    for page in pages.values():
+        for anchor in page["anchors_by_kind"]["SHEET_REFERENCE"]:
+            matches = by_sheet[anchor["sheet"]]
+            eligible = [other for other in matches if _scope_disagreement(page, other) is None]
+            candidates = eligible or matches
+            target = candidates[0] if len(candidates) == 1 else None
+            if page["authority_block"]:
+                reason = page["authority_block"]
+            elif not candidates:
+                reason = "REFERENCE_TARGET_NOT_FOUND"
+            elif target is None:
+                reason = "AMBIGUOUS_REFERENCE_TARGET"
+            elif page is target:
+                reason = "SELF_SHEET_REFERENCE"
+            else:
+                reason = _scope_disagreement(page, target)
+                if not reason and (not page["linkable"] or not target["linkable"]):
+                    reason = "REFERENCE_TARGET_UNRESOLVED"
+            g.edge("PRINTED_SHEET_REFERENCE", page["node"], target["node"] if target else None,
+                   [anchor, *(target["anchors_by_kind"]["SHEET_ID"] if target else ())],
+                   status="BLOCKED" if reason else "VALIDATED_REFERENCE", code=reason,
+                   reason=_REASONS[reason][0] if reason else "ارجاع چاپی و شمارهٔ یکتای شیت در ابلاغ ثبت شده‌اند",
+                   candidates=[item["node"]["node_id"] for item in matches])
+
+
 def _add_callouts(g, pages, details, local_nodes):
     by_reference = defaultdict(list)
     for key, page_details in details.items():
-        if pages[key]["sheet_id"]:
+        for code in {anchor["code"] for anchor in pages[key]["anchors_by_kind"]["SHEET_ID"]}:
             for item in page_details:
-                by_reference[(pages[key]["sheet_id"], item["reference_kind"], item["detail_code"])].append((key, item))
+                by_reference[(code, item["reference_kind"], item["detail_code"])].append((key, item))
     selected = defaultdict(list)
     for key, page in pages.items():
         witnesses = page["anchors_by_kind"]
@@ -766,7 +800,9 @@ def _add_callouts(g, pages, details, local_nodes):
             options = eligible or matches
             target = options[0][1] if len(options) == 1 else None
             reason, status = None, "VALIDATED_REFERENCE"
-            if callout["kind"] == "SCHEDULE_ROW" and page["page_role"] != "SCHEDULE":
+            if page["authority_block"]:
+                reason = page["authority_block"]
+            elif callout["kind"] == "SCHEDULE_ROW" and page["page_role"] != "SCHEDULE":
                 reason = "SCHEDULE_CONTEXT_UNVERIFIED"
             elif member and len(objects) != 1:
                 reason = "REFERENCE_SUBJECT_NOT_FOUND"
@@ -858,7 +894,7 @@ def _column_detail_marks(g, pages, report):
 
 
 def _column_plan_locations(g, pages, report, detail_hints):
-    positions, axes = {}, {}
+    positions, axes, source_paths = {}, {}, {}
     axis_grids = {(x["document_id"], x["page"]): x for x in report.get("vector_grid_summaries", ())}
     ledger = {x["candidate_id"]: x for x in report.get("column_position_ledger", {}).get("positions", ())}
     for candidate in report.get("grid_location_candidates", ()):
@@ -881,10 +917,20 @@ def _column_plan_locations(g, pages, report, detail_hints):
         anchors = [anchor]
         glyph = evidenced and evidenced["type_evidence"]
         if glyph and _box(glyph.get("bbox_pt")):
+            if key not in source_paths:
+                by_path = defaultdict(list)
+                for parent in page["raw"]["detail_topology"]["groups"]:
+                    for op in parent["source_operators"]:
+                        by_path[op["path_index"]].append(op["source_id"])
+                source_paths[key] = by_path
+            # The original vector glyph reader stores zero-based get_drawings() indices.
+            path_ids = sorted({index + 1 for index in glyph.get("path_indices", ())})
+            operator_ids = [ref for index in path_ids for ref in source_paths[key].get(index, ())]
             anchors.append({
                 **glyph, "anchor_id": _stable("COLUMN_PLAN_GLYPH", page["sha256"], key[1], row, col),
                 "kind": "COLUMN_PLAN_GLYPH", "document_id": key[0], "page": key[1],
                 "source_sha256": page["sha256"], "source_name": page["source_name"], "normalized_tag": tag,
+                "source_operator_ids": operator_ids,
             })
         status = "UNRESOLVED" if page["linkable"] and not page["authority_block"] else "BLOCKED"
         node = g.node("INSTANCE_CANDIDATE", (anchor["anchor_id"],), "موقعیت احتمالی ستون", status,
@@ -1133,14 +1179,19 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
     type_nodes = {}
     for identity, views in type_sources.items():
         _, tag, family = identity
-        anchors = [anchor for view in views for anchor in view["anchors"] if anchor["kind"] == "DETAIL_TITLE"]
+        headings = [(view, anchor) for view in views for anchor in view["anchors"] if anchor["kind"] == "DETAIL_TITLE"
+                    and not pages[(anchor["document_id"], anchor["page"])]["authority_block"]]
+        if not headings:
+            continue
+        anchors = [anchor for _, anchor in headings]
         definition = g.node("TYPE_DEFINITION", identity, tag, "EXAMINED", anchors, family=family, type_tag=tag)
         type_nodes[identity] = definition
-        for view in views:
+        for view, _ in headings:
             g.edge("DETAIL_TYPE_DEFINITION", view, definition, view["anchors"],
                    status="PROPOSED", reason="تیپ در عنوان دیتیل ثبت شده است")
     local_instances = _add_instances(g, pages, shapes, type_nodes)
     _add_callouts(g, pages, details, local_instances)
+    _add_sheet_references(g, pages)
     detail_hints = _column_detail_marks(g, pages, report)
     positions = _column_plan_locations(g, pages, report, detail_hints)
     member_review_groups = _add_column_id_review(g, pages, positions, detail_hints, member_review)
@@ -1321,6 +1372,17 @@ def build_pdf_detail_evidence_graph(report, page_evidence, *, revision_registry=
     result["beam_span_request_status"] = beam_requests["status"]
     result["beam_span_request_summary"] = beam_requests["summary"]
     result["review_questions"] = _group_review_questions(result["issues"])
+    result["reference_links"] = build_reference_links(g.nodes, g.edges, pages, _scope_disagreement)
+    result["reference_sheet_metadata"] = [{
+        "document_id": page["document_id"], "page": page["page"],
+        "sheet_code": page["sheet_id"] or "UNKNOWN", "page_role": page["page_role"],
+        "revision_status": page["authority_status"], "printed_revisions": page["printed_revisions"],
+        "printed_scales": page["printed_scales"],
+        "declarations": [anchor for kind, anchors in page["anchors_by_kind"].items()
+                         if kind in {"SHEET_ID", "REVISION", "PAGE_ROLE", "DETAIL_TITLE", "PRINTED_SCALE", "AXIS", "LEVEL"}
+                         for anchor in anchors],
+        "local_titles": page["raw"]["detail_title_anchors"],
+    } for page in pages.values()]
     result["graph_sha256"] = sha256(json.dumps(
         result, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")).hexdigest()
     return result
