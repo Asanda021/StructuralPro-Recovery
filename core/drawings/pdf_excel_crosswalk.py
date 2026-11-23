@@ -54,6 +54,22 @@ def _nonempty(row: Mapping, field: str) -> str:
     return str(v).strip()
 
 
+def _source_item_code(row: Mapping) -> str:
+    """Preserve leading zeroes and fail closed on inconsistent source-code aliases."""
+    codes = []
+    for field in ('price_code', 'item_code'):
+        raw = row.get(field)
+        if raw is None:
+            continue
+        value = str(raw).strip().translate(_DIGITS)
+        if not value or not re.fullmatch(r'[0-9A-Za-z_-]{1,32}', value):
+            raise ValueError(f'{field} invalid')
+        codes.append(value)
+    if len(set(codes)) > 1:
+        raise ValueError('price_code and item_code conflict in one source')
+    return codes[0] if codes else ''
+
+
 def _validate_factors(row: Mapping, quantity: Decimal) -> None:
     """Optional, independently transcribed arithmetic, NOT an Excel formula parser."""
     if 'factors' not in row:
@@ -86,6 +102,7 @@ class Evidence:
     revision: str
     locator: str
     formula_checked: bool
+    source_item_code: str = ''
 
     @property
     def key(self) -> tuple[str, str, str, str, str]:
@@ -98,7 +115,8 @@ class Evidence:
                 'measure': self.measure, 'unit': self.unit,
                 'quantity': str(self.quantity), 'source_ref': self.source_ref,
                 'revision': self.revision, 'locator': self.locator,
-                'formula_checked': self.formula_checked}
+                'formula_checked': self.formula_checked,
+                **({'source_item_code': self.source_item_code} if self.source_item_code else {})}
 
 
 def _evidence(row: Mapping, side: str) -> Evidence:
@@ -125,7 +143,7 @@ def _evidence(row: Mapping, side: str) -> Evidence:
     _validate_factors(row, quantity)
     return Evidence(side, member, scope, trade, measure, unit, quantity,
                     source, str(row.get('revision') or '').strip(), locator,
-                    'factors' in row)
+                    'factors' in row, _source_item_code(row))
 
 
 def reconcile_pdf_excel(
@@ -161,6 +179,11 @@ def reconcile_pdf_excel(
                 status, reason = 'BLOCKED_MULTIPLE_CANDIDATES', 'Multiple rows share one physical identity; duplicate/typical-sheet ownership unknown.'
             else:
                 status, reason = 'BLOCKED_MISSING_COUNTERPART', 'Evidence is missing from PDF or Excel.'
+            proposed = None
+        elif ((pdf[0].source_item_code or excel[0].source_item_code)
+              and pdf[0].source_item_code != excel[0].source_item_code):
+            status = 'BLOCKED_SOURCE_CODE_CONFLICT'
+            reason = 'Price/item source codes differ or one source code is missing; no automatic code correction or finance.'
             proposed = None
         elif pdf[0].quantity != excel[0].quantity:
             status, reason = 'BLOCKED_QUANTITY_CONFLICT', 'PDF and Excel quantities disagree; source precedence unverified.'
