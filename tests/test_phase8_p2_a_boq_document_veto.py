@@ -97,3 +97,19 @@ def test_validate_commit_rows_rejects_document_audit_marker():
     t['quantities'][0]['status'] = 'BLOCKED_SOURCE_CODE_CONFLICT'
     with pytest.raises(ValueError):
         validate_commit_rows({'takeoffs': []}, [t], source_id='synthetic-source-1')
+
+def test_nonpayable_procurement_quantity_can_remain_in_takeoff_without_boq():
+    from core.takeoff.commit_guards import rebuild_project_boq
+    t = sample_takeoff()
+    t['quantities'][0].update(role='material', financially_payable=False)
+    takeoffs, boq = rebuild_project_boq({'takeoffs': [], 'boq': []}, [t])
+    assert len(takeoffs) == 1
+    assert boq == []
+
+
+def test_source_reconciliation_still_blocks_payable_work_quantity():
+    from core.takeoff.commit_guards import rebuild_project_boq
+    t = sample_takeoff()
+    t['quantities'][0].update(role='work', financially_payable=False)
+    with pytest.raises(ValueError):
+        rebuild_project_boq({'takeoffs': [], 'boq': []}, [t])
