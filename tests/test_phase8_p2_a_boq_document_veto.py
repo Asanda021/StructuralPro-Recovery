@@ -113,3 +113,8 @@ def test_source_reconciliation_still_blocks_payable_work_quantity():
     t['quantities'][0].update(role='work', financially_payable=False)
     with pytest.raises(ValueError):
         rebuild_project_boq({'takeoffs': [], 'boq': []}, [t])
+
+@pytest.mark.parametrize('flag', [0, 'false', 'no', []])
+def test_final_boq_rejects_ambiguous_or_falsy_payability(flag):
+    with pytest.raises(ValueError):
+        build_boq([work_row(financially_payable=flag)])
