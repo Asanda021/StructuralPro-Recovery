@@ -77,3 +77,40 @@ def test_nonfinancial_audit_report_retains_blocked_status_as_evidence():
     }])
     assert report.validate()['valid']
     assert report.rows[0]['status'] == 'BLOCKED_AMOUNT_CONFLICT'
+
+def test_period_summary_export_rejects_tainted_boq_before_template(tmp_path):
+    from core.platform.application import StructuralProApp
+    from types import SimpleNamespace
+    from unittest.mock import patch
+    app = object.__new__(StructuralProApp)
+    project = {
+        'id': 'synthetic', 'name': 'Synthetic',
+        'boq': [row(source_type='legacy_financial_audit')],
+    }
+    app.store = SimpleNamespace(get=lambda _id: project)
+    app.project_statement_summary = lambda _id: {'gross_current': '100'}
+    app.statement_periods = lambda _id: [{
+        'number': 1, 'gross_current': 100, 'retention': 0,
+        'advance_recovery': 0, 'tax': 0, 'insurance': 0,
+        'payable_current': 100, 'progress_percent': 1,
+    }]
+    with patch('core.reports.project_report.ProjectReport.export',
+               return_value='EXPORTED') as exporter:
+        with pytest.raises(ValueError):
+            app.project_statement_report(
+                'synthetic', 'csv', tmp_path / 'historical.csv')
+    exporter.assert_not_called()
+
+
+def test_verified_statement_pdf_export_rejects_unapproved_boq_before_report(tmp_path):
+    from core.platform.application import StructuralProApp
+    app = object.__new__(StructuralProApp)
+    app.open_project = lambda _id: {
+        'id': 'synthetic', 'name': 'Synthetic',
+        'boq': [row(status='BLOCKED_AMOUNT_CONFLICT')],
+    }
+    app.project_statement_period = lambda _id, _period: (_ for _ in ()).throw(
+        AssertionError('Period must not be accessed before BOQ veto'))
+    with pytest.raises(ValueError):
+        app.verified_statement_report(
+            'synthetic', 1, 'pdf', tmp_path / 'statement.pdf')
