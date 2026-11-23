@@ -1975,7 +1975,11 @@ class StructuralProApp:
         from core.commercial.statement_amendment import summary
         from core.reports.exporters import report_date
         from datetime import date
-        p=self.open_project(project_id);period=self.project_statement_period(project_id,period_no)
+        p=self.open_project(project_id)
+        from core.takeoff.boq import _reject_document_only_evidence
+        for row in p.get("boq") or []:
+            _reject_document_only_evidence(row)
+        period=self.project_statement_period(project_id,period_no)
         net=summary(p,period_no)
         previous_effective={}
         for prior in p.get('statement_periods',[]):
@@ -2362,6 +2366,9 @@ class StructuralProApp:
         p = self.store.get(project_id)
         if p is None:
             raise KeyError(project_id)
+        from core.takeoff.boq import _reject_document_only_evidence
+        for row in p.get("boq") or []:
+            _reject_document_only_evidence(row)
         summary = self.project_statement_summary(project_id)
         rows = [{
             "دوره": x.get("number", ""), "کارکرد ناخالص": x.get("gross_current", 0),
