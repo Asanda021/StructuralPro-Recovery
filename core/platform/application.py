@@ -3445,6 +3445,9 @@ class StructuralProApp:
     def report(self,project_id:str,fmt:str,path,*,period_no:int|None=None):
         p=self.store.get(project_id)
         if p is None: raise KeyError(project_id)
+        from core.takeoff.boq import _reject_document_only_evidence
+        for row in p.get("boq") or []:
+            _reject_document_only_evidence(row)
         from core.commercial.statement_basis import validate_statement_pricing
         basis=validate_statement_pricing(p)
         # A reviewed private-contract BOQ does not magically become a
