@@ -1,0 +1,272 @@
+name: P8 P2 A PDF takeoff and reviewed BOQ
+
+on:
+  pull_request:
+    branches: [test/phase8-p2-engineering-e2e-20261031]
+    paths:
+      - .github/workflows/phase8-p2-a-pdf-takeoff.yml
+      - .github/workflows/structuralpro-windows-portable.yml
+      - scripts/build_structuralpro_windows_portable.ps1
+      - tests/test_phase8_p2_a_pdf_integrity.py
+      - tests/test_phase8_p2_a_pdf_excel_crosswalk.py
+      - tests/test_phase8_p2_a_pdf_auto_intake.py
+      - tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
+      - core/drawings/pdf_detail_object_index.py
+      - core/drawings/pdf_detail_topology.py
+      - core/drawings/pdf_detail_evidence_graph.py
+      - core/drawings/pdf_reference_links.py
+      - core/drawings/pdf_quantity_evidence.py
+      - core/drawings/pdf_member_review.py
+      - core/drawings/pdf_occurrence_review.py
+      - core/drawings/pdf_structural_plan_review.py
+      - core/drawings/pdf_beam_profile_review.py
+      - core/drawings/pdf_beam_axis_crosscheck.py
+      - core/drawings/pdf_beam_end_support_review.py
+      - core/drawings/pdf_beam_span_evidence_requests.py
+      - core/drawings/pdf_designer_rfi_gate.py
+      - tests/test_phase8_p2_a_pdf_designer_rfi_gate.py
+      - tests/test_phase8_p2_a_pdf_beam_span_evidence_requests.py
+      - core/drawings/pdf_private_19sheet_replay.py
+      - tests/test_phase8_p2_a_pdf_private_19sheet_replay.py
+      - tests/test_phase8_p2_a_pdf_beam_end_support_review.py
+      - tests/test_phase8_p2_a_pdf_beam_axis_crosscheck.py
+      - tests/test_phase8_p2_a_pdf_beam_profile_review.py
+      - tests/test_phase8_p2_a_pdf_occurrence_review.py
+      - tests/test_phase8_p2_a_pdf_structural_plan_review.py
+      - tests/test_phase8_p2_a_pdf_engineering_review_qt.py
+      - tests/test_phase8_p2_a_pdf_member_review.py
+      - tests/test_phase8_p2_a_pdf_cad_stroke_words.py
+      - core/drawings/pdf_rendered_text_recovery.py
+      - tests/test_phase8_p2_a_pdf_rendered_text_recovery.py
+      - core/drawings/pdf_revision_preflight.py
+      - tests/test_phase8_p2_a_pdf_revision_preflight.py
+      - app/pdf_detail_graph_review.py
+      - core/drawings/pdf_engine.py
+      - tests/test_phase8_p2_a_pdf_detail_topology.py
+      - tests/test_phase8_p2_a_pdf_combined_graph.py
+      - tests/test_phase8_p2_a_pdf_combined_qt.py
+      - core/drawings/pdf_vector_detail_groups.py
+      - core/drawings/pdf_type_word_witness.py
+      - tests/test_phase8_p2_a_pdf_type_word_witness.py
+      - core/drawings/pdf_detail_evidence_links.py
+      - tests/test_phase8_p2_a_pdf_detail_evidence_links.py
+      - tests/test_phase8_p2_a_pdf_vector_detail_groups.py
+      - tests/test_phase8_p2_a_pdf_detail_object_index.py
+      - tests/test_phase8_p2_a_pdf_detail_object_integration.py
+      - tests/test_phase8_p2_a_pdf_sheet_detail_intake_integration.py
+      - core/drawings/pdf_sheet_detail_inventory.py
+      - core/drawings/pdf_multidiscipline_gap_register.py
+      - tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
+      - core/drawings/pdf_operator_component_review.py
+      - core/drawings/pdf_component_boundaries.py
+      - core/drawings/pdf_dimension_arrowheads.py
+      - core/drawings/pdf_component_source_links.py
+      - core/drawings/pdf_component_evaluation.py
+      - tests/test_phase8_p2_a_pdf_operator_component_review.py
+      - tests/test_phase8_p2_a_pdf_component_boundaries.py
+      - tests/test_phase8_p2_a_pdf_dimension_arrowheads.py
+      - tests/test_phase8_p2_a_pdf_component_semantics.py
+      - tests/test_phase8_p2_a_pdf_component_evaluation.py
+      - tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py
+      - tests/test_phase8_p2_a_pdf_column_position_ledger.py
+      - core/drawings/pdf_column_position_ledger.py
+      - tests/test_phase8_p2_a_pdf_grid_instances.py
+      - tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
+      - tests/test_phase8_p2_a_pdf_vector_type_labels.py
+      - tests/test_phase8_p2_a_pdf_sheet_scope_registration.py
+      - tests/test_phase8_p2_a_pdf_column_profile_reconcile.py
+      - core/drawings/pdf_column_profile_reconcile.py
+      - core/drawings/pdf_sheet_scope_registration.py
+      - core/drawings/pdf_vector_type_labels.py
+      - core/drawings/pdf_vector_symbol_witness.py
+      - core/drawings/pdf_grid_instances.py
+      - tests/test_phase8_p2_a_pdf_auto_intake_qt.py
+      - tests/test_phase8_p2_a_pdf_auto_questions.py
+      - core/drawings/pdf_auto_questions.py
+      - core/drawings/pdf_excel_crosswalk.py
+      - core/drawings/pdf_column_length_schedule.py
+      - core/drawings/pdf_column_weight_preview.py
+      - app/pdf_column_takeoff_panel.py
+      - app/pdf_auto_intake_review.py
+      - tests/test_phase8_p2_a_column_weight_preview.py
+      - tests/test_phase8_p2_a_column_takeoff_qt.py
+      - tests/test_phase8_p2_a_column_length_schedule.py
+      - core/drawings/legacy_financial_document_gate.py
+      - tests/test_phase8_p2_a_financial_source_gate.py
+      - core/takeoff/boq.py
+      - core/takeoff/commit_guards.py
+      - tests/test_phase8_p2_a_boq_document_veto.py
+      - tests/test_phase8_p2_a_downstream_financial_veto.py
+      - core/commercial/statement.py
+      - core/reports/aec_office_package.py
+      - core/platform/application.py
+      - core/drawings/pdf_auto_intake.py
+      - app/pdf_auto_intake_review.py
+      - app/graphical_takeoff.py
+
+permissions:
+  contents: read
+
+jobs:
+  pdf-evidence:
+    name: PDF ${{ matrix.scope }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: [targeted, regression]
+        os: [ubuntu-24.04, windows-2022]
+        include:
+          - os: ubuntu-24.04
+            qpa: offscreen
+          - os: windows-2022
+            qpa: windows
+    env:
+      PDF_TEST_SHA: ${{ github.event.pull_request.head.sha }}
+      PYTHONPATH: .
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: ${{ matrix.qpa }}
+    steps:
+      - name: Preserve Git evidence line endings
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Verify tested source SHA
+        run: >-
+          python -c "import os, subprocess; actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip();
+          print(actual); assert actual == os.environ['PDF_TEST_SHA']"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install Qt system libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq libegl1 libopengl0 libgl1 libxcb-cursor0
+      - name: Install runtime and test dependencies
+        run: python -m pip install -q -r requirements.txt "pytest==8.4.2"
+      - name: PDF source, geometry, reviewed BOQ and Qt
+        if: matrix.scope == 'targeted'
+        run: >-
+          python -m pytest -q --junitxml=p8-p2-a.xml
+          tests/test_phase8_p2_a_pdf_integrity.py
+          tests/test_phase8_p2_a_pdf_excel_crosswalk.py
+          tests/test_phase8_p2_a_column_length_schedule.py
+          tests/test_phase8_p2_a_column_weight_preview.py
+          tests/test_phase8_p2_a_column_takeoff_qt.py
+          tests/test_phase8_p2_a_financial_source_gate.py
+          tests/test_phase8_p2_a_boq_document_veto.py
+          tests/test_phase8_p2_a_downstream_financial_veto.py
+          tests/test_phase8_p2_a_pdf_auto_intake.py
+          tests/test_phase8_p2_a_pdf_sheet_detail_inventory.py
+          tests/test_phase8_p2_a_pdf_multidiscipline_gap_register.py
+          tests/test_phase8_p2_a_pdf_operator_component_review.py
+          tests/test_phase8_p2_a_pdf_component_boundaries.py
+          tests/test_phase8_p2_a_pdf_dimension_arrowheads.py
+          tests/test_phase8_p2_a_pdf_component_semantics.py
+          tests/test_phase8_p2_a_pdf_component_evaluation.py
+          tests/test_phase8_p2_a_pdf_degenerate_quad_operators.py
+          tests/test_phase8_p2_a_pdf_detail_object_index.py
+          tests/test_phase8_p2_a_pdf_detail_topology.py
+          tests/test_phase8_p2_a_pdf_combined_graph.py
+          tests/test_phase8_p2_a_pdf_member_review.py
+          tests/test_phase8_p2_a_pdf_occurrence_review.py
+          tests/test_phase8_p2_a_pdf_structural_plan_review.py
+          tests/test_phase8_p2_a_pdf_beam_profile_review.py
+          tests/test_phase8_p2_a_pdf_beam_axis_crosscheck.py
+          tests/test_phase8_p2_a_pdf_beam_end_support_review.py
+          tests/test_phase8_p2_a_pdf_beam_span_evidence_requests.py
+          tests/test_phase8_p2_a_pdf_designer_rfi_gate.py
+          tests/test_phase8_p2_a_pdf_private_19sheet_replay.py
+          tests/test_phase8_p2_a_pdf_engineering_review_qt.py
+          tests/test_phase8_p2_a_pdf_cad_stroke_words.py
+          tests/test_phase8_p2_a_pdf_revision_preflight.py
+          tests/test_phase8_p2_a_pdf_rendered_text_recovery.py
+          tests/test_phase8_p2_a_pdf_combined_qt.py
+          tests/test_phase8_p2_a_pdf_vector_detail_groups.py
+          tests/test_phase8_p2_a_pdf_type_word_witness.py
+          tests/test_phase8_p2_a_pdf_detail_evidence_links.py
+          tests/test_phase8_p2_a_pdf_detail_object_integration.py
+          tests/test_phase8_p2_a_pdf_sheet_detail_intake_integration.py
+          tests/test_phase8_p2_a_pdf_column_position_ledger.py
+          tests/test_phase8_p2_a_pdf_grid_instances.py
+          tests/test_phase8_p2_a_pdf_vector_symbol_witness.py
+          tests/test_phase8_p2_a_pdf_vector_type_labels.py
+          tests/test_phase8_p2_a_pdf_sheet_scope_registration.py
+          tests/test_phase8_p2_a_pdf_column_profile_reconcile.py
+          tests/test_phase8_p2_a_pdf_auto_intake_qt.py
+          tests/test_phase8_p2_a_pdf_auto_questions.py
+          tests/test_pdf_dimension_text_regression.py
+          tests/test_work_pdf_precision.py
+          tests/test_chat7_pdf_scale_fail_closed.py
+          tests/test_phase2_pdf_navigation.py
+          tests/test_phase2_pdf_roof.py
+          tests/test_phase2_pdf_roof_openings.py
+          tests/test_phase2_pdf_roof_ui.py
+          tests/test_phase2_polygon_amendments.py
+          tests/test_phase2_topology_v2_sqlite.py
+          tests/test_drawing_takeoff_persistence_and_golden.py
+          tests/test_phase8_p2_fivefloor_financial_e2e.py
+      - name: Adjacent pricing, reports, CAS and synthetic DWG veto
+        if: matrix.scope == 'regression'
+        run: >-
+          python -m pytest -q --junitxml=p8-p2-a.xml
+          tests/test_phase8_p2_dwg_financial_veto.py
+          tests/test_recovery_concurrent_takeoff.py
+          tests/test_takeoff_boq_statement_integrity.py
+          tests/test_phase3_five_floor_finance.py
+          tests/test_ai_takeoff_persistent_approval.py
+          tests/test_phase7_p2_multifloor_bundle.py
+          tests/test_phase7_p2_persisted_boq_crosswalk.py
+          tests/test_phase7_p3_custom_batch.py
+          tests/test_phase7_p4_technical_office_revision.py
+          tests/test_phase8_p2_windows_custom_batch_freshness.py
+          tests/test_p231_p240_report_export_integrity.py
+          tests/test_phase7_p5_source_discrepancy_gate.py
+          tests/test_phase7_p5_real_commit_integration.py
+      # Source-only checkout for private local engine execution. No user drawings,
+      # Library data, test fixtures or non-Git workspace content are included.
+      - name: Package committed engine source for private local replay
+        if: matrix.scope == 'targeted' && matrix.os == 'ubuntu-24.04'
+        run: git archive --format=zip --output=structuralpro-engine-source.zip HEAD core app contracts recovery requirements.txt pytest.ini
+      - name: Retain source-only private replay bootstrap for 1 day
+        if: matrix.scope == 'targeted' && matrix.os == 'ubuntu-24.04'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8-p2-a-source-bootstrap
+          path: structuralpro-engine-source.zip
+          retention-days: 1
+          if-no-files-found: error
+      - name: Publish counts from the actual JUnit
+        if: always()
+        shell: bash
+        run: |
+          python - <<'PYCOUNTS'
+          import os
+          from pathlib import Path
+          from xml.etree import ElementTree as ET
+
+          result = Path("p8-p2-a.xml")
+          if not result.exists():
+              print("::warning title=PDF JUnit unavailable::The test step did not produce its JUnit XML")
+              raise SystemExit(0)
+          cases = list(ET.parse(result).getroot().iter("testcase"))
+          failed = sum(c.find("failure") is not None or c.find("error") is not None for c in cases)
+          skipped = sum(c.find("skipped") is not None for c in cases)
+          passed = len(cases) - failed - skipped
+          column = sum("test_phase8_p2_a_column_" in c.attrib.get("classname", "") for c in cases)
+          message = (f"SHA {os.environ['PDF_TEST_SHA']} | PASS {passed} | FAIL {failed}"
+                     f" | SKIP {skipped} | column tests {column}")
+          print(f"::notice title=PDF JUnit counts::{message}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write(message + "\n")
+          PYCOUNTS
+      - name: Retain JUnit for this SHA
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: p8-p2-a-${{ matrix.scope }}-${{ matrix.os }}
+          path: p8-p2-a.xml
+          retention-days: 14
+          if-no-files-found: warn

@@ -18,7 +18,7 @@ class Measurement:
 # Avoid consuming the first digit of a dimension as a free-form label.
 # PDF text extractors may concatenate adjacent annotations: "14.00 mL= 12.00 m".
 _DIM_RE = re.compile(
-    r"(?<![\w.,٫+\-])"
+    r"(?<![\w.,٫٬+\-−])"
     r"(?:(?P<label_assigned>[A-Za-zآ-ی_][A-Za-zآ-ی0-9_\-]{0,39})\s*[=:]\s*"
     r"|(?P<label>[A-Za-zآ-ی_][A-Za-zآ-ی_\-]*(?:\s+[A-Za-zآ-ی_][A-Za-zآ-ی_\-]*){0,3})\s+)?"
     r"(?P<value>\d+(?:[.,٫]\d+)?)\s*"
@@ -118,12 +118,19 @@ class PDFTakeoffAdapter:
         out=[]
         for page in pages:
             for m in _DIM_RE.finditer(page.text):
+                start = m.start()
+                while start and page.text[start - 1] in " \t":
+                    start -= 1
+                if start and page.text[start - 1] in "+-−":
+                    continue
                 value = float(m.group("value").replace(",", ".").replace("٫", "."))
                 unit = re.sub(r"[\s\u200c]", "", m.group("unit").lower())
                 if unit in ("mm", "میلیمتر"):
                     value /= 1000
                 elif unit in ("cm", "سانت", "سانتیمتر", "سانتمتر"):
                     value /= 100
+                if not math.isfinite(value) or value <= 0:
+                    continue
                 label = m.group("label_assigned") or m.group("label") or ""
                 out.append(Measurement("dimension", value, "m", "pdf-text", page.page, label.strip(), 0.45))
         return out

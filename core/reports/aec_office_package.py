@@ -87,13 +87,44 @@ def flatten_takeoffs(project: dict) -> list[dict]:
     return rows
 
 
+def _verify_drawing_pdfs(project, rows):
+    from core.drawings.pdf_engine import require_current_pdf
+
+    sessions = project.get("drawing_sessions") or {}
+    checked = set()
+    for row in rows:
+        if row.get("domain") not in {"drawing", "drawing_ai"}:
+            continue
+        params = row.get("params") or {}
+        proof = row.get("provenance") or {}
+        session = sessions.get(row.get("drawing_session_id"), {})
+        sources = (params.get("drawing_source"), proof.get("drawing_source"),
+                   session.get("drawing_source"))
+        if not any(Path(path).suffix.lower() == ".pdf" for path in sources if path):
+            continue
+        path = params.get("drawing_source")
+        expected = params.get("source_sha256")
+        witness = (session if row["domain"] == "drawing_ai" else proof)
+        if (not path or Path(path).suffix.lower() != ".pdf"
+                or witness.get("drawing_source") != path or witness.get("source_sha256") != expected):
+            raise ValueError("رسید منبع PDF برای حسابرسی BOQ ناقص یا ناسازگار است")
+        pair = Path(path), expected
+        if pair not in checked:
+            require_current_pdf(*pair)
+            checked.add(pair)
+
+
 @exact
 def audit_boq(project: dict, *, require_pricebook: bool = False) -> dict:
     """Reconcile every BOQ source-group quantity to its original takeoff rows."""
     from core.takeoff.manual_formula_amendments import effective_takeoffs
     effective = effective_takeoffs(project, project.get("takeoffs") or [])
+    _verify_drawing_pdfs(project, effective)
     details = flatten_takeoffs({**project, "takeoffs": effective})
     boq = project.get("boq") or []
+    from core.takeoff.boq import _reject_document_only_evidence
+    for row in boq:
+        _reject_document_only_evidence(row)
     result = validate_boq_structure(boq)
     if not result["valid"]:
         raise ValueError("ساختار ردیف‌های برآورد نامعتبر است")

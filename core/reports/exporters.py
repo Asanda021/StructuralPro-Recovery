@@ -197,6 +197,7 @@ def export_csv(rows, path, title="گزارش استراکچرال پرو", summa
         w.writerow(["CSV داده متنی است؛ چیدمان، فونت و راست‌به‌چپ دیداری در این قالب ذخیره نمی‌شود."])
         for key,value in _report_metadata(title,metadata,cols).items():
             w.writerow([key,value])
+        w.writerows(_summary_items(summary))
         w.writerow([])
         w.writerow([label for _, label in cols])
         w.writerows([_cell(_display_value(row, key)) for key, _ in cols] for row in rows)

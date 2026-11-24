@@ -1,0 +1,120 @@
+name: StructuralPro Windows 7 compatibility candidates
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - .github/workflows/structuralpro-win7-compat.yml
+      - app/win7_column_desktop.py
+      - core/drawings/pdf_column_text_witness.py
+      - core/drawings/pdf_column_length_schedule.py
+      - core/drawings/pdf_column_weight_preview.py
+permissions:
+  contents: read
+jobs:
+  build-win7-candidate:
+    if: >-
+      github.repository == 'Asanda021/StructuralPro-Recovery' &&
+      ((github.event_name == 'pull_request' && github.event.pull_request.number == 49) ||
+       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/fix/phase8-p2-a-pdf-takeoff-20261115'))
+    name: Win7 compatibility candidate / ${{ matrix.arch }}
+    runs-on: windows-2022
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86, x64]
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      PYTHONUTF8: '1'
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.8.10'
+          architecture: ${{ matrix.arch }}
+      - name: Install Python 3.8 legacy-compatible dependencies
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne $env:SOURCE_SHA) { throw 'Wrong checkout SHA' }
+          python -c "import sys;assert sys.version_info[:2] == (3,8),sys.version"
+          python -m pip install --only-binary=:all: 'PyMuPDF==1.24.11' 'openpyxl==3.1.2' 'pyinstaller==5.13.2'
+          if ($LASTEXITCODE -ne 0) { throw 'Legacy dependency installation failed' }
+      - name: Run synthetic vector-PDF and Excel smoke with Tk desktop
+        shell: pwsh
+        run: |
+          python app/win7_column_desktop.py --smoke-test (Join-Path $env:RUNNER_TEMP 'source-smoke')
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'source-smoke/win7-smoke.json')
+            throw 'Source smoke failed'
+          }
+      - name: Freeze Python 3.8/Tk desktop into portable EXE
+        shell: pwsh
+        run: |
+          $scratch=Join-Path $env:RUNNER_TEMP 'win7-freeze'
+          New-Item -ItemType Directory -Path $scratch | Out-Null
+          $argsPy=@('-m','PyInstaller','--noconfirm','--clean','--onedir','--windowed','--noupx','--name','StructuralPro-Win7','--paths','.','--collect-all','pymupdf','--distpath',(Join-Path $scratch 'dist'),'--workpath',(Join-Path $scratch 'build'),'--specpath',(Join-Path $scratch 'spec'),'app/win7_column_desktop.py')
+          & python @argsPy
+          if ($LASTEXITCODE -ne 0) { throw 'Legacy PyInstaller build failed' }
+      - name: Pack, unpack and smoke the actual Windows EXE
+        shell: pwsh
+        run: |
+          $scratch=Join-Path $env:RUNNER_TEMP 'win7-freeze'
+          $folder=Join-Path $scratch 'dist/StructuralPro-Win7'
+          $delivery=Join-Path $env:RUNNER_TEMP 'win7-delivery'
+          New-Item -ItemType Directory -Path $delivery | Out-Null
+          if (-not (Test-Path (Join-Path $folder 'StructuralPro-Win7.exe'))) { throw 'EXE missing' }
+          @'
+          @echo off
+          cd /d "%~dp0"
+          if not exist diagnostics mkdir diagnostics
+          "StructuralPro-Win7.exe" --smoke-test "%~dp0diagnostics"
+          if exist "%~dp0diagnostics\win7-smoke.json" type "%~dp0diagnostics\win7-smoke.json"
+          echo Report exact message, Windows 7 Service Pack and 32/64-bit architecture.
+          pause
+          '@ | Set-Content -LiteralPath (Join-Path $folder 'RUN-DIAGNOSTIC.cmd') -Encoding ascii
+          @'
+          Windows 7 SP1 compatibility CANDIDATE. NOT TESTED ON WINDOWS 7.
+          Extract entire folder and run StructuralPro-Win7.exe.
+          Python 3.8 / Tcl-Tk without Qt6.
+          Windows 7 SP1 Universal CRT update KB2999226 may be necessary.
+          Run RUN-DIAGNOSTIC.cmd and send diagnostics\win7-smoke.json if needed.
+          No private drawings or approved financial data are bundled.
+          '@ | Set-Content -LiteralPath (Join-Path $folder 'START-HERE.txt') -Encoding ascii
+          $archiveName='StructuralPro-Win7-${{ matrix.arch }}.zip'
+          $archive=Join-Path $delivery $archiveName
+          Compress-Archive -Path $folder -DestinationPath $archive -CompressionLevel Optimal
+          $unpack=Join-Path $scratch 'unpacked'
+          Expand-Archive -LiteralPath $archive -DestinationPath $unpack
+          $exe=Join-Path $unpack 'StructuralPro-Win7/StructuralPro-Win7.exe'
+          $out=Join-Path $scratch 'frozen-smoke'
+          $env:Path="$env:SystemRoot\System32;$env:SystemRoot"
+          Remove-Item Env:PYTHONPATH,Env:PYTHONHOME -ErrorAction SilentlyContinue
+          $proc=Start-Process -FilePath $exe -WorkingDirectory $unpack -ArgumentList @('--smoke-test',('"' + $out + '"')) -PassThru -Wait
+          if ($proc.ExitCode -ne 0) {
+            if (Test-Path (Join-Path $out 'win7-smoke.json')) { Get-Content (Join-Path $out 'win7-smoke.json') }
+            throw 'Frozen EXE smoke failed'
+          }
+          $receipt=Get-Content (Join-Path $out 'win7-smoke.json') -Raw | ConvertFrom-Json -AsHashtable
+          if ($receipt.status -ne 'PASS') { throw 'Frozen receipt not PASS' }
+          $runtime=Get-ChildItem -LiteralPath (Join-Path $unpack 'StructuralPro-Win7') -Recurse -File
+          foreach ($required in @('StructuralPro-Win7.exe','python38.dll','_tkinter.pyd')) {
+            if (-not ($runtime | Where-Object { $_.Name -eq $required })) { throw "Missing $required" }
+          }
+          $h=(Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$h  $archiveName" | Set-Content (Join-Path $delivery ($archiveName+'.sha256.txt')) -Encoding ascii
+          Copy-Item (Join-Path $out 'win7-smoke.json') (Join-Path $delivery 'smoke.json')
+          [ordered]@{source_sha=$env:SOURCE_SHA;architecture='${{ matrix.arch }}';python_version='3.8.10';build_host='windows-2022';verified_on_real_windows7=$false;frozen_exe_smoke='PASS';archive_sha256=$h} | ConvertTo-Json | Set-Content (Join-Path $delivery 'build.json') -Encoding utf8
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: StructuralPro-Win7-${{ matrix.arch }}-CANDIDATE
+          path: |
+            ${{ runner.temp }}/win7-delivery/*.zip
+            ${{ runner.temp }}/win7-delivery/*.txt
+            ${{ runner.temp }}/win7-delivery/*.json
+          retention-days: 14
+          if-no-files-found: error

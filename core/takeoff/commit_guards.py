@@ -9,7 +9,7 @@ from copy import deepcopy
 import math
 from typing import Any, Iterable
 
-from core.takeoff.boq import build_boq
+from core.takeoff.boq import build_boq, _reject_document_only_evidence
 from core.takeoff.units import normalize_unit
 
 _REGISTRIES = ("beam_detail_register", "reviewed_structural_members", "reviewed_aec_systems")
@@ -133,6 +133,7 @@ def validate_commit_rows(
     for row in incoming:
         if not isinstance(row, dict):
             raise ValueError("ساختار ردیف پیشنهادی نامعتبر است")
+        _reject_document_only_evidence(row)
         sid = _canonical_source_id(row.get("source_id"))
         if sid in ids or sid in prior_ids:
             raise ValueError("ردیف با شناسه تکراری یا خالی قابل انتقال به BOQ نیست")
@@ -145,6 +146,8 @@ def validate_commit_rows(
         for q in quantities:
             if not isinstance(q, dict):
                 raise ValueError("ساختار ریزکمیت متره نامعتبر است")
+            if _is_payable_quantity(row, q):
+                _reject_document_only_evidence(q)
             if not str(q.get("code") or "").strip() or not str(q.get("title") or "").strip():
                 raise ValueError("کد و شرح ریزکمیت الزامی است")
             normalize_unit(q.get("unit"))
@@ -198,6 +201,7 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
     for takeoff in effective_takeoffs(project,takeoffs):
         if not isinstance(takeoff, dict):
             raise ValueError("ردیف متره نامعتبر است")
+        _reject_document_only_evidence(takeoff)
         sid = takeoff.get("source_id")
         if not isinstance(sid, str) or not sid.strip():
             raise ValueError("ریزمتره بدون منبع قابل ورود به BOQ نیست")
@@ -209,6 +213,7 @@ def rebuild_project_boq(project: dict, new_takeoffs: Iterable[dict]) -> tuple[li
                 raise ValueError("ساختار ریزکمیت متره نامعتبر است")
             if not _is_payable_quantity(takeoff, quantity):
                 continue
+            _reject_document_only_evidence(quantity)
             inputs.append({
                 "source": sid, "source_id": sid, "source_type": "takeoff",
                 "description": quantity["title"], "quantity": quantity["amount"],

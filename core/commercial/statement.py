@@ -47,8 +47,10 @@ def valid_date(value):
 def statement_rows(project):
     """Compatible price-code projection; original BOQ/source rows stay intact."""
     from core.takeoff.units import normalize_unit
+    from core.takeoff.boq import _reject_document_only_evidence
     groups={}
     for original in project.get('boq',[]):
+        _reject_document_only_evidence(original)
         row=deepcopy(original);code=row['price_code'];unit=normalize_unit(row['unit'])
         if number(row.get('factor',1),'ضریب ردیف')!=1 or number(row.get('waste_percent',0),'پرت') or number(row.get('allowance_quantity',0),'اضافه مقدار'):
             raise ValueError('مبنای کارکرد دارای پرت یا ضریب ردیف نیازمند قرارداد صریح مستقل است')

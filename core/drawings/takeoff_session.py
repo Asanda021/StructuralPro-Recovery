@@ -51,9 +51,35 @@ class Calibration:
     reference_pixels: float
     reference_meters: float
     source: str = "manual-reference"
+    pdf_view: dict | None = None
+
+    def __post_init__(self):
+        if self.pdf_view is None:
+            return
+        try:
+            bounds = self.pdf_view["bounds"]
+            points = self.pdf_view["reference_points"]
+            if len(bounds) != 4 or len(points) != 2 or any(len(p) != 2 for p in points):
+                raise ValueError
+            raw = [*bounds, *points[0], *points[1]]
+            if any(isinstance(v, bool) or not math.isfinite(float(v)) for v in raw):
+                raise ValueError
+            x0, y0, x1, y1, ax, ay, bx, by = map(float, raw)
+            if not (0 <= x0 < x1 and 0 <= y0 < y1
+                    and all(x0 <= x <= x1 and y0 <= y <= y1 for x, y in ((ax, ay), (bx, by)))
+                    and math.isclose(math.hypot(bx-ax, by-ay), self.reference_pixels, rel_tol=1e-12)):
+                raise ValueError
+        except (KeyError, TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("محدوده نما و دو نقطه مرجع کالیبراسیون PDF معتبر نیستند") from exc
+        object.__setattr__(self, "pdf_view", {
+            "bounds": [x0, y0, x1, y1], "reference_points": [[ax, ay], [bx, by]],
+        })
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if self.pdf_view is None:
+            data.pop("pdf_view")
+        return data
 
 
 class DrawingTakeoffSession:
@@ -93,7 +119,8 @@ class DrawingTakeoffSession:
         self.calibration = self.calibrations.get(page)
         return page
 
-    def calibrate(self, page: int, reference_pixels: float, reference_meters: float) -> Calibration:
+    def calibrate(self, page: int, reference_pixels: float, reference_meters: float, *,
+                  pdf_view: dict | None = None) -> Calibration:
         page = self._page_number(page)
         if isinstance(reference_pixels, bool) or isinstance(reference_meters, bool):
             raise ValueError("مرجع کالیبراسیون باید عددی باشد")
@@ -104,13 +131,16 @@ class DrawingTakeoffSession:
         factor=meters/px
         if not math.isfinite(factor) or factor<=0:
             raise ValueError("نسبت کالیبراسیون خارج از دامنه عددی معتبر است")
+        if pdf_view is not None and Path(self.drawing_source).suffix.lower() != ".pdf":
+            raise ValueError("محدوده نما فقط برای نقشه PDF مجاز است")
+        calibration = Calibration(factor, page, px, meters, pdf_view=pdf_view)
         previous = self.calibrations.get(page)
-        if previous and not math.isclose(previous.meters_per_pixel, meters / px, rel_tol=1e-12) and any(
+        if previous and (previous.pdf_view != calibration.pdf_view or
+                not math.isclose(previous.meters_per_pixel, factor, rel_tol=1e-12)) and any(
             item.page == page and item.kind in {"length", "area"} for item in self.items
         ):
             raise ValueError("این صفحه متره ثبت‌شده دارد؛ پیش از تغییر مقیاس، متره‌های وابسته را حذف و با مقیاس جدید اندازه‌گیری کنید")
         self._record()
-        calibration = Calibration(meters / px, page, px, meters)
         self.calibrations[page] = calibration
         self.calibration = self.calibrations.get(self.current_page)
         self._redo.clear()
@@ -510,6 +540,12 @@ class DrawingTakeoffSession:
                 issues.append(f"متره {item.id} سطح اطمینان نامعتبر دارد")
             if item.kind in {"length", "area"} and item.page not in self.calibrations:
                 issues.append(f"متره {item.id} بدون مقیاس همان صفحه ثبت شده است")
+            calibration = self.calibrations.get(item.page)
+            if calibration and calibration.pdf_view:
+                x0, y0, x1, y1 = calibration.pdf_view["bounds"]
+                points = [*item.geometry, *(p for hole in item.holes for p in hole)]
+                if not points or any(not (x0 <= x <= x1 and y0 <= y <= y1) for x, y in points):
+                    issues.append(f"متره {item.id} داخل محدوده کالیبراسیون نما نیست")
         return {"valid": not issues, "issues": issues, "item_count": len(self.items)}
 
     def boq_rows(self, selected_ids: Iterable[str] | None = None) -> list[dict[str, Any]]:
@@ -651,6 +687,8 @@ class DrawingTakeoffSession:
             values = (calibration.meters_per_pixel, calibration.reference_pixels, calibration.reference_meters)
             if page_number < 1 or any(not math.isfinite(float(v)) or float(v) <= 0 for v in values):
                 raise ValueError("فایل متره دارای کالیبراسیون نامعتبر است")
+            if calibration.pdf_view and Path(session.drawing_source).suffix.lower() != ".pdf":
+                raise ValueError("محدوده نما در منبع غیر PDF معتبر نیست")
         session.current_page = cls._page_number(data.get("current_page", 1))
         if session.current_page < 1:
             raise ValueError("شماره صفحه جاری باید مثبت باشد")
