@@ -18,7 +18,7 @@ from core.drawings.pdf_grid_instances import detect_vector_grid_positions
 from core.drawings.pdf_vector_symbol_witness import compact_symbol_witness
 from core.drawings.pdf_vector_type_labels import vector_column_type_labels
 from core.drawings.pdf_sheet_scope_registration import classify_sheet_title
-from core.drawings.pdf_auto_intake import _parse_pdf_lines, _score_pair
+from core.drawings.pdf_column_text_witness import _parse_pdf_lines, _score_pair
 
 
 def _collect_dimensions(doc):
