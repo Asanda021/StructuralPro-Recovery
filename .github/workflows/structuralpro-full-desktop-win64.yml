@@ -1,0 +1,106 @@
+name: StructuralPro full desktop Windows x64 candidate
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    branches: [fix/phase8-p2-a-pdf-takeoff-20261115]
+    paths: ['.github/workflows/structuralpro-full-desktop-win64.yml']
+permissions:
+  contents: read
+jobs:
+  full-desktop:
+    if: github.repository == 'Asanda021/StructuralPro-Recovery' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'build/full-desktop-win64-20261124'
+    runs-on: windows-2022
+    timeout-minutes: 55
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha }}
+      PYTHONUTF8: '1'
+      QT_QPA_PLATFORM: windows
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Install dependencies and exercise the actual full desktop entry point
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne $env:SOURCE_SHA) { throw 'Unexpected source SHA' }
+          python -m pip install -r requirements.txt 'pyinstaller==6.19.0' 'ifcopenshell>=0.8,<0.9'
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed' }
+          python -m pip freeze | Set-Content (Join-Path $env:RUNNER_TEMP 'full-dependencies.txt')
+          $env:STRUCTURALPRO_SMOKE = '1'
+          $env:PYTHONPATH = (Get-Location).Path
+          python -m app.main
+          if ($LASTEXITCODE -ne 0) { throw 'Full desktop source smoke failed' }
+          Remove-Item Env:STRUCTURALPRO_SMOKE,Env:PYTHONPATH
+      - name: Freeze comprehensive application, not column preview
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $repo = (Get-Location).Path
+          $scratch = Join-Path (Split-Path -Parent $repo) 'full-desktop-build'
+          New-Item -ItemType Directory -Path $scratch -Force | Out-Null
+          $argsPy = @('-m','PyInstaller','--noconfirm','--clean','--onedir','--windowed','--noupx','--name','StructuralPro','--paths',$repo,'--distpath',(Join-Path $scratch 'dist'),'--workpath',(Join-Path $scratch 'work'),'--specpath',$scratch,'--collect-submodules','app','--collect-submodules','core','--collect-data','app','--collect-data','core','--collect-all','pymupdf','--collect-all','ifcopenshell','--collect-all','ezdwg')
+          foreach ($dir in @('assets','resources','data','templates','pricebooks','fonts')) {
+            if (Test-Path -LiteralPath (Join-Path $repo $dir) -PathType Container) { $argsPy += @('--add-data',((Join-Path $repo $dir) + ';' + $dir)) }
+          }
+          $argsPy += (Join-Path $repo 'app/main.py')
+          & python @argsPy
+          if ($LASTEXITCODE -ne 0) { throw 'Full desktop freeze failed' }
+          $bundle = Join-Path $scratch 'dist/StructuralPro'
+          $internal = Join-Path $bundle '_internal'
+          if (-not (Test-Path (Join-Path $bundle 'StructuralPro.exe'))) { throw 'EXE missing' }
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $vs = (& $vswhere -latest -products '*' -property installationPath | Select-Object -First 1)
+          $crt = Get-ChildItem -LiteralPath (Join-Path $vs 'VC/Redist/MSVC') -Directory | Where-Object { $_.Name -match '^\d+\.\d+(\.\d+)?$' } | Sort-Object { [version]$_.Name } -Descending | ForEach-Object { Join-Path $_.FullName 'x64/Microsoft.VC143.CRT' } | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (-not $crt) { throw 'VC runtime missing' }
+          Get-ChildItem -LiteralPath $crt -File -Filter '*.dll' | Copy-Item -Destination $internal -Force
+          Copy-Item VERSION -Destination $bundle
+          @'
+          StructuralPro full desktop development candidate (Windows 10/11 x64 target, not Windows 7).
+          Extract the entire archive. Run StructuralPro.exe, keeping _internal beside it.
+          Includes the actual app/main.py desktop shell, not the standalone column preview.
+          Startup checks are not engineering or financial acceptance. Do not rely on unverified quantities.
+          '@ | Set-Content -LiteralPath (Join-Path $bundle 'START-HERE.txt') -Encoding utf8
+          $delivery = Join-Path $env:RUNNER_TEMP 'full-desktop-delivery'
+          New-Item -ItemType Directory -Path $delivery -Force | Out-Null
+          $zip = Join-Path $delivery 'StructuralPro-Full-Windows-x64.zip'
+          Compress-Archive -Path $bundle -DestinationPath $zip -CompressionLevel Optimal
+          $unpack = Join-Path $scratch 'unpacked'
+          Expand-Archive -LiteralPath $zip -DestinationPath $unpack
+          $exe = Join-Path $unpack 'StructuralPro/StructuralPro.exe'
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot"
+          Remove-Item Env:PYTHONPATH,Env:PYTHONHOME,Env:QT_PLUGIN_PATH,Env:QT_QPA_PLATFORM_PLUGIN_PATH -ErrorAction SilentlyContinue
+          $env:STRUCTURALPRO_SMOKE = '1'
+          $p = Start-Process -FilePath $exe -WorkingDirectory $unpack -PassThru
+          try {
+            if (-not $p.WaitForExit(180000)) { throw 'Frozen full desktop smoke timeout' }
+            if ($p.ExitCode -ne 0) { throw "Frozen full desktop smoke exit $($p.ExitCode)" }
+          } finally { if (-not $p.HasExited) { $p.Kill() }; $p.Dispose() }
+          Remove-Item Env:STRUCTURALPRO_SMOKE
+          $p = Start-Process -FilePath $exe -WorkingDirectory $unpack -PassThru
+          try {
+            $deadline = [DateTime]::UtcNow.AddSeconds(120)
+            do {
+              Start-Sleep -Milliseconds 500
+              $p.Refresh()
+              if ($p.HasExited) { throw "Full desktop exited before window: $($p.ExitCode)" }
+              $ready = $p.MainWindowHandle -ne [IntPtr]::Zero -and $p.MainWindowTitle -like '*StructuralPro*'
+            } until ($ready -or [DateTime]::UtcNow -ge $deadline)
+            if (-not $ready) { throw 'Full desktop window not visible' }
+            if (-not $p.CloseMainWindow() -or -not $p.WaitForExit(60000) -or $p.ExitCode -ne 0) { throw 'Full desktop did not close normally' }
+          } finally { if (-not $p.HasExited) { $p.Kill() }; $p.Dispose() }
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  StructuralPro-Full-Windows-x64.zip" | Set-Content (Join-Path $delivery 'SHA256.txt') -Encoding ascii
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'full-dependencies.txt') -Destination $delivery
+          [ordered]@{source_sha=$env:SOURCE_SHA;entrypoint='app/main.py';architecture='x64';build_host='windows-2022';source_startup='PASS';frozen_startup='PASS';visible_window_and_close='PASS';engineering_acceptance='NOT_TESTED';windows_7='UNSUPPORTED';sha256=$hash} | ConvertTo-Json | Set-Content (Join-Path $delivery 'build.json') -Encoding utf8
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: StructuralPro-Full-Windows-x64
+          path: ${{ runner.temp }}/full-desktop-delivery/*
+          retention-days: 30
+          compression-level: 0
+          if-no-files-found: error
